@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Memory Cue</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1e293b">
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 1rem; background: #f0f4f8; color: #0f172a;}
+    h1 { text-align: center; margin-bottom: 1rem; }
+    #controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; justify-content: center; flex-wrap: wrap; }
+    input[type="text"] { flex-grow: 1; padding: 0.5rem; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; }
+    button { padding: 0.5rem 1rem; font-size: 1rem; border: none; border-radius: 0.25rem; cursor: pointer;}
+    button.primary { background: #1e90ff; color: white; }
+    button.secondary { background: #64748b; color: white; }
+    ul { list-style: none; padding: 0; }
+    li { background: white; border: 1px solid #e2e8f0; margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center;}
+    li.done { text-decoration: line-through; color: #94a3b8; }
+    small { color: #475569; }
+  </style>
+</head>
+<body>
+<h1>Memory Cue</h1>
+<div id="controls">
+  <input type="text" id="taskInput" placeholder="What do you need to remember?" />
+  <button id="addButton" class="primary">+ Quick</button>
+  <button id="voiceButton" class="secondary">🎙️ Voice add</button>
+  <button id="notifyButton" class="secondary">🔔 Enable alerts</button>
+</div>
+<ul id="taskList"></ul>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+
+// tasks array
+let tasks = JSON.parse(localStorage.getItem('memoryCueTasks') || '[]');
+render();
+
+// request notification permission
+document.getElementById('notifyButton').addEventListener('click', () => {
+  if (Notification && Notification.requestPermission) {
+    Notification.requestPermission().then(res => {
+      alert('Notification permission: ' + res);
+    });
+  }
+});
+
+// add quick
+document.getElementById('addButton').addEventListener('click', () => {
+  const input = document.getElementById('taskInput');
+  const text = input.value.trim();
+  if (text) {
+    addTask(text);
+    input.value = '';
+  }
+});
+
+// voice add
+document.getElementById('voiceButton').addEventListener('click', () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Voice recognition not supported. Try Chrome desktop/Android.');
+    return;
+  }
+  const recog = new SR();
+  recog.lang = 'en-US';
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
+  recog.onresult = (e) => {
+    const text = e.results[0][0].transcript.trim();
+    if (text) addTask(text);
+  };
+  recog.start();
+});
+
+// add task function
+function addTask(text) {
+  const task = { id: Date.now(), title: text, done: false, due: parseDue(text) };
+  tasks.push(task);
+  saveTasks();
+  render();
+  scheduleNotification(task);
+}
+
+// parse due date/time
+function parseDue(text) {
+  // simple regex for hh(:mm)?(am|pm)
+  const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (!timeMatch) return null;
+  let hour = parseInt(timeMatch[1], 10);
+  const minute = parseInt(timeMatch[2] || '0', 10);
+  const period = timeMatch[3].toLowerCase();
+  if (period === 'pm' && hour < 12) hour += 12;
+  if (period === 'am' && hour === 12) hour = 0;
+  const now = new Date();
+  const due = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0);
+  // if due time has already passed today, set for tomorrow
+  if (due.getTime() <= now.getTime()) {
+    due.setDate(due.getDate() + 1);
+  }
+  return due.getTime();
+}
+
+// schedule notification
+function scheduleNotification(task) {
+  if (!('Notification' in window) || Notification.permission !== 'granted' || !task.due) return;
+  const delay = task.due - Date.now();
+  if (delay <= 0) return;
+  setTimeout(() => {
+    new Notification('Memory Cue', { body: task.title });
+  }, delay);
+}
+
+// save tasks to localStorage
+function saveTasks() {
+  localStorage.setItem('memoryCueTasks', JSON.stringify(tasks));
+}
+
+// toggle done and remove
+function toggleDone(id) {
+  tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+  saveTasks();
+  render();
+}
+function removeTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks();
+  render();
+}
+
+// render tasks
+function render() {
+  const ul = document.getElementById('taskList');
+  ul.innerHTML = '';
+  tasks.sort((a,b) => a.due === b.due ? 0 : (!a.due ? 1 : !b.due ? -1 : a.due - b.due));
+  tasks.forEach(task => {
+    const li = document.createElement('li');
+    if (task.done) li.classList.add('done');
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = task.title;
+    li.appendChild(titleSpan);
+    if (task.due) {
+      const timeSmall = document.createElement('small');
+      const d = new Date(task.due);
+      const options = { hour: 'numeric', minute: '2-digit' };
+      timeSmall.textContent = ' — ' + d.toLocaleTimeString([], options);
+      li.appendChild(timeSmall);
+    }
+    const actions = document.createElement('span');
+    actions.style.marginLeft = 'auto';
+    const doneBtn = document.createElement('button');
+    doneBtn.textContent = task.done ? '↺' : '✔';
+    doneBtn.style.marginRight = '0.3rem';
+    doneBtn.addEventListener('click', () => toggleDone(task.id));
+    actions.appendChild(doneBtn);
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '🗑';
+    delBtn.addEventListener('click', () => removeTask(task.id));
+    actions.appendChild(delBtn);
+    li.appendChild(actions);
+    ul.appendChild(li);
+  });
+}
+</script>
+</body>
+</html>
