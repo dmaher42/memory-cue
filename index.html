@@ -53,7 +53,7 @@
   </header>
 
   <main class="wrap grid">
-    <section class="panel">
+    <section class="panel" id="settingsSection">
       <div class="row" style="gap:8px;align-items:flex-end">
         <div style="flex:1">
           <label class="sr-only" for="title">Reminder</label>
@@ -386,8 +386,9 @@
   });
 
   // Settings
-  openSettings.addEventListener('click', ()=>{
-    window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' });
+openSettings.addEventListener('click', ()=>{
+  const sec = document.getElementById('settingsSection');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   saveSettings.addEventListener('click', ()=>{
     const url = syncUrlInput.value.trim();
