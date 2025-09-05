@@ -241,7 +241,7 @@
     if(!url) return;
     const payload = { title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium' };
     try{
-      await fetch(url, { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      await fetch(url, { method:'POST',  headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
       toast('Synced to Calendar/Sheet');
     }catch(e){ toast('Sync failed (offline?)'); }
   }
