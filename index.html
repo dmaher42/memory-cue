@@ -392,6 +392,7 @@
 openSettings.addEventListener('click', ()=>{
   const sec = document.getElementById('settingsSection');
   if (sec) { sec.classList.remove('hidden'); sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } 
   });
   saveSettings.addEventListener('click', ()=>{
     const url = syncUrlInput.value.trim();
