@@ -1,169 +1,410 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Memory Cue</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1e293b">
-  <style>
-    body { font-family: sans-serif; margin: 0; padding: 1rem; background: #f0f4f8; color: #0f172a;}
-    h1 { text-align: center; margin-bottom: 1rem; }
-    #controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; justify-content: center; flex-wrap: wrap; }
-    input[type="text"] { flex-grow: 1; padding: 0.5rem; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; }
-    button { padding: 0.5rem 1rem; font-size: 1rem; border: none; border-radius: 0.25rem; cursor: pointer;}
-    button.primary { background: #1e90ff; color: white; }
-    button.secondary { background: #64748b; color: white; }
-    ul { list-style: none; padding: 0; }
-    li { background: white; border: 1px solid #e2e8f0; margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center;}
-    li.done { text-decoration: line-through; color: #94a3b8; }
-    small { color: #475569; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Memory Cue — Voice Reminders (PWA) + Calendar Sync</title>
+<meta name="theme-color" content="#0b1220" />
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<style>
+  :root{
+    --bg:#0b1220;--panel:#0f172a;--muted:#94a3b8;--text:#e5e7eb;--accent:#38bdf8;--ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;
+  }
+  html,body{height:100%;}
+  body{margin:0;background:linear-gradient(180deg,#0b1220 0%,#0a0f1c 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji");}
+  .wrap{max-width:960px;margin:0 auto;padding:16px;}
+  header{position:sticky;top:0;background:rgba(10,15,28,.7);backdrop-filter:blur(8px);border-bottom:1px solid #1f2937;z-index:10}
+  h1{font-size:22px;margin:0;padding:12px 0;font-weight:700;letter-spacing:.2px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  input,select,button,textarea{color:var(--text);background:#0f172a;border:1px solid #22304a;border-radius:12px;padding:10px 12px;font-size:14px}
+  input::placeholder,textarea::placeholder{color:#64748b}
+  button{cursor:pointer}
+  button.primary{background:var(--accent);border-color:#1e7aa2;color:#001018;font-weight:700}
+  button.good{background:var(--ok);border-color:#157a3a;color:#001108;font-weight:700}
+  button.warn{background:var(--warn);border-color:#7a5a0f;color:#1b1200;font-weight:700}
+  button.ghost{background:#0f172a;border-color:#22304a}
+  .panel{background:var(--panel);border:1px solid #22304a;border-radius:16px;padding:12px}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:980px){.grid{grid-template-columns:1.2fr .8fr}}
+  .list{display:grid;gap:8px}
+  .item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid #20314b;border-radius:14px;background:#0c1426}
+  .item.done .title{text-decoration:line-through;color:#93a3b8}
+  .title{font-weight:600}
+  .meta{font-size:12px;color:var(--muted)}
+  .badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #2b3b58;background:#0f1a32}
+  .section-title{margin:8px 0 0;font-size:13px;color:#a8b2c2;text-transform:uppercase;letter-spacing:.12em}
+  .footer{color:#8aa0b8;font-size:12px;text-align:center;margin:14px 0}
+  .sr-only{position:absolute;height:1px;width:1px;clip:rect(1px,1px,1px,1px);overflow:hidden;white-space:nowrap}
+</style>
 </head>
 <body>
-<h1>Memory Cue</h1>
-<div id="controls">
-  <input type="text" id="taskInput" placeholder="What do you need to remember?" />
-  <button id="addButton" class="primary">+ Quick</button>
-  <button id="voiceButton" class="secondary">🎙️ Voice add</button>
-  <button id="notifyButton" class="secondary">🔔 Enable alerts</button>
-</div>
-<ul id="taskList"></ul>
+  <header>
+    <div class="wrap">
+      <h1>Memory Cue — Voice Reminders (PWA) + Calendar Sync</h1>
+      <div class="row" style="padding-bottom:12px">
+        <input id="q" placeholder="Search reminders or #tags" style="flex:1" />
+        <button id="voiceBtn" class="ghost" title="Voice quick add">🎙️ Voice add</button>
+        <button id="notifBtn" class="ghost" title="Enable notifications">🔔 Enable alerts</button>
+        <button id="addQuickBtn" class="primary" title="Add quick reminder">+ Quick</button>
+        <button id="openSettings" class="ghost" title="Open settings">⚙️ Settings</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <section class="panel">
+      <div class="row" style="gap:8px;align-items:flex-end">
+        <div style="flex:1">
+          <label class="sr-only" for="title">Reminder</label>
+          <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
+        </div>
+        <div>
+          <label class="sr-only" for="date">Date</label>
+          <input id="date" type="date" />
+        </div>
+        <div>
+          <label class="sr-only" for="time">Time</label>
+          <input id="time" type="time" />
+        </div>
+        <div>
+          <select id="priority">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <button id="saveBtn" class="good">Save</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="copyMtlBtn" class="ghost">Copy MTL updates</button>
+        <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px">
+          Import JSON <input id="importFile" type="file" accept="application/json" style="display:none" />
+        </label>
+        <button id="exportBtn" class="ghost">Export JSON</button>
+        <span id="status" class="meta"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div class="row" style="gap:8px">
+          <button class="ghost" data-filter="today">Today</button>
+          <button class="ghost" data-filter="overdue">Overdue</button>
+          <button class="ghost" data-filter="all">All</button>
+          <button class="ghost" data-filter="done">Completed</button>
+        </div>
+        <div>
+          <select id="sort">
+            <option value="smart">Smart sort</option>
+            <option value="time">Time</option>
+            <option value="priority">Priority</option>
+          </select>
+        </div>
+      </div>
+      <div class="section-title">Reminders</div>
+      <div id="list" class="list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">Settings</div>
+      <div class="row" style="gap:8px;align-items:flex-end">
+        <input id="syncUrl" placeholder="Paste your Google Apps Script Web App URL (ends with /exec)" style="flex:1" />
+        <button id="saveSettings" class="good">Save settings</button>
+        <button id="testSync" class="ghost">Send test</button>
+      </div>
+      <div class="meta" style="margin-top:8px">
+        Tip: In Google Apps Script, click <b>Deploy → New deployment → Web app</b>, set <b>Execute as: Me</b>, 
+        <b>Who has access: Anyone with the link</b>, then copy the URL (ends with <code>/exec</code>).
+      </div>
+    </section>
+  </main>
+
+  <div class="wrap footer">Adelaide time. Voice works best in Chrome. Snooze: the app schedules a backup alert 5 minutes after the due time.</div>
 
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
-}
+(function(){
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
 
-// tasks array
-let tasks = JSON.parse(localStorage.getItem('memoryCueTasks') || '[]');
-render();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+  }
 
-// request notification permission
-document.getElementById('notifyButton').addEventListener('click', () => {
-  if (Notification && Notification.requestPermission) {
-    Notification.requestPermission().then(res => {
-      alert('Notification permission: ' + res);
+  const TZ = 'Australia/Adelaide';
+  const storageKey = 'memory_cue_pwa_v2';
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  let items = load();
+  let filter = 'today';
+  let sortKey = 'smart';
+  let listening = false;
+  let recog = null;
+
+  const q = $('#q');
+  const title = $('#title');
+  const date = $('#date');
+  const time = $('#time');
+  const priority = $('#priority');
+  const saveBtn = $('#saveBtn');
+  const list = $('#list');
+  const status = $('#status');
+  const voiceBtn = $('#voiceBtn');
+  const notifBtn = $('#notifBtn');
+  const addQuickBtn = $('#addQuickBtn');
+  const importFile = $('#importFile');
+  const exportBtn = $('#exportBtn');
+  const copyMtlBtn = $('#copyMtlBtn');
+  const sortSel = $('#sort');
+  const openSettings = $('#openSettings');
+  const syncUrlInput = $('#syncUrl');
+  const saveSettings = $('#saveSettings');
+  const testSync = $('#testSync');
+
+  const savedSyncUrl = localStorage.getItem('syncUrl') || '';
+  if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
+
+  function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function save(){ localStorage.setItem(storageKey, JSON.stringify(items)); scheduleAll(); render(); }
+  function load(){ try { return JSON.parse(localStorage.getItem(storageKey)||'[]'); } catch { return []; } }
+  function fmtDayDate(iso){ if(!iso) return '—'; try{ const d=new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat('en-AU',{ timeZone: TZ, weekday:'long', day:'numeric', month:'long'}).format(d);}catch{return iso}}
+  function toISODatePart(d){ return d.toISOString().slice(0,10); }
+  function todayISO(){ const d=new Date(); return toISODatePart(new Date(d.getTime() - d.getTimezoneOffset()*60000)); }
+  function parseQuickWhen(text){
+    text = text.toLowerCase();
+    let when = { date: todayISO(), time: '' };
+    if(/tomorrow/.test(text)){
+      const d=new Date(); d.setDate(d.getDate()+1); when.date=toISODatePart(d);
+    }
+    const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
+    const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
+    if(mHm){ when.time = `${mHm[1].padStart(2,'0')}:${mHm[2]}`; }
+    else if(m12){
+      let h = parseInt(m12[1],10)%12; if(m12[2]==='pm') h+=12; when.time = `${String(h).padStart(2,'0')}:00`;
+    }
+    return when;
+  }
+  function priorityWeight(p){ return p==='High'?3:p==='Medium'?2:1; }
+  function smartCompare(a,b){
+    const pr = priorityWeight(b.priority)-priorityWeight(a.priority);
+    if(pr) return pr;
+    const at = +new Date(a.due||0); const bt = +new Date(b.due||0);
+    if(at!==bt) return at-bt;
+    return (a.updatedAt||0) > (b.updatedAt||0)? -1: 1;
+  }
+
+  let notifOK = false;
+  async function ensureNotifications(){
+    if(!('Notification' in window)) { toast('Notifications not supported'); return; }
+    if(Notification.permission === 'granted'){ notifOK = true; toast('Notifications enabled'); return; }
+    const perm = await Notification.requestPermission();
+    notifOK = perm==='granted';
+    toast(notifOK? 'Notifications enabled' : 'Notifications blocked');
+  }
+  function ping(item){
+    if(notifOK){
+      const n = new Notification('Reminder', { body: item.title, silent:false });
+      setTimeout(()=>n.close(), 6000);
+    } else {
+      try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=880; g.gain.setValueAtTime(.001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(.2, ctx.currentTime+.05); o.start(); setTimeout(()=>{g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2); o.stop(ctx.currentTime+.25);}, 200);}catch{}
+      alert('Reminder: '+item.title);
+    }
+  }
+
+  let timers = new Map();
+  function scheduleAll(){
+    timers.forEach(id=>clearTimeout(id)); timers.clear();
+    items.filter(x=>!x.done && x.due).forEach(x=>{
+      const t = new Date(x.due).getTime();
+      const dt = t - Date.now();
+      if(dt>500){
+        const id = setTimeout(()=>{ ping(x); }, dt);
+        timers.set(x.id, id);
+        const id2 = setTimeout(()=>{ ping(x); }, dt + 5*60*1000); // 5-min backup
+        timers.set(x.id+'-snooze', id2);
+      }
     });
   }
-});
 
-// add quick
-document.getElementById('addButton').addEventListener('click', () => {
-  const input = document.getElementById('taskInput');
-  const text = input.value.trim();
-  if (text) {
-    addTask(text);
-    input.value = '';
+  function addItem(obj){
+    const it = { id: uid(), title: obj.title.trim(), priority: obj.priority||'Medium', notes: obj.notes||'', done:false, createdAt:Date.now(), updatedAt:Date.now(), due: obj.due||null };
+    items = [it, ...items];
+    save();
+    trySync(it);
   }
-});
+  function toggleDone(id){ const i=items.find(x=>x.id===id); if(i){ i.done=!i.done; i.updatedAt=Date.now(); save(); } }
+  function remove(id){ items = items.filter(x=>x.id!==id); save(); }
 
-// voice add
-document.getElementById('voiceButton').addEventListener('click', () => {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    alert('Voice recognition not supported. Try Chrome desktop/Android.');
-    return;
+  async function trySync(task){
+    const url = (localStorage.getItem('syncUrl') || '').trim();
+    if(!url) return;
+    const payload = { title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium' };
+    try{
+      await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      toast('Synced to Calendar/Sheet');
+    }catch(e){ toast('Sync failed (offline?)'); }
   }
-  const recog = new SR();
-  recog.lang = 'en-US';
-  recog.interimResults = false;
-  recog.maxAlternatives = 1;
-  recog.onresult = (e) => {
-    const text = e.results[0][0].transcript.trim();
-    if (text) addTask(text);
-  };
-  recog.start();
-});
 
-// add task function
-function addTask(text) {
-  const task = { id: Date.now(), title: text, done: false, due: parseDue(text) };
-  tasks.push(task);
-  saveTasks();
-  render();
-  scheduleNotification(task);
-}
+  function render(){
+    const query = q.value.trim().toLowerCase();
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
 
-// parse due date/time
-function parseDue(text) {
-  // simple regex for hh(:mm)?(am|pm)
-  const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
-  if (!timeMatch) return null;
-  let hour = parseInt(timeMatch[1], 10);
-  const minute = parseInt(timeMatch[2] || '0', 10);
-  const period = timeMatch[3].toLowerCase();
-  if (period === 'pm' && hour < 12) hour += 12;
-  if (period === 'am' && hour === 12) hour = 0;
-  const now = new Date();
-  const due = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0);
-  // if due time has already passed today, set for tomorrow
-  if (due.getTime() <= now.getTime()) {
-    due.setDate(due.getDate() + 1);
+    let rows = items.slice();
+    if(query){ rows = rows.filter(r => r.title.toLowerCase().includes(query) || (r.notes||'').toLowerCase().includes(query)); }
+    rows = rows.filter(r=>{
+      if(filter==='done') return r.done;
+      if(filter==='overdue') return !r.done && r.due && new Date(r.due) < new Date();
+      if(filter==='today'){
+        if(!r.due) return true;
+        const d = new Date(r.due);
+        return d>=todayStart && d<=todayEnd;
+      }
+      return true;
+    });
+
+    rows.sort((a,b)=>{
+      if(sortKey==='time') return (+new Date(a.due||0))-(+new Date(b.due||0));
+      if(sortKey==='priority') return priorityWeight(b.priority)-priorityWeight(a.priority);
+      return smartCompare(a,b);
+    });
+
+    list.innerHTML = '';
+    if(rows.length===0){ list.innerHTML = '<div class="meta">Nothing here yet.</div>'; return; }
+
+    rows.forEach(r=>{
+      const div = document.createElement('div');
+      div.className = 'item'+(r.done?' done':'');
+      const dueTxt = r.due ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit'})+ ' • ' + fmtDayDate(r.due.slice(0,10)) : '—';
+      div.innerHTML = `
+        <input type="checkbox" ${r.done?'checked':''} aria-label="Mark done" />
+        <div>
+          <div class="title">${escapeHtml(r.title)}</div>
+          <div class="meta">${dueTxt} • <span class="badge">${r.priority}</span> ${r.notes? '• '+escapeHtml(r.notes): ''}</div>
+        </div>
+        <div class="row">
+          <button class="ghost" data-del>Delete</button>
+        </div>`;
+      div.querySelector('input').addEventListener('change',()=>toggleDone(r.id));
+      div.querySelector('[data-del]').addEventListener('click',()=>remove(r.id));
+      list.appendChild(div);
+    });
   }
-  return due.getTime();
-}
 
-// schedule notification
-function scheduleNotification(task) {
-  if (!('Notification' in window) || Notification.permission !== 'granted' || !task.due) return;
-  const delay = task.due - Date.now();
-  if (delay <= 0) return;
-  setTimeout(() => {
-    new Notification('Memory Cue', { body: task.title });
-  }, delay);
-}
+  function escapeHtml(s){ return s.replace(/[&<>\"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\\'':'&#39;'}[c])); }
+  function fmtDayDate(iso){ try{ const d=new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat('en-AU',{ timeZone: TZ, weekday:'long', day:'numeric', month:'long'}).format(d);}catch{return iso}}
 
-// save tasks to localStorage
-function saveTasks() {
-  localStorage.setItem('memoryCueTasks', JSON.stringify(tasks));
-}
-
-// toggle done and remove
-function toggleDone(id) {
-  tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
-  saveTasks();
-  render();
-}
-function removeTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  saveTasks();
-  render();
-}
-
-// render tasks
-function render() {
-  const ul = document.getElementById('taskList');
-  ul.innerHTML = '';
-  tasks.sort((a,b) => a.due === b.due ? 0 : (!a.due ? 1 : !b.due ? -1 : a.due - b.due));
-  tasks.forEach(task => {
-    const li = document.createElement('li');
-    if (task.done) li.classList.add('done');
-    const titleSpan = document.createElement('span');
-    titleSpan.textContent = task.title;
-    li.appendChild(titleSpan);
-    if (task.due) {
-      const timeSmall = document.createElement('small');
-      const d = new Date(task.due);
-      const options = { hour: 'numeric', minute: '2-digit' };
-      timeSmall.textContent = ' — ' + d.toLocaleTimeString([], options);
-      li.appendChild(timeSmall);
+  saveBtn.addEventListener('click', ()=>{
+    const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
+    let due = null;
+    if(date.value || time.value){
+      const d = (date.value||todayISO());
+      const tm = (time.value||'09:00');
+      due = new Date(`${d}T${tm}:00`).toISOString();
+    } else {
+      const p = parseQuickWhen(t);
+      if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
     }
-    const actions = document.createElement('span');
-    actions.style.marginLeft = 'auto';
-    const doneBtn = document.createElement('button');
-    doneBtn.textContent = task.done ? '↺' : '✔';
-    doneBtn.style.marginRight = '0.3rem';
-    doneBtn.addEventListener('click', () => toggleDone(task.id));
-    actions.appendChild(doneBtn);
-    const delBtn = document.createElement('button');
-    delBtn.textContent = '🗑';
-    delBtn.addEventListener('click', () => removeTask(task.id));
-    actions.appendChild(delBtn);
-    li.appendChild(actions);
-    ul.appendChild(li);
+    addItem({ title:t, priority: priority.value, due });
+    title.value = ''; time.value='';
+    render();
   });
-}
+
+  addQuickBtn.addEventListener('click', ()=>{
+    if(!title.value.trim()){
+      title.focus(); toast('Type something like "pick up dog at 6pm"'); return;
+    }
+    saveBtn.click();
+  });
+
+  q.addEventListener('input', render);
+  sortSel.addEventListener('change', e=>{ sortKey = sortSel.value; render(); });
+  $$('button[data-filter]').forEach(b=> b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
+
+  importFile.addEventListener('change', (e)=>{
+    const f = importFile.files[0]; if(!f) return;
+    const rd = new FileReader(); rd.onload = ()=>{ try{ items = JSON.parse(String(rd.result)||'[]'); save(); }catch(err){ toast('Invalid JSON'); } };
+    rd.readAsText(f); importFile.value='';
+  });
+  exportBtn.addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(items,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='memory-cue.json'; a.click(); URL.revokeObjectURL(url);
+  });
+  copyMtlBtn.addEventListener('click', ()=>{
+    const lines = items.filter(x=>!x.done).map(x=>{
+      const datePart = x.due ? fmtDayDate(x.due.slice(0,10)) : '';
+      const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}) : '';
+      const pieces = [
+        'mtl '+x.title,
+        x.due? `Due Date: ${datePart}`: '',
+        x.due? `Time: ${timePart}`: '',
+        `Status: Not started`,
+        x.notes? `Notes: ${x.notes}`: ''
+      ].filter(Boolean);
+      return pieces.join('\n');
+    });
+    navigator.clipboard.writeText(lines.join('\n')).then(()=> toast('Copied MTL lines')).catch(()=> alert('Copy failed'));
+  });
+
+  notifBtn.addEventListener('click', ensureNotifications);
+
+  // Voice
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ voiceBtn.disabled = true; voiceBtn.title = 'Voice not supported in this browser'; }
+  else {
+    recog = new SR();
+    try{ recog.lang = 'en-AU'; }catch{}
+    recog.continuous = false; recog.interimResults = true; recog.maxAlternatives = 1;
+    recog.onresult = (e)=>{
+      const last = e.results[e.results.length-1];
+      if(last && last.isFinal){
+        const text = last[0].transcript.trim();
+        if(text){
+          title.value = text;
+          const p = parseQuickWhen(text);
+          if(p.time){
+            date.value = p.date; time.value = p.time;
+          }
+          toast('Heard: '+text);
+        }
+      }
+    };
+    recog.onend = ()=>{ listening=false; voiceBtn.textContent = '🎙️ Voice add'; };
+  }
+  voiceBtn.addEventListener('click', ()=>{
+    if(!recog) return;
+    if(!listening){ try{ recog.start(); listening=true; voiceBtn.textContent='Listening…'; }catch{} }
+    else { try{ recog.stop(); }catch{} listening=false; voiceBtn.textContent='🎙️ Voice add'; }
+  });
+
+  // Settings
+  openSettings.addEventListener('click', ()=>{
+    window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' });
+  });
+  saveSettings.addEventListener('click', ()=>{
+    const url = syncUrlInput.value.trim();
+    localStorage.setItem('syncUrl', url);
+    toast('Settings saved');
+  });
+  testSync.addEventListener('click', async ()=>{
+    const url = syncUrlInput.value.trim();
+    if(!url){ toast('Enter Sync URL first'); return; }
+    try{
+      const r = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ title:'Test from Memory Cue', dueIso:null, priority:'Low' })
+      });
+      toast(r.ok ? 'Test sent' : 'Sync error');
+    }catch(e){ toast('Sync failed (check URL & deploy)'); }
+  });
+
+  function toast(msg){ status.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> status.textContent='', 3000); }
+
+  render();
+  scheduleAll();
+})();
 </script>
 </body>
 </html>
