@@ -93,7 +93,12 @@
         <button id="saveBtn" class="good" type="button">Save</button>
       </div>
       <div class="row" style="margin-top:8px">
+        <button id="copyMtlBtn" class="ghost" type="button">Copy MTL updates</button>
+        <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px">
+          Import JSON <input id="importFile" type="file" accept="application/json" style="display:none" />
+        </label>
         <button id="exportBtn" class="ghost" type="button">Export JSON</button>
+        <button id="openSettings" class="ghost" type="button" title="Open settings">⚙️ Settings</button>
         <span id="status" class="meta"></span>
       </div>
     </section>
@@ -120,10 +125,24 @@
         <div class="meta">Loading...</div>
       </div>
     </section>
+
+    <!-- Settings (hidden by default; revealed via Settings button) -->
+    <section class="panel hidden" id="settingsSection">
+      <div class="section-title">Calendar Sync Settings</div>
+      <div class="row" style="gap:8px;align-items:flex-end">
+        <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" style="flex:1" />
+        <button id="saveSettings" class="good" type="button">Save settings</button>
+        <button id="testSync" class="ghost" type="button">Send test</button>
+      </div>
+      <div class="meta" style="margin-top:8px">
+        Tip: In Google Apps Script, click <b>Deploy → New deployment → Web app</b>,
+        set <b>Execute as: Me</b>, <b>Who has access: Anyone with the link</b>, then copy the URL (ends with <code>/exec</code>).
+      </div>
+    </section>
   </main>
 
   <div class="wrap footer">
-    Adelaide time. Voice works best in Chrome. Multi-device sync powered by Firebase.
+    Adelaide time. Voice works best in Chrome. Multi-device sync via Firebase + Calendar sync via Google Apps Script.
   </div>
 
   <!-- Firebase SDK -->
@@ -174,9 +193,20 @@
     const voiceBtn = $('#voiceBtn');
     const notifBtn = $('#notifBtn');
     const addQuickBtn = $('#addQuickBtn');
+    const copyMtlBtn = $('#copyMtlBtn');
+    const importFile = $('#importFile');
     const exportBtn = $('#exportBtn');
     const sortSel = $('#sort');
     const syncStatus = $('#syncStatus');
+    const openSettings = $('#openSettings');
+    const syncUrlInput = $('#syncUrl');
+    const saveSettings = $('#saveSettings');
+    const testSync = $('#testSync');
+    const settingsSection = $('#settingsSection');
+
+    // Restore saved Sync URL
+    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
+    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
 
     // Firebase Authentication
     onAuthStateChanged(auth, (user) => {
@@ -195,9 +225,9 @@
       if (!userId) return;
 
       const userCollection = collection(db, 'users', userId, 'reminders');
-      const q = query(userCollection, orderBy('updatedAt', 'desc'));
+      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
 
-      unsubscribe = onSnapshot(q, (snapshot) => {
+      unsubscribe = onSnapshot(qSnap, (snapshot) => {
         const remoteItems = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
@@ -245,10 +275,8 @@
     // Firebase operations
     async function saveToFirebase(item) {
       if (!userId) return;
-
       try {
-        const docRef = doc(db, 'users', userId, 'reminders', item.id);
-        await setDoc(docRef, {
+        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
           title: item.title,
           priority: item.priority,
           notes: item.notes,
@@ -257,8 +285,6 @@
           createdAt: item.createdAt,
           updatedAt: item.updatedAt
         });
-
-        // Remove from pending changes
         removePendingChange(item.id);
       } catch (error) {
         console.error('Save failed:', error);
@@ -270,10 +296,8 @@
 
     async function deleteFromFirebase(id) {
       if (!userId) return;
-
       try {
-        const docRef = doc(db, 'users', userId, 'reminders', id);
-        await deleteDoc(docRef);
+        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
         removePendingChange(id);
       } catch (error) {
         console.error('Delete failed:', error);
@@ -317,12 +341,37 @@
       }
     }
 
+    // Calendar sync function
+    async function tryCalendarSync(task) {
+      const url = (localStorage.getItem('syncUrl') || '').trim();
+      if (!url) return;
+      
+      const payload = { 
+        title: task.title, 
+        dueIso: task.due || null, 
+        priority: task.priority || 'Medium' 
+      };
+      
+      try {
+        await fetch(url, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'text/plain' }, 
+          body: JSON.stringify(payload) 
+        });
+        toast('Synced to Calendar');
+      } catch (e) { 
+        toast('Calendar sync failed (offline?)'); 
+      }
+    }
+
     // Utility functions
     function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
     function toISODatePart(d) { return d.toISOString().slice(0, 10); }
     function todayISO() {
-      const d = new Date();
-      return toISODatePart(new Date(d.getTime() - d.getTimezoneOffset() * 60000));
+      // Get today's date in Adelaide timezone
+      const now = new Date();
+      const adelaideDate = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
+      return toISODatePart(adelaideDate);
     }
     function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
     function smartCompare(a, b) {
@@ -371,6 +420,10 @@
 
       // Save to Firebase
       saveToFirebase(item);
+      
+      // Also sync to calendar if URL is configured
+      tryCalendarSync(item);
+      
       return item;
     }
 
@@ -393,8 +446,14 @@
     // Render function
     function render() {
       const query = q.value.trim().toLowerCase();
-      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+      
+      // Get today's date range in Adelaide timezone
+      const now = new Date();
+      const adelaideNow = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
+      const todayStart = new Date(adelaideNow);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(adelaideNow);
+      todayEnd.setHours(23, 59, 59, 999);
 
       let rows = items.slice();
 
@@ -406,11 +465,13 @@
 
       rows = rows.filter(r => {
         if (filter === 'done') return r.done;
-        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < new Date();
+        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < adelaideNow;
         if (filter === 'today') {
           if (!r.due) return true;
-          const d = new Date(r.due);
-          return d >= todayStart && d <= todayEnd;
+          const dueDate = new Date(r.due);
+          // Convert due date to Adelaide timezone for comparison
+          const dueDateAdelaide = new Date(dueDate.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
+          return dueDateAdelaide >= todayStart && dueDateAdelaide <= todayEnd;
         }
         return true;
       });
@@ -456,6 +517,7 @@
     }
 
     function toast(msg) {
+      console.log('Toast:', msg);
       statusEl.textContent = msg; clearTimeout(toast._t);
       toast._t = setTimeout(() => statusEl.textContent = '', 3000);
     }
@@ -489,6 +551,45 @@
       filter = b.getAttribute('data-filter'); render();
     }));
 
+    copyMtlBtn.addEventListener('click', () => {
+      const lines = items.filter(x => !x.done).map(x => {
+        const datePart = x.due ? fmtDayDate(x.due.slice(0, 10)) : '';
+        const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
+        const pieces = [
+          'mtl ' + x.title,
+          x.due ? `Due Date: ${datePart}` : '',
+          x.due ? `Time: ${timePart}` : '',
+          `Status: Not started`,
+        ].filter(Boolean);
+        return pieces.join('\n');
+      });
+      if (lines.length === 0) { toast('No active tasks to copy'); return; }
+      navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
+        toast('Copied for Master Task List');
+      }).catch(() => toast('Copy failed'));
+    });
+
+    importFile.addEventListener('change', () => {
+      const f = importFile.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try { 
+          const importedItems = JSON.parse(String(rd.result) || '[]'); 
+          // Add imported items to Firebase
+          importedItems.forEach(item => {
+            item.id = uid(); // Generate new IDs to avoid conflicts
+            items = [item, ...items];
+            saveToFirebase(item);
+          });
+          render();
+          toast('Import successful');
+        }
+        catch (err) { toast('Invalid JSON'); }
+      };
+      rd.readAsText(f);
+      importFile.value = '';
+    });
+
     exportBtn.addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -496,7 +597,36 @@
       URL.revokeObjectURL(url);
     });
 
-    // Voice recognition (simplified)
+    // Settings button: reveal + scroll to panel
+    openSettings.addEventListener('click', () => {
+      if (settingsSection) {
+        settingsSection.classList.remove('hidden');
+        settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // Save settings
+    saveSettings.addEventListener('click', () => {
+      const url = syncUrlInput.value.trim();
+      localStorage.setItem('syncUrl', url);
+      toast('Calendar sync settings saved');
+    });
+
+    // Test calendar sync
+    testSync.addEventListener('click', async () => {
+      const url = syncUrlInput.value.trim();
+      if (!url) { toast('Enter Google Apps Script URL first'); return; }
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ title: 'Test from Memory Cue', dueIso: null, priority: 'Low' })
+        });
+        toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error');
+      } catch (e) { toast('Calendar sync failed (check URL & deploy)'); }
+    });
+
+    // Voice recognition
     try {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SR) {
