@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memory-cue-cache-v17'; // bump to v5 (or next)
+const CACHE_NAME = 'memory-cue-cache-v18'; // bump to v18 (or next)
 const urlsToCache = [
   './',
   './index.html',
