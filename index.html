@@ -363,15 +363,25 @@
           const dueTxt=r.due
             ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit'})+' • '+fmtDayDate(r.due.slice(0,10))
             : '—';
-          div.innerHTML=`
-            <input type="checkbox" ${r.done?'checked':''} aria-label="Mark done"/>
-            <div>
-              <div class="title">${escapeHtml(r.title)}</div>
-              <div class="meta">${dueTxt} • <span class="badge">${r.priority}</span> ${r.notes? '• '+escapeHtml(r.notes): ''}</div>
-            </div>
-            <div class="row">
-              <button class="ghost" data-del type="button">Delete</button>
-            </div>`;
+      div.innerHTML = `
+  <input type="checkbox" ${r.done?'checked':''} aria-label="Mark done"/>
+  <div>
+    <div class="title">
+      ${escapeHtml(r.title)}
+      ${r.due
+        ? ` — ${new Date(r.due).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})} ${fmtDayDate(r.due.slice(0,10))}`
+        : ''
+      }
+    </div>
+    <div class="meta">
+      <span class="badge">${r.priority}</span>
+      ${r.notes ? '• ' + escapeHtml(r.notes) : ''}
+    </div>
+  </div>
+  <div class="row">
+    <button class="ghost" data-del type="button">Delete</button>
+  </div>`;
+
           div.querySelector('input').addEventListener('change',()=>toggleDone(r.id));
           div.querySelector('[data-del]').addEventListener('click',()=>removeItem(r.id));
           list.appendChild(div);
