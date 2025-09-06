@@ -7,60 +7,105 @@
   <meta name="theme-color" content="#0b1220"/>
   <link rel="manifest" href="manifest.webmanifest"/>
   <link rel="icon" href="icons/icon-192.png" sizes="192x192"/>
+
   <style>
     :root{
-      --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --text:#e5e7eb;
+      --bg:#0b1220; --panel:#0f172a; --panel-2:#0c1426; --muted:#94a3b8; --text:#e5e7eb;
       --accent:#38bdf8; --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444;
-      --border:#22304a;
+      --border:#22304a; --ring:#61dafb33;
+      --shadow:0 8px 24px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.35);
     }
-    html,body{height:100%;}
+
+    html,body{height:100%}
     body{
       margin:0; color:var(--text);
       background:linear-gradient(180deg,#0b1220 0%,#0a0f1c 100%);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji");
       font-size:15px;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
-    .wrap{max-width:980px;margin:0 auto;padding:16px;}
-    header{position:sticky;top:0;background:rgba(10,15,28,.7);backdrop-filter:blur(8px);border-bottom:1px solid #1f2937;z-index:20}
-    h1{font-size:20px;margin:0;padding:12px 0;font-weight:700;letter-spacing:.2px}
+
+    /* Layout */
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    header{
+      position:sticky;top:0;z-index:40;
+      background:rgba(10,15,28,.7);backdrop-filter:blur(10px);
+      border-bottom:1px solid #1f2937;
+    }
+    h1{font-size:22px;margin:0;padding:12px 0;font-weight:800;letter-spacing:.2px}
+
+    /* Controls + inputs */
     .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     input,select,button,textarea{
-      color:var(--text);background:#0f172a;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px
+      color:var(--text);background:#0f172a;border:1px solid var(--border);
+      border-radius:12px;padding:10px 12px;font-size:14px;transition:.15s ease-in-out;
     }
-    input::placeholder,textarea::placeholder{color:#64748b}
+    input::placeholder,textarea::placeholder{color:#6b7d94}
+    input:focus,select:focus,textarea:focus,button:focus-visible{
+      outline:none; box-shadow:0 0 0 3px var(--ring); border-color:#2c466e;
+    }
     button{cursor:pointer}
-    button.primary{background:var(--accent);border-color:#1e7aa2;color:#001018;font-weight:700}
-    button.good{background:var(--ok);border-color:#157a3a;color:#001108;font-weight:700}
-    button.warn{background:var(--warn);border-color:#7a5a0f;color:#1b1200;font-weight:700}
+    button.primary{background:var(--accent);border-color:#1e7aa2;color:#001018;font-weight:800}
+    button.good{background:var(--ok);border-color:#157a3a;color:#001108;font-weight:800}
+    button.warn{background:var(--warn);border-color:#7a5a0f;color:#1b1200;font-weight:800}
     button.ghost{background:#0f172a;border-color:var(--border)}
-    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media (min-width:980px){.grid{grid-template-columns:1.2fr .8fr}}
-    .list{display:grid;gap:8px}
-    .item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #20314b;border-radius:16px;background:#0c1426}
-    .item.done .title{text-decoration:line-through;color:#93a3b8}
-    .title{font-weight:600}
-    .meta{font-size:12px;color:var(--muted)}
+    button.ghost:hover{background:#111a2e;border-color:#2b3b58}
+    .icon-btn{width:40px;height:40px;display:inline-grid;place-items:center;border-radius:12px}
+    .chip{font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid #2b3b58;background:#0f1a32}
     .badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #2b3b58;background:#0f1a32}
-    .section-title{margin:8px 0 0;font-size:13px;color:#a8b2c2;text-transform:uppercase;letter-spacing:.12em}
-    .footer{color:#8aa0b8;font-size:12px;text-align:center;margin:14px 0}
+
+    /* Panels */
+    .panel{
+      background:var(--panel);border:1px solid var(--border);
+      border-radius:16px;padding:12px;box-shadow:var(--shadow);
+    }
+    .panel-soft{background:var(--panel-2)}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media (min-width:1000px){.grid{grid-template-columns:1.25fr .75fr}}
+
+    /* List */
+    .list{display:grid;gap:8px}
+    .section-title{margin:12px 0 6px;font-size:12px;color:#a8b2c2;text-transform:uppercase;letter-spacing:.14em}
+    .item{
+      display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+      padding:12px;border:1px solid #20314b;border-radius:16px;background:#0c1426;
+      transition:transform .06s ease, border-color .15s ease, background .15s ease;
+    }
+    .item:hover{transform:translateY(-1px);border-color:#2b3b58;background:#0f1a32}
+    .item.done .title{text-decoration:line-through;color:#93a3b8}
+    .title{font-weight:700;line-height:1.25}
+    .meta{font-size:12px;color:var(--muted)}
     .sr-only{position:absolute;height:1px;width:1px;clip:rect(1px,1px,1px,1px);overflow:hidden;white-space:nowrap}
-    .hidden{display:none;}
-    /* Modal */
-    .modal.hidden{display:none;}
-    .modal{position:fixed;inset:0;z-index:1200;}
-    .modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);}
-    .modal__sheet{position:absolute;left:50%;top:10%;transform:translateX(-50%);
-      width:min(680px,92vw);background:#0f172a;border:1px solid var(--border);border-radius:16px;padding:12px}
+
+    /* Search bar */
+    .toolbar{display:flex;gap:8px;align-items:center;padding:8px 0 12px}
+    .toolbar .search{flex:1;display:flex;align-items:center;gap:8px}
+    .toolbar .search input{flex:1}
+    .toolbar .actions{display:flex;gap:8px}
+
     /* Floating add bar (mobile) */
-    .fab-add{position:sticky;bottom:0;display:flex;gap:8px;padding:10px;background:linear-gradient(180deg,rgba(11,18,32,0),#0b1220 35%);z-index:5}
-    @media (min-width:980px){.fab-add{position:static;background:none;padding:0}}
-    .fab-add input{flex:1}
-    /* Focus visibility */
-    :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:12px}
+    .fab-add{position:sticky;bottom:0;display:flex;gap:8px;padding:10px;
+      background:linear-gradient(180deg,rgba(11,18,32,0),#0b1220 35%);z-index:5;border-radius:12px}
+    @media (min-width:1000px){.fab-add{position:static;background:none;padding:0}}
+
+    /* Settings modal */
+    .modal.hidden{display:none}
+    .modal{position:fixed;inset:0;z-index:1200}
+    .modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+    .modal__sheet{position:absolute;left:50%;top:10%;transform:translateX(-50%);
+      width:min(680px,92vw);background:#0f172a;border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+
+    /* Footer */
+    .footer{color:#8aa0b8;font-size:12px;text-align:center;margin:8px 0 16px}
+
+    /* Update toast */
+    #updateToast{position:fixed;right:16px;top:100px;z-index:2000;
+      background:#0f1a32;border:1px solid #2b3b58;border-radius:12px;padding:10px 12px;display:none}
+    #updateToast button{margin-left:8px}
+
     /* Reduced motion */
     @media (prefers-reduced-motion:reduce){
-      *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
+      *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
     }
   </style>
 </head>
@@ -70,16 +115,19 @@
       <div class="row" style="justify-content:space-between;align-items:center">
         <h1>Memory Cue</h1>
         <div class="row">
-          <span id="syncChip" class="badge">Online</span>
-          <button id="notifBtn" class="ghost" type="button" title="Enable notifications">🔔</button>
-          <button id="syncNow" class="ghost" type="button" title="Sync now">⟳</button>
-          <button id="openSettings" class="ghost" type="button" title="Settings">⚙️</button>
+          <span id="syncChip" class="chip">Online</span>
+          <button id="notifBtn" class="icon-btn ghost" type="button" title="Enable notifications">🔔</button>
+          <button id="syncNow" class="icon-btn ghost" type="button" title="Sync now">⟳</button>
+          <button id="openSettings" class="icon-btn ghost" type="button" title="Settings">⚙️</button>
         </div>
       </div>
-      <div class="row" style="padding:8px 0 12px">
-        <input id="q" placeholder="Search reminders or #tags" style="flex:1"/>
-        <button id="voiceBtn" class="ghost" type="button" title="Voice quick add">🎙️ Voice</button>
-        <select id="sort">
+
+      <div class="toolbar">
+        <div class="search">
+          <input id="q" placeholder="Search reminders or #tags" aria-label="Search reminders"/>
+          <button id="voiceBtn" class="ghost" type="button" title="Voice quick add">🎙️ Voice</button>
+        </div>
+        <select id="sort" aria-label="Sort">
           <option value="smart">Smart sort</option>
           <option value="time">Time</option>
           <option value="priority">Priority</option>
@@ -99,7 +147,7 @@
           <button class="ghost" data-filter="done" type="button">Completed</button>
         </div>
         <div class="row" style="gap:8px">
-          <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px">
+          <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer">
             Import <input id="importFile" type="file" accept="application/json" style="display:none"/>
           </label>
           <button id="exportBtn" class="ghost" type="button">Export</button>
@@ -114,30 +162,31 @@
       </div>
 
       <!-- Floating Add Bar -->
-      <div class="fab-add">
-        <input id="quickTitle" placeholder="Add a reminder… e.g., Pick up dog 6pm"/>
+      <div class="fab-add panel-soft">
+        <input id="quickTitle" placeholder="Add a reminder… e.g., Pick up dog 6pm" aria-label="Quick add reminder"/>
         <button id="quickAdd" class="primary" type="button">Add</button>
-        <span id="status" class="meta"></span>
+        <span id="status" class="meta" role="status" aria-live="polite"></span>
       </div>
     </section>
 
-    <!-- Right: Full Add -->
+    <!-- Right: Full Add + Settings -->
     <section class="panel">
       <div class="row" style="gap:8px;align-items:flex-end">
-        <div style="flex:1">
+        <div style="flex:1;min-width:220px">
           <label class="sr-only" for="title">Reminder</label>
-          <input id="title" placeholder="Reminder title"/>
+          <input id="title" placeholder="Reminder title" aria-label="Reminder title"/>
         </div>
         <div>
           <label class="sr-only" for="date">Date</label>
-          <input id="date" type="date"/>
+          <input id="date" type="date" aria-label="Date"/>
         </div>
         <div>
           <label class="sr-only" for="time">Time</label>
-          <input id="time" type="time"/>
+          <input id="time" type="time" aria-label="Time"/>
         </div>
         <div>
-          <select id="priority">
+          <label class="sr-only" for="priority">Priority</label>
+          <select id="priority" aria-label="Priority">
             <option>High</option>
             <option selected>Medium</option>
             <option>Low</option>
@@ -145,11 +194,19 @@
         </div>
         <button id="saveBtn" class="good" type="button">Save</button>
       </div>
+
+      <div class="section-title" style="margin-top:14px">Settings</div>
+      <div class="row panel-soft" style="gap:8px;align-items:flex-end;padding:10px;border-radius:12px;border:1px solid var(--border)">
+        <input id="syncUrl" placeholder="https://script.google.com/.../exec" style="flex:1" aria-label="Apps Script sync URL"/>
+        <button id="saveSettings" class="good" type="button">Save</button>
+        <button id="testSync" class="ghost" type="button">Send test</button>
+      </div>
+      <p class="meta" style="margin-top:8px">Deploy Apps Script Web app → Execute as: Me • Access: Anyone with the link. Paste the /exec URL above.</p>
     </section>
   </main>
 
   <div class="wrap footer">
-    Adelaide time. Installable PWA • Voice entry in Chrome • Offline-friendly. 
+    Adelaide time. Installable PWA • Voice entry in Chrome • Offline-friendly.
   </div>
 
   <!-- Settings Modal -->
@@ -161,22 +218,60 @@
         <button class="ghost" type="button" data-close aria-label="Close">✕</button>
       </div>
       <div class="row" style="gap:8px;align-items:flex-end;margin-top:8px">
-        <input id="syncUrl" placeholder="https://script.google.com/.../exec" style="flex:1"/>
-        <button id="saveSettings" class="good" type="button">Save</button>
-        <button id="testSync" class="ghost" type="button">Send test</button>
+        <input id="syncUrlModal" placeholder="https://script.google.com/.../exec" style="flex:1"/>
+        <button id="saveSettingsModal" class="good" type="button">Save</button>
+        <button id="testSyncModal" class="ghost" type="button">Send test</button>
       </div>
-      <p class="meta" style="margin-top:8px">Deploy Apps Script Web app → Execute as: Me • Access: Anyone with the link. Paste the /exec URL above.</p>
+      <p class="meta" style="margin-top:8px">Same as main settings — paste your /exec URL and test.</p>
     </div>
+  </div>
+
+  <!-- Update toast (hidden by default) -->
+  <div id="updateToast" role="status" aria-live="polite">
+    <span>Update available</span>
+    <button id="reloadBtn" class="primary" type="button">Reload</button>
   </div>
 
   <script>
   (async function(){
-    // PWA SW
+    // ---------------- PWA SW (kept, +small update hook) ----------------
     let deferredPrompt=null;
     window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;});
-    if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(console.error); }
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.register('./service-worker.js').catch(console.error);
 
-    // ---- Constants & helpers
+      // Show "Update available" toast when a new SW is installed
+      if (reg) {
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              const toast = document.getElementById('updateToast');
+              if (toast) toast.style.display = 'inline-flex';
+            }
+          });
+        });
+      }
+
+      // Reload button → skip waiting + reload
+      const reloadBtn = document.getElementById('reloadBtn');
+      if (reloadBtn) {
+        reloadBtn.addEventListener('click', async () => {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          regs.forEach(r => r.active && r.active.postMessage({ type: 'SKIP_WAITING' }));
+          setTimeout(() => location.reload(), 150);
+        });
+      }
+
+      // If the controller changes (new SW takes control), refresh once
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // If you prefer auto refresh, uncomment next line:
+        // location.reload();
+      });
+    }
+
+    // ---------------- Constants & helpers (unchanged) ----------------
     const TZ='Australia/Adelaide';
     const storageKey='memory_cue_pwa_v3';
     const $=(s)=>document.querySelector(s);
@@ -208,13 +303,13 @@
     function escapeHtml(s){ return String(s).replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function isoToMillis(x){ try{return +new Date(x);}catch{return 0;} }
 
-    // ---- Data state
+    // ---------------- Data state (unchanged) ----------------
     let items=load();
     let filter='today', sortKey='smart';
     let listening=false, recog=null;
     let timers=new Map();
 
-    // ---- Elements
+    // ---------------- Elements (unchanged IDs) ----------------
     const q=$('#q'), title=$('#title'), date=$('#date'), time=$('#time'), priority=$('#priority');
     const saveBtn=$('#saveBtn'), list=$('#list'), statusEl=$('#status');
     const voiceBtn=$('#voiceBtn'), notifBtn=$('#notifBtn'), importFile=$('#importFile'), exportBtn=$('#exportBtn');
@@ -223,7 +318,7 @@
     const settingsModal=$('#settingsModal'), openSettings=$('#openSettings'), syncUrlInput=$('#syncUrl');
     const saveSettings=$('#saveSettings'), testSync=$('#testSync');
 
-    // ---- Notifications
+    // ---------------- Notifications (unchanged) ----------------
     let notifOK=false;
     async function ensureNotifications(){
       if(!('Notification' in window)) { toast('Notifications not supported'); return; }
@@ -235,7 +330,7 @@
     window.addEventListener('online', ()=> setSyncChip('Online'));
     window.addEventListener('offline',()=> setSyncChip('Offline – queued'));
 
-    // ---- Scheduling
+    // ---------------- Scheduling (unchanged) ----------------
     function ping(item){
       if(notifOK){
         const n=new Notification('Reminder',{body:item.title,silent:false}); setTimeout(()=>n.close(),6000);
@@ -257,7 +352,7 @@
       });
     }
 
-    // ---- Sync helpers
+    // ---------------- Sync helpers (unchanged) ----------------
     function setSyncChip(text){ if(syncChip) syncChip.textContent=text; }
     function getSyncUrl(){ return (localStorage.getItem('syncUrl')||'').trim(); }
 
@@ -298,7 +393,7 @@
       }catch(e){ setSyncChip('Offline – queued'); }
     }
 
-    // ---- CRUD
+    // ---------------- CRUD (unchanged) ----------------
     function addItem(obj){
       const it={
         id: obj.id || uid(),
@@ -314,7 +409,7 @@
     function toggleDone(id){ const i=items.find(x=>x.id===id); if(i){ i.done=!i.done; i.updatedAt=new Date().toISOString(); save(); render(); } }
     function removeItem(id){ items=items.filter(x=>x.id!==id); save(); render(); }
 
-    // ---- Render (grouped)
+    // ---------------- Render (unchanged structure; polished styles) ----------------
     function groupLabel(iso){
       if(!iso) return 'No date';
       const today=new Date(); today.setHours(0,0,0,0);
@@ -363,7 +458,7 @@
           const dueTxt=r.due
             ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit'})+' • '+fmtDayDate(r.due.slice(0,10))
             : '—';
-      div.innerHTML = `
+          div.innerHTML = `
   <input type="checkbox" ${r.done?'checked':''} aria-label="Mark done"/>
   <div>
     <div class="title">
@@ -389,7 +484,7 @@
       }
     }
 
-    // ---- Events
+    // ---------------- Events (unchanged) ----------------
     saveBtn.addEventListener('click', ()=>{
       const t=title.value.trim(); if(!t){ toast('Add a title'); return; }
       let due=null;
@@ -446,7 +541,7 @@
       navigator.clipboard.writeText(lines.join('\n\n')).then(()=> toast('Copied for MTL')).catch(()=> toast('Copy failed'));
     });
 
-    // Share to ChatGPT / share sheet
+    // Share sheet
     shareMtlBtn?.addEventListener('click', async ()=>{
       const blocks=items.filter(x=>!x.done).map(x=>{
         const d=x.due ? fmtDayDate(x.due.slice(0,10)) : '';
@@ -460,7 +555,7 @@
       }catch{ toast('Share cancelled'); }
     });
 
-    // Voice
+    // Voice (unchanged)
     try{
       const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
       if(SR){ recog=new SR(); recog.lang='en-AU'; recog.interimResults=false; recog.maxAlternatives=1;
@@ -474,14 +569,19 @@
       else{ try{ recog.stop(); }catch{} listening=false; voiceBtn.textContent='🎙️ Voice'; }
     });
 
-    // Settings modal
+    // Settings modal (kept simple)
+    const syncUrlModal=$('#syncUrlModal'), saveSettingsModal=$('#saveSettingsModal'), testSyncModal=$('#testSyncModal');
     function openModal(m){ m.classList.remove('hidden'); document.body.style.overflow='hidden'; }
     function closeModal(m){ m.classList.add('hidden'); document.body.style.overflow=''; }
-    openSettings.addEventListener('click', ()=> openModal(settingsModal));
+    openSettings.addEventListener('click', ()=> {
+      // load the same value into modal input
+      if(syncUrlModal && syncUrlInput) syncUrlModal.value = syncUrlInput.value || localStorage.getItem('syncUrl') || '';
+      openModal(settingsModal);
+    });
     settingsModal.addEventListener('click', (e)=>{ if(e.target.dataset.close!==undefined || e.target.classList.contains('modal__backdrop')) closeModal(settingsModal); });
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !settingsModal.classList.contains('hidden')) closeModal(settingsModal); });
 
-    // Settings persistence
+    // Settings persistence (unchanged)
     const savedSyncUrl=localStorage.getItem('syncUrl')||''; if(savedSyncUrl) syncUrlInput.value=savedSyncUrl;
     saveSettings.addEventListener('click', ()=>{ localStorage.setItem('syncUrl', (syncUrlInput.value||'').trim()); toast('Settings saved'); });
     testSync.addEventListener('click', async ()=>{
@@ -492,14 +592,23 @@
       }catch{ toast('Sync failed'); }
     });
 
+    // Modal buttons mirror main settings
+    if (saveSettingsModal) saveSettingsModal.addEventListener('click', ()=>{ localStorage.setItem('syncUrl', (syncUrlModal.value||'').trim()); if(syncUrlInput) syncUrlInput.value = syncUrlModal.value; toast('Settings saved'); closeModal(settingsModal); });
+    if (testSyncModal) testSyncModal.addEventListener('click', async ()=>{
+      const url=(syncUrlModal.value||'').trim(); if(!url){ toast('Enter Sync URL'); return; }
+      try{
+        const r=await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:'Test from Memory Cue (modal)', dueIso:null, priority:'Low', updatedAt:new Date().toISOString() })});
+        toast(r.ok? 'Test sent' : 'Sync error');
+      }catch{ toast('Sync failed'); }
+    });
+
     // Manual sync now
     syncNow.addEventListener('click', async ()=>{ await loadFromServer(); render(); toast('Synced from server'); });
 
-    // Toasts
+    // Toasts (unchanged)
     function toast(msg){ statusEl.textContent=msg; clearTimeout(toast._t); toast._t=setTimeout(()=> statusEl.textContent='', 3000); }
 
     // ---- Start
-    // Pull from server first, then render and schedule
     await loadFromServer();
     render();
     scheduleAll();
