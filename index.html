@@ -1,73 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Memory Cue — Voice Reminders (PWA) + Calendar Sync</title>
-<meta name="theme-color" content="#0b1220" />
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png" sizes="192x192">
-<style>
-  :root{
-    --bg:#0b1220;--panel:#0f172a;--muted:#94a3b8;--text:#e5e7eb;--accent:#38bdf8;--ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;
-  }
-  html,body{height:100%;}
-  body{margin:0;background:linear-gradient(180deg,#0b1220 0%,#0a0f1c 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji");}
-  .wrap{max-width:960px;margin:0 auto;padding:16px;}
-  header{position:sticky;top:0;background:rgba(10,15,28,.7);backdrop-filter:blur(8px);border-bottom:1px solid #1f2937;z-index:10}
-  h1{font-size:22px;margin:0;padding:12px 0;font-weight:700;letter-spacing:.2px}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  input,select,button,textarea{color:var(--text);background:#0f172a;border:1px solid #22304a;border-radius:12px;padding:10px 12px;font-size:14px}
-  input::placeholder,textarea::placeholder{color:#64748b}
-  button{cursor:pointer}
-  button.primary{background:var(--accent);border-color:#1e7aa2;color:#001018;font-weight:700}
-  button.good{background:var(--ok);border-color:#157a3a;color:#001108;font-weight:700}
-  button.warn{background:var(--warn);border-color:#7a5a0f;color:#1b1200;font-weight:700}
-  button.ghost{background:#0f172a;border-color:#22304a}
-  .panel{background:var(--panel);border:1px solid #22304a;border-radius:16px;padding:12px}
-  .grid{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:980px){.grid{grid-template-columns:1.2fr .8fr}}
-  .list{display:grid;gap:8px}
-  .item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid #20314b;border-radius:14px;background:#0c1426}
-  .item.done .title{text-decoration:line-through;color:#93a3b8}
-  .title{font-weight:600}
-  .meta{font-size:12px;color:var(--muted)}
-  .badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #2b3b58;background:#0f1a32}
-  .section-title{margin:8px 0 0;font-size:13px;color:#a8b2c2;text-transform:uppercase;letter-spacing:.12em}
-  .footer{color:#8aa0b8;font-size:12px;text-align:center;margin:14px 0}
-  .sr-only{position:absolute;height:1px;width:1px;clip:rect(1px,1px,1px,1px);overflow:hidden;white-space:nowrap}
-  #settingsSection { scroll-margin-top: 120px; }
-  .hidden { display: none; }
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Memory Cue — Reminders (PWA)</title>
+  <meta name="theme-color" content="#0b1220"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192"/>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --text:#e5e7eb;
+      --accent:#38bdf8; --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444;
+      --border:#22304a;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; color:var(--text);
+      background:linear-gradient(180deg,#0b1220 0%,#0a0f1c 100%);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji");
+      font-size:15px;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:16px;}
+    header{position:sticky;top:0;background:rgba(10,15,28,.7);backdrop-filter:blur(8px);border-bottom:1px solid #1f2937;z-index:20}
+    h1{font-size:20px;margin:0;padding:12px 0;font-weight:700;letter-spacing:.2px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    input,select,button,textarea{
+      color:var(--text);background:#0f172a;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px
+    }
+    input::placeholder,textarea::placeholder{color:#64748b}
+    button{cursor:pointer}
+    button.primary{background:var(--accent);border-color:#1e7aa2;color:#001018;font-weight:700}
+    button.good{background:var(--ok);border-color:#157a3a;color:#001108;font-weight:700}
+    button.warn{background:var(--warn);border-color:#7a5a0f;color:#1b1200;font-weight:700}
+    button.ghost{background:#0f172a;border-color:var(--border)}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:980px){.grid{grid-template-columns:1.2fr .8fr}}
+    .list{display:grid;gap:8px}
+    .item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #20314b;border-radius:16px;background:#0c1426}
+    .item.done .title{text-decoration:line-through;color:#93a3b8}
+    .title{font-weight:600}
+    .meta{font-size:12px;color:var(--muted)}
+    .badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #2b3b58;background:#0f1a32}
+    .section-title{margin:8px 0 0;font-size:13px;color:#a8b2c2;text-transform:uppercase;letter-spacing:.12em}
+    .footer{color:#8aa0b8;font-size:12px;text-align:center;margin:14px 0}
+    .sr-only{position:absolute;height:1px;width:1px;clip:rect(1px,1px,1px,1px);overflow:hidden;white-space:nowrap}
+    .hidden{display:none;}
+    /* Modal */
+    .modal.hidden{display:none;}
+    .modal{position:fixed;inset:0;z-index:1200;}
+    .modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);}
+    .modal__sheet{position:absolute;left:50%;top:10%;transform:translateX(-50%);
+      width:min(680px,92vw);background:#0f172a;border:1px solid var(--border);border-radius:16px;padding:12px}
+    /* Floating add bar (mobile) */
+    .fab-add{position:sticky;bottom:0;display:flex;gap:8px;padding:10px;background:linear-gradient(180deg,rgba(11,18,32,0),#0b1220 35%);z-index:5}
+    @media (min-width:980px){.fab-add{position:static;background:none;padding:0}}
+    .fab-add input{flex:1}
+    /* Focus visibility */
+    :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:12px}
+    /* Reduced motion */
+    @media (prefers-reduced-motion:reduce){
+      *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
+    }
+  </style>
 </head>
 <body>
   <header>
     <div class="wrap">
-      <h1>Memory Cue — Voice Reminders (PWA) + Calendar Sync</h1>
-      <div class="row" style="padding-bottom:12px">
-        <input id="q" placeholder="Search reminders or #tags" style="flex:1" />
-        <button id="voiceBtn" class="ghost" title="Voice quick add">🎙️ Voice add</button>
-        <button id="notifBtn" class="ghost" title="Enable notifications">🔔 Enable alerts</button>
-        <button id="addQuickBtn" class="primary" title="Add quick reminder">+ Quick</button>
-        <button id="openSettings" class="ghost" title="Open settings">⚙️ Settings</button>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h1>Memory Cue</h1>
+        <div class="row">
+          <span id="syncChip" class="badge">Online</span>
+          <button id="notifBtn" class="ghost" type="button" title="Enable notifications">🔔</button>
+          <button id="syncNow" class="ghost" type="button" title="Sync now">⟳</button>
+          <button id="openSettings" class="ghost" type="button" title="Settings">⚙️</button>
+        </div>
+      </div>
+      <div class="row" style="padding:8px 0 12px">
+        <input id="q" placeholder="Search reminders or #tags" style="flex:1"/>
+        <button id="voiceBtn" class="ghost" type="button" title="Voice quick add">🎙️ Voice</button>
+        <select id="sort">
+          <option value="smart">Smart sort</option>
+          <option value="time">Time</option>
+          <option value="priority">Priority</option>
+        </select>
       </div>
     </div>
   </header>
 
   <main class="wrap grid">
+    <!-- Left: Lists -->
+    <section class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div class="row" style="gap:8px">
+          <button class="ghost" data-filter="today" type="button">Today</button>
+          <button class="ghost" data-filter="overdue" type="button">Overdue</button>
+          <button class="ghost" data-filter="all" type="button">All</button>
+          <button class="ghost" data-filter="done" type="button">Completed</button>
+        </div>
+        <div class="row" style="gap:8px">
+          <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px">
+            Import <input id="importFile" type="file" accept="application/json" style="display:none"/>
+          </label>
+          <button id="exportBtn" class="ghost" type="button">Export</button>
+          <button id="copyMtlBtn" class="ghost" type="button">Copy MTL</button>
+          <button id="shareMtl" class="ghost" type="button">Share</button>
+        </div>
+      </div>
+
+      <div class="section-title">Reminders</div>
+      <div id="list" class="list" aria-live="polite">
+        <div class="meta">Nothing here yet.</div>
+      </div>
+
+      <!-- Floating Add Bar -->
+      <div class="fab-add">
+        <input id="quickTitle" placeholder="Add a reminder… e.g., Pick up dog 6pm"/>
+        <button id="quickAdd" class="primary" type="button">Add</button>
+        <span id="status" class="meta"></span>
+      </div>
+    </section>
+
+    <!-- Right: Full Add -->
     <section class="panel">
       <div class="row" style="gap:8px;align-items:flex-end">
         <div style="flex:1">
           <label class="sr-only" for="title">Reminder</label>
-          <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
+          <input id="title" placeholder="Reminder title"/>
         </div>
         <div>
           <label class="sr-only" for="date">Date</label>
-          <input id="date" type="date" />
+          <input id="date" type="date"/>
         </div>
         <div>
           <label class="sr-only" for="time">Time</label>
-          <input id="time" type="time" />
+          <input id="time" type="time"/>
         </div>
         <div>
           <select id="priority">
@@ -76,347 +143,358 @@
             <option>Low</option>
           </select>
         </div>
-        <button id="saveBtn" class="good">Save</button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="copyMtlBtn" class="ghost">Copy MTL updates</button>
-        <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px">
-          Import JSON <input id="importFile" type="file" accept="application/json" style="display:none" />
-        </label>
-        <button id="exportBtn" class="ghost">Export JSON</button>
-        <span id="status" class="meta"></span>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="row" style="justify-content:space-between">
-        <div class="row" style="gap:8px">
-          <button class="ghost" data-filter="today">Today</button>
-          <button class="ghost" data-filter="overdue">Overdue</button>
-          <button class="ghost" data-filter="all">All</button>
-          <button class="ghost" data-filter="done">Completed</button>
-        </div>
-        <div>
-          <select id="sort">
-            <option value="smart">Smart sort</option>
-            <option value="time">Time</option>
-            <option value="priority">Priority</option>
-          </select>
-        </div>
-      </div>
-      <div class="section-title">Reminders</div>
-      <div id="list" class="list" aria-live="polite"></div>
-    </section>
-
-    <section class="panel">
-    <section class="panel hidden" id="settingsSection">
-      <div class="section-title">Settings</div>
-      <div class="row" style="gap:8px;align-items:flex-end">
-        <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycbwvN3FjKkofQbkP21G4cW7GILiZBxexnhXthBgzXpE/exec" style="flex:1" />
-        <button id="saveSettings" class="good">Save settings</button>
-        <button id="testSync" class="ghost">Send test</button>
-      </div>
-      <div class="meta" style="margin-top:8px">
-        Tip: In Google Apps Script, click <b>Deploy → New deployment → Web app</b>, set <b>Execute as: Me</b>, 
-        <b>Who has access: Anyone with the link</b>, then copy the URL (ends with <code>/exec</code>).
+        <button id="saveBtn" class="good" type="button">Save</button>
       </div>
     </section>
   </main>
 
-  <div class="wrap footer">Adelaide time. Voice works best in Chrome. Snooze: the app schedules a backup alert 5 minutes after the due time.</div>
+  <div class="wrap footer">
+    Adelaide time. Installable PWA • Voice entry in Chrome • Offline-friendly. 
+  </div>
 
-<script>
-(function(){
-  let deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__sheet">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 id="settingsTitle" style="margin:0">Settings</h2>
+        <button class="ghost" type="button" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="row" style="gap:8px;align-items:flex-end;margin-top:8px">
+        <input id="syncUrl" placeholder="https://script.google.com/.../exec" style="flex:1"/>
+        <button id="saveSettings" class="good" type="button">Save</button>
+        <button id="testSync" class="ghost" type="button">Send test</button>
+      </div>
+      <p class="meta" style="margin-top:8px">Deploy Apps Script Web app → Execute as: Me • Access: Anyone with the link. Paste the /exec URL above.</p>
+    </div>
+  </div>
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js').catch(console.error);
-  }
+  <script>
+  (async function(){
+    // PWA SW
+    let deferredPrompt=null;
+    window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;});
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(console.error); }
 
-  const TZ = 'Australia/Adelaide';
-  const storageKey = 'memory_cue_pwa_v2';
-  const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
-  let items = load();
-  let filter = 'today';
-  let sortKey = 'smart';
-  let listening = false;
-  let recog = null;
-
-  const q = $('#q');
-  const title = $('#title');
-  const date = $('#date');
-  const time = $('#time');
-  const priority = $('#priority');
-  const saveBtn = $('#saveBtn');
-  const list = $('#list');
-  const status = $('#status');
-  const voiceBtn = $('#voiceBtn');
-  const notifBtn = $('#notifBtn');
-  const addQuickBtn = $('#addQuickBtn');
-  const importFile = $('#importFile');
-  const exportBtn = $('#exportBtn');
-  const copyMtlBtn = $('#copyMtlBtn');
-  const sortSel = $('#sort');
-  const openSettings = $('#openSettings');
-  const syncUrlInput = $('#syncUrl');
-  const saveSettings = $('#saveSettings');
-  const testSync = $('#testSync');
-
-  const savedSyncUrl = localStorage.getItem('syncUrl') || '';
-  if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
-
-  function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-  function save(){ localStorage.setItem(storageKey, JSON.stringify(items)); scheduleAll(); render(); }
-  function load(){ try { return JSON.parse(localStorage.getItem(storageKey)||'[]'); } catch { return []; } }
-  function fmtDayDate(iso){ if(!iso) return '—'; try{ const d=new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat('en-AU',{ timeZone: TZ, weekday:'long', day:'numeric', month:'long'}).format(d);}catch{return iso}}
-  function toISODatePart(d){ return d.toISOString().slice(0,10); }
-  function todayISO(){ const d=new Date(); return toISODatePart(new Date(d.getTime() - d.getTimezoneOffset()*60000)); }
-  function parseQuickWhen(text){
-    text = text.toLowerCase();
-    let when = { date: todayISO(), time: '' };
-    if(/tomorrow/.test(text)){
-      const d=new Date(); d.setDate(d.getDate()+1); when.date=toISODatePart(d);
+    // ---- Constants & helpers
+    const TZ='Australia/Adelaide';
+    const storageKey='memory_cue_pwa_v3';
+    const $=(s)=>document.querySelector(s);
+    const $$=(s)=>Array.from(document.querySelectorAll(s));
+    function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+    function toISODatePart(d){ return d.toISOString().slice(0,10); }
+    function todayISO(){ const d=new Date(); return toISODatePart(new Date(d.getTime()-d.getTimezoneOffset()*60000)); }
+    function load(){ try{ return JSON.parse(localStorage.getItem(storageKey)||'[]'); }catch{return [];} }
+    function save(){ localStorage.setItem(storageKey, JSON.stringify(items)); }
+    function priorityWeight(p){ return p==='High'?3:p==='Medium'?2:1; }
+    function smartCompare(a,b){
+      const pr=priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr;
+      const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt;
+      return (a.updatedAt||0)>(b.updatedAt||0)?-1:1;
     }
-    const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
-    const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
-    if(mHm){ when.time = `${mHm[1].padStart(2,'0')}:${mHm[2]}`; }
-    else if(m12){
-      let h = parseInt(m12[1],10)%12; if(m12[2]==='pm') h+=12; when.time = `${String(h).padStart(2,'0')}:00`;
+    function fmtDayDate(iso){
+      if(!iso) return '—';
+      try{ const d=new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat('en-AU',{ timeZone:TZ, weekday:'long', day:'numeric', month:'long'}).format(d);}catch{return iso;}
     }
-    return when;
-  }
-  function priorityWeight(p){ return p==='High'?3:p==='Medium'?2:1; }
-  function smartCompare(a,b){
-    const pr = priorityWeight(b.priority)-priorityWeight(a.priority);
-    if(pr) return pr;
-    const at = +new Date(a.due||0); const bt = +new Date(b.due||0);
-    if(at!==bt) return at-bt;
-    return (a.updatedAt||0) > (b.updatedAt||0)? -1: 1;
-  }
-
-  let notifOK = false;
-  async function ensureNotifications(){
-    if(!('Notification' in window)) { toast('Notifications not supported'); return; }
-    if(Notification.permission === 'granted'){ notifOK = true; toast('Notifications enabled'); return; }
-    const perm = await Notification.requestPermission();
-    notifOK = perm==='granted';
-    toast(notifOK? 'Notifications enabled' : 'Notifications blocked');
-  }
-  function ping(item){
-    if(notifOK){
-      const n = new Notification('Reminder', { body: item.title, silent:false });
-      setTimeout(()=>n.close(), 6000);
-    } else {
-      try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=880; g.gain.setValueAtTime(.001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(.2, ctx.currentTime+.05); o.start(); setTimeout(()=>{g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2); o.stop(ctx.currentTime+.25);}, 200);}catch{}
-      alert('Reminder: '+item.title);
+    function parseQuickWhen(text){
+      text=text.toLowerCase(); let when={date:todayISO(), time:''};
+      if(/tomorrow/.test(text)){ const d=new Date(); d.setDate(d.getDate()+1); when.date=toISODatePart(d); }
+      const mHm=text.match(/\b(\d{1,2}):(\d{2})\b/);
+      const m12=text.match(/\b(\d{1,2})\s*(am|pm)\b/);
+      if(mHm){ when.time=`${String(mHm[1]).padStart(2,'0')}:${mHm[2]}`; }
+      else if(m12){ let h=parseInt(m12[1],10)%12; if(m12[2]==='pm') h+=12; when.time=`${String(h).padStart(2,'0')}:00`; }
+      return when;
     }
-  }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function isoToMillis(x){ try{return +new Date(x);}catch{return 0;} }
 
-  let timers = new Map();
-  function scheduleAll(){
-    timers.forEach(id=>clearTimeout(id)); timers.clear();
-    items.filter(x=>!x.done && x.due).forEach(x=>{
-      const t = new Date(x.due).getTime();
-      const dt = t - Date.now();
-      if(dt>500){
-        const id = setTimeout(()=>{ ping(x); }, dt);
-        timers.set(x.id, id);
-        const id2 = setTimeout(()=>{ ping(x); }, dt + 5*60*1000); // 5-min backup
-        timers.set(x.id+'-snooze', id2);
+    // ---- Data state
+    let items=load();
+    let filter='today', sortKey='smart';
+    let listening=false, recog=null;
+    let timers=new Map();
+
+    // ---- Elements
+    const q=$('#q'), title=$('#title'), date=$('#date'), time=$('#time'), priority=$('#priority');
+    const saveBtn=$('#saveBtn'), list=$('#list'), statusEl=$('#status');
+    const voiceBtn=$('#voiceBtn'), notifBtn=$('#notifBtn'), importFile=$('#importFile'), exportBtn=$('#exportBtn');
+    const copyMtlBtn=$('#copyMtlBtn'), shareMtlBtn=$('#shareMtl'), sortSel=$('#sort');
+    const quickTitle=$('#quickTitle'), quickAdd=$('#quickAdd'), syncNow=$('#syncNow'), syncChip=$('#syncChip');
+    const settingsModal=$('#settingsModal'), openSettings=$('#openSettings'), syncUrlInput=$('#syncUrl');
+    const saveSettings=$('#saveSettings'), testSync=$('#testSync');
+
+    // ---- Notifications
+    let notifOK=false;
+    async function ensureNotifications(){
+      if(!('Notification' in window)) { toast('Notifications not supported'); return; }
+      if(Notification.permission==='granted'){ notifOK=true; toast('Notifications enabled'); return; }
+      const perm=await Notification.requestPermission(); notifOK=(perm==='granted');
+      toast(notifOK?'Notifications enabled':'Notifications blocked');
+    }
+    notifBtn.addEventListener('click', ensureNotifications);
+    window.addEventListener('online', ()=> setSyncChip('Online'));
+    window.addEventListener('offline',()=> setSyncChip('Offline – queued'));
+
+    // ---- Scheduling
+    function ping(item){
+      if(notifOK){
+        const n=new Notification('Reminder',{body:item.title,silent:false}); setTimeout(()=>n.close(),6000);
+      }else{
+        try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination);
+          o.frequency.value=880; g.gain.setValueAtTime(.001,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.2,ctx.currentTime+.05); o.start();
+          setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2); o.stop(ctx.currentTime+.25); },200);
+        }catch{} alert('Reminder: '+item.title);
       }
-    });
-  }
-
-  function addItem(obj){
-    const it = { id: uid(), title: obj.title.trim(), priority: obj.priority||'Medium', notes: obj.notes||'', done:false, createdAt:Date.now(), updatedAt:Date.now(), due: obj.due||null };
-    items = [it, ...items];
-    save();
-    trySync(it);
-  }
-  function toggleDone(id){ const i=items.find(x=>x.id===id); if(i){ i.done=!i.done; i.updatedAt=Date.now(); save(); } }
-  function remove(id){ items = items.filter(x=>x.id!==id); save(); }
-
-  async function trySync(task){
-    const url = (localStorage.getItem('syncUrl') || '').trim();
-    if(!url) return;
-    const payload = { title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium' };
-    try{
-      await fetch(url, { method:'POST',  headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-      toast('Synced to Calendar/Sheet');
-    }catch(e){ toast('Sync failed (offline?)'); }
-  }
-
-  function render(){
-    const query = q.value.trim().toLowerCase();
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
-
-    let rows = items.slice();
-    if(query){ rows = rows.filter(r => r.title.toLowerCase().includes(query) || (r.notes||'').toLowerCase().includes(query)); }
-    rows = rows.filter(r=>{
-      if(filter==='done') return r.done;
-      if(filter==='overdue') return !r.done && r.due && new Date(r.due) < new Date();
-      if(filter==='today'){
-        if(!r.due) return true;
-        const d = new Date(r.due);
-        return d>=todayStart && d<=todayEnd;
-      }
-      return true;
-    });
-
-    rows.sort((a,b)=>{
-      if(sortKey==='time') return (+new Date(a.due||0))-(+new Date(b.due||0));
-      if(sortKey==='priority') return priorityWeight(b.priority)-priorityWeight(a.priority);
-      return smartCompare(a,b);
-    });
-
-    list.innerHTML = '';
-    if(rows.length===0){ list.innerHTML = '<div class="meta">Nothing here yet.</div>'; return; }
-
-    rows.forEach(r=>{
-      const div = document.createElement('div');
-      div.className = 'item'+(r.done?' done':'');
-      const dueTxt = r.due ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit'})+ ' • ' + fmtDayDate(r.due.slice(0,10)) : '—';
-      div.innerHTML = `
-        <input type="checkbox" ${r.done?'checked':''} aria-label="Mark done" />
-        <div>
-          <div class="title">${escapeHtml(r.title)}</div>
-          <div class="meta">${dueTxt} • <span class="badge">${r.priority}</span> ${r.notes? '• '+escapeHtml(r.notes): ''}</div>
-        </div>
-        <div class="row">
-          <button class="ghost" data-del>Delete</button>
-        </div>`;
-      div.querySelector('input').addEventListener('change',()=>toggleDone(r.id));
-      div.querySelector('[data-del]').addEventListener('click',()=>remove(r.id));
-      list.appendChild(div);
-    });
-  }
-
-
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, (c) => (
-      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]
-    ));
-  }
-
-
-  function fmtDayDate(iso){ try{ const d=new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat('en-AU',{ timeZone: TZ, weekday:'long', day:'numeric', month:'long'}).format(d);}catch{return iso}}
-
-  saveBtn.addEventListener('click', ()=>{
-    const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
-    let due = null;
-    if(date.value || time.value){
-      const d = (date.value||todayISO());
-      const tm = (time.value||'09:00');
-      due = new Date(`${d}T${tm}:00`).toISOString();
-    } else {
-      const p = parseQuickWhen(t);
-      if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
     }
-    addItem({ title:t, priority: priority.value, due });
-    title.value = ''; time.value='';
-    render();
-  });
-
-  addQuickBtn.addEventListener('click', ()=>{
-    if(!title.value.trim()){
-      title.focus(); toast('Type something like "pick up dog at 6pm"'); return;
-    }
-    saveBtn.click();
-  });
-
-  q.addEventListener('input', render);
-  sortSel.addEventListener('change', e=>{ sortKey = sortSel.value; render(); });
-  $$('button[data-filter]').forEach(b=> b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
-
-  importFile.addEventListener('change', (e)=>{
-    const f = importFile.files[0]; if(!f) return;
-    const rd = new FileReader(); rd.onload = ()=>{ try{ items = JSON.parse(String(rd.result)||'[]'); save(); }catch(err){ toast('Invalid JSON'); } };
-    rd.readAsText(f); importFile.value='';
-  });
-  exportBtn.addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify(items,null,2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='memory-cue.json'; a.click(); URL.revokeObjectURL(url);
-  });
-  copyMtlBtn.addEventListener('click', ()=>{
-    const lines = items.filter(x=>!x.done).map(x=>{
-      const datePart = x.due ? fmtDayDate(x.due.slice(0,10)) : '';
-      const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}) : '';
-      const pieces = [
-        'mtl '+x.title,
-        x.due? `Due Date: ${datePart}`: '',
-        x.due? `Time: ${timePart}`: '',
-        `Status: Not started`,
-        x.notes? `Notes: ${x.notes}`: ''
-      ].filter(Boolean);
-      return pieces.join('\n');
-    });
-    navigator.clipboard.writeText(lines.join('\n')).then(()=> toast('Copied MTL lines')).catch(()=> alert('Copy failed'));
-  });
-
-  notifBtn.addEventListener('click', ensureNotifications);
-
-  // Voice
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ voiceBtn.disabled = true; voiceBtn.title = 'Voice not supported in this browser'; }
-  else {
-    recog = new SR();
-    try{ recog.lang = 'en-AU'; }catch{}
-    recog.continuous = false; recog.interimResults = true; recog.maxAlternatives = 1;
-    recog.onresult = (e)=>{
-      const last = e.results[e.results.length-1];
-      if(last && last.isFinal){
-        const text = last[0].transcript.trim();
-        if(text){
-          title.value = text;
-          const p = parseQuickWhen(text);
-          if(p.time){
-            date.value = p.date; time.value = p.time;
-          }
-          toast('Heard: '+text);
+    function scheduleAll(){
+      timers.forEach(id=>clearTimeout(id)); timers.clear();
+      items.filter(x=>!x.done && x.due).forEach(x=>{
+        const t=new Date(x.due).getTime(); const dt=t-Date.now();
+        if(dt>500){
+          const id=setTimeout(()=> ping(x), dt); timers.set(x.id,id);
+          const id2=setTimeout(()=> ping(x), dt + 5*60*1000); timers.set(x.id+'-snooze', id2);
         }
-      }
-    };
-    recog.onend = ()=>{ listening=false; voiceBtn.textContent = '🎙️ Voice add'; };
-  }
-  voiceBtn.addEventListener('click', ()=>{
-    if(!recog) return;
-    if(!listening){ try{ recog.start(); listening=true; voiceBtn.textContent='Listening…'; }catch{} }
-    else { try{ recog.stop(); }catch{} listening=false; voiceBtn.textContent='🎙️ Voice add'; }
-  });
-
-  // Settings
-openSettings.addEventListener('click', ()=>{
-  const sec = document.getElementById('settingsSection');
-  if (sec) { sec.classList.remove('hidden'); sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } 
-  });
-  saveSettings.addEventListener('click', ()=>{
-    const url = syncUrlInput.value.trim();
-    localStorage.setItem('syncUrl', url);
-    toast('Settings saved');
-  });
-  testSync.addEventListener('click', async ()=>{
-    const url = syncUrlInput.value.trim();
-    if(!url){ toast('Enter Sync URL first'); return; }
-    try{
-      const r = await fetch(url, {
-        method:'POST',
-      headers: {'Content-Type':'text/plain'},
-        body: JSON.stringify({ title:'Test from Memory Cue', dueIso:null, priority:'Low' })
       });
-      toast(r.ok ? 'Test sent' : 'Sync error');
-    }catch(e){ toast('Sync failed (check URL & deploy)'); }
-  });
+    }
 
-  function toast(msg){ status.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> status.textContent='', 3000); }
+    // ---- Sync helpers
+    function setSyncChip(text){ if(syncChip) syncChip.textContent=text; }
+    function getSyncUrl(){ return (localStorage.getItem('syncUrl')||'').trim(); }
 
-  render();
-  scheduleAll();
-})();
-</script>
+    async function loadFromServer(){
+      const url=getSyncUrl(); if(!url) return;
+      try{
+        const res=await fetch(url,{method:'GET'});
+        const data=await res.json();
+        if(!data || !data.ok || !Array.isArray(data.rows)) return;
+        const server=data.rows.map(r=>({
+          id:String(r.id||'').trim(), title:String(r.title||'').trim(),
+          due:r.dueIso||null, priority:r.priority||'Medium',
+          updatedAt:r.updatedAt||new Date().toISOString(), done:false, notes:''
+        }));
+        const localMap=new Map(items.map(x=>[x.id,x]));
+        for(const s of server){
+          if(!s.id) continue;
+          if(!localMap.has(s.id)) localMap.set(s.id,s);
+          else{
+            const l=localMap.get(s.id);
+            if(isoToMillis(s.updatedAt) > isoToMillis(l.updatedAt)){
+              s.done=(l.done ?? s.done); s.notes=(l.notes ?? s.notes);
+              localMap.set(s.id,s);
+            }
+          }
+        }
+        items=Array.from(localMap.values()); save();
+      }catch(err){ console.error('loadFromServer failed',err); }
+    }
+
+    async function trySync(task){
+      const url=getSyncUrl(); if(!url) return;
+      setSyncChip('Syncing…');
+      const payload={ id:task.id, title:task.title, dueIso:task.due||null, priority:task.priority||'Medium', updatedAt:task.updatedAt||new Date().toISOString() };
+      try{
+        await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        setSyncChip('Synced • '+ new Date().toLocaleTimeString());
+      }catch(e){ setSyncChip('Offline – queued'); }
+    }
+
+    // ---- CRUD
+    function addItem(obj){
+      const it={
+        id: obj.id || uid(),
+        title: (obj.title||'').trim(),
+        priority: obj.priority || 'Medium',
+        notes: obj.notes || '',
+        done:false,
+        updatedAt: obj.updatedAt || new Date().toISOString(),
+        due: obj.due || null
+      };
+      items=[it, ...items]; save(); scheduleAll(); render(); trySync(it);
+    }
+    function toggleDone(id){ const i=items.find(x=>x.id===id); if(i){ i.done=!i.done; i.updatedAt=new Date().toISOString(); save(); render(); } }
+    function removeItem(id){ items=items.filter(x=>x.id!==id); save(); render(); }
+
+    // ---- Render (grouped)
+    function groupLabel(iso){
+      if(!iso) return 'No date';
+      const today=new Date(); today.setHours(0,0,0,0);
+      const tomorrow=new Date(today); tomorrow.setDate(today.getDate()+1);
+      const isoDay=new Date(iso.slice(0,10));
+      if(isoDay.getTime()===today.getTime()) return 'Today';
+      if(isoDay.getTime()===tomorrow.getTime()) return 'Tomorrow';
+      return fmtDayDate(iso.slice(0,10));
+    }
+
+    function render(){
+      const query=q.value.trim().toLowerCase();
+      const todayStart=new Date(); todayStart.setHours(0,0,0,0);
+      const todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
+      let rows=items.slice();
+
+      if(query){ rows=rows.filter(r=> r.title.toLowerCase().includes(query) || (r.notes||'').toLowerCase().includes(query)); }
+
+      rows=rows.filter(r=>{
+        if(filter==='done') return r.done;
+        if(filter==='overdue') return !r.done && r.due && new Date(r.due) < new Date();
+        if(filter==='today'){
+          if(!r.due) return true;
+          const d=new Date(r.due); return d>=todayStart && d<=todayEnd;
+        }
+        return true;
+      });
+
+      rows.sort((a,b)=>{
+        if(sortKey==='time') return (+new Date(a.due||0))-(+new Date(b.due||0));
+        if(sortKey==='priority') return priorityWeight(b.priority)-priorityWeight(a.priority);
+        return smartCompare(a,b);
+      });
+
+      list.innerHTML='';
+      if(rows.length===0){ list.innerHTML='<div class="meta">Nothing here yet.</div>'; return; }
+
+      // group and render
+      const groups=new Map();
+      for(const r of rows){ const key=groupLabel(r.due); if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(r); }
+      for(const [label, group] of groups){
+        const h=document.createElement('div'); h.className='section-title'; h.textContent=label; list.appendChild(h);
+        group.forEach(r=>{
+          const div=document.createElement('div');
+          div.className='item'+(r.done?' done':'');
+          const dueTxt=r.due
+            ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit'})+' • '+fmtDayDate(r.due.slice(0,10))
+            : '—';
+          div.innerHTML=`
+            <input type="checkbox" ${r.done?'checked':''} aria-label="Mark done"/>
+            <div>
+              <div class="title">${escapeHtml(r.title)}</div>
+              <div class="meta">${dueTxt} • <span class="badge">${r.priority}</span> ${r.notes? '• '+escapeHtml(r.notes): ''}</div>
+            </div>
+            <div class="row">
+              <button class="ghost" data-del type="button">Delete</button>
+            </div>`;
+          div.querySelector('input').addEventListener('change',()=>toggleDone(r.id));
+          div.querySelector('[data-del]').addEventListener('click',()=>removeItem(r.id));
+          list.appendChild(div);
+        });
+      }
+    }
+
+    // ---- Events
+    saveBtn.addEventListener('click', ()=>{
+      const t=title.value.trim(); if(!t){ toast('Add a title'); return; }
+      let due=null;
+      if(date.value || time.value){
+        const d=(date.value||todayISO()); const tm=(time.value||'09:00');
+        due=new Date(`${d}T${tm}:00`).toISOString();
+      }else{
+        const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); }
+      }
+      addItem({title:t, priority:priority.value, due});
+      title.value=''; time.value='';
+    });
+
+    quickAdd.addEventListener('click', ()=>{
+      const t=(quickTitle.value||'').trim();
+      if(!t){ toast('Type a reminder'); quickTitle.focus(); return; }
+      const p=parseQuickWhen(t);
+      const due=p.time? new Date(`${p.date}T${p.time}:00`).toISOString(): null;
+      addItem({title:t, priority:'Medium', due}); quickTitle.value='';
+    });
+
+    q.addEventListener('input', render);
+    sortSel.addEventListener('change', ()=>{ sortKey=sortSel.value; render(); });
+    $$('button[data-filter]').forEach(b=> b.addEventListener('click', ()=>{ filter=b.getAttribute('data-filter'); render(); }));
+
+    importFile.addEventListener('change', ()=>{
+      const f=importFile.files[0]; if(!f) return;
+      const rd=new FileReader();
+      rd.onload=()=>{ try{ items=JSON.parse(String(rd.result)||'[]'); save(); render(); scheduleAll(); }catch{ toast('Invalid JSON'); } };
+      rd.readAsText(f); importFile.value='';
+    });
+    exportBtn.addEventListener('click', ()=>{
+      const blob=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='memory-cue.json'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Copy MTL
+    copyMtlBtn.addEventListener('click', ()=>{
+      const lines=items.filter(x=>!x.done).map(x=>{
+        const datePart=x.due? fmtDayDate(x.due.slice(0,10)) : '';
+        const timePart=x.due? new Date(x.due).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}) : '';
+        const pieces=[
+          'mtl '+x.title,
+          `Category: Dev`,
+          `Priority: ${x.priority||'Medium'}`,
+          x.due? `Due Date: ${datePart}` : 'Due Date: ',
+          x.due? `Time: ${timePart}` : 'Time: ',
+          `Status: Not started`,
+          x.notes? `Notes: ${x.notes}` : 'Notes: '
+        ];
+        return pieces.join('\n');
+      });
+      if(lines.length===0){ toast('No active tasks to copy'); return; }
+      navigator.clipboard.writeText(lines.join('\n\n')).then(()=> toast('Copied for MTL')).catch(()=> toast('Copy failed'));
+    });
+
+    // Share to ChatGPT / share sheet
+    shareMtlBtn?.addEventListener('click', async ()=>{
+      const blocks=items.filter(x=>!x.done).map(x=>{
+        const d=x.due ? fmtDayDate(x.due.slice(0,10)) : '';
+        const t=x.due ? new Date(x.due).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}) : '';
+        return `mtl ${x.title}\nCategory: Dev\nPriority: ${x.priority||'Medium'}\n${x.due?`Due Date: ${d}\nTime: ${t}\n`:''}Status: Not started\nNotes: `;
+      }).join('\n\n');
+      if(!blocks){ toast('No active tasks'); return; }
+      try{
+        if(navigator.share){ await navigator.share({title:'MTL tasks', text:blocks}); }
+        else { await navigator.clipboard.writeText(blocks); toast('Copied'); }
+      }catch{ toast('Share cancelled'); }
+    });
+
+    // Voice
+    try{
+      const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(SR){ recog=new SR(); recog.lang='en-AU'; recog.interimResults=false; recog.maxAlternatives=1;
+        recog.onresult=(e)=>{ const t=e.results[0][0].transcript||''; quickTitle.value=t; toast('Heard: '+t); };
+        recog.onend=()=>{ listening=false; voiceBtn.textContent='🎙️ Voice'; };
+      }
+    }catch{}
+    voiceBtn.addEventListener('click', ()=>{
+      if(!recog) return;
+      if(!listening){ try{ recog.start(); listening=true; voiceBtn.textContent='Listening…'; }catch{} }
+      else{ try{ recog.stop(); }catch{} listening=false; voiceBtn.textContent='🎙️ Voice'; }
+    });
+
+    // Settings modal
+    function openModal(m){ m.classList.remove('hidden'); document.body.style.overflow='hidden'; }
+    function closeModal(m){ m.classList.add('hidden'); document.body.style.overflow=''; }
+    openSettings.addEventListener('click', ()=> openModal(settingsModal));
+    settingsModal.addEventListener('click', (e)=>{ if(e.target.dataset.close!==undefined || e.target.classList.contains('modal__backdrop')) closeModal(settingsModal); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !settingsModal.classList.contains('hidden')) closeModal(settingsModal); });
+
+    // Settings persistence
+    const savedSyncUrl=localStorage.getItem('syncUrl')||''; if(savedSyncUrl) syncUrlInput.value=savedSyncUrl;
+    saveSettings.addEventListener('click', ()=>{ localStorage.setItem('syncUrl', (syncUrlInput.value||'').trim()); toast('Settings saved'); });
+    testSync.addEventListener('click', async ()=>{
+      const url=(syncUrlInput.value||'').trim(); if(!url){ toast('Enter Sync URL'); return; }
+      try{
+        const r=await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:'Test from Memory Cue', dueIso:null, priority:'Low', updatedAt:new Date().toISOString() })});
+        toast(r.ok? 'Test sent' : 'Sync error');
+      }catch{ toast('Sync failed'); }
+    });
+
+    // Manual sync now
+    syncNow.addEventListener('click', async ()=>{ await loadFromServer(); render(); toast('Synced from server'); });
+
+    // Toasts
+    function toast(msg){ statusEl.textContent=msg; clearTimeout(toast._t); toast._t=setTimeout(()=> statusEl.textContent='', 3000); }
+
+    // ---- Start
+    // Pull from server first, then render and schedule
+    await loadFromServer();
+    render();
+    scheduleAll();
+    setSyncChip(navigator.onLine? 'Online':'Offline – queued');
+  })();
+  </script>
 </body>
 </html>
