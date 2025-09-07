@@ -63,6 +63,7 @@
       .sync-status { font-size:9px; padding:2px 5px;}
       .row.mobile-stack { flex-direction:column; gap:3px; align-items:stretch;}
     }
+    button#openSettings { font-size:22px; padding:9px 18px; border:2px solid var(--accent);}
     /* Touch-friendly icon buttons */
     .icon-btn { background:none; border:none; padding:6px; font-size:20px; line-height:1; color:var(--accent); cursor:pointer; }
     .icon-btn:active { background:rgba(56,189,248,0.1);}
@@ -154,12 +155,642 @@
 
   <!-- Scripts copied from index.html, functionally identical -->
   <script type="module">
-    // ... [The entire JS code from index.html goes here, unchanged] ...
-    // For brevity, reuse the very latest index.html script block, as it handles all logic and sync.
+    // Import Firebase modules
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
+      authDomain: "memory-cue-app.firebaseapp.com",
+      projectId: "memory-cue-app",
+      storageBucket: "memory-cue-app.firebasestorage.app",
+      messagingSenderId: "751284466633",
+      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
+      measurementId: "G-R0V4M7VCE6"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // App state
+    let items = [];
+    let filter = 'today';
+    let sortKey = 'smart';
+    let listening = false;
+    let recog = null;
+    let userId = null;
+    let unsubscribe = null;
+
+    const TZ = 'Australia/Adelaide';
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    // DOM elements
+    const q = $('#q');
+    const title = $('#title');
+    const date = $('#date');
+    const time = $('#time');
+    const priority = $('#priority');
+    const saveBtn = $('#saveBtn');
+    const list = $('#list');
+    const statusEl = $('#status');
+    const voiceBtn = $('#voiceBtn');
+    const notifBtn = $('#notifBtn');
+    const addQuickBtn = $('#addQuickBtn');
+    const copyMtlBtn = $('#copyMtlBtn');
+    const importFile = $('#importFile');
+    const exportBtn = $('#exportBtn');
+    const sortSel = $('#sort');
+    const syncStatus = $('#syncStatus');
+    const openSettings = $('#openSettings');
+    const syncUrlInput = $('#syncUrl');
+    const saveSettings = $('#saveSettings');
+    const testSync = $('#testSync');
+    const settingsSection = $('#settingsSection');
+
+    // Restore saved Sync URL
+    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
+    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
+
+    // Firebase Authentication
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userId = user.uid;
+        syncStatus.textContent = 'Online';
+        syncStatus.className = 'sync-status online';
+        setupFirestoreSync();
+      } else {
+        signInAnonymously(auth).catch(console.error);
+      }
+    });
+
+    // Firestore real-time sync
+    function setupFirestoreSync() {
+      if (!userId) return;
+
+      const userCollection = collection(db, 'users', userId, 'reminders');
+      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
+
+      unsubscribe = onSnapshot(qSnap, (snapshot) => {
+        const remoteItems = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          remoteItems.push({
+            id: doc.id,
+            title: data.title,
+            priority: data.priority,
+            notes: data.notes || '',
+            done: data.done,
+            due: data.due,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt
+          });
+        });
+
+        // Merge with any pending local changes
+        items = mergeWithLocal(remoteItems);
+        render();
+      }, (error) => {
+        console.error('Firestore sync error:', error);
+        syncStatus.textContent = 'Sync Error';
+        syncStatus.className = 'sync-status error';
+      });
+    }
+
+    function mergeWithLocal(remoteItems) {
+      const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+      const merged = new Map();
+
+      // Add all remote items
+      remoteItems.forEach(item => merged.set(item.id, item));
+
+      // Apply pending local changes
+      localPending.forEach(change => {
+        if (change.action === 'upsert') {
+          merged.set(change.item.id, change.item);
+        } else if (change.action === 'delete') {
+          merged.delete(change.itemId);
+        }
+      });
+
+      return Array.from(merged.values());
+    }
+
+    // Firebase operations
+    async function saveToFirebase(item) {
+      if (!userId) return;
+      try {
+        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
+          title: item.title,
+          priority: item.priority,
+          notes: item.notes,
+          done: item.done,
+          due: item.due,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        });
+        removePendingChange(item.id);
+      } catch (error) {
+        console.error('Save failed:', error);
+        addPendingChange({ action: 'upsert', item });
+        syncStatus.textContent = 'Sync Pending';
+        syncStatus.className = 'sync-status offline';
+      }
+    }
+
+    async function deleteFromFirebase(id) {
+      if (!userId) return;
+      try {
+        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
+        removePendingChange(id);
+      } catch (error) {
+        console.error('Delete failed:', error);
+        addPendingChange({ action: 'delete', itemId: id });
+      }
+    }
+
+    function addPendingChange(change) {
+      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+      // Remove any existing change for this item
+      const filtered = pending.filter(p => 
+        (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
+        (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
+      );
+      filtered.push(change);
+      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
+    }
+
+    function removePendingChange(itemId) {
+      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+      const filtered = pending.filter(p => 
+        (p.action === 'upsert' && p.item.id !== itemId) ||
+        (p.action === 'delete' && p.itemId !== itemId)
+      );
+      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
+    }
+
+    // Retry pending changes when online
+    async function retryPendingChanges() {
+      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+      for (const change of pending) {
+        try {
+          if (change.action === 'upsert') {
+            await saveToFirebase(change.item);
+          } else if (change.action === 'delete') {
+            await deleteFromFirebase(change.itemId);
+          }
+        } catch (error) {
+          break; // Stop retrying if still failing
+        }
+      }
+    }
+
+    // Calendar sync function
+    async function tryCalendarSync(task) {
+      const url = (localStorage.getItem('syncUrl') || '').trim();
+      if (!url) return;
+      
+      const payload = { 
+        title: task.title, 
+        dueIso: task.due || null, 
+        priority: task.priority || 'Medium' 
+      };
+      
+      try {
+        await fetch(url, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'text/plain' }, 
+          body: JSON.stringify(payload) 
+        });
+        toast('Synced to Calendar');
+      } catch (e) { 
+        toast('Calendar sync failed (offline?)'); 
+      }
+    }
+
+    // Utility functions
+    function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    function toISODatePart(d) { return d.toISOString().slice(0, 10); }
+    function todayISO() {
+      // Get today's date in Adelaide timezone
+      const now = new Date();
+      const adelaideDate = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
+      return toISODatePart(adelaideDate);
+    }
+    function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
+    function smartCompare(a, b) {
+      const pr = priorityWeight(b.priority) - priorityWeight(a.priority); if (pr) return pr;
+      const at = +new Date(a.due || 0), bt = +new Date(b.due || 0); if (at !== bt) return at - bt;
+      return (a.updatedAt || 0) > (b.updatedAt || 0) ? -1 : 1;
+    }
+    function fmtDayDate(iso) {
+      if (!iso) return '—';
+      try {
+        const d = new Date(iso + 'T00:00:00');
+        return new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+      } catch { return iso; }
+    }
+    function parseQuickWhen(text) {
+      text = text.toLowerCase();
+      let when = { date: todayISO(), time: '' };
+      if (/tomorrow/.test(text)) {
+        const d = new Date(); d.setDate(d.getDate() + 1); when.date = toISODatePart(d);
+      }
+      const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
+      const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
+      if (mHm) { when.time = `${String(mHm[1]).padStart(2, '0')}:${mHm[2]}`; }
+      else if (m12) {
+        let h = parseInt(m12[1], 10) % 12; if (m12[2] === 'pm') h += 12; when.time = `${String(h).padStart(2, '0')}:00`;
+      }
+      return when;
+    }
+
+    // CRUD operations
+    function addItem(obj) {
+      const item = {
+        id: uid(),
+        title: obj.title.trim(),
+        priority: obj.priority || 'Medium',
+        notes: obj.notes || '',
+        done: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        due: obj.due || null
+      };
+
+      // Add to local state immediately
+      items = [item, ...items];
+      render();
+
+      // Save to Firebase
+      saveToFirebase(item);
+      
+      // Also sync to calendar if URL is configured
+      tryCalendarSync(item);
+      
+      return item;
+    }
+
+    function toggleDone(id) {
+      const item = items.find(x => x.id === id);
+      if (item) {
+        item.done = !item.done;
+        item.updatedAt = Date.now();
+        render();
+        saveToFirebase(item);
+      }
+    }
+
+    function removeItem(id) {
+      items = items.filter(x => x.id !== id);
+      render();
+      deleteFromFirebase(id);
+    }
+
+    // Render function
+    function render() {
+      const query = q.value.trim().toLowerCase();
+      
+      // Get today's date range in Adelaide timezone
+      const now = new Date();
+      const adelaideNow = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
+      const todayStart = new Date(adelaideNow);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(adelaideNow);
+      todayEnd.setHours(23, 59, 59, 999);
+
+      let rows = items.slice();
+
+      if (query) {
+        rows = rows.filter(r =>
+          r.title.toLowerCase().includes(query) || (r.notes || '').toLowerCase().includes(query)
+        );
+      }
+
+      rows = rows.filter(r => {
+        if (filter === 'done') return r.done;
+        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < adelaideNow;
+        if (filter === 'today') {
+          if (!r.due) return true;
+          const dueDate = new Date(r.due);
+          // Convert due date to Adelaide timezone for comparison
+          const dueDateAdelaide = new Date(dueDate.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
+          return dueDateAdelaide >= todayStart && dueDateAdelaide <= todayEnd;
+        }
+        return true;
+      });
+
+      rows.sort((a, b) => {
+        if (sortKey === 'time') return (+new Date(a.due || 0)) - (+new Date(b.due || 0));
+        if (sortKey === 'priority') return priorityWeight(b.priority) - priorityWeight(a.priority);
+        return smartCompare(a, b);
+      });
+
+      list.innerHTML = '';
+      if (rows.length === 0) {
+        list.innerHTML = '<div class="meta">Nothing here yet.</div>';
+        return;
+      }
+
+      rows.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'item' + (r.done ? ' done' : '');
+        const dueTxt = r.due
+          ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) +
+          ' • ' + fmtDayDate(r.due.slice(0, 10))
+          : '—';
+        div.innerHTML = `
+          <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark done" />
+          <div>
+            <div class="title">${escapeHtml(r.title)}</div>
+            <div class="meta">${dueTxt} • <span class="badge">${r.priority}</span> ${r.notes ? '• ' + escapeHtml(r.notes) : ''}</div>
+          </div>
+          <div class="row">
+            <button class="ghost" data-del type="button">Delete</button>
+          </div>`;
+        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
+        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
+        list.appendChild(div);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+    }
+
+    function toast(msg) {
+      console.log('Toast:', msg);
+      statusEl.textContent = msg; clearTimeout(toast._t);
+      toast._t = setTimeout(() => statusEl.textContent = '', 3000);
+    }
+
+    // Event listeners
+    saveBtn.addEventListener('click', () => {
+      const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
+      let due = null;
+      if (date.value || time.value) {
+        const d = (date.value || todayISO());
+        const tm = (time.value || '09:00');
+        due = new Date(`${d}T${tm}:00`).toISOString();
+      } else {
+        const p = parseQuickWhen(t);
+        if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
+      }
+      addItem({ title: t, priority: priority.value, due });
+      title.value = ''; time.value = '';
+    });
+
+    addQuickBtn.addEventListener('click', () => {
+      if (!title.value.trim()) {
+        title.focus(); toast('Type something like \"pick up dog at 6pm\"'); return;
+      }
+      saveBtn.click();
+    });
+
+    q.addEventListener('input', render);
+    sortSel.addEventListener('change', () => { sortKey = sortSel.value; render(); });
+    $$('button[data-filter]').forEach(b => b.addEventListener('click', () => {
+      filter = b.getAttribute('data-filter'); render();
+    }));
+
+    copyMtlBtn.addEventListener('click', () => {
+      const lines = items.filter(x => !x.done).map(x => {
+        const datePart = x.due ? fmtDayDate(x.due.slice(0, 10)) : '';
+        const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
+        const pieces = [
+          'mtl ' + x.title,
+          x.due ? `Due Date: ${datePart}` : '',
+          x.due ? `Time: ${timePart}` : '',
+          `Status: Not started`,
+        ].filter(Boolean);
+        return pieces.join('\n');
+      });
+      if (lines.length === 0) { toast('No active tasks to copy'); return; }
+      navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
+        toast('Copied for Master Task List');
+      }).catch(() => toast('Copy failed'));
+    });
+
+    importFile.addEventListener('change', () => {
+      const f = importFile.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try { 
+          const importedItems = JSON.parse(String(rd.result) || '[]'); 
+          // Add imported items to Firebase
+          importedItems.forEach(item => {
+            item.id = uid(); // Generate new IDs to avoid conflicts
+            items = [item, ...items];
+            saveToFirebase(item);
+          });
+          render();
+          toast('Import successful');
+        }
+        catch (err) { toast('Invalid JSON'); }
+      };
+      rd.readAsText(f);
+      importFile.value = '';
+    });
+
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'memory-cue.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Settings button: reveal + scroll to panel
+    openSettings.addEventListener('click', () => {
+      if (settingsSection) {
+        settingsSection.classList.remove('hidden');
+        settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // Save settings
+    saveSettings.addEventListener('click', () => {
+      const url = syncUrlInput.value.trim();
+      localStorage.setItem('syncUrl', url);
+      toast('Calendar sync settings saved');
+    });
+
+    // Test calendar sync
+    testSync.addEventListener('click', async () => {
+      const url = syncUrlInput.value.trim();
+      if (!url) { toast('Enter Google Apps Script URL first'); return; }
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ title: 'Test from Memory Cue', dueIso: null, priority: 'Low' })
+        });
+        toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error');
+      } catch (e) { toast('Calendar sync failed (check URL & deploy)'); }
+    });
+
+    // Voice recognition
+    try {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        recog = new SR();
+        recog.lang = 'en-AU';
+        recog.interimResults = false;
+        recog.onresult = (e) => {
+          const t = e.results[0][0].transcript || '';
+          title.value = t;
+          toast('Heard: ' + t);
+        };
+        recog.onend = () => { listening = false; voiceBtn.textContent = '🎙️'; };
+      }
+    } catch { }
+
+    voiceBtn.addEventListener('click', () => {
+      if (!recog) return;
+      if (!listening) { try { recog.start(); listening = true; voiceBtn.textContent = 'Listening…'; } catch { } }
+      else { try { recog.stop(); } catch { } listening = false; voiceBtn.textContent = '🎙️'; }
+    });
+
+    // Notifications
+    notifBtn.addEventListener('click', async () => {
+      if (!('Notification' in window)) { toast('Notifications not supported'); return; }
+      if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
+      const perm = await Notification.requestPermission();
+      toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
+    });
+
+    // Handle online/offline
+    window.addEventListener('online', () => {
+      syncStatus.textContent = 'Online';
+      syncStatus.className = 'sync-status online';
+      retryPendingChanges();
+    });
+
+    window.addEventListener('offline', () => {
+      syncStatus.textContent = 'Offline';
+      syncStatus.className = 'sync-status offline';
+    });
+
+    // Initialize
+    render();
   </script>
-  <!-- All the non-module scripts from index.html should also be included here -->
+
   <script>
-    // ... [All non-module scripts from index.html, unchanged] ...
+    (function(){
+      // Keep network badge updated
+      function setStatus(el, state, label){
+        if (!el) return;
+        el.classList.remove('online','offline','error');
+        el.classList.add(state);
+        el.textContent = label;
+      }
+      function updateNetworkBadge(){
+        var el = document.getElementById('syncStatus');
+        if (!el) return;
+        if (navigator.onLine) {
+          setStatus(el, 'online', 'Online');
+        } else {
+          setStatus(el, 'offline', 'Offline');
+        }
+      }
+      window.addEventListener('online', updateNetworkBadge);
+      window.addEventListener('offline', updateNetworkBadge);
+      if (document.readyState !== 'loading') updateNetworkBadge();
+      else document.addEventListener('DOMContentLoaded', updateNetworkBadge);
+
+      // Optional: a "Test Sync" button to ping your Apps Script endpoint
+      var testBtn = document.getElementById('testSync');
+      var urlInput = document.getElementById('syncUrl');
+      async function pingSync(){
+        var el = document.getElementById('syncStatus');
+        try {
+          var url = (urlInput && urlInput.value) || urlInput?.getAttribute('value') || '';
+          if (!url) { updateNetworkBadge(); return; }
+          const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'ping=1', { method: 'GET', cache:'no-store' });
+          if (res.ok) setStatus(el, 'online', 'Online');
+          else setStatus(el, 'error', 'Sync Error');
+        } catch (e) {
+          if (!navigator.onLine) setStatus(el, 'offline', 'Offline');
+          else setStatus(el, 'error', 'Sync Error');
+        }
+      }
+      if (testBtn) testBtn.addEventListener('click', function(e){ e.preventDefault(); pingSync(); });
+      // Auto-ping shortly after load if online
+      if (navigator.onLine) setTimeout(pingSync, 800);
+    })();
+  </script>
+
+  <script>
+    (function(){
+      // Safe URL getter for sync
+      function getSyncUrl(){
+        var el = document.getElementById('syncUrl');
+        var url = (el && (el.value || el.getAttribute('value'))) ? (el.value || el.getAttribute('value')) : '';
+        url = (url || '').trim();
+        if (!url) throw new Error('Missing sync URL. Add your Google Apps Script Web App URL in Settings.');
+        if (!/^https:\/\//i.test(url)) throw new Error('Sync URL must start with https://');
+        return url;
+      }
+      window.__getSyncUrl = getSyncUrl;
+    })();
+  </script>
+
+  <script>
+    (function(){
+      async function loadFromServer(opts){
+        opts = opts || {};
+        const maxRetries = 2;
+        const backoff = [300, 900]; // ms
+        const statusEl = document.getElementById('syncStatus');
+        function setStatus(cls, label){
+          if (!statusEl) return;
+          statusEl.classList.remove('online','offline','error');
+          statusEl.classList.add(cls);
+          statusEl.textContent = label;
+        }
+        let url;
+        try {
+          url = (window.__getSyncUrl && window.__getSyncUrl()) || '';
+        } catch(e) {
+          console.warn(e.message);
+          setStatus('error', 'Sync URL missing');
+          return { ok:false, error:e.message };
+        }
+
+        async function attempt(i){
+          try {
+            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'list=1', {
+              method: 'GET',
+              headers: { 'Accept': 'application/json' },
+              cache: 'no-store',
+              redirect: 'follow',
+              // mode: 'cors' // default for https->https
+            });
+            if (!res.ok) throw new Error('Server responded ' + res.status);
+            const data = await res.json();
+            setStatus('online', 'Online');
+            return { ok:true, data };
+          } catch (err) {
+            if (i < maxRetries) {
+              await new Promise(r => setTimeout(r, backoff[i]));
+              return attempt(i+1);
+            }
+            console.error('loadFromServer failed', err);
+            if (!navigator.onLine) setStatus('offline', 'Offline');
+            else setStatus('error', 'Sync Error');
+            return { ok:false, error: String(err && err.message || err) };
+          }
+        }
+        return attempt(0);
+      }
+      // Expose so existing code can call it
+      window.loadFromServer = loadFromServer;
+    })();
   </script>
 </body>
 </html>
