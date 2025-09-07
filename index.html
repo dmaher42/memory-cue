@@ -49,6 +49,7 @@
     .sync-status.online{background:var(--ok);color:#001108}
     .sync-status.offline{background:var(--warn);color:#1b1200}
     .sync-status.error{background:var(--danger);color:#fff}
+    .google-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;}
   </style>
 </head>
 <body>
@@ -63,6 +64,10 @@
         <button id="voiceBtn" class="ghost" type="button" title="Voice quick add">🎙️ Voice add</button>
         <button id="notifBtn" class="ghost" type="button" title="Enable notifications">🔔 Enable alerts</button>
         <button id="addQuickBtn" class="primary" type="button" title="Add quick reminder">+ Quick</button>
+        <!-- Google Auth buttons -->
+        <button id="googleSignInBtn" class="ghost" type="button">Sign in with Google</button>
+        <button id="googleSignOutBtn" class="ghost hidden" type="button"><img id="googleAvatar" class="google-avatar hidden" />Sign out</button>
+        <span id="googleUserName" class="meta"></span>
       </div>
     </div>
   </header>
@@ -147,12 +152,11 @@
 
   <!-- Firebase SDK -->
   <script type="module">
-    // Import Firebase modules
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+    import { GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
-    // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
       authDomain: "memory-cue-app.firebaseapp.com",
@@ -163,7 +167,6 @@
       measurementId: "G-R0V4M7VCE6"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -176,6 +179,7 @@
     let recog = null;
     let userId = null;
     let unsubscribe = null;
+    let currentUser = null;
 
     const TZ = 'Australia/Adelaide';
     const $ = (sel) => document.querySelector(sel);
@@ -203,27 +207,81 @@
     const saveSettings = $('#saveSettings');
     const testSync = $('#testSync');
     const settingsSection = $('#settingsSection');
+    const googleSignInBtn = $('#googleSignInBtn');
+    const googleSignOutBtn = $('#googleSignOutBtn');
+    const googleAvatar = $('#googleAvatar');
+    const googleUserName = $('#googleUserName');
 
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
     if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
 
-    // Firebase Authentication
+    // Google Sign-In logic
+    googleSignInBtn.addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        toast('Google sign-in failed');
+        console.error(error);
+      }
+    });
+
+    googleSignOutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        toast('Signed out');
+        items = [];
+        render();
+      } catch (error) {
+        toast('Sign-out failed');
+        console.error(error);
+      }
+    });
+
+    // Firebase Authentication state
     onAuthStateChanged(auth, (user) => {
       if (user) {
         userId = user.uid;
+        currentUser = user;
         syncStatus.textContent = 'Online';
         syncStatus.className = 'sync-status online';
+        googleSignInBtn.classList.add('hidden');
+        googleSignOutBtn.classList.remove('hidden');
+        if (user.photoURL) {
+          googleAvatar.classList.remove('hidden');
+          googleAvatar.src = user.photoURL;
+        } else {
+          googleAvatar.classList.add('hidden');
+          googleAvatar.src = '';
+        }
+        if (user.displayName) {
+          googleUserName.textContent = `Hello, ${user.displayName}`;
+        } else if (user.email) {
+          googleUserName.textContent = user.email;
+        } else {
+          googleUserName.textContent = '';
+        }
         setupFirestoreSync();
       } else {
-        signInAnonymously(auth).catch(console.error);
+        googleSignInBtn.classList.remove('hidden');
+        googleSignOutBtn.classList.add('hidden');
+        googleAvatar.classList.add('hidden');
+        googleAvatar.src = '';
+        googleUserName.textContent = '';
+        items = [];
+        render();
       }
     });
 
     // Firestore real-time sync
     function setupFirestoreSync() {
-      if (!userId) return;
-
+      if (!userId) {
+        items = [];
+        render();
+        return;
+      }
+      if (unsubscribe) unsubscribe();
       const userCollection = collection(db, 'users', userId, 'reminders');
       const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
 
@@ -243,7 +301,6 @@
           });
         });
 
-        // Merge with any pending local changes
         items = mergeWithLocal(remoteItems);
         render();
       }, (error) => {
@@ -257,10 +314,8 @@
       const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
       const merged = new Map();
 
-      // Add all remote items
       remoteItems.forEach(item => merged.set(item.id, item));
 
-      // Apply pending local changes
       localPending.forEach(change => {
         if (change.action === 'upsert') {
           merged.set(change.item.id, change.item);
@@ -272,7 +327,6 @@
       return Array.from(merged.values());
     }
 
-    // Firebase operations
     async function saveToFirebase(item) {
       if (!userId) return;
       try {
@@ -307,7 +361,6 @@
 
     function addPendingChange(change) {
       const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      // Remove any existing change for this item
       const filtered = pending.filter(p => 
         (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
         (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
@@ -325,7 +378,6 @@
       localStorage.setItem('pendingChanges', JSON.stringify(filtered));
     }
 
-    // Retry pending changes when online
     async function retryPendingChanges() {
       const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
       for (const change of pending) {
@@ -336,12 +388,11 @@
             await deleteFromFirebase(change.itemId);
           }
         } catch (error) {
-          break; // Stop retrying if still failing
+          break;
         }
       }
     }
 
-    // Calendar sync function
     async function tryCalendarSync(task) {
       const url = (localStorage.getItem('syncUrl') || '').trim();
       if (!url) return;
@@ -364,11 +415,9 @@
       }
     }
 
-    // Utility functions
     function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
     function toISODatePart(d) { return d.toISOString().slice(0, 10); }
     function todayISO() {
-      // Get today's date in Adelaide timezone
       const now = new Date();
       const adelaideDate = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
       return toISODatePart(adelaideDate);
@@ -401,8 +450,8 @@
       return when;
     }
 
-    // CRUD operations
     function addItem(obj) {
+      if (!userId) { toast('Sign in to add reminders'); return; }
       const item = {
         id: uid(),
         title: obj.title.trim(),
@@ -414,14 +463,10 @@
         due: obj.due || null
       };
 
-      // Add to local state immediately
       items = [item, ...items];
       render();
 
-      // Save to Firebase
       saveToFirebase(item);
-      
-      // Also sync to calendar if URL is configured
       tryCalendarSync(item);
       
       return item;
@@ -443,11 +488,9 @@
       deleteFromFirebase(id);
     }
 
-    // Render function
     function render() {
       const query = q.value.trim().toLowerCase();
-      
-      // Get today's date range in Adelaide timezone
+
       const now = new Date();
       const adelaideNow = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
       const todayStart = new Date(adelaideNow);
@@ -469,7 +512,6 @@
         if (filter === 'today') {
           if (!r.due) return true;
           const dueDate = new Date(r.due);
-          // Convert due date to Adelaide timezone for comparison
           const dueDateAdelaide = new Date(dueDate.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
           return dueDateAdelaide >= todayStart && dueDateAdelaide <= todayEnd;
         }
@@ -522,7 +564,6 @@
       toast._t = setTimeout(() => statusEl.textContent = '', 3000);
     }
 
-    // Event listeners
     saveBtn.addEventListener('click', () => {
       const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
       let due = null;
@@ -575,9 +616,8 @@
       rd.onload = () => {
         try { 
           const importedItems = JSON.parse(String(rd.result) || '[]'); 
-          // Add imported items to Firebase
           importedItems.forEach(item => {
-            item.id = uid(); // Generate new IDs to avoid conflicts
+            item.id = uid();
             items = [item, ...items];
             saveToFirebase(item);
           });
@@ -597,7 +637,6 @@
       URL.revokeObjectURL(url);
     });
 
-    // Settings button: reveal + scroll to panel
     openSettings.addEventListener('click', () => {
       if (settingsSection) {
         settingsSection.classList.remove('hidden');
@@ -605,14 +644,12 @@
       }
     });
 
-    // Save settings
     saveSettings.addEventListener('click', () => {
       const url = syncUrlInput.value.trim();
       localStorage.setItem('syncUrl', url);
       toast('Calendar sync settings saved');
     });
 
-    // Test calendar sync
     testSync.addEventListener('click', async () => {
       const url = syncUrlInput.value.trim();
       if (!url) { toast('Enter Google Apps Script URL first'); return; }
@@ -648,7 +685,6 @@
       else { try { recog.stop(); } catch { } listening = false; voiceBtn.textContent = '🎙️ Voice add'; }
     });
 
-    // Notifications
     notifBtn.addEventListener('click', async () => {
       if (!('Notification' in window)) { toast('Notifications not supported'); return; }
       if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
@@ -656,7 +692,6 @@
       toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
     });
 
-    // Handle online/offline
     window.addEventListener('online', () => {
       syncStatus.textContent = 'Online';
       syncStatus.className = 'sync-status online';
@@ -668,13 +703,11 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    // Initialize
     render();
   </script>
 
 <script>
 (function(){
-  // Keep network badge updated
   function setStatus(el, state, label){
     if (!el) return;
     el.classList.remove('online','offline','error');
@@ -695,7 +728,6 @@
   if (document.readyState !== 'loading') updateNetworkBadge();
   else document.addEventListener('DOMContentLoaded', updateNetworkBadge);
 
-  // Optional: a "Test Sync" button to ping your Apps Script endpoint
   var testBtn = document.getElementById('testSync');
   var urlInput = document.getElementById('syncUrl');
   async function pingSync(){
@@ -712,15 +744,12 @@
     }
   }
   if (testBtn) testBtn.addEventListener('click', function(e){ e.preventDefault(); pingSync(); });
-  // Auto-ping shortly after load if online
   if (navigator.onLine) setTimeout(pingSync, 800);
 })();
 </script>
 
-
 <script>
 (function(){
-  // Safe URL getter for sync
   function getSyncUrl(){
     var el = document.getElementById('syncUrl');
     var url = (el && (el.value || el.getAttribute('value'))) ? (el.value || el.getAttribute('value')) : '';
@@ -733,13 +762,12 @@
 })();
 </script>
 
-
 <script>
 (function(){
   async function loadFromServer(opts){
     opts = opts || {};
     const maxRetries = 2;
-    const backoff = [300, 900]; // ms
+    const backoff = [300, 900];
     const statusEl = document.getElementById('syncStatus');
     function setStatus(cls, label){
       if (!statusEl) return;
@@ -763,7 +791,6 @@
           headers: { 'Accept': 'application/json' },
           cache: 'no-store',
           redirect: 'follow',
-          // mode: 'cors' // default for https->https
         });
         if (!res.ok) throw new Error('Server responded ' + res.status);
         const data = await res.json();
@@ -782,7 +809,6 @@
     }
     return attempt(0);
   }
-  // Expose so existing code can call it
   window.loadFromServer = loadFromServer;
 })();
 </script>
