@@ -126,6 +126,7 @@
       </div>
     </section>
 
+    <!-- Calendar sync settings panel -->
     <section class="panel hidden" id="settingsSection">
       <div class="section-title">Calendar Sync Settings</div>
       <div class="row" style="gap:7px;align-items:flex-end">
@@ -195,15 +196,15 @@
     const exportBtn = $('#exportBtn');
     const sortSel = $('#sort');
     const syncStatus = $('#syncStatus');
-    const openSettings = $('#openSettings');
-    const syncUrlInput = $('#syncUrl');
-    const saveSettings = $('#saveSettings');
-    const testSync = $('#testSync');
-    const settingsSection = $('#settingsSection');
     const googleSignInBtn = $('#googleSignInBtn');
     const googleSignOutBtn = $('#googleSignOutBtn');
     const googleAvatar = $('#googleAvatar');
     const googleUserName = $('#googleUserName');
+    const openSettings = $('#openSettings');
+    const settingsSection = $('#settingsSection');
+    const syncUrlInput = $('#syncUrl');
+    const saveSettings = $('#saveSettings');
+    const testSync = $('#testSync');
 
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
@@ -689,113 +690,5 @@
 
     render();
   </script>
-
-<script>
-(function(){
-  function setStatus(el, state, label){
-    if (!el) return;
-    el.classList.remove('online','offline','error');
-    el.classList.add(state);
-    el.textContent = label;
-  }
-  function updateNetworkBadge(){
-    var el = document.getElementById('syncStatus');
-    if (!el) return;
-    if (navigator.onLine) {
-      setStatus(el, 'online', 'Online');
-    } else {
-      setStatus(el, 'offline', 'Offline');
-    }
-  }
-  window.addEventListener('online', updateNetworkBadge);
-  window.addEventListener('offline', updateNetworkBadge);
-  if (document.readyState !== 'loading') updateNetworkBadge();
-  else document.addEventListener('DOMContentLoaded', updateNetworkBadge);
-
-  var testBtn = document.getElementById('testSync');
-  var urlInput = document.getElementById('syncUrl');
-  async function pingSync(){
-    var el = document.getElementById('syncStatus');
-    try {
-      var url = (urlInput && urlInput.value) || urlInput?.getAttribute('value') || '';
-      if (!url) { updateNetworkBadge(); return; }
-      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'ping=1', { method: 'GET', cache:'no-store' });
-      if (res.ok) setStatus(el, 'online', 'Online');
-      else setStatus(el, 'error', 'Sync Error');
-    } catch (e) {
-      if (!navigator.onLine) setStatus(el, 'offline', 'Offline');
-      else setStatus(el, 'error', 'Sync Error');
-    }
-  }
-  if (testBtn) testBtn.addEventListener('click', function(e){ e.preventDefault(); pingSync(); });
-  if (navigator.onLine) setTimeout(pingSync, 600);
-})();
-</script>
-
-<script>
-(function(){
-  function getSyncUrl(){
-    var el = document.getElementById('syncUrl');
-    var url = (el && (el.value || el.getAttribute('value'))) ? (el.value || el.getAttribute('value')) : '';
-    url = (url || '').trim();
-    if (!url) throw new Error('Missing sync URL. Add your Google Apps Script Web App URL in Settings.');
-    if (!/^https:\/\//i.test(url)) throw new Error('Sync URL must start with https://');
-    return url;
-  }
-  window.__getSyncUrl = getSyncUrl;
-})();
-</script>
-
-<script>
-(function(){
-  async function loadFromServer(opts){
-    opts = opts || {};
-    const maxRetries = 2;
-    const backoff = [200, 600];
-    const statusEl = document.getElementById('syncStatus');
-    function setStatus(cls, label){
-      if (!statusEl) return;
-      statusEl.classList.remove('online','offline','error');
-      statusEl.classList.add(cls);
-      statusEl.textContent = label;
-    }
-    let url;
-    try {
-      url = (window.__getSyncUrl && window.__getSyncUrl()) || '';
-    } catch(e) {
-      console.warn(e.message);
-      setStatus('error', 'Sync URL missing');
-      return { ok:false, error:e.message };
-    }
-
-    async function attempt(i){
-      try {
-        const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'list=1', {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          cache: 'no-store',
-          redirect: 'follow',
-        });
-        if (!res.ok) throw new Error('Server responded ' + res.status);
-        const data = await res.json();
-        setStatus('online', 'Online');
-        return { ok:true, data };
-      } catch (err) {
-        if (i < maxRetries) {
-          await new Promise(r => setTimeout(r, backoff[i]));
-          return attempt(i+1);
-        }
-        console.error('loadFromServer failed', err);
-        if (!navigator.onLine) setStatus('offline', 'Offline');
-        else setStatus('error', 'Sync Error');
-        return { ok:false, error: String(err && err.message || err) };
-      }
-    }
-    return attempt(0);
-  }
-  window.loadFromServer = loadFromServer;
-})();
-</script>
-
 </body>
 </html>
