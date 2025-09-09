@@ -252,6 +252,11 @@ z-index:100;box-shadow:var(--shadow-sm)}
           <div class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-xs);">
             <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
             set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL.
+            <br><br>
+            <strong>Batch Sync:</strong> This app now supports batch synchronization with delete operations. 
+            Your Apps Script should expect: <code>{ tasks: [{ id, title, dueIso, priority, done, description, tags, source }] }</code>
+            <br>
+            For deletions: <code>{ tasks: [{ id, title, dueIso, deleted: true }] }</code>
           </div>
         </div>
       </section>
@@ -309,6 +314,14 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
     // ---- Edit state ----
     let editingId = null;
+
+    // ---- Apps Script Sync Constants ----
+    const APPS_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/REPLACE_DEPLOYMENT_ID/exec';
+    const APPS_SCRIPT_TOKEN = 'REPLACE_TOKEN';
+    const APPS_SCRIPT_URL = `${APPS_SCRIPT_BASE_URL}?token=${APPS_SCRIPT_TOKEN}`;
+
+    // ---- Sync State ----
+    let pendingDeletes = new Set(); // Track items marked for deletion
 
     const TZ = 'Australia/Adelaide';
     const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
@@ -400,7 +413,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
           const data = d.data();
           remoteItems.push({
             id: d.id,
-            title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done,
+            title: data.title, 
+            priority: data.priority, 
+            notes: data.notes || '', 
+            description: data.description || '', // Extended field for Apps Script
+            tags: data.tags || [], // Extended field for Apps Script
+            done: !!data.done,
             due: data.due || null,
             createdAt: data.createdAt?.toMillis?.() || 0,
             updatedAt: data.updatedAt?.toMillis?.() || 0
@@ -419,7 +437,13 @@ z-index:100;box-shadow:var(--shadow-sm)}
       if (!userId) return;
       try {
         await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-          title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
+          title: item.title, 
+          priority: item.priority, 
+          notes: item.notes || '', 
+          description: item.description || '', // Extended field for Apps Script
+          tags: item.tags || [], // Extended field for Apps Script
+          done: !!item.done, 
+          due: item.due || null,
           createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
@@ -429,12 +453,44 @@ z-index:100;box-shadow:var(--shadow-sm)}
     }
     async function deleteFromFirebase(id) { if (!userId) return; try { await deleteDoc(doc(db, 'users', userId, 'reminders', id)); } catch { toast('Delete queued (offline)'); } }
 
-    // Optional: Calendar/Sheet sync via Apps Script
+    // Enhanced Calendar/Sheet sync via Apps Script with batch support
     async function tryCalendarSync(task) {
-      const url = (localStorage.getItem('syncUrl') || '').trim(); if (!url) return;
-      const payload = { id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', done: !!task.done, source: 'memory-cue-mobile' };
-      try { await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
-      catch {}
+      // For individual task changes, trigger debounced batch sync
+      debouncedBatchSync();
+    }
+
+    async function performBatchSync() {
+      const url = (localStorage.getItem('syncUrl') || APPS_SCRIPT_URL).trim(); 
+      if (!url || url.includes('REPLACE_')) {
+        console.log('Sync URL not configured or contains placeholders');
+        return;
+      }
+      
+      if (!items.length && pendingDeletes.size === 0) {
+        console.log('No tasks to sync');
+        return;
+      }
+
+      try {
+        const deletedTasksArray = Array.from(pendingDeletes);
+        const payload = prepareBatchPayload(items, deletedTasksArray);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          setLastSyncTimestamp();
+          pendingDeletes.clear(); // Clear pending deletes on successful sync
+          console.log('Batch sync successful');
+        } else {
+          console.error('Batch sync failed:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('Batch sync error:', error);
+      }
     }
 
     // Utils
@@ -450,6 +506,50 @@ z-index:100;box-shadow:var(--shadow-sm)}
     function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' }[c])); }
     function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+    // ---- Batch Sync Utilities ----
+    function getLastSyncTimestamp() {
+      return parseInt(localStorage.getItem('remindersLastSync') || '0', 10);
+    }
+
+    function setLastSyncTimestamp(timestamp = Date.now()) {
+      localStorage.setItem('remindersLastSync', timestamp.toString());
+    }
+
+    function prepareBatchPayload(tasks, deletedTasks = []) {
+      const payload = { tasks: [] };
+      
+      // Add regular tasks
+      tasks.forEach(task => {
+        payload.tasks.push({
+          id: task.id,
+          title: task.title,
+          dueIso: task.due ? new Date(task.due).toISOString() : '',
+          priority: task.priority || 'Medium',
+          done: !!task.done,
+          description: task.description || task.notes || '', // Use notes as fallback for description
+          tags: task.tags || [],
+          source: 'memory-cue-mobile'
+        });
+      });
+
+      // Add deleted tasks
+      deletedTasks.forEach(delTask => {
+        payload.tasks.push({
+          id: delTask.id,
+          title: delTask.title,
+          dueIso: delTask.dueIso,
+          deleted: true
+        });
+      });
+
+      return payload;
+    }
+
+    // Debounced batch sync function
+    const debouncedBatchSync = debounce(async () => {
+      await performBatchSync();
+    }, 2000);
 
     function parseQuickWhen(text) {
       text = String(text || '').toLowerCase();
@@ -688,15 +788,31 @@ z-index:100;box-shadow:var(--shadow-sm)}
       if (!userId) { toast('Sign in to add reminders'); return; }
       const nowMs = Date.now();
       const item = {
-        id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false,
-        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null
+        id: uid(), 
+        title: obj.title.trim(), 
+        priority: obj.priority || 'Medium', 
+        notes: obj.notes || '', 
+        description: obj.description || '', // Extended field for Apps Script
+        tags: obj.tags || [], // Extended field for Apps Script  
+        done: false,
+        createdAt: nowMs, 
+        updatedAt: nowMs, 
+        due: obj.due || null
       };
       items = [item, ...items]; render(); saveToFirebase(item);
       tryCalendarSync(item);
       return item;
     }
     function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); }
-    function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); }
+    function removeItem(id){ 
+      const item = items.find(x=>x.id===id);
+      if (item) {
+        pendingDeletes.add({id: item.id, title: item.title, dueIso: item.due || ''});
+      }
+      items = items.filter(x=>x.id!==id); 
+      render(); 
+      deleteFromFirebase(id); 
+    }
 
     // Rendering
     function render(){
@@ -779,6 +895,47 @@ z-index:100;box-shadow:var(--shadow-sm)}
       closeMenu();
     });
     document.addEventListener('DOMContentLoaded', () => { settingsSection.classList.add('hidden'); });
+
+    // Settings handlers
+    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
+    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
+
+    saveSettings.addEventListener('click', () => {
+      const url = syncUrlInput.value.trim();
+      localStorage.setItem('syncUrl', url);
+      toast('Sync settings saved');
+    });
+
+    testSync.addEventListener('click', async () => {
+      const url = syncUrlInput.value.trim() || localStorage.getItem('syncUrl') || APPS_SCRIPT_URL;
+      if (!url || url.includes('REPLACE_')) {
+        toast('Enter Google Apps Script URL first');
+        return;
+      }
+      try {
+        const testPayload = {
+          tasks: [{
+            id: 'test-' + Date.now(),
+            title: 'Test from Memory Cue Mobile',
+            dueIso: '',
+            priority: 'Low',
+            done: false,
+            description: 'Test sync connectivity',
+            tags: ['test'],
+            source: 'memory-cue-mobile'
+          }]
+        };
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testPayload)
+        });
+        toast(response.ok ? 'Sync test successful!' : `Sync test failed: ${response.status}`);
+      } catch (error) {
+        toast('Sync test failed: Network error');
+        console.error('Test sync error:', error);
+      }
+    });
 
     // Save/create or update
     saveBtn.addEventListener('click', () => {
@@ -871,7 +1028,14 @@ z-index:100;box-shadow:var(--shadow-sm)}
       rd.onload = () => {
         try {
           const importedItems = JSON.parse(String(rd.result) || '[]').slice(0, 500);
-          importedItems.forEach(item => { item.id = (Math.random().toString(36).slice(2)+Date.now().toString(36)); items = [item, ...items]; saveToFirebase(item); });
+          importedItems.forEach(item => { 
+            item.id = (Math.random().toString(36).slice(2)+Date.now().toString(36)); 
+            // Ensure new fields exist for backward compatibility
+            item.description = item.description || '';
+            item.tags = item.tags || [];
+            items = [item, ...items]; 
+            saveToFirebase(item); 
+          });
           render(); toast('Import successful');
         } catch { toast('Invalid JSON'); }
       };
@@ -884,33 +1048,45 @@ z-index:100;box-shadow:var(--shadow-sm)}
       closeMenu();
     });
 
-    // Sync All Now -> POST everything in batches
+    // Sync All Now -> POST everything using new batch format
     syncAllBtn?.addEventListener('click', async () => {
-      const url = (localStorage.getItem('syncUrl') || '').trim();
-      if (!url) { toast('Add your Apps Script URL in Settings first'); closeMenu(); return; }
-      if (!items.length) { toast('No tasks to sync'); closeMenu(); return; }
+      const url = (localStorage.getItem('syncUrl') || APPS_SCRIPT_URL).trim();
+      if (!url || url.includes('REPLACE_')) { 
+        toast('Add your Apps Script URL in Settings first'); 
+        closeMenu(); 
+        return; 
+      }
+      if (!items.length && pendingDeletes.size === 0) { 
+        toast('No tasks to sync'); 
+        closeMenu(); 
+        return; 
+      }
 
       toast('Syncing all tasks…');
-      const chunkSize = 20;
-      let fail = 0;
-      for (let i = 0; i < items.length; i += chunkSize) {
-        const chunk = items.slice(i, i + chunkSize);
-        const results = await Promise.allSettled(chunk.map(task => {
-          const payload = {
-            id: task.id,
-            title: task.title,
-            dueIso: task.due || null,
-            priority: task.priority || 'Medium',
-            done: !!task.done,
-            source: 'memory-cue-mobile'
-          };
-          return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        }));
-        fail += results.filter(r => r.status === 'rejected').length;
-        await new Promise(res => setTimeout(res, 400));
-      }
-      toast(`Sync complete: ${items.length - fail} ok${fail ? `, ${fail} failed` : ''}`);
       closeMenu();
+
+      try {
+        const deletedTasksArray = Array.from(pendingDeletes);
+        const payload = prepareBatchPayload(items, deletedTasksArray);
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          setLastSyncTimestamp();
+          pendingDeletes.clear();
+          const totalTasks = items.length + deletedTasksArray.length;
+          toast(`Sync complete: ${totalTasks} tasks processed successfully`);
+        } else {
+          toast(`Sync failed: ${response.status} ${response.statusText}`);
+        }
+      } catch (error) {
+        toast('Sync failed: Network or server error');
+        console.error('Manual sync error:', error);
+      }
     });
 
     // Voice + Notifications
