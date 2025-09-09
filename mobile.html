@@ -121,6 +121,240 @@ z-index:100;box-shadow:var(--shadow-sm)}
       white-space: nowrap !important;
       border: 0 !important;
     }
+
+    /* Notebook Layout */
+    .notebook-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: var(--space-4);
+      height: calc(100vh - 200px);
+      min-height: 500px;
+    }
+
+    @media (max-width: 768px) {
+      .notebook-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+        min-height: auto;
+      }
+    }
+
+    /* Notes Sidebar */
+    .notes-sidebar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notes-header {
+      margin-bottom: var(--space-3);
+    }
+
+    .notes-stats {
+      margin-top: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      display: flex;
+      gap: var(--space-3);
+    }
+
+    .notes-list {
+      flex: 1;
+      overflow-y: auto;
+      margin: 0 calc(-1 * var(--space-3));
+      padding: 0 var(--space-3);
+    }
+
+    .note-item {
+      padding: var(--space-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-tertiary);
+      margin-bottom: var(--space-2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .note-item:hover {
+      background: var(--bg-primary);
+      border-color: var(--border-light);
+    }
+
+    .note-item.active {
+      background: var(--accent);
+      color: var(--bg-primary);
+      border-color: var(--accent);
+    }
+
+    .note-item-title {
+      font-weight: 600;
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-1);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .note-item-snippet {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-bottom: var(--space-2);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.3;
+    }
+
+    .note-item.active .note-item-snippet {
+      color: rgba(11, 18, 32, 0.7);
+    }
+
+    .note-item-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+
+    .note-item.active .note-item-meta {
+      color: rgba(11, 18, 32, 0.6);
+    }
+
+    .note-item-tags {
+      display: flex;
+      gap: var(--space-1);
+      flex-wrap: wrap;
+    }
+
+    .note-tag {
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: var(--text-xs);
+      border: 1px solid var(--border);
+    }
+
+    .note-item.active .note-tag {
+      background: rgba(11, 18, 32, 0.2);
+      color: var(--bg-primary);
+      border-color: rgba(11, 18, 32, 0.3);
+    }
+
+    .empty-notes {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: var(--space-6);
+    }
+
+    /* Note Editor */
+    .note-editor {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      min-height: 500px;
+    }
+
+    .note-editor-header {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      margin-bottom: var(--space-3);
+    }
+
+    @media (max-width: 640px) {
+      .note-editor-header {
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+    }
+
+    .note-title-input {
+      flex: 1;
+      font-size: var(--text-lg);
+      font-weight: 600;
+      background: var(--bg-tertiary);
+    }
+
+    .note-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    @media (max-width: 640px) {
+      .note-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    .note-tags-line {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+      min-height: 24px;
+    }
+
+    .tags-label {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .note-tags {
+      display: flex;
+      gap: var(--space-1);
+      flex-wrap: wrap;
+    }
+
+    .note-content {
+      flex: 1;
+      background: var(--bg-tertiary);
+      resize: none;
+      font-family: inherit;
+      line-height: 1.6;
+      min-height: 300px;
+    }
+
+    .note-status {
+      margin-top: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .note-status.success {
+      color: var(--success);
+    }
+
+    .note-status.error {
+      color: var(--danger);
+    }
+
+    @media (max-width: 768px) {
+      .notes-sidebar {
+        max-height: 300px;
+        margin-bottom: var(--space-4);
+      }
+      
+      .note-editor {
+        min-height: 400px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -261,33 +495,97 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
   <div id="notebookTab" class="tab-panel hidden">
     <div class="container">
-      <section class="card section">
-        <div class="card-content">
-          <textarea id="notes" placeholder="Type notes..." style="width:100%;min-height:200px;"></textarea>
+      <div class="notebook-layout">
+        <!-- Notes Archive Sidebar -->
+        <div class="notes-sidebar">
+          <div class="notes-header">
+            <input type="text" id="notesSearch" class="search-input" placeholder="Search notes or #tags..." />
+            <div class="notes-stats">
+              <span id="notesCount">0 notes</span>
+              <span id="filteredCount"></span>
+            </div>
+          </div>
+          <div id="notesList" class="notes-list">
+            <div class="empty-notes">No notes yet. Create your first note!</div>
+          </div>
         </div>
-      </section>
+
+        <!-- Note Editor -->
+        <div class="note-editor">
+          <div class="note-editor-header">
+            <input type="text" id="noteTitle" class="note-title-input" placeholder="Note title..." />
+            <div class="note-actions">
+              <button id="saveNoteBtn" class="btn-success btn-compact" type="button" title="Save note (Ctrl+S)">Save Note</button>
+              <button id="newNoteBtn" class="btn-primary btn-compact" type="button" title="New note (Ctrl+Shift+N)">New Note</button>
+              <button id="deleteNoteBtn" class="btn-ghost btn-compact" type="button" title="Delete note">Delete Note</button>
+            </div>
+          </div>
+          <div class="note-tags-line">
+            <span class="tags-label">Tags:</span>
+            <div id="noteTags" class="note-tags"></div>
+          </div>
+          <textarea id="noteContent" class="note-content" placeholder="Start writing your note..."></textarea>
+          <div id="noteStatus" class="note-status" aria-live="polite"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+    // Firebase imports with fallbacks for offline testing
+    let initializeApp, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp;
+    let getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut;
+    let app, db, auth;
+    let firebaseAvailable = false;
 
-    // Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
-      authDomain: "memory-cue-app.firebaseapp.com",
-      projectId: "memory-cue-app",
-      storageBucket: "memory-cue-app.firebasestorage.app",
-      messagingSenderId: "751284466633",
-      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
-      measurementId: "G-R0V4M7VCE6"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
-    const auth = getAuth(app);
+    try {
+      ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
+      ({ getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+      ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
+      firebaseAvailable = true;
+    } catch (error) {
+      console.warn('Firebase unavailable, running in offline mode:', error);
+      // Mock Firebase functions for offline testing
+      initializeApp = () => ({});
+      getFirestore = () => ({});
+      doc = () => ({});
+      setDoc = () => Promise.resolve();
+      deleteDoc = () => Promise.resolve();
+      onSnapshot = () => () => {};
+      collection = () => ({});
+      query = () => ({});
+      orderBy = () => ({});
+      enableIndexedDbPersistence = () => Promise.resolve();
+      serverTimestamp = () => new Date();
+      getAuth = () => ({});
+      onAuthStateChanged = () => {};
+      GoogleAuthProvider = class {};
+      signInWithPopup = () => Promise.reject(new Error('Offline'));
+      signInWithRedirect = () => Promise.reject(new Error('Offline'));
+      getRedirectResult = () => Promise.resolve();
+      signOut = () => Promise.resolve();
+    }
+
+    // Firebase initialization
+    if (firebaseAvailable) {
+      const firebaseConfig = {
+        apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
+        authDomain: "memory-cue-app.firebaseapp.com",
+        projectId: "memory-cue-app",
+        storageBucket: "memory-cue-app.firebasestorage.app",
+        messagingSenderId: "751284466633",
+        appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
+        measurementId: "G-R0V4M7VCE6"
+      };
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
+      auth = getAuth(app);
+    } else {
+      app = {};
+      db = {};
+      auth = {};
+    }
 
     // State
     let items = [];
@@ -297,6 +595,13 @@ z-index:100;box-shadow:var(--shadow-sm)}
     let recog = null;
     let userId = null;
     let unsubscribe = null;
+
+    // Notebook state
+    let notes = [];
+    let currentNote = null;
+    let notesFilter = '';
+    let autoSaveTimeout = null;
+    let notesUnsubscribe = null;
 
     // ---- Edit state ----
     let editingId = null;
@@ -341,12 +646,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
-    const notesEl = $('#notes');
+    // Notebook elements
+    const notesSearch = $('#notesSearch'), notesList = $('#notesList'), notesCount = $('#notesCount'), filteredCount = $('#filteredCount');
+    const noteTitle = $('#noteTitle'), noteContent = $('#noteContent'), noteTags = $('#noteTags'), noteStatus = $('#noteStatus');
+    const saveNoteBtn = $('#saveNoteBtn'), newNoteBtn = $('#newNoteBtn'), deleteNoteBtn = $('#deleteNoteBtn');
     const tabBtns = $$('.tab-btn');
     const tabPanels = $$('.tab-panel');
-
-    notesEl.value = localStorage.getItem('mobileNotes') || '';
-    notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
 
     tabBtns.forEach(btn => btn.addEventListener('click', () => {
       tabBtns.forEach(b => b.classList.remove('active'));
@@ -354,7 +659,428 @@ z-index:100;box-shadow:var(--shadow-sm)}
       btn.classList.add('active');
       const target = btn.getAttribute('data-target');
       document.getElementById(target).classList.remove('hidden');
+      
+      // Initialize notebook on first view
+      if (target === 'notebookTab' && notes.length === 0) {
+        initializeNotebook();
+      }
     }));
+
+    // ========================
+    // NOTEBOOK FUNCTIONALITY
+    // ========================
+
+    function initializeNotebook() {
+      loadNotesFromStorage();
+      migrateLegacyNotes();
+      renderNotesList();
+      setupNotesSync();
+      
+      if (notes.length === 0) {
+        createNewNote();
+      } else {
+        selectNote(notes[0]);
+      }
+    }
+
+    function loadNotesFromStorage() {
+      try {
+        const stored = localStorage.getItem('mobileNotesArchive');
+        notes = stored ? JSON.parse(stored) : [];
+      } catch (error) {
+        console.error('Failed to load notes from storage:', error);
+        notes = [];
+      }
+    }
+
+    function saveNotesToStorage() {
+      try {
+        localStorage.setItem('mobileNotesArchive', JSON.stringify(notes));
+      } catch (error) {
+        console.error('Failed to save notes to storage:', error);
+      }
+    }
+
+    function migrateLegacyNotes() {
+      const legacyContent = localStorage.getItem('mobileNotes');
+      if (legacyContent && legacyContent.trim() && notes.length === 0) {
+        const migratedNote = {
+          id: generateId(),
+          title: 'Migrated Note',
+          content: legacyContent.trim(),
+          tags: extractTags(legacyContent),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          synced: false
+        };
+        notes.push(migratedNote);
+        saveNotesToStorage();
+        localStorage.removeItem('mobileNotes'); // Clean up legacy data
+      }
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function extractTags(text) {
+      const tagPattern = /#([a-zA-Z0-9_-]+)/g;
+      const tags = new Set();
+      let match;
+      while ((match = tagPattern.exec(text)) !== null) {
+        tags.add(match[1].toLowerCase());
+      }
+      return Array.from(tags);
+    }
+
+    function createNewNote() {
+      const newNote = {
+        id: generateId(),
+        title: '',
+        content: '',
+        tags: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        synced: false
+      };
+      
+      notes.unshift(newNote);
+      saveNotesToStorage();
+      selectNote(newNote);
+      renderNotesList();
+      
+      // Focus title input
+      setTimeout(() => noteTitle.focus(), 100);
+      showStatus('New note created');
+    }
+
+    function selectNote(note) {
+      currentNote = note;
+      noteTitle.value = note.title;
+      noteContent.value = note.content;
+      renderNoteTags(note.tags);
+      renderNotesList(); // Re-render to update active state
+      
+      // Clear any pending auto-save
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = null;
+      }
+    }
+
+    function saveCurrentNote() {
+      if (!currentNote) return;
+      
+      const title = noteTitle.value.trim();
+      const content = noteContent.value.trim();
+      
+      // Don't save empty notes
+      if (!title && !content) {
+        showStatus('Cannot save empty note', 'error');
+        return;
+      }
+      
+      // Extract tags from title and content
+      const allText = title + ' ' + content;
+      const tags = extractTags(allText);
+      
+      // Update note
+      currentNote.title = title || 'Untitled';
+      currentNote.content = content;
+      currentNote.tags = tags;
+      currentNote.updatedAt = Date.now();
+      currentNote.synced = false;
+      
+      // Move to top of list (most recently updated)
+      const index = notes.indexOf(currentNote);
+      if (index > 0) {
+        notes.splice(index, 1);
+        notes.unshift(currentNote);
+      }
+      
+      saveNotesToStorage();
+      renderNoteTags(tags);
+      renderNotesList();
+      
+      // Sync to Firestore if signed in
+      if (userId) {
+        saveNoteToFirestore(currentNote);
+      }
+      
+      showStatus('Saved', 'success');
+    }
+
+    function deleteCurrentNote() {
+      if (!currentNote) return;
+      
+      if (!confirm('Are you sure you want to delete this note?')) {
+        return;
+      }
+      
+      const index = notes.indexOf(currentNote);
+      if (index !== -1) {
+        // Delete from Firestore if signed in
+        if (userId && currentNote.synced) {
+          deleteNoteFromFirestore(currentNote.id);
+        }
+        
+        notes.splice(index, 1);
+        saveNotesToStorage();
+        
+        // Select another note or create new one
+        if (notes.length > 0) {
+          const nextNote = notes[Math.min(index, notes.length - 1)];
+          selectNote(nextNote);
+        } else {
+          createNewNote();
+        }
+        
+        renderNotesList();
+        showStatus('Note deleted');
+      }
+    }
+
+    function renderNotesList() {
+      let filteredNotes = notes;
+      
+      // Apply search filter
+      if (notesFilter.trim()) {
+        const query = notesFilter.toLowerCase();
+        const isTagSearch = query.startsWith('#');
+        
+        if (isTagSearch) {
+          const tagQuery = query.slice(1);
+          filteredNotes = notes.filter(note => 
+            note.tags.some(tag => tag.includes(tagQuery))
+          );
+        } else {
+          filteredNotes = notes.filter(note => 
+            note.title.toLowerCase().includes(query) ||
+            note.content.toLowerCase().includes(query) ||
+            note.tags.some(tag => tag.includes(query))
+          );
+        }
+      }
+      
+      // Update stats
+      notesCount.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+      if (notesFilter.trim() && filteredNotes.length !== notes.length) {
+        filteredCount.textContent = `(${filteredNotes.length} shown)`;
+      } else {
+        filteredCount.textContent = '';
+      }
+      
+      // Render list
+      if (filteredNotes.length === 0) {
+        notesList.innerHTML = '<div class="empty-notes">No notes match your search.</div>';
+        return;
+      }
+      
+      const html = filteredNotes.map(note => {
+        const isActive = currentNote && currentNote.id === note.id;
+        const snippet = note.content.slice(0, 100);
+        const timeAgo = formatTimeAgo(note.updatedAt);
+        
+        return `
+          <div class="note-item ${isActive ? 'active' : ''}" data-note-id="${note.id}">
+            <div class="note-item-title">${escapeHtml(note.title || 'Untitled')}</div>
+            <div class="note-item-snippet">${escapeHtml(snippet)}</div>
+            <div class="note-item-meta">
+              <div class="note-item-tags">
+                ${note.tags.slice(0, 3).map(tag => `<span class="note-tag">#${tag}</span>`).join('')}
+                ${note.tags.length > 3 ? `<span class="note-tag">+${note.tags.length - 3}</span>` : ''}
+              </div>
+              <span>${timeAgo}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      notesList.innerHTML = html;
+      
+      // Add click handlers
+      notesList.querySelectorAll('.note-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const noteId = item.dataset.noteId;
+          const note = notes.find(n => n.id === noteId);
+          if (note) {
+            selectNote(note);
+          }
+        });
+      });
+    }
+
+    function renderNoteTags(tags) {
+      if (tags.length === 0) {
+        noteTags.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">No tags</span>';
+      } else {
+        noteTags.innerHTML = tags.map(tag => `<span class="note-tag">#${tag}</span>`).join('');
+      }
+    }
+
+    function formatTimeAgo(timestamp) {
+      const now = Date.now();
+      const diff = now - timestamp;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      
+      if (minutes < 1) return 'now';
+      if (minutes < 60) return `${minutes}m ago`;
+      if (hours < 24) return `${hours}h ago`;
+      if (days < 7) return `${days}d ago`;
+      return new Date(timestamp).toLocaleDateString();
+    }
+
+    function showStatus(message, type = '') {
+      noteStatus.textContent = message;
+      noteStatus.className = `note-status ${type}`;
+      
+      if (message) {
+        setTimeout(() => {
+          noteStatus.textContent = '';
+          noteStatus.className = 'note-status';
+        }, 3000);
+      }
+    }
+
+    function scheduleAutoSave() {
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      
+      autoSaveTimeout = setTimeout(() => {
+        if (currentNote) {
+          saveCurrentNote();
+        }
+      }, 800);
+    }
+
+    // Firestore integration for notes
+    function setupNotesSync() {
+      if (!userId) return;
+      
+      if (notesUnsubscribe) {
+        notesUnsubscribe();
+      }
+      
+      const notesCollection = collection(db, 'users', userId, 'notes');
+      const notesQuery = query(notesCollection, orderBy('updatedAt', 'desc'));
+      
+      notesUnsubscribe = onSnapshot(notesQuery, (snapshot) => {
+        const remoteNotes = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          remoteNotes.push({
+            id: doc.id,
+            title: data.title || '',
+            content: data.content || '',
+            tags: data.tags || [],
+            createdAt: data.createdAt?.toMillis?.() || 0,
+            updatedAt: data.updatedAt?.toMillis?.() || 0,
+            synced: true
+          });
+        });
+        
+        // Merge with local notes
+        mergeNotesWithRemote(remoteNotes);
+        renderNotesList();
+      }, (error) => {
+        console.error('Notes sync error:', error);
+        showStatus('Sync error', 'error');
+      });
+      
+      // Upload unsynced local notes
+      uploadUnsyncedNotes();
+    }
+
+    function mergeNotesWithRemote(remoteNotes) {
+      const merged = new Map();
+      
+      // Add remote notes first
+      remoteNotes.forEach(note => merged.set(note.id, note));
+      
+      // Add local notes, keeping local if newer
+      notes.forEach(localNote => {
+        const remoteNote = merged.get(localNote.id);
+        if (!remoteNote || localNote.updatedAt > remoteNote.updatedAt) {
+          merged.set(localNote.id, localNote);
+        }
+      });
+      
+      notes = Array.from(merged.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+      saveNotesToStorage();
+    }
+
+    function uploadUnsyncedNotes() {
+      if (!userId) return;
+      
+      const unsyncedNotes = notes.filter(note => !note.synced);
+      unsyncedNotes.forEach(note => {
+        saveNoteToFirestore(note);
+      });
+    }
+
+    async function saveNoteToFirestore(note) {
+      if (!userId) return;
+      
+      try {
+        await setDoc(doc(db, 'users', userId, 'notes', note.id), {
+          title: note.title,
+          content: note.content,
+          tags: note.tags,
+          createdAt: note.createdAt ? new Date(note.createdAt) : serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        
+        note.synced = true;
+        saveNotesToStorage();
+      } catch (error) {
+        console.error('Failed to save note to Firestore:', error);
+        showStatus('Save failed - queued for retry', 'error');
+      }
+    }
+
+    async function deleteNoteFromFirestore(noteId) {
+      if (!userId) return;
+      
+      try {
+        await deleteDoc(doc(db, 'users', userId, 'notes', noteId));
+      } catch (error) {
+        console.error('Failed to delete note from Firestore:', error);
+      }
+    }
+
+    // Event Listeners for Notebook
+    notesSearch.addEventListener('input', (e) => {
+      notesFilter = e.target.value;
+      renderNotesList();
+    });
+
+    noteTitle.addEventListener('input', scheduleAutoSave);
+    noteContent.addEventListener('input', scheduleAutoSave);
+
+    saveNoteBtn.addEventListener('click', saveCurrentNote);
+    newNoteBtn.addEventListener('click', createNewNote);
+    deleteNoteBtn.addEventListener('click', deleteCurrentNote);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Only handle shortcuts when in notebook tab
+      if (!document.getElementById('notebookTab').classList.contains('hidden')) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          saveCurrentNote();
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+          e.preventDefault();
+          createNewNote();
+        }
+      }
+    });
+
+    // ========================
+    // END NOTEBOOK FUNCTIONALITY
+    // ========================
 
     // Auth
     googleSignInBtn.addEventListener('click', async () => {
@@ -363,20 +1089,25 @@ z-index:100;box-shadow:var(--shadow-sm)}
     });
     getRedirectResult(auth).catch(()=>{});
     googleSignOutBtn.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userId = user.uid;
-        syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online';
-        googleSignInBtn.classList.add('hidden'); googleSignOutBtn.classList.remove('hidden');
-        if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
-        googleUserName.textContent = user.displayName || user.email || '';
-        setupFirestoreSync();
-      } else {
-        googleSignInBtn.classList.remove('hidden'); googleSignOutBtn.classList.add('hidden');
-        googleAvatar.classList.add('hidden'); googleAvatar.src = ''; googleUserName.textContent = '';
-        items = []; render();
-      }
-    });
+    // Auth state handling
+    if (firebaseAvailable) {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          userId = user.uid;
+          syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online';
+          googleSignInBtn.classList.add('hidden'); googleSignOutBtn.classList.remove('hidden');
+          if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
+          googleUserName.textContent = user.displayName || user.email || '';
+          setupFirestoreSync();
+          setupNotesSync(); // Setup notebook sync
+        } else {
+          googleSignInBtn.classList.remove('hidden'); googleSignOutBtn.classList.add('hidden');
+          googleAvatar.classList.add('hidden'); googleAvatar.src = ''; googleUserName.textContent = '';
+          items = []; render();
+          if (notesUnsubscribe) { notesUnsubscribe(); notesUnsubscribe = null; } // Cleanup notes sync
+        }
+      });
+    }
 
     // Firestore sync
     function setupFirestoreSync() {
