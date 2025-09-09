@@ -262,8 +262,17 @@ z-index:100;box-shadow:var(--shadow-sm)}
   <div id="notebookTab" class="tab-panel hidden">
     <div class="container">
       <section class="card section">
+        <div class="card-header">
+          <h2 class="card-title">Notebook</h2>
+        </div>
         <div class="card-content">
-          <textarea id="notes" placeholder="Type notes..." style="width:100%;min-height:200px;"></textarea>
+          <div class="form-stack">
+            <textarea id="notes" placeholder="Type notes..." style="width:100%;min-height:200px;"></textarea>
+            <div class="form-row">
+              <button id="saveNoteBtn" class="btn-success flex-1" type="button">Save Note</button>
+              <button id="newNoteBtn" class="btn-ghost flex-1" type="button">New Note</button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -342,6 +351,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
     const notesEl = $('#notes');
+    const saveNoteBtn = $('#saveNoteBtn'), newNoteBtn = $('#newNoteBtn');
     const tabBtns = $$('.tab-btn');
     const tabPanels = $$('.tab-panel');
 
@@ -923,6 +933,22 @@ z-index:100;box-shadow:var(--shadow-sm)}
       if (!('Notification' in window)) { toast('Notifications not supported'); return; }
       if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
       const perm = await Notification.requestPermission(); toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
+    });
+
+    // Notebook functionality
+    saveNoteBtn.addEventListener('click', () => {
+      // Notes are already auto-saved to localStorage, so just show confirmation
+      toast('Note saved');
+    });
+    
+    newNoteBtn.addEventListener('click', () => {
+      if (notesEl.value.trim() && !confirm('Are you sure you want to start a new note? This will clear the current content.')) {
+        return;
+      }
+      notesEl.value = '';
+      localStorage.setItem('mobileNotes', '');
+      notesEl.focus();
+      toast('New note started');
     });
 
     // PWA scaffold
