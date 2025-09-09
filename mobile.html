@@ -28,7 +28,8 @@
          font-size:var(--text-base);line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
          -webkit-tap-highlight-color:transparent;}
     .container{max-width:520px;margin:0 auto;padding:0 var(--space-3)}
-    header{position:sticky;top:0;background:rgba(11,18,32,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
+    header{position:sticky;top:0;background:rgba(11,18,32,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+z-index:100;box-shadow:var(--shadow-sm)}
     .header-content{padding:var(--space-3) 0}
     .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)}
     h1{font-size:var(--text-2xl);font-weight:700;margin:0;letter-spacing:-.025em;background:linear-gradient(135deg,var(--text-primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -47,6 +48,9 @@
     .btn-ghost{background:var(--bg-secondary);color:var(--text-secondary);border-color:var(--border)}
     .btn-ghost:hover,.btn-ghost:focus{background:var(--bg-tertiary);color:var(--text-primary);border-color:var(--border-light)}
     .btn-compact{padding:var(--space-2) var(--space-3);min-height:36px;font-size:var(--text-xs)}
+    .tabs{display:flex;border-bottom:1px solid var(--border);}
+    .tab-btn{flex:1;background:var(--bg-secondary);color:var(--text-secondary);border:0;border-bottom:2px solid transparent;padding:var(--space-3);font-weight:600}
+    .tab-btn.active{color:var(--text-primary);background:var(--bg-tertiary);border-bottom-color:var(--accent)}
     .main-content{padding:var(--space-4) 0}
     .section{margin-bottom:var(--space-6)}
     .card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
@@ -96,7 +100,7 @@
     .summary-pills { display:flex; gap: var(--space-2); align-items:center; }
     .pill { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); background:var(--bg-tertiary); border-radius: var(--radius-sm); }
     .pill .count { font-weight:700; font-size: 18px; line-height: 1; }
-    .filters { display:flex; gap: var(--space-2); align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .filters { display:flex; gap: var(--space-2); alignments:center; flex-wrap:wrap; justify-content:flex-end; }
     .filter-buttons { display:flex; gap: var(--space-2); }
     .filter-buttons .btn-ghost.active { outline:2px solid rgba(56,189,248,.35); outline-offset:0; }
     .sort-control select { min-width: 120px; }
@@ -155,8 +159,13 @@
       </div>
     </div>
   </header>
+  <nav class="tabs">
+    <button class="tab-btn active" data-target="tasksTab">Reminders</button>
+    <button class="tab-btn" data-target="notebookTab">Notebook</button>
+  </nav>
 
-  <main class="main-content">
+  <div id="tasksTab" class="tab-panel">
+    <main class="main-content">
     <div class="container">
       <!-- Create Reminder Card -->
       <section class="card section">
@@ -248,6 +257,17 @@
       </section>
     </div>
   </main>
+  </div>
+
+  <div id="notebookTab" class="tab-panel hidden">
+    <div class="container">
+      <section class="card section">
+        <div class="card-content">
+          <textarea id="notes" placeholder="Type notes..." style="width:100%;min-height:200px;"></textarea>
+        </div>
+      </section>
+    </div>
+  </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
@@ -321,6 +341,20 @@
     const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
+    const notesEl = $('#notes');
+    const tabBtns = $$('.tab-btn');
+    const tabPanels = $$('.tab-panel');
+
+    notesEl.value = localStorage.getItem('mobileNotes') || '';
+    notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
+
+    tabBtns.forEach(btn => btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanels.forEach(p => p.classList.add('hidden'));
+      btn.classList.add('active');
+      const target = btn.getAttribute('data-target');
+      document.getElementById(target).classList.remove('hidden');
+    }));
 
     // Auth
     googleSignInBtn.addEventListener('click', async () => {
@@ -397,17 +431,16 @@
     function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
     function toISODatePart(d){ return formatDateLocal(d); }
     function todayISO(){ const now = new Date(); return formatDateLocal(now); }
-    function startOfWeek(dateObj){ const d = new Date(dateObj); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); d.setHours(0,0,0,0); return d; }
+    function startOfWeek(dateObj){ const d = new Date(dateObj); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day);d.setHours(0,0,0,0); return d; }
     function endOfWeek(dateObj){ const s = startOfWeek(dateObj); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
     function priorityWeight(p){ return p==='High'?3 : p==='Medium'?2 : 1; }
     function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
     function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
     function fmtTime(d){ return timeFmt.format(d); }
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[c])); }
+    function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' }[c])); }
     function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
-    
     function parseQuickWhen(text) {
       text = String(text || '').toLowerCase();
 
@@ -505,7 +538,6 @@
         const targetDate = getThisDayOfWeek(6); // Saturday
         when.date = formatDateLocal(targetDate);
       }
-      // Detect "next weekend"
       else if (/\bnext\s+weekend\b/.test(text)) {
         const targetDate = getNextDayOfWeek(6); // Saturday
         when.date = formatDateLocal(targetDate);
@@ -535,12 +567,12 @@
         const first = parseInt(match[1], 10);
         const second = parseInt(match[2], 10);
         let year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
-        
+
         // Handle 2-digit years
         if (year < 100) {
           year += year < 50 ? 2000 : 1900;
         }
-        
+
         // Assume DD/MM format (common in AU)
         if (first <= 12 && second <= 12) {
           // If both could be month or day, prefer DD/MM format
@@ -594,7 +626,6 @@
 
       return when;
     }
-
 
 
     function isoToLocalDate(iso){
@@ -685,6 +716,7 @@
         }
         return true;
       });
+
       rows.sort((a,b)=>{
         if (sortKey==='time') return (+new Date(a.due||0)) - (+new Date(b.due||0));
         if (sortKey==='priority') return priorityWeight(b.priority) - priorityWeight(a.priority);
@@ -725,7 +757,7 @@
     // Menu toggle
     function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
     function openMenu(){ moreBtn?.setAttribute('aria-expanded','true'); moreMenu?.classList.remove('hidden'); }
-    moreBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true'; open ? closeMenu() : openMenu(); });
+    moreBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true';open ? closeMenu() : openMenu(); });
     document.addEventListener('click', (e)=>{ if (!moreMenu?.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
 
@@ -765,7 +797,7 @@
       title.value = ''; time.value = '';
     });
     title.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
-    
+
     // Add real-time date feedback
     function updateDateFeedback() {
       const text = title.value.trim();
@@ -773,23 +805,23 @@
         dateFeedback.style.display = 'none';
         return;
       }
-      
+
       try {
         const parsed = parseQuickWhen(text);
         const today = todayISO();
-        
+
         if (parsed.date !== today || parsed.time) {
           let feedback = '';
-          
+
           if (parsed.date !== today) {
             const dateObj = new Date(parsed.date + 'T00:00:00');
             feedback += `📅 ${fmtDayDate(parsed.date)}`;
           }
-          
+
           if (parsed.time) {
             feedback += `${feedback ? ' ' : ''}🕐 ${parsed.time}`;
           }
-          
+
           if (feedback) {
             dateFeedback.textContent = `Parsed: ${feedback}`;
             dateFeedback.style.display = 'block';
@@ -803,7 +835,7 @@
         dateFeedback.style.display = 'none';
       }
     }
-    
+
     title.addEventListener('input', debounce(updateDateFeedback, 300));
     cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); });
     window.addEventListener('load', ()=> title.focus());
