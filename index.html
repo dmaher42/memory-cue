@@ -563,6 +563,7 @@
               <div class="form-group flex-1">
                 <label class="sr-only" for="title">Reminder</label>
                 <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
+                <div id="dateFeedback" style="margin-top: 4px; font-size: 12px; color: var(--text-muted); display: none;"></div>
               </div>
               <div class="form-group">
                 <label class="sr-only" for="date">Date</label>
@@ -687,6 +688,7 @@
     // DOM elements
     const q = $('#q');
     const title = $('#title');
+    const dateFeedback = $('#dateFeedback');
     const date = $('#date');
     const time = $('#time');
     const priority = $('#priority');
@@ -914,6 +916,8 @@
       }
     }
 
+    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+    
     function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
     function toISODatePart(d) { return d.toISOString().slice(0, 10); }
     function todayISO() {
@@ -937,9 +941,148 @@
     function parseQuickWhen(text) {
       text = text.toLowerCase();
       let when = { date: todayISO(), time: '' };
-      if (/tomorrow/.test(text)) {
+
+      // Helper function to get next occurrence of a day
+      const getNextDayOfWeek = (dayIndex) => {
+        const today = new Date();
+        const currentDay = today.getDay();
+        const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + (daysUntilTarget === 0 ? 7 : daysUntilTarget));
+        return targetDate;
+      };
+
+      // Helper function to get this occurrence of a day
+      const getThisDayOfWeek = (dayIndex) => {
+        const today = new Date();
+        const currentDay = today.getDay();
+        const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + daysUntilTarget);
+        return targetDate;
+      };
+
+      // Day names mapping
+      const dayNames = {
+        'sunday': 0, 'sun': 0,
+        'monday': 1, 'mon': 1,
+        'tuesday': 2, 'tue': 2, 'tues': 2,
+        'wednesday': 3, 'wed': 3,
+        'thursday': 4, 'thu': 4, 'thur': 4, 'thurs': 4,
+        'friday': 5, 'fri': 5,
+        'saturday': 6, 'sat': 6
+      };
+
+      // Month names mapping
+      const monthNames = {
+        'january': 0, 'jan': 0,
+        'february': 1, 'feb': 1,
+        'march': 2, 'mar': 2,
+        'april': 3, 'apr': 3,
+        'may': 4,
+        'june': 5, 'jun': 5,
+        'july': 6, 'jul': 6,
+        'august': 7, 'aug': 7,
+        'september': 8, 'sep': 8, 'sept': 8,
+        'october': 9, 'oct': 9,
+        'november': 10, 'nov': 10,
+        'december': 11, 'dec': 11
+      };
+
+      // Detect "tomorrow"
+      if (/\btomorrow\b/.test(text)) {
         const d = new Date(); d.setDate(d.getDate() + 1); when.date = toISODatePart(d);
       }
+      // Detect "today"
+      else if (/\btoday\b/.test(text)) {
+        when.date = todayISO();
+      }
+      // Detect "next [day]"
+      else if (/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
+        const match = text.match(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
+        const dayIndex = dayNames[match[1]];
+        const targetDate = getNextDayOfWeek(dayIndex);
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect "this [day]"
+      else if (/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
+        const match = text.match(/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
+        const dayIndex = dayNames[match[1]];
+        const targetDate = getThisDayOfWeek(dayIndex);
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect standalone day names (assume next occurrence)
+      else if (/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
+        const match = text.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
+        const dayIndex = dayNames[match[1]];
+        const targetDate = getNextDayOfWeek(dayIndex);
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect "in X days"
+      else if (/\bin\s+(\d+)\s+days?\b/.test(text)) {
+        const match = text.match(/\bin\s+(\d+)\s+days?\b/);
+        const days = parseInt(match[1], 10);
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + days);
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect "this weekend" (assume Saturday)
+      else if (/\bthis\s+weekend\b/.test(text)) {
+        const targetDate = getThisDayOfWeek(6); // Saturday
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect "next weekend"
+      else if (/\bnext\s+weekend\b/.test(text)) {
+        const targetDate = getNextDayOfWeek(6); // Saturday
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect "next week"
+      else if (/\bnext\s+week\b/.test(text)) {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + 7);
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect specific dates like "september 15" or "sep 15"
+      else if (/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(st|nd|rd|th)?\b/.test(text)) {
+        const match = text.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(st|nd|rd|th)?\b/);
+        const monthIndex = monthNames[match[1]];
+        const day = parseInt(match[2], 10);
+        const targetDate = new Date();
+        targetDate.setMonth(monthIndex, day);
+        // If the date has passed this year, assume next year
+        if (targetDate < new Date()) {
+          targetDate.setFullYear(targetDate.getFullYear() + 1);
+        }
+        when.date = toISODatePart(targetDate);
+      }
+      // Detect date formats like "15/09" or "09/15" or "15/09/2025"
+      else if (/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/.test(text)) {
+        const match = text.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+        const first = parseInt(match[1], 10);
+        const second = parseInt(match[2], 10);
+        let year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
+        
+        // Handle 2-digit years
+        if (year < 100) {
+          year += year < 50 ? 2000 : 1900;
+        }
+        
+        // Assume DD/MM format (common in AU)
+        if (first <= 12 && second <= 12) {
+          // If both could be month or day, prefer DD/MM format
+          const targetDate = new Date(year, second - 1, first);
+          when.date = toISODatePart(targetDate);
+        } else if (first <= 31 && second <= 12) {
+          // DD/MM format
+          const targetDate = new Date(year, second - 1, first);
+          when.date = toISODatePart(targetDate);
+        } else if (first <= 12 && second <= 31) {
+          // MM/DD format
+          const targetDate = new Date(year, first - 1, second);
+          when.date = toISODatePart(targetDate);
+        }
+      }
+
       const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
       const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
       if (mHm) { when.time = `${String(mHm[1]).padStart(2, '0')}:${mHm[2]}`; }
@@ -1100,6 +1243,46 @@
       title.value = ''; 
       time.value = '';
     });
+
+    // Add real-time date feedback
+    function updateDateFeedback() {
+      const text = title.value.trim();
+      if (!text) {
+        dateFeedback.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const parsed = parseQuickWhen(text);
+        const today = todayISO();
+        
+        if (parsed.date !== today || parsed.time) {
+          let feedback = '';
+          
+          if (parsed.date !== today) {
+            const dateObj = new Date(parsed.date + 'T00:00:00');
+            feedback += `📅 ${fmtDayDate(parsed.date)}`;
+          }
+          
+          if (parsed.time) {
+            feedback += `${feedback ? ' ' : ''}🕐 ${parsed.time}`;
+          }
+          
+          if (feedback) {
+            dateFeedback.textContent = `Parsed: ${feedback}`;
+            dateFeedback.style.display = 'block';
+          } else {
+            dateFeedback.style.display = 'none';
+          }
+        } else {
+          dateFeedback.style.display = 'none';
+        }
+      } catch (e) {
+        dateFeedback.style.display = 'none';
+      }
+    }
+    
+    title.addEventListener('input', debounce(updateDateFeedback, 300));
 
     addQuickBtn.addEventListener('click', () => {
       if (!title.value.trim()) {
