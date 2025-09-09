@@ -498,6 +498,110 @@
       margin-top: var(--space-8);
     }
 
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      position: relative;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-tertiary);
+    }
+
+    .modal-title {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin: 0;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      padding: var(--space-1);
+      font-size: var(--text-xl);
+      line-height: 1;
+      min-height: auto;
+      min-width: auto;
+      width: 32px;
+      height: 32px;
+    }
+
+    .modal-body {
+      padding: var(--space-4);
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-top: 1px solid var(--border);
+      background: var(--bg-tertiary);
+    }
+
+    .modal-footer button {
+      flex: 1;
+    }
+
+    /* Textarea specific styles */
+    textarea {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: var(--space-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: all 0.2s ease;
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+      font-size: var(--text-sm);
+      line-height: 1.4;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1);
+    }
+
+    textarea::placeholder {
+      color: var(--text-muted);
+    }
+
     /* Utility Classes */
     .hidden { 
       display: none; 
@@ -686,6 +790,52 @@
     </div>
   </main>
 
+  <!-- Edit Task Modal -->
+  <div id="editModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Reminder</h3>
+        <button id="closeModal" class="btn-ghost modal-close" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="sr-only" for="editTitle">Reminder</label>
+            <input id="editTitle" placeholder="e.g., Pick up dog at 6pm #home" />
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="sr-only" for="editDate">Date</label>
+              <input id="editDate" type="date" />
+            </div>
+            <div class="form-group flex-1">
+              <label class="sr-only" for="editTime">Time</label>
+              <input id="editTime" type="time" />
+            </div>
+            <div class="form-group">
+              <select id="editPriority">
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="sr-only" for="editNotes">Notes</label>
+            <textarea id="editNotes" placeholder="Additional notes..." rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelEdit" class="btn-ghost" type="button">Cancel</button>
+        <button id="saveEdit" class="btn-success" type="button">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="container">
       Mobile optimized. Voice works best in Chrome. Multi-device sync via Firebase + Calendar sync via Google Apps Script.
@@ -752,6 +902,19 @@
     const syncUrlInput = $('#syncUrl');
     const saveSettings = $('#saveSettings');
     const testSync = $('#testSync');
+    
+    // Modal elements
+    const editModal = $('#editModal');
+    const closeModal = $('#closeModal');
+    const editTitle = $('#editTitle');
+    const editDate = $('#editDate');
+    const editTime = $('#editTime');
+    const editPriority = $('#editPriority');
+    const editNotes = $('#editNotes');
+    const cancelEdit = $('#cancelEdit');
+    const saveEdit = $('#saveEdit');
+    
+    let currentEditingItem = null;
 
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
@@ -1023,6 +1186,82 @@
       deleteFromFirebase(id);
     }
 
+    function editItem(id) {
+      const item = items.find(x => x.id === id);
+      if (!item) return;
+      
+      currentEditingItem = item;
+      
+      // Populate modal fields
+      editTitle.value = item.title;
+      editPriority.value = item.priority;
+      editNotes.value = item.notes || '';
+      
+      // Handle date/time
+      if (item.due) {
+        const dueDate = new Date(item.due);
+        editDate.value = dueDate.toISOString().slice(0, 10);
+        editTime.value = dueDate.toTimeString().slice(0, 5);
+      } else {
+        editDate.value = '';
+        editTime.value = '';
+      }
+      
+      // Show modal
+      editModal.classList.remove('hidden');
+      editTitle.focus();
+    }
+
+    function closeEditModal() {
+      editModal.classList.add('hidden');
+      currentEditingItem = null;
+      // Clear form
+      editTitle.value = '';
+      editDate.value = '';
+      editTime.value = '';
+      editPriority.value = 'Medium';
+      editNotes.value = '';
+    }
+
+    function saveEditedItem() {
+      if (!currentEditingItem) return;
+      
+      const titleText = editTitle.value.trim();
+      if (!titleText) {
+        toast('Title is required');
+        editTitle.focus();
+        return;
+      }
+      
+      // Update item properties
+      currentEditingItem.title = titleText;
+      currentEditingItem.priority = editPriority.value;
+      currentEditingItem.notes = editNotes.value.trim();
+      currentEditingItem.updatedAt = Date.now();
+      
+      // Handle due date/time
+      if (editDate.value || editTime.value) {
+        const d = editDate.value || todayISO();
+        const tm = editTime.value || '09:00';
+        currentEditingItem.due = new Date(`${d}T${tm}:00`).toISOString();
+      } else {
+        // Check if title contains time info
+        const p = parseQuickWhen(titleText);
+        if (p.time) {
+          currentEditingItem.due = new Date(`${p.date}T${p.time}:00`).toISOString();
+        } else {
+          currentEditingItem.due = null;
+        }
+      }
+      
+      // Update UI and sync to Firebase
+      render();
+      saveToFirebase(currentEditingItem);
+      
+      closeEditModal();
+      toast('Reminder updated');
+    }
+
     function render() {
       const query = q.value.trim().toLowerCase();
       const now = new Date();
@@ -1092,10 +1331,12 @@
             </div>
           </div>
           <div class="task-actions">
+            <button class="btn-ghost" data-edit type="button">Edit</button>
             <button class="btn-ghost" data-del type="button">Del</button>
           </div>`;
         
         div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
+        div.querySelector('[data-edit]').addEventListener('click', () => editItem(r.id));
         div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
         list.appendChild(div);
       });
@@ -1238,6 +1479,25 @@
         toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error');
       } catch (e) { 
         toast('Calendar sync failed (check URL & deploy)'); 
+      }
+    });
+
+    // Modal event listeners
+    closeModal.addEventListener('click', closeEditModal);
+    cancelEdit.addEventListener('click', closeEditModal);
+    saveEdit.addEventListener('click', saveEditedItem);
+    
+    // Close modal when clicking backdrop
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal || e.target.classList.contains('modal-backdrop')) {
+        closeEditModal();
+      }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !editModal.classList.contains('hidden')) {
+        closeEditModal();
       }
     });
 
