@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Memory Cue (Mobile)</title>
+  <title>Memory Cue (Mobile) — Inline Counters</title>
   <meta name="theme-color" content="#0b1220" />
-  <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
     :root{
@@ -17,7 +16,7 @@
       --border:#334155; --border-light:#475569;
       --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
       --text-xs:11px; --text-sm:13px; --text-base:15px; --text-lg:17px; --text-xl:19px; --text-2xl:22px;
-      --radius-sm:6px; --radius:8px; --radius-md:12px; --radius-lg:14px;
+      --radius-sm:8px; --radius:10px; --radius-md:12px; --radius-lg:14px;
       --touch-target:44px; --button-height:42px;
       --shadow-sm:0 1px 2px 0 rgb(0 0 0 / 0.05);
       --shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -28,7 +27,7 @@
          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
          font-size:var(--text-base);line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
          -webkit-tap-highlight-color:transparent;}
-    .container{max-width:480px;margin:0 auto;padding:0 var(--space-3)}
+    .container{max-width:520px;margin:0 auto;padding:0 var(--space-3)}
     header{position:sticky;top:0;background:rgba(11,18,32,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
     .header-content{padding:var(--space-3) 0}
     .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)}
@@ -38,7 +37,7 @@
     input,select,textarea{background:var(--bg-secondary);color:var(--text-primary);padding:var(--space-3);min-height:var(--button-height);box-shadow:var(--shadow-sm)}
     input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.1)}
     input::placeholder,textarea::placeholder{color:var(--text-muted)}
-    .search-input{flex:1;min-width:140px}
+    .search-input{flex:1;min-width:160px}
     button{cursor:pointer;font-weight:500;padding:var(--space-3);min-height:var(--touch-target);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1);white-space:nowrap;border:1px solid transparent;transition:.2s all;user-select:none;-webkit-user-select:none;touch-action:manipulation}
     button:active{transform:scale(.98)}
     .btn-primary{background:var(--accent);color:var(--bg-primary);border-color:var(--accent);font-weight:600}
@@ -64,7 +63,7 @@
     .task-item:active{transform:scale(.99)}
     .task-item.completed .task-title{text-decoration:line-through;color:var(--text-muted)}
     .task-content{min-width:0;padding-top:2px}
-    .task-title{font-size:var(--text-base);font-weight:500;margin:0 0 var(--space-1);color:var(--text-primary);line-height:1.3;word-wrap:break-word}
+    .task-title{font-size:var(--text-base);font-weight:500;margin:0 0 var(--space-1);color:var(--text-primary)}
     .task-meta{display:flex;flex-direction:column;gap:var(--space-1);font-size:var(--text-xs);color:var(--text-muted)}
     .task-meta-row{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}
     .priority-badge{padding:2px var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:500;border:1px solid transparent;flex-shrink:0}
@@ -80,24 +79,6 @@
     .auth-info{font-size:var(--text-xs);color:var(--text-muted);display:flex;align-items:center;gap:var(--space-1)}
     .status-message{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-2)}
     .footer{text-align:center;padding:var(--space-6) 0;color:var(--text-muted);font-size:var(--text-xs);border-top:1px solid var(--border);margin-top:var(--space-8)}
-    .modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:var(--space-4)}
-    .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
-    .modal-content{position:relative;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);width:100%;max-width:400px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4);border-bottom:1px solid var(--border);background:var(--bg-tertiary)}
-    .modal-title{font-size:var(--text-lg);font-weight:600;margin:0;color:var(--text-primary)}
-    .modal-close{padding:var(--space-1);font-size:var(--text-xl);line-height:1;min-height:auto;min-width:auto;width:32px;height:32px}
-    .modal-body{padding:var(--space-4)}
-    .modal-footer{display:flex;gap:var(--space-3);padding:var(--space-4);border-top:1px solid var(--border);background:var(--bg-tertiary)}
-    .modal-footer button{flex:1}
-    textarea{background:var(--bg-secondary);color:var(--text-primary);padding:var(--space-3);border:1px solid var(--border);border-radius:var(--radius);transition:.2s all;resize:vertical;min-height:80px;font-family:inherit;font-size:var(--text-sm);line-height:1.4}
-    textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.1)}
-    textarea::placeholder{color:var(--text-muted)}
-    .hidden{display:none}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .text-muted{color:var(--text-muted)}
-    @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
-    @media (max-width:400px){ .container{padding:0 var(--space-2)} .header-controls{gap:var(--space-1)} .task-item{padding:var(--space-3);gap:var(--space-2)} .btn-compact{padding:var(--space-1);min-width:60px} }
-    @media (orientation: landscape) and (max-height: 500px){ .header-content{padding:var(--space-2) 0} .main-content{padding:var(--space-3) 0} }
 
     /* Header tools menu */
     .menu-wrap { position: relative; margin-left: auto; }
@@ -106,6 +87,21 @@
     .menu-item { width: 100%; text-align: left; background: transparent; border: 0; padding: 10px 12px; border-radius: var(--radius-sm); font-size: var(--text-sm); color: var(--text-primary); }
     .menu-item:hover, .menu-item:focus { background: var(--bg-tertiary); outline: none; }
     .menu-sep { height: 1px; background: var(--border); margin: 6px 0; }
+
+    /* Inline agenda counters */
+    .panel-header { display:grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items:center; }
+    .summary-pills { display:flex; gap: var(--space-2); align-items:center; }
+    .pill { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); background:var(--bg-tertiary); border-radius: var(--radius-sm); }
+    .pill .count { font-weight:700; font-size: 18px; line-height: 1; }
+    .filters { display:flex; gap: var(--space-2); align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .filter-buttons { display:flex; gap: var(--space-2); }
+    .filter-buttons .btn-ghost.active { outline:2px solid rgba(56,189,248,.35); outline-offset:0; }
+    .sort-control select { min-width: 120px; }
+
+    @media (max-width: 430px){
+      .panel-header { grid-template-columns: 1fr; gap: var(--space-2); }
+      .filters { justify-content: flex-start; }
+    }
   </style>
 </head>
 <body>
@@ -146,15 +142,14 @@
 
   <main class="main-content">
     <div class="container">
+      <!-- Create Reminder Card -->
       <section class="card section">
-        <div class="card-header">
-          <h2 class="card-title">Create Reminder</h2>
-        </div>
+        <div class="card-header"><h2 class="card-title">Create Reminder</h2></div>
         <div class="card-content">
           <div class="form-stack">
             <div class="form-group">
               <label class="sr-only" for="title">Reminder</label>
-              <input id="title" placeholder="e.g., Pick up dog at 6pm #home" aria-label="Reminder title" />
+              <input id="title" placeholder="e.g., Email parents about camp #admin" aria-label="Reminder title" />
             </div>
             <div class="form-row">
               <div class="form-group flex-1">
@@ -168,10 +163,29 @@
               <div class="form-group">
                 <label class="sr-only" for="priority">Priority</label>
                 <select id="priority" aria-label="Priority">
-                  <option>High</option>
-                  <option selected>Medium</option>
-                  <option>Low</option>
+                  <option>High</option><option selected>Medium</option><option>Low</option>
                 </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label class="sr-only" for="repeat">Repeat</label>
+                <select id="repeat" aria-label="Repeat">
+                  <option value="none" selected>Do not repeat</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekdays">Weekdays (Mon–Fri)</option>
+                  <option value="weekly:MO">Weekly (Mon)</option>
+                  <option value="weekly:TU">Weekly (Tue)</option>
+                  <option value="weekly:WE">Weekly (Wed)</option>
+                  <option value="weekly:TH">Weekly (Thu)</option>
+                  <option value="weekly:FR">Weekly (Fri)</option>
+                  <option value="weekly:SA">Weekly (Sat)</option>
+                  <option value="weekly:SU">Weekly (Sun)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="sr-only" for="repeatCount">Repeat for (occurrences)</label>
+                <input id="repeatCount" type="number" min="1" max="365" value="7" aria-label="Occurrences count" />
               </div>
             </div>
             <button id="saveBtn" class="btn-success" type="button">Save Reminder</button>
@@ -180,46 +194,52 @@
         </div>
       </section>
 
+      <!-- Reminders List with inline counters -->
       <section class="card section">
         <div class="card-header">
-          <div class="filter-controls">
-            <div class="filter-buttons">
-              <button class="btn-ghost active" data-filter="today" type="button">Today</button>
-              <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
-              <button class="btn-ghost" data-filter="all" type="button">All</button>
-              <button class="btn-ghost" data-filter="done" type="button">Done</button>
+          <div class="panel-header">
+            <div class="summary-pills">
+              <div class="pill" title="Tasks due today">
+                <span>Today</span>
+                <span class="count" id="inlineTodayCount">0</span>
+              </div>
+              <div class="pill" title="Tasks due this week">
+                <span>This Week</span>
+                <span class="count" id="inlineWeekCount">0</span>
+              </div>
             </div>
-            <div class="sort-control">
-              <label class="sr-only" for="sort">Sort</label>
-              <select id="sort">
-                <option value="smart">Smart sort</option>
-                <option value="time">Time</option>
-                <option value="priority">Priority</option>
-              </select>
+            <div class="filters">
+              <div class="filter-buttons">
+                <button class="btn-ghost active" data-filter="today" type="button">Today</button>
+                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
+                <button class="btn-ghost" data-filter="all" type="button">All</button>
+                <button class="btn-ghost" data-filter="done" type="button">Done</button>
+              </div>
+              <div class="sort-control">
+                <label class="sr-only" for="sort">Sort</label>
+                <select id="sort">
+                  <option value="smart">Smart sort</option>
+                  <option value="time">Time</option>
+                  <option value="priority">Priority</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
         <div class="card-content">
-          <h3 class="section-subtitle">Reminders</h3>
           <div id="list" class="task-list" aria-live="polite">
             <div class="text-muted">Loading...</div>
           </div>
         </div>
       </section>
 
+      <!-- Settings -->
       <section class="card section hidden" id="settingsSection">
-        <div class="card-header">
-          <h2 class="card-title">Calendar Sync Settings</h2>
-        </div>
+        <div class="card-header"><h2 class="card-title">Calendar Sync Settings</h2></div>
         <div class="card-content">
           <div class="form-stack">
-            <div class="form-group">
-              <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" />
-            </div>
-            <div class="form-row">
-              <button id="saveSettings" class="btn-success flex-1" type="button">Save</button>
-              <button id="testSync" class="btn-ghost flex-1" type="button">Test</button>
-            </div>
+            <div class="form-group"><input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" /></div>
+            <div class="form-row"><button id="saveSettings" class="btn-success flex-1" type="button">Save</button><button id="testSync" class="btn-ghost flex-1" type="button">Test</button></div>
           </div>
           <div class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-xs);">
             <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
@@ -230,61 +250,12 @@
     </div>
   </main>
 
-  <div id="editModal" class="modal hidden" aria-hidden="true" role="dialog" aria-labelledby="editModalTitle">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title" id="editModalTitle">Edit Reminder</h3>
-        <button id="closeModal" class="btn-ghost modal-close" type="button" aria-label="Close">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-stack">
-          <div class="form-group">
-            <label class="sr-only" for="editTitle">Reminder</label>
-            <input id="editTitle" placeholder="e.g., Pick up dog at 6pm #home" aria-label="Edit reminder title" />
-          </div>
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label class="sr-only" for="editDate">Date</label>
-              <input id="editDate" type="date" aria-label="Edit due date" />
-            </div>
-            <div class="form-group flex-1">
-              <label class="sr-only" for="editTime">Time</label>
-              <input id="editTime" type="time" aria-label="Edit due time" />
-            </div>
-            <div class="form-group">
-              <label class="sr-only" for="editPriority">Priority</label>
-              <select id="editPriority" aria-label="Edit priority">
-                <option>High</option>
-                <option>Medium</option>
-                <option>Low</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="sr-only" for="editNotes">Notes</label>
-            <textarea id="editNotes" placeholder="Additional notes..." rows="3" aria-label="Edit notes"></textarea>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="cancelEdit" class="btn-ghost" type="button">Cancel</button>
-        <button id="saveEdit" class="btn-success" type="button">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <footer class="footer">
-    <div class="container">
-      Mobile optimized. Voice works best in Chrome. Multi-device sync via Firebase + Calendar sync via Google Apps Script.
-    </div>
-  </footer>
-
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
     import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
+    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
       authDomain: "memory-cue-app.firebaseapp.com",
@@ -294,12 +265,12 @@
       appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
       measurementId: "G-R0V4M7VCE6"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
     const auth = getAuth(app);
 
+    // State
     let items = [];
     let filter = 'today';
     let sortKey = 'smart';
@@ -307,7 +278,6 @@
     let recog = null;
     let userId = null;
     let unsubscribe = null;
-    let currentUser = null;
 
     const TZ = 'Australia/Adelaide';
     const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
@@ -316,258 +286,168 @@
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-    const q = $('#q');
-    const title = $('#title');
-    const date = $('#date');
-    const time = $('#time');
-    const priority = $('#priority');
-    const saveBtn = $('#saveBtn');
-    const list = $('#list');
-    const statusEl = $('#status');
-    const voiceBtn = $('#voiceBtn');
-    const notifBtn = $('#notifBtn');
-    const addQuickBtn = $('#addQuickBtn');
-    const copyMtlBtn = $('#copyMtlBtn');
-    const importFile = $('#importFile');
-    const exportBtn = $('#exportBtn');
-    const sortSel = $('#sort');
-    const syncStatus = $('#syncStatus');
-    const googleSignInBtn = $('#googleSignInBtn');
-    const googleSignOutBtn = $('#googleSignOutBtn');
-    const googleAvatar = $('#googleAvatar');
-    const googleUserName = $('#googleUserName');
-    const openSettings = $('#openSettings');
-    const settingsSection = $('#settingsSection');
-    const syncUrlInput = $('#syncUrl');
-    const saveSettings = $('#saveSettings');
-    const testSync = $('#testSync');
-    const moreBtn = $('#moreBtn');
-    const moreMenu = $('#moreMenu');
+    // Elements
+    const q = $('#q'), title = $('#title'), date = $('#date'), time = $('#time'), priority = $('#priority'), saveBtn = $('#saveBtn');
+    const repeatSel = $('#repeat'), repeatCount = $('#repeatCount');
+    const list = $('#list'), statusEl = $('#status'), syncStatus = $('#syncStatus');
+    const voiceBtn = $('#voiceBtn'), notifBtn = $('#notifBtn'), addQuickBtn = $('#addQuickBtn');
+    const copyMtlBtn = $('#copyMtlBtn'), importFile = $('#importFile'), exportBtn = $('#exportBtn');
+    const sortSel = $('#sort'), openSettings = $('#openSettings'), settingsSection = $('#settingsSection');
+    const syncUrlInput = $('#syncUrl'), saveSettings = $('#saveSettings'), testSync = $('#testSync');
+    const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
+    const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
+    const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
 
-    const editModal = $('#editModal');
-    const closeModal = $('#closeModal');
-    const editTitle = $('#editTitle');
-    const editDate = $('#editDate');
-    const editTime = $('#editTime');
-    const editPriority = $('#editPriority');
-    const editNotes = $('#editNotes');
-    const cancelEdit = $('#cancelEdit');
-    const saveEdit = $('#saveEdit');
-    let currentEditingItem = null;
-
-    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
-    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
-
+    // Auth
     googleSignInBtn.addEventListener('click', async () => {
       const provider = new GoogleAuthProvider();
-      try { await signInWithPopup(auth, provider); }
-      catch (error) {
-        try { await signInWithRedirect(auth, provider); }
-        catch (e) { toast('Google sign-in failed'); console.error(e); }
-      }
+      try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch (e) { toast('Google sign-in failed'); } }
     });
     getRedirectResult(auth).catch(()=>{});
-
-    googleSignOutBtn.addEventListener('click', async () => {
-      try {
-        await signOut(auth);
-        toast('Signed out');
-        items = [];
-        render();
-      } catch (error) {
-        toast('Sign-out failed');
-        console.error(error);
-      }
-    });
-
+    googleSignOutBtn.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
     onAuthStateChanged(auth, (user) => {
       if (user) {
         userId = user.uid;
-        currentUser = user;
-        syncStatus.textContent = 'Online';
-        syncStatus.className = 'sync-status online';
-        googleSignInBtn.classList.add('hidden');
-        googleSignOutBtn.classList.remove('hidden');
-        if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; }
-        else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
+        syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online';
+        googleSignInBtn.classList.add('hidden'); googleSignOutBtn.classList.remove('hidden');
+        if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
         googleUserName.textContent = user.displayName || user.email || '';
         setupFirestoreSync();
       } else {
-        googleSignInBtn.classList.remove('hidden');
-        googleSignOutBtn.classList.add('hidden');
-        googleAvatar.classList.add('hidden');
-        googleAvatar.src = '';
-        googleUserName.textContent = '';
-        items = [];
-        render();
+        googleSignInBtn.classList.remove('hidden'); googleSignOutBtn.classList.add('hidden');
+        googleAvatar.classList.add('hidden'); googleAvatar.src = ''; googleUserName.textContent = '';
+        items = []; render();
       }
     });
 
+    // Firestore sync
     function setupFirestoreSync() {
-      if (!userId) { items = []; render(); return; }
+      if (!userId) { items=[]; render(); return; }
       if (unsubscribe) unsubscribe();
       const userCollection = collection(db, 'users', userId, 'reminders');
       const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
-
       unsubscribe = onSnapshot(qSnap, (snapshot) => {
         const remoteItems = [];
         snapshot.forEach((d) => {
           const data = d.data();
           remoteItems.push({
             id: d.id,
-            title: data.title,
-            priority: data.priority,
-            notes: data.notes || '',
-            done: !!data.done,
+            title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done,
             due: data.due || null,
             createdAt: data.createdAt?.toMillis?.() || 0,
             updatedAt: data.updatedAt?.toMillis?.() || 0,
+            recur: data.recur || null // keep recurrence shape if you add later
           });
         });
         items = remoteItems;
         render();
       }, (error) => {
         console.error('Firestore sync error:', error);
-        syncStatus.textContent = 'Sync Error';
-        syncStatus.className = 'sync-status error';
+        syncStatus.textContent = 'Sync Error'; syncStatus.className = 'sync-status error';
       });
     }
 
+    // Save/Delete
     async function saveToFirebase(item) {
       if (!userId) return;
       try {
         await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-          title: item.title,
-          priority: item.priority,
-          notes: item.notes,
-          done: item.done,
-          due: item.due,
+          title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
           createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
           updatedAt: serverTimestamp(),
+          recur: item.recur || null
         }, { merge: true });
       } catch (error) {
-        console.error('Save failed:', error);
-        toast('Save queued (offline)');
+        console.error('Save failed:', error); toast('Save queued (offline)');
       }
     }
+    async function deleteFromFirebase(id) { if (!userId) return; try { await deleteDoc(doc(db, 'users', userId, 'reminders', id)); } catch { toast('Delete queued (offline)'); } }
 
-    async function deleteFromFirebase(id) {
-      if (!userId) return;
-      try {
-        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
-      } catch (error) {
-        console.error('Delete failed:', error);
-        toast('Delete queued (offline)');
-      }
-    }
-
+    // Optional: Calendar sync
     async function tryCalendarSync(task) {
-      const url = (localStorage.getItem('syncUrl') || '').trim();
-      if (!url) return;
+      const url = (localStorage.getItem('syncUrl') || '').trim(); if (!url) return;
       const payload = { title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium' };
-      try {
-        await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        toast('Synced to Calendar');
-      } catch (e) { toast('Calendar sync failed (offline?)'); }
+      try { await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); toast('Synced to Calendar'); }
+      catch { /* offline ok */ }
     }
 
+    // Utils
     function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
     function toISODatePart(d){ return d.toISOString().slice(0,10); }
-    function todayISO(){
-      const now = new Date();
-      const adelaideDate = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
-      return toISODatePart(adelaideDate);
-    }
+    function todayISO(){ const now = new Date(); const adl = new Date(now.toLocaleString('en-US',{timeZone:TZ})); return toISODatePart(adl); }
+    function startOfWeek(dateObj){ const d = new Date(dateObj); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); d.setHours(0,0,0,0); return d; }
+    function endOfWeek(dateObj){ const s = startOfWeek(dateObj); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
     function priorityWeight(p){ return p==='High'?3 : p==='Medium'?2 : 1; }
-    function smartCompare(a,b){
-      const pr = priorityWeight(b.priority) - priorityWeight(a.priority); if (pr) return pr;
-      const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt;
-      return (a.updatedAt||0) > (b.updatedAt||0) ? -1 : 1;
-    }
+    function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
     function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
     function fmtTime(d){ return timeFmt.format(d); }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+    function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
+    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
     function parseQuickWhen(text){
       text = text.toLowerCase();
       let when = { date: todayISO(), time: '' };
       if (/tomorrow/.test(text)) { const d = new Date(); d.setDate(d.getDate() + 1); when.date = toISODatePart(d); }
-      const mHm = text.match(/(\d{1,2}):(\d{2})/);
-      const m12 = text.match(/(\d{1,2})\s*(am|pm)/);
+      const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
+      const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
       if (mHm) { when.time = `${String(mHm[1]).padStart(2,'0')}:${mHm[2]}`; }
       else if (m12) { let h = parseInt(m12[1],10)%12; if (m12[2]==='pm') h+=12; when.time = `${String(h).padStart(2,'0')}:00`; }
       return when;
     }
 
+    // Create & basic actions
     function addItem(obj){
       if (!userId) { toast('Sign in to add reminders'); return; }
       const nowMs = Date.now();
-      const item = { id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false, createdAt: nowMs, updatedAt: nowMs, due: obj.due || null };
-      items = [item, ...items];
-      render();
-      saveToFirebase(item);
+      const item = {
+        id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false,
+        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null, recur: obj.recur || null
+      };
+      items = [item, ...items]; render(); saveToFirebase(item);
       tryCalendarSync(item);
       return item;
     }
-
-    function toggleDone(id){
-      const item = items.find(x=>x.id===id);
-      if (item){ item.done = !item.done; item.updatedAt = Date.now(); render(); saveToFirebase(item); }
-    }
-
+    function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); render(); }
     function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); }
 
-    function editItem(id){
-      const item = items.find(x=>x.id===id); if(!item) return;
-      currentEditingItem = item;
-      editTitle.value = item.title; editPriority.value = item.priority; editNotes.value = item.notes || '';
-      if (item.due){ const dueDate = new Date(item.due); editDate.value = dueDate.toISOString().slice(0,10); editTime.value = dueDate.toTimeString().slice(0,5); }
-      else { editDate.value = ''; editTime.value = ''; }
-      editModal.classList.remove('hidden'); editTitle.focus();
-    }
-    function closeEditModal(){ editModal.classList.add('hidden'); currentEditingItem = null; editTitle.value = ''; editDate.value=''; editTime.value=''; editPriority.value='Medium'; editNotes.value=''; }
-    function saveEditedItem(){
-      if (!currentEditingItem) return;
-      const titleText = editTitle.value.trim(); if(!titleText){ toast('Title is required'); editTitle.focus(); return; }
-      currentEditingItem.title = titleText; currentEditingItem.priority = editPriority.value; currentEditingItem.notes = editNotes.value.trim(); currentEditingItem.updatedAt = Date.now();
-      if (editDate.value || editTime.value){ const d = editDate.value || todayISO(); const tm = editTime.value || '09:00'; currentEditingItem.due = new Date(`${d}T${tm}:00`).toISOString(); }
-      else { const p = parseQuickWhen(titleText); currentEditingItem.due = p.time ? new Date(`${p.date}T${p.time}:00`).toISOString() : null; }
-      render(); saveToFirebase(currentEditingItem); closeEditModal(); toast('Reminder updated');
-    }
-
+    // Rendering
     function render(){
-      const queryStr = q.value.trim().toLowerCase();
+      // Update inline counters first
       const now = new Date();
-      const adelaideNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
-      const todayStart = new Date(adelaideNow); todayStart.setHours(0,0,0,0);
-      const todayEnd   = new Date(adelaideNow); todayEnd.setHours(23,59,59,999);
+      const adlNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+      const t0 = new Date(adlNow); t0.setHours(0,0,0,0);
+      const t1 = new Date(adlNow); t1.setHours(23,59,59,999);
+      const w0 = startOfWeek(adlNow);
+      const w1 = endOfWeek(adlNow);
+      const todays = items.filter(x => x.due && new Date(x.due) >= t0 && new Date(x.due) <= t1 && !x.done);
+      const weeks  = items.filter(x => x.due && new Date(x.due) >= w0 && new Date(x.due) <= w1 && !x.done);
+      inlineTodayCount.textContent = String(todays.length);
+      inlineWeekCount.textContent = String(weeks.length);
 
+      // Now render list
+      const queryStr = q.value.trim().toLowerCase();
       let rows = items.slice();
       if (queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr)); }
-
       rows = rows.filter(r => {
         if (filter==='done') return r.done;
-        if (filter==='overdue') return !r.done && r.due && new Date(r.due) < adelaideNow;
+        if (filter==='overdue') return !r.done && r.due && new Date(r.due) < adlNow;
         if (filter==='today'){
           if (!r.due) return true;
-          const dueDate = new Date(r.due);
-          const dueAdl = new Date(dueDate.toLocaleString('en-US', { timeZone: TZ }));
-          return dueAdl >= todayStart && dueAdl <= todayEnd;
+          const dueAdl = new Date(new Date(r.due).toLocaleString('en-US', { timeZone: TZ }));
+          return dueAdl >= t0 && dueAdl <= t1;
         }
         return true;
       });
-
       rows.sort((a,b)=>{
         if (sortKey==='time') return (+new Date(a.due||0)) - (+new Date(b.due||0));
         if (sortKey==='priority') return priorityWeight(b.priority) - priorityWeight(a.priority);
         return smartCompare(a,b);
       });
-
-      $$('[data-filter]').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-filter')===filter));
-
+      $$('button[data-filter]').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-filter')===filter));
       const frag = document.createDocumentFragment();
       if (rows.length===0){ list.innerHTML = '<div class="text-muted">No reminders found.</div>'; return; }
       list.replaceChildren();
-
       rows.forEach(r => {
         const div = document.createElement('div');
         div.className = 'task-item' + (r.done ? ' completed' : '');
@@ -582,34 +462,26 @@
                 <span>${dueTxt}</span>
                 <span class="priority-badge ${priorityClass}">${r.priority}</span>
               </div>
-              ${r.notes ? `<div class="task-meta-row"><span>${escapeHtml(r.notes)}</span></div>` : ''}
             </div>
           </div>
           <div class="task-actions">
-            <button class="btn-ghost" data-edit type="button">Edit</button>
             <button class="btn-ghost" data-del type="button">Del</button>
           </div>`;
         div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-        div.querySelector('[data-edit]').addEventListener('click', () => editItem(r.id));
         div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
         frag.appendChild(div);
       });
       list.appendChild(frag);
     }
 
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-    function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 3000); }
-    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
     // Menu toggle
-    function closeMenu(){ if(moreBtn) moreBtn.setAttribute('aria-expanded','false'); if(moreMenu) moreMenu.classList.add('hidden'); }
-    function openMenu(){ if(moreBtn) moreBtn.setAttribute('aria-expanded','true'); if(moreMenu) moreMenu.classList.remove('hidden'); }
-    if (moreBtn && moreMenu){
-      moreBtn.addEventListener('click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true'; open ? closeMenu() : openMenu(); });
-      document.addEventListener('click', (e)=>{ if (!moreMenu.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
-      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
-    }
+    function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
+    function openMenu(){ moreBtn?.setAttribute('aria-expanded','true'); moreMenu?.classList.remove('hidden'); }
+    moreBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true'; open ? closeMenu() : openMenu(); });
+    document.addEventListener('click', (e)=>{ if (!moreMenu?.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
+    document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
 
+    // Events
     saveBtn.addEventListener('click', () => {
       const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
       let due = null;
@@ -617,11 +489,10 @@
       else { const p = parseQuickWhen(t); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
       addItem({ title: t, priority: priority.value, due });
       title.value = ''; time.value = '';
-      closeMenu();
     });
     title.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
     window.addEventListener('load', ()=> title.focus());
-    addQuickBtn.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "pick up dog at 6pm"'); return; } saveBtn.click(); });
+    addQuickBtn.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
     q.addEventListener('input', debounce(render, 150));
     sortSel.addEventListener('change', () => { sortKey = sortSel.value; render(); });
     $$('button[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.getAttribute('data-filter'); render(); }));
@@ -637,7 +508,6 @@
       navigator.clipboard.writeText(lines.join('\n\n')).then(() => toast('Copied for Master Task List')).catch(() => toast('Copy failed'));
       closeMenu();
     });
-
     importFile.addEventListener('change', () => {
       const f = importFile.files[0]; if (!f) return;
       const rd = new FileReader();
@@ -651,13 +521,11 @@
       rd.readAsText(f); importFile.value = '';
       closeMenu();
     });
-
     exportBtn.addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url);
       closeMenu();
     });
-
     openSettings.addEventListener('click', () => { if (settingsSection) { settingsSection.classList.remove('hidden'); settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); } closeMenu(); });
     saveSettings.addEventListener('click', () => { const url = syncUrlInput.value.trim(); localStorage.setItem('syncUrl', url); toast('Calendar sync settings saved'); });
     testSync.addEventListener('click', async () => {
@@ -666,12 +534,7 @@
       catch { toast('Calendar sync failed (check URL & deploy)'); }
     });
 
-    closeModal.addEventListener('click', closeEditModal);
-    cancelEdit.addEventListener('click', closeEditModal);
-    saveEdit.addEventListener('click', saveEditedItem);
-    editModal.addEventListener('click', (e) => { if (e.target === editModal || e.target.classList.contains('modal-backdrop')) closeEditModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editModal.classList.contains('hidden')) closeEditModal(); });
-
+    // Voice + Notifications
     try {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SR) {
@@ -687,18 +550,15 @@
       if (!listening) { try { recog.start(); listening = true; voiceBtn.textContent = '👂'; } catch {} }
       else { try { recog.stop(); } catch {} listening = false; voiceBtn.textContent = '🎙️'; }
     });
-
     notifBtn.addEventListener('click', async () => {
       if (!('Notification' in window)) { toast('Notifications not supported'); return; }
       if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
       const perm = await Notification.requestPermission(); toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
     });
 
-    window.addEventListener('online', () => { syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online'; });
-    window.addEventListener('offline', () => { syncStatus.textContent = 'Offline'; syncStatus.className = 'sync-status offline'; });
-
+    // PWA scaffold
     (function setupPWA(){
-      const manifest = { name:'Memory Cue', short_name:'MemoryCue', start_url:'.', display:'standalone', background_color:'#0b1220', theme_color:'#0b1220', icons:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'}] };
+      const manifest = { name:'Memory Cue', short_name:'MemoryCue', start_url:'.', display:'standalone', background_color:'#0b1220', theme_color:'#0b1220' };
       const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       document.getElementById('manifestLink').setAttribute('href', url);
@@ -710,6 +570,7 @@
       }
     })();
 
+    // Initial render
     render();
   </script>
 </body>
