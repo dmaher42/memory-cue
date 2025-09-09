@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
+  <title>T</title>
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
@@ -271,6 +271,24 @@
     const TZ = 'Australia/Adelaide';
     const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
     const dayFmt  = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday:'long', day:'numeric', month:'long' });
+    // --- TZ-safe helpers (Australia/Adelaide) ---
+    const dateOnlyFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' }); // YYYY-MM-DD
+    function formatDateLocal(d){ // returns 'YYYY-MM-DD' in TZ
+      const parts = dateOnlyFmt.formatToParts(d);
+      const y = parts.find(p=>p.type==='year').value;
+      const m = parts.find(p=>p.type==='month').value;
+      const da = parts.find(p=>p.type==='day').value;
+      return `${y}-${m}-${da}`;
+    }
+    function localDateTimeToISO(dstr, tstr){ // build a Date using local wall time, then toISOString()
+      const [Y,M,D] = dstr.split('-').map(n=>parseInt(n,10));
+      const [h,m] = tstr.split(':').map(n=>parseInt(n,10));
+      const dt = new Date();
+      dt.setFullYear(Y, (M||1)-1, D||1);
+      dt.setHours(h||0, m||0, 0, 0);
+      return dt.toISOString();
+    }
+
     const datePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
     const timePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
 
@@ -363,8 +381,8 @@
 
     // Utils
     function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-    function toISODatePart(d){ return d.toISOString().slice(0,10); }
-    function todayISO(){ const now = new Date(); const adl = new Date(now.toLocaleString('en-US',{timeZone:TZ})); return toISODatePart(adl); }
+    function toISODatePart(d){ return formatDateLocal(d); }
+    function todayISO(){ const now = new Date(); return formatDateLocal(now); }
     function startOfWeek(dateObj){ const d = new Date(dateObj); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); d.setHours(0,0,0,0); return d; }
     function endOfWeek(dateObj){ const s = startOfWeek(dateObj); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
     function priorityWeight(p){ return p==='High'?3 : p==='Medium'?2 : 1; }
@@ -375,10 +393,51 @@
     function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
+    
     function parseQuickWhen(text){
-      text = text.toLowerCase();
+      text = String(text || '').toLowerCase();
+      // Default: today, no time
       let when = { date: todayISO(), time: '' };
-      if (/tomorrow/.test(text)) { const d = new Date(); d.setDate(d.getDate() + 1); when.date = toISODatePart(d); }
+
+      // detect 'tomorrow'
+      if (\btomorrow\b.test(text)) {
+        const d = new Date(); d.setDate(d.getDate()+1);
+        when.date = formatDateLocal(d);
+      }
+
+      // hh:mm pattern
+      let m = text.match(/\b(\d{1,2}):(\d{2})\b/);
+      if (m) {
+        const hh = String(parseInt(m[1],10)).padStart(2,'0');
+        const mm = String(parseInt(m[2],10)).padStart(2,'0');
+        when.time = `${hh}:${mm}`;
+        return when;
+      }
+
+      // h am/pm pattern
+      m = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
+      if (m) {
+        let h = parseInt(m[1],10) % 12;
+        if (m[2] === 'pm') h += 12;
+        when.time = `${String(h).padStart(2,'0')}:00`;
+        return when;
+      }
+
+      // compact '630' or '0930' pattern (defaults to morning)
+      m = text.match(/\b(\d{3,4})\b/);
+      if (m) {
+        const digits = m[1];
+        let hh, mm;
+        if (digits.length === 3) { hh = '0' + digits[0]; mm = digits.slice(1); }
+        else { hh = digits.slice(0,2); mm = digits.slice(2); }
+        hh = String(parseInt(hh,10)).padStart(2,'0');
+        mm = String(parseInt(mm,10)).padStart(2,'0');
+        when.time = `${hh}:${mm}`;
+      }
+
+      return when;
+    }
+
       const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
       const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
       if (mHm) { when.time = `${String(mHm[1]).padStart(2,'0')}:${mHm[2]}`; }
@@ -537,7 +596,7 @@
         let due = null;
         if (date.value || time.value) {
           const d = (date.value || todayISO()); const tm = (time.value || '09:00');
-          due = new Date(`${d}T${tm}:00`).toISOString();
+          due = localDateTimeToISO(d, tm);
         } else {
           const p = parseQuickWhen(tNew); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
         }
@@ -548,7 +607,7 @@
 
       const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
       let due = null;
-      if (date.value || time.value) { const d = (date.value || todayISO()); const tm = (time.value || '09:00'); due = new Date(`${d}T${tm}:00`).toISOString(); }
+      if (date.value || time.value) { const d = (date.value || todayISO()); const tm = (time.value || '09:00'); due = localDateTimeToISO(d, tm); }
       else { const p = parseQuickWhen(t); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
       addItem({ title: t, priority: priority.value, due });
       title.value = ''; time.value = '';
