@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Memory Cue (Mobile) — Inline Counters</title>
+  <title>Memory Cue (Mobile) — Inline Counters (Patched Settings)</title>
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
@@ -80,6 +80,9 @@
     .status-message{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-2)}
     .footer{text-align:center;padding:var(--space-6) 0;color:var(--text-muted);font-size:var(--text-xs);border-top:1px solid var(--border);margin-top:var(--space-8)}
 
+    /* Utils */
+    .hidden{display:none !important;}
+
     /* Header tools menu */
     .menu-wrap { position: relative; margin-left: auto; }
     .menu { position: absolute; right: 0; top: calc(100% + 6px); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); min-width: 200px; padding: 6px; z-index: 200; }
@@ -116,7 +119,6 @@
           <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
           <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
           <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
-          <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
           <div class="menu-wrap">
             <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
             <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
@@ -149,7 +151,7 @@
           <div class="form-stack">
             <div class="form-group">
               <label class="sr-only" for="title">Reminder</label>
-              <input id="title" placeholder="e.g., Email parents about camp #admin" aria-label="Reminder title" />
+              <input id="title" placeholder=" " aria-label="Reminder title" />
             </div>
             <div class="form-row">
               <div class="form-group flex-1">
@@ -165,27 +167,6 @@
                 <select id="priority" aria-label="Priority">
                   <option>High</option><option selected>Medium</option><option>Low</option>
                 </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="sr-only" for="repeat">Repeat</label>
-                <select id="repeat" aria-label="Repeat">
-                  <option value="none" selected>Do not repeat</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekdays">Weekdays (Mon–Fri)</option>
-                  <option value="weekly:MO">Weekly (Mon)</option>
-                  <option value="weekly:TU">Weekly (Tue)</option>
-                  <option value="weekly:WE">Weekly (Wed)</option>
-                  <option value="weekly:TH">Weekly (Thu)</option>
-                  <option value="weekly:FR">Weekly (Fri)</option>
-                  <option value="weekly:SA">Weekly (Sat)</option>
-                  <option value="weekly:SU">Weekly (Sun)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="sr-only" for="repeatCount">Repeat for (occurrences)</label>
-                <input id="repeatCount" type="number" min="1" max="365" value="7" aria-label="Occurrences count" />
               </div>
             </div>
             <button id="saveBtn" class="btn-success" type="button">Save Reminder</button>
@@ -210,9 +191,9 @@
             </div>
             <div class="filters">
               <div class="filter-buttons">
+                  <button class="btn-ghost" data-filter="all" type="button">All</button>
                 <button class="btn-ghost active" data-filter="today" type="button">Today</button>
-                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
-                <button class="btn-ghost" data-filter="all" type="button">All</button>
+                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>                
                 <button class="btn-ghost" data-filter="done" type="button">Done</button>
               </div>
               <div class="sort-control">
@@ -228,12 +209,12 @@
         </div>
         <div class="card-content">
           <div id="list" class="task-list" aria-live="polite">
-            <div class="text-muted">Loading...</div>
+            <div class="text-muted">No reminders yet.</div>
           </div>
         </div>
       </section>
 
-      <!-- Settings -->
+      <!-- Settings (hidden by default) -->
       <section class="card section hidden" id="settingsSection">
         <div class="card-header"><h2 class="card-title">Calendar Sync Settings</h2></div>
         <div class="card-content">
@@ -272,7 +253,7 @@
 
     // State
     let items = [];
-    let filter = 'today';
+    let filter = 'all';
     let sortKey = 'smart';
     let listening = false;
     let recog = null;
@@ -288,7 +269,6 @@
 
     // Elements
     const q = $('#q'), title = $('#title'), date = $('#date'), time = $('#time'), priority = $('#priority'), saveBtn = $('#saveBtn');
-    const repeatSel = $('#repeat'), repeatCount = $('#repeatCount');
     const list = $('#list'), statusEl = $('#status'), syncStatus = $('#syncStatus');
     const voiceBtn = $('#voiceBtn'), notifBtn = $('#notifBtn'), addQuickBtn = $('#addQuickBtn');
     const copyMtlBtn = $('#copyMtlBtn'), importFile = $('#importFile'), exportBtn = $('#exportBtn');
@@ -335,8 +315,7 @@
             title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done,
             due: data.due || null,
             createdAt: data.createdAt?.toMillis?.() || 0,
-            updatedAt: data.updatedAt?.toMillis?.() || 0,
-            recur: data.recur || null // keep recurrence shape if you add later
+            updatedAt: data.updatedAt?.toMillis?.() || 0
           });
         });
         items = remoteItems;
@@ -354,8 +333,7 @@
         await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
           title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
           createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          recur: item.recur || null
+          updatedAt: serverTimestamp()
         }, { merge: true });
       } catch (error) {
         console.error('Save failed:', error); toast('Save queued (offline)');
@@ -402,7 +380,7 @@
       const nowMs = Date.now();
       const item = {
         id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false,
-        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null, recur: obj.recur || null
+        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null
       };
       items = [item, ...items]; render(); saveToFirebase(item);
       tryCalendarSync(item);
@@ -481,6 +459,24 @@
     document.addEventListener('click', (e)=>{ if (!moreMenu?.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
 
+    // Settings toggle (robust: class + hidden utility)
+    openSettings.addEventListener('click', () => {
+      const willShow = settingsSection.classList.contains('hidden');
+      settingsSection.classList.toggle('hidden');
+      if (willShow) { settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      closeMenu();
+    });
+    // Force hidden on load
+    document.addEventListener('DOMContentLoaded', () => {
+      settingsSection.classList.add('hidden');
+    });
+    // Hide settings with ESC if open
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !settingsSection.classList.contains('hidden')) {
+        settingsSection.classList.add('hidden');
+      }
+    });
+
     // Events
     saveBtn.addEventListener('click', () => {
       const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
@@ -514,7 +510,7 @@
       rd.onload = () => {
         try {
           const importedItems = JSON.parse(String(rd.result) || '[]').slice(0, 500);
-          importedItems.forEach(item => { item.id = uid(); items = [item, ...items]; saveToFirebase(item); });
+          importedItems.forEach(item => { item.id = (Math.random().toString(36).slice(2)+Date.now().toString(36)); items = [item, ...items]; saveToFirebase(item); });
           render(); toast('Import successful');
         } catch { toast('Invalid JSON'); }
       };
@@ -525,13 +521,6 @@
       const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url);
       closeMenu();
-    });
-    openSettings.addEventListener('click', () => { if (settingsSection) { settingsSection.classList.remove('hidden'); settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); } closeMenu(); });
-    saveSettings.addEventListener('click', () => { const url = syncUrlInput.value.trim(); localStorage.setItem('syncUrl', url); toast('Calendar sync settings saved'); });
-    testSync.addEventListener('click', async () => {
-      const url = syncUrlInput.value.trim(); if (!url) { toast('Enter Google Apps Script URL first'); return; }
-      try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Test from Memory Cue Mobile', dueIso: null, priority: 'Low' }) }); toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error'); }
-      catch { toast('Calendar sync failed (check URL & deploy)'); }
     });
 
     // Voice + Notifications
