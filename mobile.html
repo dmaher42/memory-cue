@@ -8,7 +8,96 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
-    /* ... existing styles ... */
+    :root{
+      --bg-primary:#0b1220; --bg-secondary:#0f172a; --bg-tertiary:#1e293b;
+      --text-primary:#f8fafc; --text-secondary:#cbd5e1; --text-muted:#94a3b8;
+      --accent:#38bdf8; --accent-hover:#0ea5e9;
+      --success:#22c55e; --success-hover:#16a34a;
+      --warning:#f59e0b; --danger:#ef4444;
+      --border:#334155; --border-light:#475569;
+      --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
+      --text-xs:11px; --text-sm:13px; --text-base:15px; --text-lg:17px; --text-xl:19px; --text-2xl:22px;
+      --radius-sm:6px; --radius:8px; --radius-md:12px; --radius-lg:14px;
+      --touch-target:44px; --button-height:42px;
+      --shadow-sm:0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-md:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    *{box-sizing:border-box} html,body{height:100%;margin:0;padding:0}
+    body{background:linear-gradient(180deg,var(--bg-primary) 0%,#0a0f1c 100%);color:var(--text-primary);
+         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+         font-size:var(--text-base);line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+         -webkit-tap-highlight-color:transparent;}
+    .container{max-width:480px;margin:0 auto;padding:0 var(--space-3)}
+    header{position:sticky;top:0;background:rgba(11,18,32,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
+    .header-content{padding:var(--space-3) 0}
+    .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)}
+    h1{font-size:var(--text-2xl);font-weight:700;margin:0;letter-spacing:-.025em;background:linear-gradient(135deg,var(--text-primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .header-controls{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center}
+    input,select,button,textarea{font-family:inherit;font-size:var(--text-sm);line-height:1.4;border:1px solid var(--border);border-radius:var(--radius);transition:.2s all;-webkit-appearance:none;appearance:none}
+    input,select,textarea{background:var(--bg-secondary);color:var(--text-primary);padding:var(--space-3);min-height:var(--button-height);box-shadow:var(--shadow-sm)}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.1)}
+    input::placeholder,textarea::placeholder{color:var(--text-muted)}
+    .search-input{flex:1;min-width:140px}
+    button{cursor:pointer;font-weight:500;padding:var(--space-3);min-height:var(--touch-target);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1);white-space:nowrap;border:1px solid transparent;transition:.2s all;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+    button:active{transform:scale(.98)}
+    .btn-primary{background:var(--accent);color:var(--bg-primary);border-color:var(--accent);font-weight:600}
+    .btn-primary:hover,.btn-primary:focus{background:var(--accent-hover);border-color:var(--accent-hover)}
+    .btn-success{background:var(--success);color:var(--bg-primary);border-color:var(--success);font-weight:600}
+    .btn-success:hover,.btn-success:focus{background:var(--success-hover);border-color:var(--success-hover)}
+    .btn-ghost{background:var(--bg-secondary);color:var(--text-secondary);border-color:var(--border)}
+    .btn-ghost:hover,.btn-ghost:focus{background:var(--bg-tertiary);color:var(--text-primary);border-color:var(--border-light)}
+    .btn-compact{padding:var(--space-2) var(--space-3);min-height:36px;font-size:var(--text-xs)}
+    .main-content{padding:var(--space-4) 0}
+    .section{margin-bottom:var(--space-6)}
+    .card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+    .card-header{padding:var(--space-4);border-bottom:1px solid var(--border);background:var(--bg-tertiary)}
+    .card-content{padding:var(--space-4)}
+    .card-title{font-size:var(--text-lg);font-weight:600;margin:0;color:var(--text-primary)}
+    .section-subtitle{font-size:var(--text-xs);font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:var(--space-4) 0 var(--space-3)}
+    .form-stack{display:flex;flex-direction:column;gap:var(--space-3)}
+    .form-row{display:flex;gap:var(--space-2);align-items:flex-end}
+    .form-group{display:flex;flex-direction:column;gap:var(--space-1)}
+    .form-group.flex-1{flex:1}
+    .task-list{display:flex;flex-direction:column;gap:var(--space-3)}
+    .task-item{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-3);align-items:flex-start;padding:var(--space-4);background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);transition:.2s all}
+    .task-item:active{transform:scale(.99)}
+    .task-item.completed .task-title{text-decoration:line-through;color:var(--text-muted)}
+    .task-content{min-width:0;padding-top:2px}
+    .task-title{font-size:var(--text-base);font-weight:500;margin:0 0 var(--space-1);color:var(--text-primary);line-height:1.3;word-wrap:break-word}
+    .task-meta{display:flex;flex-direction:column;gap:var(--space-1);font-size:var(--text-xs);color:var(--text-muted)}
+    .task-meta-row{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}
+    .priority-badge{padding:2px var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:500;border:1px solid transparent;flex-shrink:0}
+    .priority-high{background:rgba(239,68,68,.1);color:#fca5a5;border-color:rgba(239,68,68,.2)}
+    .priority-medium{background:rgba(245,158,11,.1);color:#fcd34d;border-color:rgba(245,158,11,.2)}
+    .priority-low{background:rgba(34,197,94,.1);color:#86efac;border-color:rgba(34,197,94,.2)}
+    input[type="checkbox"]{width:18px;height:18px;cursor:pointer;margin-top:2px}
+    .sync-status{padding:var(--space-1) var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:600;border:1px solid transparent}
+    .sync-status.online{background:rgba(34,197,94,.1);color:var(--success);border-color:rgba(34,197,94,.2)}
+    .sync-status.offline{background:rgba(245,158,11,.1);color:var(--warning);border-color:rgba(245,158,11,.2)}
+    .sync-status.error{background:rgba(239,68,68,.1);color:var(--danger);border-color:rgba(239,68,68,.2)}
+    .google-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:var(--space-1)}
+    .auth-info{font-size:var(--text-xs);color:var(--text-muted);display:flex;align-items:center;gap:var(--space-1)}
+    .status-message{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-2)}
+    .footer{text-align:center;padding:var(--space-6) 0;color:var(--text-muted);font-size:var(--text-xs);border-top:1px solid var(--border);margin-top:var(--space-8)}
+    .modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:var(--space-4)}
+    .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+    .modal-content{position:relative;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);width:100%;max-width:400px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4);border-bottom:1px solid var(--border);background:var(--bg-tertiary)}
+    .modal-title{font-size:var(--text-lg);font-weight:600;margin:0;color:var(--text-primary)}
+    .modal-close{padding:var(--space-1);font-size:var(--text-xl);line-height:1;min-height:auto;min-width:auto;width:32px;height:32px}
+    .modal-body{padding:var(--space-4)}
+    .modal-footer{display:flex;gap:var(--space-3);padding:var(--space-4);border-top:1px solid var(--border);background:var(--bg-tertiary)}
+    .modal-footer button{flex:1}
+    textarea{background:var(--bg-secondary);color:var(--text-primary);padding:var(--space-3);border:1px solid var(--border);border-radius:var(--radius);transition:.2s all;resize:vertical;min-height:80px;font-family:inherit;font-size:var(--text-sm);line-height:1.4}
+    textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.1)}
+    textarea::placeholder{color:var(--text-muted)}
+    .hidden{display:none}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .text-muted{color:var(--text-muted)}
+    @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+    @media (max-width:400px){ .container{padding:0 var(--space-2)} .header-controls{gap:var(--space-1)} .task-item{padding:var(--space-3);gap:var(--space-2)} .btn-compact{padding:var(--space-1);min-width:60px} }
+    @media (orientation: landscape) and (max-height: 500px){ .header-content{padding:var(--space-2) 0} .main-content{padding:var(--space-3) 0} }
 
     /* Header tools menu */
     .menu-wrap { position: relative; margin-left: auto; }
@@ -29,9 +118,9 @@
         </div>
         <div class="header-controls">
           <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
-          <button id="voiceBtn" class="btn-ghost btn-compact" type="button">🎙️</button>
-          <button id="notifBtn" class="btn-ghost btn-compact" type="button">🔔</button>
-          <button id="addQuickBtn" class="btn-primary btn-compact" type="button">+</button>
+          <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
+          <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
+          <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
           <div class="menu-wrap">
             <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
             <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
@@ -43,13 +132,13 @@
             </div>
           </div>
         </div>
-        <!-- Auth controls -->
         <div class="header-controls" style="margin-top: var(--space-2);">
-          <button id="googleSignInBtn" class="btn-ghost" type="button">Sign in with Google</button>
-          <button id="googleSignOutBtn" class="btn-ghost hidden" type="button">
-            <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" /> Sign out
+          <button id="googleSignInBtn" class="btn-ghost" type="button" aria-label="Sign in with Google">Sign in with Google</button>
+          <button id="googleSignOutBtn" class="btn-ghost hidden" type="button" aria-label="Sign out">
+            <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" />
+            Sign out
           </button>
-          <div id="googleUserName" class="auth-info"></div>
+          <div id="googleUserName" class="auth-info" aria-live="polite"></div>
         </div>
       </div>
     </div>
@@ -57,34 +146,462 @@
 
   <main class="main-content">
     <div class="container">
-      <!-- Create Reminder Card -->
       <section class="card section">
-        <div class="card-header"><h2 class="card-title">Create Reminder</h2></div>
+        <div class="card-header">
+          <h2 class="card-title">Create Reminder</h2>
+        </div>
         <div class="card-content">
           <div class="form-stack">
             <div class="form-group">
               <label class="sr-only" for="title">Reminder</label>
-              <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
+              <input id="title" placeholder="e.g., Pick up dog at 6pm #home" aria-label="Reminder title" />
             </div>
             <div class="form-row">
-              <div class="form-group flex-1"><input id="date" type="date" /></div>
-              <div class="form-group flex-1"><input id="time" type="time" /></div>
-              <div class="form-group"><select id="priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+              <div class="form-group flex-1">
+                <label class="sr-only" for="date">Date</label>
+                <input id="date" type="date" aria-label="Due date" />
+              </div>
+              <div class="form-group flex-1">
+                <label class="sr-only" for="time">Time</label>
+                <input id="time" type="time" aria-label="Due time" />
+              </div>
+              <div class="form-group">
+                <label class="sr-only" for="priority">Priority</label>
+                <select id="priority" aria-label="Priority">
+                  <option>High</option>
+                  <option selected>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
             </div>
             <button id="saveBtn" class="btn-success" type="button">Save Reminder</button>
           </div>
           <div id="status" class="status-message" aria-live="polite"></div>
         </div>
       </section>
-      <!-- other sections unchanged -->
+
+      <section class="card section">
+        <div class="card-header">
+          <div class="filter-controls">
+            <div class="filter-buttons">
+              <button class="btn-ghost active" data-filter="today" type="button">Today</button>
+              <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
+              <button class="btn-ghost" data-filter="all" type="button">All</button>
+              <button class="btn-ghost" data-filter="done" type="button">Done</button>
+            </div>
+            <div class="sort-control">
+              <label class="sr-only" for="sort">Sort</label>
+              <select id="sort">
+                <option value="smart">Smart sort</option>
+                <option value="time">Time</option>
+                <option value="priority">Priority</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card-content">
+          <h3 class="section-subtitle">Reminders</h3>
+          <div id="list" class="task-list" aria-live="polite">
+            <div class="text-muted">Loading...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card section hidden" id="settingsSection">
+        <div class="card-header">
+          <h2 class="card-title">Calendar Sync Settings</h2>
+        </div>
+        <div class="card-content">
+          <div class="form-stack">
+            <div class="form-group">
+              <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" />
+            </div>
+            <div class="form-row">
+              <button id="saveSettings" class="btn-success flex-1" type="button">Save</button>
+              <button id="testSync" class="btn-ghost flex-1" type="button">Test</button>
+            </div>
+          </div>
+          <div class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-xs);">
+            <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
+            set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL.
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
-  <!-- JS unchanged, but add menu toggle logic -->
+  <div id="editModal" class="modal hidden" aria-hidden="true" role="dialog" aria-labelledby="editModalTitle">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="editModalTitle">Edit Reminder</h3>
+        <button id="closeModal" class="btn-ghost modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="sr-only" for="editTitle">Reminder</label>
+            <input id="editTitle" placeholder="e.g., Pick up dog at 6pm #home" aria-label="Edit reminder title" />
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="sr-only" for="editDate">Date</label>
+              <input id="editDate" type="date" aria-label="Edit due date" />
+            </div>
+            <div class="form-group flex-1">
+              <label class="sr-only" for="editTime">Time</label>
+              <input id="editTime" type="time" aria-label="Edit due time" />
+            </div>
+            <div class="form-group">
+              <label class="sr-only" for="editPriority">Priority</label>
+              <select id="editPriority" aria-label="Edit priority">
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="sr-only" for="editNotes">Notes</label>
+            <textarea id="editNotes" placeholder="Additional notes..." rows="3" aria-label="Edit notes"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelEdit" class="btn-ghost" type="button">Cancel</button>
+        <button id="saveEdit" class="btn-success" type="button">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      Mobile optimized. Voice works best in Chrome. Multi-device sync via Firebase + Calendar sync via Google Apps Script.
+    </div>
+  </footer>
+
   <script type="module">
-    // ...existing imports...
-    const moreBtn = document.querySelector('#moreBtn');
-    const moreMenu = document.querySelector('#moreMenu');
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
+      authDomain: "memory-cue-app.firebaseapp.com",
+      projectId: "memory-cue-app",
+      storageBucket: "memory-cue-app.firebasestorage.app",
+      messagingSenderId: "751284466633",
+      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
+      measurementId: "G-R0V4M7VCE6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
+    const auth = getAuth(app);
+
+    let items = [];
+    let filter = 'today';
+    let sortKey = 'smart';
+    let listening = false;
+    let recog = null;
+    let userId = null;
+    let unsubscribe = null;
+    let currentUser = null;
+
+    const TZ = 'Australia/Adelaide';
+    const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
+    const dayFmt  = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday:'long', day:'numeric', month:'long' });
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    const q = $('#q');
+    const title = $('#title');
+    const date = $('#date');
+    const time = $('#time');
+    const priority = $('#priority');
+    const saveBtn = $('#saveBtn');
+    const list = $('#list');
+    const statusEl = $('#status');
+    const voiceBtn = $('#voiceBtn');
+    const notifBtn = $('#notifBtn');
+    const addQuickBtn = $('#addQuickBtn');
+    const copyMtlBtn = $('#copyMtlBtn');
+    const importFile = $('#importFile');
+    const exportBtn = $('#exportBtn');
+    const sortSel = $('#sort');
+    const syncStatus = $('#syncStatus');
+    const googleSignInBtn = $('#googleSignInBtn');
+    const googleSignOutBtn = $('#googleSignOutBtn');
+    const googleAvatar = $('#googleAvatar');
+    const googleUserName = $('#googleUserName');
+    const openSettings = $('#openSettings');
+    const settingsSection = $('#settingsSection');
+    const syncUrlInput = $('#syncUrl');
+    const saveSettings = $('#saveSettings');
+    const testSync = $('#testSync');
+    const moreBtn = $('#moreBtn');
+    const moreMenu = $('#moreMenu');
+
+    const editModal = $('#editModal');
+    const closeModal = $('#closeModal');
+    const editTitle = $('#editTitle');
+    const editDate = $('#editDate');
+    const editTime = $('#editTime');
+    const editPriority = $('#editPriority');
+    const editNotes = $('#editNotes');
+    const cancelEdit = $('#cancelEdit');
+    const saveEdit = $('#saveEdit');
+    let currentEditingItem = null;
+
+    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
+    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
+
+    googleSignInBtn.addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try { await signInWithPopup(auth, provider); }
+      catch (error) {
+        try { await signInWithRedirect(auth, provider); }
+        catch (e) { toast('Google sign-in failed'); console.error(e); }
+      }
+    });
+    getRedirectResult(auth).catch(()=>{});
+
+    googleSignOutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        toast('Signed out');
+        items = [];
+        render();
+      } catch (error) {
+        toast('Sign-out failed');
+        console.error(error);
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userId = user.uid;
+        currentUser = user;
+        syncStatus.textContent = 'Online';
+        syncStatus.className = 'sync-status online';
+        googleSignInBtn.classList.add('hidden');
+        googleSignOutBtn.classList.remove('hidden');
+        if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; }
+        else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
+        googleUserName.textContent = user.displayName || user.email || '';
+        setupFirestoreSync();
+      } else {
+        googleSignInBtn.classList.remove('hidden');
+        googleSignOutBtn.classList.add('hidden');
+        googleAvatar.classList.add('hidden');
+        googleAvatar.src = '';
+        googleUserName.textContent = '';
+        items = [];
+        render();
+      }
+    });
+
+    function setupFirestoreSync() {
+      if (!userId) { items = []; render(); return; }
+      if (unsubscribe) unsubscribe();
+      const userCollection = collection(db, 'users', userId, 'reminders');
+      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
+
+      unsubscribe = onSnapshot(qSnap, (snapshot) => {
+        const remoteItems = [];
+        snapshot.forEach((d) => {
+          const data = d.data();
+          remoteItems.push({
+            id: d.id,
+            title: data.title,
+            priority: data.priority,
+            notes: data.notes || '',
+            done: !!data.done,
+            due: data.due || null,
+            createdAt: data.createdAt?.toMillis?.() || 0,
+            updatedAt: data.updatedAt?.toMillis?.() || 0,
+          });
+        });
+        items = remoteItems;
+        render();
+      }, (error) => {
+        console.error('Firestore sync error:', error);
+        syncStatus.textContent = 'Sync Error';
+        syncStatus.className = 'sync-status error';
+      });
+    }
+
+    async function saveToFirebase(item) {
+      if (!userId) return;
+      try {
+        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
+          title: item.title,
+          priority: item.priority,
+          notes: item.notes,
+          done: item.done,
+          due: item.due,
+          createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } catch (error) {
+        console.error('Save failed:', error);
+        toast('Save queued (offline)');
+      }
+    }
+
+    async function deleteFromFirebase(id) {
+      if (!userId) return;
+      try {
+        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
+      } catch (error) {
+        console.error('Delete failed:', error);
+        toast('Delete queued (offline)');
+      }
+    }
+
+    async function tryCalendarSync(task) {
+      const url = (localStorage.getItem('syncUrl') || '').trim();
+      if (!url) return;
+      const payload = { title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium' };
+      try {
+        await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        toast('Synced to Calendar');
+      } catch (e) { toast('Calendar sync failed (offline?)'); }
+    }
+
+    function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    function toISODatePart(d){ return d.toISOString().slice(0,10); }
+    function todayISO(){
+      const now = new Date();
+      const adelaideDate = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+      return toISODatePart(adelaideDate);
+    }
+    function priorityWeight(p){ return p==='High'?3 : p==='Medium'?2 : 1; }
+    function smartCompare(a,b){
+      const pr = priorityWeight(b.priority) - priorityWeight(a.priority); if (pr) return pr;
+      const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt;
+      return (a.updatedAt||0) > (b.updatedAt||0) ? -1 : 1;
+    }
+    function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
+    function fmtTime(d){ return timeFmt.format(d); }
+
+    function parseQuickWhen(text){
+      text = text.toLowerCase();
+      let when = { date: todayISO(), time: '' };
+      if (/tomorrow/.test(text)) { const d = new Date(); d.setDate(d.getDate() + 1); when.date = toISODatePart(d); }
+      const mHm = text.match(/(\d{1,2}):(\d{2})/);
+      const m12 = text.match(/(\d{1,2})\s*(am|pm)/);
+      if (mHm) { when.time = `${String(mHm[1]).padStart(2,'0')}:${mHm[2]}`; }
+      else if (m12) { let h = parseInt(m12[1],10)%12; if (m12[2]==='pm') h+=12; when.time = `${String(h).padStart(2,'0')}:00`; }
+      return when;
+    }
+
+    function addItem(obj){
+      if (!userId) { toast('Sign in to add reminders'); return; }
+      const nowMs = Date.now();
+      const item = { id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false, createdAt: nowMs, updatedAt: nowMs, due: obj.due || null };
+      items = [item, ...items];
+      render();
+      saveToFirebase(item);
+      tryCalendarSync(item);
+      return item;
+    }
+
+    function toggleDone(id){
+      const item = items.find(x=>x.id===id);
+      if (item){ item.done = !item.done; item.updatedAt = Date.now(); render(); saveToFirebase(item); }
+    }
+
+    function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); }
+
+    function editItem(id){
+      const item = items.find(x=>x.id===id); if(!item) return;
+      currentEditingItem = item;
+      editTitle.value = item.title; editPriority.value = item.priority; editNotes.value = item.notes || '';
+      if (item.due){ const dueDate = new Date(item.due); editDate.value = dueDate.toISOString().slice(0,10); editTime.value = dueDate.toTimeString().slice(0,5); }
+      else { editDate.value = ''; editTime.value = ''; }
+      editModal.classList.remove('hidden'); editTitle.focus();
+    }
+    function closeEditModal(){ editModal.classList.add('hidden'); currentEditingItem = null; editTitle.value = ''; editDate.value=''; editTime.value=''; editPriority.value='Medium'; editNotes.value=''; }
+    function saveEditedItem(){
+      if (!currentEditingItem) return;
+      const titleText = editTitle.value.trim(); if(!titleText){ toast('Title is required'); editTitle.focus(); return; }
+      currentEditingItem.title = titleText; currentEditingItem.priority = editPriority.value; currentEditingItem.notes = editNotes.value.trim(); currentEditingItem.updatedAt = Date.now();
+      if (editDate.value || editTime.value){ const d = editDate.value || todayISO(); const tm = editTime.value || '09:00'; currentEditingItem.due = new Date(`${d}T${tm}:00`).toISOString(); }
+      else { const p = parseQuickWhen(titleText); currentEditingItem.due = p.time ? new Date(`${p.date}T${p.time}:00`).toISOString() : null; }
+      render(); saveToFirebase(currentEditingItem); closeEditModal(); toast('Reminder updated');
+    }
+
+    function render(){
+      const queryStr = q.value.trim().toLowerCase();
+      const now = new Date();
+      const adelaideNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+      const todayStart = new Date(adelaideNow); todayStart.setHours(0,0,0,0);
+      const todayEnd   = new Date(adelaideNow); todayEnd.setHours(23,59,59,999);
+
+      let rows = items.slice();
+      if (queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr)); }
+
+      rows = rows.filter(r => {
+        if (filter==='done') return r.done;
+        if (filter==='overdue') return !r.done && r.due && new Date(r.due) < adelaideNow;
+        if (filter==='today'){
+          if (!r.due) return true;
+          const dueDate = new Date(r.due);
+          const dueAdl = new Date(dueDate.toLocaleString('en-US', { timeZone: TZ }));
+          return dueAdl >= todayStart && dueAdl <= todayEnd;
+        }
+        return true;
+      });
+
+      rows.sort((a,b)=>{
+        if (sortKey==='time') return (+new Date(a.due||0)) - (+new Date(b.due||0));
+        if (sortKey==='priority') return priorityWeight(b.priority) - priorityWeight(a.priority);
+        return smartCompare(a,b);
+      });
+
+      $$('[data-filter]').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-filter')===filter));
+
+      const frag = document.createDocumentFragment();
+      if (rows.length===0){ list.innerHTML = '<div class="text-muted">No reminders found.</div>'; return; }
+      list.replaceChildren();
+
+      rows.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'task-item' + (r.done ? ' completed' : '');
+        const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
+        const priorityClass = `priority-${r.priority.toLowerCase()}`;
+        div.innerHTML = `
+          <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
+          <div class="task-content">
+            <div class="task-title">${escapeHtml(r.title)}</div>
+            <div class="task-meta">
+              <div class="task-meta-row">
+                <span>${dueTxt}</span>
+                <span class="priority-badge ${priorityClass}">${r.priority}</span>
+              </div>
+              ${r.notes ? `<div class="task-meta-row"><span>${escapeHtml(r.notes)}</span></div>` : ''}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button class="btn-ghost" data-edit type="button">Edit</button>
+            <button class="btn-ghost" data-del type="button">Del</button>
+          </div>`;
+        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
+        div.querySelector('[data-edit]').addEventListener('click', () => editItem(r.id));
+        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
+        frag.appendChild(div);
+      });
+      list.appendChild(frag);
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+    function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 3000); }
+    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+    // Menu toggle
     function closeMenu(){ if(moreBtn) moreBtn.setAttribute('aria-expanded','false'); if(moreMenu) moreMenu.classList.add('hidden'); }
     function openMenu(){ if(moreBtn) moreBtn.setAttribute('aria-expanded','true'); if(moreMenu) moreMenu.classList.remove('hidden'); }
     if (moreBtn && moreMenu){
@@ -92,7 +609,108 @@
       document.addEventListener('click', (e)=>{ if (!moreMenu.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
       document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
     }
-    // ...rest of JS...
+
+    saveBtn.addEventListener('click', () => {
+      const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
+      let due = null;
+      if (date.value || time.value) { const d = (date.value || todayISO()); const tm = (time.value || '09:00'); due = new Date(`${d}T${tm}:00`).toISOString(); }
+      else { const p = parseQuickWhen(t); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+      addItem({ title: t, priority: priority.value, due });
+      title.value = ''; time.value = '';
+      closeMenu();
+    });
+    title.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
+    window.addEventListener('load', ()=> title.focus());
+    addQuickBtn.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "pick up dog at 6pm"'); return; } saveBtn.click(); });
+    q.addEventListener('input', debounce(render, 150));
+    sortSel.addEventListener('change', () => { sortKey = sortSel.value; render(); });
+    $$('button[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.getAttribute('data-filter'); render(); }));
+
+    copyMtlBtn.addEventListener('click', () => {
+      const lines = items.filter(x => !x.done).map(x => {
+        const datePart = x.due ? fmtDayDate(x.due.slice(0, 10)) : '';
+        const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
+        const pieces = [ 'mtl ' + x.title, x.due ? `Due Date: ${datePart}` : '', x.due ? `Time: ${timePart}` : '', `Status: Not started` ].filter(Boolean);
+        return pieces.join('\n');
+      });
+      if (lines.length === 0) { toast('No active tasks to copy'); return; }
+      navigator.clipboard.writeText(lines.join('\n\n')).then(() => toast('Copied for Master Task List')).catch(() => toast('Copy failed'));
+      closeMenu();
+    });
+
+    importFile.addEventListener('change', () => {
+      const f = importFile.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const importedItems = JSON.parse(String(rd.result) || '[]').slice(0, 500);
+          importedItems.forEach(item => { item.id = uid(); items = [item, ...items]; saveToFirebase(item); });
+          render(); toast('Import successful');
+        } catch { toast('Invalid JSON'); }
+      };
+      rd.readAsText(f); importFile.value = '';
+      closeMenu();
+    });
+
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url);
+      closeMenu();
+    });
+
+    openSettings.addEventListener('click', () => { if (settingsSection) { settingsSection.classList.remove('hidden'); settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); } closeMenu(); });
+    saveSettings.addEventListener('click', () => { const url = syncUrlInput.value.trim(); localStorage.setItem('syncUrl', url); toast('Calendar sync settings saved'); });
+    testSync.addEventListener('click', async () => {
+      const url = syncUrlInput.value.trim(); if (!url) { toast('Enter Google Apps Script URL first'); return; }
+      try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Test from Memory Cue Mobile', dueIso: null, priority: 'Low' }) }); toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error'); }
+      catch { toast('Calendar sync failed (check URL & deploy)'); }
+    });
+
+    closeModal.addEventListener('click', closeEditModal);
+    cancelEdit.addEventListener('click', closeEditModal);
+    saveEdit.addEventListener('click', saveEditedItem);
+    editModal.addEventListener('click', (e) => { if (e.target === editModal || e.target.classList.contains('modal-backdrop')) closeEditModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editModal.classList.contains('hidden')) closeEditModal(); });
+
+    try {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        recog = new SR();
+        recog.lang = 'en-AU';
+        recog.interimResults = false;
+        recog.onresult = (e) => { const t = e.results[0][0].transcript || ''; title.value = t; toast('Heard: ' + t); };
+        recog.onend = () => { listening = false; voiceBtn.textContent = '🎙️'; };
+      }
+    } catch {}
+    voiceBtn.addEventListener('click', () => {
+      if (!recog) return;
+      if (!listening) { try { recog.start(); listening = true; voiceBtn.textContent = '👂'; } catch {} }
+      else { try { recog.stop(); } catch {} listening = false; voiceBtn.textContent = '🎙️'; }
+    });
+
+    notifBtn.addEventListener('click', async () => {
+      if (!('Notification' in window)) { toast('Notifications not supported'); return; }
+      if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
+      const perm = await Notification.requestPermission(); toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
+    });
+
+    window.addEventListener('online', () => { syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online'; });
+    window.addEventListener('offline', () => { syncStatus.textContent = 'Offline'; syncStatus.className = 'sync-status offline'; });
+
+    (function setupPWA(){
+      const manifest = { name:'Memory Cue', short_name:'MemoryCue', start_url:'.', display:'standalone', background_color:'#0b1220', theme_color:'#0b1220', icons:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'}] };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      document.getElementById('manifestLink').setAttribute('href', url);
+      if ('serviceWorker' in navigator) {
+        const swCode = `self.addEventListener('install', e=>self.skipWaiting()); self.addEventListener('activate', e=>self.clients.claim());`;
+        const swBlob = new Blob([swCode], { type: 'text/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(()=>{});
+      }
+    })();
+
+    render();
   </script>
 </body>
 </html>
