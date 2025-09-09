@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>T</title>
+  <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
@@ -104,6 +104,18 @@
     @media (max-width: 430px){
       .panel-header { grid-template-columns: 1fr; gap: var(--space-2); }
       .filters { justify-content: flex-start; }
+    }
+  /* Visually hidden but accessible */
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 1px, 1px) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
     }
   </style>
 </head>
@@ -394,56 +406,58 @@
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
     
-    function parseQuickWhen(text){
+    function parseQuickWhen(text) {
       text = String(text || '').toLowerCase();
-      // Default: today, no time
+
+      // Default = today, no time
       let when = { date: todayISO(), time: '' };
 
-      // detect 'tomorrow'
-      if (\btomorrow\b.test(text)) {
-        const d = new Date(); d.setDate(d.getDate()+1);
+      // Detect "tomorrow"
+      if (/\btomorrow\b/.test(text)) {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
         when.date = formatDateLocal(d);
       }
 
-      // hh:mm pattern
+      // hh:mm (24h)
       let m = text.match(/\b(\d{1,2}):(\d{2})\b/);
       if (m) {
-        const hh = String(parseInt(m[1],10)).padStart(2,'0');
-        const mm = String(parseInt(m[2],10)).padStart(2,'0');
+        const hh = String(parseInt(m[1], 10)).padStart(2, '0');
+        const mm = String(parseInt(m[2], 10)).padStart(2, '0');
         when.time = `${hh}:${mm}`;
         return when;
       }
 
-      // h am/pm pattern
+      // h am/pm
       m = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
       if (m) {
-        let h = parseInt(m[1],10) % 12;
-        if (m[2] === 'pm') h += 12;
-        when.time = `${String(h).padStart(2,'0')}:00`;
+        let h = parseInt(m[1], 10) % 12;
+        if (m[2] == 'pm') h += 12;
+        when.time = `${String(h).padStart(2, '0')}:00`;
         return when;
       }
 
-      // compact '630' or '0930' pattern (defaults to morning)
+      // compact 3–4 digit time like "630" or "0930"
       m = text.match(/\b(\d{3,4})\b/);
       if (m) {
         const digits = m[1];
         let hh, mm;
-        if (digits.length === 3) { hh = '0' + digits[0]; mm = digits.slice(1); }
-        else { hh = digits.slice(0,2); mm = digits.slice(2); }
-        hh = String(parseInt(hh,10)).padStart(2,'0');
-        mm = String(parseInt(mm,10)).padStart(2,'0');
+        if (digits.length == 3) {
+          hh = '0' + digits[0];
+          mm = digits.slice(1);
+        } else {
+          hh = digits.slice(0, 2);
+          mm = digits.slice(2);
+        }
+        hh = String(parseInt(hh, 10)).padStart(2, '0');
+        mm = String(parseInt(mm, 10)).padStart(2, '0');
         when.time = `${hh}:${mm}`;
       }
 
       return when;
     }
 
-      const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
-      const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
-      if (mHm) { when.time = `${String(mHm[1]).padStart(2,'0')}:${mHm[2]}`; }
-      else if (m12) { let h = parseInt(m12[1],10)%12; if (m12[2]==='pm') h+=12; when.time = `${String(h).padStart(2,'0')}:00`; }
-      return when;
-    }
+
 
     function isoToLocalDate(iso){
       try {
