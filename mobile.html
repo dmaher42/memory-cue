@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Memory Cue (Mobile) — Inline Counters (Patched Settings)</title>
+  <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
@@ -119,12 +119,14 @@
           <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
           <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
           <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
+          <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
           <div class="menu-wrap">
             <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
             <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
               <button id="copyMtlBtn" class="menu-item" role="menuitem">Copy MTL</button>
               <label class="menu-item" role="menuitem" for="importFile" style="display:flex; align-items:center; gap:8px; cursor:pointer;">Import<input id="importFile" type="file" accept="application/json" class="sr-only" /></label>
               <button id="exportBtn" class="menu-item" role="menuitem">Export</button>
+              <button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button>
               <div class="menu-sep"></div>
               <button id="openSettings" class="menu-item" role="menuitem">Settings</button>
             </div>
@@ -151,7 +153,7 @@
           <div class="form-stack">
             <div class="form-group">
               <label class="sr-only" for="title">Reminder</label>
-              <input id="title" placeholder=" " aria-label="Reminder title" />
+              <input id="title" placeholder="e.g., Email parents about camp #admin" aria-label="Reminder title" />
             </div>
             <div class="form-row">
               <div class="form-group flex-1">
@@ -169,7 +171,10 @@
                 </select>
               </div>
             </div>
-            <button id="saveBtn" class="btn-success" type="button">Save Reminder</button>
+            <div class="form-row">
+              <button id="saveBtn" class="btn-success flex-1" type="button">Save Reminder</button>
+              <button id="cancelEditBtn" class="btn-ghost flex-1 hidden" type="button">Cancel</button>
+            </div>
           </div>
           <div id="status" class="status-message" aria-live="polite"></div>
         </div>
@@ -191,9 +196,9 @@
             </div>
             <div class="filters">
               <div class="filter-buttons">
-                  <button class="btn-ghost" data-filter="all" type="button">All</button>
                 <button class="btn-ghost active" data-filter="today" type="button">Today</button>
-                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>                
+                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
+                <button class="btn-ghost" data-filter="all" type="button">All</button>
                 <button class="btn-ghost" data-filter="done" type="button">Done</button>
               </div>
               <div class="sort-control">
@@ -216,7 +221,7 @@
 
       <!-- Settings (hidden by default) -->
       <section class="card section hidden" id="settingsSection">
-        <div class="card-header"><h2 class="card-title">Calendar Sync Settings</h2></div>
+        <div class="card-header"><h2 class="card-title">Sync Settings</h2></div>
         <div class="card-content">
           <div class="form-stack">
             <div class="form-group"><input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" /></div>
@@ -253,26 +258,33 @@
 
     // State
     let items = [];
-    let filter = 'all';
+    let filter = 'today';
     let sortKey = 'smart';
     let listening = false;
     let recog = null;
     let userId = null;
     let unsubscribe = null;
 
+    // ---- Edit state ----
+    let editingId = null;
+
     const TZ = 'Australia/Adelaide';
     const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
     const dayFmt  = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday:'long', day:'numeric', month:'long' });
+    const datePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+    const timePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
 
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
     // Elements
     const q = $('#q'), title = $('#title'), date = $('#date'), time = $('#time'), priority = $('#priority'), saveBtn = $('#saveBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
     const list = $('#list'), statusEl = $('#status'), syncStatus = $('#syncStatus');
     const voiceBtn = $('#voiceBtn'), notifBtn = $('#notifBtn'), addQuickBtn = $('#addQuickBtn');
     const copyMtlBtn = $('#copyMtlBtn'), importFile = $('#importFile'), exportBtn = $('#exportBtn');
     const sortSel = $('#sort'), openSettings = $('#openSettings'), settingsSection = $('#settingsSection');
+    const syncAllBtn = document.getElementById('syncAllBtn');
     const syncUrlInput = $('#syncUrl'), saveSettings = $('#saveSettings'), testSync = $('#testSync');
     const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
@@ -341,12 +353,12 @@
     }
     async function deleteFromFirebase(id) { if (!userId) return; try { await deleteDoc(doc(db, 'users', userId, 'reminders', id)); } catch { toast('Delete queued (offline)'); } }
 
-    // Optional: Calendar sync
+    // Optional: Calendar/Sheet sync via Apps Script
     async function tryCalendarSync(task) {
       const url = (localStorage.getItem('syncUrl') || '').trim(); if (!url) return;
-      const payload = { title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium' };
-      try { await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); toast('Synced to Calendar'); }
-      catch { /* offline ok */ }
+      const payload = { id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', done: !!task.done, source: 'memory-cue-mobile' };
+      try { await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
+      catch {}
     }
 
     // Utils
@@ -359,7 +371,7 @@
     function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
     function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
     function fmtTime(d){ return timeFmt.format(d); }
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[c])); }
     function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
@@ -374,6 +386,51 @@
       return when;
     }
 
+    function isoToLocalDate(iso){
+      try {
+        const d = new Date(iso);
+        const parts = datePartsFmt.formatToParts(d);
+        const y = parts.find(p=>p.type==='year')?.value || '0000';
+        const m = parts.find(p=>p.type==='month')?.value || '01';
+        const da = parts.find(p=>p.type==='day')?.value || '01';
+        return `${y}-${m}-${da}`;
+      } catch { return ''; }
+    }
+    function isoToLocalTime(iso){
+      try {
+        const d = new Date(iso);
+        const parts = timePartsFmt.formatToParts(d);
+        const h = parts.find(p=>p.type==='hour')?.value?.padStart(2,'0') || '00';
+        const m = parts.find(p=>p.type==='minute')?.value?.padStart(2,'0') || '00';
+        return `${h}:${m}`;
+      } catch { return ''; }
+    }
+
+    function resetForm(){
+      title.value = ''; date.value = ''; time.value=''; priority.value='Medium';
+      editingId = null;
+      saveBtn.textContent = 'Save Reminder';
+      cancelEditBtn.classList.add('hidden');
+    }
+
+    function loadForEdit(id){
+      const it = items.find(x => x.id === id);
+      if (!it) return;
+      title.value = it.title || '';
+      if (it.due){
+        date.value = isoToLocalDate(it.due);
+        time.value = isoToLocalTime(it.due);
+      } else {
+        date.value = ''; time.value = '';
+      }
+      priority.value = it.priority || 'Medium';
+      editingId = id;
+      saveBtn.textContent = 'Update Reminder';
+      cancelEditBtn.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      title.focus();
+    }
+
     // Create & basic actions
     function addItem(obj){
       if (!userId) { toast('Sign in to add reminders'); return; }
@@ -386,7 +443,7 @@
       tryCalendarSync(item);
       return item;
     }
-    function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); render(); }
+    function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); }
     function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); }
 
     // Rendering
@@ -443,9 +500,11 @@
             </div>
           </div>
           <div class="task-actions">
+            <button class="btn-ghost" data-edit type="button">Edit</button>
             <button class="btn-ghost" data-del type="button">Del</button>
           </div>`;
         div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
+        div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
         div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
         frag.appendChild(div);
       });
@@ -459,26 +518,34 @@
     document.addEventListener('click', (e)=>{ if (!moreMenu?.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
 
-    // Settings toggle (robust: class + hidden utility)
+    // Settings toggle + force hidden on load + Esc hides
     openSettings.addEventListener('click', () => {
       const willShow = settingsSection.classList.contains('hidden');
       settingsSection.classList.toggle('hidden');
       if (willShow) { settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       closeMenu();
     });
-    // Force hidden on load
-    document.addEventListener('DOMContentLoaded', () => {
-      settingsSection.classList.add('hidden');
-    });
-    // Hide settings with ESC if open
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !settingsSection.classList.contains('hidden')) {
-        settingsSection.classList.add('hidden');
-      }
-    });
+    document.addEventListener('DOMContentLoaded', () => { settingsSection.classList.add('hidden'); });
 
-    // Events
+    // Save/create or update
     saveBtn.addEventListener('click', () => {
+      // Create new OR update existing depending on editingId
+      if (editingId) {
+        const it = items.find(x=>x.id===editingId);
+        if (!it) { resetForm(); return; }
+        const tNew = title.value.trim(); if (!tNew) { toast('Add a reminder title'); return; }
+        let due = null;
+        if (date.value || time.value) {
+          const d = (date.value || todayISO()); const tm = (time.value || '09:00');
+          due = new Date(`${d}T${tm}:00`).toISOString();
+        } else {
+          const p = parseQuickWhen(tNew); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
+        }
+        it.title = tNew; it.priority = priority.value; it.due = due; it.updatedAt = Date.now();
+        saveToFirebase(it); tryCalendarSync(it); render(); resetForm(); toast('Reminder updated');
+        return;
+      }
+
       const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
       let due = null;
       if (date.value || time.value) { const d = (date.value || todayISO()); const tm = (time.value || '09:00'); due = new Date(`${d}T${tm}:00`).toISOString(); }
@@ -487,6 +554,7 @@
       title.value = ''; time.value = '';
     });
     title.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
+    cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); });
     window.addEventListener('load', ()=> title.focus());
     addQuickBtn.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
     q.addEventListener('input', debounce(render, 150));
@@ -520,6 +588,35 @@
     exportBtn.addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url);
+      closeMenu();
+    });
+
+    // Sync All Now -> POST everything in batches
+    syncAllBtn?.addEventListener('click', async () => {
+      const url = (localStorage.getItem('syncUrl') || '').trim();
+      if (!url) { toast('Add your Apps Script URL in Settings first'); closeMenu(); return; }
+      if (!items.length) { toast('No tasks to sync'); closeMenu(); return; }
+
+      toast('Syncing all tasks…');
+      const chunkSize = 20;
+      let fail = 0;
+      for (let i = 0; i < items.length; i += chunkSize) {
+        const chunk = items.slice(i, i + chunkSize);
+        const results = await Promise.allSettled(chunk.map(task => {
+          const payload = {
+            id: task.id,
+            title: task.title,
+            dueIso: task.due || null,
+            priority: task.priority || 'Medium',
+            done: !!task.done,
+            source: 'memory-cue-mobile'
+          };
+          return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        }));
+        fail += results.filter(r => r.status === 'rejected').length;
+        await new Promise(res => setTimeout(res, 400));
+      }
+      toast(`Sync complete: ${items.length - fail} ok${fail ? `, ${fail} failed` : ''}`);
       closeMenu();
     });
 
