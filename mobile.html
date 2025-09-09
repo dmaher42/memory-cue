@@ -640,9 +640,9 @@
         <div class="card-header">
           <div class="filter-controls">
             <div class="filter-buttons">
-              <button class="btn-ghost active" data-filter="today" type="button">Today</button>
+              <button class="btn-ghost" data-filter="today" type="button">Today</button>
               <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
-              <button class="btn-ghost" data-filter="all" type="button">All</button>
+              <button class="btn-ghost active" data-filter="all" type="button">All</button>
               <button class="btn-ghost" data-filter="done" type="button">Done</button>
             </div>
             <div class="sort-control">
@@ -714,7 +714,7 @@
     const auth = getAuth(app);
 
     let items = [];
-    let filter = 'today';
+    let filter = 'all';
     let sortKey = 'smart';
     let listening = false;
     let recog = null;
@@ -1033,23 +1033,13 @@
       todayEnd.setHours(23, 59, 59, 999);
 
       let rows = items.slice();
+      // Show all tasks regardless of filter selection
+      // Only apply search filtering if there's a search query
       if (query) {
         rows = rows.filter(r =>
           r.title.toLowerCase().includes(query) || (r.notes || '').toLowerCase().includes(query)
         );
       }
-
-      rows = rows.filter(r => {
-        if (filter === 'done') return r.done;
-        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < adelaideNow;
-        if (filter === 'today') {
-          if (!r.due) return true;
-          const dueDate = new Date(r.due);
-          const dueDateAdelaide = new Date(dueDate.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
-          return dueDateAdelaide >= todayStart && dueDateAdelaide <= todayEnd;
-        }
-        return true;
-      });
 
       rows.sort((a, b) => {
         if (sortKey === 'time') return (+new Date(a.due || 0)) - (+new Date(b.due || 0));
