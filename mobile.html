@@ -337,6 +337,15 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+    // Helper function for safe event binding
+    function on(el, evt, handler) {
+      if (!el) {
+        console.warn(`MemoryCue: Element is null/undefined, skipping event binding for '${evt}'`);
+        return;
+      }
+      el.addEventListener(evt, handler);
+    }
+
     // Elements
     const q = $('#q'), title = $('#title'), date = $('#date'), time = $('#time'), priority = $('#priority'), saveBtn = $('#saveBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -356,9 +365,9 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const tabPanels = $$('.tab-panel');
 
     notesEl.value = localStorage.getItem('mobileNotes') || '';
-    notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
+    on(notesEl, 'input', () => localStorage.setItem('mobileNotes', notesEl.value));
 
-    tabBtns.forEach(btn => btn.addEventListener('click', () => {
+    tabBtns.forEach(btn => on(btn, 'click', () => {
       tabBtns.forEach(b => b.classList.remove('active'));
       tabPanels.forEach(p => p.classList.add('hidden'));
       btn.classList.add('active');
@@ -367,12 +376,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
     }));
 
     // Auth
-    googleSignInBtn.addEventListener('click', async () => {
+    on(googleSignInBtn, 'click', async () => {
       const provider = new GoogleAuthProvider();
       try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch (e) { toast('Google sign-in failed'); } }
     });
     getRedirectResult(auth).catch(()=>{});
-    googleSignOutBtn.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
+    on(googleSignOutBtn, 'click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
     onAuthStateChanged(auth, (user) => {
       if (user) {
         userId = user.uid;
@@ -756,9 +765,9 @@ z-index:100;box-shadow:var(--shadow-sm)}
             <button class="btn-ghost" data-edit type="button">Edit</button>
             <button class="btn-ghost" data-del type="button">Del</button>
           </div>`;
-        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-        div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
-        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
+        on(div.querySelector('input'), 'change', () => toggleDone(r.id));
+        on(div.querySelector('[data-edit]'), 'click', () => loadForEdit(r.id));
+        on(div.querySelector('[data-del]'), 'click', () => removeItem(r.id));
         frag.appendChild(div);
       });
       list.appendChild(frag);
@@ -772,7 +781,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
 
     // Settings toggle + force hidden on load + Esc hides
-    openSettings.addEventListener('click', () => {
+    on(openSettings, 'click', () => {
       const willShow = settingsSection.classList.contains('hidden');
       settingsSection.classList.toggle('hidden');
       if (willShow) { settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -781,7 +790,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     document.addEventListener('DOMContentLoaded', () => { settingsSection.classList.add('hidden'); });
 
     // Save/create or update
-    saveBtn.addEventListener('click', () => {
+    on(saveBtn, 'click', () => {
       // Create new OR update existing depending on editingId
       if (editingId) {
         const it = items.find(x=>x.id===editingId);
@@ -806,7 +815,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
       addItem({ title: t, priority: priority.value, due });
       title.value = ''; time.value = '';
     });
-    title.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
+    on(title, 'keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
 
     // Add real-time date feedback
     function updateDateFeedback() {
@@ -846,15 +855,15 @@ z-index:100;box-shadow:var(--shadow-sm)}
       }
     }
 
-    title.addEventListener('input', debounce(updateDateFeedback, 300));
-    cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); });
+    on(title, 'input', debounce(updateDateFeedback, 300));
+    on(cancelEditBtn, 'click', () => { resetForm(); toast('Edit cancelled'); });
     window.addEventListener('load', ()=> title.focus());
-    addQuickBtn.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
-    q.addEventListener('input', debounce(render, 150));
-    sortSel.addEventListener('change', () => { sortKey = sortSel.value; render(); });
-    $$('button[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.getAttribute('data-filter'); render(); }));
+    on(addQuickBtn, 'click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
+    on(q, 'input', debounce(render, 150));
+    on(sortSel, 'change', () => { sortKey = sortSel.value; render(); });
+    $$('button[data-filter]').forEach(b => on(b, 'click', () => { filter = b.getAttribute('data-filter'); render(); }));
 
-    copyMtlBtn.addEventListener('click', () => {
+    on(copyMtlBtn, 'click', () => {
       const lines = items.filter(x => !x.done).map(x => {
         const datePart = x.due ? fmtDayDate(x.due.slice(0, 10)) : '';
         const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -865,7 +874,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
       navigator.clipboard.writeText(lines.join('\n\n')).then(() => toast('Copied for Master Task List')).catch(() => toast('Copy failed'));
       closeMenu();
     });
-    importFile.addEventListener('change', () => {
+    on(importFile, 'change', () => {
       const f = importFile.files[0]; if (!f) return;
       const rd = new FileReader();
       rd.onload = () => {
@@ -878,14 +887,14 @@ z-index:100;box-shadow:var(--shadow-sm)}
       rd.readAsText(f); importFile.value = '';
       closeMenu();
     });
-    exportBtn.addEventListener('click', () => {
+    on(exportBtn, 'click', () => {
       const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url);
       closeMenu();
     });
 
     // Sync All Now -> POST everything in batches
-    syncAllBtn?.addEventListener('click', async () => {
+    on(syncAllBtn, 'click', async () => {
       const url = (localStorage.getItem('syncUrl') || '').trim();
       if (!url) { toast('Add your Apps Script URL in Settings first'); closeMenu(); return; }
       if (!items.length) { toast('No tasks to sync'); closeMenu(); return; }
@@ -924,24 +933,24 @@ z-index:100;box-shadow:var(--shadow-sm)}
         recog.onend = () => { listening = false; voiceBtn.textContent = '🎙️'; };
       }
     } catch {}
-    voiceBtn.addEventListener('click', () => {
+    on(voiceBtn, 'click', () => {
       if (!recog) return;
       if (!listening) { try { recog.start(); listening = true; voiceBtn.textContent = '👂'; } catch {} }
       else { try { recog.stop(); } catch {} listening = false; voiceBtn.textContent = '🎙️'; }
     });
-    notifBtn.addEventListener('click', async () => {
+    on(notifBtn, 'click', async () => {
       if (!('Notification' in window)) { toast('Notifications not supported'); return; }
       if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
       const perm = await Notification.requestPermission(); toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
     });
 
     // Notebook functionality
-    saveNoteBtn.addEventListener('click', () => {
+    on(saveNoteBtn, 'click', () => {
       // Notes are already auto-saved to localStorage, so just show confirmation
       toast('Note saved');
     });
     
-    newNoteBtn.addEventListener('click', () => {
+    on(newNoteBtn, 'click', () => {
       if (notesEl.value.trim() && !confirm('Are you sure you want to start a new note? This will clear the current content.')) {
         return;
       }
@@ -964,6 +973,9 @@ z-index:100;box-shadow:var(--shadow-sm)}
         navigator.serviceWorker.register(swUrl).catch(()=>{});
       }
     })();
+
+    // Console marker for debugging
+    console.log('MemoryCue: bindings initialized');
 
     // Initial render
     render();
