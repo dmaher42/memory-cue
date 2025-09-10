@@ -1596,15 +1596,13 @@
     function setupLogin() {
       const app = document.getElementById('app');
       const loginView = document.getElementById('loginView');
-      const signInBtn = document.getElementById('googleSignInBtn');
-      const signOutBtn = document.getElementById('googleSignOutBtn');
 
       auth.onAuthStateChanged((user) => {
         if (user) {
           userId = user.uid;
           loginView.classList.add('hidden');
           app.classList.remove('hidden');
-          signOutBtn.classList.remove('hidden');
+          googleSignOutBtn.classList.remove('hidden');
           googleUserName.textContent = user.displayName || user.email || '';
           if (user.photoURL) {
             googleAvatar.src = user.photoURL;
@@ -1618,7 +1616,7 @@
           userId = null;
           loginView.classList.remove('hidden');
           app.classList.add('hidden');
-          signOutBtn.classList.add('hidden');
+          googleSignOutBtn.classList.add('hidden');
           googleAvatar.classList.add('hidden');
           googleAvatar.src = '';
           googleUserName.textContent = '';
@@ -1627,7 +1625,7 @@
         }
       });
 
-      signInBtn.addEventListener('click', async () => {
+      googleSignInBtn.addEventListener('click', async () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         try {
           await auth.signInWithPopup(provider);
@@ -1640,7 +1638,7 @@
         }
       });
 
-      signOutBtn.addEventListener('click', async () => {
+      googleSignOutBtn.addEventListener('click', async () => {
         try {
           await auth.signOut();
           toast('Signed out');
