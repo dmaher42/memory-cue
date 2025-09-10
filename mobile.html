@@ -6,6 +6,7 @@
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="#" id="manifestLink" />
+  <link rel="stylesheet" href="css/app.css" />
   <style>
     :root{
       --bg-primary:#0b1220; --bg-secondary:#0f172a; --bg-tertiary:#1e293b;
@@ -133,9 +134,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
         </div>
         <div class="header-controls">
           <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
-          <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
-          <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
-          <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
+          <div class="utilities-bar">
+            <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
+            <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
+            <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
+            <button id="themeToggle" class="btn-ghost btn-compact" type="button" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+          </div>
           <div class="menu-wrap">
             <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
             <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
@@ -159,6 +163,50 @@ z-index:100;box-shadow:var(--shadow-sm)}
       </div>
     </div>
   </header>
+  
+  <!-- Toast container for improved animations -->
+  <div class="toast-container" id="toastContainer"></div>
+  
+  <!-- Theme initialization script - independent of Firebase modules -->
+  <script>
+    // Theme initialization - handles system preference and toggle functionality
+    (() => {
+      const themeToggle = document.getElementById('themeToggle');
+      const storedTheme = localStorage.getItem('theme');
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // Set initial theme
+      const initialTheme = storedTheme || (systemPrefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', initialTheme);
+      updateThemeIcon(initialTheme);
+      
+      // Theme toggle handler
+      themeToggle?.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+      });
+      
+      // Update theme icon
+      function updateThemeIcon(theme) {
+        if (themeToggle) {
+          themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+      }
+      
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+          const theme = e.matches ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          updateThemeIcon(theme);
+        }
+      });
+    })();
+  </script>
+  
   <nav class="tabs">
     <button class="tab-btn active" data-target="tasksTab">Reminders</button>
     <button class="tab-btn" data-target="notebookTab">Notebook</button>
@@ -448,7 +496,41 @@ z-index:100;box-shadow:var(--shadow-sm)}
     function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
     function fmtTime(d){ return timeFmt.format(d); }
     function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' }[c])); }
-    function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
+    function toast(msg) {
+      // Enhanced toast with animation - maintains same API signature
+      const toastContainer = document.getElementById('toastContainer');
+      if (!toastContainer) {
+        // Fallback to original implementation if container not found
+        statusEl.textContent = msg; 
+        clearTimeout(toast._t); 
+        toast._t = setTimeout(() => statusEl.textContent = '', 2500);
+        return;
+      }
+
+      // Create toast element
+      const toastEl = document.createElement('div');
+      toastEl.className = 'toast';
+      toastEl.setAttribute('role', 'status');
+      toastEl.setAttribute('aria-live', 'polite');
+      toastEl.textContent = msg;
+      
+      // Add to container
+      toastContainer.appendChild(toastEl);
+      
+      // Trigger show animation
+      setTimeout(() => toastEl.classList.add('show'), 10);
+      
+      // Auto-hide after delay
+      setTimeout(() => {
+        toastEl.classList.add('hide');
+        toastEl.classList.remove('show');
+        setTimeout(() => {
+          if (toastEl.parentNode) {
+            toastEl.parentNode.removeChild(toastEl);
+          }
+        }, 200);
+      }, 2500);
+    }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
     function parseQuickWhen(text) {
