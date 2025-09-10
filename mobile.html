@@ -925,7 +925,8 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
     // Notebook functionality
     saveNoteBtn.addEventListener('click', () => {
-      // Notes are already auto-saved to localStorage, so just show confirmation
+      // Persist current note to localStorage and show confirmation
+      localStorage.setItem('mobileNotes', notesEl.value);
       toast('Note saved');
     });
     
