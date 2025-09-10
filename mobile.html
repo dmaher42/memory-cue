@@ -144,6 +144,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
               <button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button>
               <div class="menu-sep"></div>
               <button id="openSettings" class="menu-item" role="menuitem">Settings</button>
+              <button id="authBtn" class="menu-item" role="menuitem">Sign In</button>
             </div>
           </div>
         </div>
@@ -272,6 +273,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
     // Firebase
     const firebaseConfig = {
@@ -285,6 +287,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
     enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
 
     // State
@@ -336,7 +339,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const sortSel = $('#sort'), openSettings = $('#openSettings'), settingsSection = $('#settingsSection');
     const syncAllBtn = document.getElementById('syncAllBtn');
     const syncUrlInput = $('#syncUrl'), saveSettings = $('#saveSettings'), testSync = $('#testSync');
-    const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
+    const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu'), authBtn = $('#authBtn');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
     const notesEl = $('#notes');
     const saveNoteBtn = $('#saveNoteBtn'), newNoteBtn = $('#newNoteBtn');
@@ -378,6 +381,20 @@ z-index:100;box-shadow:var(--shadow-sm)}
         console.error('Firestore sync error:', error);
         syncStatus.textContent = 'Sync Error'; syncStatus.className = 'sync-status error';
       });
+    }
+
+    function handleAuth() {
+      if (auth.currentUser) {
+        signOut(auth);
+      } else {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch(() => toast('Sign in failed'));
+      }
+    }
+
+    function updateAuthButton(user) {
+      if (!authBtn) return;
+      authBtn.textContent = user ? 'Sign Out' : 'Sign In';
     }
 
     // Save/Delete
@@ -850,6 +867,11 @@ z-index:100;box-shadow:var(--shadow-sm)}
       closeMenu();
     });
 
+    authBtn.addEventListener('click', () => {
+      handleAuth();
+      closeMenu();
+    });
+
     // Sync All Now -> POST everything in batches
     syncAllBtn?.addEventListener('click', async () => {
       const url = (localStorage.getItem('syncUrl') || '').trim();
@@ -932,6 +954,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
     })();
 
     // Initial render
+    onAuthStateChanged(auth, user => {
+      userId = user ? user.uid : null;
+      updateAuthButton(user);
+      setupFirestoreSync();
+    });
+
     render();
   </script>
 </body>
