@@ -8,16 +8,21 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
     .content-panel { display: none; }
     .content-panel.active { display: block; }
     .hidden { display: none; }
+    .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
   </style>
 </head>
 <body>
-  <div id="app" class="app-layout">
+  <div id="loginScreen" class="login-screen hidden">
+    <div id="googleSignIn"></div>
+  </div>
+  <div id="app" class="app-layout hidden">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
       <div class="sidebar-header">
@@ -96,9 +101,6 @@
           </div>
           <button id="addQuickBtn" class="topbar-btn primary" type="button" title="Add quick reminder">
             + Add
-          </button>
-          <button id="googleSignInBtn" class="topbar-btn" type="button">
-            Sign in
           </button>
           <button id="googleSignOutBtn" class="topbar-btn hidden" type="button">
             <img id="googleAvatar" class="user-avatar hidden" />
@@ -878,7 +880,6 @@
     const saveSettings = $('#saveSettings');
     const testSync = $('#testSync');
     const settingsSection = $('#settingsSection');
-    const googleSignInBtn = $('#googleSignInBtn');
     const googleSignOutBtn = $('#googleSignOutBtn');
     const googleAvatar = $('#googleAvatar');
     const googleUserName = $('#googleUserName');
@@ -887,19 +888,10 @@
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
     if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
 
-    // Demo authentication handlers
-    googleSignInBtn.addEventListener('click', () => {
-      toast('Demo mode - Firebase authentication not available');
-    });
-
     googleSignOutBtn.addEventListener('click', () => {
-      toast('Demo mode - sign out not available');
+      localStorage.removeItem('googleCredential');
+      location.reload();
     });
-
-    // Set up demo mode UI
-    syncStatus.textContent = 'Demo Mode';
-    syncStatus.className = 'sync-status offline';
-    googleSignInBtn.textContent = 'Demo Mode';
 
     // Stub functions for Firebase (to be implemented later)
     function setupFirestoreSync() {
@@ -1605,7 +1597,56 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    initializeTeacherApp();
+    function applyCredential(credential) {
+      try {
+        const payload = JSON.parse(atob(credential.split('.')[1]));
+        googleUserName.textContent = payload.name || '';
+        if (payload.picture) {
+          googleAvatar.src = payload.picture;
+          googleAvatar.classList.remove('hidden');
+        }
+        googleSignOutBtn.classList.remove('hidden');
+      } catch (e) {
+        console.warn('Credential parse error', e);
+      }
+    }
+
+    function setupLogin() {
+      const appEl = $('#app');
+      const loginEl = $('#loginScreen');
+      const stored = localStorage.getItem('googleCredential');
+      if (stored) {
+        applyCredential(stored);
+        loginEl.classList.add('hidden');
+        appEl.classList.remove('hidden');
+        initializeTeacherApp();
+        return;
+      }
+
+      loginEl.classList.remove('hidden');
+      appEl.classList.add('hidden');
+
+      window.handleCredentialResponse = (response) => {
+        localStorage.setItem('googleCredential', response.credential);
+        applyCredential(response.credential);
+        loginEl.classList.add('hidden');
+        appEl.classList.remove('hidden');
+        initializeTeacherApp();
+      };
+
+      if (window.google && google.accounts?.id) {
+        google.accounts.id.initialize({
+          client_id: 'YOUR_GOOGLE_CLIENT_ID',
+          callback: handleCredentialResponse,
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('googleSignIn'),
+          { theme: 'outline', size: 'large' }
+        );
+      }
+    }
+
+    setupLogin();
   </script>
 
   <!-- Non-module scripts (same as before) -->
