@@ -8,9 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
+
   <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
@@ -453,19 +451,24 @@
   </div>
 
   <!-- Teacher App JavaScript -->
-  <script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
     const firebaseConfig = {
-      apiKey: "AIzaSyD5XITctJKpgzUprmfqe4LLNTpfMJyNl2w",
+      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
       authDomain: "memory-cue-app.firebaseapp.com",
       projectId: "memory-cue-app",
       storageBucket: "memory-cue-app.firebasestorage.app",
-      messagingSenderId: "458740047814",
-      appId: "1:458740047814:web:9a072d8f529af9c24df448"
+      messagingSenderId: "751284466633",
+      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
+      measurementId: "G-R0V4M7VCE6"
     };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    auth.onIdTokenChanged(async (user) => {
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    setPersistence(auth, browserLocalPersistence);
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         const token = await user.getIdToken();
         localStorage.setItem('mcAuthToken', token);
@@ -473,8 +476,8 @@
         localStorage.removeItem('mcAuthToken');
       }
     });
-    const db = firebase.firestore();
-    firebase.firestore().enablePersistence().catch(() => {});
+    const db = getFirestore(app);
+    enableIndexedDbPersistence(db).catch(() => {});
 
     // App state
     let items = [];
@@ -1599,7 +1602,7 @@
       const signInBtn = document.getElementById('googleSignInBtn');
       const signOutBtn = document.getElementById('googleSignOutBtn');
 
-      auth.onAuthStateChanged((user) => {
+      onAuthStateChanged(auth, (user) => {
         if (user) {
           userId = user.uid;
           loginView.classList.add('hidden');
@@ -1628,12 +1631,12 @@
       });
 
       signInBtn.addEventListener('click', async () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
+        const provider = new GoogleAuthProvider();
         try {
-          await auth.signInWithPopup(provider);
+          await signInWithPopup(auth, provider);
         } catch (error) {
           try {
-            await auth.signInWithRedirect(provider);
+            await signInWithRedirect(auth, provider);
           } catch (e) {
             toast('Google sign-in failed');
           }
@@ -1642,7 +1645,7 @@
 
       signOutBtn.addEventListener('click', async () => {
         try {
-          await auth.signOut();
+          await signOut(auth);
           toast('Signed out');
         } catch {
           toast('Sign-out failed');
