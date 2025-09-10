@@ -8,9 +8,6 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
   <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
@@ -441,7 +438,11 @@
   </div>
 
   <!-- Teacher App JavaScript -->
-  <script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
     const firebaseConfig = {
       apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
       authDomain: "memory-cue-app.firebaseapp.com",
@@ -451,10 +452,10 @@
       appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
       measurementId: "G-R0V4M7VCE6"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    firebase.firestore().enablePersistence().catch(() => {});
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
 
     // App state
     let items = [];
@@ -939,10 +940,10 @@
 
     function handleAuth() {
       if (auth.currentUser) {
-        auth.signOut();
+        signOut(auth);
       } else {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch((err) => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch((err) => {
           console.error('Auth error:', err);
           toast('Sign in failed');
         });
@@ -1627,7 +1628,7 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       currentUser = user;
       userId = user ? user.uid : null;
       updateAuthButton(user);
