@@ -459,16 +459,21 @@ z-index:100;box-shadow:var(--shadow-sm)}
       const url = (localStorage.getItem('syncUrl') || '').trim();
       if (!url) return;
       try {
-        await fetch(url, {
+        console.log('Daily email URL', url);
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, reminders: active })
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         localStorage.setItem('lastEmailSent', today);
         if (force) toast('Email sent');
       } catch (err) {
         console.error('Daily email failed', err);
-        if (force) toast('Email failed');
+        if (force) {
+          const msg = navigator.onLine ? `Email failed: ${err.message}` : 'Offline; email not sent';
+          toast(msg);
+        }
       }
     }
 
