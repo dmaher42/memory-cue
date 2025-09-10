@@ -15,11 +15,22 @@
     .content-panel { display: none; }
     .content-panel.active { display: block; }
     .hidden { display: none; }
+    .login-view { display:flex; align-items:center; justify-content:center; height:100vh; }
+    .login-box { max-width:320px; width:100%; display:flex; flex-direction:column; }
+    .login-box input { margin-bottom:0.5rem; padding:0.5rem; }
   </style>
   </style>
 </head>
 <body>
-  <div class="app-layout">
+  <div id="loginView" class="login-view">
+    <form id="loginForm" class="login-box">
+      <h2>Login</h2>
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <div id="app" class="app-layout hidden">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
       <div class="sidebar-header">
@@ -1607,8 +1618,33 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    // Initialize the teacher app
-    initializeTeacherApp();
+    function setupLogin() {
+      const app = document.getElementById('app');
+      const loginView = document.getElementById('loginView');
+      const form = document.getElementById('loginForm');
+      if (localStorage.getItem('mcLoggedIn') === 'true') {
+        loginView.classList.add('hidden');
+        app.classList.remove('hidden');
+        initializeTeacherApp();
+      } else {
+        loginView.classList.remove('hidden');
+        app.classList.add('hidden');
+      }
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const pwd = document.getElementById('loginPassword').value;
+        if (pwd === 'teacher') {
+          localStorage.setItem('mcLoggedIn', 'true');
+          loginView.classList.add('hidden');
+          app.classList.remove('hidden');
+          initializeTeacherApp();
+        } else {
+          toast('Invalid password');
+        }
+      });
+    }
+
+    setupLogin();
   </script>
 
   <!-- Non-module scripts (same as before) -->
