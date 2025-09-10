@@ -915,34 +915,9 @@
     googleSignInBtn.textContent = 'Demo Mode';
 
     // Stub functions for Firebase (to be implemented later)
-    function setupFirestoreSync() {
-      console.log('Firebase sync not implemented in demo mode');
-    }
 
-    function saveToFirebase(item) {
-      console.log('Would save to Firebase:', item);
-    }
 
-    function deleteFromFirebase(id) {
-      console.log('Would delete from Firebase:', id);
-    }
 
-    function addPendingChange(change) {
-      // For demo mode, just log
-      console.log('Would add pending change:', change);
-    }
-
-    function removePendingChange(itemId) {
-      console.log('Would remove pending change:', itemId);
-    }
-
-    function mergeWithLocal(remoteItems) {
-      return remoteItems;
-    }
-
-    async function retryPendingChanges() {
-      console.log('Would retry pending changes');
-    }
 
     // Firestore real-time sync
     function setupFirestoreSync() {
