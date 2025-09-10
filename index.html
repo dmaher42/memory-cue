@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/teacher.css" />
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
   <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
@@ -89,11 +90,12 @@
           <button id="notifBtn" class="topbar-btn" type="button" title="Enable notifications">
             🔔
           </button>
+          <button id="authBtn" class="topbar-btn" type="button" title="Sign in">Sign In</button>
           <div class="quick-add-container">
-            <input 
-              id="quickAddInput" 
-              class="quick-add-input" 
-              placeholder="Quick add reminder..." 
+            <input
+              id="quickAddInput"
+              class="quick-add-input"
+              placeholder="Quick add reminder..."
               style="display: none;"
             />
           </div>
@@ -450,6 +452,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
     firebase.firestore().enablePersistence().catch(() => {});
 
     // App state
@@ -879,6 +882,7 @@
     const statusEl = $('#status');
     const voiceBtn = $('#voiceBtn');
     const notifBtn = $('#notifBtn');
+    const authBtn = $('#authBtn');
     const addQuickBtn = $('#addQuickBtn');
     const copyMtlBtn = $('#copyMtlBtn');
     const importFile = $('#importFile');
@@ -930,6 +934,29 @@
         syncStatus.textContent = 'Sync Error';
         syncStatus.className = 'sync-status error';
       });
+    }
+
+    function handleAuth() {
+      if (auth.currentUser) {
+        auth.signOut();
+      } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch((err) => {
+          console.error('Auth error:', err);
+          toast('Sign in failed');
+        });
+      }
+    }
+
+    function updateAuthButton(user) {
+      if (!authBtn) return;
+      if (user) {
+        authBtn.textContent = 'Sign Out';
+        authBtn.title = 'Sign out';
+      } else {
+        authBtn.textContent = 'Sign In';
+        authBtn.title = 'Sign in';
+      }
     }
 
     function mergeWithLocal(remoteItems) {
@@ -1556,6 +1583,8 @@
       }
     } catch { }
 
+    authBtn.addEventListener('click', handleAuth);
+
     voiceBtn.addEventListener('click', () => {
       if (!recog) return;
       if (!listening) { 
@@ -1595,6 +1624,13 @@
     window.addEventListener('offline', () => {
       syncStatus.textContent = 'Offline';
       syncStatus.className = 'sync-status offline';
+    });
+
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+      userId = user ? user.uid : null;
+      updateAuthButton(user);
+      setupFirestoreSync();
     });
 
     initializeTeacherApp();
