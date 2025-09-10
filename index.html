@@ -9,17 +9,15 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
   <style>
-  <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
     .content-panel { display: none; }
     .content-panel.active { display: block; }
     .hidden { display: none; }
   </style>
-  </style>
 </head>
 <body>
-  <div class="app-layout">
+  <div id="app" class="app-layout">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
       <div class="sidebar-header">
@@ -1607,7 +1605,6 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    // Initialize the teacher app
     initializeTeacherApp();
   </script>
 
