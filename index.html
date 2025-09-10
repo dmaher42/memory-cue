@@ -9,7 +9,6 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
   <style>
     /* Critical inline styles for immediate rendering */
@@ -17,20 +16,11 @@
     .content-panel { display: none; }
     .content-panel.active { display: block; }
     .hidden { display: none; }
-    .login-view { display:flex; align-items:center; justify-content:center; height:100vh; }
-    .login-box { max-width:320px; width:100%; display:flex; flex-direction:column; }
-    .login-box input { margin-bottom:0.5rem; padding:0.5rem; }
+    
   </style>
 </head>
 <body>
-  <div id="loginView" class="login-view">
-    <div class="login-box">
-      <h2>Login</h2>
-      <button id="googleSignInBtn" type="button">Sign in with Google</button>
-    </div>
-  </div>
-
-  <div id="app" class="app-layout hidden">
+  <div id="app" class="app-layout">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
       <div class="sidebar-header">
@@ -110,11 +100,6 @@
           <button id="addQuickBtn" class="topbar-btn primary" type="button" title="Add quick reminder">
             + Add
           </button>
-          <button id="googleSignOutBtn" class="topbar-btn hidden" type="button">
-            <img id="googleAvatar" class="user-avatar hidden" />
-            Sign out
-          </button>
-          <span id="googleUserName" class="text-muted"></span>
         </div>
       </header>
 
@@ -463,16 +448,6 @@
       appId: "1:458740047814:web:9a072d8f529af9c24df448"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    auth.onIdTokenChanged(async (user) => {
-      if (user) {
-        const token = await user.getIdToken();
-        localStorage.setItem('mcAuthToken', token);
-      } else {
-        localStorage.removeItem('mcAuthToken');
-      }
-    });
     const db = firebase.firestore();
     firebase.firestore().enablePersistence().catch(() => {});
 
@@ -914,10 +889,6 @@
     const saveSettings = $('#saveSettings');
     const testSync = $('#testSync');
     const settingsSection = $('#settingsSection');
-    const googleSignInBtn = $('#googleSignInBtn');
-    const googleSignOutBtn = $('#googleSignOutBtn');
-    const googleAvatar = $('#googleAvatar');
-    const googleUserName = $('#googleUserName');
 
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
@@ -1597,64 +1568,7 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    function setupLogin() {
-      const app = document.getElementById('app');
-      const loginView = document.getElementById('loginView');
-      const signInBtn = document.getElementById('googleSignInBtn');
-      const signOutBtn = document.getElementById('googleSignOutBtn');
-
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          userId = user.uid;
-          loginView.classList.add('hidden');
-          app.classList.remove('hidden');
-          signOutBtn.classList.remove('hidden');
-          googleUserName.textContent = user.displayName || user.email || '';
-          if (user.photoURL) {
-            googleAvatar.src = user.photoURL;
-            googleAvatar.classList.remove('hidden');
-          } else {
-            googleAvatar.src = '';
-            googleAvatar.classList.add('hidden');
-          }
-          initializeTeacherApp();
-        } else {
-          userId = null;
-          loginView.classList.remove('hidden');
-          app.classList.add('hidden');
-          signOutBtn.classList.add('hidden');
-          googleAvatar.classList.add('hidden');
-          googleAvatar.src = '';
-          googleUserName.textContent = '';
-          items = [];
-          render();
-        }
-      });
-
-      signInBtn.addEventListener('click', async () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        try {
-          await auth.signInWithPopup(provider);
-        } catch (error) {
-          try {
-            await auth.signInWithRedirect(provider);
-          } catch (e) {
-            toast('Google sign-in failed');
-          }
-        }
-      });
-
-      signOutBtn.addEventListener('click', async () => {
-        try {
-          await auth.signOut();
-          toast('Signed out');
-        } catch {
-          toast('Sign-out failed');
-        }
-      });
-    }
-
-    setupLogin();
+    initializeTeacherApp();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker

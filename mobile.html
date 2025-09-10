@@ -79,8 +79,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     .sync-status.online{background:rgba(34,197,94,.1);color:var(--success);border-color:rgba(34,197,94,.2)}
     .sync-status.offline{background:rgba(245,158,11,.1);color:var(--warning);border-color:rgba(245,158,11,.2)}
     .sync-status.error{background:rgba(239,68,68,.1);color:var(--danger);border-color:rgba(239,68,68,.2)}
-    .google-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:var(--space-1)}
-    .auth-info{font-size:var(--text-xs);color:var(--text-muted);display:flex;align-items:center;gap:var(--space-1)}
+    
     .status-message{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-2)}
     .footer{text-align:center;padding:var(--space-6) 0;color:var(--text-muted);font-size:var(--text-xs);border-top:1px solid var(--border);margin-top:var(--space-8)}
 
@@ -147,14 +146,6 @@ z-index:100;box-shadow:var(--shadow-sm)}
               <button id="openSettings" class="menu-item" role="menuitem">Settings</button>
             </div>
           </div>
-        </div>
-        <div class="header-controls" style="margin-top: var(--space-2);">
-          <button id="googleSignInBtn" class="btn-ghost" type="button" aria-label="Sign in with Google">Sign in with Google</button>
-          <button id="googleSignOutBtn" class="btn-ghost hidden" type="button" aria-label="Sign out">
-            <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" />
-            Sign out
-          </button>
-          <div id="googleUserName" class="auth-info" aria-live="polite"></div>
         </div>
       </div>
     </div>
@@ -281,7 +272,6 @@ z-index:100;box-shadow:var(--shadow-sm)}
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
     // Firebase
     const firebaseConfig = {
@@ -296,7 +286,6 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
-    const auth = getAuth(app);
 
     // State
     let items = [];
@@ -347,7 +336,6 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const sortSel = $('#sort'), openSettings = $('#openSettings'), settingsSection = $('#settingsSection');
     const syncAllBtn = document.getElementById('syncAllBtn');
     const syncUrlInput = $('#syncUrl'), saveSettings = $('#saveSettings'), testSync = $('#testSync');
-    const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
     const notesEl = $('#notes');
@@ -365,28 +353,6 @@ z-index:100;box-shadow:var(--shadow-sm)}
       const target = btn.getAttribute('data-target');
       document.getElementById(target).classList.remove('hidden');
     }));
-
-    // Auth
-    googleSignInBtn.addEventListener('click', async () => {
-      const provider = new GoogleAuthProvider();
-      try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch (e) { toast('Google sign-in failed'); } }
-    });
-    getRedirectResult(auth).catch(()=>{});
-    googleSignOutBtn.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userId = user.uid;
-        syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online';
-        googleSignInBtn.classList.add('hidden'); googleSignOutBtn.classList.remove('hidden');
-        if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
-        googleUserName.textContent = user.displayName || user.email || '';
-        setupFirestoreSync();
-      } else {
-        googleSignInBtn.classList.remove('hidden'); googleSignOutBtn.classList.add('hidden');
-        googleAvatar.classList.add('hidden'); googleAvatar.src = ''; googleUserName.textContent = '';
-        items = []; render();
-      }
-    });
 
     // Firestore sync
     function setupFirestoreSync() {
