@@ -7,670 +7,445 @@
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
+  <link rel="stylesheet" href="css/teacher.css" />
   <style>
-    :root{
-      /* Colors */
-      --bg-primary: #0b1220;
-      --bg-secondary: #0f172a;
-      --bg-tertiary: #1e293b;
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-hover: #0ea5e9;
-      --success: #22c55e;
-      --success-hover: #16a34a;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --border: #334155;
-      --border-light: #475569;
-
-      /* Spacing (8px grid) */
-      --space-1: 4px;
-      --space-2: 8px;
-      --space-3: 12px;
-      --space-4: 16px;
-      --space-5: 20px;
-      --space-6: 24px;
-      --space-8: 32px;
-      --space-10: 40px;
-      --space-12: 48px;
-
-      /* Typography */
-      --text-xs: 12px;
-      --text-sm: 14px;
-      --text-base: 16px;
-      --text-lg: 18px;
-      --text-xl: 20px;
-      --text-2xl: 24px;
-      --text-3xl: 30px;
-
-      /* Radius */
-      --radius-sm: 6px;
-      --radius: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-
-      /* Shadows */
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: linear-gradient(180deg, var(--bg-primary) 0%, #0a0f1c 100%);
-      color: var(--text-primary);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-size: var(--text-base);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 var(--space-4);
-    }
-
-    /* Header */
-    header {
-      position: sticky;
-      top: 0;
-      background: rgba(11, 18, 32, 0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      z-index: 100;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .header-content {
-      padding: var(--space-4) 0;
-    }
-
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--space-4);
-    }
-
-    h1 {
-      font-size: var(--text-3xl);
-      font-weight: 700;
-      margin: 0;
-      letter-spacing: -0.025em;
-      background: linear-gradient(135deg, var(--text-primary), var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .header-controls {
-      display: flex;
-      gap: var(--space-3);
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    /* Form Elements */
-    input, select, button, textarea {
-      font-family: inherit;
-      font-size: var(--text-sm);
-      line-height: 1.5;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      transition: all 0.2s ease;
-    }
-
-    input, select, textarea {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      padding: var(--space-3) var(--space-4);
-      box-shadow: var(--shadow-sm);
-    }
-
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
-    }
-
-    input::placeholder, textarea::placeholder {
-      color: var(--text-muted);
-    }
-
-    .search-input {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    /* Buttons */
-    button {
-      cursor: pointer;
-      font-weight: 500;
-      padding: var(--space-3) var(--space-4);
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      white-space: nowrap;
-      border: 1px solid transparent;
-      transition: all 0.2s ease;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: var(--bg-primary);
-      border-color: var(--accent);
-      font-weight: 600;
-    }
-
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
-    }
-
-    .btn-success {
-      background: var(--success);
-      color: var(--bg-primary);
-      border-color: var(--success);
-      font-weight: 600;
-    }
-
-    .btn-success:hover {
-      background: var(--success-hover);
-      border-color: var(--success-hover);
-    }
-
-    .btn-ghost {
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-      border-color: var(--border);
-    }
-
-    .btn-ghost:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      border-color: var(--border-light);
-    }
-
-    /* Layout */
-    .main-content {
-      padding: var(--space-8) 0;
-    }
-
-    .grid {
-      display: grid;
-      gap: var(--space-8);
-      grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 1024px) {
-      .grid {
-        grid-template-columns: 1.2fr 0.8fr;
-      }
-    }
-
-    /* Cards/Panels */
-    .card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .card-header {
-      padding: var(--space-6);
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-tertiary);
-    }
-
-    .card-content {
-      padding: var(--space-6);
-    }
-
-    .card-title {
-      font-size: var(--text-lg);
-      font-weight: 600;
-      margin: 0 0 var(--space-2) 0;
-      color: var(--text-primary);
-    }
-
-    .section-subtitle {
-      font-size: var(--text-xs);
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: var(--space-6) 0 var(--space-4) 0;
-    }
-
-    /* Form Layout */
-    .form-row {
-      display: flex;
-      gap: var(--space-3);
-      align-items: flex-end;
-      flex-wrap: wrap;
-      margin-bottom: var(--space-4);
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-    }
-
-    .form-group.flex-1 {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: var(--space-3);
-      flex-wrap: wrap;
-      align-items: center;
-      padding-top: var(--space-4);
-      border-top: 1px solid var(--border);
-    }
-
-    /* Filter Controls */
-    .filter-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-4);
-      margin-bottom: var(--space-6);
-      flex-wrap: wrap;
-    }
-
-    .filter-buttons {
-      display: flex;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-    }
-
-    .filter-buttons button {
-      padding: var(--space-2) var(--space-4);
-      font-size: var(--text-sm);
-    }
-
-    .filter-buttons button.active {
-      background: var(--accent);
-      color: var(--bg-primary);
-      border-color: var(--accent);
-    }
-
-    /* Task List */
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    .task-item {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: var(--space-4);
-      align-items: center;
-      padding: var(--space-4);
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      transition: all 0.2s ease;
-    }
-
-    .task-item:hover {
-      border-color: var(--border-light);
-      box-shadow: var(--shadow-md);
-    }
-
-    .task-item.completed .task-title {
-      text-decoration: line-through;
-      color: var(--text-muted);
-    }
-
-    .task-content {
-      min-width: 0; /* Allow text to wrap */
-    }
-
-    .task-title {
-      font-size: var(--text-base);
-      font-weight: 500;
-      margin: 0 0 var(--space-1) 0;
-      color: var(--text-primary);
-      line-height: 1.4;
-    }
-
-    .task-meta {
-      display: flex;
-      gap: var(--space-3);
-      align-items: center;
-      flex-wrap: wrap;
-      font-size: var(--text-xs);
-      color: var(--text-muted);
-    }
-
-    .priority-badge {
-      padding: var(--space-1) var(--space-2);
-      border-radius: var(--radius-sm);
-      font-size: var(--text-xs);
-      font-weight: 500;
-      border: 1px solid transparent;
-    }
-
-    .priority-high {
-      background: rgba(239, 68, 68, 0.1);
-      color: #fca5a5;
-      border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .priority-medium {
-      background: rgba(245, 158, 11, 0.1);
-      color: #fcd34d;
-      border-color: rgba(245, 158, 11, 0.2);
-    }
-
-    .priority-low {
-      background: rgba(34, 197, 94, 0.1);
-      color: #86efac;
-      border-color: rgba(34, 197, 94, 0.2);
-    }
-
-    .task-actions {
-      display: flex;
-      gap: var(--space-2);
-    }
-
-    .task-actions button {
-      padding: var(--space-2);
-      font-size: var(--text-xs);
-      min-width: auto;
-    }
-
-    /* Checkbox */
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-
-    /* Status Elements */
-    .sync-status {
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      border: 1px solid transparent;
-    }
-
-    .sync-status.online {
-      background: rgba(34, 197, 94, 0.1);
-      color: var(--success);
-      border-color: rgba(34, 197, 94, 0.2);
-    }
-
-    .sync-status.offline {
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--warning);
-      border-color: rgba(245, 158, 11, 0.2);
-    }
-
-    .sync-status.error {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger);
-      border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .google-avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .status-message {
-      font-size: var(--text-sm);
-      color: var(--text-muted);
-      margin-top: var(--space-2);
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: var(--space-8) 0;
-      color: var(--text-muted);
-      font-size: var(--text-sm);
-      border-top: 1px solid var(--border);
-      margin-top: var(--space-12);
-    }
-
-    /* Utility Classes */
-    .hidden { 
-      display: none; 
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    .text-muted {
-      color: var(--text-muted);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 640px) {
-      .container {
-        padding: 0 var(--space-3);
-      }
-      
-      .header-controls {
-        width: 100%;
-      }
-      
-      .form-row {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .filter-controls {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .task-item {
-        padding: var(--space-3);
-      }
-      
-      h1 {
-        font-size: var(--text-2xl);
-      }
-    }
+  <style>
+    /* Critical inline styles for immediate rendering */
+    .app-layout { display: flex; height: 100vh; overflow: hidden; }
+    .content-panel { display: none; }
+    .content-panel.active { display: block; }
+    .hidden { display: none; }
+  </style>
   </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <div class="header-content">
-        <div class="header-top">
-          <h1>Memory Cue</h1>
-          <div id="syncStatus" class="sync-status offline">Offline</div>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">Memory Cue</div>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          ☰
+        </button>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-panel="dashboard" aria-selected="true">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-item" data-panel="reminders" aria-selected="false">
+          <span class="nav-icon">🔔</span>
+          <span class="nav-label">Reminders</span>
+        </button>
+        <button class="nav-item" data-panel="planner" aria-selected="false">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Planner</span>
+        </button>
+        <button class="nav-item" data-panel="notes" aria-selected="false">
+          <span class="nav-icon">📝</span>
+          <span class="nav-label">Notes</span>
+        </button>
+        <button class="nav-item" data-panel="resources" aria-selected="false">
+          <span class="nav-icon">📚</span>
+          <span class="nav-label">Resources</span>
+        </button>
+        <button class="nav-item" data-panel="templates" aria-selected="false">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Templates</span>
+        </button>
+        <button class="nav-item" data-panel="settings" aria-selected="false">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content Area -->
+    <div class="main-area">
+      <!-- Top Bar -->
+      <header class="topbar" role="banner">
+        <div class="topbar-left">
+          <div class="search-container">
+            <input 
+              id="q" 
+              class="search-input" 
+              placeholder="Search reminders, resources, notes..." 
+              aria-label="Search"
+            />
+          </div>
         </div>
-        <div class="header-controls">
-          <input id="q" class="search-input" placeholder="Search reminders or #tags" />
-          <button id="voiceBtn" class="btn-ghost" type="button" title="Voice quick add">
-            🎙️ Voice
+        <div class="topbar-right">
+          <button class="topbar-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+            🌙
           </button>
-          <button id="notifBtn" class="btn-ghost" type="button" title="Enable notifications">
-            🔔 Alerts
+          <div id="syncStatus" class="sync-status offline">Offline</div>
+          <button id="voiceBtn" class="topbar-btn" type="button" title="Voice quick add">
+            🎙️
           </button>
-          <button id="addQuickBtn" class="btn-primary" type="button" title="Add quick reminder">
-            + Quick Add
+          <button id="notifBtn" class="topbar-btn" type="button" title="Enable notifications">
+            🔔
           </button>
-          <button id="googleSignInBtn" class="btn-ghost" type="button">
-            Sign in with Google
+          <div class="quick-add-container">
+            <input 
+              id="quickAddInput" 
+              class="quick-add-input" 
+              placeholder="Quick add reminder..." 
+              style="display: none;"
+            />
+          </div>
+          <button id="addQuickBtn" class="topbar-btn primary" type="button" title="Add quick reminder">
+            + Add
           </button>
-          <button id="googleSignOutBtn" class="btn-ghost hidden" type="button">
-            <img id="googleAvatar" class="google-avatar hidden" />
+          <button id="googleSignInBtn" class="topbar-btn" type="button">
+            Sign in
+          </button>
+          <button id="googleSignOutBtn" class="topbar-btn hidden" type="button">
+            <img id="googleAvatar" class="user-avatar hidden" />
             Sign out
           </button>
           <span id="googleUserName" class="text-muted"></span>
         </div>
-      </div>
-    </div>
-  </header>
+      </header>
 
-  <main class="main-content">
-    <div class="container">
-      <div class="grid">
-        <!-- Create Reminder Card -->
-        <section class="card">
-          <div class="card-header">
-            <h2 class="card-title">Create Reminder</h2>
-          </div>
-          <div class="card-content">
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="sr-only" for="title">Reminder</label>
-                <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
-                <div id="dateFeedback" style="margin-top: 4px; font-size: 12px; color: var(--text-muted); display: none;"></div>
-              </div>
-              <div class="form-group">
-                <label class="sr-only" for="date">Date</label>
-                <input id="date" type="date" />
-              </div>
-              <div class="form-group">
-                <label class="sr-only" for="time">Time</label>
-                <input id="time" type="time" />
-              </div>
-              <div class="form-group">
-                <select id="priority">
-                  <option>High</option>
-                  <option selected>Medium</option>
-                  <option>Low</option>
-                </select>
-              </div>
-              <button id="saveBtn" class="btn-success" type="button">Save</button>
+      <!-- Content Panels -->
+      <main class="content-area" role="main">
+        <!-- Dashboard Panel -->
+        <div class="content-panel active" id="dashboardPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Dashboard</h1>
+              <p class="panel-subtitle">Your daily overview and quick agenda</p>
             </div>
-            
-            <div class="form-actions">
-              <button id="copyMtlBtn" class="btn-ghost" type="button">Copy MTL updates</button>
+          </div>
+
+          <div class="grid grid-2">
+            <!-- Today's Agenda -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Today's Agenda</h2>
+              </div>
+              <div class="card-content">
+                <div id="todayAgenda" class="agenda-list">
+                  <div class="empty-state">
+                    <div class="empty-icon">📅</div>
+                    <div class="empty-title">No agenda for today</div>
+                    <div class="empty-description">Add lessons and reminders to see them here</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Quick Stats</h2>
+              </div>
+              <div class="card-content">
+                <div class="grid grid-2">
+                  <div class="stat-item">
+                    <div class="stat-number" id="subjectCount">0</div>
+                    <div class="stat-label">Subjects</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-number" id="reminderCount">0</div>
+                    <div class="stat-label">Active Reminders</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-number" id="lessonCount">0</div>
+                    <div class="stat-label">This Week's Lessons</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-number" id="templateCount">0</div>
+                    <div class="stat-label">Templates</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reminders Panel -->
+        <div class="content-panel" id="remindersPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Reminders</h1>
+              <p class="panel-subtitle">Manage your reminders and sync with Firebase</p>
+            </div>
+            <div class="panel-actions">
+              <button id="copyMtlBtn" class="btn-ghost" type="button">Copy MTL</button>
               <label class="btn-ghost" style="cursor: pointer;">
                 Import JSON
                 <input id="importFile" type="file" accept="application/json" class="sr-only" />
               </label>
               <button id="exportBtn" class="btn-ghost" type="button">Export JSON</button>
-              <button id="openSettings" class="btn-ghost" type="button">⚙️ Settings</button>
-              <div id="status" class="status-message"></div>
             </div>
           </div>
-        </section>
 
-        <!-- Reminders List Card -->
-        <section class="card">
-          <div class="card-header">
-            <div class="filter-controls">
-              <div class="filter-buttons">
-                <button class="btn-ghost active" data-filter="today" type="button">Today</button>
-                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
-                <button class="btn-ghost" data-filter="all" type="button">All</button>
-                <button class="btn-ghost" data-filter="done" type="button">Completed</button>
+          <div class="grid">
+            <!-- Create Reminder Form -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Create Reminder</h2>
               </div>
-              <select id="sort">
-                <option value="smart">Smart sort</option>
-                <option value="time">Time</option>
-                <option value="priority">Priority</option>
+              <div class="card-content">
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label class="sr-only" for="title">Reminder</label>
+                    <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
+                    <div id="dateFeedback" style="margin-top: 4px; font-size: 12px; color: var(--text-muted); display: none;"></div>
+                  </div>
+                  <div class="form-group">
+                    <label class="sr-only" for="date">Date</label>
+                    <input id="date" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label class="sr-only" for="time">Time</label>
+                    <input id="time" type="time" />
+                  </div>
+                  <div class="form-group">
+                    <select id="priority">
+                      <option>High</option>
+                      <option selected>Medium</option>
+                      <option>Low</option>
+                    </select>
+                  </div>
+                  <button id="saveBtn" class="btn-success" type="button">Save</button>
+                </div>
+                <div id="status" class="status-message"></div>
+              </div>
+            </div>
+
+            <!-- Reminders List -->
+            <div class="card">
+              <div class="card-header">
+                <div class="filter-controls">
+                  <div class="filter-buttons">
+                    <button class="btn-ghost active" data-filter="today" type="button">Today</button>
+                    <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
+                    <button class="btn-ghost" data-filter="all" type="button">All</button>
+                    <button class="btn-ghost" data-filter="done" type="button">Completed</button>
+                  </div>
+                  <select id="sort">
+                    <option value="smart">Smart sort</option>
+                    <option value="time">Time</option>
+                    <option value="priority">Priority</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-content">
+                <div id="list" class="task-list" aria-live="polite">
+                  <div class="text-muted">Loading...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lesson Planner Panel -->
+        <div class="content-panel" id="plannerPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Weekly Lesson Planner</h1>
+              <p class="panel-subtitle">Plan and organize your weekly lessons</p>
+            </div>
+            <div class="panel-actions">
+              <button class="btn-ghost" id="manageSubjectsBtn">Manage Subjects</button>
+              <button class="btn-primary" id="addLessonBtn">+ Add Lesson</button>
+            </div>
+          </div>
+
+          <!-- Week Navigation -->
+          <div class="week-nav">
+            <button class="btn-ghost" id="prevWeekBtn">← Previous</button>
+            <div class="week-info">
+              <div class="week-title" id="weekTitle">Week of September 9, 2024</div>
+              <div class="week-range" id="weekRange">Sep 9 - Sep 13</div>
+            </div>
+            <button class="btn-ghost" id="nextWeekBtn">Next →</button>
+            <button class="btn-ghost" id="todayBtn">Today</button>
+          </div>
+
+          <!-- Planner Grid -->
+          <div class="card">
+            <div class="card-content">
+              <div class="planner-grid" id="plannerGrid">
+                <!-- Grid will be generated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes Panel -->
+        <div class="content-panel" id="notesPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Lesson Notes</h1>
+              <p class="panel-subtitle">Rich text notes for your subjects and general scratch pad</p>
+            </div>
+            <div class="panel-actions">
+              <select id="notesSubjectSelect">
+                <option value="global">Global Scratch Pad</option>
               </select>
             </div>
           </div>
-          <div class="card-content">
-            <h3 class="section-subtitle">Reminders</h3>
-            <div id="list" class="task-list" aria-live="polite">
-              <div class="text-muted">Loading...</div>
+
+          <div class="card">
+            <div class="card-content">
+              <div class="notes-editor">
+                <div class="notes-toolbar">
+                  <button data-command="bold" title="Bold">B</button>
+                  <button data-command="italic" title="Italic">I</button>
+                  <button data-command="insertUnorderedList" title="Bullet List">•</button>
+                  <button data-command="insertOrderedList" title="Numbered List">1.</button>
+                  <button data-command="removeFormat" title="Clear Formatting">Clear</button>
+                </div>
+                <div 
+                  class="notes-content" 
+                  id="notesContent" 
+                  contenteditable="true" 
+                  data-placeholder="Start typing your notes..."
+                ></div>
+              </div>
             </div>
           </div>
-        </section>
-      </div>
-
-      <!-- Settings Card (hidden by default) -->
-      <section class="card hidden" id="settingsSection" style="margin-top: var(--space-8);">
-        <div class="card-header">
-          <h2 class="card-title">Calendar Sync Settings</h2>
         </div>
-        <div class="card-content">
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+
+        <!-- Resources Panel -->
+        <div class="content-panel" id="resourcesPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Resource Library</h1>
+              <p class="panel-subtitle">Save and organize links and files for your lessons</p>
             </div>
-            <button id="saveSettings" class="btn-success" type="button">Save settings</button>
-            <button id="testSync" class="btn-ghost" type="button">Send test</button>
+            <div class="panel-actions">
+              <button class="btn-primary" id="addResourceBtn">+ Add Resource</button>
+            </div>
           </div>
-          <div class="text-muted" style="margin-top: var(--space-4);">
-            <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
-            set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL (ends with <code>/exec</code>).
+
+          <div class="card">
+            <div class="card-content">
+              <div id="resourcesList">
+                <div class="empty-state">
+                  <div class="empty-icon">📚</div>
+                  <div class="empty-title">No resources yet</div>
+                  <div class="empty-description">Add links, files, and other resources for your lessons</div>
+                  <button class="btn-primary mt-4" onclick="document.getElementById('addResourceBtn').click()">
+                    Add First Resource
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+
+        <!-- Templates Panel -->
+        <div class="content-panel" id="templatesPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Lesson Templates</h1>
+              <p class="panel-subtitle">Save and reuse lesson structures</p>
+            </div>
+            <div class="panel-actions">
+              <button class="btn-primary" id="createTemplateBtn">+ Create Template</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-content">
+              <div id="templateGrid" class="template-grid">
+                <div class="empty-state">
+                  <div class="empty-icon">📋</div>
+                  <div class="empty-title">No templates yet</div>
+                  <div class="empty-description">Create lesson templates to quickly add structured lessons to your planner</div>
+                  <button class="btn-primary mt-4" onclick="document.getElementById('createTemplateBtn').click()">
+                    Create First Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="content-panel" id="settingsPanel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Settings</h1>
+              <p class="panel-subtitle">Configure your preferences and sync settings</p>
+            </div>
+          </div>
+
+          <div class="grid">
+            <!-- Calendar Sync Settings -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Calendar Sync Settings</h2>
+              </div>
+              <div class="card-content">
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label class="form-label" for="syncUrl">Google Apps Script URL</label>
+                    <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+                  </div>
+                  <button id="saveSettings" class="btn-success" type="button">Save</button>
+                  <button id="testSync" class="btn-ghost" type="button">Test</button>
+                </div>
+                <div class="text-muted" style="margin-top: var(--space-4);">
+                  <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
+                  set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL (ends with <code>/exec</code>).
+                </div>
+              </div>
+            </div>
+
+            <!-- Teacher Data Management -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Teacher Data</h2>
+              </div>
+              <div class="card-content">
+                <div class="form-row">
+                  <button id="exportTeacherDataBtn" class="btn-ghost" type="button">Export Teacher Data</button>
+                  <label class="btn-ghost" style="cursor: pointer;">
+                    Import Teacher Data
+                    <input id="importTeacherDataFile" type="file" accept="application/json" class="sr-only" />
+                  </label>
+                  <button id="clearTeacherDataBtn" class="btn-ghost" type="button" style="color: var(--danger);">Clear All Data</button>
+                </div>
+                <div class="text-muted" style="margin-top: var(--space-4);">
+                  Export/import includes subjects, lesson plans, notes, resources, and templates. Reminders are managed separately via Firebase.
+                </div>
+              </div>
+            </div>
+
+            <!-- Theme Settings -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Appearance</h2>
+              </div>
+              <div class="card-content">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="themeSelect">Theme</label>
+                    <select id="themeSelect">
+                      <option value="auto">Auto (System)</option>
+                      <option value="dark">Dark</option>
+                      <option value="light">Light</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-  </main>
+  </div>
 
-  <footer class="footer">
-    <div class="container">
-      Adelaide time. Voice works best in Chrome. Multi-device sync via Firebase + Calendar sync via Google Apps Script.
-    </div>
-  </footer>
-
-  <!-- Firebase SDK and JavaScript (same as before) -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-    import { GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
-      authDomain: "memory-cue-app.firebaseapp.com",
-      projectId: "memory-cue-app",
-      storageBucket: "memory-cue-app.firebasestorage.app",
-      messagingSenderId: "751284466633",
-      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
-      measurementId: "G-R0V4M7VCE6"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
+  <!-- Teacher App JavaScript (without Firebase dependencies) -->
+  <script>
     // App state
     let items = [];
     let filter = 'today';
@@ -680,10 +455,407 @@
     let userId = null;
     let unsubscribe = null;
     let currentUser = null;
+    let currentPanel = 'dashboard';
+    let currentWeek = new Date();
+    let currentSubjectForNotes = 'global';
+
+    // Teacher data state
+    let subjects = [];
+    let lessonPlans = {};
+    let notes = { globalScratch: '', subjects: {} };
+    let resources = [];
+    let templates = [];
 
     const TZ = 'Australia/Adelaide';
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    // Utility Functions
+    function generateISOWeekKey(date) {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const start = new Date(year, 0, 1);
+      const days = Math.floor((d - start) / (24 * 60 * 60 * 1000));
+      const week = Math.ceil((days + start.getDay() + 1) / 7);
+      return `${year}-W${String(week).padStart(2, '0')}`;
+    }
+
+    function loadTeacherData() {
+      try {
+        subjects = JSON.parse(localStorage.getItem('tcSubjects') || '[]');
+        lessonPlans = JSON.parse(localStorage.getItem('tcLessonPlans') || '{}');
+        notes = JSON.parse(localStorage.getItem('tcNotes') || '{"globalScratch":"","subjects":{}}');
+        resources = JSON.parse(localStorage.getItem('tcResources') || '[]');
+        templates = JSON.parse(localStorage.getItem('tcTemplates') || '[]');
+      } catch (e) {
+        console.error('Error loading teacher data:', e);
+        // Reset to defaults if corrupted
+        subjects = [];
+        lessonPlans = {};
+        notes = { globalScratch: '', subjects: {} };
+        resources = [];
+        templates = [];
+      }
+    }
+
+    function saveTeacherData() {
+      try {
+        localStorage.setItem('tcSubjects', JSON.stringify(subjects));
+        localStorage.setItem('tcLessonPlans', JSON.stringify(lessonPlans));
+        localStorage.setItem('tcNotes', JSON.stringify(notes));
+        localStorage.setItem('tcResources', JSON.stringify(resources));
+        localStorage.setItem('tcTemplates', JSON.stringify(templates));
+      } catch (e) {
+        console.error('Error saving teacher data:', e);
+        toast('Failed to save data - storage may be full');
+      }
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem('mcTheme');
+      const theme = saved || 'auto';
+      applyTheme(theme);
+      const themeSelect = $('#themeSelect');
+      if (themeSelect) themeSelect.value = theme;
+    }
+
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      if (theme === 'light') {
+        html.setAttribute('data-theme', 'light');
+      } else if (theme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+      } else {
+        // Auto mode - use system preference
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+          html.setAttribute('data-theme', 'light');
+        } else {
+          html.setAttribute('data-theme', 'dark');
+        }
+      }
+      localStorage.setItem('mcTheme', theme);
+      updateThemeToggle();
+    }
+
+    function updateThemeToggle() {
+      const toggle = $('#themeToggle');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (toggle) toggle.textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // Panel Navigation
+    function showPanel(panelId) {
+      // Hide all panels
+      $$('.content-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      
+      // Show target panel
+      const targetPanel = $(`#${panelId}Panel`);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+        currentPanel = panelId;
+      }
+
+      // Update navigation
+      $$('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        item.setAttribute('aria-selected', 'false');
+      });
+      
+      const activeNavItem = $(`.nav-item[data-panel="${panelId}"]`);
+      if (activeNavItem) {
+        activeNavItem.classList.add('active');
+        activeNavItem.setAttribute('aria-selected', 'true');
+      }
+
+      // Initialize panel-specific content
+      if (panelId === 'planner') {
+        initializePlanner();
+      } else if (panelId === 'notes') {
+        initializeNotes();
+      } else if (panelId === 'resources') {
+        renderResources();
+      } else if (panelId === 'templates') {
+        renderTemplates();
+      } else if (panelId === 'dashboard') {
+        updateDashboard();
+      } else if (panelId === 'reminders') {
+        render();
+      }
+    }
+
+    // Dashboard Functions
+    function updateDashboard() {
+      updateQuickStats();
+      renderTodayAgenda();
+    }
+
+    function updateQuickStats() {
+      const subjectCountEl = $('#subjectCount');
+      const reminderCountEl = $('#reminderCount');
+      const lessonCountEl = $('#lessonCount');
+      const templateCountEl = $('#templateCount');
+      
+      if (subjectCountEl) subjectCountEl.textContent = subjects.length;
+      if (reminderCountEl) reminderCountEl.textContent = items.filter(item => !item.done).length;
+      
+      const currentWeekKey = generateISOWeekKey(new Date());
+      const weekLessons = lessonPlans[currentWeekKey] || [];
+      if (lessonCountEl) lessonCountEl.textContent = weekLessons.length;
+      if (templateCountEl) templateCountEl.textContent = templates.length;
+    }
+
+    function renderTodayAgenda() {
+      const agendaContainer = $('#todayAgenda');
+      if (!agendaContainer) return;
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get today's lessons
+      const currentWeekKey = generateISOWeekKey(new Date());
+      const weekLessons = lessonPlans[currentWeekKey] || [];
+      const todayLessons = weekLessons.filter(lesson => {
+        const lessonDate = new Date(currentWeek);
+        const dayOffset = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(lesson.day);
+        lessonDate.setDate(lessonDate.getDate() - lessonDate.getDay() + 1 + dayOffset);
+        return lessonDate.toISOString().split('T')[0] === today;
+      });
+
+      // Get today's reminders
+      const todayReminders = items.filter(item => {
+        if (!item.due) return false;
+        return item.due.split('T')[0] === today && !item.done;
+      });
+
+      const agendaItems = [];
+
+      // Add lessons
+      todayLessons.forEach(lesson => {
+        const subject = subjects.find(s => s.id === lesson.subjectId);
+        agendaItems.push({
+          time: lesson.slot,
+          title: lesson.title,
+          type: 'lesson',
+          meta: subject ? subject.name : 'Unknown Subject',
+          color: subject ? subject.color : 'blue'
+        });
+      });
+
+      // Add reminders
+      todayReminders.forEach(reminder => {
+        const time = reminder.due ? new Date(reminder.due).toLocaleTimeString('en-AU', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : '';
+        agendaItems.push({
+          time,
+          title: reminder.title,
+          type: 'reminder',
+          meta: `${reminder.priority} priority`,
+          color: reminder.priority === 'High' ? 'red' : reminder.priority === 'Medium' ? 'orange' : 'green'
+        });
+      });
+
+      // Sort by time
+      agendaItems.sort((a, b) => {
+        if (a.time < b.time) return -1;
+        if (a.time > b.time) return 1;
+        return 0;
+      });
+
+      if (agendaItems.length === 0) {
+        agendaContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📅</div>
+            <div class="empty-title">No agenda for today</div>
+            <div class="empty-description">Add lessons and reminders to see them here</div>
+          </div>
+        `;
+        return;
+      }
+
+      agendaContainer.innerHTML = agendaItems.map(item => `
+        <div class="agenda-item">
+          <div class="agenda-time">${item.time}</div>
+          <div class="agenda-content">
+            <div class="agenda-title">${escapeHtml(item.title)}</div>
+            <div class="agenda-meta">${item.meta}</div>
+          </div>
+          <div class="subject-dot subject-color-${item.color}"></div>
+        </div>
+      `).join('');
+    }
+
+    // Initialize teacher app
+    function initializeTeacherApp() {
+      loadTeacherData();
+      loadTheme();
+      setupEventListeners();
+      
+      // Load demo reminders
+      try {
+        const demoReminders = localStorage.getItem('demoReminders');
+        if (demoReminders) {
+          items = JSON.parse(demoReminders);
+        }
+      } catch (e) {
+        console.error('Error loading demo reminders:', e);
+        items = [];
+      }
+      
+      showPanel('dashboard');
+    }
+
+    function setupEventListeners() {
+      // Navigation
+      $$('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const panel = item.getAttribute('data-panel');
+          showPanel(panel);
+        });
+      });
+
+      // Sidebar toggle
+      $('#sidebarToggle')?.addEventListener('click', () => {
+        const sidebar = $('#sidebar');
+        if (window.innerWidth <= 1024) {
+          // Mobile behavior
+          sidebar.classList.toggle('open');
+          $('#sidebarOverlay').classList.toggle('open');
+        } else {
+          // Desktop behavior
+          sidebar.classList.toggle('collapsed');
+        }
+      });
+
+      // Mobile sidebar overlay
+      $('#sidebarOverlay')?.addEventListener('click', () => {
+        $('#sidebar').classList.remove('open');
+        $('#sidebarOverlay').classList.remove('open');
+      });
+
+      // Theme toggle
+      $('#themeToggle')?.addEventListener('click', () => {
+        const current = localStorage.getItem('mcTheme') || 'auto';
+        const next = current === 'dark' ? 'light' : current === 'light' ? 'auto' : 'dark';
+        applyTheme(next);
+      });
+
+      $('#themeSelect')?.addEventListener('change', (e) => {
+        applyTheme(e.target.value);
+      });
+
+      // Teacher data export/import
+      $('#exportTeacherDataBtn')?.addEventListener('click', exportTeacherData);
+      $('#importTeacherDataFile')?.addEventListener('change', importTeacherData);
+      $('#clearTeacherDataBtn')?.addEventListener('click', clearTeacherData);
+
+      // Search functionality
+      q?.addEventListener('input', handleSearch);
+    }
+
+    function handleSearch() {
+      const query = q.value.trim().toLowerCase();
+      
+      if (currentPanel === 'reminders') {
+        render(); // Existing reminder search
+      } else if (currentPanel === 'resources') {
+        renderResources();
+      } else if (currentPanel === 'notes') {
+        // Could implement note search in the future
+      }
+    }
+
+    function exportTeacherData() {
+      const teacherData = {
+        subjects,
+        lessonPlans,
+        notes,
+        resources,
+        templates,
+        exportedAt: new Date().toISOString(),
+        version: '1.0'
+      };
+
+      const blob = new Blob([JSON.stringify(teacherData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `memory-cue-teacher-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Teacher data exported successfully');
+    }
+
+    function importTeacherData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          
+          if (data.subjects) subjects = data.subjects;
+          if (data.lessonPlans) lessonPlans = data.lessonPlans;
+          if (data.notes) notes = data.notes;
+          if (data.resources) resources = data.resources;
+          if (data.templates) templates = data.templates;
+
+          saveTeacherData();
+          
+          // Refresh current panel
+          if (currentPanel === 'planner') initializePlanner();
+          if (currentPanel === 'notes') initializeNotes();
+          if (currentPanel === 'resources') renderResources();
+          if (currentPanel === 'templates') renderTemplates();
+          if (currentPanel === 'dashboard') updateDashboard();
+
+          toast('Teacher data imported successfully');
+        } catch (error) {
+          console.error('Import error:', error);
+          toast('Failed to import data - invalid file format');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function clearTeacherData() {
+      if (!confirm('Are you sure you want to clear all teacher data? This cannot be undone.')) {
+        return;
+      }
+
+      subjects = [];
+      lessonPlans = {};
+      notes = { globalScratch: '', subjects: {} };
+      resources = [];
+      templates = [];
+
+      saveTeacherData();
+      
+      // Refresh current panel
+      showPanel(currentPanel);
+      toast('All teacher data cleared');
+    }
+
+    // Placeholder functions for new features (to be implemented)
+    function initializePlanner() {
+      toast('Planner feature coming soon');
+    }
+
+    function initializeNotes() {
+      toast('Notes feature coming soon');
+    }
+
+    function renderResources() {
+      toast('Resources feature coming soon');
+    }
+
+    function renderTemplates() {
+      toast('Templates feature coming soon');
+    }
 
     // DOM elements
     const q = $('#q');
@@ -717,63 +889,49 @@
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
     if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
 
-    // Google Sign-In logic
-    googleSignInBtn.addEventListener('click', async () => {
-      const provider = new GoogleAuthProvider();
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (error) {
-        toast('Google sign-in failed');
-        console.error(error);
-      }
+    // Demo authentication handlers
+    googleSignInBtn.addEventListener('click', () => {
+      toast('Demo mode - Firebase authentication not available');
     });
 
-    googleSignOutBtn.addEventListener('click', async () => {
-      try {
-        await signOut(auth);
-        toast('Signed out');
-        items = [];
-        render();
-      } catch (error) {
-        toast('Sign-out failed');
-        console.error(error);
-      }
+    googleSignOutBtn.addEventListener('click', () => {
+      toast('Demo mode - sign out not available');
     });
 
-    // Firebase Authentication state
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userId = user.uid;
-        currentUser = user;
-        syncStatus.textContent = 'Online';
-        syncStatus.className = 'sync-status online';
-        googleSignInBtn.classList.add('hidden');
-        googleSignOutBtn.classList.remove('hidden');
-        if (user.photoURL) {
-          googleAvatar.classList.remove('hidden');
-          googleAvatar.src = user.photoURL;
-        } else {
-          googleAvatar.classList.add('hidden');
-          googleAvatar.src = '';
-        }
-        if (user.displayName) {
-          googleUserName.textContent = `Hello, ${user.displayName}`;
-        } else if (user.email) {
-          googleUserName.textContent = user.email;
-        } else {
-          googleUserName.textContent = '';
-        }
-        setupFirestoreSync();
-      } else {
-        googleSignInBtn.classList.remove('hidden');
-        googleSignOutBtn.classList.add('hidden');
-        googleAvatar.classList.add('hidden');
-        googleAvatar.src = '';
-        googleUserName.textContent = '';
-        items = [];
-        render();
-      }
-    });
+    // Set up demo mode UI
+    syncStatus.textContent = 'Demo Mode';
+    syncStatus.className = 'sync-status offline';
+    googleSignInBtn.textContent = 'Demo Mode';
+
+    // Stub functions for Firebase (to be implemented later)
+    function setupFirestoreSync() {
+      console.log('Firebase sync not implemented in demo mode');
+    }
+
+    function saveToFirebase(item) {
+      console.log('Would save to Firebase:', item);
+    }
+
+    function deleteFromFirebase(id) {
+      console.log('Would delete from Firebase:', id);
+    }
+
+    function addPendingChange(change) {
+      // For demo mode, just log
+      console.log('Would add pending change:', change);
+    }
+
+    function removePendingChange(itemId) {
+      console.log('Would remove pending change:', itemId);
+    }
+
+    function mergeWithLocal(remoteItems) {
+      return remoteItems;
+    }
+
+    async function retryPendingChanges() {
+      console.log('Would retry pending changes');
+    }
 
     // Firestore real-time sync
     function setupFirestoreSync() {
@@ -1093,7 +1251,6 @@
     }
 
     function addItem(obj) {
-      if (!userId) { toast('Sign in to add reminders'); return; }
       const item = {
         id: uid(),
         title: obj.title.trim(),
@@ -1108,8 +1265,9 @@
       items = [item, ...items];
       render();
 
-      saveToFirebase(item);
-      tryCalendarSync(item);
+      // In demo mode, just save to localStorage
+      localStorage.setItem('demoReminders', JSON.stringify(items));
+      toast('Reminder added (demo mode)');
       
       return item;
     }
@@ -1449,7 +1607,8 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    render();
+    // Initialize the teacher app
+    initializeTeacherApp();
   </script>
 
   <!-- Non-module scripts (same as before) -->
