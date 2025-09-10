@@ -1,12 +1,13 @@
-/* Memory Cue — Service Worker (improved)
+/* Memory Cue — Service Worker (improved, CORS-safe for Apps Script)
    Strategy:
    - HTML navigations: network-first with offline fallback to /index.html
    - Static assets (JS/CSS/icons/images): stale-while-revalidate
    - Google Fonts: runtime caching
    - Safe updates: skipWaiting + clients.claim + nav preload (when supported)
+   NOTE: v22 bump to force clients to update; bypass script.google.com so requests are untouched.
 */
 
-const VERSION = 'v21';
+const VERSION = 'v22';
 const APP_CACHE = `memory-cue-app-${VERSION}`;
 const STATIC_CACHE = `memory-cue-static-${VERSION}`;
 const FONTS_CACHE = `memory-cue-fonts-${VERSION}`;
@@ -61,6 +62,11 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
+  // Bypass Apps Script requests entirely (avoid caching / potential header mutation).
+  if (url.hostname === 'script.google.com') {
+    return; // allow default browser handling
+  }
+
   // 1) HTML navigations → network-first with offline fallback
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
@@ -97,8 +103,10 @@ self.addEventListener('fetch', (event) => {
 
   // 3) Same-origin static assets (icons, images, css, js) → SWR
   if (url.origin === self.location.origin &&
-      (/\.(?:js|css|png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname) ||
-       url.pathname.startsWith('/icons/'))) {
+      (/
+        .(?:js|css|png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname) ||
+        url.pathname.startsWith('/icons/')
+      )) {
     event.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
     return;
   }
