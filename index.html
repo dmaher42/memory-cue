@@ -9,7 +9,6 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
   <style>
-  <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
     .content-panel { display: none; }
@@ -18,7 +17,6 @@
     .login-view { display:flex; align-items:center; justify-content:center; height:100vh; }
     .login-box { max-width:320px; width:100%; display:flex; flex-direction:column; }
     .login-box input { margin-bottom:0.5rem; padding:0.5rem; }
-  </style>
   </style>
 </head>
 <body>
@@ -944,124 +942,7 @@
       console.log('Would retry pending changes');
     }
 
-    // Firestore real-time sync
-    function setupFirestoreSync() {
-      if (!userId) {
-        items = [];
-        render();
-        return;
-      }
-      if (unsubscribe) unsubscribe();
-      const userCollection = collection(db, 'users', userId, 'reminders');
-      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
 
-      unsubscribe = onSnapshot(qSnap, (snapshot) => {
-        const remoteItems = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          remoteItems.push({
-            id: doc.id,
-            title: data.title,
-            priority: data.priority,
-            notes: data.notes || '',
-            done: data.done,
-            due: data.due,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt
-          });
-        });
-
-        items = mergeWithLocal(remoteItems);
-        render();
-      }, (error) => {
-        console.error('Firestore sync error:', error);
-        syncStatus.textContent = 'Sync Error';
-        syncStatus.className = 'sync-status error';
-      });
-    }
-
-    function mergeWithLocal(remoteItems) {
-      const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const merged = new Map();
-
-      remoteItems.forEach(item => merged.set(item.id, item));
-
-      localPending.forEach(change => {
-        if (change.action === 'upsert') {
-          merged.set(change.item.id, change.item);
-        } else if (change.action === 'delete') {
-          merged.delete(change.itemId);
-        }
-      });
-
-      return Array.from(merged.values());
-    }
-
-    async function saveToFirebase(item) {
-      if (!userId) return;
-      try {
-        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-          title: item.title,
-          priority: item.priority,
-          notes: item.notes,
-          done: item.done,
-          due: item.due,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt
-        });
-        removePendingChange(item.id);
-      } catch (error) {
-        console.error('Save failed:', error);
-        addPendingChange({ action: 'upsert', item });
-        syncStatus.textContent = 'Sync Pending';
-        syncStatus.className = 'sync-status offline';
-      }
-    }
-
-    async function deleteFromFirebase(id) {
-      if (!userId) return;
-      try {
-        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
-        removePendingChange(id);
-      } catch (error) {
-        console.error('Delete failed:', error);
-        addPendingChange({ action: 'delete', itemId: id });
-      }
-    }
-
-    function addPendingChange(change) {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const filtered = pending.filter(p => 
-        (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
-        (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
-      );
-      filtered.push(change);
-      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
-    }
-
-    function removePendingChange(itemId) {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const filtered = pending.filter(p => 
-        (p.action === 'upsert' && p.item.id !== itemId) ||
-        (p.action === 'delete' && p.itemId !== itemId)
-      );
-      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
-    }
-
-    async function retryPendingChanges() {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      for (const change of pending) {
-        try {
-          if (change.action === 'upsert') {
-            await saveToFirebase(change.item);
-          } else if (change.action === 'delete') {
-            await deleteFromFirebase(change.itemId);
-          }
-        } catch (error) {
-          break;
-        }
-      }
-    }
 
     async function tryCalendarSync(task) {
       const url = (localStorage.getItem('syncUrl') || '').trim();
