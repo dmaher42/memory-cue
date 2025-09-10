@@ -474,8 +474,12 @@
     let notes = { globalScratch: '', subjects: {} };
     let resources = [];
     let templates = [];
+    // Detect and store timezone
+    let settings = JSON.parse(localStorage.getItem('tcSettings') || '{}');
+    settings.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    localStorage.setItem('tcSettings', JSON.stringify(settings));
 
-    const TZ = 'Australia/Adelaide';
+    const TZ = settings.timeZone;
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
@@ -1059,8 +1063,8 @@
     function toISODatePart(d) { return d.toISOString().slice(0, 10); }
     function todayISO() {
       const now = new Date();
-      const adelaideDate = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
-      return toISODatePart(adelaideDate);
+      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+      return toISODatePart(tzDate);
     }
     function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
     function smartCompare(a, b) {
@@ -1271,10 +1275,10 @@
       const query = q.value.trim().toLowerCase();
 
       const now = new Date();
-      const adelaideNow = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
-      const todayStart = new Date(adelaideNow);
+      const tzNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+      const todayStart = new Date(tzNow);
       todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date(adelaideNow);
+      const todayEnd = new Date(tzNow);
       todayEnd.setHours(23, 59, 59, 999);
 
       let rows = items.slice();
@@ -1287,12 +1291,12 @@
 
       rows = rows.filter(r => {
         if (filter === 'done') return r.done;
-        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < adelaideNow;
+        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < tzNow;
         if (filter === 'today') {
           if (!r.due) return true;
           const dueDate = new Date(r.due);
-          const dueDateAdelaide = new Date(dueDate.toLocaleString("en-US", {timeZone: "Australia/Adelaide"}));
-          return dueDateAdelaide >= todayStart && dueDateAdelaide <= todayEnd;
+          const dueDateTz = new Date(dueDate.toLocaleString('en-US', { timeZone: TZ }));
+          return dueDateTz >= todayStart && dueDateTz <= todayEnd;
         }
         return true;
       });
