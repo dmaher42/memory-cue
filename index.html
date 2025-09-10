@@ -393,6 +393,26 @@
                   <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
                   set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL (ends with <code>/exec</code>).
                 </div>
+            </div>
+          </div>
+
+            <!-- Daily Email -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Daily Email</h2>
+              </div>
+              <div class="card-content">
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label class="form-label" for="emailAddress">Email Address</label>
+                    <input id="emailAddress" type="email" placeholder="you@example.com" />
+                  </div>
+                  <button id="saveEmail" class="btn-success" type="button">Save</button>
+                  <button id="testEmail" class="btn-ghost" type="button">Send Now</button>
+                </div>
+                <div class="text-muted" style="margin-top: var(--space-4);">
+                  Sends your active reminders to this email once per day.
+                </div>
               </div>
             </div>
 
@@ -895,11 +915,22 @@
     const saveSettings = $('#saveSettings');
     const testSync = $('#testSync');
     const syncAllBtn = $('#syncAllBtn');
+    const emailInput = $('#emailAddress');
+    const saveEmailBtn = $('#saveEmail');
+    const testEmailBtn = $('#testEmail');
     const settingsSection = $('#settingsSection');
 
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
     if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
+
+    const savedEmail = localStorage.getItem('emailAddress') || '';
+    if (savedEmail && emailInput) emailInput.value = savedEmail;
+    saveEmailBtn?.addEventListener('click', () => {
+      localStorage.setItem('emailAddress', emailInput.value.trim());
+      toast('Email saved');
+    });
+    testEmailBtn?.addEventListener('click', () => sendDailyEmail(true));
 
     // Firestore real-time sync
     function setupFirestoreSync() {
@@ -1060,8 +1091,32 @@
           body: JSON.stringify(payload) 
         });
         toast('Synced to Calendar');
-      } catch (e) { 
-        toast('Calendar sync failed (offline?)'); 
+      } catch (e) {
+        toast('Calendar sync failed (offline?)');
+      }
+    }
+
+    async function sendDailyEmail(force = false) {
+      const email = (localStorage.getItem('emailAddress') || '').trim();
+      if (!email) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const lastSent = localStorage.getItem('lastEmailSent');
+      if (!force && lastSent === today) return;
+      const active = items.filter(i => !i.done);
+      if (!active.length) return;
+      const url = (localStorage.getItem('syncUrl') || '').trim();
+      if (!url) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, reminders: active })
+        });
+        localStorage.setItem('lastEmailSent', today);
+        if (force) toast('Email sent');
+      } catch (err) {
+        console.error('Daily email failed', err);
+        if (force) toast('Email failed');
       }
     }
 
@@ -1280,6 +1335,7 @@
     }
 
     function render() {
+      sendDailyEmail();
       const query = q.value.trim().toLowerCase();
 
       const now = new Date();
