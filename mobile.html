@@ -357,6 +357,21 @@ z-index:100;box-shadow:var(--shadow-sm)}
       document.getElementById(target).classList.remove('hidden');
     }));
 
+    function updateNetworkBadge() {
+      if (!syncStatus) return;
+      if (navigator.onLine) {
+        syncStatus.textContent = 'Online';
+        syncStatus.className = 'sync-status online';
+      } else {
+        syncStatus.textContent = 'Offline';
+        syncStatus.className = 'sync-status offline';
+      }
+    }
+
+    window.addEventListener('online', updateNetworkBadge);
+    window.addEventListener('offline', updateNetworkBadge);
+    updateNetworkBadge();
+
     // Firestore sync
     function setupFirestoreSync() {
       if (!userId) { items=[]; render(); return; }
