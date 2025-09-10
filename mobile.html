@@ -240,6 +240,8 @@ z-index:100;box-shadow:var(--shadow-sm)}
           <div class="form-stack">
             <div class="form-group"><input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" /></div>
             <div class="form-row"><button id="saveSettings" class="btn-success flex-1" type="button">Save</button><button id="testSync" class="btn-ghost flex-1" type="button">Test</button></div>
+            <div class="form-group"><input id="emailAddress" type="email" placeholder="you@example.com" aria-label="Daily email address" /></div>
+            <div class="form-row"><button id="saveEmail" class="btn-success flex-1" type="button">Save Email</button><button id="testEmail" class="btn-ghost flex-1" type="button">Send Now</button></div>
           </div>
           <div class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-xs);">
             <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
@@ -339,12 +341,23 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const sortSel = $('#sort'), openSettings = $('#openSettings'), settingsSection = $('#settingsSection');
     const syncAllBtn = document.getElementById('syncAllBtn');
     const syncUrlInput = $('#syncUrl'), saveSettings = $('#saveSettings'), testSync = $('#testSync');
+    const emailInput = $('#emailAddress'), saveEmail = $('#saveEmail'), testEmail = $('#testEmail');
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu'), authBtn = $('#authBtn');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
     const notesEl = $('#notes');
     const saveNoteBtn = $('#saveNoteBtn'), newNoteBtn = $('#newNoteBtn');
     const tabBtns = $$('.tab-btn');
     const tabPanels = $$('.tab-panel');
+
+    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
+    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
+    const savedEmail = localStorage.getItem('emailAddress') || '';
+    if (savedEmail) emailInput.value = savedEmail;
+    saveEmail?.addEventListener('click', () => {
+      localStorage.setItem('emailAddress', emailInput.value.trim());
+      toast('Email saved');
+    });
+    testEmail?.addEventListener('click', () => sendDailyEmail(true));
 
     notesEl.value = localStorage.getItem('mobileNotes') || '';
     notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
@@ -418,6 +431,30 @@ z-index:100;box-shadow:var(--shadow-sm)}
       const payload = { id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', done: !!task.done, source: 'memory-cue-mobile' };
       try { await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
       catch {}
+    }
+
+    async function sendDailyEmail(force = false) {
+      const email = (localStorage.getItem('emailAddress') || '').trim();
+      if (!email) return;
+      const today = new Date().toISOString().slice(0,10);
+      const lastSent = localStorage.getItem('lastEmailSent');
+      if (!force && lastSent === today) return;
+      const active = items.filter(i => !i.done);
+      if (!active.length) return;
+      const url = (localStorage.getItem('syncUrl') || '').trim();
+      if (!url) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, reminders: active })
+        });
+        localStorage.setItem('lastEmailSent', today);
+        if (force) toast('Email sent');
+      } catch (err) {
+        console.error('Daily email failed', err);
+        if (force) toast('Email failed');
+      }
     }
 
     // Utils
@@ -683,6 +720,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
     // Rendering
     function render(){
+      sendDailyEmail();
       // Update inline counters first
       const now = new Date();
       const adlNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
