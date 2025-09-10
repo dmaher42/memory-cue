@@ -403,7 +403,8 @@ z-index:100;box-shadow:var(--shadow-sm)}
             title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done,
             due: data.due || null,
             createdAt: data.createdAt?.toMillis?.() || 0,
-            updatedAt: data.updatedAt?.toMillis?.() || 0
+            updatedAt: data.updatedAt?.toMillis?.() || 0,
+            _notified: data._notified || false
           });
         });
         items = remoteItems;
@@ -421,7 +422,8 @@ z-index:100;box-shadow:var(--shadow-sm)}
         await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
           title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
           createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
-          updatedAt: serverTimestamp()
+          updatedAt: serverTimestamp(),
+          _notified: item._notified || false
         }, { merge: true });
       } catch (error) {
         console.error('Save failed:', error); toast('Save queued (offline)');
@@ -450,6 +452,38 @@ z-index:100;box-shadow:var(--shadow-sm)}
     function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' }[c])); }
     function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+    // Notification checking
+    function checkDueNotifications() {
+      // Skip if notifications not granted
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return;
+      }
+
+      const now = new Date();
+      
+      items.forEach(item => {
+        // Check if item needs notification: not done, has due time, not already notified, and due time has passed
+        if (!item.done && item.due && !item._notified) {
+          const dueTime = new Date(item.due);
+          if (dueTime <= now) {
+            // Show notification
+            new Notification('Memory Cue Reminder', {
+              body: item.title,
+              icon: '/favicon.ico', // You can replace this with a specific icon
+              tag: item.id, // Prevents duplicate notifications for the same item
+              requireInteraction: false
+            });
+            
+            // Mark as notified to prevent duplicates
+            item._notified = true;
+            
+            // Save the updated item to persist the _notified flag
+            saveToFirebase(item);
+          }
+        }
+      });
+    }
 
     function parseQuickWhen(text) {
       text = String(text || '').toLowerCase();
@@ -689,7 +723,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
       const nowMs = Date.now();
       const item = {
         id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false,
-        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null
+        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null, _notified: false
       };
       items = [item, ...items]; render(); saveToFirebase(item);
       tryCalendarSync(item);
@@ -794,7 +828,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
         } else {
           const p = parseQuickWhen(tNew); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
         }
-        it.title = tNew; it.priority = priority.value; it.due = due; it.updatedAt = Date.now();
+        it.title = tNew; it.priority = priority.value; it.due = due; it.updatedAt = Date.now(); it._notified = false;
         saveToFirebase(it); tryCalendarSync(it); render(); resetForm(); toast('Reminder updated');
         return;
       }
@@ -967,6 +1001,13 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
     // Initial render
     render();
+
+    // Start notification polling (check every 30 seconds)
+    setInterval(checkDueNotifications, 30000);
+    // Also check immediately if user is already signed in
+    if (userId) {
+      setTimeout(checkDueNotifications, 2000);
+    }
   </script>
 </body>
 </html>
