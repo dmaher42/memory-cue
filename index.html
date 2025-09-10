@@ -8,6 +8,9 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
   <style>
     /* Critical inline styles for immediate rendering */
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
@@ -21,11 +24,10 @@
 </head>
 <body>
   <div id="loginView" class="login-view">
-    <form id="loginForm" class="login-box">
+    <div class="login-box">
       <h2>Login</h2>
-      <input type="password" id="loginPassword" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
+      <button id="googleSignInBtn" type="button">Sign in with Google</button>
+    </div>
   </div>
 
   <div id="app" class="app-layout hidden">
@@ -107,9 +109,6 @@
           </div>
           <button id="addQuickBtn" class="topbar-btn primary" type="button" title="Add quick reminder">
             + Add
-          </button>
-          <button id="googleSignInBtn" class="topbar-btn" type="button">
-            Sign in
           </button>
           <button id="googleSignOutBtn" class="topbar-btn hidden" type="button">
             <img id="googleAvatar" class="user-avatar hidden" />
@@ -453,8 +452,30 @@
     </div>
   </div>
 
-  <!-- Teacher App JavaScript (without Firebase dependencies) -->
+  <!-- Teacher App JavaScript -->
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5XITctJKpgzUprmfqe4LLNTpfMJyNl2w",
+      authDomain: "memory-cue-app.firebaseapp.com",
+      projectId: "memory-cue-app",
+      storageBucket: "memory-cue-app.firebasestorage.app",
+      messagingSenderId: "458740047814",
+      appId: "1:458740047814:web:9a072d8f529af9c24df448"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    auth.onIdTokenChanged(async (user) => {
+      if (user) {
+        const token = await user.getIdToken();
+        localStorage.setItem('mcAuthToken', token);
+      } else {
+        localStorage.removeItem('mcAuthToken');
+      }
+    });
+    const db = firebase.firestore();
+    firebase.firestore().enablePersistence().catch(() => {});
+
     // App state
     let items = [];
     let filter = 'today';
@@ -897,20 +918,6 @@
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
     if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
-
-    // Demo authentication handlers
-    googleSignInBtn.addEventListener('click', () => {
-      toast('Demo mode - Firebase authentication not available');
-    });
-
-    googleSignOutBtn.addEventListener('click', () => {
-      toast('Demo mode - sign out not available');
-    });
-
-    // Set up demo mode UI
-    syncStatus.textContent = 'Demo Mode';
-    syncStatus.className = 'sync-status offline';
-    googleSignInBtn.textContent = 'Demo Mode';
 
     // Firestore real-time sync
     function setupFirestoreSync() {
@@ -1589,25 +1596,56 @@
     function setupLogin() {
       const app = document.getElementById('app');
       const loginView = document.getElementById('loginView');
-      const form = document.getElementById('loginForm');
-      if (localStorage.getItem('mcLoggedIn') === 'true') {
-        loginView.classList.add('hidden');
-        app.classList.remove('hidden');
-        initializeTeacherApp();
-      } else {
-        loginView.classList.remove('hidden');
-        app.classList.add('hidden');
-      }
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const pwd = document.getElementById('loginPassword').value;
-        if (pwd === 'teacher') {
-          localStorage.setItem('mcLoggedIn', 'true');
+      const signInBtn = document.getElementById('googleSignInBtn');
+      const signOutBtn = document.getElementById('googleSignOutBtn');
+
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          userId = user.uid;
           loginView.classList.add('hidden');
           app.classList.remove('hidden');
+          signOutBtn.classList.remove('hidden');
+          googleUserName.textContent = user.displayName || user.email || '';
+          if (user.photoURL) {
+            googleAvatar.src = user.photoURL;
+            googleAvatar.classList.remove('hidden');
+          } else {
+            googleAvatar.src = '';
+            googleAvatar.classList.add('hidden');
+          }
           initializeTeacherApp();
         } else {
-          toast('Invalid password');
+          userId = null;
+          loginView.classList.remove('hidden');
+          app.classList.add('hidden');
+          signOutBtn.classList.add('hidden');
+          googleAvatar.classList.add('hidden');
+          googleAvatar.src = '';
+          googleUserName.textContent = '';
+          items = [];
+          render();
+        }
+      });
+
+      signInBtn.addEventListener('click', async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+          await auth.signInWithPopup(provider);
+        } catch (error) {
+          try {
+            await auth.signInWithRedirect(provider);
+          } catch (e) {
+            toast('Google sign-in failed');
+          }
+        }
+      });
+
+      signOutBtn.addEventListener('click', async () => {
+        try {
+          await auth.signOut();
+          toast('Signed out');
+        } catch {
+          toast('Sign-out failed');
         }
       });
     }
