@@ -454,7 +454,26 @@
   </div>
 
   <!-- Teacher App JavaScript (without Firebase dependencies) -->
-  <script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
+    // Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
+      authDomain: "memory-cue-app.firebaseapp.com",
+      projectId: "memory-cue-app",
+      storageBucket: "memory-cue-app.firebasestorage.app",
+      messagingSenderId: "751284466633",
+      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
+      measurementId: "G-R0V4M7VCE6"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
+    const auth = getAuth(app);
+
     // App state
     let items = [];
     let filter = 'today';
@@ -898,19 +917,46 @@
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
     if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
 
-    // Demo authentication handlers
-    googleSignInBtn.addEventListener('click', () => {
-      toast('Demo mode - Firebase authentication not available');
+    // Authentication
+    googleSignInBtn.addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try { await signInWithPopup(auth, provider); }
+      catch { toast('Google sign-in failed'); }
     });
 
-    googleSignOutBtn.addEventListener('click', () => {
-      toast('Demo mode - sign out not available');
+    googleSignOutBtn.addEventListener('click', async () => {
+      try { await signOut(auth); toast('Signed out'); }
+      catch { toast('Sign-out failed'); }
     });
 
-    // Set up demo mode UI
-    syncStatus.textContent = 'Demo Mode';
-    syncStatus.className = 'sync-status offline';
-    googleSignInBtn.textContent = 'Demo Mode';
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userId = user.uid;
+        syncStatus.textContent = 'Online';
+        syncStatus.className = 'sync-status online';
+        googleSignInBtn.classList.add('hidden');
+        googleSignOutBtn.classList.remove('hidden');
+        if (user.photoURL) {
+          googleAvatar.classList.remove('hidden');
+          googleAvatar.src = user.photoURL;
+        } else {
+          googleAvatar.classList.add('hidden');
+          googleAvatar.src = '';
+        }
+        googleUserName.textContent = user.displayName || user.email || '';
+        setupFirestoreSync();
+      } else {
+        googleSignInBtn.classList.remove('hidden');
+        googleSignOutBtn.classList.add('hidden');
+        googleAvatar.classList.add('hidden');
+        googleAvatar.src = '';
+        googleUserName.textContent = '';
+        syncStatus.textContent = 'Offline';
+        syncStatus.className = 'sync-status offline';
+        items = [];
+        render();
+      }
+    });
 
     // Firestore real-time sync
     function setupFirestoreSync() {
