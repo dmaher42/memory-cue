@@ -15,11 +15,9 @@ const FONTS_CACHE = `memory-cue-fonts-${VERSION}`;
 const PRECACHE_URLS = [
   './',
   './index.html',
+  './mobile.html',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/maskable-192.png',
-  './icons/maskable-512.png'
+  './css/app.css'
 ];
 
 // ---- Install: pre-cache app shell (bypass HTTP cache to ensure fresh install)

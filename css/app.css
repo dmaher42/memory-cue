@@ -1,0 +1,301 @@
+/* Memory Cue - External Stylesheet */
+
+/* Design Tokens */
+:root {
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Typography */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 19px;
+  --text-2xl: 22px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+
+  /* Interactive */
+  --touch-target: 44px;
+  --button-height: 42px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+  /* Light Theme (Default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --success: #22c55e;
+  --success-hover: #16a34a;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --border: #e2e8f0;
+  --border-light: #cbd5e1;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-primary: #0b1220;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-hover: #0ea5e9;
+  --success: #22c55e;
+  --success-hover: #16a34a;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --border: #334155;
+  --border-light: #475569;
+}
+
+/* System preference detection - apply dark theme only when explicitly preferred */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-primary: #0b1220;
+    --bg-secondary: #0f172a;
+    --bg-tertiary: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-hover: #0ea5e9;
+    --border: #334155;
+    --border-light: #475569;
+  }
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  min-height: 36px;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+/* Utilities Bar */
+.utilities-bar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* Modern Button Styles */
+.btn-modern {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.btn-modern:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-light);
+}
+
+.btn-modern:active {
+  transform: scale(0.98);
+}
+
+/* Card Enhancements */
+.card-modern {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.card-modern:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-light);
+}
+
+/* Tab Enhancements */
+.tabs-modern {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.tab-btn-modern {
+  flex: 1;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn-modern:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.tab-btn-modern.active {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border-bottom-color: var(--accent);
+}
+
+/* Toast Animations */
+.toast {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  max-width: 90vw;
+  word-wrap: break-word;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.hide {
+  opacity: 0;
+  transform: translateX(-50%) translateY(100px);
+}
+
+/* Success toast variant */
+.toast.success {
+  background: var(--success);
+  color: var(--bg-primary);
+  border-color: var(--success);
+}
+
+/* Error toast variant */
+.toast.error {
+  background: var(--danger);
+  color: var(--bg-primary);
+  border-color: var(--danger);
+}
+
+/* Warning toast variant */
+.toast.warning {
+  background: var(--warning);
+  color: var(--bg-primary);
+  border-color: var(--warning);
+}
+
+/* Responsive Tweaks */
+@media (max-width: 480px) {
+  .utilities-bar {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+  
+  .toast {
+    left: var(--space-3);
+    right: var(--space-3);
+    transform: translateY(100px);
+    max-width: none;
+  }
+  
+  .toast.show {
+    transform: translateY(0);
+  }
+  
+  .toast.hide {
+    transform: translateY(100px);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .toast {
+    border-width: 2px;
+  }
+  
+  .btn-modern {
+    border-width: 2px;
+  }
+  
+  .theme-toggle {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .btn-modern,
+  .theme-toggle,
+  .card-modern,
+  .tab-btn-modern {
+    transition: none;
+  }
+  
+  .btn-modern:hover {
+    transform: none;
+  }
+  
+  .btn-modern:active {
+    transform: none;
+  }
+}

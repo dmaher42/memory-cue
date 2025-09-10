@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
   <meta name="theme-color" content="#0b1220" />
-  <link rel="manifest" href="#" id="manifestLink" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="css/app.css" />
   <style>
     :root{
       --bg-primary:#0b1220; --bg-secondary:#0f172a; --bg-tertiary:#1e293b;
@@ -133,18 +135,21 @@ z-index:100;box-shadow:var(--shadow-sm)}
         </div>
         <div class="header-controls">
           <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
-          <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
-          <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
-          <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
-          <div class="menu-wrap">
-            <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
-            <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
-              <button id="copyMtlBtn" class="menu-item" role="menuitem">Copy MTL</button>
-              <label class="menu-item" role="menuitem" for="importFile" style="display:flex; align-items:center; gap:8px; cursor:pointer;">Import<input id="importFile" type="file" accept="application/json" class="sr-only" /></label>
-              <button id="exportBtn" class="menu-item" role="menuitem">Export</button>
-              <button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button>
-              <div class="menu-sep"></div>
-              <button id="openSettings" class="menu-item" role="menuitem">Settings</button>
+          <div class="utilities-bar">
+            <button id="voiceBtn" class="btn-ghost btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
+            <button id="notifBtn" class="btn-ghost btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
+            <button id="addQuickBtn" class="btn-primary btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
+            <button id="themeToggle" class="btn-ghost btn-compact" type="button" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+            <div class="menu-wrap">
+              <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
+              <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
+                <button id="copyMtlBtn" class="menu-item" role="menuitem">Copy MTL</button>
+                <label class="menu-item" role="menuitem" for="importFile" style="display:flex; align-items:center; gap:8px; cursor:pointer;">Import<input id="importFile" type="file" accept="application/json" class="sr-only" /></label>
+                <button id="exportBtn" class="menu-item" role="menuitem">Export</button>
+                <button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button>
+                <div class="menu-sep"></div>
+                <button id="openSettings" class="menu-item" role="menuitem">Settings</button>
+              </div>
             </div>
           </div>
         </div>
@@ -277,6 +282,55 @@ z-index:100;box-shadow:var(--shadow-sm)}
       </section>
     </div>
   </div>
+
+  <!-- Theme initialization script -->
+  <script>
+    // Theme initialization IIFE
+    (function themeInit() {
+      const themeToggle = document.getElementById('themeToggle');
+      const storedTheme = localStorage.getItem('mcTheme');
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // Determine initial theme
+      let currentTheme;
+      if (storedTheme) {
+        currentTheme = storedTheme;
+      } else {
+        currentTheme = systemPrefersDark ? 'dark' : 'light';
+      }
+      
+      // Apply theme
+      function applyTheme(theme) {
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          if (themeToggle) themeToggle.textContent = '☀️'; // sun in dark mode (switch to light)
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          if (themeToggle) themeToggle.textContent = '🌙'; // moon in light mode (switch to dark)
+        }
+        localStorage.setItem('mcTheme', theme);
+      }
+      
+      // Set initial theme
+      applyTheme(currentTheme);
+      
+      // Theme toggle handler
+      if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          applyTheme(newTheme);
+        });
+      }
+      
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('mcTheme')) {
+          applyTheme(e.matches ? 'dark' : 'light');
+        }
+      });
+    })();
+  </script>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
@@ -448,7 +502,41 @@ z-index:100;box-shadow:var(--shadow-sm)}
     function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
     function fmtTime(d){ return timeFmt.format(d); }
     function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' }[c])); }
-    function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
+    function toast(msg, timeout = 2500) {
+      // Create toast element
+      const toastEl = document.createElement('div');
+      toastEl.className = 'toast';
+      toastEl.setAttribute('role', 'status');
+      toastEl.textContent = msg;
+      
+      // Add to body
+      document.body.appendChild(toastEl);
+      
+      // Show toast with animation
+      requestAnimationFrame(() => {
+        toastEl.classList.add('show');
+      });
+      
+      // Auto-hide with animation
+      setTimeout(() => {
+        toastEl.classList.remove('show');
+        toastEl.classList.add('hide');
+        
+        // Remove from DOM after animation
+        setTimeout(() => {
+          if (toastEl.parentNode) {
+            toastEl.parentNode.removeChild(toastEl);
+          }
+        }, 300);
+      }, timeout);
+      
+      // Also update statusEl if it exists for backward compatibility
+      if (typeof statusEl !== 'undefined' && statusEl) {
+        statusEl.textContent = msg;
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => statusEl.textContent = '', timeout);
+      }
+    }
     function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
     function parseQuickWhen(text) {
@@ -951,19 +1039,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
       toast('New note started');
     });
 
-    // PWA scaffold
-    (function setupPWA(){
-      const manifest = { name:'Memory Cue', short_name:'MemoryCue', start_url:'.', display:'standalone', background_color:'#0b1220', theme_color:'#0b1220' };
-      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      document.getElementById('manifestLink').setAttribute('href', url);
-      if ('serviceWorker' in navigator) {
-        const swCode = `self.addEventListener('install', e=>self.skipWaiting()); self.addEventListener('activate', e=>self.clients.claim());`;
-        const swBlob = new Blob([swCode], { type: 'text/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
-        navigator.serviceWorker.register(swUrl).catch(()=>{});
-      }
-    })();
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch((err) => {
+        console.warn('Service worker registration failed:', err);
+      });
+    }
 
     // Initial render
     render();
