@@ -776,7 +776,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     // Menu toggle
     function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
     function openMenu(){ moreBtn?.setAttribute('aria-expanded','true'); moreMenu?.classList.remove('hidden'); }
-    moreBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true';open ? closeMenu() : openMenu(); });
+    on(moreBtn, 'click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true';open ? closeMenu() : openMenu(); });
     document.addEventListener('click', (e)=>{ if (!moreMenu?.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
 
@@ -791,6 +791,12 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
     // Save/create or update
     on(saveBtn, 'click', () => {
+      // Defensive guard: ensure saveBtn still exists (shouldn't be needed if helper works, but added for extra safety)
+      if (!saveBtn) {
+        console.warn('MemoryCue: saveBtn is missing during click handler execution');
+        return;
+      }
+      
       // Create new OR update existing depending on editingId
       if (editingId) {
         const it = items.find(x=>x.id===editingId);
