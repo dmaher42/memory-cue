@@ -385,6 +385,7 @@
                   </div>
                   <button id="saveSettings" class="btn-success" type="button">Save</button>
                   <button id="testSync" class="btn-ghost" type="button">Test</button>
+                  <button id="syncAllBtn" class="btn-ghost" type="button">Sync All</button>
                 </div>
                 <div class="text-muted" style="margin-top: var(--space-4);">
                   <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
@@ -888,6 +889,7 @@
     const syncUrlInput = $('#syncUrl');
     const saveSettings = $('#saveSettings');
     const testSync = $('#testSync');
+    const syncAllBtn = $('#syncAllBtn');
     const settingsSection = $('#settingsSection');
 
     // Restore saved Sync URL
@@ -1492,9 +1494,9 @@
 
     testSync.addEventListener('click', async () => {
       const url = syncUrlInput.value.trim();
-      if (!url) { 
-        toast('Enter Google Apps Script URL first'); 
-        return; 
+      if (!url) {
+        toast('Enter Google Apps Script URL first');
+        return;
       }
       try {
         const r = await fetch(url, {
@@ -1503,9 +1505,36 @@
           body: JSON.stringify({ title: 'Test from Memory Cue', dueIso: null, priority: 'Low' })
         });
         toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error');
-      } catch (e) { 
-        toast('Calendar sync failed (check URL & deploy)'); 
+      } catch (e) {
+        toast('Calendar sync failed (check URL & deploy)');
       }
+    });
+
+    syncAllBtn?.addEventListener('click', async () => {
+      const url = syncUrlInput.value.trim();
+      if (!url) { toast('Add your Apps Script URL in Settings first'); return; }
+      if (!items.length) { toast('No reminders to sync'); return; }
+
+      toast('Syncing all reminders…');
+      const chunkSize = 20;
+      let fail = 0;
+      for (let i = 0; i < items.length; i += chunkSize) {
+        const chunk = items.slice(i, i + chunkSize);
+        const results = await Promise.allSettled(chunk.map(task => {
+          const payload = {
+            id: task.id,
+            title: task.title,
+            dueIso: task.due || null,
+            priority: task.priority || 'Medium',
+            done: !!task.done,
+            source: 'memory-cue'
+          };
+          return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        }));
+        fail += results.filter(r => r.status === 'rejected').length;
+        await new Promise(res => setTimeout(res, 400));
+      }
+      toast(`Sync complete: ${items.length - fail} ok${fail ? `, ${fail} failed` : ''}`);
     });
 
     // Voice recognition
