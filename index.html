@@ -179,6 +179,23 @@
             </div>
           </div>
 
+          <!-- Auth Onboarding Banner -->
+          <div id="authOnboardingBanner" class="auth-onboarding-banner hidden" role="region" aria-live="polite">
+            <div class="auth-banner-icon">🔐</div>
+            <h2 class="auth-banner-title">Sign in to Sync Reminders</h2>
+            <p class="auth-banner-description">
+              Sign in with your Google account to sync your reminders across all your devices. 
+              Your reminders will be safely stored and accessible anywhere.
+            </p>
+            <button id="authBannerSignIn" class="auth-banner-button" type="button">
+              <span>🚀</span>
+              Sign In with Google
+            </button>
+          </div>
+
+          <!-- Auth Status Announcements (Screen Reader) -->
+          <div id="authStatusAnnouncements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
           <div class="grid">
             <!-- Create Reminder Form -->
             <div class="card">
@@ -471,10 +488,24 @@
       appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
       measurementId: "G-R0V4M7VCE6"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    firebase.firestore().enablePersistence().catch(() => {});
+    // Initialize Firebase with error handling
+    let db = null;
+    let auth = null;
+    let firebaseAvailable = false;
+    
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        firebase.firestore().enablePersistence().catch(() => {});
+        firebaseAvailable = true;
+      } else {
+        console.warn('Firebase not available - running in offline mode');
+      }
+    } catch (error) {
+      console.warn('Firebase initialization failed - running in offline mode:', error);
+    }
 
     // App state
     let items = [];
@@ -616,6 +647,13 @@
         updateDashboard();
       } else if (panelId === 'reminders') {
         render();
+      }
+
+      // Update auth banner visibility for reminders panel
+      if (panelId === 'reminders' && !currentUser) {
+        authOnboardingBanner?.classList.remove('hidden');
+      } else {
+        authOnboardingBanner?.classList.add('hidden');
       }
     }
 
@@ -919,6 +957,9 @@
     const saveEmailBtn = $('#saveEmail');
     const testEmailBtn = $('#testEmail');
     const settingsSection = $('#settingsSection');
+    const authOnboardingBanner = $('#authOnboardingBanner');
+    const authBannerSignIn = $('#authBannerSignIn');
+    const authStatusAnnouncements = $('#authStatusAnnouncements');
 
     // Restore saved Sync URL
     const savedSyncUrl = localStorage.getItem('syncUrl') || '';
@@ -934,7 +975,7 @@
 
     // Firestore real-time sync
     function setupFirestoreSync() {
-      if (!userId) {
+      if (!firebaseAvailable || !userId) {
         items = [];
         render();
         return;
@@ -969,6 +1010,11 @@
     }
 
     function handleAuth() {
+      if (!firebaseAvailable) {
+        toast('Firebase not available - running in demo mode');
+        return;
+      }
+      
       if (auth.currentUser) {
         auth.signOut();
       } else {
@@ -991,6 +1037,36 @@
       }
     }
 
+    function updateAuthOnboardingBanner(user) {
+      if (!authOnboardingBanner) return;
+      
+      if (user) {
+        // User is signed in - hide banner
+        authOnboardingBanner.classList.add('hidden');
+        announceAuthStatus(`Signed in as ${user.displayName || user.email}`);
+      } else {
+        // User is not signed in - show banner (only in reminders panel)
+        if (currentPanel === 'reminders') {
+          authOnboardingBanner.classList.remove('hidden');
+        }
+        announceAuthStatus('Not signed in. Sign in to sync reminders across devices.');
+      }
+    }
+
+    function announceAuthStatus(message) {
+      if (!authStatusAnnouncements) return;
+      authStatusAnnouncements.textContent = message;
+      // Clear after a delay to avoid repeated announcements
+      setTimeout(() => {
+        authStatusAnnouncements.textContent = '';
+      }, 3000);
+    }
+
+    function focusAuthBannerButton() {
+      if (!authBannerSignIn || authOnboardingBanner?.classList.contains('hidden')) return;
+      authBannerSignIn.focus();
+    }
+
     function mergeWithLocal(remoteItems) {
       const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
       const merged = new Map();
@@ -1009,7 +1085,7 @@
     }
 
     async function saveToFirebase(item) {
-      if (!userId) return;
+      if (!firebaseAvailable || !userId) return;
       try {
         await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
           title: item.title,
@@ -1030,7 +1106,7 @@
     }
 
     async function deleteFromFirebase(id) {
-      if (!userId) return;
+      if (!firebaseAvailable || !userId) return;
       try {
         await deleteDoc(doc(db, 'users', userId, 'reminders', id));
         removePendingChange(id);
@@ -1297,6 +1373,33 @@
     }
 
     function addItem(obj) {
+      // If Firebase is not available, always allow adding reminders in demo mode
+      if (!firebaseAvailable) {
+        const item = {
+          id: uid(),
+          title: obj.title.trim(),
+          priority: obj.priority || 'Medium',
+          notes: obj.notes || '',
+          done: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          due: obj.due || null
+        };
+
+        items = [item, ...items];
+        render();
+        localStorage.setItem('demoReminders', JSON.stringify(items));
+        toast('Reminder added (demo mode)');
+        return item;
+      }
+
+      // If user is not signed in, show toast and focus banner sign-in button
+      if (!currentUser) {
+        toast('Sign in to sync reminders across devices');
+        focusAuthBannerButton();
+        return null;
+      }
+
       const item = {
         id: uid(),
         title: obj.title.trim(),
@@ -1311,9 +1414,8 @@
       items = [item, ...items];
       render();
 
-      // In demo mode, just save to localStorage
-      localStorage.setItem('demoReminders', JSON.stringify(items));
-      toast('Reminder added (demo mode)');
+      // Save to Firebase if available
+      saveToFirebase(item);
       
       return item;
     }
@@ -1642,6 +1744,9 @@
 
     authBtn.addEventListener('click', handleAuth);
 
+    // Banner sign-in button
+    authBannerSignIn?.addEventListener('click', handleAuth);
+
     voiceBtn.addEventListener('click', () => {
       if (!recog) return;
       if (!listening) { 
@@ -1683,12 +1788,23 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    auth.onAuthStateChanged((user) => {
-      currentUser = user;
-      userId = user ? user.uid : null;
-      updateAuthButton(user);
+    // Set up auth state listener only if Firebase is available
+    if (firebaseAvailable && auth) {
+      auth.onAuthStateChanged((user) => {
+        currentUser = user;
+        userId = user ? user.uid : null;
+        updateAuthButton(user);
+        updateAuthOnboardingBanner(user);
+        setupFirestoreSync();
+      });
+    } else {
+      // In offline mode, simulate no user signed in
+      currentUser = null;
+      userId = null;
+      updateAuthButton(null);
+      updateAuthOnboardingBanner(null);
       setupFirestoreSync();
-    });
+    }
 
     initializeTeacherApp();
 
