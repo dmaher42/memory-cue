@@ -471,10 +471,26 @@
       appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
       measurementId: "G-R0V4M7VCE6"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    firebase.firestore().enablePersistence().catch(() => {});
+    
+    // Initialize Firebase with error handling
+    let db = null;
+    let auth = null;
+    let firebaseAvailable = false;
+    
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        firebase.firestore().enablePersistence().catch(() => {});
+        firebaseAvailable = true;
+      } else {
+        console.warn('Firebase not available - running in offline mode');
+      }
+    } catch (error) {
+      console.error('Firebase initialization failed:', error);
+      firebaseAvailable = false;
+    }
 
     // App state
     let items = [];
@@ -925,6 +941,14 @@
 
     // Firestore real-time sync
     function setupFirestoreSync() {
+      if (!firebaseAvailable) {
+        items = [];
+        render();
+        syncStatus.textContent = 'Firebase not available';
+        syncStatus.className = 'sync-status error';
+        return;
+      }
+      
       if (!userId) {
         items = [];
         render();
@@ -965,6 +989,11 @@
     }
 
     function handleAuth() {
+      if (!firebaseAvailable) {
+        toast('Firebase not available - sign in disabled');
+        return;
+      }
+      
       if (auth.currentUser) {
         auth.signOut();
       } else {
@@ -988,7 +1017,7 @@
     }
 
     async function saveToFirebase(item) {
-      if (!userId) return;
+      if (!firebaseAvailable || !userId) return;
       try {
         await db.collection('users').doc(userId).collection('reminders').doc(item.id).set({
           title: item.title,
@@ -1006,7 +1035,7 @@
     }
 
     async function deleteFromFirebase(id) {
-      if (!userId) return;
+      if (!firebaseAvailable || !userId) return;
       try {
         await db.collection('users').doc(userId).collection('reminders').doc(id).delete();
       } catch (error) {
@@ -1238,6 +1267,11 @@
     }
 
     function addItem(obj) {
+      if (!firebaseAvailable) {
+        toast('Firebase not available - cannot save reminders');
+        return;
+      }
+      
       if (!userId) {
         toast('Please sign in to add reminders');
         return;
@@ -1625,12 +1659,17 @@
       syncStatus.className = 'sync-status offline';
     });
 
-    auth.onAuthStateChanged((user) => {
-      currentUser = user;
-      userId = user ? user.uid : null;
-      updateAuthButton(user);
+    if (firebaseAvailable && auth) {
+      auth.onAuthStateChanged((user) => {
+        currentUser = user;
+        userId = user ? user.uid : null;
+        updateAuthButton(user);
+        setupFirestoreSync();
+      });
+    } else {
+      // Initialize without Firebase
       setupFirestoreSync();
-    });
+    }
 
     initializeTeacherApp();
 
