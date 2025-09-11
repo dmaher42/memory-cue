@@ -831,6 +831,78 @@ input::placeholder, textarea::placeholder {
   object-fit: cover;
 }
 
+/* Onboarding Banner */
+.auth-onboarding-banner {
+  background: linear-gradient(135deg, var(--accent-light), rgba(56, 189, 248, 0.05));
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  text-align: center;
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease-in-out;
+}
+
+.auth-onboarding-banner.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+.auth-banner-icon {
+  font-size: var(--text-3xl);
+  margin-bottom: var(--space-4);
+  display: block;
+}
+
+.auth-banner-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.auth-banner-description {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+  line-height: 1.5;
+}
+
+.auth-banner-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.auth-banner-button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.auth-banner-button:active {
+  transform: translateY(0);
+}
+
+.auth-banner-button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Priority Badges */
 .priority-badge {
   padding: var(--space-1) var(--space-2);
