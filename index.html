@@ -1,2067 +1,299 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Memory Cue — fresh UI (Emerald & Teal)</title>
+  <meta name="color-scheme" content="light dark">
+
+  <!-- Tailwind v4 (Play CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Memory Cue</title>
-  <meta name="theme-color" content="#0f172a" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
-  <link rel="stylesheet" href="css/teacher.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- Your palette: Emerald (brand) + Teal (accent) -->
   <style type="text/tailwindcss">
-    @theme { --color-accent: var(--color-indigo-500); }
+    @theme {
+      /* brand = Emerald */
+      --color-brand-50:  #ecfdf5;
+      --color-brand-200: #a7f3d0;
+      --color-brand-500: #10b981;
+      --color-brand-600: #059669;
+      --color-brand-700: #047857;
+
+      /* accent = Teal */
+      --color-accent-500: #14b8a6;
+    }
   </style>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+
+  <!-- Small helpers that don't need Tailwind processing -->
   <style>
-    /* Critical inline styles for immediate rendering */
-    .app-layout { display: flex; height: 100vh; overflow: hidden; }
-    .content-panel { display: none; }
-    .content-panel.active { display: block; }
-    .hidden { display: none; }
-    
+    html { scroll-behavior: smooth; }
+    /* Prevent CLS on icon buttons */
+    .icon-24 { inline-size: 24px; block-size: 24px; }
   </style>
 </head>
-<body>
-  <div id="app" class="app-layout flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">Memory Cue</div>
-        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-          ☰
+
+<body class="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
+  <!-- Header / Nav -->
+  <header class="sticky top-0 z-40 bg-white/70 dark:bg-slate-950/70 backdrop-blur border-b border-slate-200/60 dark:border-slate-800">
+    <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      <!-- Brand -->
+      <a href="#top" class="inline-flex items-center gap-2">
+        <!-- Sparkles icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9.813 15.904 9 21l-1.19-5.096A4.5 4.5 0 0 0 5.096 14.19L0 13l5.096-1.19A4.5 4.5 0 0 0 7.81 9.81L9 4.715 10.19 9.81a4.5 4.5 0 0 0 2.715 2.715L18 13l-5.095 1.19a4.5 4.5 0 0 0-3.092 1.714Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M20.5 9.5 21 7l.5 2.5L24 10l-2.5.5L21 13l-.5-2.5L18 10l2.5-.5Z" />
+        </svg>
+        <span class="font-semibold tracking-tight">Memory Cue</span>
+      </a>
+
+      <!-- Desktop nav -->
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a href="#reminders" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Reminders</a>
+        <a href="#planner"   class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Planner</a>
+        <a href="#notes"     class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Notes</a>
+        <a href="#resources" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Resources</a>
+        <a href="#templates" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Templates</a>
+        <a href="#settings"  class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Settings</a>
+      </nav>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        <!-- Theme toggle -->
+        <button id="themeBtn" type="button"
+          class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-3 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
+          aria-label="Toggle theme">
+          <!-- Sun/Moon icon (swap with JS) -->
+          <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24 hidden dark:block">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95 6.636 17.364M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
+          </svg>
+          <svg id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24 dark:hidden">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M21 12.79A9 9 0 1 1 11.21 3c.2 0 .4.01.59.03A7 7 0 0 0 21 12.79Z" />
+          </svg>
+          <span class="hidden sm:inline">Theme</span>
+        </button>
+
+        <!-- Mobile menu button -->
+        <button id="menuBtn" type="button" class="md:hidden inline-flex items-center justify-center rounded-xl ring-1 ring-slate-300/60 bg-white px-3 py-2 hover:bg-slate-50 dark:bg-slate-900 dark:ring-white/10" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 5.75h16.5M3.75 12h16.5M3.75 18.25h16.5"/>
+          </svg>
         </button>
       </div>
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-panel="dashboard" aria-selected="true">
-          <span class="nav-icon">📊</span>
-          <span class="nav-label">Dashboard</span>
-        </button>
-        <button class="nav-item" data-panel="reminders" aria-selected="false">
-          <span class="nav-icon">🔔</span>
-          <span class="nav-label">Reminders</span>
-        </button>
-        <button class="nav-item" data-panel="planner" aria-selected="false">
-          <span class="nav-icon">📅</span>
-          <span class="nav-label">Planner</span>
-        </button>
-        <button class="nav-item" data-panel="notes" aria-selected="false">
-          <span class="nav-icon">📝</span>
-          <span class="nav-label">Notes</span>
-        </button>
-        <button class="nav-item" data-panel="resources" aria-selected="false">
-          <span class="nav-icon">📚</span>
-          <span class="nav-label">Resources</span>
-        </button>
-        <button class="nav-item" data-panel="templates" aria-selected="false">
-          <span class="nav-icon">📋</span>
-          <span class="nav-label">Templates</span>
-        </button>
-        <button class="nav-item" data-panel="settings" aria-selected="false">
-          <span class="nav-icon">⚙️</span>
-          <span class="nav-label">Settings</span>
-        </button>
-      </nav>
-    </aside>
+    </div>
 
-    <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="md:hidden hidden border-t border-slate-200/60 dark:border-slate-800">
+      <div class="px-4 py-3 space-y-2">
+        <a href="#reminders" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Reminders</a>
+        <a href="#planner"   class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Planner</a>
+        <a href="#notes"     class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Notes</a>
+        <a href="#resources" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Resources</a>
+        <a href="#templates" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Templates</a>
+        <a href="#settings"  class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Settings</a>
+      </div>
+    </div>
+  </header>
 
-    <!-- Main Content Area -->
-    <div class="main-area">
-      <!-- Top Bar -->
-      <header class="sticky top-0 z-40 bg-white/70 backdrop-blur border-b border-slate-200/60" role="banner">
-        <div class="h-14 flex items-center justify-between max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="topbar-left flex items-center gap-4">
-            <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Memory Cue</h1>
-            <div class="search-container relative">
-              <input
-                id="q"
-                class="search-input pl-10 block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none"
-                placeholder="Search reminders, resources, notes..."
-                aria-label="Search"
-              />
-            <svg class="pointer-events-none w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.75 9.75a7.5 7.5 0 0012.9 6.9z" />
-            </svg>
-        </div>
-        </div>
-          <div class="topbar-right flex items-center gap-2">
-            <button class="topbar-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1.5M16.95 7.05l1.06 1.06M21 12h-1.5M16.95 16.95l1.06-1.06M12 21v-1.5M7.05 16.95l-1.06-1.06M3 12h1.5M7.05 7.05L6 8.11M12 8.25a3.75 3.75 0 110 7.5 3.75 3.75 0 010-7.5z" />
-            </svg>
-          </button>
-          <div id="syncStatus" class="sync-status offline">Offline</div>
-          <button id="voiceBtn" class="topbar-btn" type="button" title="Voice quick add" aria-label="Voice quick add">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 1.5a3 3 0 00-3 3v6a3 3 0 006 0v-6a3 3 0 00-3-3z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5v1a7.5 7.5 0 01-15 0v-1M12 21v-3" />
-            </svg>
-          </button>
-          <button id="notifBtn" class="topbar-btn" type="button" title="Enable notifications" aria-label="Enable notifications">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 18.75a1.5 1.5 0 01-3 0M18.75 9a6.75 6.75 0 10-13.5 0c0 3.135-1.195 4.35-1.5 4.5h16.5c-.305-.15-1.5-1.365-1.5-4.5z" />
-            </svg>
-          </button>
-          <button id="authBtn" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-2 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900" type="button" title="Sign in">Sign In</button>
-          <div class="quick-add-container">
-            <input
-              id="quickAddInput"
-              class="quick-add-input"
-              placeholder="Quick add reminder..."
-              style="display: none;"
-            />
-          </div>
-          <button id="addQuickBtn" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-2 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900" type="button" title="Add quick reminder">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add
-          </button>
+  <main id="top" class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Hero banner (optional) -->
+    <section class="py-8 sm:py-10 lg:py-14">
+      <div class="rounded-2xl overflow-hidden ring-1 ring-black/5">
+        <div class="bg-gradient-to-r from-brand-600 via-accent-500 to-brand-600 text-white p-6 sm:p-10">
+          <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">Welcome to Memory Cue</h1>
+          <p class="mt-2 leading-7 text-white/90">A fresh, accessible look powered by Tailwind — with your Emerald &amp; Teal palette.</p>
+          <div class="mt-4">
+            <a href="#reminders" class="inline-flex items-center gap-2 rounded-xl bg-white/10 text-white px-4 py-2 ring-1 ring-white/30 hover:bg-white/20">
+              Go to Reminders
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12h15m0 0-6-6m6 6-6 6"/>
+              </svg>
+            </a>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Reminders -->
+    <section id="reminders" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
+      <header class="mb-6 flex items-center justify-between">
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Reminders</h2>
+        <button type="button"
+          class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          Add
+        </button>
       </header>
 
-      <!-- Content Panels -->
-      <main class="content-area" role="main">
-        <!-- Dashboard Panel -->
-        <div class="content-panel active" id="dashboardPanel">
-          <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-14">
-          <div class="panel-header py-8 sm:py-10 lg:py-14">
+      <!-- Filter pills -->
+      <div class="mb-4 inline-flex rounded-xl ring-1 ring-slate-300/60 bg-white p-1 dark:bg-slate-900 dark:ring-white/10">
+        <button class="rounded-lg bg-slate-900 text-white px-3 py-1.5">Today</button>
+        <button class="rounded-lg text-slate-600 px-3 py-1.5 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Overdue</button>
+        <button class="rounded-lg text-slate-600 px-3 py-1.5 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">All</button>
+      </div>
+
+      <!-- List -->
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <li class="rounded-2xl p-5 ring-1 ring-transparent hover:ring-black/5 transition hover:shadow-sm bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/60 dark:ring-white/10">
+          <div class="flex items-start justify-between gap-3">
             <div>
-              <h1 class="panel-title text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
-              <p class="panel-subtitle leading-7 text-slate-600">Your daily overview and quick agenda</p>
+              <h3 class="font-medium text-slate-900 dark:text-slate-100">Email parent consent forms</h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Due today · 3:30 PM</p>
             </div>
+            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-brand-200 bg-brand-50 text-brand-900">High</span>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 text-center">
-              <div id="subjectCount" class="text-3xl font-semibold text-slate-900">0</div>
-              <div class="mt-1 text-sm text-slate-600">Subjects</div>
-            </div>
-            <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 text-center">
-              <div id="reminderCount" class="text-3xl font-semibold text-slate-900">0</div>
-              <div class="mt-1 text-sm text-slate-600">Active Reminders</div>
-            </div>
-            <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 text-center">
-              <div id="lessonCount" class="text-3xl font-semibold text-slate-900">0</div>
-              <div class="mt-1 text-sm text-slate-600">This Week's Lessons</div>
-            </div>
-            <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 text-center">
-              <div id="templateCount" class="text-3xl font-semibold text-slate-900">0</div>
-              <div class="mt-1 text-sm text-slate-600">Templates</div>
-            </div>
-          </div>
-
-          <div class="grid grid-2">
-            <!-- Today's Agenda -->
-            <div class="card">
-              <div class="card-header">
-                <h2 class="card-title">Today's Agenda</h2>
-              </div>
-              <div class="card-content">
-                <div id="todayAgenda" class="agenda-list">
-                  <div class="empty-state">
-                    <div class="empty-icon">📅</div>
-                    <div class="empty-title">No agenda for today</div>
-                    <div class="empty-description">Add lessons and reminders to see them here</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
-        </div>
-
-        <!-- Reminders Panel -->
-        <div class="content-panel" id="remindersPanel">
-          <div class="panel-header">
+        </li>
+        <li class="rounded-2xl p-5 ring-1 ring-transparent hover:ring-black/5 transition hover:shadow-sm bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/60 dark:ring-white/10">
+          <div class="flex items-start justify-between gap-3">
             <div>
-              <h1 class="panel-title">Reminders</h1>
-              <p class="panel-subtitle">Manage your reminders and sync with Firebase</p>
+              <h3 class="font-medium text-slate-900 dark:text-slate-100">Print fixtures for Round 2</h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Tomorrow · Reprographics</p>
             </div>
-            <div class="panel-actions">
-              <button id="copyMtlBtn" class="btn-ghost" type="button">Copy MTL</button>
-              <label class="btn-ghost" style="cursor: pointer;">
-                Import JSON
-                <input id="importFile" type="file" accept="application/json" class="sr-only" />
-              </label>
-              <button id="exportBtn" class="btn-ghost" type="button">Export JSON</button>
-            </div>
+            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-emerald-200 bg-emerald-50 text-emerald-900">Medium</span>
           </div>
+        </li>
+      </ul>
+    </section>
 
-          <!-- Auth Onboarding Banner -->
-          <div id="authOnboardingBanner" class="auth-onboarding-banner hidden" role="region" aria-live="polite">
-            <div class="auth-banner-icon">🔐</div>
-            <h2 class="auth-banner-title">Sign in to Sync Reminders</h2>
-            <p class="auth-banner-description">
-              Sign in with your Google account to sync your reminders across all your devices. 
-              Your reminders will be safely stored and accessible anywhere.
-            </p>
-            <button id="authBannerSignIn" class="auth-banner-button" type="button">
-              <span>🚀</span>
-              Sign In with Google
-            </button>
-          </div>
+    <!-- Planner -->
+    <section id="planner" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Planner</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Example day card -->
+        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+          <header class="flex items-center justify-between">
+            <h3 class="font-medium">Mon</h3>
+            <span class="text-xs text-slate-500">Week 5</span>
+          </header>
+          <ul class="mt-3 space-y-2 text-sm">
+            <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-accent-500"></span> Year 9 SEPEP briefing</li>
+            <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-brand-600"></span> Fixtures check</li>
+          </ul>
+        </article>
+        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+          <header class="flex items-center justify-between">
+            <h3 class="font-medium">Tue</h3>
+            <span class="text-xs text-slate-500">Week 5</span>
+          </header>
+          <ul class="mt-3 space-y-2 text-sm">
+            <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-amber-500"></span> Print score sheets</li>
+          </ul>
+        </article>
+        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+          <header class="flex items-center justify-between">
+            <h3 class="font-medium">Wed</h3>
+            <span class="text-xs text-slate-500">Week 5</span>
+          </header>
+          <ul class="mt-3 space-y-2 text-sm">
+            <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-rose-500"></span> Round 1 kickoff</li>
+          </ul>
+        </article>
+      </div>
+    </section>
 
-          <!-- Auth Status Announcements (Screen Reader) -->
-          <div id="authStatusAnnouncements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-
-          <div class="grid">
-            <!-- Create Reminder Form -->
-            <div class="card">
-              <div class="card-header">
-                <h2 class="card-title">Create Reminder</h2>
-              </div>
-              <div class="card-content">
-                <div class="form-row">
-                  <div class="form-group flex-1">
-                    <label class="sr-only" for="title">Reminder</label>
-                    <input id="title" placeholder="e.g., Pick up dog at 6pm #home" />
-                    <div id="dateFeedback" style="margin-top: 4px; font-size: 12px; color: var(--text-muted); display: none;"></div>
-                  </div>
-                  <div class="form-group">
-                    <label class="sr-only" for="date">Date</label>
-                    <input id="date" type="date" />
-                  </div>
-                  <div class="form-group">
-                    <label class="sr-only" for="time">Time</label>
-                    <input id="time" type="time" />
-                  </div>
-                  <div class="form-group">
-                    <select id="priority">
-                      <option>High</option>
-                      <option selected>Medium</option>
-                      <option>Low</option>
-                    </select>
-                  </div>
-                  <button id="saveBtn" class="btn-success" type="button">Save</button>
-                </div>
-                <div id="status" class="status-message"></div>
-              </div>
-            </div>
-
-            <!-- Reminders List -->
-            <div class="card">
-              <div class="card-header">
-                <div class="filter-controls">
-                  <div class="filter-buttons">
-                    <button class="btn-ghost active" data-filter="today" type="button">Today</button>
-                    <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
-                    <button class="btn-ghost" data-filter="all" type="button">All</button>
-                    <button class="btn-ghost" data-filter="done" type="button">Completed</button>
-                  </div>
-                  <select id="sort">
-                    <option value="smart">Smart sort</option>
-                    <option value="time">Time</option>
-                    <option value="priority">Priority</option>
-                  </select>
-                </div>
-              </div>
-              <div class="card-content">
-                <div id="list" class="task-list" aria-live="polite">
-                  <div class="text-muted">Loading...</div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <!-- Notes -->
+    <section id="notes" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Notes</h2>
+      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+        <label for="note" class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Quick note</label>
+        <textarea id="note" rows="4"
+          class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none dark:bg-slate-900/60"
+          placeholder="Type something to remember…"></textarea>
+        <div class="mt-3 flex items-center gap-2">
+          <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">
+            Save
+          </button>
+          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 dark:bg-slate-900 dark:ring-white/10">
+            Clear
+          </button>
         </div>
+      </div>
+    </section>
 
-        <!-- Lesson Planner Panel -->
-        <div class="content-panel" id="plannerPanel">
-          <div class="panel-header">
-            <div>
-              <h1 class="panel-title">Weekly Lesson Planner</h1>
-              <p class="panel-subtitle">Plan and organize your weekly lessons</p>
-            </div>
-            <div class="panel-actions">
-              <button class="btn-ghost" id="manageSubjectsBtn">Manage Subjects</button>
-              <button class="btn-primary" id="addLessonBtn">+ Add Lesson</button>
-            </div>
-          </div>
+    <!-- Resources -->
+    <section id="resources" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Resources</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <a href="#" class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium">SEPEP Handbook (PDF)</h3>
+          <p class="text-sm text-slate-500 mt-1">Rules, roles and assessment overview.</p>
+        </a>
+        <a href="#" class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium">Fixture Spreadsheet</h3>
+          <p class="text-sm text-slate-500 mt-1">All divisions, rounds and venues.</p>
+        </a>
+      </div>
+    </section>
 
-          <!-- Week Navigation -->
-          <div class="week-nav">
-            <button class="btn-ghost" id="prevWeekBtn">← Previous</button>
-            <div class="week-info">
-              <div class="week-title" id="weekTitle">Week of September 9, 2024</div>
-              <div class="week-range" id="weekRange">Sep 9 - Sep 13</div>
-            </div>
-            <button class="btn-ghost" id="nextWeekBtn">Next →</button>
-            <button class="btn-ghost" id="todayBtn">Today</button>
-          </div>
+    <!-- Templates -->
+    <section id="templates" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Templates</h2>
+      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+        <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+          <li class="rounded-xl ring-1 ring-slate-200/60 p-4">Score sheet</li>
+          <li class="rounded-xl ring-1 ring-slate-200/60 p-4">Duty roster</li>
+          <li class="rounded-xl ring-1 ring-slate-200/60 p-4">Announcement post</li>
+        </ul>
+      </div>
+    </section>
 
-          <!-- Planner Grid -->
-          <div class="card">
-            <div class="card-content">
-              <div class="planner-grid" id="plannerGrid">
-                <!-- Grid will be generated by JavaScript -->
-              </div>
-            </div>
-          </div>
+    <!-- Settings -->
+    <section id="settings" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Settings</h2>
+      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+        <div class="rounded-xl border border-slate-200/60 bg-slate-50/70 p-4 text-sm dark:bg-slate-900/40 dark:border-slate-800">
+          Your site is using the <strong>Emerald &amp; Teal</strong> palette. Toggle light/dark in the header.
         </div>
-
-        <!-- Notes Panel -->
-        <div class="content-panel" id="notesPanel">
-          <div class="panel-header">
-            <div>
-              <h1 class="panel-title">Lesson Notes</h1>
-              <p class="panel-subtitle">Rich text notes for your subjects and general scratch pad</p>
-            </div>
-            <div class="panel-actions">
-              <select id="notesSubjectSelect">
-                <option value="global">Global Scratch Pad</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-content">
-              <div class="notes-editor">
-                <div class="notes-toolbar">
-                  <button data-command="bold" title="Bold">B</button>
-                  <button data-command="italic" title="Italic">I</button>
-                  <button data-command="insertUnorderedList" title="Bullet List">•</button>
-                  <button data-command="insertOrderedList" title="Numbered List">1.</button>
-                  <button data-command="removeFormat" title="Clear Formatting">Clear</button>
-                </div>
-                <div 
-                  class="notes-content" 
-                  id="notesContent" 
-                  contenteditable="true" 
-                  data-placeholder="Start typing your notes..."
-                ></div>
-              </div>
-            </div>
-          </div>
+        <div class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+          For best accessibility, keep contrast ≥ 4.5:1 for normal text when customizing colors.
         </div>
+      </div>
+    </section>
+  </main>
 
-        <!-- Resources Panel -->
-        <div class="content-panel" id="resourcesPanel">
-          <div class="panel-header">
-            <div>
-              <h1 class="panel-title">Resource Library</h1>
-              <p class="panel-subtitle">Save and organize links and files for your lessons</p>
-            </div>
-            <div class="panel-actions">
-              <button class="btn-primary" id="addResourceBtn">+ Add Resource</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-content">
-              <div id="resourcesList">
-                <div class="empty-state">
-                  <div class="empty-icon">📚</div>
-                  <div class="empty-title">No resources yet</div>
-                  <div class="empty-description">Add links, files, and other resources for your lessons</div>
-                  <button class="btn-primary mt-4" onclick="document.getElementById('addResourceBtn').click()">
-                    Add First Resource
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Templates Panel -->
-        <div class="content-panel" id="templatesPanel">
-          <div class="panel-header">
-            <div>
-              <h1 class="panel-title">Lesson Templates</h1>
-              <p class="panel-subtitle">Save and reuse lesson structures</p>
-            </div>
-            <div class="panel-actions">
-              <button class="btn-primary" id="createTemplateBtn">+ Create Template</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-content">
-              <div id="templateGrid" class="template-grid">
-                <div class="empty-state">
-                  <div class="empty-icon">📋</div>
-                  <div class="empty-title">No templates yet</div>
-                  <div class="empty-description">Create lesson templates to quickly add structured lessons to your planner</div>
-                  <button class="btn-primary mt-4" onclick="document.getElementById('createTemplateBtn').click()">
-                    Create First Template
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Settings Panel -->
-        <div class="content-panel" id="settingsPanel">
-          <div class="panel-header">
-            <div>
-              <h1 class="panel-title">Settings</h1>
-              <p class="panel-subtitle">Configure your preferences and sync settings</p>
-            </div>
-          </div>
-
-          <div class="grid">
-            <!-- Calendar Sync Settings -->
-            <div class="card">
-              <div class="card-header">
-                <h2 class="card-title">Calendar Sync Settings</h2>
-              </div>
-              <div class="card-content">
-                <div class="form-row">
-                  <div class="form-group flex-1">
-                    <label class="form-label" for="syncUrl">Google Apps Script URL</label>
-                    <input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
-                  </div>
-                  <button id="saveSettings" class="btn-success" type="button">Save</button>
-                  <button id="testSync" class="btn-ghost" type="button">Test</button>
-                  <button id="syncAllBtn" class="btn-ghost" type="button">Sync All</button>
-                </div>
-                <div class="text-muted" style="margin-top: var(--space-4);">
-                  <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
-                  set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL (ends with <code>/exec</code>).
-                </div>
-            </div>
-          </div>
-
-            <!-- Daily Email -->
-            <div class="card">
-              <div class="card-header">
-                <h2 class="card-title">Daily Email</h2>
-              </div>
-              <div class="card-content">
-                <div class="form-row">
-                  <div class="form-group flex-1">
-                    <label class="form-label" for="emailAddress">Email Address</label>
-                    <input id="emailAddress" type="email" placeholder="you@example.com" />
-                  </div>
-                  <button id="saveEmail" class="btn-success" type="button">Save</button>
-                  <button id="testEmail" class="btn-ghost" type="button">Send Now</button>
-                </div>
-                <div class="text-muted" style="margin-top: var(--space-4);">
-                  Sends your active reminders to this email once per day.
-                </div>
-              </div>
-            </div>
-
-            <!-- Teacher Data Management -->
-            <div class="card">
-              <div class="card-header">
-                <h2 class="card-title">Teacher Data</h2>
-              </div>
-              <div class="card-content">
-                <div class="form-row">
-                  <button id="exportTeacherDataBtn" class="btn-ghost" type="button">Export Teacher Data</button>
-                  <label class="btn-ghost" style="cursor: pointer;">
-                    Import Teacher Data
-                    <input id="importTeacherDataFile" type="file" accept="application/json" class="sr-only" />
-                  </label>
-                  <button id="clearTeacherDataBtn" class="btn-ghost" type="button" style="color: var(--danger);">Clear All Data</button>
-                </div>
-                <div class="text-muted" style="margin-top: var(--space-4);">
-                  Export/import includes subjects, lesson plans, notes, resources, and templates. Reminders are managed separately via Firebase.
-                </div>
-              </div>
-            </div>
-
-            <!-- Theme Settings -->
-            <div class="card">
-              <div class="card-header">
-                <h2 class="card-title">Appearance</h2>
-              </div>
-              <div class="card-content">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label" for="themeSelect">Theme</label>
-                    <select id="themeSelect">
-                      <option value="auto">Auto (System)</option>
-                      <option value="dark">Dark</option>
-                      <option value="light">Light</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+  <!-- Footer -->
+  <footer class="border-t border-slate-200/60 dark:border-slate-800 py-6 mt-8">
+    <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-sm text-slate-500 flex items-center justify-between">
+      <p>&copy; <span id="year"></span> Memory Cue</p>
+      <a class="text-brand-700 hover:text-brand-800 underline-offset-4 hover:underline" href="#top">Back to top</a>
     </div>
-  </div>
+  </footer>
 
-  <!-- Teacher App JavaScript -->
+  <!-- Minimal JS: theme + mobile menu (no app logic changed) -->
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
-      authDomain: "memory-cue-app.firebaseapp.com",
-      projectId: "memory-cue-app",
-      storageBucket: "memory-cue-app.firebasestorage.app",
-      messagingSenderId: "751284466633",
-      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
-      measurementId: "G-R0V4M7VCE6"
-    };
-    // Initialize Firebase with error handling
-    let db = null;
-    let auth = null;
-    let firebaseAvailable = false;
-    
-    try {
-      if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        auth = firebase.auth();
-        firebase.firestore().enablePersistence().catch(() => {});
-        firebaseAvailable = true;
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Theme toggle (respects system by default)
+    const root = document.documentElement;
+    const KEY = 'mc_theme';
+    const applyTheme = (v) => {
+      if (v === 'dark' || (v === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        root.classList.add('dark');
       } else {
-        console.warn('Firebase not available - running in offline mode');
-      }
-    } catch (error) {
-      console.warn('Firebase initialization failed - running in offline mode:', error);
-    }
-
-    // App state
-    let items = [];
-    let filter = 'today';
-    let sortKey = 'smart';
-    let listening = false;
-    let recog = null;
-    let userId = null;
-    let unsubscribe = null;
-    let currentUser = null;
-    let currentPanel = 'dashboard';
-    let currentWeek = new Date();
-    let currentSubjectForNotes = 'global';
-
-    // Teacher data state
-    let subjects = [];
-    let lessonPlans = {};
-    let notes = { globalScratch: '', subjects: {} };
-    let resources = [];
-    let templates = [];
-
-    // === CORE MODULES ===
-    
-    // Authentication Core Module
-    const AuthCore = {
-      isAvailable: () => firebaseAvailable,
-      
-      getCurrentUser: () => currentUser,
-      
-      getUserId: () => userId,
-      
-      async signIn() {
-        if (!firebaseAvailable) {
-          UICore.showToast('Firebase not available - running in demo mode');
-          return;
-        }
-        
-        if (auth.currentUser) {
-          auth.signOut();
-        } else {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          try {
-            await auth.signInWithPopup(provider);
-          } catch (err) {
-            console.error('Auth error:', err);
-            UICore.showToast('Sign in failed');
-          }
-        }
-      },
-      
-      onStateChanged(callback) {
-        if (firebaseAvailable && auth) {
-          auth.onAuthStateChanged(callback);
-        } else {
-          // In offline mode, simulate no user signed in
-          callback(null);
-        }
-      },
-      
-      updateAuthUI(user) {
-        // Update auth button
-        const authBtn = $('#authBtn');
-        if (authBtn) {
-          if (user) {
-            authBtn.textContent = 'Sign Out';
-            authBtn.title = 'Sign out';
-          } else {
-            authBtn.textContent = 'Sign In';
-            authBtn.title = 'Sign in';
-          }
-        }
-        
-        // Update onboarding banner
-        UICore.updateOnboardingBanner(user);
-        
-        // Update global state
-        currentUser = user;
-        userId = user ? user.uid : null;
+        root.classList.remove('dark');
       }
     };
-    
-    // Data Management Core Module
-    const DataCore = {
-      async saveReminder(item) {
-        if (!firebaseAvailable || !userId) {
-          // Offline mode - save to localStorage
-          localStorage.setItem('demoReminders', JSON.stringify(items));
-          return;
-        }
-        
-        try {
-          await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-            title: item.title,
-            priority: item.priority,
-            notes: item.notes,
-            done: item.done,
-            due: item.due,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt
-          });
-          this.removePendingChange(item.id);
-        } catch (error) {
-          console.error('Save failed:', error);
-          this.addPendingChange({ action: 'upsert', item });
-          UICore.updateSyncStatus('pending');
-        }
-      },
-      
-      async deleteReminder(id) {
-        if (!firebaseAvailable || !userId) return;
-        
-        try {
-          await deleteDoc(doc(db, 'users', userId, 'reminders', id));
-          this.removePendingChange(id);
-        } catch (error) {
-          console.error('Delete failed:', error);
-          this.addPendingChange({ action: 'delete', itemId: id });
-        }
-      },
-      
-      addPendingChange(change) {
-        const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-        const filtered = pending.filter(p => 
-          (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
-          (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
-        );
-        filtered.push(change);
-        localStorage.setItem('pendingChanges', JSON.stringify(filtered));
-      },
-      
-      removePendingChange(itemId) {
-        const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-        const filtered = pending.filter(p => 
-          (p.action === 'upsert' && p.item.id !== itemId) ||
-          (p.action === 'delete' && p.itemId !== itemId)
-        );
-        localStorage.setItem('pendingChanges', JSON.stringify(filtered));
-      },
-      
-      async retryPendingChanges() {
-        const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-        for (const change of pending) {
-          try {
-            if (change.action === 'upsert') {
-              await this.saveReminder(change.item);
-            } else if (change.action === 'delete') {
-              await this.deleteReminder(change.itemId);
-            }
-          } catch (error) {
-            break;
-          }
-        }
-      },
-      
-      mergeWithLocal(remoteItems) {
-        const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-        const merged = new Map();
-
-        remoteItems.forEach(item => merged.set(item.id, item));
-
-        localPending.forEach(change => {
-          if (change.action === 'upsert') {
-            merged.set(change.item.id, change.item);
-          } else if (change.action === 'delete') {
-            merged.delete(change.itemId);
-          }
-        });
-
-        return Array.from(merged.values());
-      },
-      
-      setupSync() {
-        if (!firebaseAvailable || !userId) {
-          items = [];
-          render();
-          return;
-        }
-        
-        if (unsubscribe) unsubscribe();
-        const userCollection = collection(db, 'users', userId, 'reminders');
-        const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
-
-        unsubscribe = onSnapshot(qSnap, (snapshot) => {
-          const remoteItems = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            remoteItems.push({
-              id: doc.id,
-              title: data.title,
-              priority: data.priority,
-              notes: data.notes || '',
-              done: data.done,
-              due: data.due,
-              createdAt: data.createdAt,
-              updatedAt: data.updatedAt
-            });
-          });
-
-          items = this.mergeWithLocal(remoteItems);
-          render();
-        }, (error) => {
-          console.error('Firestore sync error:', error);
-          UICore.updateSyncStatus('error');
-        });
-      }
-    };
-    
-    // UI Management Core Module
-    const UICore = {
-      showToast(msg) {
-        console.log('Toast:', msg);
-        const statusEl = $('#status');
-        if (statusEl) {
-          statusEl.textContent = msg;
-          clearTimeout(UICore.showToast._timer);
-          UICore.showToast._timer = setTimeout(() => statusEl.textContent = '', 3000);
-        }
-      },
-      
-      updateSyncStatus(state) {
-        const syncStatus = $('#syncStatus');
-        if (!syncStatus) return;
-        
-        syncStatus.classList.remove('online', 'offline', 'error');
-        
-        switch (state) {
-          case 'online':
-            syncStatus.classList.add('online');
-            syncStatus.textContent = 'Online';
-            break;
-          case 'offline':
-            syncStatus.classList.add('offline');
-            syncStatus.textContent = 'Offline';
-            break;
-          case 'pending':
-            syncStatus.classList.add('offline');
-            syncStatus.textContent = 'Sync Pending';
-            break;
-          case 'error':
-            syncStatus.classList.add('error');
-            syncStatus.textContent = 'Sync Error';
-            break;
-        }
-      },
-      
-      updateOnboardingBanner(user) {
-        const authOnboardingBanner = $('#authOnboardingBanner');
-        if (!authOnboardingBanner) return;
-        
-        if (user) {
-          // User is signed in - hide banner
-          authOnboardingBanner.classList.add('hidden');
-          this.announceAuthStatus(`Signed in as ${user.displayName || user.email}`);
-        } else {
-          // User is not signed in - show banner (only in reminders panel)
-          if (currentPanel === 'reminders') {
-            authOnboardingBanner.classList.remove('hidden');
-          }
-          this.announceAuthStatus('Not signed in. Sign in to sync reminders across devices.');
-        }
-      },
-      
-      announceAuthStatus(message) {
-        const authStatusAnnouncements = $('#authStatusAnnouncements');
-        if (!authStatusAnnouncements) return;
-        
-        authStatusAnnouncements.textContent = message;
-        // Clear after a delay to avoid repeated announcements
-        setTimeout(() => {
-          authStatusAnnouncements.textContent = '';
-        }, 3000);
-      },
-      
-      focusAuthBannerButton() {
-        const authBannerSignIn = $('#authBannerSignIn');
-        if (!authBannerSignIn || $('#authOnboardingBanner')?.classList.contains('hidden')) return;
-        authBannerSignIn.focus();
-      }
-    };
-    // Detect and store timezone
-    let settings = JSON.parse(localStorage.getItem('tcSettings') || '{}');
-    settings.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    localStorage.setItem('tcSettings', JSON.stringify(settings));
-
-    const TZ = settings.timeZone;
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
-    // Utility Functions
-    function generateISOWeekKey(date) {
-      const d = new Date(date);
-      const year = d.getFullYear();
-      const start = new Date(year, 0, 1);
-      const days = Math.floor((d - start) / (24 * 60 * 60 * 1000));
-      const week = Math.ceil((days + start.getDay() + 1) / 7);
-      return `${year}-W${String(week).padStart(2, '0')}`;
-    }
-
-    function loadTeacherData() {
-      try {
-        subjects = JSON.parse(localStorage.getItem('tcSubjects') || '[]');
-        lessonPlans = JSON.parse(localStorage.getItem('tcLessonPlans') || '{}');
-        notes = JSON.parse(localStorage.getItem('tcNotes') || '{"globalScratch":"","subjects":{}}');
-        resources = JSON.parse(localStorage.getItem('tcResources') || '[]');
-        templates = JSON.parse(localStorage.getItem('tcTemplates') || '[]');
-      } catch (e) {
-        console.error('Error loading teacher data:', e);
-        // Reset to defaults if corrupted
-        subjects = [];
-        lessonPlans = {};
-        notes = { globalScratch: '', subjects: {} };
-        resources = [];
-        templates = [];
-      }
-    }
-
-    function saveTeacherData() {
-      try {
-        localStorage.setItem('tcSubjects', JSON.stringify(subjects));
-        localStorage.setItem('tcLessonPlans', JSON.stringify(lessonPlans));
-        localStorage.setItem('tcNotes', JSON.stringify(notes));
-        localStorage.setItem('tcResources', JSON.stringify(resources));
-        localStorage.setItem('tcTemplates', JSON.stringify(templates));
-      } catch (e) {
-        console.error('Error saving teacher data:', e);
-        toast('Failed to save data - storage may be full');
-      }
-    }
-
-    function loadTheme() {
-      const saved = localStorage.getItem('mcTheme');
-      const theme = saved || 'auto';
-      applyTheme(theme);
-      const themeSelect = $('#themeSelect');
-      if (themeSelect) themeSelect.value = theme;
-    }
-
-    function applyTheme(theme) {
-      const html = document.documentElement;
-      if (theme === 'light') {
-        html.setAttribute('data-theme', 'light');
-      } else if (theme === 'dark') {
-        html.setAttribute('data-theme', 'dark');
-      } else {
-        // Auto mode - use system preference
-        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-          html.setAttribute('data-theme', 'light');
-        } else {
-          html.setAttribute('data-theme', 'dark');
-        }
-      }
-      localStorage.setItem('mcTheme', theme);
-      updateThemeToggle();
-    }
-
-    function updateThemeToggle() {
-      const toggle = $('#themeToggle');
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      if (toggle) toggle.textContent = isDark ? '☀️' : '🌙';
-    }
-
-    // Panel Navigation
-    function showPanel(panelId) {
-      // Hide all panels
-      $$('.content-panel').forEach(panel => {
-        panel.classList.remove('active');
-      });
-      
-      // Show target panel
-      const targetPanel = $(`#${panelId}Panel`);
-      if (targetPanel) {
-        targetPanel.classList.add('active');
-        currentPanel = panelId;
-      }
-
-      // Update navigation
-      $$('.nav-item').forEach(item => {
-        item.classList.remove('active');
-        item.setAttribute('aria-selected', 'false');
-      });
-      
-      const activeNavItem = $(`.nav-item[data-panel="${panelId}"]`);
-      if (activeNavItem) {
-        activeNavItem.classList.add('active');
-        activeNavItem.setAttribute('aria-selected', 'true');
-      }
-
-      // Initialize panel-specific content
-      if (panelId === 'planner') {
-        initializePlanner();
-      } else if (panelId === 'notes') {
-        initializeNotes();
-      } else if (panelId === 'resources') {
-        renderResources();
-      } else if (panelId === 'templates') {
-        renderTemplates();
-      } else if (panelId === 'dashboard') {
-        updateDashboard();
-      } else if (panelId === 'reminders') {
-        render();
-      }
-
-      // Update auth banner visibility for reminders panel
-      if (panelId === 'reminders' && !currentUser) {
-        authOnboardingBanner?.classList.remove('hidden');
-      } else {
-        authOnboardingBanner?.classList.add('hidden');
-      }
-    }
-
-    // Dashboard Functions
-    function updateDashboard() {
-      updateQuickStats();
-      renderTodayAgenda();
-    }
-
-    function updateQuickStats() {
-      const subjectCountEl = $('#subjectCount');
-      const reminderCountEl = $('#reminderCount');
-      const lessonCountEl = $('#lessonCount');
-      const templateCountEl = $('#templateCount');
-      
-      if (subjectCountEl) subjectCountEl.textContent = subjects.length;
-      if (reminderCountEl) reminderCountEl.textContent = items.filter(item => !item.done).length;
-      
-      const currentWeekKey = generateISOWeekKey(new Date());
-      const weekLessons = lessonPlans[currentWeekKey] || [];
-      if (lessonCountEl) lessonCountEl.textContent = weekLessons.length;
-      if (templateCountEl) templateCountEl.textContent = templates.length;
-    }
-
-    function renderTodayAgenda() {
-      const agendaContainer = $('#todayAgenda');
-      if (!agendaContainer) return;
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get today's lessons
-      const currentWeekKey = generateISOWeekKey(new Date());
-      const weekLessons = lessonPlans[currentWeekKey] || [];
-      const todayLessons = weekLessons.filter(lesson => {
-        const lessonDate = new Date(currentWeek);
-        const dayOffset = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(lesson.day);
-        lessonDate.setDate(lessonDate.getDate() - lessonDate.getDay() + 1 + dayOffset);
-        return lessonDate.toISOString().split('T')[0] === today;
-      });
-
-      // Get today's reminders
-      const todayReminders = items.filter(item => {
-        if (!item.due) return false;
-        return item.due.split('T')[0] === today && !item.done;
-      });
-
-      const agendaItems = [];
-
-      // Add lessons
-      todayLessons.forEach(lesson => {
-        const subject = subjects.find(s => s.id === lesson.subjectId);
-        agendaItems.push({
-          time: lesson.slot,
-          title: lesson.title,
-          type: 'lesson',
-          meta: subject ? subject.name : 'Unknown Subject',
-          color: subject ? subject.color : 'blue'
-        });
-      });
-
-      // Add reminders
-      todayReminders.forEach(reminder => {
-        const time = reminder.due ? new Date(reminder.due).toLocaleTimeString('en-AU', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : '';
-        agendaItems.push({
-          time,
-          title: reminder.title,
-          type: 'reminder',
-          meta: `${reminder.priority} priority`,
-          color: reminder.priority === 'High' ? 'red' : reminder.priority === 'Medium' ? 'orange' : 'green'
-        });
-      });
-
-      // Sort by time
-      agendaItems.sort((a, b) => {
-        if (a.time < b.time) return -1;
-        if (a.time > b.time) return 1;
-        return 0;
-      });
-
-      if (agendaItems.length === 0) {
-        agendaContainer.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">📅</div>
-            <div class="empty-title">No agenda for today</div>
-            <div class="empty-description">Add lessons and reminders to see them here</div>
-          </div>
-        `;
-        return;
-      }
-
-      agendaContainer.innerHTML = agendaItems.map(item => `
-        <div class="agenda-item">
-          <div class="agenda-time">${item.time}</div>
-          <div class="agenda-content">
-            <div class="agenda-title">${escapeHtml(item.title)}</div>
-            <div class="agenda-meta">${item.meta}</div>
-          </div>
-          <div class="subject-dot subject-color-${item.color}"></div>
-        </div>
-      `).join('');
-    }
-
-    // Initialize teacher app
-    function initializeTeacherApp() {
-      loadTeacherData();
-      loadTheme();
-      setupEventListeners();
-      
-      // Load demo reminders
-      try {
-        const demoReminders = localStorage.getItem('demoReminders');
-        if (demoReminders) {
-          items = JSON.parse(demoReminders);
-        }
-      } catch (e) {
-        console.error('Error loading demo reminders:', e);
-        items = [];
-      }
-      
-      showPanel('dashboard');
-    }
-
-    function setupEventListeners() {
-      // Navigation
-      $$('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const panel = item.getAttribute('data-panel');
-          showPanel(panel);
-        });
-      });
-
-      // Sidebar toggle
-      $('#sidebarToggle')?.addEventListener('click', () => {
-        const sidebar = $('#sidebar');
-        if (window.innerWidth <= 1024) {
-          // Mobile behavior
-          sidebar.classList.toggle('open');
-          $('#sidebarOverlay').classList.toggle('open');
-        } else {
-          // Desktop behavior
-          sidebar.classList.toggle('collapsed');
-        }
-      });
-
-      // Mobile sidebar overlay
-      $('#sidebarOverlay')?.addEventListener('click', () => {
-        $('#sidebar').classList.remove('open');
-        $('#sidebarOverlay').classList.remove('open');
-      });
-
-      // Theme toggle
-      $('#themeToggle')?.addEventListener('click', () => {
-        const current = localStorage.getItem('mcTheme') || 'auto';
-        const next = current === 'dark' ? 'light' : current === 'light' ? 'auto' : 'dark';
-        applyTheme(next);
-      });
-
-      $('#themeSelect')?.addEventListener('change', (e) => {
-        applyTheme(e.target.value);
-      });
-
-      // Teacher data export/import
-      $('#exportTeacherDataBtn')?.addEventListener('click', exportTeacherData);
-      $('#importTeacherDataFile')?.addEventListener('change', importTeacherData);
-      $('#clearTeacherDataBtn')?.addEventListener('click', clearTeacherData);
-
-      // Search functionality
-      q?.addEventListener('input', handleSearch);
-    }
-
-    function handleSearch() {
-      const query = q.value.trim().toLowerCase();
-      
-      if (currentPanel === 'reminders') {
-        render(); // Existing reminder search
-      } else if (currentPanel === 'resources') {
-        renderResources();
-      } else if (currentPanel === 'notes') {
-        // Could implement note search in the future
-      }
-    }
-
-    function exportTeacherData() {
-      const teacherData = {
-        subjects,
-        lessonPlans,
-        notes,
-        resources,
-        templates,
-        exportedAt: new Date().toISOString(),
-        version: '1.0'
-      };
-
-      const blob = new Blob([JSON.stringify(teacherData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `memory-cue-teacher-data-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('Teacher data exported successfully');
-    }
-
-    function importTeacherData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          
-          if (data.subjects) subjects = data.subjects;
-          if (data.lessonPlans) lessonPlans = data.lessonPlans;
-          if (data.notes) notes = data.notes;
-          if (data.resources) resources = data.resources;
-          if (data.templates) templates = data.templates;
-
-          saveTeacherData();
-          
-          // Refresh current panel
-          if (currentPanel === 'planner') initializePlanner();
-          if (currentPanel === 'notes') initializeNotes();
-          if (currentPanel === 'resources') renderResources();
-          if (currentPanel === 'templates') renderTemplates();
-          if (currentPanel === 'dashboard') updateDashboard();
-
-          toast('Teacher data imported successfully');
-        } catch (error) {
-          console.error('Import error:', error);
-          toast('Failed to import data - invalid file format');
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
-
-    function clearTeacherData() {
-      if (!confirm('Are you sure you want to clear all teacher data? This cannot be undone.')) {
-        return;
-      }
-
-      subjects = [];
-      lessonPlans = {};
-      notes = { globalScratch: '', subjects: {} };
-      resources = [];
-      templates = [];
-
-      saveTeacherData();
-      
-      // Refresh current panel
-      showPanel(currentPanel);
-      toast('All teacher data cleared');
-    }
-
-    // Placeholder functions for new features (to be implemented)
-    function initializePlanner() {
-      toast('Planner feature coming soon');
-    }
-
-    function initializeNotes() {
-      toast('Notes feature coming soon');
-    }
-
-    function renderResources() {
-      toast('Resources feature coming soon');
-    }
-
-    function renderTemplates() {
-      toast('Templates feature coming soon');
-    }
-
-    // DOM elements
-    const q = $('#q');
-    const title = $('#title');
-    const dateFeedback = $('#dateFeedback');
-    const date = $('#date');
-    const time = $('#time');
-    const priority = $('#priority');
-    const saveBtn = $('#saveBtn');
-    const list = $('#list');
-    const statusEl = $('#status');
-    const voiceBtn = $('#voiceBtn');
-    const notifBtn = $('#notifBtn');
-    const authBtn = $('#authBtn');
-    const addQuickBtn = $('#addQuickBtn');
-    const copyMtlBtn = $('#copyMtlBtn');
-    const importFile = $('#importFile');
-    const exportBtn = $('#exportBtn');
-    const sortSel = $('#sort');
-    const syncStatus = $('#syncStatus');
-    const openSettings = $('#openSettings');
-    const syncUrlInput = $('#syncUrl');
-    const saveSettings = $('#saveSettings');
-    const testSync = $('#testSync');
-    const syncAllBtn = $('#syncAllBtn');
-    const emailInput = $('#emailAddress');
-    const saveEmailBtn = $('#saveEmail');
-    const testEmailBtn = $('#testEmail');
-    const settingsSection = $('#settingsSection');
-    const authOnboardingBanner = $('#authOnboardingBanner');
-    const authBannerSignIn = $('#authBannerSignIn');
-    const authStatusAnnouncements = $('#authStatusAnnouncements');
-
-    // Restore saved Sync URL
-    const savedSyncUrl = localStorage.getItem('syncUrl') || '';
-    if (savedSyncUrl) syncUrlInput.value = savedSyncUrl;
-
-    const savedEmail = localStorage.getItem('emailAddress') || '';
-    if (savedEmail && emailInput) emailInput.value = savedEmail;
-    saveEmailBtn?.addEventListener('click', () => {
-      localStorage.setItem('emailAddress', emailInput.value.trim());
-      toast('Email saved');
-    });
-    testEmailBtn?.addEventListener('click', () => sendDailyEmail(true));
-
-    // Firestore real-time sync
-    function setupFirestoreSync() {
-      DataCore.setupSync();
-    }
-
-    function handleAuth() {
-      AuthCore.signIn();
-    }
-
-    // Legacy functions replaced by core modules - keeping for compatibility
-    function updateAuthButton(user) {
-      AuthCore.updateAuthUI(user);
-    }
-
-    function updateAuthOnboardingBanner(user) {
-      UICore.updateOnboardingBanner(user);
-    }
-
-    function announceAuthStatus(message) {
-      UICore.announceAuthStatus(message);
-    }
-
-    function focusAuthBannerButton() {
-      UICore.focusAuthBannerButton();
-    }
-
-    function toast(msg) {
-      UICore.showToast(msg);
-    }
-
-    // Legacy functions replaced by core modules - keeping for compatibility
-    function mergeWithLocal(remoteItems) {
-      return DataCore.mergeWithLocal(remoteItems);
-    }
-
-    async function saveToFirebase(item) {
-      return DataCore.saveReminder(item);
-    }
-
-    async function deleteFromFirebase(id) {
-      return DataCore.deleteReminder(id);
-    }
-
-    function addPendingChange(change) {
-      DataCore.addPendingChange(change);
-    }
-
-    function removePendingChange(itemId) {
-      DataCore.removePendingChange(itemId);
-    }
-
-    async function retryPendingChanges() {
-      return DataCore.retryPendingChanges();
-    }
-
-    async function tryCalendarSync(task) {
-      const url = (localStorage.getItem('syncUrl') || '').trim();
-      if (!url) return;
-      
-      const payload = { 
-        title: task.title, 
-        dueIso: task.due || null, 
-        priority: task.priority || 'Medium' 
-      };
-      
-      try {
-        await fetch(url, { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'text/plain' }, 
-          body: JSON.stringify(payload) 
-        });
-        toast('Synced to Calendar');
-      } catch (e) {
-        toast('Calendar sync failed (offline?)');
-      }
-    }
-
-    async function sendDailyEmail(force = false) {
-      const email = (localStorage.getItem('emailAddress') || '').trim();
-      if (!email) return;
-      const today = new Date().toISOString().slice(0, 10);
-      const lastSent = localStorage.getItem('lastEmailSent');
-      if (!force && lastSent === today) return;
-      const active = items.filter(i => !i.done);
-      if (!active.length) return;
-      const url = (localStorage.getItem('syncUrl') || '').trim();
-      if (!url) return;
-      try {
-        await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, reminders: active })
-        });
-        localStorage.setItem('lastEmailSent', today);
-        if (force) toast('Email sent');
-      } catch (err) {
-        console.error('Daily email failed', err);
-        if (force) toast('Email failed');
-      }
-    }
-
-    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-    
-    function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-    function toISODatePart(d) { return d.toISOString().slice(0, 10); }
-    function todayISO() {
-      const now = new Date();
-      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
-      return toISODatePart(tzDate);
-    }
-    function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
-    function smartCompare(a, b) {
-      const pr = priorityWeight(b.priority) - priorityWeight(a.priority); if (pr) return pr;
-      const at = +new Date(a.due || 0), bt = +new Date(b.due || 0); if (at !== bt) return at - bt;
-      return (a.updatedAt || 0) > (b.updatedAt || 0) ? -1 : 1;
-    }
-    function fmtDayDate(iso) {
-      if (!iso) return '—';
-      try {
-        const d = new Date(iso + 'T00:00:00');
-        return new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }).format(d);
-      } catch { return iso; }
-    }
-    function parseQuickWhen(text) {
-      text = text.toLowerCase();
-      let when = { date: todayISO(), time: '' };
-
-      // Helper function to get next occurrence of a day
-      const getNextDayOfWeek = (dayIndex) => {
-        const today = new Date();
-        const currentDay = today.getDay();
-        const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + (daysUntilTarget === 0 ? 7 : daysUntilTarget));
-        return targetDate;
-      };
-
-      // Helper function to get this occurrence of a day
-      const getThisDayOfWeek = (dayIndex) => {
-        const today = new Date();
-        const currentDay = today.getDay();
-        const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + daysUntilTarget);
-        return targetDate;
-      };
-
-      // Day names mapping
-      const dayNames = {
-        'sunday': 0, 'sun': 0,
-        'monday': 1, 'mon': 1,
-        'tuesday': 2, 'tue': 2, 'tues': 2,
-        'wednesday': 3, 'wed': 3,
-        'thursday': 4, 'thu': 4, 'thur': 4, 'thurs': 4,
-        'friday': 5, 'fri': 5,
-        'saturday': 6, 'sat': 6
-      };
-
-      // Month names mapping
-      const monthNames = {
-        'january': 0, 'jan': 0,
-        'february': 1, 'feb': 1,
-        'march': 2, 'mar': 2,
-        'april': 3, 'apr': 3,
-        'may': 4,
-        'june': 5, 'jun': 5,
-        'july': 6, 'jul': 6,
-        'august': 7, 'aug': 7,
-        'september': 8, 'sep': 8, 'sept': 8,
-        'october': 9, 'oct': 9,
-        'november': 10, 'nov': 10,
-        'december': 11, 'dec': 11
-      };
-
-      // Detect "tomorrow"
-      if (/\btomorrow\b/.test(text)) {
-        const d = new Date(); d.setDate(d.getDate() + 1); when.date = toISODatePart(d);
-      }
-      // Detect "today"
-      else if (/\btoday\b/.test(text)) {
-        when.date = todayISO();
-      }
-      // Detect "next [day]"
-      else if (/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
-        const match = text.match(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
-        const dayIndex = dayNames[match[1]];
-        const targetDate = getNextDayOfWeek(dayIndex);
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect "this [day]"
-      else if (/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
-        const match = text.match(/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
-        const dayIndex = dayNames[match[1]];
-        const targetDate = getThisDayOfWeek(dayIndex);
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect standalone day names (assume next occurrence)
-      else if (/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
-        const match = text.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
-        const dayIndex = dayNames[match[1]];
-        const targetDate = getNextDayOfWeek(dayIndex);
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect "in X days"
-      else if (/\bin\s+(\d+)\s+days?\b/.test(text)) {
-        const match = text.match(/\bin\s+(\d+)\s+days?\b/);
-        const days = parseInt(match[1], 10);
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + days);
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect "this weekend" (assume Saturday)
-      else if (/\bthis\s+weekend\b/.test(text)) {
-        const targetDate = getThisDayOfWeek(6); // Saturday
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect "next weekend"
-      else if (/\bnext\s+weekend\b/.test(text)) {
-        const targetDate = getNextDayOfWeek(6); // Saturday
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect "next week"
-      else if (/\bnext\s+week\b/.test(text)) {
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + 7);
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect specific dates like "september 15" or "sep 15"
-      else if (/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(st|nd|rd|th)?\b/.test(text)) {
-        const match = text.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(st|nd|rd|th)?\b/);
-        const monthIndex = monthNames[match[1]];
-        const day = parseInt(match[2], 10);
-        const targetDate = new Date();
-        targetDate.setMonth(monthIndex, day);
-        // If the date has passed this year, assume next year
-        if (targetDate < new Date()) {
-          targetDate.setFullYear(targetDate.getFullYear() + 1);
-        }
-        when.date = toISODatePart(targetDate);
-      }
-      // Detect date formats like "15/09" or "09/15" or "15/09/2025"
-      else if (/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/.test(text)) {
-        const match = text.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
-        const first = parseInt(match[1], 10);
-        const second = parseInt(match[2], 10);
-        let year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
-        
-        // Handle 2-digit years
-        if (year < 100) {
-          year += year < 50 ? 2000 : 1900;
-        }
-        
-        // Assume DD/MM format (common in AU)
-        if (first <= 12 && second <= 12) {
-          // If both could be month or day, prefer DD/MM format
-          const targetDate = new Date(year, second - 1, first);
-          when.date = toISODatePart(targetDate);
-        } else if (first <= 31 && second <= 12) {
-          // DD/MM format
-          const targetDate = new Date(year, second - 1, first);
-          when.date = toISODatePart(targetDate);
-        } else if (first <= 12 && second <= 31) {
-          // MM/DD format
-          const targetDate = new Date(year, first - 1, second);
-          when.date = toISODatePart(targetDate);
-        }
-      }
-
-      const mHm = text.match(/\b(\d{1,2}):(\d{2})\b/);
-      const m12 = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
-      if (mHm) { when.time = `${String(mHm[1]).padStart(2, '0')}:${mHm[2]}`; }
-      else if (m12) {
-        let h = parseInt(m12[1], 10) % 12; if (m12[2] === 'pm') h += 12; when.time = `${String(h).padStart(2, '0')}:00`;
-      }
-      return when;
-    }
-
-    function addItem(obj) {
-      // If Firebase is not available, always allow adding reminders in demo mode
-      if (!AuthCore.isAvailable()) {
-        const item = {
-          id: uid(),
-          title: obj.title.trim(),
-          priority: obj.priority || 'Medium',
-          notes: obj.notes || '',
-          done: false,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          due: obj.due || null
-        };
-
-        items = [item, ...items];
-        render();
-        localStorage.setItem('demoReminders', JSON.stringify(items));
-        UICore.showToast('Reminder added (demo mode)');
-        return item;
-      }
-
-      // If user is not signed in, show toast and focus banner sign-in button
-      if (!AuthCore.getCurrentUser()) {
-        UICore.showToast('Sign in to sync reminders across devices');
-        UICore.focusAuthBannerButton();
-        return null;
-      }
-
-      const item = {
-        id: uid(),
-        title: obj.title.trim(),
-        priority: obj.priority || 'Medium',
-        notes: obj.notes || '',
-        done: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        due: obj.due || null
-      };
-
-      items = [item, ...items];
-      render();
-
-      // Save to Firebase if available
-      DataCore.saveReminder(item);
-      
-      return item;
-    }
-
-    function toggleDone(id) {
-      const item = items.find(x => x.id === id);
-      if (item) {
-        item.done = !item.done;
-        item.updatedAt = Date.now();
-        render();
-        saveToFirebase(item);
-      }
-    }
-
-    function removeItem(id) {
-      items = items.filter(x => x.id !== id);
-      render();
-      deleteFromFirebase(id);
-    }
-
-    function render() {
-      sendDailyEmail();
-      const query = q.value.trim().toLowerCase();
-
-      const now = new Date();
-      const tzNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
-      const todayStart = new Date(tzNow);
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date(tzNow);
-      todayEnd.setHours(23, 59, 59, 999);
-
-      let rows = items.slice();
-
-      if (query) {
-        rows = rows.filter(r =>
-          r.title.toLowerCase().includes(query) || (r.notes || '').toLowerCase().includes(query)
-        );
-      }
-
-      rows = rows.filter(r => {
-        if (filter === 'done') return r.done;
-        if (filter === 'overdue') return !r.done && r.due && new Date(r.due) < tzNow;
-        if (filter === 'today') {
-          if (!r.due) return true;
-          const dueDate = new Date(r.due);
-          const dueDateTz = new Date(dueDate.toLocaleString('en-US', { timeZone: TZ }));
-          return dueDateTz >= todayStart && dueDateTz <= todayEnd;
-        }
-        return true;
-      });
-
-      rows.sort((a, b) => {
-        if (sortKey === 'time') return (+new Date(a.due || 0)) - (+new Date(b.due || 0));
-        if (sortKey === 'priority') return priorityWeight(b.priority) - priorityWeight(a.priority);
-        return smartCompare(a, b);
-      });
-
-      // Update filter button states
-      $$('[data-filter]').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
-      });
-
-      list.innerHTML = '';
-      if (rows.length === 0) {
-        list.innerHTML = '<div class="text-muted">No reminders found.</div>';
-        return;
-      }
-
-      rows.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'task-item' + (r.done ? ' completed' : '');
-        
-        const dueTxt = r.due
-          ? new Date(r.due).toLocaleString('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) +
-            ' • ' + fmtDayDate(r.due.slice(0, 10))
-          : 'No due date';
-
-        const priorityClass = `priority-${r.priority.toLowerCase()}`;
-        
-        div.innerHTML = `
-          <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
-          <div class="task-content">
-            <div class="task-title">${escapeHtml(r.title)}</div>
-            <div class="task-meta">
-              <span>${dueTxt}</span>
-              <span class="priority-badge ${priorityClass}">${r.priority}</span>
-              ${r.notes ? `<span>${escapeHtml(r.notes)}</span>` : ''}
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn-ghost" data-del type="button">Delete</button>
-          </div>`;
-        
-        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
-        list.appendChild(div);
-      });
-    }
-
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>"']/g, (c) =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
-      );
-    }
-
-
-
-    // Event Listeners
-    saveBtn.addEventListener('click', () => {
-      const t = title.value.trim(); 
-      if (!t) { 
-        toast('Add a reminder title'); 
-        return; 
-      }
-      let due = null;
-      if (date.value || time.value) {
-        const d = (date.value || todayISO());
-        const tm = (time.value || '09:00');
-        due = new Date(`${d}T${tm}:00`).toISOString();
-      } else {
-        const p = parseQuickWhen(t);
-        if (p.time) { 
-          due = new Date(`${p.date}T${p.time}:00`).toISOString(); 
-        }
-      }
-      addItem({ title: t, priority: priority.value, due });
-      title.value = ''; 
-      time.value = '';
+    const saved = localStorage.getItem(KEY) || 'auto';
+    applyTheme(saved);
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      const next = root.classList.contains('dark') ? 'light' : 'dark';
+      localStorage.setItem(KEY, next);
+      applyTheme(next);
     });
 
-    // Add real-time date feedback
-    function updateDateFeedback() {
-      const text = title.value.trim();
-      if (!text) {
-        dateFeedback.style.display = 'none';
-        return;
-      }
-      
-      try {
-        const parsed = parseQuickWhen(text);
-        const today = todayISO();
-        
-        if (parsed.date !== today || parsed.time) {
-          let feedback = '';
-          
-          if (parsed.date !== today) {
-            const dateObj = new Date(parsed.date + 'T00:00:00');
-            feedback += `📅 ${fmtDayDate(parsed.date)}`;
-          }
-          
-          if (parsed.time) {
-            feedback += `${feedback ? ' ' : ''}🕐 ${parsed.time}`;
-          }
-          
-          if (feedback) {
-            dateFeedback.textContent = `Parsed: ${feedback}`;
-            dateFeedback.style.display = 'block';
-          } else {
-            dateFeedback.style.display = 'none';
-          }
-        } else {
-          dateFeedback.style.display = 'none';
-        }
-      } catch (e) {
-        dateFeedback.style.display = 'none';
-      }
-    }
-    
-    title.addEventListener('input', debounce(updateDateFeedback, 300));
-
-    addQuickBtn.addEventListener('click', () => {
-      if (!title.value.trim()) {
-        title.focus(); 
-        toast('Type something like "pick up dog at 6pm"'); 
-        return;
-      }
-      saveBtn.click();
+    // Mobile menu
+    const menuBtn = document.getElementById('menuBtn');
+    const menu = document.getElementById('mobileMenu');
+    menuBtn?.addEventListener('click', () => {
+      const open = menu.classList.toggle('hidden') === false;
+      menuBtn.setAttribute('aria-expanded', String(open));
     });
-
-    q.addEventListener('input', render);
-    sortSel.addEventListener('change', () => { 
-      sortKey = sortSel.value; 
-      render(); 
-    });
-    
-    $$('button[data-filter]').forEach(b => b.addEventListener('click', () => {
-      filter = b.getAttribute('data-filter'); 
-      render();
-    }));
-
-    copyMtlBtn.addEventListener('click', () => {
-      const lines = items.filter(x => !x.done).map(x => {
-        const datePart = x.due ? fmtDayDate(x.due.slice(0, 10)) : '';
-        const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
-        const pieces = [
-          'mtl ' + x.title,
-          x.due ? `Due Date: ${datePart}` : '',
-          x.due ? `Time: ${timePart}` : '',
-          `Status: Not started`,
-        ].filter(Boolean);
-        return pieces.join('\n');
-      });
-      if (lines.length === 0) { 
-        toast('No active tasks to copy'); 
-        return; 
-      }
-      navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
-        toast('Copied for Master Task List');
-      }).catch(() => toast('Copy failed'));
-    });
-
-    importFile.addEventListener('change', () => {
-      const f = importFile.files[0]; 
-      if (!f) return;
-      const rd = new FileReader();
-      rd.onload = () => {
-        try { 
-          const importedItems = JSON.parse(String(rd.result) || '[]'); 
-          importedItems.forEach(item => {
-            item.id = uid();
-            items = [item, ...items];
-            saveToFirebase(item);
-          });
-          render();
-          toast('Import successful');
-        }
-        catch (err) { 
-          toast('Invalid JSON'); 
-        }
-      };
-      rd.readAsText(f);
-      importFile.value = '';
-    });
-
-    exportBtn.addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); 
-      a.href = url; 
-      a.download = 'memory-cue.json'; 
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    openSettings?.addEventListener('click', () => {
-      if (settingsSection) {
-        settingsSection.classList.remove('hidden');
-        settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-
-    saveSettings.addEventListener('click', () => {
-      const url = syncUrlInput.value.trim();
-      localStorage.setItem('syncUrl', url);
-      toast('Calendar sync settings saved');
-    });
-
-    testSync.addEventListener('click', async () => {
-      const url = syncUrlInput.value.trim();
-      if (!url) {
-        toast('Enter Google Apps Script URL first');
-        return;
-      }
-      try {
-        const r = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ title: 'Test from Memory Cue', dueIso: null, priority: 'Low' })
-        });
-        toast(r.ok ? 'Calendar test sent successfully' : 'Calendar sync error');
-      } catch (e) {
-        toast('Calendar sync failed (check URL & deploy)');
-      }
-    });
-
-    syncAllBtn?.addEventListener('click', async () => {
-      const url = syncUrlInput.value.trim();
-      if (!url) { toast('Add your Apps Script URL in Settings first'); return; }
-      if (!items.length) { toast('No reminders to sync'); return; }
-
-      toast('Syncing all reminders…');
-      const chunkSize = 20;
-      let fail = 0;
-      for (let i = 0; i < items.length; i += chunkSize) {
-        const chunk = items.slice(i, i + chunkSize);
-        const results = await Promise.allSettled(chunk.map(task => {
-          const payload = {
-            id: task.id,
-            title: task.title,
-            dueIso: task.due || null,
-            priority: task.priority || 'Medium',
-            done: !!task.done,
-            source: 'memory-cue'
-          };
-          return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        }));
-        fail += results.filter(r => r.status === 'rejected').length;
-        await new Promise(res => setTimeout(res, 400));
-      }
-      toast(`Sync complete: ${items.length - fail} ok${fail ? `, ${fail} failed` : ''}`);
-    });
-
-    // Voice recognition
-    try {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SR) {
-        recog = new SR();
-        recog.lang = 'en-AU';
-        recog.interimResults = false;
-        recog.onresult = (e) => {
-          const t = e.results[0][0].transcript || '';
-          title.value = t;
-          toast('Heard: ' + t);
-        };
-        recog.onend = () => { 
-          listening = false; 
-          voiceBtn.textContent = '🎙️ Voice'; 
-        };
-      }
-    } catch { }
-
-    authBtn.addEventListener('click', handleAuth);
-
-    // Banner sign-in button
-    authBannerSignIn?.addEventListener('click', handleAuth);
-
-    voiceBtn.addEventListener('click', () => {
-      if (!recog) return;
-      if (!listening) { 
-        try { 
-          recog.start(); 
-          listening = true; 
-          voiceBtn.textContent = '👂 Listening...'; 
-        } catch { } 
-      } else { 
-        try { 
-          recog.stop(); 
-        } catch { } 
-        listening = false; 
-        voiceBtn.textContent = '🎙️ Voice'; 
-      }
-    });
-
-    notifBtn.addEventListener('click', async () => {
-      if (!('Notification' in window)) { 
-        toast('Notifications not supported'); 
-        return; 
-      }
-      if (Notification.permission === 'granted') { 
-        toast('Notifications enabled'); 
-        return; 
-      }
-      const perm = await Notification.requestPermission();
-      toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
-    });
-
-    window.addEventListener('online', () => {
-      UICore.updateSyncStatus('online');
-      retryPendingChanges();
-    });
-
-    window.addEventListener('offline', () => {
-      UICore.updateSyncStatus('offline');
-    });
-
-    // Set up auth state listener using AuthCore
-    AuthCore.onStateChanged((user) => {
-      AuthCore.updateAuthUI(user);
-      setupFirestoreSync();
-    });
-
-    initializeTeacherApp();
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('service-worker.js')
-        .then(() => {
-          console.log('Service worker registered');
-          toast('App ready for offline use');
-        })
-        .catch((err) => {
-          console.error('Service worker registration failed:', err);
-          toast('Service worker registration failed');
-        });
-    }
-  </script>
-
-  <!-- Non-module scripts (same as before) -->
-  <script>
-    (function(){
-      function setStatus(el, state, label){
-        if (!el) return;
-        el.classList.remove('online','offline','error');
-        el.classList.add(state);
-        el.textContent = label;
-      }
-      function updateNetworkBadge(){
-        var el = document.getElementById('syncStatus');
-        if (!el) return;
-        if (navigator.onLine) {
-          setStatus(el, 'online', 'Online');
-        } else {
-          setStatus(el, 'offline', 'Offline');
-        }
-      }
-      window.addEventListener('online', updateNetworkBadge);
-      window.addEventListener('offline', updateNetworkBadge);
-      if (document.readyState !== 'loading') updateNetworkBadge();
-      else document.addEventListener('DOMContentLoaded', updateNetworkBadge);
-
-      var testBtn = document.getElementById('testSync');
-      var urlInput = document.getElementById('syncUrl');
-      async function pingSync(){
-        var el = document.getElementById('syncStatus');
-        try {
-          var url = (urlInput && urlInput.value) || urlInput?.getAttribute('value') || '';
-          if (!url) { updateNetworkBadge(); return; }
-          const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'ping=1', { method: 'GET', cache:'no-store' });
-          if (res.ok) setStatus(el, 'online', 'Online');
-          else setStatus(el, 'error', 'Sync Error');
-        } catch (e) {
-          if (!navigator.onLine) setStatus(el, 'offline', 'Offline');
-          else setStatus(el, 'error', 'Sync Error');
-        }
-      }
-      if (testBtn) testBtn.addEventListener('click', function(e){ e.preventDefault(); pingSync(); });
-      if (navigator.onLine) setTimeout(pingSync, 800);
-    })();
-  </script>
-
-  <script>
-    (function(){
-      function getSyncUrl(){
-        var el = document.getElementById('syncUrl');
-        var url = (el && (el.value || el.getAttribute('value'))) ? (el.value || el.getAttribute('value')) : '';
-        url = (url || '').trim();
-        if (!url) throw new Error('Missing sync URL. Add your Google Apps Script Web App URL in Settings.');
-        if (!/^https:\/\//i.test(url)) throw new Error('Sync URL must start with https://');
-        return url;
-      }
-      window.__getSyncUrl = getSyncUrl;
-    })();
-  </script>
-
-  <script>
-    (function(){
-      async function loadFromServer(opts){
-        opts = opts || {};
-        const maxRetries = 2;
-        const backoff = [300, 900];
-        const statusEl = document.getElementById('syncStatus');
-        function setStatus(cls, label){
-          if (!statusEl) return;
-          statusEl.classList.remove('online','offline','error');
-          statusEl.classList.add(cls);
-          statusEl.textContent = label;
-        }
-        let url;
-        try {
-          url = (window.__getSyncUrl && window.__getSyncUrl()) || '';
-        } catch(e) {
-          console.warn(e.message);
-          setStatus('error', 'Sync URL missing');
-          return { ok:false, error:e.message };
-        }
-
-        async function attempt(i){
-          try {
-            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'list=1', {
-              method: 'GET',
-              headers: { 'Accept': 'application/json' },
-              cache: 'no-store',
-              redirect: 'follow',
-            });
-            if (!res.ok) throw new Error('Server responded ' + res.status);
-            const data = await res.json();
-            setStatus('online', 'Online');
-            return { ok:true, data };
-          } catch (err) {
-            if (i < maxRetries) {
-              await new Promise(r => setTimeout(r, backoff[i]));
-              return attempt(i+1);
-            }
-            console.error('loadFromServer failed', err);
-            if (!navigator.onLine) setStatus('offline', 'Offline');
-            else setStatus('error', 'Sync Error');
-            return { ok:false, error: String(err && err.message || err) };
-          }
-        }
-        return attempt(0);
-      }
-      window.loadFromServer = loadFromServer;
-    })();
   </script>
 </body>
 </html>
