@@ -727,18 +727,9 @@
       loadTheme();
       setupEventListeners();
       
-      // Load demo reminders
-      try {
-        const demoReminders = localStorage.getItem('demoReminders');
-        if (demoReminders) {
-          items = JSON.parse(demoReminders);
-        }
-      } catch (e) {
-        console.error('Error loading demo reminders:', e);
-        items = [];
-      }
-      
       showPanel('dashboard');
+      
+      console.log('MemoryCue index: full mode initialized');
     }
 
     function setupEventListeners() {
@@ -937,13 +928,16 @@
       if (!userId) {
         items = [];
         render();
+        syncStatus.textContent = 'Not signed in';
+        syncStatus.className = 'sync-status offline';
         return;
       }
       if (unsubscribe) unsubscribe();
-      const userCollection = collection(db, 'users', userId, 'reminders');
-      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
+      
+      const userCollection = db.collection('users').doc(userId).collection('reminders');
+      const qSnap = userCollection.orderBy('updatedAt', 'desc');
 
-      unsubscribe = onSnapshot(qSnap, (snapshot) => {
+      unsubscribe = qSnap.onSnapshot((snapshot) => {
         const remoteItems = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
@@ -959,8 +953,10 @@
           });
         });
 
-        items = mergeWithLocal(remoteItems);
+        items = remoteItems;
         render();
+        syncStatus.textContent = 'Online';
+        syncStatus.className = 'sync-status online';
       }, (error) => {
         console.error('Firestore sync error:', error);
         syncStatus.textContent = 'Sync Error';
@@ -991,27 +987,10 @@
       }
     }
 
-    function mergeWithLocal(remoteItems) {
-      const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const merged = new Map();
-
-      remoteItems.forEach(item => merged.set(item.id, item));
-
-      localPending.forEach(change => {
-        if (change.action === 'upsert') {
-          merged.set(change.item.id, change.item);
-        } else if (change.action === 'delete') {
-          merged.delete(change.itemId);
-        }
-      });
-
-      return Array.from(merged.values());
-    }
-
     async function saveToFirebase(item) {
       if (!userId) return;
       try {
-        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
+        await db.collection('users').doc(userId).collection('reminders').doc(item.id).set({
           title: item.title,
           priority: item.priority,
           notes: item.notes,
@@ -1020,57 +999,19 @@
           createdAt: item.createdAt,
           updatedAt: item.updatedAt
         });
-        removePendingChange(item.id);
       } catch (error) {
         console.error('Save failed:', error);
-        addPendingChange({ action: 'upsert', item });
-        syncStatus.textContent = 'Sync Pending';
-        syncStatus.className = 'sync-status offline';
+        toast('Save failed - will retry when online');
       }
     }
 
     async function deleteFromFirebase(id) {
       if (!userId) return;
       try {
-        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
-        removePendingChange(id);
+        await db.collection('users').doc(userId).collection('reminders').doc(id).delete();
       } catch (error) {
         console.error('Delete failed:', error);
-        addPendingChange({ action: 'delete', itemId: id });
-      }
-    }
-
-    function addPendingChange(change) {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const filtered = pending.filter(p => 
-        (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
-        (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
-      );
-      filtered.push(change);
-      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
-    }
-
-    function removePendingChange(itemId) {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const filtered = pending.filter(p => 
-        (p.action === 'upsert' && p.item.id !== itemId) ||
-        (p.action === 'delete' && p.itemId !== itemId)
-      );
-      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
-    }
-
-    async function retryPendingChanges() {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      for (const change of pending) {
-        try {
-          if (change.action === 'upsert') {
-            await saveToFirebase(change.item);
-          } else if (change.action === 'delete') {
-            await deleteFromFirebase(change.itemId);
-          }
-        } catch (error) {
-          break;
-        }
+        toast('Delete failed - will retry when online');
       }
     }
 
@@ -1297,6 +1238,11 @@
     }
 
     function addItem(obj) {
+      if (!userId) {
+        toast('Please sign in to add reminders');
+        return;
+      }
+
       const item = {
         id: uid(),
         title: obj.title.trim(),
@@ -1310,10 +1256,7 @@
 
       items = [item, ...items];
       render();
-
-      // In demo mode, just save to localStorage
-      localStorage.setItem('demoReminders', JSON.stringify(items));
-      toast('Reminder added (demo mode)');
+      saveToFirebase(item);
       
       return item;
     }
@@ -1675,7 +1618,6 @@
     window.addEventListener('online', () => {
       syncStatus.textContent = 'Online';
       syncStatus.className = 'sync-status online';
-      retryPendingChanges();
     });
 
     window.addEventListener('offline', () => {
