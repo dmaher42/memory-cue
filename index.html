@@ -526,6 +526,265 @@
     let notes = { globalScratch: '', subjects: {} };
     let resources = [];
     let templates = [];
+
+    // === CORE MODULES ===
+    
+    // Authentication Core Module
+    const AuthCore = {
+      isAvailable: () => firebaseAvailable,
+      
+      getCurrentUser: () => currentUser,
+      
+      getUserId: () => userId,
+      
+      async signIn() {
+        if (!firebaseAvailable) {
+          UICore.showToast('Firebase not available - running in demo mode');
+          return;
+        }
+        
+        if (auth.currentUser) {
+          auth.signOut();
+        } else {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          try {
+            await auth.signInWithPopup(provider);
+          } catch (err) {
+            console.error('Auth error:', err);
+            UICore.showToast('Sign in failed');
+          }
+        }
+      },
+      
+      onStateChanged(callback) {
+        if (firebaseAvailable && auth) {
+          auth.onAuthStateChanged(callback);
+        } else {
+          // In offline mode, simulate no user signed in
+          callback(null);
+        }
+      },
+      
+      updateAuthUI(user) {
+        // Update auth button
+        const authBtn = $('#authBtn');
+        if (authBtn) {
+          if (user) {
+            authBtn.textContent = 'Sign Out';
+            authBtn.title = 'Sign out';
+          } else {
+            authBtn.textContent = 'Sign In';
+            authBtn.title = 'Sign in';
+          }
+        }
+        
+        // Update onboarding banner
+        UICore.updateOnboardingBanner(user);
+        
+        // Update global state
+        currentUser = user;
+        userId = user ? user.uid : null;
+      }
+    };
+    
+    // Data Management Core Module
+    const DataCore = {
+      async saveReminder(item) {
+        if (!firebaseAvailable || !userId) {
+          // Offline mode - save to localStorage
+          localStorage.setItem('demoReminders', JSON.stringify(items));
+          return;
+        }
+        
+        try {
+          await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
+            title: item.title,
+            priority: item.priority,
+            notes: item.notes,
+            done: item.done,
+            due: item.due,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt
+          });
+          this.removePendingChange(item.id);
+        } catch (error) {
+          console.error('Save failed:', error);
+          this.addPendingChange({ action: 'upsert', item });
+          UICore.updateSyncStatus('pending');
+        }
+      },
+      
+      async deleteReminder(id) {
+        if (!firebaseAvailable || !userId) return;
+        
+        try {
+          await deleteDoc(doc(db, 'users', userId, 'reminders', id));
+          this.removePendingChange(id);
+        } catch (error) {
+          console.error('Delete failed:', error);
+          this.addPendingChange({ action: 'delete', itemId: id });
+        }
+      },
+      
+      addPendingChange(change) {
+        const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+        const filtered = pending.filter(p => 
+          (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
+          (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
+        );
+        filtered.push(change);
+        localStorage.setItem('pendingChanges', JSON.stringify(filtered));
+      },
+      
+      removePendingChange(itemId) {
+        const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+        const filtered = pending.filter(p => 
+          (p.action === 'upsert' && p.item.id !== itemId) ||
+          (p.action === 'delete' && p.itemId !== itemId)
+        );
+        localStorage.setItem('pendingChanges', JSON.stringify(filtered));
+      },
+      
+      async retryPendingChanges() {
+        const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+        for (const change of pending) {
+          try {
+            if (change.action === 'upsert') {
+              await this.saveReminder(change.item);
+            } else if (change.action === 'delete') {
+              await this.deleteReminder(change.itemId);
+            }
+          } catch (error) {
+            break;
+          }
+        }
+      },
+      
+      mergeWithLocal(remoteItems) {
+        const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
+        const merged = new Map();
+
+        remoteItems.forEach(item => merged.set(item.id, item));
+
+        localPending.forEach(change => {
+          if (change.action === 'upsert') {
+            merged.set(change.item.id, change.item);
+          } else if (change.action === 'delete') {
+            merged.delete(change.itemId);
+          }
+        });
+
+        return Array.from(merged.values());
+      },
+      
+      setupSync() {
+        if (!firebaseAvailable || !userId) {
+          items = [];
+          render();
+          return;
+        }
+        
+        if (unsubscribe) unsubscribe();
+        const userCollection = collection(db, 'users', userId, 'reminders');
+        const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
+
+        unsubscribe = onSnapshot(qSnap, (snapshot) => {
+          const remoteItems = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            remoteItems.push({
+              id: doc.id,
+              title: data.title,
+              priority: data.priority,
+              notes: data.notes || '',
+              done: data.done,
+              due: data.due,
+              createdAt: data.createdAt,
+              updatedAt: data.updatedAt
+            });
+          });
+
+          items = this.mergeWithLocal(remoteItems);
+          render();
+        }, (error) => {
+          console.error('Firestore sync error:', error);
+          UICore.updateSyncStatus('error');
+        });
+      }
+    };
+    
+    // UI Management Core Module
+    const UICore = {
+      showToast(msg) {
+        console.log('Toast:', msg);
+        const statusEl = $('#status');
+        if (statusEl) {
+          statusEl.textContent = msg;
+          clearTimeout(UICore.showToast._timer);
+          UICore.showToast._timer = setTimeout(() => statusEl.textContent = '', 3000);
+        }
+      },
+      
+      updateSyncStatus(state) {
+        const syncStatus = $('#syncStatus');
+        if (!syncStatus) return;
+        
+        syncStatus.classList.remove('online', 'offline', 'error');
+        
+        switch (state) {
+          case 'online':
+            syncStatus.classList.add('online');
+            syncStatus.textContent = 'Online';
+            break;
+          case 'offline':
+            syncStatus.classList.add('offline');
+            syncStatus.textContent = 'Offline';
+            break;
+          case 'pending':
+            syncStatus.classList.add('offline');
+            syncStatus.textContent = 'Sync Pending';
+            break;
+          case 'error':
+            syncStatus.classList.add('error');
+            syncStatus.textContent = 'Sync Error';
+            break;
+        }
+      },
+      
+      updateOnboardingBanner(user) {
+        const authOnboardingBanner = $('#authOnboardingBanner');
+        if (!authOnboardingBanner) return;
+        
+        if (user) {
+          // User is signed in - hide banner
+          authOnboardingBanner.classList.add('hidden');
+          this.announceAuthStatus(`Signed in as ${user.displayName || user.email}`);
+        } else {
+          // User is not signed in - show banner (only in reminders panel)
+          if (currentPanel === 'reminders') {
+            authOnboardingBanner.classList.remove('hidden');
+          }
+          this.announceAuthStatus('Not signed in. Sign in to sync reminders across devices.');
+        }
+      },
+      
+      announceAuthStatus(message) {
+        const authStatusAnnouncements = $('#authStatusAnnouncements');
+        if (!authStatusAnnouncements) return;
+        
+        authStatusAnnouncements.textContent = message;
+        // Clear after a delay to avoid repeated announcements
+        setTimeout(() => {
+          authStatusAnnouncements.textContent = '';
+        }, 3000);
+      },
+      
+      focusAuthBannerButton() {
+        const authBannerSignIn = $('#authBannerSignIn');
+        if (!authBannerSignIn || $('#authOnboardingBanner')?.classList.contains('hidden')) return;
+        authBannerSignIn.focus();
+      }
+    };
     // Detect and store timezone
     let settings = JSON.parse(localStorage.getItem('tcSettings') || '{}');
     settings.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -975,179 +1234,57 @@
 
     // Firestore real-time sync
     function setupFirestoreSync() {
-      if (!firebaseAvailable || !userId) {
-        items = [];
-        render();
-        return;
-      }
-      if (unsubscribe) unsubscribe();
-      const userCollection = collection(db, 'users', userId, 'reminders');
-      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
-
-      unsubscribe = onSnapshot(qSnap, (snapshot) => {
-        const remoteItems = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          remoteItems.push({
-            id: doc.id,
-            title: data.title,
-            priority: data.priority,
-            notes: data.notes || '',
-            done: data.done,
-            due: data.due,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt
-          });
-        });
-
-        items = mergeWithLocal(remoteItems);
-        render();
-      }, (error) => {
-        console.error('Firestore sync error:', error);
-        syncStatus.textContent = 'Sync Error';
-        syncStatus.className = 'sync-status error';
-      });
+      DataCore.setupSync();
     }
 
     function handleAuth() {
-      if (!firebaseAvailable) {
-        toast('Firebase not available - running in demo mode');
-        return;
-      }
-      
-      if (auth.currentUser) {
-        auth.signOut();
-      } else {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch((err) => {
-          console.error('Auth error:', err);
-          toast('Sign in failed');
-        });
-      }
+      AuthCore.signIn();
     }
 
+    // Legacy functions replaced by core modules - keeping for compatibility
     function updateAuthButton(user) {
-      if (!authBtn) return;
-      if (user) {
-        authBtn.textContent = 'Sign Out';
-        authBtn.title = 'Sign out';
-      } else {
-        authBtn.textContent = 'Sign In';
-        authBtn.title = 'Sign in';
-      }
+      AuthCore.updateAuthUI(user);
     }
 
     function updateAuthOnboardingBanner(user) {
-      if (!authOnboardingBanner) return;
-      
-      if (user) {
-        // User is signed in - hide banner
-        authOnboardingBanner.classList.add('hidden');
-        announceAuthStatus(`Signed in as ${user.displayName || user.email}`);
-      } else {
-        // User is not signed in - show banner (only in reminders panel)
-        if (currentPanel === 'reminders') {
-          authOnboardingBanner.classList.remove('hidden');
-        }
-        announceAuthStatus('Not signed in. Sign in to sync reminders across devices.');
-      }
+      UICore.updateOnboardingBanner(user);
     }
 
     function announceAuthStatus(message) {
-      if (!authStatusAnnouncements) return;
-      authStatusAnnouncements.textContent = message;
-      // Clear after a delay to avoid repeated announcements
-      setTimeout(() => {
-        authStatusAnnouncements.textContent = '';
-      }, 3000);
+      UICore.announceAuthStatus(message);
     }
 
     function focusAuthBannerButton() {
-      if (!authBannerSignIn || authOnboardingBanner?.classList.contains('hidden')) return;
-      authBannerSignIn.focus();
+      UICore.focusAuthBannerButton();
     }
 
+    function toast(msg) {
+      UICore.showToast(msg);
+    }
+
+    // Legacy functions replaced by core modules - keeping for compatibility
     function mergeWithLocal(remoteItems) {
-      const localPending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const merged = new Map();
-
-      remoteItems.forEach(item => merged.set(item.id, item));
-
-      localPending.forEach(change => {
-        if (change.action === 'upsert') {
-          merged.set(change.item.id, change.item);
-        } else if (change.action === 'delete') {
-          merged.delete(change.itemId);
-        }
-      });
-
-      return Array.from(merged.values());
+      return DataCore.mergeWithLocal(remoteItems);
     }
 
     async function saveToFirebase(item) {
-      if (!firebaseAvailable || !userId) return;
-      try {
-        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-          title: item.title,
-          priority: item.priority,
-          notes: item.notes,
-          done: item.done,
-          due: item.due,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt
-        });
-        removePendingChange(item.id);
-      } catch (error) {
-        console.error('Save failed:', error);
-        addPendingChange({ action: 'upsert', item });
-        syncStatus.textContent = 'Sync Pending';
-        syncStatus.className = 'sync-status offline';
-      }
+      return DataCore.saveReminder(item);
     }
 
     async function deleteFromFirebase(id) {
-      if (!firebaseAvailable || !userId) return;
-      try {
-        await deleteDoc(doc(db, 'users', userId, 'reminders', id));
-        removePendingChange(id);
-      } catch (error) {
-        console.error('Delete failed:', error);
-        addPendingChange({ action: 'delete', itemId: id });
-      }
+      return DataCore.deleteReminder(id);
     }
 
     function addPendingChange(change) {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const filtered = pending.filter(p => 
-        (p.action === 'upsert' && p.item.id !== (change.item?.id || change.itemId)) ||
-        (p.action === 'delete' && p.itemId !== (change.item?.id || change.itemId))
-      );
-      filtered.push(change);
-      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
+      DataCore.addPendingChange(change);
     }
 
     function removePendingChange(itemId) {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      const filtered = pending.filter(p => 
-        (p.action === 'upsert' && p.item.id !== itemId) ||
-        (p.action === 'delete' && p.itemId !== itemId)
-      );
-      localStorage.setItem('pendingChanges', JSON.stringify(filtered));
+      DataCore.removePendingChange(itemId);
     }
 
     async function retryPendingChanges() {
-      const pending = JSON.parse(localStorage.getItem('pendingChanges') || '[]');
-      for (const change of pending) {
-        try {
-          if (change.action === 'upsert') {
-            await saveToFirebase(change.item);
-          } else if (change.action === 'delete') {
-            await deleteFromFirebase(change.itemId);
-          }
-        } catch (error) {
-          break;
-        }
-      }
+      return DataCore.retryPendingChanges();
     }
 
     async function tryCalendarSync(task) {
@@ -1374,7 +1511,7 @@
 
     function addItem(obj) {
       // If Firebase is not available, always allow adding reminders in demo mode
-      if (!firebaseAvailable) {
+      if (!AuthCore.isAvailable()) {
         const item = {
           id: uid(),
           title: obj.title.trim(),
@@ -1389,14 +1526,14 @@
         items = [item, ...items];
         render();
         localStorage.setItem('demoReminders', JSON.stringify(items));
-        toast('Reminder added (demo mode)');
+        UICore.showToast('Reminder added (demo mode)');
         return item;
       }
 
       // If user is not signed in, show toast and focus banner sign-in button
-      if (!currentUser) {
-        toast('Sign in to sync reminders across devices');
-        focusAuthBannerButton();
+      if (!AuthCore.getCurrentUser()) {
+        UICore.showToast('Sign in to sync reminders across devices');
+        UICore.focusAuthBannerButton();
         return null;
       }
 
@@ -1415,7 +1552,7 @@
       render();
 
       // Save to Firebase if available
-      saveToFirebase(item);
+      DataCore.saveReminder(item);
       
       return item;
     }
@@ -1521,12 +1658,7 @@
       );
     }
 
-    function toast(msg) {
-      console.log('Toast:', msg);
-      statusEl.textContent = msg; 
-      clearTimeout(toast._t);
-      toast._t = setTimeout(() => statusEl.textContent = '', 3000);
-    }
+
 
     // Event Listeners
     saveBtn.addEventListener('click', () => {
@@ -1778,33 +1910,19 @@
     });
 
     window.addEventListener('online', () => {
-      syncStatus.textContent = 'Online';
-      syncStatus.className = 'sync-status online';
+      UICore.updateSyncStatus('online');
       retryPendingChanges();
     });
 
     window.addEventListener('offline', () => {
-      syncStatus.textContent = 'Offline';
-      syncStatus.className = 'sync-status offline';
+      UICore.updateSyncStatus('offline');
     });
 
-    // Set up auth state listener only if Firebase is available
-    if (firebaseAvailable && auth) {
-      auth.onAuthStateChanged((user) => {
-        currentUser = user;
-        userId = user ? user.uid : null;
-        updateAuthButton(user);
-        updateAuthOnboardingBanner(user);
-        setupFirestoreSync();
-      });
-    } else {
-      // In offline mode, simulate no user signed in
-      currentUser = null;
-      userId = null;
-      updateAuthButton(null);
-      updateAuthOnboardingBanner(null);
+    // Set up auth state listener using AuthCore
+    AuthCore.onStateChanged((user) => {
+      AuthCore.updateAuthUI(user);
       setupFirestoreSync();
-    }
+    });
 
     initializeTeacherApp();
 
