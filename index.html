@@ -8,76 +8,60 @@
 
   <!-- Tailwind v4 (Play CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-  <!-- Your palette: Emerald (brand) + Teal (accent) -->
   <style type="text/tailwindcss">
-    @theme {
-      /* brand = Emerald */
-      --color-brand-50:  #ecfdf5;
-      --color-brand-200: #a7f3d0;
-      --color-brand-500: #10b981;
-      --color-brand-600: #059669;
-      --color-brand-700: #047857;
-
-      /* accent = Teal */
-      --color-accent-500: #14b8a6;
-    }
+@theme {
+  /* brand = Emerald */
+  --color-brand-50:#ecfdf5; --color-brand-200:#a7f3d0; --color-brand-500:#10b981;
+  --color-brand-600:#059669; --color-brand-700:#047857;
+  /* accent = Teal */
+  --color-accent-500:#14b8a6;
+}
   </style>
 
-  <!-- Small helpers that don't need Tailwind processing -->
   <style>
     html { scroll-behavior: smooth; }
-    /* Prevent CLS on icon buttons */
-    .icon-24 { inline-size: 24px; block-size: 24px; }
+    .icon-24 { inline-size:24px; block-size:24px; }
   </style>
 </head>
-
-<body class="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
+<body class="bg-white dark:bg-slate-950 antialiased leading-7 text-slate-700 dark:text-slate-300">
   <!-- Header / Nav -->
   <header class="sticky top-0 z-40 bg-white/70 dark:bg-slate-950/70 backdrop-blur border-b border-slate-200/60 dark:border-slate-800">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
       <!-- Brand -->
-      <a href="#top" class="inline-flex items-center gap-2">
-        <!-- Sparkles icon -->
+      <a href="#dashboard" class="inline-flex items-center gap-2">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M9.813 15.904 9 21l-1.19-5.096A4.5 4.5 0 0 0 5.096 14.19L0 13l5.096-1.19A4.5 4.5 0 0 0 7.81 9.81L9 4.715 10.19 9.81a4.5 4.5 0 0 0 2.715 2.715L18 13l-5.095 1.19a4.5 4.5 0 0 0-3.092 1.714Z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M20.5 9.5 21 7l.5 2.5L24 10l-2.5.5L21 13l-.5-2.5L18 10l2.5-.5Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904 9 21l-1.19-5.096A4.5 4.5 0 0 0 5.096 14.19L0 13l5.096-1.19A4.5 4.5 0 0 0 7.81 9.81L9 4.715l1.19 5.095a4.5 4.5 0 0 0 2.715 2.715L18 13l-5.095 1.19a4.5 4.5 0 0 0-3.092 1.714Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.5 9.5 21 7l.5 2.5L24 10l-2.5.5L21 13l-.5-2.5L18 10l2.5-.5Z" />
         </svg>
-        <span class="font-semibold tracking-tight">Memory Cue</span>
+        <span class="font-semibold tracking-tight text-slate-900 dark:text-white">Memory Cue</span>
       </a>
 
       <!-- Desktop nav -->
       <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a href="#dashboard" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Dashboard</a>
         <a href="#reminders" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Reminders</a>
-        <a href="#planner"   class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Planner</a>
-        <a href="#notes"     class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Notes</a>
+        <a href="#planner" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Planner</a>
+        <a href="#notes" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Notes</a>
         <a href="#resources" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Resources</a>
         <a href="#templates" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Templates</a>
-        <a href="#settings"  class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Settings</a>
+        <a href="#settings" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Settings</a>
       </nav>
 
       <!-- Actions -->
       <div class="flex items-center gap-2">
+        <button type="button" class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 dark:bg-slate-900 dark:ring-white/10">Sign In</button>
         <!-- Theme toggle -->
-        <button id="themeBtn" type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-3 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
-          aria-label="Toggle theme">
-          <!-- Sun/Moon icon (swap with JS) -->
+        <button id="themeBtn" type="button" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-3 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700" aria-label="Toggle theme">
           <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24 hidden dark:block">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95 6.636 17.364M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95 6.636 17.364M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
           </svg>
           <svg id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24 dark:hidden">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M21 12.79A9 9 0 1 1 11.21 3c.2 0 .4.01.59.03A7 7 0 0 0 21 12.79Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12.79A9 9 0 1 1 11.21 3c.2 0 .4.01.59.03A7 7 0 0 0 21 12.79Z" />
           </svg>
           <span class="hidden sm:inline">Theme</span>
         </button>
-
         <!-- Mobile menu button -->
-        <button id="menuBtn" type="button" class="md:hidden inline-flex items-center justify-center rounded-xl ring-1 ring-slate-300/60 bg-white px-3 py-2 hover:bg-slate-50 dark:bg-slate-900 dark:ring-white/10" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
+        <button id="menuBtn" type="button" class="md:hidden inline-flex items-center justify-center rounded-xl ring-1 ring-slate-300/60 bg-white px-3 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 dark:bg-slate-900 dark:ring-white/10" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 5.75h16.5M3.75 12h16.5M3.75 18.25h16.5"/>
           </svg>
@@ -88,31 +72,37 @@
     <!-- Mobile menu -->
     <div id="mobileMenu" class="md:hidden hidden border-t border-slate-200/60 dark:border-slate-800">
       <div class="px-4 py-3 space-y-2">
+        <a href="#dashboard" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Dashboard</a>
         <a href="#reminders" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Reminders</a>
-        <a href="#planner"   class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Planner</a>
-        <a href="#notes"     class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Notes</a>
+        <a href="#planner" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Planner</a>
+        <a href="#notes" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Notes</a>
         <a href="#resources" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Resources</a>
         <a href="#templates" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Templates</a>
-        <a href="#settings"  class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Settings</a>
+        <a href="#settings" class="block px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40">Settings</a>
       </div>
     </div>
   </header>
 
-  <main id="top" class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Hero banner (optional) -->
+  <main id="dashboard" class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Dashboard -->
     <section class="py-8 sm:py-10 lg:py-14">
-      <div class="rounded-2xl overflow-hidden ring-1 ring-black/5">
-        <div class="bg-gradient-to-r from-brand-600 via-accent-500 to-brand-600 text-white p-6 sm:p-10">
-          <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">Welcome to Memory Cue</h1>
-          <p class="mt-2 leading-7 text-white/90">A fresh, accessible look powered by Tailwind — with your Emerald &amp; Teal palette.</p>
-          <div class="mt-4">
-            <a href="#reminders" class="inline-flex items-center gap-2 rounded-xl bg-white/10 text-white px-4 py-2 ring-1 ring-white/30 hover:bg-white/20">
-              Go to Reminders
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12h15m0 0-6-6m6 6-6 6"/>
-              </svg>
-            </a>
-          </div>
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">Dashboard</h2>
+      <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Upcoming Reminders</p>
+          <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">3</p>
+        </div>
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Lessons This Week</p>
+          <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">5</p>
+        </div>
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Resources Saved</p>
+          <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">12</p>
+        </div>
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Templates</p>
+          <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">4</p>
         </div>
       </div>
     </section>
@@ -120,23 +110,30 @@
     <!-- Reminders -->
     <section id="reminders" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
       <header class="mb-6 flex items-center justify-between">
-        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Reminders</h2>
-        <button type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">Reminders</h2>
+        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/>
           </svg>
           Add
         </button>
       </header>
-
+      <form class="mb-6 grid sm:grid-cols-4 gap-4">
+        <input type="text" placeholder="Reminder" class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none">
+        <input type="date" class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none">
+        <select class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none">
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Save</button>
+      </form>
       <!-- Filter pills -->
       <div class="mb-4 inline-flex rounded-xl ring-1 ring-slate-300/60 bg-white p-1 dark:bg-slate-900 dark:ring-white/10">
         <button class="rounded-lg bg-slate-900 text-white px-3 py-1.5">Today</button>
         <button class="rounded-lg text-slate-600 px-3 py-1.5 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Overdue</button>
         <button class="rounded-lg text-slate-600 px-3 py-1.5 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">All</button>
       </div>
-
       <!-- List -->
       <ul class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <li class="rounded-2xl p-5 ring-1 ring-transparent hover:ring-black/5 transition hover:shadow-sm bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/60 dark:ring-white/10">
@@ -145,7 +142,7 @@
               <h3 class="font-medium text-slate-900 dark:text-slate-100">Email parent consent forms</h3>
               <p class="text-sm text-slate-500 dark:text-slate-400">Due today · 3:30 PM</p>
             </div>
-            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-brand-200 bg-brand-50 text-brand-900">High</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-rose-200 bg-rose-50 text-rose-900">High</span>
           </div>
         </li>
         <li class="rounded-2xl p-5 ring-1 ring-transparent hover:ring-black/5 transition hover:shadow-sm bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/60 dark:ring-white/10">
@@ -154,40 +151,50 @@
               <h3 class="font-medium text-slate-900 dark:text-slate-100">Print fixtures for Round 2</h3>
               <p class="text-sm text-slate-500 dark:text-slate-400">Tomorrow · Reprographics</p>
             </div>
-            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-emerald-200 bg-emerald-50 text-emerald-900">Medium</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-amber-200 bg-amber-50 text-amber-900">Medium</span>
           </div>
         </li>
       </ul>
     </section>
 
-    <!-- Planner -->
+    <!-- Weekly Lesson Planner -->
     <section id="planner" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
-      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Planner</h2>
+      <header class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">Weekly Lesson Planner</h2>
+        <div class="flex items-center gap-2">
+          <button type="button" class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">&larr; Previous</button>
+          <button type="button" class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Today</button>
+          <button type="button" class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Next &rarr;</button>
+        </div>
+      </header>
+      <div class="mb-4 flex flex-wrap gap-2">
+        <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Manage Subjects</button>
+        <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Add Lesson</button>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <!-- Example day card -->
-        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
           <header class="flex items-center justify-between">
-            <h3 class="font-medium">Mon</h3>
-            <span class="text-xs text-slate-500">Week 5</span>
+            <h3 class="font-medium text-slate-900 dark:text-slate-100">Mon</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">Week 5</span>
           </header>
           <ul class="mt-3 space-y-2 text-sm">
             <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-accent-500"></span> Year 9 SEPEP briefing</li>
             <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-brand-600"></span> Fixtures check</li>
           </ul>
         </article>
-        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
           <header class="flex items-center justify-between">
-            <h3 class="font-medium">Tue</h3>
-            <span class="text-xs text-slate-500">Week 5</span>
+            <h3 class="font-medium text-slate-900 dark:text-slate-100">Tue</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">Week 5</span>
           </header>
           <ul class="mt-3 space-y-2 text-sm">
             <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-amber-500"></span> Print score sheets</li>
           </ul>
         </article>
-        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+        <article class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
           <header class="flex items-center justify-between">
-            <h3 class="font-medium">Wed</h3>
-            <span class="text-xs text-slate-500">Week 5</span>
+            <h3 class="font-medium text-slate-900 dark:text-slate-100">Wed</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">Week 5</span>
           </header>
           <ul class="mt-3 space-y-2 text-sm">
             <li class="flex gap-2 items-start"><span class="mt-1 size-1.5 rounded-full bg-rose-500"></span> Round 1 kickoff</li>
@@ -198,59 +205,102 @@
 
     <!-- Notes -->
     <section id="notes" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
-      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Notes</h2>
-      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Lesson Notes</h2>
+      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
         <label for="note" class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Quick note</label>
-        <textarea id="note" rows="4"
-          class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none dark:bg-slate-900/60"
-          placeholder="Type something to remember…"></textarea>
+        <textarea id="note" rows="4" class="min-h-[12rem] block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none dark:bg-slate-900/60" placeholder="Type something to remember…"></textarea>
         <div class="mt-3 flex items-center gap-2">
-          <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">
-            Save
-          </button>
-          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 dark:bg-slate-900 dark:ring-white/10">
-            Clear
-          </button>
+          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Save</button>
+          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Clear</button>
         </div>
       </div>
     </section>
 
-    <!-- Resources -->
+    <!-- Resource Library -->
     <section id="resources" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
-      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Resources</h2>
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Resource Library</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <a href="#" class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">
-          <h3 class="font-medium">SEPEP Handbook (PDF)</h3>
-          <p class="text-sm text-slate-500 mt-1">Rules, roles and assessment overview.</p>
+        <a href="#" class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium text-slate-900 dark:text-slate-100">SEPEP Handbook (PDF)</h3>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Rules, roles and assessment overview.</p>
         </a>
-        <a href="#" class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">
-          <h3 class="font-medium">Fixture Spreadsheet</h3>
-          <p class="text-sm text-slate-500 mt-1">All divisions, rounds and venues.</p>
+        <a href="#" class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium text-slate-900 dark:text-slate-100">Fixture Spreadsheet</h3>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">All divisions, rounds and venues.</p>
         </a>
       </div>
     </section>
 
-    <!-- Templates -->
+    <!-- Lesson Templates -->
     <section id="templates" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
-      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Templates</h2>
-      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
-        <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          <li class="rounded-xl ring-1 ring-slate-200/60 p-4">Score sheet</li>
-          <li class="rounded-xl ring-1 ring-slate-200/60 p-4">Duty roster</li>
-          <li class="rounded-xl ring-1 ring-slate-200/60 p-4">Announcement post</li>
-        </ul>
-      </div>
+      <header class="mb-6 flex items-center justify-between">
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">Lesson Templates</h2>
+        <div class="flex items-center gap-2">
+          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Copy MTL</button>
+          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Import JSON</button>
+          <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Export JSON</button>
+        </div>
+      </header>
+      <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        <li class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">Score sheet</li>
+        <li class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">Duty roster</li>
+        <li class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 hover:shadow-sm transition dark:bg-slate-900/60 dark:ring-white/10">Announcement post</li>
+      </ul>
     </section>
 
     <!-- Settings -->
     <section id="settings" class="py-8 sm:py-10 lg:py-14 border-t border-slate-200/60 dark:border-slate-800">
-      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">Settings</h2>
-      <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 p-5 dark:bg-slate-900/60 dark:ring-white/10">
-        <div class="rounded-xl border border-slate-200/60 bg-slate-50/70 p-4 text-sm dark:bg-slate-900/40 dark:border-slate-800">
-          Your site is using the <strong>Emerald &amp; Teal</strong> palette. Toggle light/dark in the header.
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Settings</h2>
+      <div class="space-y-8">
+        <!-- Calendar Sync -->
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium text-slate-900 dark:text-slate-100">Calendar Sync</h3>
+          <div class="mt-4 rounded-xl border border-slate-200/60 bg-slate-50/70 p-4 text-sm text-slate-600 dark:text-slate-300 dark:bg-slate-900/40 dark:border-slate-700">Use a deployed Apps Script web app URL for calendar sync.</div>
+          <div class="mt-4"><input type="url" placeholder="Apps Script URL" class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none"></div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Save</button>
+            <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Test</button>
+            <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Sync All</button>
+          </div>
         </div>
-        <div class="mt-4 text-sm text-slate-600 dark:text-slate-300">
-          For best accessibility, keep contrast ≥ 4.5:1 for normal text when customizing colors.
+        <!-- Daily Email -->
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium text-slate-900 dark:text-slate-100">Daily Email</h3>
+          <div class="mt-4"><input type="email" placeholder="Email address" class="block w-full rounded-xl border-slate-300/60 bg-white/80 px-3 py-2 focus:ring-2 focus:ring-slate-900/20 outline-none"></div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Save Email</button>
+            <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Send Now</button>
+          </div>
+        </div>
+        <!-- Teacher Data -->
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium text-slate-900 dark:text-slate-100">Teacher Data</h3>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Export Data</button>
+            <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Import Data</button>
+            <button class="inline-flex items-center gap-2 rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Clear All Data</button>
+          </div>
+        </div>
+        <!-- Appearance -->
+        <div class="rounded-2xl ring-1 ring-black/5 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-5 sm:p-6 dark:bg-slate-900/60 dark:ring-white/10">
+          <h3 class="font-medium text-slate-900 dark:text-slate-100">Appearance</h3>
+          <fieldset class="mt-4">
+            <legend class="sr-only">Theme</legend>
+            <div class="flex flex-wrap gap-3">
+              <label class="inline-flex items-center cursor-pointer">
+                <input type="radio" name="themeOpt" value="auto" class="sr-only peer">
+                <span class="inline-flex items-center rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-700 peer-checked:bg-slate-900 peer-checked:text-white">Auto</span>
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input type="radio" name="themeOpt" value="light" class="sr-only peer">
+                <span class="inline-flex items-center rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-700 peer-checked:bg-slate-900 peer-checked:text-white">Light</span>
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input type="radio" name="themeOpt" value="dark" class="sr-only peer">
+                <span class="inline-flex items-center rounded-xl ring-1 ring-slate-300/60 bg-white px-4 py-2 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-700 peer-checked:bg-slate-900 peer-checked:text-white">Dark</span>
+              </label>
+            </div>
+          </fieldset>
         </div>
       </div>
     </section>
@@ -260,7 +310,7 @@
   <footer class="border-t border-slate-200/60 dark:border-slate-800 py-6 mt-8">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-sm text-slate-500 flex items-center justify-between">
       <p>&copy; <span id="year"></span> Memory Cue</p>
-      <a class="text-brand-700 hover:text-brand-800 underline-offset-4 hover:underline" href="#top">Back to top</a>
+      <a class="text-brand-700 hover:text-brand-800 underline-offset-4 hover:underline" href="#dashboard">Back to top</a>
     </div>
   </footer>
 
