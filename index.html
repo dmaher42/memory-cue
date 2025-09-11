@@ -4,20 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue</title>
-  <meta name="theme-color" content="#0b1220" />
+  <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <link rel="stylesheet" href="css/teacher.css" />
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: '#38bdf8' }
+        }
+      }
+    }
+  </script>
   <style>
-    /* Critical inline styles for immediate rendering */
-    .app-layout { display: flex; height: 100vh; overflow: hidden; }
+    :root { --color-brand: #38bdf8; }
+
+    @layer components {
+      .app-layout { @apply flex h-screen overflow-hidden bg-gradient-to-br from-sky-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100 antialiased; }
+      .sidebar { @apply hidden md:flex md:flex-col md:w-64 gap-2 p-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur border-r border-slate-200 dark:border-slate-700; }
+      .sidebar-header { @apply flex items-center justify-between mb-6 text-2xl font-semibold; }
+      .sidebar-logo { @apply text-brand; }
+      .sidebar-toggle { @apply md:hidden p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800; }
+      .sidebar-nav { @apply flex flex-col gap-1; }
+      .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand transition; }
+      .nav-item.active { @apply bg-brand/10 text-brand; }
+      .topbar { @apply sticky top-0 z-10 flex items-center justify-between p-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur border-b border-slate-200 dark:border-slate-700; }
+      .topbar-btn { @apply p-2 rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand transition; }
+      .topbar-btn.primary { @apply bg-brand text-white hover:bg-brand/90; }
+      .search-input { @apply w-64 md:w-96 rounded-md border border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800 pl-10 pr-3 py-2 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand; }
+      .main-area { @apply flex-1 overflow-y-auto; }
+      .content-area { @apply p-6 md:p-10 space-y-8; }
+      .card { @apply rounded-xl bg-white dark:bg-slate-800 shadow-sm p-6; }
+      .card-header { @apply mb-4; }
+      .card-title { @apply text-lg font-semibold; }
+      .panel-header { @apply flex items-center justify-between mb-4; }
+      .panel-title { @apply text-2xl font-bold; }
+      .panel-subtitle { @apply text-sm text-slate-500 dark:text-slate-400; }
+      .stat-item { @apply flex flex-col gap-1; }
+      .stat-number { @apply text-2xl font-bold text-slate-900 dark:text-slate-100; }
+      .stat-label { @apply text-sm text-slate-500 dark:text-slate-400; }
+      .empty-state { @apply text-center py-8; }
+      .empty-icon { @apply text-5xl mb-2; }
+      .empty-title { @apply text-lg font-medium; }
+      .empty-description { @apply text-sm text-slate-500 dark:text-slate-400; }
+      .quick-add-input { @apply border border-slate-300 rounded-md px-2 py-1; }
+    }
     .content-panel { display: none; }
     .content-panel.active { display: block; }
     .hidden { display: none; }
-    
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+  <!-- Minimal fallback styles before Tailwind loads -->
+  <style>
+    .content-panel { display: none; }
+    .content-panel.active { display: block; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -69,26 +114,37 @@
     <div class="main-area">
       <!-- Top Bar -->
       <header class="topbar" role="banner">
-        <div class="topbar-left">
-          <div class="search-container">
-            <input 
-              id="q" 
-              class="search-input" 
-              placeholder="Search reminders, resources, notes..." 
+        <div class="topbar-left flex items-center gap-4">
+          <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Memory Cue</h1>
+          <div class="search-container relative">
+            <input
+              id="q"
+              class="search-input"
+              placeholder="Search reminders, resources, notes..."
               aria-label="Search"
             />
+            <svg class="pointer-events-none w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.75 9.75a7.5 7.5 0 0012.9 6.9z" />
+            </svg>
           </div>
         </div>
-        <div class="topbar-right">
+        <div class="topbar-right flex items-center gap-2">
           <button class="topbar-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
-            🌙
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1.5M16.95 7.05l1.06 1.06M21 12h-1.5M16.95 16.95l1.06-1.06M12 21v-1.5M7.05 16.95l-1.06-1.06M3 12h1.5M7.05 7.05L6 8.11M12 8.25a3.75 3.75 0 110 7.5 3.75 3.75 0 010-7.5z" />
+            </svg>
           </button>
           <div id="syncStatus" class="sync-status offline">Offline</div>
-          <button id="voiceBtn" class="topbar-btn" type="button" title="Voice quick add">
-            🎙️
+          <button id="voiceBtn" class="topbar-btn" type="button" title="Voice quick add" aria-label="Voice quick add">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 1.5a3 3 0 00-3 3v6a3 3 0 006 0v-6a3 3 0 00-3-3z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5v1a7.5 7.5 0 01-15 0v-1M12 21v-3" />
+            </svg>
           </button>
-          <button id="notifBtn" class="topbar-btn" type="button" title="Enable notifications">
-            🔔
+          <button id="notifBtn" class="topbar-btn" type="button" title="Enable notifications" aria-label="Enable notifications">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 18.75a1.5 1.5 0 01-3 0M18.75 9a6.75 6.75 0 10-13.5 0c0 3.135-1.195 4.35-1.5 4.5h16.5c-.305-.15-1.5-1.365-1.5-4.5z" />
+            </svg>
           </button>
           <button id="authBtn" class="topbar-btn" type="button" title="Sign in">Sign In</button>
           <div class="quick-add-container">
@@ -99,8 +155,11 @@
               style="display: none;"
             />
           </div>
-          <button id="addQuickBtn" class="topbar-btn primary" type="button" title="Add quick reminder">
-            + Add
+          <button id="addQuickBtn" class="topbar-btn primary flex items-center gap-1" type="button" title="Add quick reminder">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add
           </button>
         </div>
       </header>
