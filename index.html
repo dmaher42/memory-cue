@@ -19,23 +19,31 @@
     <header class="px-4 pt-safe-top pb-2 bg-brand-600 text-white">
       <div class="flex items-center justify-between">
         <h1 class="text-xl font-semibold">Memory Cue</h1>
-        <button id="settingsTabBtn" aria-label="Settings" class="p-2">
-          <!-- Cog Icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902
-              0l.518 1.596a1 1 0 0 0 .95.69h1.692c.969
-              0 1.372 1.24.588 1.81l-1.37 1a1 1 0 0 0-.364
-              1.118l.518 1.596c.3.921-.755
-              1.688-1.54 1.118l-1.37-1a1 1 0
-              0 0-1.176 0l-1.37 1c-.785.57-1.84-.197-1.54-1.118l.518-1.596a1
-              1 0 0 0-.364-1.118l-1.37-1c-.784-.57-.38-1.81.588-1.81h1.692a1
-              1 0 0 0 .95-.69l.518-1.596z" />
-            <path stroke-linecap="round" stroke-linejoin="round"
-              stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-2" role="tablist">
+          <button id="remindersTabBtn" role="tab" aria-controls="panel-reminders" aria-selected="true" class="p-2">
+            Reminders
+          </button>
+          <button id="notebookTabBtn" role="tab" aria-controls="panel-notebook" aria-selected="false" class="p-2">
+            Notebook
+          </button>
+          <button id="settingsTabBtn" role="tab" aria-controls="panel-settings" aria-selected="false" aria-label="Settings" class="p-2">
+            <!-- Cog Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902
+                0l.518 1.596a1 1 0 0 0 .95.69h1.692c.969
+                0 1.372 1.24.588 1.81l-1.37 1a1 1 0 0 0-.364
+                1.118l.518 1.596c.3.921-.755
+                1.688-1.54 1.118l-1.37-1a1 1 0
+                0 0-1.176 0l-1.37 1c-.785.57-1.84-.197-1.54-1.118l.518-1.596a1
+                1 0 0 0-.364-1.118l-1.37-1c-.784-.57-.38-1.81.588-1.81h1.692a1
+                1 0 0 0 .95-.69l.518-1.596z" />
+              <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -175,18 +183,27 @@
     document.getElementById('year').textContent = new Date().getFullYear();
 
     // Tab logic (Reminders / Notebook / Settings)
-    const btns = {
+    const panels = {
       reminders: document.getElementById('panel-reminders'),
       notebook: document.getElementById('panel-notebook'),
       settings: document.getElementById('panel-settings')
     };
+    const tabs = {
+      reminders: document.getElementById('remindersTabBtn'),
+      notebook: document.getElementById('notebookTabBtn'),
+      settings: document.getElementById('settingsTabBtn')
+    };
     function setActive(panel) {
-      Object.values(btns).forEach(p => p.classList.add('hidden'));
-      btns[panel].classList.remove('hidden');
+      Object.values(panels).forEach(p => p.classList.add('hidden'));
+      panels[panel].classList.remove('hidden');
+      Object.keys(tabs).forEach(t => {
+        tabs[t].setAttribute('aria-selected', t === panel ? 'true' : 'false');
+      });
     }
 
+    document.getElementById('remindersTabBtn').addEventListener('click', () => setActive('reminders'));
+    document.getElementById('notebookTabBtn').addEventListener('click', () => setActive('notebook'));
     document.getElementById('settingsTabBtn').addEventListener('click', () => setActive('settings'));
-    // you’d also need similar tabs/buttons for Reminders and Notebook
 
     // Service Worker registration
     if ('serviceWorker' in navigator) {
