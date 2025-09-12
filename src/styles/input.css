@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* If you used custom CSS variables or brand tokens, keep them here too */
