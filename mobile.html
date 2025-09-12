@@ -289,7 +289,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, enableIndexedDbPersistence, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+    import { initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
     import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
     // Firebase
@@ -303,8 +303,13 @@ z-index:100;box-shadow:var(--shadow-sm)}
       measurementId: "G-R0V4M7VCE6"
     };
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    enableIndexedDbPersistence(db).catch(err => { console.warn('Firestore persistence not enabled:', err?.code || err); });
+    let db;
+    try {
+      db = initializeFirestore(app, { cache: persistentLocalCache() });
+    } catch (err) {
+      console.warn('Firestore persistence not enabled:', err?.code || err);
+      db = getFirestore(app);
+    }
     const auth = getAuth(app);
 
     // State
