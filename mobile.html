@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
-  <meta name="theme-color" content="#0b1220" />
+  <!-- Use an emerald shade for the browser UI to match "primary" actions -->
+  <meta name="theme-color" content="#065f46" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
     :root{
@@ -41,8 +42,9 @@ z-index:100;box-shadow:var(--shadow-sm)}
     .search-input{flex:1;min-width:160px}
     button{cursor:pointer;font-weight:500;padding:var(--space-3);min-height:var(--touch-target);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1);white-space:nowrap;border:1px solid transparent;transition:.2s all;user-select:none;-webkit-user-select:none;touch-action:manipulation}
     button:active{transform:scale(.98)}
-    .btn-primary{background:var(--accent);color:var(--bg-primary);border-color:var(--accent);font-weight:600}
-    .btn-primary:hover,.btn-primary:focus{background:var(--accent-hover);border-color:var(--accent-hover)}
+    /* Make primary actions emerald by reusing your existing success tokens */
+    .btn-primary{background:var(--success);color:var(--bg-primary);border-color:var(--success);font-weight:600}
+    .btn-primary:hover,.btn-primary:focus{background:var(--success-hover);border-color:var(--success-hover)}
     .btn-success{background:var(--success);color:var(--bg-primary);border-color:var(--success);font-weight:600}
     .btn-success:hover,.btn-success:focus{background:var(--success-hover);border-color:var(--success-hover)}
     .btn-ghost{background:var(--bg-secondary);color:var(--text-secondary);border-color:var(--border)}
@@ -159,12 +161,14 @@ z-index:100;box-shadow:var(--shadow-sm)}
       </div>
     </div>
   </header>
-  <nav class="tabs">
-    <button class="tab-btn active" data-target="tasksTab">Reminders</button>
-    <button class="tab-btn" data-target="notebookTab">Notebook</button>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button id="tab-reminders" class="tab-btn active" data-target="tasksTab" role="tab"
+            aria-controls="tasksTab" aria-selected="true" tabindex="0">Reminders</button>
+    <button id="tab-notebook"  class="tab-btn" data-target="notebookTab" role="tab"
+            aria-controls="notebookTab" aria-selected="false" tabindex="-1">Notebook</button>
   </nav>
 
-  <div id="tasksTab" class="tab-panel">
+  <div id="tasksTab" class="tab-panel" role="tabpanel" aria-labelledby="tab-reminders" tabindex="0">
     <main class="main-content">
     <div class="container">
       <!-- Create Reminder Card -->
@@ -259,7 +263,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
   </main>
   </div>
 
-  <div id="notebookTab" class="tab-panel hidden">
+  <div id="notebookTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-notebook" tabindex="0">
     <div class="container">
       <section class="card section">
         <div class="card-content">
@@ -342,19 +346,38 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
     const notesEl = $('#notes');
-    const tabBtns = $$('.tab-btn');
-    const tabPanels = $$('.tab-panel');
+    const tabBtns = $$('.tab-btn[role="tab"]');
+    const tabPanels = $$('.tab-panel[role="tabpanel"]');
 
     notesEl.value = localStorage.getItem('mobileNotes') || '';
     notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
 
-    tabBtns.forEach(btn => btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      tabPanels.forEach(p => p.classList.add('hidden'));
-      btn.classList.add('active');
+    function activateTab(btn){
       const target = btn.getAttribute('data-target');
-      document.getElementById(target).classList.remove('hidden');
-    }));
+      const panel  = document.getElementById(target);
+      tabBtns.forEach(b => {
+        const isActive = b === btn;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-selected', String(isActive));
+        b.tabIndex = isActive ? 0 : -1;
+      });
+      tabPanels.forEach(p => p.classList.add('hidden'));
+      panel.classList.remove('hidden');
+      btn.focus({ preventScroll: true });
+    }
+    tabBtns.forEach((btn, i) => {
+      btn.addEventListener('click', () => activateTab(btn));
+      btn.addEventListener('keydown', (e) => {
+        const last = tabBtns.length - 1;
+        let next = null;
+        if (e.key === 'ArrowRight') next = tabBtns[i === last ? 0 : i + 1];
+        if (e.key === 'ArrowLeft')  next = tabBtns[i === 0 ? last : i - 1];
+        if (e.key === 'Home')       next = tabBtns[0];
+        if (e.key === 'End')        next = tabBtns[last];
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); activateTab(btn); return; }
+        if (next) { e.preventDefault(); activateTab(next); }
+      });
+    });
 
     // Auth
     googleSignInBtn.addEventListener('click', async () => {
