@@ -1,149 +1,161 @@
-/* Memory Cue — Service Worker (improved, CORS-safe for Apps Script)
-   Strategy:
-   - HTML navigations: network-first with offline fallback to /index.html
-   - Static assets (JS/CSS/icons/images): stale-while-revalidate
-   - Google Fonts: runtime caching
-   - Safe updates: skipWaiting + clients.claim + nav preload (when supported)
-   NOTE: v22 bump to force clients to update; bypass script.google.com so requests are untouched.
-*/
+/* service-worker.js
+ *
+ * Memory Cue — robust SW with:
+ * - No regex pitfalls (uses pathname.endsWith for extensions)
+ * - Cache versioning & cleanup
+ * - Precache minimal app shell
+ * - Network-first (with timeout) for navigations + offline fallback
+ * - Stale-while-revalidate for static assets
+ * - Explicit bypass for Apps Script domain
+ *
+ * UPDATE APP_PATH if your site path is different.
+ */
 
-const VERSION = 'v22';
-const APP_CACHE = `memory-cue-app-${VERSION}`;
-const STATIC_CACHE = `memory-cue-static-${VERSION}`;
-const FONTS_CACHE = `memory-cue-fonts-${VERSION}`;
+'use strict';
 
-const PRECACHE_URLS = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/maskable-192.png',
-  './icons/maskable-512.png'
+const APP_PATH = '/memory-cue/'; // <-- PATH: adjust if your project builds to a different subpath
+const CACHE_PREFIX = 'mc-static-';
+const CACHE_VERSION = 'v2025-09-12-a'; // bump this to force clients to update
+const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
+
+const SHELL_URLS = [
+  `${APP_PATH}index.html`,
+  `${APP_PATH}mobile.html`,
+  `${APP_PATH}manifest.webmanifest`,
+  // Add your real icons below if present; missing files are skipped.
+  `${APP_PATH}icons/icon-192.png`,
+  `${APP_PATH}icons/icon-512.png`,
 ];
 
-// ---- Install: pre-cache app shell (bypass HTTP cache to ensure fresh install)
+// File extensions treated as static assets for SWR caching
+const STATIC_EXTS = [
+  '.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.json', '.webmanifest'
+];
+
+// Domains we never want to intercept (bypass to network)
+const BYPASS_HOSTS = new Set([
+  'script.google.com', // Apps Script endpoint
+]);
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(APP_CACHE).then(async (cache) => {
-      await cache.addAll(
-        PRECACHE_URLS.map((u) => new Request(u, { cache: 'reload' }))
-      );
-    })
-  );
+  // Activate this SW immediately on install
   self.skipWaiting();
+
+  event.waitUntil((async () => {
+    const cache = await caches.open(RUNTIME_CACHE);
+
+    // Precache shell, but don’t fail the whole install if one URL 404s.
+    await Promise.allSettled(
+      SHELL_URLS.map(async (url) => {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (res && res.ok) {
+            await cache.put(url, res.clone());
+          }
+        } catch (_) {
+          // ignore missing/failed entries
+        }
+      })
+    );
+  })());
 });
 
-// ---- Activate: cleanup old caches + enable navigation preload
 self.addEventListener('activate', (event) => {
+  // Become active immediately on clients
   event.waitUntil((async () => {
+    // Clean up old caches
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((k) => ![APP_CACHE, STATIC_CACHE, FONTS_CACHE].includes(k))
+        .filter((k) => k.startsWith(CACHE_PREFIX) && k !== RUNTIME_CACHE)
         .map((k) => caches.delete(k))
     );
-    if ('navigationPreload' in self.registration) {
-      try { await self.registration.navigationPreload.enable(); } catch {}
-    }
+
     await self.clients.claim();
   })());
 });
 
-// Optional: allow page to trigger skipWaiting immediately after an update
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-// ---- Fetch: route by request type
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Bypass Apps Script requests entirely (avoid caching / potential header mutation).
-  if (url.hostname === 'script.google.com') {
-    return; // allow default browser handling
+  // Only handle http(s)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+  // Always bypass certain hosts (Apps Script, etc.)
+  if (BYPASS_HOSTS.has(url.hostname)) {
+    return; // Let the browser handle it (goes to network)
   }
 
-  // 1) HTML navigations → network-first with offline fallback
+  // Handle same-origin navigations with network-first + timeout, fallback to offline shell
   if (req.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        // If nav preload is available, it returns a fresh response quickly
-        const preloaded = await event.preloadResponse;
-        if (preloaded) return preloaded;
-
-        const net = await fetch(req);
-        // Cache a copy of the latest index for offline use
-        const cache = await caches.open(APP_CACHE);
-        cache.put('./index.html', net.clone());
-        return net;
-      } catch {
-        // Offline fallback to cached index.html
-        const cached = await caches.match('./index.html');
-        return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
-      }
-    })());
+    event.respondWith(networkFirstWithTimeout(req, 4500, `${APP_PATH}index.html`));
     return;
   }
 
-  // 2) Google Fonts (stylesheet & files) → runtime caching
-  if (url.origin.includes('fonts.googleapis.com')) {
-    // Stylesheets: SWR
-    event.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
-    return;
-  }
-  if (url.origin.includes('fonts.gstatic.com')) {
-    // Font files: cache-first (they’re immutable)
-    event.respondWith(cacheFirst(req, FONTS_CACHE));
+  // Only consider same-origin requests for runtime caching to avoid opaque responses
+  const isSameOrigin = url.origin === self.location.origin;
+
+  // Use SWR for static assets (by extension check), same-origin only
+  if (isSameOrigin && isStaticAsset(url.pathname)) {
+    event.respondWith(staleWhileRevalidate(req));
     return;
   }
 
-  // 3) Same-origin static assets (icons, images, css, js) → SWR
-  if (url.origin === self.location.origin &&
-      (/
-        .(?:js|css|png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname) ||
-        url.pathname.startsWith('/icons/')
-      )) {
-    event.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
-    return;
-  }
-
-  // 4) Default: try cache, then network (very safe fallback)
-  event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
-  );
+  // For everything else, just pass-through to network (and fall back to cache if available)
+  event.respondWith(fetch(req).catch(() => caches.match(req)));
 });
 
-// ---- Helpers: caching strategies
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  const networkPromise = fetch(request).then((res) => {
-    // Only cache valid (basic/opaques ok for fonts css) 200 responses
-    if (res && (res.ok || res.type === 'opaque')) {
-      cache.put(request, res.clone()).catch(() => {});
-    }
-    return res;
-  }).catch(() => undefined);
+// ---------- Helpers ----------
 
-  // Return cached immediately if present; otherwise wait for network
-  return cached || networkPromise || new Response('Offline', { status: 503 });
+function isStaticAsset(pathname) {
+  // Safe extension check (no regex parsing issues)
+  return STATIC_EXTS.some((ext) => pathname.endsWith(ext));
 }
 
-async function cacheFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  if (cached) return cached;
+async function staleWhileRevalidate(req) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cached = await cache.match(req);
+  const fetchPromise = fetch(req)
+    .then((res) => {
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    })
+    .catch(() => undefined);
+
+  // Return cached immediately if present; otherwise use network
+  return cached || (await fetchPromise) || new Response('', { status: 504, statusText: 'Gateway Timeout' });
+}
+
+async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrl) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const res = await fetch(request);
-    if (res && (res.ok || res.type === 'opaque')) {
-      cache.put(request, res.clone()).catch(() => {});
-    }
+    const res = await fetch(req, { signal: controller.signal });
+    clearTimeout(t);
+    if (res && res.ok) return res;
+
+    // Non-ok -> try cache fallback for offline shell on navigations
+    const cached = await caches.match(offlineFallbackUrl, { ignoreSearch: true });
+    if (cached) return cached;
+
+    // As a last resort, return the original (even if non-ok) to surface correct status
     return res;
-  } catch {
-    return new Response('Offline', { status: 503 });
+  } catch (_) {
+    clearTimeout(t);
+    // On timeout or network error, serve cached offline shell if we have it
+    const cached = await caches.match(offlineFallbackUrl, { ignoreSearch: true });
+    if (cached) return cached;
+
+    // Fallback to any cached version of the request
+    const alt = await caches.match(req);
+    if (alt) return alt;
+
+    // Final hard failure
+    return new Response('Offline and no cached content available.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 }
