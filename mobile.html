@@ -374,6 +374,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
       panels.forEach((panel) => {
         const show = panel.id === current.getAttribute('aria-controls');
         panel.hidden = !show;
+        panel.classList.toggle('hidden', !show);
         if (!panel.hasAttribute('aria-labelledby')) {
           panel.setAttribute('aria-labelledby', current.id);
         }
