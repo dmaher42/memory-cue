@@ -7,14 +7,14 @@
 
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml" sizes="any" />
-  <link rel="stylesheet" href="./css/app.css" />
+  <link rel="stylesheet" href="./css/app.css?v=1" />
   <meta name="theme-color" content="#10b981" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
 
   <style>
     /* Your existing Tailwind / other styles here */
-    .pt-safe-top { padding-top: env(safe-area-inset-top); }
     .hidden { display: none; }
+    .pt-safe-top { padding-top: env(safe-area-inset-top); }
   </style>
 </head>
 <body class="h-full bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-50">
@@ -208,8 +208,8 @@
     document.getElementById('notebookTabBtn').addEventListener('click', () => setActive('notebook'));
     document.getElementById('settingsTabBtn').addEventListener('click', () => setActive('settings'));
 
-    // Service Worker registration
-    if ('serviceWorker' in navigator) {
+    // Service Worker registration (only on localhost to avoid stale caches in production)
+    if ('serviceWorker' in navigator && location.hostname === 'localhost') {
       navigator.serviceWorker.register('./service-worker.js').catch(console.error);
     }
   </script>

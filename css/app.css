@@ -1,1 +1,23 @@
-/* Tailwind build output placeholder - build failed due to missing dependencies */
+/* Minimal Tailwind build (dependencies unavailable in this environment) */
+.pt-safe-top{padding-top:env(safe-area-inset-top)}
+.hidden{display:none}
+.bg-brand-50{--tw-bg-opacity:1;background-color:#ecfdf5}
+.bg-brand-100{--tw-bg-opacity:1;background-color:#d1fae5}
+.bg-brand-200{--tw-bg-opacity:1;background-color:#a7f3d0}
+.bg-brand-300{--tw-bg-opacity:1;background-color:#6ee7b7}
+.bg-brand-400{--tw-bg-opacity:1;background-color:#34d399}
+.bg-brand-500{--tw-bg-opacity:1;background-color:#10b981}
+.bg-brand-600{--tw-bg-opacity:1;background-color:#059669}
+.bg-brand-700{--tw-bg-opacity:1;background-color:#047857}
+.bg-brand-800{--tw-bg-opacity:1;background-color:#065f46}
+.bg-brand-900{--tw-bg-opacity:1;background-color:#064e3b}
+.bg-accent-50{--tw-bg-opacity:1;background-color:#f0f9ff}
+.bg-accent-100{--tw-bg-opacity:1;background-color:#e0f2fe}
+.bg-accent-200{--tw-bg-opacity:1;background-color:#bae6fd}
+.bg-accent-300{--tw-bg-opacity:1;background-color:#7dd3fc}
+.bg-accent-400{--tw-bg-opacity:1;background-color:#38bdf8}
+.bg-accent-500{--tw-bg-opacity:1;background-color:#0ea5e9}
+.bg-accent-600{--tw-bg-opacity:1;background-color:#0284c7}
+.bg-accent-700{--tw-bg-opacity:1;background-color:#0369a1}
+.bg-accent-800{--tw-bg-opacity:1;background-color:#075985}
+.bg-accent-900{--tw-bg-opacity:1;background-color:#0c4a6e}
