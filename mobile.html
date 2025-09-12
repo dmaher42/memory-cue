@@ -277,6 +277,10 @@ z-index:100;box-shadow:var(--shadow-sm)}
       <section class="card section">
         <div class="card-content">
           <textarea id="notes" placeholder="Type notes..." style="width:100%;min-height:200px;"></textarea>
+          <div class="form-row" style="margin-top: var(--space-3);">
+            <button id="saveNotesBtn" class="btn-success flex-1" type="button">Save Notes</button>
+            <button id="loadNotesBtn" class="btn-ghost flex-1" type="button">Load Notes</button>
+          </div>
         </div>
       </section>
     </div>
@@ -354,7 +358,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
-    const notesEl = $('#notes');
+    const notesEl = $('#notes'), saveNotesBtn = $('#saveNotesBtn'), loadNotesBtn = $('#loadNotesBtn');
     const tabs   = document.querySelectorAll('[role="tab"]');
     const panels = document.querySelectorAll('[role="tabpanel"]');
     const baseTab     = 'tab-btn';
@@ -363,6 +367,14 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
     notesEl.value = localStorage.getItem('mobileNotes') || '';
     notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
+    saveNotesBtn?.addEventListener('click', () => {
+      localStorage.setItem('mobileNotes', notesEl.value);
+      toast('Notes saved');
+    });
+    loadNotesBtn?.addEventListener('click', () => {
+      notesEl.value = localStorage.getItem('mobileNotes') || '';
+      toast('Notes loaded');
+    });
 
     function setActive(current) {
       tabs.forEach((tab) => {
