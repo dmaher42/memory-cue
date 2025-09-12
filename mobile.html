@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
-  <meta name="theme-color" content="#0b1220" />
+  <meta name="theme-color" content="#065f46" />
   <link rel="manifest" href="#" id="manifestLink" />
   <style>
     :root{
@@ -129,7 +129,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
       <div class="header-content">
         <div class="header-top">
           <h1>Memory Cue</h1>
-          <div id="syncStatus" class="sync-status offline" aria-live="polite">Offline</div>
+          <div id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</div>
         </div>
         <div class="header-controls">
           <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
@@ -159,12 +159,25 @@ z-index:100;box-shadow:var(--shadow-sm)}
       </div>
     </div>
   </header>
-  <nav class="tabs">
-    <button class="tab-btn active" data-target="tasksTab">Reminders</button>
-    <button class="tab-btn" data-target="notebookTab">Notebook</button>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button id="tab-reminders"
+            class="tab-btn active"
+            data-target="tasksTab"
+            role="tab"
+            aria-controls="tasksTab"
+            aria-selected="true"
+            tabindex="0">Reminders</button>
+
+    <button id="tab-notebook"
+            class="tab-btn"
+            data-target="notebookTab"
+            role="tab"
+            aria-controls="notebookTab"
+            aria-selected="false"
+            tabindex="-1">Notebook</button>
   </nav>
 
-  <div id="tasksTab" class="tab-panel">
+  <div id="tasksTab" class="tab-panel" role="tabpanel" aria-labelledby="tab-reminders" tabindex="0">
     <main class="main-content">
     <div class="container">
       <!-- Create Reminder Card -->
@@ -259,7 +272,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
   </main>
   </div>
 
-  <div id="notebookTab" class="tab-panel hidden">
+  <div id="notebookTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-notebook" tabindex="0">
     <div class="container">
       <section class="card section">
         <div class="card-content">
@@ -342,19 +355,52 @@ z-index:100;box-shadow:var(--shadow-sm)}
     const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
     const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
     const notesEl = $('#notes');
-    const tabBtns = $$('.tab-btn');
-    const tabPanels = $$('.tab-panel');
+    const tabs   = document.querySelectorAll('[role="tab"]');
+    const panels = document.querySelectorAll('[role="tabpanel"]');
+    const baseTab     = 'tab-btn';
+    const activeTab   = 'active';
+    const inactiveTab = '';
 
     notesEl.value = localStorage.getItem('mobileNotes') || '';
     notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
 
-    tabBtns.forEach(btn => btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      tabPanels.forEach(p => p.classList.add('hidden'));
-      btn.classList.add('active');
-      const target = btn.getAttribute('data-target');
-      document.getElementById(target).classList.remove('hidden');
-    }));
+    function setActive(current) {
+      tabs.forEach((tab) => {
+        const isActive = tab === current;
+        tab.setAttribute('aria-selected', String(isActive));
+        tab.tabIndex = isActive ? 0 : -1;
+        tab.className = `${baseTab}${isActive ? ' ' + activeTab : ''}`;
+      });
+      panels.forEach((panel) => {
+        const show = panel.id === current.getAttribute('aria-controls');
+        panel.hidden = !show;
+        if (!panel.hasAttribute('aria-labelledby')) {
+          panel.setAttribute('aria-labelledby', current.id);
+        }
+      });
+      current.focus({ preventScroll: true });
+    }
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => setActive(tab));
+      tab.addEventListener('keydown', (e) => {
+        const last = tabs.length - 1;
+        let next = null;
+        if (e.key === 'ArrowRight') next = tabs[i === last ? 0 : i + 1];
+        if (e.key === 'ArrowLeft')  next = tabs[i === 0 ? last : i - 1];
+        if (e.key === 'Home')       next = tabs[0];
+        if (e.key === 'End')        next = tabs[last];
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setActive(tab); return; }
+        if (next) { e.preventDefault(); setActive(next); }
+      });
+    });
+
+    document.getElementById('openSettings')?.addEventListener('click', () => {
+      const settingsTab = document.getElementById('tab-settings');
+      if (settingsTab) setActive(settingsTab);
+    });
+
+    setActive(document.getElementById('tab-reminders'));
 
     // Auth
     googleSignInBtn.addEventListener('click', async () => {
