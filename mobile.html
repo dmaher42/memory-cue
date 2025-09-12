@@ -1,69 +1,366 @@
-@@
--  <meta name="theme-color" content="#0f172a" />
-+  <meta name="theme-color" content="#065f46" />
-@@
--        <a class="text-sm underline decoration-dotted hover:decoration-solid" href="./index.html">Desktop</a>
-+        <a class="text-sm underline decoration-dotted hover:decoration-solid text-blue-700 dark:text-blue-400" href="./index.html">Desktop</a>
-@@
--          <button id="tab-reminders" role="tab" aria-controls="panel-reminders"
--                  aria-selected="true" tabindex="0"
--                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-indigo-500 data-[active=true]:text-indigo-600 dark:data-[active=true]:text-indigo-400">
-+          <button id="tab-reminders" role="tab" aria-controls="panel-reminders"
-+                  aria-selected="true" tabindex="0"
-+                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-blue-500 data-[active=true]:text-blue-600 dark:data-[active=true]:text-blue-400">
-             Reminders
-           </button>
--          <button id="tab-notebook" role="tab" aria-controls="panel-notebook"
--                  aria-selected="false" tabindex="-1"
--                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent">
-+          <button id="tab-notebook" role="tab" aria-controls="panel-notebook"
-+                  aria-selected="false" tabindex="-1"
-+                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-blue-500 data-[active=true]:text-blue-600 dark:data-[active=true]:text-blue-400">
-             Notebook
-           </button>
--          <button id="tab-settings" role="tab" aria-controls="panel-settings"
--                  aria-selected="false" tabindex="-1"
--                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent">
-+          <button id="tab-settings" role="tab" aria-controls="panel-settings"
-+                  aria-selected="false" tabindex="-1"
-+                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-blue-500 data-[active=true]:text-blue-600 dark:data-[active=true]:text-blue-400">
-             Settings
-           </button>
-@@
--          <button type="submit"
--                  class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 active:bg-indigo-700">
-+          <button type="submit"
-+                  class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700">
-             Save reminder
-           </button>
--          <button id="send-test-email" type="button"
--                  class="rounded-md bg-slate-200 px-3 py-2 text-sm font-medium hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600">
-+          <button id="send-test-email" type="button"
-+                  class="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500 active:bg-blue-700">
-             Send daily email now
-           </button>
-@@
--        <button id="save-notes" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 active:bg-indigo-700">
-+        <button id="save-notes" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700">
-           Save notes
-         </button>
-@@
--          <button type="submit"
--                  class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 active:bg-indigo-700">
-+          <button type="submit"
-+                  class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700">
-             Save settings
-           </button>
-@@
--      const classes = {
--        info:  'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 border border-slate-300/70 dark:border-slate-700',
--        ok:    'bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-200 border border-green-300/70 dark:border-green-800',
--        warn:  'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-300/70 dark:border-amber-800',
--        error: 'bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-200 border border-rose-300/70 dark:border-rose-800'
--      };
-+      const classes = {
-+        info:  'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 border border-slate-300/70 dark:border-slate-700',
-+        ok:    'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200 border border-emerald-300/70 dark:border-emerald-800',
-+        warn:  'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-300/70 dark:border-amber-800',
-+        error: 'bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-200 border border-rose-300/70 dark:border-rose-800'
-+      };
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#065f46" />
+
+  <title>Memory Cue — Mobile</title>
+
+  <!-- PWA manifest: relative so it works at /memory-cue/ on GitHub Pages -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <!-- Optional icons (add real files when available) -->
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
+  <!-- Tailwind v4 Play CDN (great for iterating; consider a built CSS for prod) -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <style>
+    /* Minimal focus ring that’s always visible */
+    :focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  </style>
+</head>
+<body class="min-h-dvh bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded">
+    Skip to content
+  </a>
+
+  <header class="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-900/70">
+    <div class="mx-auto max-w-screen-sm px-4 py-3 flex items-center justify-between">
+      <h1 class="text-lg font-semibold">Memory Cue</h1>
+      <nav aria-label="Primary" class="flex items-center gap-3">
+        <a class="text-sm underline decoration-dotted hover:decoration-solid text-blue-700 dark:text-blue-400" href="./index.html">Desktop</a>
+      </nav>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-t border-slate-200/70 dark:border-slate-700">
+      <div class="mx-auto max-w-screen-sm px-2">
+        <div role="tablist" aria-label="Sections" class="grid grid-cols-3">
+          <button id="tab-reminders" role="tab" aria-controls="panel-reminders"
+                  aria-selected="true" tabindex="0"
+                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-blue-500 data-[active=true]:text-blue-600 dark:data-[active=true]:text-blue-400">
+            Reminders
+          </button>
+          <button id="tab-notebook" role="tab" aria-controls="panel-notebook"
+                  aria-selected="false" tabindex="-1"
+                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-blue-500 data-[active=true]:text-blue-600 dark:data-[active=true]:text-blue-400">
+            Notebook
+          </button>
+          <button id="tab-settings" role="tab" aria-controls="panel-settings"
+                  aria-selected="false" tabindex="-1"
+                  class="tab-button px-3 py-3 text-sm font-medium border-b-2 border-transparent data-[active=true]:border-blue-500 data-[active=true]:text-blue-600 dark:data-[active=true]:text-blue-400">
+            Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live status / toasts (screen-reader friendly) -->
+  <div id="app-status" role="status" aria-live="polite" aria-atomic="true"
+       class="mx-auto max-w-screen-sm px-4 pt-3 hidden">
+    <div id="app-status-box" class="rounded-md px-3 py-2 text-sm"></div>
+  </div>
+
+  <main id="main" class="mx-auto max-w-screen-sm p-4 space-y-8">
+
+    <!-- Reminders -->
+    <section id="panel-reminders" role="tabpanel" aria-labelledby="tab-reminders">
+      <form id="reminder-form" class="space-y-3" novalidate>
+        <label class="block">
+          <span class="block text-sm font-medium">Quick add</span>
+          <input id="reminder-text" name="reminder" type="text" inputmode="text"
+                 placeholder="e.g., ‘Pay rent tomorrow 9am #bills’"
+                 class="mt-1 w-full rounded-md border border-slate-300 bg-white/90 px-3 py-2 text-sm shadow-sm dark:bg-slate-800 dark:border-slate-700" />
+        </label>
+        <div class="flex items-center gap-2">
+          <button type="submit"
+                  class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700">
+            Save reminder
+          </button>
+          <button id="send-test-email" type="button"
+                  class="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500 active:bg-blue-700">
+            Send daily email now
+          </button>
+        </div>
+      </form>
+
+      <hr class="my-5 border-slate-200/70 dark:border-slate-700" />
+
+      <div class="space-y-2">
+        <h2 class="text-sm font-semibold">Today</h2>
+        <ul id="reminders-list" class="space-y-1 list-disc pl-5">
+          <!-- populated from localStorage in this simple build -->
+        </ul>
+      </div>
+    </section>
+
+    <!-- Notebook -->
+    <section id="panel-notebook" role="tabpanel" aria-labelledby="tab-notebook" hidden>
+      <label class="block">
+        <span class="block text-sm font-medium">Notes</span>
+        <textarea id="notes" rows="6" class="mt-1 w-full rounded-md border border-slate-300 bg-white/90 px-3 py-2 text-sm shadow-sm dark:bg-slate-800 dark:border-slate-700"
+                  placeholder="Free-form notes…"></textarea>
+      </label>
+      <div class="pt-2">
+        <button id="save-notes" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700">
+          Save notes
+        </button>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <form id="settings-form" class="space-y-4" novalidate>
+        <label class="block">
+          <span class="block text-sm font-medium">Daily email address</span>
+          <input id="email" name="email" type="email" autocomplete="email" inputmode="email"
+                 placeholder="you@example.com"
+                 class="mt-1 w-full rounded-md border border-slate-300 bg-white/90 px-3 py-2 text-sm shadow-sm dark:bg-slate-800 dark:border-slate-700" />
+        </label>
+
+        <label class="block">
+          <span class="block text-sm font-medium">Apps Script endpoint</span>
+          <input id="script-url" name="scriptUrl" type="url" inputmode="url"
+                 placeholder="https://script.google.com/macros/s/…/exec"
+                 class="mt-1 w-full rounded-md border border-slate-300 bg-white/90 px-3 py-2 text-sm shadow-sm dark:bg-slate-800 dark:border-slate-700" />
+          <p class="mt-1 text-xs text-slate-500">
+            Only <code>https://script.google.com/</code> is allowed by default.
+          </p>
+        </label>
+
+        <div class="flex items-center gap-2">
+          <button type="submit"
+                  class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700">
+            Save settings
+          </button>
+          <button id="clear-data" type="button"
+                  class="rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-500 active:bg-rose-700">
+            Reset local data
+          </button>
+        </div>
+      </form>
+
+      <p class="mt-4 text-xs text-slate-500">
+        Version <span id="app-version">dev</span> • © <span id="year"></span>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    'use strict';
+
+    // ---------- Utilities ----------
+    const $  = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const storage = {
+      get(key, fallback = null) {
+        try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); }
+        catch { return fallback; }
+      },
+      set(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+    };
+
+    function showStatus(message, type = 'info') {
+      const wrap = $('#app-status');
+      const box  = $('#app-status-box');
+      const classes = {
+        info:  'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 border border-slate-300/70 dark:border-slate-700',
+        ok:    'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200 border border-emerald-300/70 dark:border-emerald-800',
+        warn:  'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-300/70 dark:border-amber-800',
+        error: 'bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-200 border border-rose-300/70 dark:border-rose-800'
+      };
+      box.className = `rounded-md px-3 py-2 text-sm ${classes[type] ?? classes.info}`;
+      box.textContent = message;
+      wrap.classList.remove('hidden');
+      // Hide visually after a few seconds but keep in DOM for screen readers to announce.
+      window.clearTimeout(showStatus._t);
+      showStatus._t = setTimeout(() => wrap.classList.add('hidden'), 5000);
+    }
+
+    function isAllowedEndpoint(url) {
+      try {
+        const u = new URL(url);
+        const allowedHosts = new Set([
+          'script.google.com',
+          'localhost',
+          '127.0.0.1'
+        ]);
+        return allowedHosts.has(u.hostname);
+      } catch {
+        return false;
+      }
+    }
+
+    async function fetchWithTimeout(resource, options = {}) {
+      const { timeout = 10000, ...rest } = options;
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        return await fetch(resource, { ...rest, signal: controller.signal });
+      } finally {
+        clearTimeout(id);
+      }
+    }
+
+    // ---------- Tabs (WAI-ARIA with roving tabindex) ----------
+    const tabs   = $$('[role="tab"]');
+    const panels = $$('[role="tabpanel"]');
+
+    function activateTab(tab) {
+      tabs.forEach(t => {
+        const selected = (t === tab);
+        t.setAttribute('aria-selected', String(selected));
+        t.tabIndex = selected ? 0 : -1;
+        t.dataset.active = selected ? 'true' : 'false';
+      });
+      panels.forEach(p => {
+        const isActive = p.id === tab.getAttribute('aria-controls');
+        p.hidden = !isActive;
+        if (!p.hasAttribute('aria-labelledby')) p.setAttribute('aria-labelledby', tab.id);
+      });
+      tab.focus({ preventScroll: true });
+    }
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => activateTab(t));
+      t.addEventListener('keydown', (e) => {
+        const last = tabs.length - 1;
+        let next = null;
+        if (e.key === 'ArrowRight') next = tabs[i === last ? 0 : i + 1];
+        if (e.key === 'ArrowLeft')  next = tabs[i === 0 ? last : i - 1];
+        if (e.key === 'Home')       next = tabs[0];
+        if (e.key === 'End')        next = tabs[last];
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); activateTab(t); return; }
+        if (next) { e.preventDefault(); activateTab(next); }
+      });
+    });
+
+    // Ensure a default active tab
+    activateTab($('#tab-reminders') || tabs[0]);
+
+    // ---------- Simple local state ----------
+    const KEYS = {
+      reminders: 'mc.reminders',
+      notes: 'mc.notes',
+      email: 'mc.email',
+      scriptUrl: 'mc.scriptUrl',
+      version: 'mc.version'
+    };
+
+    // Reminders list (super simple local-only rendering for now)
+    function renderReminders() {
+      const list = $('#reminders-list');
+      const items = storage.get(KEYS.reminders, []);
+      list.innerHTML = '';
+      if (!items.length) {
+        const li = document.createElement('li');
+        li.className = 'text-sm text-slate-500 list-none';
+        li.textContent = 'No reminders yet.';
+        list.appendChild(li);
+        return;
+      }
+      for (const r of items) {
+        const li = document.createElement('li');
+        li.className = 'text-sm';
+        li.textContent = r;
+        list.appendChild(li);
+      }
+    }
+
+    $('#reminder-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = $('#reminder-text');
+      const text = (input.value || '').trim();
+      if (!text) { input.focus(); return; }
+      const items = storage.get(KEYS.reminders, []);
+      items.unshift(text);
+      storage.set(KEYS.reminders, items.slice(0, 100)); // keep it modest
+      input.value = '';
+      renderReminders();
+      showStatus('Reminder saved.', 'ok');
+    });
+
+    // Notes
+    $('#save-notes')?.addEventListener('click', () => {
+      storage.set(KEYS.notes, $('#notes').value || '');
+      showStatus('Notes saved.', 'ok');
+    });
+
+    // Settings save/reset
+    $('#settings-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = $('#email').value.trim();
+      const url   = $('#script-url').value.trim();
+      if (email) storage.set(KEYS.email, email);
+      if (url) {
+        if (!isAllowedEndpoint(url)) {
+          showStatus('Endpoint must be hosted on script.google.com (or localhost for dev).', 'warn');
+          return;
+        }
+        storage.set(KEYS.scriptUrl, url);
+      }
+      showStatus('Settings saved.', 'ok');
+    });
+
+    $('#clear-data')?.addEventListener('click', () => {
+      for (const k of Object.values(KEYS)) localStorage.removeItem(k);
+      $('#email').value = '';
+      $('#script-url').value = '';
+      $('#notes').value = '';
+      renderReminders();
+      showStatus('Local data cleared.', 'ok');
+    });
+
+    // Send daily email now (manual trigger)
+    $('#send-test-email')?.addEventListener('click', async () => {
+      const email = (storage.get(KEYS.email, '') || '').trim();
+      const url   = (storage.get(KEYS.scriptUrl, '') || '').trim();
+      if (!email) { showStatus('Add your email in Settings first.', 'warn'); activateTab($('#tab-settings')); $('#email').focus(); return; }
+      if (!url || !isAllowedEndpoint(url)) { showStatus('Add a valid Apps Script URL in Settings first.', 'warn'); activateTab($('#tab-settings')); $('#script-url').focus(); return; }
+
+      const payload = { email, ts: Date.now(), force: true };
+      const headers = { 'Content-Type': 'application/json' };
+
+      try {
+        // First attempt with timeout
+        let res = await fetchWithTimeout(url, { method: 'POST', headers, body: JSON.stringify(payload), timeout: 10000, cache: 'no-store' });
+        // Retry once on transient errors
+        if (!res.ok && (res.status >= 500 || res.status === 429)) {
+          res = await fetchWithTimeout(url, { method: 'POST', headers, body: JSON.stringify(payload), timeout: 10000, cache: 'no-store' });
+        }
+        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        showStatus('Daily email sent (manual trigger).', 'ok');
+      } catch (err) {
+        const msg = (err?.name === 'AbortError')
+          ? 'Email request timed out. Check your network and try again.'
+          : `Failed to send email: ${(err && err.message) || 'unknown error'}`;
+        showStatus(msg, 'error');
+      }
+    });
+
+    // ---------- Boot ----------
+    (function boot() {
+      // Fill saved settings and notes
+      $('#email').value      = storage.get(KEYS.email, '') || '';
+      $('#script-url').value = storage.get(KEYS.scriptUrl, '') || '';
+      $('#notes').value      = storage.get(KEYS.notes, '') || '';
+      $('#year').textContent = new Date().getFullYear();
+      $('#app-version').textContent = storage.get(KEYS.version, 'dev');
+
+      renderReminders();
+
+      // Register the service worker if present (path aware for GH Pages)
+      if ('serviceWorker' in navigator) {
+        // Adjust if your project path differs
+        const swUrl = '/memory-cue/service-worker.js';
+        navigator.serviceWorker.register(swUrl).catch(() => { /* ignore */ });
+      }
+    })();
+  </script>
+</body>
+</html>
