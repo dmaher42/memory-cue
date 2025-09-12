@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue</title>
 
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
   <meta name="theme-color" content="#10b981" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
@@ -207,7 +207,7 @@
 
     // Service Worker registration
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(console.error);
+      navigator.serviceWorker.register('./service-worker.js').catch(console.error);
     }
   </script>
 </body>
