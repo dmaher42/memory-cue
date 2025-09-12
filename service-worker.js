@@ -23,8 +23,8 @@ const SHELL_URLS = [
   `${APP_PATH}mobile.html`,
   `${APP_PATH}manifest.webmanifest`,
   // Add your real icons below if present; missing files are skipped.
-  `${APP_PATH}icons/icon-192.png`,
-  `${APP_PATH}icons/icon-512.png`,
+  `${APP_PATH}icons/icon-192.svg`,
+  `${APP_PATH}icons/icon-512.svg`,
 ];
 
 // File extensions treated as static assets for SWR caching
