@@ -1,7 +1,7 @@
 /* Teacher-Centric Memory Cue Styles */
 
 :root {
-  /* Enhanced Color System */
+  /* Theme Colors */
   --bg-primary: #0b1220;
   --bg-secondary: #0f172a;
   --bg-tertiary: #1e293b;
@@ -544,7 +544,7 @@ input::placeholder, textarea::placeholder {
   grid-template-columns: repeat(4, 1fr);
 }
 
-/* Subject Color System */
+/* Subject Colors */
 .subject-color-blue { background-color: var(--subject-blue); }
 .subject-color-green { background-color: var(--subject-green); }
 .subject-color-purple { background-color: var(--subject-purple); }
