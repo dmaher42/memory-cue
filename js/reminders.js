@@ -313,7 +313,13 @@ export function initReminders(sel = {}) {
   function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
   function openMenu(){ moreBtn?.setAttribute('aria-expanded','true'); moreMenu?.classList.remove('hidden'); }
   moreBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); const open=moreBtn.getAttribute('aria-expanded')==='true'; open ? closeMenu() : openMenu(); });
-  document.addEventListener('click', (e)=>{ if(!moreMenu?.classList.contains('hidden')){ if(!moreMenu.contains(e.target) && e.target!==moreBtn) closeMenu(); } });
+  document.addEventListener('click', (e)=>{
+    if (!moreMenu || moreMenu.classList.contains('hidden')) return;
+    const target = e.target;
+    if (!(target instanceof Node)) return;
+    if (target === moreBtn || moreMenu.contains(target)) return;
+    closeMenu();
+  });
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
   openSettings?.addEventListener('click', () => {
