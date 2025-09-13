@@ -14,8 +14,16 @@
   --accent-light: rgba(56, 189, 248, 0.1);
   --success: #22c55e;
   --success-hover: #16a34a;
+  --success-light: rgba(34, 197, 94, 0.1);
   --warning: #f59e0b;
+  --warning-hover: #ea580c;
+  --warning-light: rgba(249, 115, 22, 0.1);
   --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-light: rgba(239, 68, 68, 0.1);
+  --purple: #8b5cf6;
+  --purple-hover: #7c3aed;
+  --purple-light: rgba(139, 92, 246, 0.1);
   --border: #334155;
   --border-light: #475569;
 
@@ -142,7 +150,7 @@ body {
 .sidebar-logo {
   font-size: var(--text-xl);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent), var(--success));
+  background: linear-gradient(135deg, var(--accent), var(--purple));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -319,6 +327,39 @@ body {
   border-color: var(--accent-hover);
 }
 
+.topbar-btn.purple {
+  background: var(--purple);
+  color: var(--bg-primary);
+  border-color: var(--purple);
+}
+
+.topbar-btn.purple:hover {
+  background: var(--purple-hover);
+  border-color: var(--purple-hover);
+}
+
+.topbar-btn.warning {
+  background: var(--warning);
+  color: var(--bg-primary);
+  border-color: var(--warning);
+}
+
+.topbar-btn.warning:hover {
+  background: var(--warning-hover);
+  border-color: var(--warning-hover);
+}
+
+.topbar-btn.danger {
+  background: var(--danger);
+  color: var(--bg-primary);
+  border-color: var(--danger);
+}
+
+.topbar-btn.danger:hover {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
 /* Content Panels */
 .content-area {
   flex: 1;
@@ -481,6 +522,42 @@ input::placeholder, textarea::placeholder {
   background: var(--bg-quaternary);
   color: var(--text-primary);
   border-color: var(--border-light);
+}
+
+.btn-purple {
+  background: var(--purple);
+  color: var(--bg-primary);
+  border-color: var(--purple);
+  font-weight: 600;
+}
+
+.btn-purple:hover {
+  background: var(--purple-hover);
+  border-color: var(--purple-hover);
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: var(--bg-primary);
+  border-color: var(--warning);
+  font-weight: 600;
+}
+
+.btn-warning:hover {
+  background: var(--warning-hover);
+  border-color: var(--warning-hover);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: var(--bg-primary);
+  border-color: var(--danger);
+  font-weight: 600;
+}
+
+.btn-danger:hover {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
 }
 
 .btn-ghost {
@@ -913,21 +990,21 @@ input::placeholder, textarea::placeholder {
 }
 
 .priority-high {
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.2);
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: var(--danger-light);
 }
 
 .priority-medium {
-  background: rgba(245, 158, 11, 0.1);
-  color: #fcd34d;
-  border-color: rgba(245, 158, 11, 0.2);
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning-light);
 }
 
 .priority-low {
-  background: rgba(34, 197, 94, 0.1);
-  color: #86efac;
-  border-color: rgba(34, 197, 94, 0.2);
+  background: var(--success-light);
+  color: var(--success);
+  border-color: var(--success-light);
 }
 
 /* Empty States */
