@@ -27,41 +27,79 @@
       --text: #1F2937;
     }
   </style>
+  <nav aria-label="Primary" class="flex gap-4 p-4">
+    <button data-route="dashboard" id="nav-dashboard" class="px-2 py-1 rounded bg-slate-200">Dashboard</button>
+    <button data-route="reminders" id="nav-reminders" class="px-2 py-1 rounded bg-slate-200">Reminders</button>
+    <button data-route="planner" id="nav-planner" class="px-2 py-1 rounded bg-slate-200">Planner</button>
+    <button data-route="notes" id="nav-notes" class="px-2 py-1 rounded bg-slate-200">Notes</button>
+    <button data-route="resources" id="nav-resources" class="px-2 py-1 rounded bg-slate-200">Resources</button>
+    <button data-route="templates" id="nav-templates" class="px-2 py-1 rounded bg-slate-200">Templates</button>
+    <button data-route="settings" id="nav-settings" class="px-2 py-1 rounded bg-slate-200">Settings</button>
+    <button id="theme-toggle" class="px-2 py-1 rounded bg-slate-200">Theme</button>
+    <button id="sign-in-btn" class="px-2 py-1 rounded bg-slate-200">Sign In</button>
+    <button id="sign-out-btn" class="px-2 py-1 rounded bg-slate-200" hidden>Sign Out</button>
+  </nav>
   <main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Hero -->
-    <section class="pt-24 pb-16 text-center">
-      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">Memory Cue</h1>
-      <p class="mt-4 text-lg text-slate-700">All your classroom tools in one place.</p>
-      <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-        <a href="#" class="inline-flex items-center justify-center rounded-xl bg-[var(--brand)] text-white px-6 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] transition-opacity motion-safe:duration-200 motion-safe:hover:opacity-90">Get started</a>
+    <section data-view="dashboard" id="view-dashboard">
+      <!-- Hero -->
+      <section class="pt-24 pb-16 text-center">
+        <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">Memory Cue</h1>
+        <p class="mt-4 text-lg text-slate-700">All your classroom tools in one place.</p>
+        <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+          <a href="#" class="inline-flex items-center justify-center rounded-xl bg-[var(--brand)] text-white px-6 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] transition-opacity motion-safe:duration-200 motion-safe:hover:opacity-90">Get started</a>
+        </div>
+      </section>
+
+      <!-- What's inside -->
+      <section aria-labelledby="inside-heading" class="py-16">
+        <h2 id="inside-heading" class="text-2xl font-semibold text-center">What's inside</h2>
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <!-- Reminders -->
+          <div class="p-8 rounded-xl bg-white shadow flex flex-col items-start transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
+            <svg class="w-6 h-6 text-[var(--brand)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/></svg>
+            <h3 class="font-medium">Reminders</h3>
+            <p class="mt-2 text-sm text-slate-700">Set tasks and forget the forgetting.</p>
+          </div>
+          <!-- Planner -->
+          <div class="p-8 rounded-xl bg-white shadow flex flex-col items-start transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
+            <svg class="w-6 h-6 text-[var(--brand)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M3 12h18M3 19h18"/></svg>
+            <h3 class="font-medium">Planner</h3>
+            <p class="mt-2 text-sm text-slate-700">Organize your day at a glance.</p>
+          </div>
+          <!-- Notes -->
+          <div class="p-8 rounded-xl bg-white shadow flex flex-col items-start transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
+            <svg class="w-6 h-6 text-[var(--brand)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5 3h14v18H5z"/></svg>
+            <h3 class="font-medium">Notes</h3>
+            <p class="mt-2 text-sm text-slate-700">Capture ideas before they fade.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+    <section data-view="reminders" id="view-reminders" hidden>
+      <form id="add-reminder-form" class="mb-4 flex gap-2">
+        <input name="reminder" class="border p-2 flex-1" placeholder="New reminder" />
+        <button type="submit" class="px-4 py-2 bg-[var(--brand)] text-white rounded">Add</button>
+      </form>
+      <ul id="reminders-list" class="list-disc pl-5"></ul>
+    </section>
+    <section data-view="planner" id="view-planner" hidden>
+      <div class="flex gap-2 mb-4">
+        <button id="planner-prev" class="px-2 py-1 bg-slate-200 rounded">Prev</button>
+        <button id="planner-today" class="px-2 py-1 bg-slate-200 rounded">Today</button>
+        <button id="planner-next" class="px-2 py-1 bg-slate-200 rounded">Next</button>
+      </div>
+      <div id="planner-week" class="p-4 bg-white rounded shadow"></div>
+    </section>
+    <section data-view="notes" id="view-notes" hidden>
+      <textarea id="quick-note" class="w-full border p-2" rows="5" placeholder="Write a quick note..."></textarea>
+      <div class="mt-2 flex gap-2">
+        <button id="save-note" class="px-4 py-2 bg-[var(--brand)] text-white rounded">Save</button>
+        <button id="clear-note" class="px-4 py-2 bg-slate-200 rounded">Clear</button>
       </div>
     </section>
-
-    <!-- What's inside -->
-    <section aria-labelledby="inside-heading" class="py-16">
-      <h2 id="inside-heading" class="text-2xl font-semibold text-center">What's inside</h2>
-      <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
-        <!-- Reminders -->
-        <div class="p-8 rounded-xl bg-white shadow flex flex-col items-start transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
-          <svg class="w-6 h-6 text-[var(--brand)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/></svg>
-          <h3 class="font-medium">Reminders</h3>
-          <p class="mt-2 text-sm text-slate-700">Set tasks and forget the forgetting.</p>
-        </div>
-        <!-- Planner -->
-        <div class="p-8 rounded-xl bg-white shadow flex flex-col items-start transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
-          <svg class="w-6 h-6 text-[var(--brand)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M3 12h18M3 19h18"/></svg>
-          <h3 class="font-medium">Planner</h3>
-          <p class="mt-2 text-sm text-slate-700">Organize your day at a glance.</p>
-        </div>
-        <!-- Notes -->
-        <div class="p-8 rounded-xl bg-white shadow flex flex-col items-start transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
-          <svg class="w-6 h-6 text-[var(--brand)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5 3h14v18H5z"/></svg>
-          <h3 class="font-medium">Notes</h3>
-          <p class="mt-2 text-sm text-slate-700">Capture ideas before they fade.</p>
-        </div>
-      </div>
-    </section>
-
+    <section data-view="resources" id="view-resources" hidden></section>
+    <section data-view="templates" id="view-templates" hidden></section>
+    <section data-view="settings" id="view-settings" hidden></section>
   </main>
   <footer class="border-t border-slate-200 py-8 mt-16">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-sm">
@@ -73,6 +111,12 @@
     // Set current year
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
+  <!-- Firebase (example v10) -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script defer src="/memory-cue/js/firebase-init.js"></script>
+  <script type="module" src="/memory-cue/js/main.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       const basePath = window.location.pathname.endsWith('/')
