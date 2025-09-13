@@ -73,5 +73,17 @@
     // Set current year
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      const basePath = window.location.pathname.endsWith('/')
+        ? window.location.pathname
+        : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      const swUrl = `${basePath}service-worker.js`;
+      navigator.serviceWorker
+        .register(swUrl)
+        .then(() => console.log('Service worker registered:', swUrl))
+        .catch(err => console.error('Service worker registration failed:', err));
+    }
+  </script>
 </body>
 </html>
