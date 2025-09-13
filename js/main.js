@@ -58,7 +58,8 @@ function toggleTheme(){
   setTheme(current === 'dark' ? 'light' : 'dark');
 }
 themeToggle?.addEventListener('click', toggleTheme);
-setTheme(localStorage.getItem('theme') || 'light');
+const preferred = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(preferred);
 
 // Reminders
 function onAddReminder(e){
