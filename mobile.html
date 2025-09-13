@@ -293,114 +293,59 @@ z-index:100;box-shadow:var(--shadow-sm)}
     </div>
   </div>
 
+  <!-- Reminder logic -->
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-
-    // Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c",
-      authDomain: "memory-cue-app.firebaseapp.com",
-      projectId: "memory-cue-app",
-      storageBucket: "memory-cue-app.firebasestorage.app",
-      messagingSenderId: "751284466633",
-      appId: "1:751284466633:web:3b10742970bef1a5d5ee18",
-      measurementId: "G-R0V4M7VCE6"
-    };
-    const app = initializeApp(firebaseConfig);
-    let db;
-    try {
-      db = initializeFirestore(app, { cache: persistentLocalCache() });
-    } catch (err) {
-      console.warn('Firestore persistence not enabled:', err?.code || err);
-      db = getFirestore(app);
-    }
-    const auth = getAuth(app);
-
-    // State
-    let items = [];
-    let filter = 'today';
-    let sortKey = 'smart';
-    let listening = false;
-    let recog = null;
-    let userId = null;
-    let unsubscribe = null;
-
-    // ---- Edit state ----
-    let editingId = null;
-
-    // Reminder scheduling state
-    const reminderTimers = {};
-    let scheduledReminders = {};
-    try { scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}'); } catch { scheduledReminders = {}; }
-
-    const TZ = 'Australia/Adelaide';
-    const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
-    const dayFmt  = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday:'long', day:'numeric', month:'long' });
-    // --- TZ-safe helpers (Australia/Adelaide) ---
-    const dateOnlyFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' }); // YYYY-MM-DD
-    function formatDateLocal(d){ // returns 'YYYY-MM-DD' in TZ
-      const parts = dateOnlyFmt.formatToParts(d);
-      const y = parts.find(p=>p.type==='year').value;
-      const m = parts.find(p=>p.type==='month').value;
-      const da = parts.find(p=>p.type==='day').value;
-      return `${y}-${m}-${da}`;
-    }
-    function localDateTimeToISO(dstr, tstr){ // build a Date using local wall time, then toISOString()
-      const [Y,M,D] = dstr.split('-').map(n=>parseInt(n,10));
-      const [h,m] = tstr.split(':').map(n=>parseInt(n,10));
-      const dt = new Date();
-      dt.setFullYear(Y, (M||1)-1, D||1);
-      dt.setHours(h||0, m||0, 0, 0);
-      return dt.toISOString();
-    }
-
-    const datePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
-    const timePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
-
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
-    // Elements
-    const q = $('#q'), title = $('#title'), date = $('#date'), time = $('#time'), priority = $('#priority'), saveBtn = $('#saveBtn');
-    const cancelEditBtn = document.getElementById('cancelEditBtn');
-    const list = $('#list'), statusEl = $('#status'), syncStatus = $('#syncStatus');
-    const voiceBtn = $('#voiceBtn'), notifBtn = $('#notifBtn'), addQuickBtn = $('#addQuickBtn');
-    const copyMtlBtn = $('#copyMtlBtn'), importFile = $('#importFile'), exportBtn = $('#exportBtn');
-    const dateFeedback = $('#dateFeedback');
-    const sortSel = $('#sort'), openSettings = $('#openSettings'), settingsSection = $('#settingsSection');
-    const syncAllBtn = document.getElementById('syncAllBtn');
-    const syncUrlInput = $('#syncUrl'), saveSettings = $('#saveSettings'), testSync = $('#testSync');
-    const googleSignInBtn = $('#googleSignInBtn'), googleSignOutBtn = $('#googleSignOutBtn'), googleAvatar = $('#googleAvatar'), googleUserName = $('#googleUserName');
-    const moreBtn = $('#moreBtn'), moreMenu = $('#moreMenu');
-    const inlineTodayCount = $('#inlineTodayCount'), inlineWeekCount = $('#inlineWeekCount');
-    const notesEl = $('#notes'), saveNotesBtn = $('#saveNotesBtn'), loadNotesBtn = $('#loadNotesBtn');
-    const tabs   = document.querySelectorAll('[role="tab"]');
+    import { initReminders } from './js/reminders.js';
+    initReminders({
+      titleSel: '#title',
+      dateSel: '#date',
+      timeSel: '#time',
+      prioritySel: '#priority',
+      saveBtnSel: '#saveBtn',
+      cancelEditBtnSel: '#cancelEditBtn',
+      listSel: '#list',
+      googleSignInBtnSel: '#googleSignInBtn',
+      googleSignOutBtnSel: '#googleSignOutBtn',
+      statusSel: '#status',
+      syncStatusSel: '#syncStatus',
+      notesSel: '#notes',
+      saveNotesBtnSel: '#saveNotesBtn',
+      loadNotesBtnSel: '#loadNotesBtn',
+      filterBtnsSel: '[data-filter]',
+      sortSel: '#sort',
+      countTodaySel: '#inlineTodayCount',
+      countWeekSel: '#inlineWeekCount',
+      qSel: '#q',
+      voiceBtnSel: '#voiceBtn',
+      notifBtnSel: '#notifBtn',
+      addQuickBtnSel: '#addQuickBtn',
+      dateFeedbackSel: '#dateFeedback',
+      googleAvatarSel: '#googleAvatar',
+      googleUserNameSel: '#googleUserName',
+      moreBtnSel: '#moreBtn',
+      moreMenuSel: '#moreMenu',
+      copyMtlBtnSel: '#copyMtlBtn',
+      importFileSel: '#importFile',
+      exportBtnSel: '#exportBtn',
+      syncAllBtnSel: '#syncAllBtn',
+      syncUrlInputSel: '#syncUrl',
+      saveSettingsSel: '#saveSettings',
+      testSyncSel: '#testSync',
+      openSettingsSel: '#openSettings',
+      settingsSectionSel: '#settingsSection'
+    });
+  </script>
+  <script>
+    const tabs = document.querySelectorAll('[role="tab"]');
     const panels = document.querySelectorAll('[role="tabpanel"]');
-    const baseTab     = 'tab-btn';
-    const activeTab   = 'active';
-    const inactiveTab = '';
-
-    notesEl.value = localStorage.getItem('mobileNotes') || '';
-    notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
-    saveNotesBtn?.addEventListener('click', () => {
-      localStorage.setItem('mobileNotes', notesEl.value);
-      toast('Notes saved');
-    });
-    loadNotesBtn?.addEventListener('click', () => {
-      notesEl.value = localStorage.getItem('mobileNotes') || '';
-      toast('Notes loaded');
-    });
-
     function setActive(current) {
-      tabs.forEach((tab) => {
+      tabs.forEach(tab => {
         const isActive = tab === current;
         tab.setAttribute('aria-selected', String(isActive));
         tab.tabIndex = isActive ? 0 : -1;
-        tab.className = `${baseTab}${isActive ? ' ' + activeTab : ''}`;
+        tab.classList.toggle('active', isActive);
       });
-      panels.forEach((panel) => {
+      panels.forEach(panel => {
         const show = panel.id === current.getAttribute('aria-controls');
         panel.hidden = !show;
         panel.classList.toggle('hidden', !show);
@@ -410,634 +355,20 @@ z-index:100;box-shadow:var(--shadow-sm)}
       });
       current.focus({ preventScroll: true });
     }
-
     tabs.forEach((tab, i) => {
       tab.addEventListener('click', () => setActive(tab));
       tab.addEventListener('keydown', (e) => {
         const last = tabs.length - 1;
         let next = null;
         if (e.key === 'ArrowRight') next = tabs[i === last ? 0 : i + 1];
-        if (e.key === 'ArrowLeft')  next = tabs[i === 0 ? last : i - 1];
-        if (e.key === 'Home')       next = tabs[0];
-        if (e.key === 'End')        next = tabs[last];
+        if (e.key === 'ArrowLeft') next = tabs[i === 0 ? last : i - 1];
+        if (e.key === 'Home') next = tabs[0];
+        if (e.key === 'End') next = tabs[last];
         if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setActive(tab); return; }
         if (next) { e.preventDefault(); setActive(next); }
       });
     });
-
-    document.getElementById('openSettings')?.addEventListener('click', () => {
-      const settingsTab = document.getElementById('tab-settings');
-      if (settingsTab) setActive(settingsTab);
-    });
-
     setActive(document.getElementById('tab-reminders'));
-
-    // Auth
-    googleSignInBtn.addEventListener('click', async () => {
-      const provider = new GoogleAuthProvider();
-      try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch (e) { toast('Google sign-in failed'); } }
-    });
-    getRedirectResult(auth).catch(()=>{});
-    googleSignOutBtn.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userId = user.uid;
-        syncStatus.textContent = 'Online'; syncStatus.className = 'sync-status online';
-        googleSignInBtn.classList.add('hidden'); googleSignOutBtn.classList.remove('hidden');
-        if (user.photoURL) { googleAvatar.classList.remove('hidden'); googleAvatar.src = user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src = ''; }
-        googleUserName.textContent = user.displayName || user.email || '';
-        setupFirestoreSync();
-      } else {
-        googleSignInBtn.classList.remove('hidden'); googleSignOutBtn.classList.add('hidden');
-        googleAvatar.classList.add('hidden'); googleAvatar.src = ''; googleUserName.textContent = '';
-        items = []; render();
-      }
-    });
-
-    // Firestore sync
-    function setupFirestoreSync() {
-      if (!userId) { items=[]; render(); return; }
-      if (unsubscribe) unsubscribe();
-      const userCollection = collection(db, 'users', userId, 'reminders');
-      const qSnap = query(userCollection, orderBy('updatedAt', 'desc'));
-      unsubscribe = onSnapshot(qSnap, (snapshot) => {
-        const remoteItems = [];
-        snapshot.forEach((d) => {
-          const data = d.data();
-          remoteItems.push({
-            id: d.id,
-            title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done,
-            due: data.due || null,
-            createdAt: data.createdAt?.toMillis?.() || 0,
-            updatedAt: data.updatedAt?.toMillis?.() || 0
-          });
-        });
-        items = remoteItems;
-        render();
-      }, (error) => {
-        console.error('Firestore sync error:', error);
-        syncStatus.textContent = 'Sync Error'; syncStatus.className = 'sync-status error';
-      });
-    }
-
-    // Save/Delete
-    async function saveToFirebase(item) {
-      if (!userId) return;
-      try {
-        await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-          title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
-          createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-      } catch (error) {
-        console.error('Save failed:', error); toast('Save queued (offline)');
-      }
-    }
-    async function deleteFromFirebase(id) { if (!userId) return; try { await deleteDoc(doc(db, 'users', userId, 'reminders', id)); } catch { toast('Delete queued (offline)'); } }
-
-    // Optional: Calendar/Sheet sync via Apps Script
-    async function tryCalendarSync(task) {
-      const url = (localStorage.getItem('syncUrl') || '').trim(); if (!url) return;
-      const payload = { id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', done: !!task.done, source: 'memory-cue-mobile' };
-      try { await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
-      catch {}
-    }
-
-    // Utils
-    function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-    function toISODatePart(d){ return formatDateLocal(d); }
-    function todayISO(){ const now = new Date(); return formatDateLocal(now); }
-    function startOfWeek(dateObj){ const d = new Date(dateObj); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day);d.setHours(0,0,0,0); return d; }
-    function endOfWeek(dateObj){ const s = startOfWeek(dateObj); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
-    function priorityWeight(p){ return p==='High'?3 : p==='Medium'?2 : 1; }
-    function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
-    function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
-    function fmtTime(d){ return timeFmt.format(d); }
-    function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' }[c])); }
-    function toast(msg){ statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='', 2500); }
-    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
-    function parseQuickWhen(text) {
-      text = String(text || '').toLowerCase();
-
-      // Default = today, no time
-      let when = { date: todayISO(), time: '' };
-
-      // Helper function to get next occurrence of a day
-      const getNextDayOfWeek = (dayIndex) => {
-        const today = new Date();
-        const currentDay = today.getDay();
-        const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + (daysUntilTarget === 0 ? 7 : daysUntilTarget));
-        return targetDate;
-      };
-
-      // Helper function to get this occurrence of a day
-      const getThisDayOfWeek = (dayIndex) => {
-        const today = new Date();
-        const currentDay = today.getDay();
-        const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + daysUntilTarget);
-        return targetDate;
-      };
-
-      // Day names mapping
-      const dayNames = {
-        'sunday': 0, 'sun': 0,
-        'monday': 1, 'mon': 1,
-        'tuesday': 2, 'tue': 2, 'tues': 2,
-        'wednesday': 3, 'wed': 3,
-        'thursday': 4, 'thu': 4, 'thur': 4, 'thurs': 4,
-        'friday': 5, 'fri': 5,
-        'saturday': 6, 'sat': 6
-      };
-
-      // Month names mapping
-      const monthNames = {
-        'january': 0, 'jan': 0,
-        'february': 1, 'feb': 1,
-        'march': 2, 'mar': 2,
-        'april': 3, 'apr': 3,
-        'may': 4,
-        'june': 5, 'jun': 5,
-        'july': 6, 'jul': 6,
-        'august': 7, 'aug': 7,
-        'september': 8, 'sep': 8, 'sept': 8,
-        'october': 9, 'oct': 9,
-        'november': 10, 'nov': 10,
-        'december': 11, 'dec': 11
-      };
-
-      // Detect "tomorrow"
-      if (/\btomorrow\b/.test(text)) {
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        when.date = formatDateLocal(d);
-      }
-      // Detect "today"
-      else if (/\btoday\b/.test(text)) {
-        when.date = todayISO();
-      }
-      // Detect "next [day]"
-      else if (/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
-        const match = text.match(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
-        const dayIndex = dayNames[match[1]];
-        const targetDate = getNextDayOfWeek(dayIndex);
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect "this [day]"
-      else if (/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
-        const match = text.match(/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
-        const dayIndex = dayNames[match[1]];
-        const targetDate = getThisDayOfWeek(dayIndex);
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect standalone day names (assume next occurrence)
-      else if (/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)) {
-        const match = text.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/);
-        const dayIndex = dayNames[match[1]];
-        const targetDate = getNextDayOfWeek(dayIndex);
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect "in X days"
-      else if (/\bin\s+(\d+)\s+days?\b/.test(text)) {
-        const match = text.match(/\bin\s+(\d+)\s+days?\b/);
-        const days = parseInt(match[1], 10);
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + days);
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect "this weekend" (assume Saturday)
-      else if (/\bthis\s+weekend\b/.test(text)) {
-        const targetDate = getThisDayOfWeek(6); // Saturday
-        when.date = formatDateLocal(targetDate);
-      }
-      else if (/\bnext\s+weekend\b/.test(text)) {
-        const targetDate = getNextDayOfWeek(6); // Saturday
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect "next week"
-      else if (/\bnext\s+week\b/.test(text)) {
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + 7);
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect specific dates like "september 15" or "sep 15"
-      else if (/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(st|nd|rd|th)?\b/.test(text)) {
-        const match = text.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(st|nd|rd|th)?\b/);
-        const monthIndex = monthNames[match[1]];
-        const day = parseInt(match[2], 10);
-        const targetDate = new Date();
-        targetDate.setMonth(monthIndex, day);
-        // If the date has passed this year, assume next year
-        if (targetDate < new Date()) {
-          targetDate.setFullYear(targetDate.getFullYear() + 1);
-        }
-        when.date = formatDateLocal(targetDate);
-      }
-      // Detect date formats like "15/09" or "09/15" or "15/09/2025"
-      else if (/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/.test(text)) {
-        const match = text.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
-        const first = parseInt(match[1], 10);
-        const second = parseInt(match[2], 10);
-        let year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
-
-        // Handle 2-digit years
-        if (year < 100) {
-          year += year < 50 ? 2000 : 1900;
-        }
-
-        // Assume DD/MM format (common in AU)
-        if (first <= 12 && second <= 12) {
-          // If both could be month or day, prefer DD/MM format
-          const targetDate = new Date(year, second - 1, first);
-          when.date = formatDateLocal(targetDate);
-        } else if (first <= 31 && second <= 12) {
-          // DD/MM format
-          const targetDate = new Date(year, second - 1, first);
-          when.date = formatDateLocal(targetDate);
-        } else if (first <= 12 && second <= 31) {
-          // MM/DD format
-          const targetDate = new Date(year, first - 1, second);
-          when.date = formatDateLocal(targetDate);
-        }
-      }
-
-      // hh:mm (24h)
-      let m = text.match(/\b(\d{1,2}):(\d{2})\b/);
-      if (m) {
-        const hh = String(parseInt(m[1], 10)).padStart(2, '0');
-        const mm = String(parseInt(m[2], 10)).padStart(2, '0');
-        when.time = `${hh}:${mm}`;
-        return when;
-      }
-
-      // h am/pm
-      m = text.match(/\b(\d{1,2})\s*(am|pm)\b/);
-      if (m) {
-        let h = parseInt(m[1], 10) % 12;
-        if (m[2] == 'pm') h += 12;
-        when.time = `${String(h).padStart(2, '0')}:00`;
-        return when;
-      }
-
-      // compact 3–4 digit time like "630" or "0930"
-      m = text.match(/\b(\d{3,4})\b/);
-      if (m) {
-        const digits = m[1];
-        let hh, mm;
-        if (digits.length == 3) {
-          hh = '0' + digits[0];
-          mm = digits.slice(1);
-        } else {
-          hh = digits.slice(0, 2);
-          mm = digits.slice(2);
-        }
-        hh = String(parseInt(hh, 10)).padStart(2, '0');
-        mm = String(parseInt(mm, 10)).padStart(2, '0');
-        when.time = `${hh}:${mm}`;
-      }
-
-      return when;
-    }
-
-
-    function isoToLocalDate(iso){
-      try {
-        const d = new Date(iso);
-        const parts = datePartsFmt.formatToParts(d);
-        const y = parts.find(p=>p.type==='year')?.value || '0000';
-        const m = parts.find(p=>p.type==='month')?.value || '01';
-        const da = parts.find(p=>p.type==='day')?.value || '01';
-        return `${y}-${m}-${da}`;
-      } catch { return ''; }
-    }
-    function isoToLocalTime(iso){
-      try {
-        const d = new Date(iso);
-        const parts = timePartsFmt.formatToParts(d);
-        const h = parts.find(p=>p.type==='hour')?.value?.padStart(2,'0') || '00';
-        const m = parts.find(p=>p.type==='minute')?.value?.padStart(2,'0') || '00';
-        return `${h}:${m}`;
-      } catch { return ''; }
-    }
-
-    function resetForm(){
-      title.value = ''; date.value = ''; time.value=''; priority.value='Medium';
-      editingId = null;
-      saveBtn.textContent = 'Save Reminder';
-      cancelEditBtn.classList.add('hidden');
-    }
-
-    function loadForEdit(id){
-      const it = items.find(x => x.id === id);
-      if (!it) return;
-      title.value = it.title || '';
-      if (it.due){
-        date.value = isoToLocalDate(it.due);
-        time.value = isoToLocalTime(it.due);
-      } else {
-        date.value = ''; time.value = '';
-      }
-      priority.value = it.priority || 'Medium';
-      editingId = id;
-      saveBtn.textContent = 'Update Reminder';
-      cancelEditBtn.classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      title.focus();
-    }
-
-    // Create & basic actions
-    function addItem(obj){
-      if (!userId) { toast('Sign in to add reminders'); return; }
-      const nowMs = Date.now();
-      const item = {
-        id: uid(), title: obj.title.trim(), priority: obj.priority || 'Medium', notes: obj.notes || '', done: false,
-        createdAt: nowMs, updatedAt: nowMs, due: obj.due || null
-      };
-      items = [item, ...items]; render(); saveToFirebase(item);
-      tryCalendarSync(item);
-      scheduleReminder(item);
-      return item;
-    }
-    function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); if(it.done) cancelReminder(id); else scheduleReminder(it); }
-    function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); cancelReminder(id); }
-
-    // Reminder scheduling
-    function saveScheduled(){ localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders)); }
-    function cancelReminder(id){ if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; } if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); } }
-    function showReminder(item){ try{ new Notification(item.title, { body: 'Due now', tag: item.id }); }catch{} }
-    function scheduleReminder(item){
-      if(!item || !item.id) return;
-      if(!item.due || item.done){ cancelReminder(item.id); return; }
-      // store for persistence
-      scheduledReminders[item.id] = { id: item.id, title: item.title, due: item.due };
-      saveScheduled();
-      // clear existing timer
-      if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
-      if(!('Notification' in window) || Notification.permission !== 'granted'){ return; }
-      const delay = new Date(item.due).getTime() - Date.now();
-      if(delay <= 0){ showReminder(item); cancelReminder(item.id); return; }
-      reminderTimers[item.id] = setTimeout(() => { showReminder(item); cancelReminder(item.id); }, delay);
-    }
-    function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it => scheduleReminder(it)); }
-
-    // Rendering
-    function render(){
-      // Update inline counters first
-      const now = new Date();
-      const adlNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
-      const t0 = new Date(adlNow); t0.setHours(0,0,0,0);
-      const t1 = new Date(adlNow); t1.setHours(23,59,59,999);
-      const w0 = startOfWeek(adlNow);
-      const w1 = endOfWeek(adlNow);
-      const todays = items.filter(x => x.due && new Date(x.due) >= t0 && new Date(x.due) <= t1 && !x.done);
-      const weeks  = items.filter(x => x.due && new Date(x.due) >= w0 && new Date(x.due) <= w1 && !x.done);
-      inlineTodayCount.textContent = String(todays.length);
-      inlineWeekCount.textContent = String(weeks.length);
-
-      // Now render list
-      const queryStr = q.value.trim().toLowerCase();
-      let rows = items.slice();
-      if (queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr)); }
-      rows = rows.filter(r => {
-        if (filter==='done') return r.done;
-        if (filter==='overdue') return !r.done && r.due && new Date(r.due) < adlNow;
-        if (filter==='today'){
-          if (!r.due) return true;
-          const dueAdl = new Date(new Date(r.due).toLocaleString('en-US', { timeZone: TZ }));
-          return dueAdl >= t0 && dueAdl <= t1;
-        }
-        return true;
-      });
-
-      rows.sort((a,b)=>{
-        if (sortKey==='time') return (+new Date(a.due||0)) - (+new Date(b.due||0));
-        if (sortKey==='priority') return priorityWeight(b.priority) - priorityWeight(a.priority);
-        return smartCompare(a,b);
-      });
-      $$('button[data-filter]').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-filter')===filter));
-      const frag = document.createDocumentFragment();
-      if (rows.length===0){ list.innerHTML = '<div class="text-muted">No reminders found.</div>'; return; }
-      list.replaceChildren();
-      rows.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'task-item' + (r.done ? ' completed' : '');
-        const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-        const priorityClass = `priority-${r.priority.toLowerCase()}`;
-        div.innerHTML = `
-          <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
-          <div class="task-content">
-            <div class="task-title">${escapeHtml(r.title)}</div>
-            <div class="task-meta">
-              <div class="task-meta-row">
-                <span>${dueTxt}</span>
-                <span class="priority-badge ${priorityClass}">${r.priority}</span>
-              </div>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn-ghost" data-edit type="button">Edit</button>
-            <button class="btn-ghost" data-del type="button">Del</button>
-          </div>`;
-        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-        div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
-        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
-        frag.appendChild(div);
-      });
-      list.appendChild(frag);
-    }
-
-    // Menu toggle
-    function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
-    function openMenu(){ moreBtn?.setAttribute('aria-expanded','true'); moreMenu?.classList.remove('hidden'); }
-    moreBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); const open = moreBtn.getAttribute('aria-expanded')==='true';open ? closeMenu() : openMenu(); });
-    document.addEventListener('click', (e)=>{ if (!moreMenu?.classList.contains('hidden')) { if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu(); } });
-    document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
-
-    // Settings toggle + force hidden on load + Esc hides
-    openSettings.addEventListener('click', () => {
-      const willShow = settingsSection.classList.contains('hidden');
-      settingsSection.classList.toggle('hidden');
-      if (willShow) { settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      closeMenu();
-    });
-    document.addEventListener('DOMContentLoaded', () => { settingsSection.classList.add('hidden'); });
-
-    // Save/create or update
-    saveBtn.addEventListener('click', () => {
-      // Create new OR update existing depending on editingId
-      if (editingId) {
-        const it = items.find(x=>x.id===editingId);
-        if (!it) { resetForm(); return; }
-        const tNew = title.value.trim(); if (!tNew) { toast('Add a reminder title'); return; }
-        let due = null;
-        if (date.value || time.value) {
-          const d = (date.value || todayISO()); const tm = (time.value || '09:00');
-          due = localDateTimeToISO(d, tm);
-        } else {
-          const p = parseQuickWhen(tNew); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
-        }
-        it.title = tNew; it.priority = priority.value; it.due = due; it.updatedAt = Date.now();
-        saveToFirebase(it); tryCalendarSync(it); render(); scheduleReminder(it); resetForm(); toast('Reminder updated');
-        return;
-      }
-
-      const t = title.value.trim(); if (!t) { toast('Add a reminder title'); return; }
-      let due = null;
-      if (date.value || time.value) { const d = (date.value || todayISO()); const tm = (time.value || '09:00'); due = localDateTimeToISO(d, tm); }
-      else { const p = parseQuickWhen(t); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-      addItem({ title: t, priority: priority.value, due });
-      title.value = ''; time.value = '';
-    });
-    title.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
-
-    // Add real-time date feedback
-    function updateDateFeedback() {
-      const text = title.value.trim();
-      if (!text) {
-        dateFeedback.style.display = 'none';
-        return;
-      }
-
-      try {
-        const parsed = parseQuickWhen(text);
-        const today = todayISO();
-
-        if (parsed.date !== today || parsed.time) {
-          let feedback = '';
-
-          if (parsed.date !== today) {
-            const dateObj = new Date(parsed.date + 'T00:00:00');
-            feedback += `📅 ${fmtDayDate(parsed.date)}`;
-          }
-
-          if (parsed.time) {
-            feedback += `${feedback ? ' ' : ''}🕐 ${parsed.time}`;
-          }
-
-          if (feedback) {
-            dateFeedback.textContent = `Parsed: ${feedback}`;
-            dateFeedback.style.display = 'block';
-          } else {
-            dateFeedback.style.display = 'none';
-          }
-        } else {
-          dateFeedback.style.display = 'none';
-        }
-      } catch (e) {
-        dateFeedback.style.display = 'none';
-      }
-    }
-
-    title.addEventListener('input', debounce(updateDateFeedback, 300));
-    cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); });
-    window.addEventListener('load', ()=> title.focus());
-    addQuickBtn.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
-    q.addEventListener('input', debounce(render, 150));
-    sortSel.addEventListener('change', () => { sortKey = sortSel.value; render(); });
-    $$('button[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.getAttribute('data-filter'); render(); }));
-
-    copyMtlBtn.addEventListener('click', () => {
-      const lines = items.filter(x => !x.done).map(x => {
-        const datePart = x.due ? fmtDayDate(x.due.slice(0, 10)) : '';
-        const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
-        const pieces = [ 'mtl ' + x.title, x.due ? `Due Date: ${datePart}` : '', x.due ? `Time: ${timePart}` : '', `Status: Not started` ].filter(Boolean);
-        return pieces.join('\n');
-      });
-      if (lines.length === 0) { toast('No active tasks to copy'); return; }
-      navigator.clipboard.writeText(lines.join('\n\n')).then(() => toast('Copied for Master Task List')).catch(() => toast('Copy failed'));
-      closeMenu();
-    });
-    importFile.addEventListener('change', () => {
-      const f = importFile.files[0]; if (!f) return;
-      const rd = new FileReader();
-      rd.onload = () => {
-        try {
-          const importedItems = JSON.parse(String(rd.result) || '[]').slice(0, 500);
-          importedItems.forEach(item => { item.id = (Math.random().toString(36).slice(2)+Date.now().toString(36)); items = [item, ...items]; saveToFirebase(item); });
-          render(); toast('Import successful');
-        } catch { toast('Invalid JSON'); }
-      };
-      rd.readAsText(f); importFile.value = '';
-      closeMenu();
-    });
-    exportBtn.addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url);
-      closeMenu();
-    });
-
-    // Sync All Now -> POST everything in batches
-    syncAllBtn?.addEventListener('click', async () => {
-      const url = (localStorage.getItem('syncUrl') || '').trim();
-      if (!url) { toast('Add your Apps Script URL in Settings first'); closeMenu(); return; }
-      if (!items.length) { toast('No tasks to sync'); closeMenu(); return; }
-
-      toast('Syncing all tasks…');
-      const chunkSize = 20;
-      let fail = 0;
-      for (let i = 0; i < items.length; i += chunkSize) {
-        const chunk = items.slice(i, i + chunkSize);
-        const results = await Promise.allSettled(chunk.map(task => {
-          const payload = {
-            id: task.id,
-            title: task.title,
-            dueIso: task.due || null,
-            priority: task.priority || 'Medium',
-            done: !!task.done,
-            source: 'memory-cue-mobile'
-          };
-          return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        }));
-        fail += results.filter(r => r.status === 'rejected').length;
-        await new Promise(res => setTimeout(res, 400));
-      }
-      toast(`Sync complete: ${items.length - fail} ok${fail ? `, ${fail} failed` : ''}`);
-      closeMenu();
-    });
-
-    // Voice + Notifications
-    try {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SR) {
-        recog = new SR();
-        recog.lang = 'en-AU';
-        recog.interimResults = false;
-        recog.onresult = (e) => { const t = e.results[0][0].transcript || ''; title.value = t; toast('Heard: ' + t); };
-        recog.onend = () => { listening = false; voiceBtn.textContent = '🎙️'; };
-      }
-    } catch {}
-    voiceBtn.addEventListener('click', () => {
-      if (!recog) return;
-      if (!listening) { try { recog.start(); listening = true; voiceBtn.textContent = '👂'; } catch {} }
-      else { try { recog.stop(); } catch {} listening = false; voiceBtn.textContent = '🎙️'; }
-    });
-    notifBtn.addEventListener('click', async () => {
-      if (!('Notification' in window)) { toast('Notifications not supported'); return; }
-      if (Notification.permission === 'granted') { toast('Notifications enabled'); return; }
-      const perm = await Notification.requestPermission(); toast(perm === 'granted' ? 'Notifications enabled' : 'Notifications blocked');
-    });
-
-    // PWA scaffold
-    (function setupPWA(){
-      const manifest = { name:'Memory Cue', short_name:'MemoryCue', start_url:'.', display:'standalone', background_color:'#0b1220', theme_color:'#0b1220' };
-      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      document.getElementById('manifestLink').setAttribute('href', url);
-      if ('serviceWorker' in navigator) {
-        const swCode = `self.addEventListener('install', e=>self.skipWaiting()); self.addEventListener('activate', e=>self.clients.claim());`;
-        const swBlob = new Blob([swCode], { type: 'text/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
-        navigator.serviceWorker.register(swUrl).catch(()=>{});
-      }
-    })();
-
-    // Initial render
-    rescheduleAllReminders();
-    render();
   </script>
 </body>
 </html>

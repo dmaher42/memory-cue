@@ -68,11 +68,49 @@
       </section>
     </section>
     <section data-view="reminders" id="view-reminders" hidden>
-      <form id="add-reminder-form" class="mb-4 flex gap-2">
-        <input name="reminder" class="border p-2 flex-1" placeholder="New reminder" />
-        <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded">Add</button>
-      </form>
-      <ul id="reminders-list" class="list-disc pl-5"></ul>
+      <div class="mb-4 space-y-2">
+        <input id="title" class="border p-2 w-full" placeholder="Reminder title" />
+        <div id="dateFeedback" class="text-sm text-slate-500 hidden"></div>
+        <div class="flex gap-2">
+          <input id="date" type="date" class="border p-2 flex-1" />
+          <input id="time" type="time" class="border p-2 flex-1" />
+          <select id="priority" class="border p-2">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button id="saveBtn" class="px-4 py-2 bg-brand-600 text-white rounded flex-1" type="button">Save Reminder</button>
+          <button id="cancelEditBtn" class="px-4 py-2 bg-red-500 text-white rounded flex-1 hidden" type="button">Cancel</button>
+        </div>
+        <div id="status" class="text-sm"></div>
+      </div>
+      <div class="mb-4 flex gap-2 flex-wrap items-center">
+        <div class="flex gap-2">
+          <button class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" data-filter="today" type="button">Today</button>
+          <button class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" data-filter="overdue" type="button">Overdue</button>
+          <button class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" data-filter="all" type="button">All</button>
+          <button class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" data-filter="done" type="button">Done</button>
+        </div>
+        <select id="sort" class="border p-1 ml-auto">
+          <option value="smart">Smart sort</option>
+          <option value="time">Time</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
+      <div class="flex gap-4 mb-4">
+        <div>Today: <span id="inlineTodayCount">0</span></div>
+        <div>This Week: <span id="inlineWeekCount">0</span></div>
+      </div>
+      <div class="mb-4 space-x-2">
+        <button id="googleSignInBtn" class="px-2 py-1 bg-purple-600 text-white rounded" type="button">Sign in with Google</button>
+        <button id="googleSignOutBtn" class="px-2 py-1 bg-red-500 text-white rounded hidden" type="button">Sign out</button>
+        <img id="googleAvatar" class="w-6 h-6 rounded-full hidden" alt="Google avatar" />
+        <span id="googleUserName" class="text-sm"></span>
+        <div id="syncStatus" class="text-sm">Offline</div>
+      </div>
+      <div id="list" class="space-y-2"></div>
     </section>
     <section data-view="planner" id="view-planner" hidden>
       <div class="flex gap-2 mb-4">
@@ -103,12 +141,31 @@
     // Set current year
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
-  <!-- Firebase (example v10) -->
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script defer src="/memory-cue/js/firebase-init.js"></script>
-  <script type="module" src="/memory-cue/js/main.js" defer></script>
+  <!-- Firebase SDKs (compat versions for existing logic) -->
+  <script defer src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js"></script>
+  <!-- Reminder logic -->
+  <script type="module">
+    import { initReminders } from './js/reminders.js';
+    initReminders({
+      titleSel: '#title',
+      dateSel: '#date',
+      timeSel: '#time',
+      prioritySel: '#priority',
+      saveBtnSel: '#saveBtn',
+      cancelEditBtnSel: '#cancelEditBtn',
+      listSel: '#list',
+      googleSignInBtnSel: '#googleSignInBtn',
+      googleSignOutBtnSel: '#googleSignOutBtn',
+      statusSel: '#status',
+      syncStatusSel: '#syncStatus',
+      filterBtnsSel: '[data-filter]',
+      sortSel: '#sort',
+      countTodaySel: '#inlineTodayCount',
+      countWeekSel: '#inlineWeekCount'
+    });
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       const basePath = window.location.pathname.endsWith('/')
