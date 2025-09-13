@@ -324,6 +324,11 @@ z-index:100;box-shadow:var(--shadow-sm)}
     // ---- Edit state ----
     let editingId = null;
 
+    // Reminder scheduling state
+    const reminderTimers = {};
+    let scheduledReminders = {};
+    try { scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}'); } catch { scheduledReminders = {}; }
+
     const TZ = 'Australia/Adelaide';
     const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour:'2-digit', minute:'2-digit' });
     const dayFmt  = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday:'long', day:'numeric', month:'long' });
@@ -748,10 +753,30 @@ z-index:100;box-shadow:var(--shadow-sm)}
       };
       items = [item, ...items]; render(); saveToFirebase(item);
       tryCalendarSync(item);
+      scheduleReminder(item);
       return item;
     }
-    function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); }
-    function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); }
+    function toggleDone(id){ const it = items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); if(it.done) cancelReminder(id); else scheduleReminder(it); }
+    function removeItem(id){ items = items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); cancelReminder(id); }
+
+    // Reminder scheduling
+    function saveScheduled(){ localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders)); }
+    function cancelReminder(id){ if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; } if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); } }
+    function showReminder(item){ try{ new Notification(item.title, { body: 'Due now', tag: item.id }); }catch{} }
+    function scheduleReminder(item){
+      if(!item || !item.id) return;
+      if(!item.due || item.done){ cancelReminder(item.id); return; }
+      // store for persistence
+      scheduledReminders[item.id] = { id: item.id, title: item.title, due: item.due };
+      saveScheduled();
+      // clear existing timer
+      if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
+      if(!('Notification' in window) || Notification.permission !== 'granted'){ return; }
+      const delay = new Date(item.due).getTime() - Date.now();
+      if(delay <= 0){ showReminder(item); cancelReminder(item.id); return; }
+      reminderTimers[item.id] = setTimeout(() => { showReminder(item); cancelReminder(item.id); }, delay);
+    }
+    function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it => scheduleReminder(it)); }
 
     // Rendering
     function render(){
@@ -850,7 +875,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
           const p = parseQuickWhen(tNew); if (p.time) { due = new Date(`${p.date}T${p.time}:00`).toISOString(); }
         }
         it.title = tNew; it.priority = priority.value; it.due = due; it.updatedAt = Date.now();
-        saveToFirebase(it); tryCalendarSync(it); render(); resetForm(); toast('Reminder updated');
+        saveToFirebase(it); tryCalendarSync(it); render(); scheduleReminder(it); resetForm(); toast('Reminder updated');
         return;
       }
 
@@ -1005,6 +1030,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
     })();
 
     // Initial render
+    rescheduleAllReminders();
     render();
   </script>
 </body>
