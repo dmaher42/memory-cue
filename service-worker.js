@@ -13,9 +13,9 @@
 
 'use strict';
 
-const APP_PATH = '/memory-cue/'; // <-- PATH: adjust if your project builds to a different subpath
+const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
 const CACHE_PREFIX = 'mc-static-';
-const CACHE_VERSION = 'v2025-09-12-a'; // bump this to force clients to update
+const CACHE_VERSION = 'v9'; // bump this to force clients to update
 const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const SHELL_URLS = [
@@ -34,7 +34,10 @@ const STATIC_EXTS = [
 
 // Domains we never want to intercept (bypass to network)
 const BYPASS_HOSTS = new Set([
-  'script.google.com', // Apps Script endpoint
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
+  'www.gstatic.com',
+  'script.google.com'
 ]);
 
 self.addEventListener('install', (event) => {
