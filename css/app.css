@@ -1,6 +1,13 @@
 /* Minimal Tailwind build (dependencies unavailable in this environment) */
+:root{--red:#ef4444;--orange:#f97316;--purple:#8b5cf6;--purple-hover:#7c3aed;--warning-hover:#ea580c;--danger-hover:#dc2626;--success-light:rgba(34,197,94,.1);--warning-light:rgba(249,115,22,.1);--danger-light:rgba(239,68,68,.1);--purple-light:rgba(139,92,246,.1)}
 .pt-safe-top{padding-top:env(safe-area-inset-top)}
 .hidden{display:none}
+.bg-red-500{--tw-bg-opacity:1;background-color:var(--red)}
+.text-red-500{--tw-text-opacity:1;color:var(--red)}
+.bg-orange-500{--tw-bg-opacity:1;background-color:var(--orange)}
+.text-orange-500{--tw-text-opacity:1;color:var(--orange)}
+.bg-purple-500{--tw-bg-opacity:1;background-color:var(--purple)}
+.text-purple-500{--tw-text-opacity:1;color:var(--purple)}
 .bg-brand-50{--tw-bg-opacity:1;background-color:#ecfdf5}
 .bg-brand-100{--tw-bg-opacity:1;background-color:#d1fae5}
 .bg-brand-200{--tw-bg-opacity:1;background-color:#a7f3d0}
