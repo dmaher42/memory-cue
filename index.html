@@ -4,20 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Memory Cue — Teacher One-Stop Shop Organiser</title>
-  <meta name="theme-color" content="#2563EB">
+  <meta name="theme-color" content="#10b981" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://www.gstatic.com">
   <!-- Tailwind v4 (Play CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
     html { scroll-behavior: smooth; }
+    /* Your existing Tailwind / other styles here */
+    .hidden { display: none; }
+    /* Safe area helper used by header (Tailwind doesn't ship this) */
+    .pt-safe-top { padding-top: env(safe-area-inset-top); }
   </style>
 </head>
 <body id="top" class="bg-[var(--surface)] text-[var(--text)] antialiased leading-7">
   <style>
     :root{
-      --brand: #2563EB;
-      --accent: #F97316;
+      --brand: #10b981;
+      --accent: #0ea5e9;
       --surface: #F8FAFC;
       --text: #1F2937;
     }
