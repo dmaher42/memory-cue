@@ -50,11 +50,11 @@ auth.onAuthStateChanged((user) => {
 // Theme toggle
 const themeToggle = document.getElementById('theme-toggle');
 function setTheme(t){
-  document.documentElement.dataset.theme = t;
+  document.documentElement.classList.toggle('dark', t === 'dark');
   localStorage.setItem('theme', t);
 }
 function toggleTheme(){
-  const current = document.documentElement.dataset.theme || 'light';
+  const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   setTheme(current === 'dark' ? 'light' : 'dark');
 }
 themeToggle?.addEventListener('click', toggleTheme);
