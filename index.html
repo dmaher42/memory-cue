@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Memory Cue — complementary blue & orange</title>
-  <meta name="color-scheme" content="light">
+  <title>Memory Cue — Teacher One-Stop Shop Organiser</title>
   <meta name="theme-color" content="#2563EB">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://www.gstatic.com">
@@ -17,22 +16,19 @@
 <body id="top" class="bg-[var(--surface)] text-[var(--text)] antialiased leading-7">
   <style>
     :root{
-      --brand: #2563EB;     /* Dominant (blue) */
-      --accent: #F97316;    /* Complementary (orange) */
-      --surface: #F8FAFC;   /* Light background */
-      --text: #1F2937;      /* Slate 800 */
-      /* 60-30-10: swap --accent for triadic schemes later */
+      --brand: #2563EB;
+      --accent: #F97316;
+      --surface: #F8FAFC;
+      --text: #1F2937;
     }
   </style>
-  <!-- #1F2937 on #F8FAFC ≈ 14.03:1 → AAA -->
   <main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Hero -->
     <section class="pt-24 pb-16 text-center">
       <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">Memory Cue</h1>
-      <p class="mt-4 text-lg text-slate-700">Plan, remember, and stay on track.</p>
+      <p class="mt-4 text-lg text-slate-700">All your classroom tools in one place.</p>
       <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-        <a href="#" class="inline-flex items-center justify-center rounded-xl bg-[var(--brand)] text-white px-6 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] transition-opacity motion-safe:duration-200 motion-safe:hover:opacity-90">Get started</a><!-- #FFFFFF on #2563EB ≈ 5.17:1 → AA -->
-        <a href="#color-system" aria-label="Explore color system" class="inline-flex items-center justify-center rounded-xl ring-1 ring-[var(--brand)] text-[var(--brand)] px-6 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] transition-opacity motion-safe:duration-200 motion-safe:hover:opacity-90">Explore color system</a>
+        <a href="#" class="inline-flex items-center justify-center rounded-xl bg-[var(--brand)] text-white px-6 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] transition-opacity motion-safe:duration-200 motion-safe:hover:opacity-90">Get started</a>
       </div>
     </section>
 
@@ -61,37 +57,6 @@
       </div>
     </section>
 
-    <!-- Color System -->
-    <section id="color-system" aria-labelledby="color-heading" class="py-16 border-t border-slate-200">
-      <h2 id="color-heading" class="text-2xl font-semibold text-center">Color system</h2>
-      <p class="mt-4 text-center text-slate-700">A complementary pairing of calm blue and energizing orange. Apply the 60-30-10 rule: 60% brand, 30% surfaces & text, 10% accent.</p>
-      <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
-        <!-- Primary -->
-        <div class="p-8 rounded-xl bg-white shadow flex flex-col items-center">
-          <div class="w-full h-24 rounded-md bg-[var(--brand)]"></div>
-          <h3 class="mt-4 font-medium">Primary</h3>
-          <p class="mt-2 text-sm text-center text-slate-700">CTAs and key highlights.</p>
-          <span class="mt-2 text-xs text-slate-500">#2563EB</span>
-          <span class="mt-2 inline-block bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-xs">AA</span><!-- #FFFFFF on #2563EB ≈ 5.17:1 → AA -->
-        </div>
-        <!-- Surface -->
-        <div class="p-8 rounded-xl bg-white shadow flex flex-col items-center">
-          <div class="w-full h-24 rounded-md bg-[var(--surface)] border border-slate-200"></div>
-          <h3 class="mt-4 font-medium">Surface</h3>
-          <p class="mt-2 text-sm text-center text-slate-700">Backgrounds and containers.</p>
-          <span class="mt-2 text-xs text-slate-500">#F8FAFC</span>
-          <span class="mt-2 inline-block bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-xs">AAA</span><!-- #1F2937 on #F8FAFC ≈ 14.03:1 → AAA -->
-        </div>
-        <!-- Accent -->
-        <div class="p-8 rounded-xl bg-white shadow flex flex-col items-center">
-          <div class="w-full h-24 rounded-md bg-[var(--accent)]"></div>
-          <h3 class="mt-4 font-medium">Accent</h3>
-          <p class="mt-2 text-sm text-center text-slate-700">Alerts or special calls to action.</p>
-          <span class="mt-2 text-xs text-slate-500">#F97316</span>
-          <span class="mt-2 inline-block bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-xs">AA</span><!-- #1F2937 on #F97316 ≈ 5.24:1 → AA -->
-        </div>
-      </div>
-    </section>
   </main>
   <footer class="border-t border-slate-200 py-8 mt-16">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-sm">
