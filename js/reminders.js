@@ -1,8 +1,4 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-import { initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-
-export function initReminders(sel = {}) {
+export async function initReminders(sel = {}) {
   const $ = (s) => (s ? document.querySelector(s) : null);
   const $$ = (s) => (s ? Array.from(document.querySelectorAll(s)) : []);
 
@@ -44,43 +40,99 @@ export function initReminders(sel = {}) {
   const openSettings = $(sel.openSettingsSel);
   const settingsSection = $(sel.settingsSectionSel);
 
-  // Firebase
-  const firebaseConfig = {
-    apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-    authDomain: 'memory-cue-app.firebaseapp.com',
-    projectId: 'memory-cue-app',
-    storageBucket: 'memory-cue-app.firebasestorage.app',
-    messagingSenderId: '751284466633',
-    appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-    measurementId: 'G-R0V4M7VCE6'
-  };
-  const app = initializeApp(firebaseConfig);
-  let db;
-  try {
-    db = initializeFirestore(app, { cache: persistentLocalCache() });
-  } catch (err) {
-    console.warn('Firestore persistence not enabled:', err?.code || err);
-    db = getFirestore(app);
-  }
-  const auth = getAuth(app);
+   // Placeholder for Firebase modules loaded later
+   let initializeApp, initializeFirestore, getFirestore, doc, setDoc, deleteDoc,
+     onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp,
+     getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+     signInWithRedirect, getRedirectResult, signOut;
 
-  // State
-  let items = [];
-  let filter = 'today';
-  let sortKey = 'smart';
-  let listening = false;
-  let recog = null;
-  let userId = null;
-  let unsubscribe = null;
-  let editingId = null;
-  const reminderTimers = {};
-  let scheduledReminders = {};
-  let notesMemory = '';
-  try {
-    scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
-  } catch {
-    scheduledReminders = {};
-  }
+   // Notes (runs before Firebase modules load)
+   function initNotebook() {
+     let notesMemory = '';
+     if (notesEl) {
+       try {
+         notesMemory = localStorage.getItem('mobileNotes') || '';
+       } catch {
+         toast('Unable to access saved notes');
+       }
+       notesEl.value = notesMemory;
+       notesEl.addEventListener('input', () => {
+         notesMemory = notesEl.value;
+         try {
+           localStorage.setItem('mobileNotes', notesMemory);
+         } catch {
+           toast('Notes saved for this session only');
+         }
+       });
+       saveNotesBtn?.addEventListener('click', () => {
+         notesMemory = notesEl.value;
+         try {
+           localStorage.setItem('mobileNotes', notesMemory);
+           toast('Notes saved');
+         } catch {
+           toast('Notes saved for this session only');
+         }
+       });
+       loadNotesBtn?.addEventListener('click', () => {
+         try {
+           notesMemory = localStorage.getItem('mobileNotes') || notesMemory;
+           notesEl.value = notesMemory;
+           toast('Notes loaded');
+         } catch {
+           notesEl.value = notesMemory;
+           toast('Unable to load saved notes');
+         }
+       });
+     }
+   }
+   initNotebook();
+
+   try {
+     ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
+     ({ initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+     ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
+   } catch (err) {
+     console.warn('Firebase modules failed to load:', err);
+     toast('Firebase failed to load; notes available offline');
+     return;
+   }
+
+   // Firebase
+   const firebaseConfig = {
+     apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
+     authDomain: 'memory-cue-app.firebaseapp.com',
+     projectId: 'memory-cue-app',
+     storageBucket: 'memory-cue-app.firebasestorage.app',
+     messagingSenderId: '751284466633',
+     appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
+     measurementId: 'G-R0V4M7VCE6'
+   };
+   const app = initializeApp(firebaseConfig);
+   let db;
+   try {
+     db = initializeFirestore(app, { cache: persistentLocalCache() });
+   } catch (err) {
+     console.warn('Firestore persistence not enabled:', err?.code || err);
+     db = getFirestore(app);
+   }
+   const auth = getAuth(app);
+
+   // State
+   let items = [];
+   let filter = 'today';
+   let sortKey = 'smart';
+   let listening = false;
+   let recog = null;
+   let userId = null;
+   let unsubscribe = null;
+   let editingId = null;
+   const reminderTimers = {};
+   let scheduledReminders = {};
+   try {
+     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
+   } catch {
+     scheduledReminders = {};
+   }
 
   // Formatting helpers
   const TZ = 'Australia/Adelaide';
@@ -171,43 +223,6 @@ export function initReminders(sel = {}) {
       when.time=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     }
     return when;
-  }
-
-  // Notes
-  if(notesEl){
-    try {
-      notesMemory = localStorage.getItem('mobileNotes') || '';
-    } catch {
-      toast('Unable to access saved notes');
-    }
-    notesEl.value = notesMemory;
-    notesEl.addEventListener('input', () => {
-      notesMemory = notesEl.value;
-      try {
-        localStorage.setItem('mobileNotes', notesMemory);
-      } catch {
-        toast('Notes saved for this session only');
-      }
-    });
-    saveNotesBtn?.addEventListener('click', () => {
-      notesMemory = notesEl.value;
-      try {
-        localStorage.setItem('mobileNotes', notesMemory);
-        toast('Notes saved');
-      } catch {
-        toast('Notes saved for this session only');
-      }
-    });
-    loadNotesBtn?.addEventListener('click', () => {
-      try {
-        notesMemory = localStorage.getItem('mobileNotes') || notesMemory;
-        notesEl.value = notesMemory;
-        toast('Notes loaded');
-      } catch {
-        notesEl.value = notesMemory;
-        toast('Unable to load saved notes');
-      }
-    });
   }
 
   // Auth
