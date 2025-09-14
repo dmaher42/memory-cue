@@ -22,30 +22,33 @@ window.addEventListener('hashchange', () => {
 show((location.hash || '#dashboard').slice(1));
 
 // Firebase auth
-const auth = firebase.auth();
 const signInBtn = document.getElementById('sign-in-btn');
 const signOutBtn = document.getElementById('sign-out-btn');
 
-signInBtn?.addEventListener('click', async () => {
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-  } catch (err) {
-    alert(err.message);
-  }
-});
+if (typeof firebase !== 'undefined' && firebase.auth) {
+  const auth = firebase.auth();
 
-signOutBtn?.addEventListener('click', () => auth.signOut());
+  signInBtn?.addEventListener('click', async () => {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
+    } catch (err) {
+      alert(err.message);
+    }
+  });
 
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    signInBtn.hidden = true;
-    signOutBtn.hidden = false;
-  } else {
-    signInBtn.hidden = false;
-    signOutBtn.hidden = true;
-  }
-});
+  signOutBtn?.addEventListener('click', () => auth.signOut());
+
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      signInBtn.hidden = true;
+      signOutBtn.hidden = false;
+    } else {
+      signInBtn.hidden = false;
+      signOutBtn.hidden = true;
+    }
+  });
+}
 
 // Theme toggle
 const themeToggle = document.getElementById('theme-toggle');
