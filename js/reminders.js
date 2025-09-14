@@ -1,3 +1,17 @@
+// Shared reminder logic used by both the mobile and desktop pages.
+// This module wires up Firebase/Firestore and all reminder UI handlers.
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+import { initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
+/**
+ * Initialise the reminders UI and sync logic.
+ * Pass in selectors for the elements the module should control.
+ * Any selector can be omitted if the corresponding feature is not needed.
+ *
+ * @param {Object} sel - Map of selector strings for DOM elements.
+ */
 export async function initReminders(sel = {}) {
   const $ = (s) => (s ? document.querySelector(s) : null);
   const $$ = (s) => (s ? Array.from(document.querySelectorAll(s)) : []);
@@ -471,4 +485,3 @@ export async function initReminders(sel = {}) {
   rescheduleAllReminders();
   render();
 }
-
