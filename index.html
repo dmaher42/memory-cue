@@ -121,9 +121,17 @@
       <div id="planner-week" class="p-4 bg-white dark:bg-slate-800 rounded shadow"></div>
     </section>
     <section data-view="notes" id="view-notes" hidden>
-      <textarea id="quick-note" class="w-full border p-2" rows="5" placeholder="Write a quick note..."></textarea>
-      <div class="mt-2 flex gap-2">
+      <div class="flex gap-2 mb-2">
+        <button id="bullet-btn" class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">&bull;</button>
+        <button id="number-btn" class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">1.</button>
+      </div>
+      <div id="quick-note" class="w-full border p-2 h-40 overflow-auto" contenteditable="true" aria-label="Write a quick note..."></div>
+      <div class="mt-2 flex flex-wrap gap-2">
         <button id="save-note" class="px-4 py-2 bg-brand-600 text-white rounded">Save</button>
+        <select id="saved-notes" class="border p-2 flex-1">
+          <option value="">Select a note</option>
+        </select>
+        <button id="load-note" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded">Load</button>
         <button id="clear-note" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded">Clear</button>
       </div>
     </section>
