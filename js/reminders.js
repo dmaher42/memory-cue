@@ -72,6 +72,10 @@ export function initReminders(sel = {}) {
   let recog = null;
   let userId = null;
   let unsubscribe = null;
+  let notesUnsub = null;
+  let notesCache = '';
+  let saveNotesToCloud = () => {};
+  let saveNotesDebounced = () => {};
   let editingId = null;
   const reminderTimers = {};
   let scheduledReminders = {};
@@ -133,6 +137,7 @@ export function initReminders(sel = {}) {
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
   function toast(msg){ if(!statusEl) return; statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='',2500); }
   function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+  saveNotesDebounced = debounce((t)=>saveNotesToCloud(t), 1000);
 
   // Quick when parser (subset from mobile)
   function parseQuickWhen(text){
@@ -172,12 +177,30 @@ export function initReminders(sel = {}) {
     return when;
   }
 
-  // Notes
+  // Notes with local fallback and cloud sync
   if(notesEl){
-    notesEl.value = localStorage.getItem('mobileNotes') || '';
-    notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
-    saveNotesBtn?.addEventListener('click', () => { localStorage.setItem('mobileNotes', notesEl.value); toast('Notes saved'); });
-    loadNotesBtn?.addEventListener('click', () => { notesEl.value = localStorage.getItem('mobileNotes') || ''; toast('Notes loaded'); });
+    try {
+      notesCache = localStorage.getItem('mobileNotes') || '';
+    } catch {
+      notesCache = '';
+    }
+    notesEl.value = notesCache;
+    notesEl.addEventListener('input', () => {
+      notesCache = notesEl.value;
+      try { localStorage.setItem('mobileNotes', notesCache); } catch {}
+      saveNotesDebounced(notesCache);
+    });
+    saveNotesBtn?.addEventListener('click', () => {
+      notesCache = notesEl.value;
+      try { localStorage.setItem('mobileNotes', notesCache); } catch {}
+      saveNotesToCloud(notesCache);
+      toast('Notes saved');
+    });
+    loadNotesBtn?.addEventListener('click', () => {
+      try { notesCache = localStorage.getItem('mobileNotes') || notesCache; } catch {}
+      notesEl.value = notesCache;
+      toast('Notes loaded');
+    });
   }
 
   // Auth
@@ -198,11 +221,14 @@ export function initReminders(sel = {}) {
       if(googleAvatar){ if(user.photoURL){ googleAvatar.classList.remove('hidden'); googleAvatar.src=user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src=''; } }
       if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
       setupFirestoreSync();
+      setupNotesSync();
     } else {
       googleSignInBtn?.classList.remove('hidden');
       googleSignOutBtn?.classList.add('hidden');
       if(googleAvatar){ googleAvatar.classList.add('hidden'); googleAvatar.src=''; }
       if(googleUserName) googleUserName.textContent='';
+      if(notesUnsub){ notesUnsub(); notesUnsub=null; }
+      saveNotesToCloud = () => {};
       items=[]; render();
     }
   });
@@ -225,6 +251,29 @@ export function initReminders(sel = {}) {
       console.error('Firestore sync error:', error);
       if(syncStatus){ syncStatus.textContent='Sync Error'; syncStatus.className='sync-status error'; }
     });
+  }
+
+  function setupNotesSync(){
+    if(!userId || !notesEl) return;
+    if(notesUnsub) notesUnsub();
+    const noteRef = doc(db, 'users', userId, 'notes', 'main');
+    notesUnsub = onSnapshot(noteRef, (snap)=>{
+      if(snap.exists()){
+        const txt = snap.data().text || '';
+        if(txt !== notesCache){
+          notesCache = txt;
+          notesEl.value = txt;
+          try{ localStorage.setItem('mobileNotes', txt); }catch{}
+        }
+      } else {
+        if(notesCache) saveNotesToCloud(notesCache);
+      }
+    }, (err)=>{ console.error('Notes sync error:', err); });
+    saveNotesToCloud = async (text)=>{
+      try{
+        await setDoc(noteRef, { text, updatedAt: serverTimestamp() }, { merge: true });
+      }catch(err){ console.error('Notes save failed:', err); }
+    };
   }
 
   async function saveToFirebase(item){
