@@ -75,6 +75,7 @@ export function initReminders(sel = {}) {
   let editingId = null;
   const reminderTimers = {};
   let scheduledReminders = {};
+  let notesMemory = '';
   try {
     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
   } catch {
@@ -174,10 +175,39 @@ export function initReminders(sel = {}) {
 
   // Notes
   if(notesEl){
-    notesEl.value = localStorage.getItem('mobileNotes') || '';
-    notesEl.addEventListener('input', () => localStorage.setItem('mobileNotes', notesEl.value));
-    saveNotesBtn?.addEventListener('click', () => { localStorage.setItem('mobileNotes', notesEl.value); toast('Notes saved'); });
-    loadNotesBtn?.addEventListener('click', () => { notesEl.value = localStorage.getItem('mobileNotes') || ''; toast('Notes loaded'); });
+    try {
+      notesMemory = localStorage.getItem('mobileNotes') || '';
+    } catch {
+      toast('Unable to access saved notes');
+    }
+    notesEl.value = notesMemory;
+    notesEl.addEventListener('input', () => {
+      notesMemory = notesEl.value;
+      try {
+        localStorage.setItem('mobileNotes', notesMemory);
+      } catch {
+        toast('Notes saved for this session only');
+      }
+    });
+    saveNotesBtn?.addEventListener('click', () => {
+      notesMemory = notesEl.value;
+      try {
+        localStorage.setItem('mobileNotes', notesMemory);
+        toast('Notes saved');
+      } catch {
+        toast('Notes saved for this session only');
+      }
+    });
+    loadNotesBtn?.addEventListener('click', () => {
+      try {
+        notesMemory = localStorage.getItem('mobileNotes') || notesMemory;
+        notesEl.value = notesMemory;
+        toast('Notes loaded');
+      } catch {
+        notesEl.value = notesMemory;
+        toast('Unable to load saved notes');
+      }
+    });
   }
 
   // Auth
