@@ -34,6 +34,7 @@ export function initReminders(sel = {}) {
   const notifBtn = $(sel.notifBtnSel);
   const moreBtn = $(sel.moreBtnSel);
   const moreMenu = $(sel.moreMenuSel);
+  const copyMtlBtn = $(sel.copyMtlBtnSel);
   const importFile = $(sel.importFileSel);
   const exportBtn = $(sel.exportBtnSel);
   const syncAllBtn = $(sel.syncAllBtnSel);
