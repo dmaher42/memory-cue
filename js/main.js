@@ -94,13 +94,58 @@ renderWeek();
 
 // Notes
 const noteEl = document.getElementById('quick-note');
+const savedSelect = document.getElementById('saved-notes');
+
+function getNotes(){
+  try {
+    const raw = localStorage.getItem('saved-notes');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Failed to parse saved notes', e);
+    return [];
+  }
+}
+
+function saveNotes(notes){
+  localStorage.setItem('saved-notes', JSON.stringify(notes));
+}
+
+function refreshSelect(){
+  if(!savedSelect) return;
+  const notes = getNotes();
+  savedSelect.innerHTML = '<option value="">Select a note</option>' +
+    notes.map((n, i) => `<option value="${i}">${n.title}</option>`).join('');
+}
+
 if(noteEl){
-  noteEl.value = localStorage.getItem('quick-note') || '';
+  refreshSelect();
+
   document.getElementById('save-note')?.addEventListener('click', () => {
-    localStorage.setItem('quick-note', noteEl.value);
+    const content = noteEl.innerHTML;
+    const title = content.replace(/<[^>]+>/g, '').slice(0, 20) || 'Untitled';
+    const notes = getNotes();
+    notes.push({ title, content });
+    saveNotes(notes);
+    refreshSelect();
   });
+
+  document.getElementById('load-note')?.addEventListener('click', () => {
+    const idx = savedSelect?.value;
+    const notes = getNotes();
+    if(idx !== '' && notes[idx]){
+      noteEl.innerHTML = notes[idx].content;
+    }
+  });
+
   document.getElementById('clear-note')?.addEventListener('click', () => {
-    noteEl.value = '';
-    localStorage.removeItem('quick-note');
+    noteEl.innerHTML = '';
+  });
+
+  document.getElementById('bullet-btn')?.addEventListener('click', () => {
+    document.execCommand('insertUnorderedList');
+  });
+
+  document.getElementById('number-btn')?.addEventListener('click', () => {
+    document.execCommand('insertOrderedList');
   });
 }
