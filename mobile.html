@@ -155,14 +155,6 @@ z-index:100;box-shadow:var(--shadow-sm)}
             </div>
           </div>
         </div>
-        <div class="header-controls" style="margin-top: var(--space-2);">
-          <button id="googleSignInBtn" class="btn-purple" type="button" aria-label="Sign in with Google">Sign in with Google</button>
-          <button id="googleSignOutBtn" class="btn-danger hidden" type="button" aria-label="Sign out">
-            <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" />
-            Sign out
-          </button>
-          <div id="googleUserName" class="auth-info" aria-live="polite"></div>
-        </div>
       </div>
     </div>
   </header>
@@ -263,9 +255,18 @@ z-index:100;box-shadow:var(--shadow-sm)}
 
       <!-- Settings (hidden by default) -->
       <section class="card section hidden" id="settingsSection">
-        <div class="card-header"><h2 class="card-title">Sync Settings</h2></div>
+        <div class="card-header"><h2 class="card-title">Settings</h2></div>
         <div class="card-content">
           <div class="form-stack">
+            <div class="form-row">
+              <button id="googleSignInBtn" class="btn-purple flex-1" type="button" aria-label="Sign in with Google">Sign in with Google</button>
+              <button id="googleSignOutBtn" class="btn-danger flex-1 hidden" type="button" aria-label="Sign out">
+                <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" />
+                Sign out
+              </button>
+            </div>
+            <div id="googleUserName" class="auth-info" aria-live="polite"></div>
+
             <div class="form-group"><input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" /></div>
             <div class="form-row"><button id="saveSettings" class="btn-success flex-1" type="button">Save</button><button id="testSync" class="btn-ghost flex-1" type="button">Test</button></div>
           </div>
