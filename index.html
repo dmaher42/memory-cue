@@ -11,7 +11,7 @@
   <link rel="dns-prefetch" href="https://www.gstatic.com">
   <link rel="manifest" href="manifest.webmanifest">
   <!-- Tailwind v4 (Play CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
     html { scroll-behavior: smooth; }
     /* Your existing Tailwind / other styles here */
@@ -436,14 +436,14 @@
       </div>
     </div>
   </footer>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="./js/firebase-init.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script defer src="./js/firebase-init.js"></script>
   <script>
     // Set current year
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
-  <script src="./js/main.js"></script>
+  <script defer src="./js/main.js"></script>
   <!-- Reminder logic -->
   <script type="module">
     import { initReminders } from './js/reminders.js';
