@@ -39,14 +39,27 @@ function show(view){
   history.replaceState(null, '', `#${view}`);
   
   // Update active navigation states
-  document.querySelectorAll('[data-route]').forEach(btn => {
-    btn.classList.remove('bg-white/20', 'text-white');
-    btn.classList.add('hover:bg-white/20', 'text-white/80', 'hover:text-white');
-    if (btn.dataset.route === view) {
-      btn.classList.add('bg-white/20', 'text-white');
-      btn.classList.remove('hover:bg-white/20', 'text-white/80', 'hover:text-white');
-    }
-  });
+  function updateNavButtons(buttons, isActiveNav){
+    buttons.forEach(btn => {
+      const isActive = isActiveNav && btn.dataset.route === view;
+      btn.classList.remove('bg-white/20', 'text-white');
+      btn.classList.add('hover:bg-white/20', 'text-white/80', 'hover:text-white');
+      if (isActive) {
+        btn.setAttribute('aria-current', 'page');
+        btn.classList.add('bg-white/20', 'text-white');
+        btn.classList.remove('hover:bg-white/20', 'text-white/80', 'hover:text-white');
+      } else {
+        btn.removeAttribute('aria-current');
+      }
+    });
+  }
+
+  const isMobileNav = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(max-width: 768px)').matches
+    : false;
+
+  updateNavButtons(document.querySelectorAll('.nav-desktop [data-route]'), !isMobileNav);
+  updateNavButtons(document.querySelectorAll('#mobile-menu [data-route]'), isMobileNav);
   
   // Close mobile menu after navigation
   closeMobileMenu();
