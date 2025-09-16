@@ -1,18 +1,41 @@
 // js/main.js
 
 // Navigation helpers
-const navButtons = document.querySelectorAll('.nav-desktop [data-route]');
+const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
 
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
+const viewMap = new Map(views.map(v => [v.dataset.view, v]));
+const DEFAULT_VIEW = 'dashboard';
+
+navButtons.forEach(btn => {
+  if (!viewMap.has(btn.dataset.route)) {
+    btn.setAttribute('aria-disabled', 'true');
+    btn.classList.add('cursor-not-allowed', 'opacity-60');
+    btn.disabled = true;
+  }
+});
+
 function show(view){
-  views.forEach(v => v.hidden = v.dataset.view !== view);
+  let targetView = viewMap.get(view);
+  if (!targetView) {
+    if (view !== DEFAULT_VIEW) {
+      view = DEFAULT_VIEW;
+      targetView = viewMap.get(view);
+    }
+    if (!targetView) return false;
+  }
+
+  views.forEach(v => {
+    v.hidden = v !== targetView;
+  });
+
   history.replaceState(null, '', `#${view}`);
-  
+
   // Update active navigation states
-  function updateNavButtons(buttons){
+  function updateNavButtons(buttons, activeView){
     buttons.forEach(btn => {
-      const isActive = btn.dataset.route === view;
+      const isActive = btn.dataset.route === activeView;
       btn.classList.remove('bg-white/20', 'text-white');
       btn.classList.add('hover:bg-white/20', 'text-white/80', 'hover:text-white');
       if (isActive) {
@@ -25,22 +48,28 @@ function show(view){
     });
   }
 
-  updateNavButtons(navButtons);
+  updateNavButtons(navButtons, view);
+  return true;
 }
 
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-route]');
-  if (!btn) return;
+  if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
+  const route = btn.dataset.route;
+  if (!viewMap.has(route)) return;
   e.preventDefault();
-  show(btn.dataset.route);
+  show(route);
 });
 
 window.addEventListener('hashchange', () => {
-  const v = (location.hash || '#dashboard').slice(1);
-  if (views.some(x => x.dataset.view === v)) show(v);
+  const v = (location.hash || `#${DEFAULT_VIEW}`).slice(1);
+  show(v);
 });
 
-show((location.hash || '#dashboard').slice(1));
+const initialView = (location.hash || `#${DEFAULT_VIEW}`).slice(1);
+if (!show(initialView)) {
+  show(DEFAULT_VIEW);
+}
 
 // Firebase auth
 const signInBtn = document.getElementById('sign-in-btn');
