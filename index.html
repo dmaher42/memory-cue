@@ -25,50 +25,15 @@
     /* Safe area helper used by header (Tailwind doesn't ship this) */
     .pt-safe-top { padding-top: env(safe-area-inset-top); }
     
-    /* Custom modern gradients and animations */
-    .hero-gradient {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .hero-text-gradient {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
+    /* Custom modern gradients */
     .card-gradient {
       background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
       backdrop-filter: blur(10px);
     }
-    
+
     .nav-gradient {
       background: linear-gradient(90deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
       backdrop-filter: blur(10px);
-    }
-    
-    .floating-animation {
-      animation: float 6s ease-in-out infinite;
-    }
-    
-    .pulse-animation {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
-    
-    @keyframes gradient-x {
-      0%, 100% { transform: translateX(0%); }
-      50% { transform: translateX(100%); }
-    }
-    
-    .bg-gradient-modern {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #4facfe 50%, #00f2fe 75%, #4facfe 100%);
-      background-size: 300% 300%;
-      animation: gradient-x 15s ease infinite;
     }
     
     .glass-effect {
@@ -182,73 +147,6 @@
   </nav>
   <main class="min-h-screen">
     <section data-view="dashboard" id="view-dashboard">
-      <!-- Modern Hero Section -->
-      <section class="relative bg-gradient-modern min-h-screen flex items-center justify-center overflow-hidden">
-        <!-- Animated background elements -->
-        <div class="absolute inset-0 opacity-20">
-          <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl floating-animation"></div>
-          <div class="absolute top-1/3 right-1/4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl floating-animation" style="animation-delay: 2s;"></div>
-          <div class="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl floating-animation" style="animation-delay: 4s;"></div>
-        </div>
-        
-        <div class="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pt-16">
-          <div class="mt-12 flex flex-col sm:flex-row justify-center gap-6">
-            <button
-              id="get-started-btn"
-              type="button"
-              class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-white/20 rounded-xl backdrop-blur-sm border border-white/30 hover:bg-white/30 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
-              <span class="relative z-10">Get Started Free</span>
-              <span aria-hidden="true" class="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-            </button>
-            <a href="#features" class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white/30 rounded-xl hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              Learn More
-              <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-              </svg>
-            </a>
-          </div>
-          
-          <!-- Feature highlights -->
-          <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 text-white/80">
-            <div class="text-center">
-              <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"></path>
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold">Smart Reminders</h3>
-              <p class="text-sm text-white/70 mt-2">Never miss important tasks</p>
-            </div>
-            <div class="text-center">
-              <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold">Lesson Planning</h3>
-              <p class="text-sm text-white/70 mt-2">Organize your curriculum</p>
-            </div>
-            <div class="text-center">
-              <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold">Quick Notes</h3>
-              <p class="text-sm text-white/70 mt-2">Capture ideas instantly</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Scroll indicator -->
-        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 pulse-animation">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-          </svg>
-        </div>
-      </section>
-
       <!-- Enhanced Feature Section -->
       <section id="features" aria-labelledby="inside-heading" class="py-24 bg-slate-50 dark:bg-slate-900 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
