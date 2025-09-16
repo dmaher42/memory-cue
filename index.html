@@ -48,41 +48,10 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    /* Mobile Navigation */
-    @media (max-width: 768px) {
-      .nav-desktop {
-        display: none;
-      }
-      
-      .nav-mobile {
-        display: flex;
-      }
-      
-      .mobile-menu {
-        position: fixed;
-        top: 64px;
-        left: 0;
-        right: 0;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
-        backdrop-filter: blur(10px);
-        transform: translateY(-100%);
-        transition: transform 0.3s ease-in-out;
-        z-index: 40;
-      }
-      
-      .mobile-menu.open {
-        transform: translateY(0);
-      }
-    }
-    
-    @media (min-width: 769px) {
-      .nav-desktop {
-        display: flex;
-      }
-      
-      .nav-mobile {
-        display: none;
-      }
+    .nav-desktop {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
     }
   </style>
 </head>
@@ -92,7 +61,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Desktop Navigation -->
-        <div class="nav-desktop items-center space-x-1">
+        <div class="nav-desktop items-center">
           <button data-route="dashboard" id="nav-dashboard" class="px-3 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium transition-all duration-200 hover:scale-105">Dashboard</button>
           <button data-route="reminders" id="nav-reminders" class="px-3 py-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-all duration-200">Reminders</button>
           <button data-route="planner" id="nav-planner" class="px-3 py-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-all duration-200">Planner</button>
@@ -100,21 +69,6 @@
           <button data-route="resources" id="nav-resources" class="px-3 py-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-all duration-200">Resources</button>
           <button data-route="templates" id="nav-templates" class="px-3 py-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-all duration-200">Templates</button>
           <button data-route="settings" id="nav-settings" class="px-3 py-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-all duration-200">Settings</button>
-        </div>
-        
-        <!-- Mobile Navigation Button -->
-        <div class="nav-mobile items-center">
-          <button
-            id="mobile-menu-btn"
-            class="px-3 py-2 rounded-lg hover:bg-white/20 text-white transition-all duration-200"
-            aria-label="Open navigation menu"
-            aria-controls="mobile-menu"
-            aria-expanded="false"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-          </button>
         </div>
 
         <div class="flex items-center space-x-2">
@@ -132,18 +86,6 @@
       </div>
     </div>
     
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="mobile-menu">
-      <div class="px-4 py-6 space-y-2">
-        <button data-route="dashboard" class="mobile-nav-dashboard block w-full text-left px-4 py-3 rounded-lg bg-white/20 text-white font-medium transition-all duration-200">Dashboard</button>
-        <button data-route="reminders" class="mobile-nav-reminders block w-full text-left px-4 py-3 rounded-lg hover:bg-white/20 text-white/90 transition-all duration-200">Reminders</button>
-        <button data-route="planner" class="mobile-nav-planner block w-full text-left px-4 py-3 rounded-lg hover:bg-white/20 text-white/90 transition-all duration-200">Planner</button>
-        <button data-route="notes" class="mobile-nav-notes block w-full text-left px-4 py-3 rounded-lg hover:bg-white/20 text-white/90 transition-all duration-200">Notes</button>
-        <button data-route="resources" class="mobile-nav-resources block w-full text-left px-4 py-3 rounded-lg hover:bg-white/20 text-white/90 transition-all duration-200">Resources</button>
-        <button data-route="templates" class="mobile-nav-templates block w-full text-left px-4 py-3 rounded-lg hover:bg-white/20 text-white/90 transition-all duration-200">Templates</button>
-        <button data-route="settings" class="mobile-nav-settings block w-full text-left px-4 py-3 rounded-lg hover:bg-white/20 text-white/90 transition-all duration-200">Settings</button>
-      </div>
-    </div>
   </nav>
   <main class="min-h-screen">
     <section data-view="dashboard" id="view-dashboard">
