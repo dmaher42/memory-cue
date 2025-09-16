@@ -299,16 +299,28 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
           <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Create Reminder</h2>
           <div class="space-y-4">
-            <input id="title" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" placeholder="Reminder title" />
+            <div class="space-y-2">
+              <label for="title" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Title</label>
+              <input id="title" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" placeholder="Reminder title" />
+            </div>
             <div id="dateFeedback" class="text-sm text-slate-500 hidden"></div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <input id="date" type="date" class="px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" />
-              <input id="time" type="time" class="px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" />
-              <select id="priority" class="px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
-                <option>High</option>
-                <option selected>Medium</option>
-                <option>Low</option>
-              </select>
+              <div class="space-y-2">
+                <label for="date" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Date</label>
+                <input id="date" type="date" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" />
+              </div>
+              <div class="space-y-2">
+                <label for="time" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Time</label>
+                <input id="time" type="time" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" />
+              </div>
+              <div class="space-y-2">
+                <label for="priority" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Priority</label>
+                <select id="priority" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                  <option>High</option>
+                  <option selected>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
             </div>
             <div class="flex gap-4">
               <button id="saveBtn" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 hover:scale-105 transition-all duration-200 shadow-lg" type="button">Save Reminder</button>
@@ -326,6 +338,7 @@
               <button class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-all duration-200" data-filter="all" type="button">All</button>
               <button class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-all duration-200" data-filter="done" type="button">Done</button>
             </div>
+            <label for="sort" class="sr-only">Sort reminders</label>
             <select id="sort" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500">
               <option value="smart">Smart sort</option>
               <option value="time">Time</option>
@@ -383,9 +396,12 @@
           <div id="quick-note" class="w-full border-2 border-slate-300 dark:border-slate-600 rounded-xl p-4 h-48 overflow-auto bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" contenteditable="true" aria-label="Write a quick note..."></div>
           <div class="mt-6 flex flex-wrap gap-4">
             <button id="save-note" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 hover:scale-105 transition-all duration-200 shadow-lg">Save Note</button>
-            <select id="saved-notes" class="flex-1 min-w-48 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500">
-              <option value="">Select a note</option>
-            </select>
+            <div class="flex-1 min-w-48">
+              <label for="saved-notes" class="sr-only">Select a saved note</label>
+              <select id="saved-notes" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500">
+                <option value="">Select a note</option>
+              </select>
+            </div>
             <button id="load-note" class="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-all duration-200">Load</button>
             <button id="clear-note" class="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-all duration-200">Clear</button>
           </div>
