@@ -101,17 +101,33 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
 
 // Theme toggle
 const themeToggle = document.getElementById('theme-toggle');
+
+function updateThemeToggleState(isDark){
+  if (!themeToggle) return;
+  const iconDark = themeToggle.dataset.iconDark || '🌙';
+  const iconLight = themeToggle.dataset.iconLight || '☀️';
+  themeToggle.setAttribute('aria-pressed', String(isDark));
+  themeToggle.textContent = isDark ? iconLight : iconDark;
+  themeToggle.setAttribute('aria-label', isDark ? 'Activate light mode' : 'Activate dark mode');
+}
+
 function setTheme(t){
   document.documentElement.classList.toggle('dark', t === 'dark');
   localStorage.setItem('theme', t);
 }
+
 function toggleTheme(){
-  const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  setTheme(current === 'dark' ? 'light' : 'dark');
+  const isPressed = themeToggle?.getAttribute('aria-pressed') === 'true';
+  const isDark = themeToggle ? isPressed : document.documentElement.classList.contains('dark');
+  const nextIsDark = !isDark;
+  setTheme(nextIsDark ? 'dark' : 'light');
+  updateThemeToggleState(nextIsDark);
 }
+
 themeToggle?.addEventListener('click', toggleTheme);
 const preferred = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 setTheme(preferred);
+updateThemeToggleState(preferred === 'dark');
 
 // Reminders
 function onAddReminder(e){
