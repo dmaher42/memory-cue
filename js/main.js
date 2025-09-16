@@ -5,11 +5,24 @@ const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
 
 function toggleMobileMenu() {
-  mobileMenu.classList.toggle('open');
+  const isExpanded = mobileMenuBtn?.getAttribute('aria-expanded') === 'true';
+  if (isExpanded) {
+    closeMobileMenu();
+  } else {
+    mobileMenuBtn?.setAttribute('aria-expanded', 'true');
+    if (mobileMenu) {
+      mobileMenu.classList.add('open');
+      mobileMenu.removeAttribute('hidden');
+    }
+  }
 }
 
 function closeMobileMenu() {
-  mobileMenu.classList.remove('open');
+  mobileMenuBtn?.setAttribute('aria-expanded', 'false');
+  if (mobileMenu) {
+    mobileMenu.classList.remove('open');
+    mobileMenu.setAttribute('hidden', '');
+  }
 }
 
 mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
