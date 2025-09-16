@@ -59,6 +59,10 @@ document.addEventListener('click', (e) => {
   show(btn.dataset.route);
 });
 
+document.getElementById('get-started-btn')?.addEventListener('click', () => {
+  show('reminders');
+});
+
 window.addEventListener('hashchange', () => {
   const v = (location.hash || '#dashboard').slice(1);
   if (views.some(x => x.dataset.view === v)) show(v);
