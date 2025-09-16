@@ -5,14 +5,25 @@ const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
 
 function toggleMobileMenu() {
-  mobileMenu.classList.toggle('open');
+  if (!mobileMenu) return;
+  const isOpen = mobileMenu.classList.toggle('open');
+  mobileMenu.hidden = !isOpen;
+  if (mobileMenuBtn) {
+    mobileMenuBtn.setAttribute('aria-expanded', String(isOpen));
+  }
 }
 
 function closeMobileMenu() {
+  if (!mobileMenu) return;
   mobileMenu.classList.remove('open');
+  mobileMenu.hidden = true;
+  mobileMenuBtn?.setAttribute('aria-expanded', 'false');
 }
 
 mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
+if (mobileMenu) {
+  closeMobileMenu();
+}
 
 // Close mobile menu when clicking outside
 document.addEventListener('click', (e) => {
