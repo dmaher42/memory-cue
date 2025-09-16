@@ -1,10 +1,44 @@
 // js/main.js
 
+// Mobile menu functionality
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+
+function toggleMobileMenu() {
+  mobileMenu.classList.toggle('open');
+}
+
+function closeMobileMenu() {
+  mobileMenu.classList.remove('open');
+}
+
+mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+  if (!mobileMenuBtn?.contains(e.target) && !mobileMenu?.contains(e.target)) {
+    closeMobileMenu();
+  }
+});
+
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
 function show(view){
   views.forEach(v => v.hidden = v.dataset.view !== view);
   history.replaceState(null, '', `#${view}`);
+  
+  // Update active navigation states
+  document.querySelectorAll('[data-route]').forEach(btn => {
+    btn.classList.remove('bg-white/20', 'text-white');
+    btn.classList.add('hover:bg-white/20', 'text-white/80', 'hover:text-white');
+    if (btn.dataset.route === view) {
+      btn.classList.add('bg-white/20', 'text-white');
+      btn.classList.remove('hover:bg-white/20', 'text-white/80', 'hover:text-white');
+    }
+  });
+  
+  // Close mobile menu after navigation
+  closeMobileMenu();
 }
 
 document.addEventListener('click', (e) => {
