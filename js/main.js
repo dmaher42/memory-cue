@@ -1,36 +1,7 @@
 // js/main.js
 
-// Mobile menu functionality
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mobileMenu = document.getElementById('mobile-menu');
-
-function toggleMobileMenu() {
-  if (!mobileMenu) return;
-  const isOpen = mobileMenu.classList.toggle('open');
-  mobileMenu.hidden = !isOpen;
-  if (mobileMenuBtn) {
-    mobileMenuBtn.setAttribute('aria-expanded', String(isOpen));
-  }
-}
-
-function closeMobileMenu() {
-  if (!mobileMenu) return;
-  mobileMenu.classList.remove('open');
-  mobileMenu.hidden = true;
-  mobileMenuBtn?.setAttribute('aria-expanded', 'false');
-}
-
-mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
-if (mobileMenu) {
-  closeMobileMenu();
-}
-
-// Close mobile menu when clicking outside
-document.addEventListener('click', (e) => {
-  if (!mobileMenuBtn?.contains(e.target) && !mobileMenu?.contains(e.target)) {
-    closeMobileMenu();
-  }
-});
+// Navigation helpers
+const navButtons = document.querySelectorAll('.nav-desktop [data-route]');
 
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
@@ -39,9 +10,9 @@ function show(view){
   history.replaceState(null, '', `#${view}`);
   
   // Update active navigation states
-  function updateNavButtons(buttons, isActiveNav){
+  function updateNavButtons(buttons){
     buttons.forEach(btn => {
-      const isActive = isActiveNav && btn.dataset.route === view;
+      const isActive = btn.dataset.route === view;
       btn.classList.remove('bg-white/20', 'text-white');
       btn.classList.add('hover:bg-white/20', 'text-white/80', 'hover:text-white');
       if (isActive) {
@@ -54,15 +25,7 @@ function show(view){
     });
   }
 
-  const isMobileNav = typeof window.matchMedia === 'function'
-    ? window.matchMedia('(max-width: 768px)').matches
-    : false;
-
-  updateNavButtons(document.querySelectorAll('.nav-desktop [data-route]'), !isMobileNav);
-  updateNavButtons(document.querySelectorAll('#mobile-menu [data-route]'), isMobileNav);
-  
-  // Close mobile menu after navigation
-  closeMobileMenu();
+  updateNavButtons(navButtons);
 }
 
 document.addEventListener('click', (e) => {
