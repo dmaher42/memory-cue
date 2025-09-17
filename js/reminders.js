@@ -1,9 +1,37 @@
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-import { initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+const activeNotifications = new Map();
+let notificationCleanupBound = false;
+
+function closeActiveNotifications() {
+  for (const notification of Array.from(activeNotifications.values())) {
+    try {
+      notification.close();
+    } catch {
+      // Ignore close errors so cleanup can continue for remaining notifications.
+    }
+  }
+  activeNotifications.clear();
+}
+
+function bindNotificationCleanupHandlers() {
+  if (notificationCleanupBound) {
+    return;
+  }
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return;
+  }
+  const cleanup = () => closeActiveNotifications();
+  ['pagehide', 'beforeunload'].forEach((eventName) => {
+    try {
+      window.addEventListener(eventName, cleanup);
+    } catch {
+      // Ignore environments that do not support these events.
+    }
+  });
+  notificationCleanupBound = true;
+}
 
 /**
  * Initialise the reminders UI and sync logic.
@@ -62,11 +90,15 @@ export async function initReminders(sel = {}) {
   const emptyInitialText = sel.emptyStateInitialText || 'Add your first reminder to see it here.';
   const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
 
+  bindNotificationCleanupHandlers();
+
    // Placeholder for Firebase modules loaded later
    let initializeApp, initializeFirestore, getFirestore, doc, setDoc, deleteDoc,
      onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp,
      getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
-     signInWithRedirect, getRedirectResult, signOut;
+      signInWithRedirect, getRedirectResult, signOut;
+
+  const firebaseDeps = sel.firebaseDeps;
 
    // Notes (runs before Firebase modules load)
    function initNotebook() {
@@ -109,14 +141,18 @@ export async function initReminders(sel = {}) {
    }
    initNotebook();
 
-   try {
-     ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
-     ({ initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
-     ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
-   } catch (err) {
-     console.warn('Firebase modules failed to load:', err);
-     toast('Firebase failed to load; notes available offline');
-     return;
+   if (firebaseDeps) {
+     ({ initializeApp, initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
+   } else {
+     try {
+       ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
+       ({ initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+       ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
+     } catch (err) {
+       console.warn('Firebase modules failed to load:', err);
+       toast('Firebase failed to load; notes available offline');
+       return;
+     }
    }
 
    // Firebase
@@ -334,9 +370,58 @@ export async function initReminders(sel = {}) {
   function removeItem(id){ items=items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); cancelReminder(id); }
 
   function saveScheduled(){ localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders)); }
-  function cancelReminder(id){ if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; } if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); } }
-  function showReminder(item){ try{ new Notification(item.title,{ body:'Due now', tag:item.id }); }catch{} }
-  function scheduleReminder(item){ if(!item||!item.id) return; if(!item.due || item.done){ cancelReminder(item.id); return; } scheduledReminders[item.id]={ id:item.id, title:item.title, due:item.due }; saveScheduled(); if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; } if(!('Notification' in window) || Notification.permission!=='granted'){ return; } const delay=new Date(item.due).getTime()-Date.now(); if(delay<=0){ showReminder(item); cancelReminder(item.id); return; } reminderTimers[item.id]=setTimeout(()=>{ showReminder(item); cancelReminder(item.id); }, delay); }
+  function clearReminderState(id, { closeNotification = true } = {}){
+    if(closeNotification){
+      const active = activeNotifications.get(id);
+      if(active){
+        try { active.close(); } catch {}
+        activeNotifications.delete(id);
+      }
+    }
+    if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; }
+    if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); }
+  }
+  function cancelReminder(id){ clearReminderState(id); }
+  function showReminder(item){
+    if(!item || !item.id || !('Notification' in window)) return;
+    try{
+      const existing = activeNotifications.get(item.id);
+      if(existing && typeof existing.close === 'function'){
+        try { existing.close(); } catch {}
+      }
+      const notification = new Notification(item.title,{ body:'Due now', tag:item.id });
+      activeNotifications.set(item.id, notification);
+      const remove = () => {
+        if(activeNotifications.get(item.id) === notification){
+          activeNotifications.delete(item.id);
+        }
+      };
+      if(typeof notification.addEventListener === 'function'){
+        notification.addEventListener('close', remove);
+        notification.addEventListener('click', remove);
+      }
+      notification.onclose = remove;
+      notification.onclick = remove;
+    }catch{}
+  }
+  function scheduleReminder(item){
+    if(!item||!item.id) return;
+    if(!item.due || item.done){ cancelReminder(item.id); return; }
+    scheduledReminders[item.id]={ id:item.id, title:item.title, due:item.due };
+    saveScheduled();
+    if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
+    if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
+    const delay=new Date(item.due).getTime()-Date.now();
+    if(delay<=0){
+      showReminder(item);
+      clearReminderState(item.id,{ closeNotification:false });
+      return;
+    }
+    reminderTimers[item.id]=setTimeout(()=>{
+      showReminder(item);
+      clearReminderState(item.id,{ closeNotification:false });
+    }, delay);
+  }
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder(it)); }
 
   const desktopPriorityClasses = {
@@ -634,4 +719,10 @@ export async function initReminders(sel = {}) {
 
   rescheduleAllReminders();
   render();
+  return {
+    cancelReminder,
+    scheduleReminder,
+    closeActiveNotifications,
+    getActiveNotifications: () => activeNotifications,
+  };
 }
