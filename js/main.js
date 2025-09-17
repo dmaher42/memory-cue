@@ -724,6 +724,7 @@ if (plannerWeekEl && plannerGrid) {
 // Notes
 const noteEl = document.getElementById('quick-note');
 const savedSelect = document.getElementById('saved-notes');
+let activeNoteIndex = null;
 
 function getNotes(){
   return JSON.parse(localStorage.getItem('saved-notes') || '[]');
@@ -733,11 +734,20 @@ function saveNotes(notes){
   localStorage.setItem('saved-notes', JSON.stringify(notes));
 }
 
-function refreshSelect(){
+function refreshSelect(selectedValue = ''){
   if(!savedSelect) return;
   const notes = getNotes();
   savedSelect.innerHTML = '<option value="">Select a note</option>' +
-    notes.map((n, i) => `<option value="${i}">${n.title}</option>`).join('');
+    notes.map((n, i) => `<option value="${i}">${escapeHtml(n.title)}</option>`).join('');
+
+  if(selectedValue !== ''){
+    const parsed = Number.parseInt(selectedValue, 10);
+    if(!Number.isNaN(parsed) && notes[parsed]){
+      savedSelect.value = String(parsed);
+      return;
+    }
+  }
+  savedSelect.value = '';
 }
 
 if(noteEl){
@@ -749,19 +759,44 @@ if(noteEl){
     const notes = getNotes();
     notes.push({ title, content });
     saveNotes(notes);
-    refreshSelect();
+    const newIndex = notes.length - 1;
+    refreshSelect(String(newIndex));
+    activeNoteIndex = newIndex;
   });
 
   document.getElementById('load-note')?.addEventListener('click', () => {
     const idx = savedSelect?.value;
+    if(idx === '' || idx == null) return;
+    const parsedIndex = Number.parseInt(idx, 10);
+    if(Number.isNaN(parsedIndex)) return;
     const notes = getNotes();
-    if(idx !== '' && notes[idx]){
-      noteEl.innerHTML = notes[idx].content;
+    if(notes[parsedIndex]){
+      noteEl.innerHTML = notes[parsedIndex].content;
+      activeNoteIndex = parsedIndex;
+    }
+  });
+
+  document.getElementById('delete-note')?.addEventListener('click', () => {
+    const idx = savedSelect?.value;
+    if(idx === '' || idx == null) return;
+    const indexNum = Number.parseInt(idx, 10);
+    if(Number.isNaN(indexNum)) return;
+    const notes = getNotes();
+    if(!notes[indexNum]) return;
+    notes.splice(indexNum, 1);
+    saveNotes(notes);
+    refreshSelect();
+    if(activeNoteIndex === indexNum){
+      noteEl.innerHTML = '';
+      activeNoteIndex = null;
+    } else if(activeNoteIndex !== null && activeNoteIndex > indexNum){
+      activeNoteIndex -= 1;
     }
   });
 
   document.getElementById('clear-note')?.addEventListener('click', () => {
     noteEl.innerHTML = '';
+    activeNoteIndex = null;
   });
 
   document.getElementById('bullet-btn')?.addEventListener('click', () => {
