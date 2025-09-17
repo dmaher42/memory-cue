@@ -135,59 +135,168 @@
   </nav>
   <main class="min-h-screen">
     <section data-view="dashboard" id="view-dashboard">
-      <!-- Enhanced Feature Section -->
-      <section id="features" aria-labelledby="inside-heading" class="py-24 bg-slate-50 dark:bg-slate-900 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-16">
-            <h2 id="inside-heading" class="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-              Everything You Need to Teach
-            </h2>
-            <p class="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-              Streamline your workflow with powerful tools designed to make teaching more organized and effective.
-            </p>
+      <section id="dashboard-overview" aria-labelledby="dashboard-heading" class="pt-24 pb-16 bg-slate-50 dark:bg-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div class="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-800 shadow-2xl border border-white/60 dark:border-slate-700/60">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-100 via-emerald-100 to-amber-100 opacity-60 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900"></div>
+            <div class="relative z-10 p-8 sm:p-10">
+              <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="space-y-2">
+                  <p class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Today's overview</p>
+                  <h1 id="dashboard-heading" class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Your teaching day at a glance</h1>
+                  <p id="dashboard-date" class="text-lg text-slate-600 dark:text-slate-300"></p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <a href="#planner" class="inline-flex items-center gap-2 rounded-full bg-blue-600 text-white px-5 py-2.5 text-sm font-semibold shadow-md hover:bg-blue-700 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">Open weekly planner<span aria-hidden="true">→</span></a>
+                  <a href="#reminders" class="inline-flex items-center gap-2 rounded-full bg-white/80 text-blue-700 px-5 py-2.5 text-sm font-semibold shadow border border-blue-100 hover:bg-white transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400">Review reminders<span aria-hidden="true">→</span></a>
+                </div>
+              </div>
+              <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl bg-white/90 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/70 p-5 shadow-sm">
+                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Lessons today</p>
+                  <p id="dashboard-lesson-count" class="mt-1 text-3xl font-bold text-slate-900 dark:text-white">0</p>
+                  <p id="dashboard-next-lesson" class="mt-2 text-sm text-slate-500 dark:text-slate-400"></p>
+                </div>
+                <div class="rounded-2xl bg-white/90 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/70 p-5 shadow-sm">
+                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Deadlines this week</p>
+                  <p id="dashboard-deadline-count" class="mt-1 text-3xl font-bold text-slate-900 dark:text-white">0</p>
+                  <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Countdowns auto-refresh</p>
+                </div>
+                <div class="rounded-2xl bg-white/90 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/70 p-5 shadow-sm">
+                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Reminders to action</p>
+                  <p id="dashboard-reminder-count" class="mt-1 text-3xl font-bold text-slate-900 dark:text-white">0</p>
+                  <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Due today or overdue</p>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Enhanced Reminders Card -->
-            <div class="group relative p-8 rounded-2xl glass-effect hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div class="relative z-10">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"></path>
-                  </svg>
+
+          <div class="space-y-6">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <section class="xl:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl" aria-labelledby="lessons-heading">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h2 id="lessons-heading" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Today's lessons</h2>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Keep track of sessions, locations, and focus areas for a smooth teaching flow.</p>
+                  </div>
+                  <p class="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 rounded-full" id="dashboard-lesson-status" aria-live="polite"></p>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-3">Smart Reminders</h3>
-                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Set intelligent reminders for grading, parent meetings, and important deadlines. Never miss what matters most.</p>
-              </div>
+                <div class="mt-6">
+                  <ul id="dashboard-lessons-list" class="space-y-4" aria-live="polite" aria-busy="false"></ul>
+                  <p id="dashboard-lessons-empty" class="hidden text-sm text-slate-500 dark:text-slate-400">No lessons captured for today yet. Add the key sessions below to build your timetable.</p>
+                </div>
+                <form id="lesson-form" class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-5" aria-describedby="lesson-feedback">
+                  <div>
+                    <label for="lesson-subject" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Lesson or group</label>
+                    <input id="lesson-subject" name="lesson-subject" type="text" required placeholder="e.g. Year 8 Science" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label for="lesson-start" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Start</label>
+                    <input id="lesson-start" name="lesson-start" type="time" required class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label for="lesson-end" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Finish</label>
+                    <input id="lesson-end" name="lesson-end" type="time" required class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label for="lesson-location" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Location</label>
+                    <input id="lesson-location" name="lesson-location" type="text" placeholder="e.g. Lab 2" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div class="flex items-end">
+                    <button type="submit" class="w-full inline-flex justify-center items-center rounded-xl bg-blue-600 text-white font-semibold px-4 py-2.5 shadow hover:bg-blue-700 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">Add lesson</button>
+                  </div>
+                </form>
+                <p id="lesson-feedback" class="hidden mt-3 text-sm font-medium"></p>
+              </section>
+
+              <section class="bg-gradient-to-br from-sky-500 via-indigo-500 to-emerald-500 text-white rounded-3xl shadow-xl border border-white/40 p-8 flex flex-col" aria-labelledby="weather-heading">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 id="weather-heading" class="text-2xl font-semibold">Outdoor planning</h2>
+                    <p class="mt-1 text-sm text-white/80">Check the forecast before excursions or sport.</p>
+                  </div>
+                  <button id="weather-refresh" type="button" class="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Refresh</button>
+                </div>
+                <div class="mt-8 space-y-4" aria-live="polite">
+                  <div id="weather-status" class="text-sm text-white/80">Finding your forecast…</div>
+                  <div id="weather-summary" class="hidden space-y-6">
+                    <div class="flex items-end gap-4">
+                      <span id="weather-icon" class="text-5xl" aria-hidden="true">☀️</span>
+                      <div>
+                        <p id="weather-temperature" class="text-5xl font-semibold">--°C</p>
+                        <p id="weather-description" class="text-lg text-white/90"></p>
+                      </div>
+                    </div>
+                    <dl class="grid grid-cols-2 gap-4 text-sm text-white/80">
+                      <div>
+                        <dt class="font-semibold text-white/90">Location</dt>
+                        <dd id="weather-location">Loading…</dd>
+                      </div>
+                      <div>
+                        <dt class="font-semibold text-white/90">Wind</dt>
+                        <dd id="weather-wind">-- km/h</dd>
+                      </div>
+                      <div>
+                        <dt class="font-semibold text-white/90">Rain chance</dt>
+                        <dd id="weather-rain">--%</dd>
+                      </div>
+                      <div>
+                        <dt class="font-semibold text-white/90">Sunset</dt>
+                        <dd id="weather-sunset">--:--</dd>
+                      </div>
+                    </dl>
+                    <p id="weather-footnote" class="text-xs text-white/70"></p>
+                  </div>
+                </div>
+              </section>
             </div>
 
-            <!-- Enhanced Planner Card -->
-            <div class="group relative p-8 rounded-2xl glass-effect hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-              <div class="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div class="relative z-10">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-blue-600 text-white mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                  </svg>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <section class="xl:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl" aria-labelledby="deadlines-heading">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h2 id="deadlines-heading" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Upcoming deadlines</h2>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Deadlines due in the next seven days with live countdowns.</p>
+                  </div>
+                  <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200 px-3 py-1 text-xs font-semibold uppercase tracking-wide">Next 7 days</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-3">Lesson Planner</h3>
-                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Create detailed lesson plans with templates, objectives, and resources. Stay organized week by week.</p>
-              </div>
-            </div>
+                <div class="mt-6">
+                  <ul id="dashboard-deadlines-list" class="space-y-4" aria-live="polite" aria-busy="false"></ul>
+                  <p id="dashboard-deadlines-empty" class="hidden text-sm text-slate-500 dark:text-slate-400">No deadlines due within the next week. You can add one below to keep it on your radar.</p>
+                </div>
+                <form id="deadline-form" class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-5" aria-describedby="deadline-feedback">
+                  <div class="md:col-span-2">
+                    <label for="deadline-title" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Deadline</label>
+                    <input id="deadline-title" name="deadline-title" type="text" required placeholder="e.g. Year 9 essays" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                  <div>
+                    <label for="deadline-due" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Due</label>
+                    <input id="deadline-due" name="deadline-due" type="datetime-local" required class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                  <div>
+                    <label for="deadline-course" class="block text-sm font-medium text-slate-600 dark:text-slate-300">Class / group</label>
+                    <input id="deadline-course" name="deadline-course" type="text" placeholder="Optional" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                  <div class="flex items-end">
+                    <button type="submit" class="w-full inline-flex justify-center items-center rounded-xl bg-amber-500 text-white font-semibold px-4 py-2.5 shadow hover:bg-amber-600 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">Add deadline</button>
+                  </div>
+                </form>
+                <p id="deadline-feedback" class="hidden mt-3 text-sm font-medium"></p>
+              </section>
 
-            <!-- Enhanced Notes Card -->
-            <div class="group relative p-8 rounded-2xl glass-effect hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-              <div class="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div class="relative z-10">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                  </svg>
+              <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl" aria-labelledby="reminders-heading">
+                <div class="flex flex-col gap-4">
+                  <div class="flex flex-col gap-2">
+                    <h2 id="reminders-heading" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Reminders needing attention</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">These are pulled automatically from the Reminders board and show tasks due today or overdue.</p>
+                  </div>
+                  <a href="#reminders" class="self-start inline-flex items-center gap-2 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 text-sm font-semibold shadow hover:shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 dark:focus-visible:outline-white">Open reminders<span aria-hidden="true">→</span></a>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-3">Quick Notes</h3>
-                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Capture spontaneous ideas, student observations, and important thoughts instantly. Access anywhere.</p>
-              </div>
+                <div class="mt-6">
+                  <ul id="dashboard-reminders-list" class="space-y-4" aria-live="polite" aria-busy="false"></ul>
+                  <p id="dashboard-reminders-empty" class="hidden text-sm text-slate-500 dark:text-slate-400">You're all caught up! Urgent reminders will appear here automatically.</p>
+                </div>
+              </section>
             </div>
           </div>
         </div>
