@@ -27,6 +27,7 @@ function setupSW() {
   global.fetch = jest.fn();
   global.self = {
     location: { origin: 'https://example.com' },
+    registration: { scope: 'https://example.com/memory-cue/' },
     addEventListener: (type, cb) => { listeners[type] = cb; },
     skipWaiting: jest.fn(),
     clients: { claim: jest.fn() },
