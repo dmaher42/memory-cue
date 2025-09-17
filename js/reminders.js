@@ -1,6 +1,7 @@
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
 
+const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
 let notificationCleanupBound = false;
 
@@ -89,6 +90,63 @@ export async function initReminders(sel = {}) {
   const variant = sel.variant || 'mobile';
   const emptyInitialText = sel.emptyStateInitialText || 'Add your first reminder to see it here.';
   const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
+
+  function emitActivity(detail = {}) {
+    const label = typeof detail.label === 'string' ? detail.label.trim() : '';
+    if (!label) return;
+    const payload = {
+      type: 'reminder',
+      target: { view: 'reminders' },
+      ...detail,
+    };
+    if (!payload.target) {
+      payload.target = { view: 'reminders' };
+    } else if (typeof payload.target === 'string') {
+      payload.target = { view: payload.target };
+    } else if (typeof payload.target === 'object' && payload.target.view == null) {
+      payload.target.view = 'reminders';
+    }
+    if (!payload.timestamp) {
+      payload.timestamp = new Date().toISOString();
+    }
+
+    let handled = false;
+    try {
+      if (typeof window !== 'undefined' && window.memoryCueActivity && typeof window.memoryCueActivity.push === 'function') {
+        window.memoryCueActivity.push(payload);
+        handled = true;
+      }
+    } catch {
+      handled = false;
+    }
+
+    if (handled) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const queue = Array.isArray(window.memoryCueActivityQueue) ? window.memoryCueActivityQueue : [];
+      queue.push(payload);
+      while (queue.length > 20) queue.shift();
+      window.memoryCueActivityQueue = queue;
+    }
+
+    if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
+      try {
+        if (typeof CustomEvent === 'function') {
+          document.dispatchEvent(new CustomEvent(ACTIVITY_EVENT_NAME, { detail: payload }));
+        } else if (document.createEvent) {
+          const evt = document.createEvent('CustomEvent');
+          if (evt && evt.initCustomEvent) {
+            evt.initCustomEvent(ACTIVITY_EVENT_NAME, false, false, payload);
+            document.dispatchEvent(evt);
+          }
+        }
+      } catch {
+        // ignore fallback dispatch errors
+      }
+    }
+  }
 
   bindNotificationCleanupHandlers();
 
@@ -365,7 +423,30 @@ export async function initReminders(sel = {}) {
   function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(priority) priority.value='Medium'; editingId=null; if(saveBtn) saveBtn.textContent='Save Reminder'; cancelEditBtn?.classList.add('hidden'); }
   function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
 
-  function addItem(obj){ if(!userId){ toast('Sign in to add reminders'); return; } const nowMs=Date.now(); const item={ id: uid(), title: obj.title.trim(), priority: obj.priority||'Medium', notes: obj.notes||'', done:false, createdAt: nowMs, updatedAt: nowMs, due: obj.due || null }; items=[item,...items]; render(); saveToFirebase(item); tryCalendarSync(item); scheduleReminder(item); return item; }
+  function addItem(obj){
+    if(!userId){ toast('Sign in to add reminders'); return; }
+    const nowMs = Date.now();
+    const item = {
+      id: uid(),
+      title: obj.title.trim(),
+      priority: obj.priority||'Medium',
+      notes: obj.notes||'',
+      done:false,
+      createdAt: nowMs,
+      updatedAt: nowMs,
+      due: obj.due || null,
+    };
+    items = [item, ...items];
+    render();
+    saveToFirebase(item);
+    tryCalendarSync(item);
+    scheduleReminder(item);
+    emitActivity({
+      action: 'created',
+      label: `Reminder added · ${item.title}`,
+    });
+    return item;
+  }
   function addNoteToReminder(id, noteText){
     if(!userId){ toast('Sign in to add notes'); return null; }
     if(!id) return null;
@@ -379,10 +460,49 @@ export async function initReminders(sel = {}) {
     reminder.updatedAt = Date.now();
     saveToFirebase(reminder);
     render();
+    emitActivity({
+      action: 'updated',
+      label: `Reminder notes updated · ${reminder.title}`,
+    });
     return reminder;
   }
-  function toggleDone(id){ const it=items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); if(it.done) cancelReminder(id); else scheduleReminder(it); }
-  function removeItem(id){ items=items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); cancelReminder(id); }
+  function toggleDone(id){
+    const it = items.find(x=>x.id===id);
+    if(!it) return;
+    it.done = !it.done;
+    it.updatedAt = Date.now();
+    saveToFirebase(it);
+    tryCalendarSync(it);
+    render();
+    if(it.done){
+      cancelReminder(id);
+      emitActivity({
+        action: 'completed',
+        label: `Reminder completed · ${it.title}`,
+      });
+    } else {
+      scheduleReminder(it);
+      emitActivity({
+        action: 'reopened',
+        label: `Reminder reopened · ${it.title}`,
+      });
+    }
+  }
+  function removeItem(id){
+    const removed = items.find(x=>x.id===id);
+    items = items.filter(x=>x.id!==id);
+    render();
+    deleteFromFirebase(id);
+    cancelReminder(id);
+    if(removed){
+      emitActivity({
+        action: 'deleted',
+        label: `Reminder removed · ${removed.title}`,
+      });
+    } else {
+      emitActivity({ action: 'deleted', label: 'Reminder removed' });
+    }
+  }
 
   function saveScheduled(){ localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders)); }
   function clearReminderState(id, { closeNotification = true } = {}){
@@ -663,7 +783,18 @@ export async function initReminders(sel = {}) {
       let due=null;
       if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
       else { const p=parseQuickWhen(tNew); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-      it.title = tNew; it.priority=priority.value; it.due = due; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); scheduleReminder(it); resetForm(); toast('Reminder updated'); return;
+      it.title = tNew;
+      it.priority=priority.value;
+      it.due = due;
+      it.updatedAt=Date.now();
+      saveToFirebase(it);
+      tryCalendarSync(it);
+      render();
+      scheduleReminder(it);
+      emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
+      resetForm();
+      toast('Reminder updated');
+      return;
     }
     const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
     let due=null;

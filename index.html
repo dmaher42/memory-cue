@@ -172,7 +172,7 @@
           </div>
 
           <div class="space-y-6">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
               <section class="xl:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl" aria-labelledby="lessons-heading">
                 <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
@@ -295,6 +295,21 @@
                 <div class="mt-6">
                   <ul id="dashboard-reminders-list" class="space-y-4" aria-live="polite" aria-busy="false"></ul>
                   <p id="dashboard-reminders-empty" class="hidden text-sm text-slate-500 dark:text-slate-400">You're all caught up! Urgent reminders will appear here automatically.</p>
+                </div>
+              </section>
+
+              <section id="dashboard-activity-container" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl" aria-labelledby="activity-heading">
+                <div class="flex flex-col gap-4">
+                  <div class="space-y-2">
+                    <h2 id="activity-heading" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Recent activity</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Keep track of updates across lessons, deadlines, and reminders.</p>
+                  </div>
+                  <div id="dashboard-activity-loading" class="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2" aria-live="polite">
+                    <span class="inline-flex h-2 w-2 animate-ping rounded-full bg-blue-500"></span>
+                    <span>Preparing your activity feed…</span>
+                  </div>
+                  <p id="dashboard-activity-empty" class="hidden text-sm text-slate-500 dark:text-slate-400">Actions you take will appear here so you can jump straight back to them.</p>
+                  <ul id="dashboard-activity-list" class="hidden space-y-3" aria-live="polite" aria-busy="true"></ul>
                 </div>
               </section>
             </div>
