@@ -23,14 +23,12 @@ function show(view){
       view = DEFAULT_VIEW;
       targetView = viewMap.get(view);
     }
-    if (!targetView) return false;
+    if (!targetView) return null;
   }
 
   views.forEach(v => {
     v.hidden = v !== targetView;
   });
-
-  history.replaceState(null, '', `#${view}`);
 
   // Update active navigation states
   function updateNavButtons(buttons, activeView){
@@ -49,7 +47,20 @@ function show(view){
   }
 
   updateNavButtons(navButtons, view);
-  return true;
+  return view;
+}
+
+function getViewFromHash(){
+  return (location.hash || `#${DEFAULT_VIEW}`).slice(1);
+}
+
+function syncViewFromHash(){
+  const requestedView = getViewFromHash();
+  const resolvedView = show(requestedView);
+  if (!resolvedView) return;
+  if (resolvedView !== requestedView) {
+    history.replaceState(null, '', `#${resolvedView}`);
+  }
 }
 
 document.addEventListener('click', (e) => {
@@ -58,18 +69,21 @@ document.addEventListener('click', (e) => {
   const route = btn.dataset.route;
   if (!viewMap.has(route)) return;
   e.preventDefault();
-  show(route);
+  const targetHash = `#${route}`;
+  if (location.hash === targetHash) {
+    show(route);
+  } else {
+    location.hash = targetHash;
+  }
 });
 
-window.addEventListener('hashchange', () => {
-  const v = (location.hash || `#${DEFAULT_VIEW}`).slice(1);
-  show(v);
-});
+window.addEventListener('hashchange', syncViewFromHash);
 
-const initialView = (location.hash || `#${DEFAULT_VIEW}`).slice(1);
-if (!show(initialView)) {
-  show(DEFAULT_VIEW);
+if (!location.hash) {
+  location.hash = `#${DEFAULT_VIEW}`;
 }
+
+syncViewFromHash();
 
 // Firebase auth
 const signInBtn = document.getElementById('sign-in-btn');
