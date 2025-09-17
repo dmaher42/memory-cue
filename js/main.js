@@ -87,6 +87,84 @@ if (!location.hash) {
 
 syncViewFromHash();
 
+const quickActionButtons = document.querySelectorAll('[data-quick-action]');
+
+function focusElementWithHighlight(element){
+  if (!element) return false;
+  const target = element;
+  if (typeof target.focus === 'function') {
+    target.focus({ preventScroll: false });
+  }
+  if (target.select) {
+    try { target.select(); } catch { /* ignore */ }
+  }
+  if (target.isContentEditable) {
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      range.collapse(false);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    } catch {
+      // ignore selection issues
+    }
+  }
+  target.classList.remove('dashboard-highlight');
+  void target.offsetWidth;
+  target.classList.add('dashboard-highlight');
+  window.setTimeout(() => {
+    target.classList.remove('dashboard-highlight');
+  }, 900);
+  return true;
+}
+
+function resolveFocusTarget(focusTarget){
+  if (!focusTarget) return null;
+  if (typeof focusTarget === 'function') {
+    try { return focusTarget(); } catch { return null; }
+  }
+  if (typeof focusTarget === 'string') {
+    return document.querySelector(focusTarget);
+  }
+  return focusTarget;
+}
+
+function showViewAndFocus(view, focusTarget){
+  const resolvedView = show(view);
+  if (!resolvedView) return;
+  if (location.hash !== `#${resolvedView}`) {
+    history.replaceState(null, '', `#${resolvedView}`);
+  }
+  const attemptFocus = (attempt = 0) => {
+    const target = resolveFocusTarget(focusTarget);
+    if (target) {
+      focusElementWithHighlight(target);
+      return;
+    }
+    if (attempt < 3) {
+      window.setTimeout(() => attemptFocus(attempt + 1), 120);
+    }
+  };
+  requestAnimationFrame(() => attemptFocus());
+}
+
+quickActionButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const action = button.dataset.quickAction;
+    if (!action) return;
+    if (action === 'reminder') {
+      showViewAndFocus('reminders', '#title');
+    } else if (action === 'note') {
+      showViewAndFocus('notes', '#quick-note');
+    } else if (action === 'planner') {
+      showViewAndFocus('planner', () => document.querySelector('#planner-grid textarea'));
+    }
+  });
+});
+
 function normalizeActivityPayload(entry){
   if (!entry || typeof entry !== 'object') return null;
   const label = typeof entry.label === 'string' ? entry.label.trim() : '';
@@ -216,11 +294,18 @@ const dashboardController = (() => {
   const lessonListEl = document.getElementById('dashboard-lessons-list');
   const deadlinesListEl = document.getElementById('dashboard-deadlines-list');
   const remindersListEl = document.getElementById('dashboard-reminders-list');
+  const lessonsSkeletonEl = document.getElementById('dashboard-lessons-skeleton');
+  const deadlinesSkeletonEl = document.getElementById('dashboard-deadlines-skeleton');
+  const remindersSkeletonEl = document.getElementById('dashboard-reminders-skeleton');
   const weatherStatusEl = document.getElementById('weather-status');
+  const weatherSkeletonEl = document.getElementById('weather-skeleton');
   const activityContainerEl = document.getElementById('dashboard-activity-container');
   const activityListEl = document.getElementById('dashboard-activity-list');
   const activityLoadingEl = document.getElementById('dashboard-activity-loading');
   const activityEmptyEl = document.getElementById('dashboard-activity-empty');
+  const hiddenTrayEl = document.getElementById('dashboard-hidden-tray');
+  const hiddenListEl = document.getElementById('dashboard-hidden-list');
+  const hiddenRestoreAllBtn = document.getElementById('dashboard-show-all');
 
   const hasDashboard = lessonListEl
     || deadlinesListEl
@@ -268,6 +353,285 @@ const dashboardController = (() => {
   if (!hasDashboard) {
     return null;
   }
+
+  const dashboardAreas = [...document.querySelectorAll('[data-dashboard-area]')];
+  const widgetElements = new Map();
+  dashboardAreas.forEach((area) => {
+    area.querySelectorAll('[data-dashboard-widget]').forEach((widget) => {
+      const widgetId = widget.dataset.dashboardWidget;
+      if (!widgetId) return;
+      widgetElements.set(widgetId, widget);
+    });
+  });
+
+  const widgetLabels = {};
+  widgetElements.forEach((el, id) => {
+    const label = el.dataset.widgetTitle || el.querySelector('h2')?.textContent?.trim() || id;
+    widgetLabels[id] = label;
+  });
+
+  const DASHBOARD_PREF_KEY = 'memoryCue.dashboardPreferences.v1';
+  let dashboardPreferences = null;
+
+  function getDefaultDashboardPreferences(){
+    const areas = {};
+    const widgets = {};
+    dashboardAreas.forEach((area) => {
+      const areaId = area.dataset.dashboardArea || 'default';
+      const order = [];
+      area.querySelectorAll('[data-dashboard-widget]').forEach((widget) => {
+        const widgetId = widget.dataset.dashboardWidget;
+        if (!widgetId) return;
+        order.push(widgetId);
+        widgets[widgetId] = { collapsed: false, hidden: false };
+      });
+      areas[areaId] = order;
+    });
+    return { version: 1, areas, widgets };
+  }
+
+  function loadDashboardPreferences(){
+    const defaults = getDefaultDashboardPreferences();
+    const stored = safeRead(DASHBOARD_PREF_KEY);
+    if (!stored || stored.version !== defaults.version) {
+      return defaults;
+    }
+    const preferences = { version: defaults.version, areas: {}, widgets: { ...defaults.widgets } };
+    const storedAreas = (stored && typeof stored.areas === 'object') ? stored.areas : {};
+    dashboardAreas.forEach((area) => {
+      const areaId = area.dataset.dashboardArea || 'default';
+      const defaultOrder = defaults.areas[areaId] || [];
+      const storedOrder = Array.isArray(storedAreas[areaId]) ? storedAreas[areaId] : [];
+      const mergedOrder = [];
+      storedOrder.forEach((id) => {
+        if (defaultOrder.includes(id) && !mergedOrder.includes(id)) {
+          mergedOrder.push(id);
+        }
+      });
+      defaultOrder.forEach((id) => {
+        if (!mergedOrder.includes(id)) mergedOrder.push(id);
+      });
+      preferences.areas[areaId] = mergedOrder;
+    });
+    const storedWidgets = (stored && typeof stored.widgets === 'object') ? stored.widgets : {};
+    Object.keys(defaults.widgets).forEach((id) => {
+      const entry = storedWidgets[id];
+      preferences.widgets[id] = {
+        collapsed: Boolean(entry?.collapsed),
+        hidden: Boolean(entry?.hidden),
+      };
+    });
+    return preferences;
+  }
+
+  function saveDashboardPreferences(){
+    if (!dashboardPreferences) return;
+    safeWrite(DASHBOARD_PREF_KEY, dashboardPreferences);
+  }
+
+  function ensureWidgetState(widgetId){
+    if (!dashboardPreferences.widgets[widgetId]) {
+      dashboardPreferences.widgets[widgetId] = { collapsed: false, hidden: false };
+    }
+    return dashboardPreferences.widgets[widgetId];
+  }
+
+  function getAreaId(widgetId){
+    const el = widgetElements.get(widgetId);
+    if (!el) return null;
+    const area = el.closest('[data-dashboard-area]');
+    return area ? (area.dataset.dashboardArea || 'default') : null;
+  }
+
+  function applyAreaOrder(areaId){
+    const area = dashboardAreas.find(item => (item.dataset.dashboardArea || 'default') === areaId);
+    if (!area) return;
+    const order = dashboardPreferences.areas[areaId] || [];
+    const nodes = Array.from(area.querySelectorAll('[data-dashboard-widget]'));
+    const nodeMap = new Map(nodes.map(node => [node.dataset.dashboardWidget, node]));
+    order.forEach((widgetId) => {
+      const node = nodeMap.get(widgetId);
+      if (node) area.appendChild(node);
+    });
+    nodes.forEach((node) => {
+      const widgetId = node.dataset.dashboardWidget;
+      if (!order.includes(widgetId)) {
+        area.appendChild(node);
+      }
+    });
+  }
+
+  function applyWidgetState(widgetId){
+    const el = widgetElements.get(widgetId);
+    if (!el) return;
+    const state = ensureWidgetState(widgetId);
+    const collapsed = Boolean(state.collapsed);
+    const body = el.querySelector('[data-widget-body]');
+    if (body) {
+      body.hidden = collapsed;
+      if (collapsed) {
+        body.setAttribute('aria-hidden', 'true');
+      } else {
+        body.removeAttribute('aria-hidden');
+      }
+    }
+    el.dataset.collapsed = collapsed ? 'true' : 'false';
+    const collapseBtn = el.querySelector('[data-widget-action="collapse"]');
+    if (collapseBtn) {
+      collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      const icon = collapseBtn.querySelector('[data-icon]');
+      if (icon) icon.textContent = collapsed ? '+' : '−';
+      const sr = collapseBtn.querySelector('.sr-only');
+      if (sr) sr.textContent = collapsed ? 'Expand widget' : 'Collapse widget';
+      collapseBtn.setAttribute('title', collapsed ? 'Expand widget' : 'Collapse widget');
+    }
+    const hidden = Boolean(state.hidden);
+    el.classList.toggle('hidden', hidden);
+    if (hidden) {
+      el.setAttribute('aria-hidden', 'true');
+      el.dataset.widgetHidden = 'true';
+    } else {
+      el.removeAttribute('aria-hidden');
+      el.dataset.widgetHidden = 'false';
+    }
+  }
+
+  function applyDashboardPreferences(){
+    dashboardAreas.forEach((area) => {
+      const areaId = area.dataset.dashboardArea || 'default';
+      applyAreaOrder(areaId);
+    });
+    widgetElements.forEach((_, widgetId) => {
+      applyWidgetState(widgetId);
+    });
+    updateHiddenTray();
+    updateMoveButtonStates();
+  }
+
+  function updateHiddenTray(){
+    if (!hiddenTrayEl || !hiddenListEl) return;
+    hiddenListEl.replaceChildren();
+    const hiddenEntries = Object.entries(dashboardPreferences.widgets)
+      .filter(([, value]) => Boolean(value && value.hidden));
+    if (!hiddenEntries.length) {
+      hiddenTrayEl.classList.add('hidden');
+      hiddenRestoreAllBtn?.classList.add('hidden');
+      return;
+    }
+    hiddenTrayEl.classList.remove('hidden');
+    hiddenEntries.forEach(([widgetId]) => {
+      const label = widgetLabels[widgetId] || widgetId;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.widgetRestore = widgetId;
+      button.className = 'inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600';
+      button.innerHTML = `<span aria-hidden="true">↩︎</span> ${label}`;
+      hiddenListEl.appendChild(button);
+    });
+    if (hiddenRestoreAllBtn) {
+      hiddenRestoreAllBtn.classList.remove('hidden');
+    }
+  }
+
+  function updateMoveButtonStates(){
+    dashboardAreas.forEach((area) => {
+      const areaId = area.dataset.dashboardArea || 'default';
+      const order = dashboardPreferences.areas[areaId] || [];
+      const visible = order.filter(id => !ensureWidgetState(id).hidden);
+      visible.forEach((widgetId, index) => {
+        const el = widgetElements.get(widgetId);
+        if (!el) return;
+        const upBtn = el.querySelector('[data-widget-action="move-up"]');
+        const downBtn = el.querySelector('[data-widget-action="move-down"]');
+        if (upBtn) upBtn.disabled = index === 0;
+        if (downBtn) downBtn.disabled = index === visible.length - 1;
+      });
+    });
+  }
+
+  function moveWidget(widgetId, direction){
+    const areaId = getAreaId(widgetId);
+    if (!areaId) return;
+    const order = dashboardPreferences.areas[areaId] || [];
+    const visible = order.filter(id => !ensureWidgetState(id).hidden);
+    const currentIndex = visible.indexOf(widgetId);
+    if (currentIndex === -1) return;
+    const targetIndex = currentIndex + direction;
+    if (targetIndex < 0 || targetIndex >= visible.length) return;
+    const swapId = visible[targetIndex];
+    const currentOrderIndex = order.indexOf(widgetId);
+    const swapOrderIndex = order.indexOf(swapId);
+    if (currentOrderIndex === -1 || swapOrderIndex === -1) return;
+    order[currentOrderIndex] = swapId;
+    order[swapOrderIndex] = widgetId;
+    applyAreaOrder(areaId);
+    saveDashboardPreferences();
+    updateMoveButtonStates();
+  }
+
+  function restoreWidget(widgetId){
+    const state = ensureWidgetState(widgetId);
+    state.hidden = false;
+    applyWidgetState(widgetId);
+    const areaId = getAreaId(widgetId);
+    if (areaId) applyAreaOrder(areaId);
+    saveDashboardPreferences();
+    updateHiddenTray();
+    updateMoveButtonStates();
+    const el = widgetElements.get(widgetId);
+    if (el) {
+      addEnterAnimation(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function setupWidgetControls(widgetId){
+    ensureWidgetState(widgetId);
+    const el = widgetElements.get(widgetId);
+    if (!el) return;
+    const collapseBtn = el.querySelector('[data-widget-action="collapse"]');
+    const hideBtn = el.querySelector('[data-widget-action="hide"]');
+    const moveUpBtn = el.querySelector('[data-widget-action="move-up"]');
+    const moveDownBtn = el.querySelector('[data-widget-action="move-down"]');
+    collapseBtn?.addEventListener('click', () => {
+      const state = ensureWidgetState(widgetId);
+      state.collapsed = !state.collapsed;
+      applyWidgetState(widgetId);
+      saveDashboardPreferences();
+    });
+    hideBtn?.addEventListener('click', () => {
+      const state = ensureWidgetState(widgetId);
+      state.hidden = true;
+      applyWidgetState(widgetId);
+      saveDashboardPreferences();
+      updateHiddenTray();
+      updateMoveButtonStates();
+    });
+    moveUpBtn?.addEventListener('click', () => moveWidget(widgetId, -1));
+    moveDownBtn?.addEventListener('click', () => moveWidget(widgetId, 1));
+  }
+
+  dashboardPreferences = loadDashboardPreferences();
+  widgetElements.forEach((_, widgetId) => {
+    setupWidgetControls(widgetId);
+  });
+  applyDashboardPreferences();
+  saveDashboardPreferences();
+
+  hiddenListEl?.addEventListener('click', (event) => {
+    const restoreBtn = event.target.closest('[data-widget-restore]');
+    if (!restoreBtn) return;
+    restoreWidget(restoreBtn.dataset.widgetRestore);
+  });
+
+  hiddenRestoreAllBtn?.addEventListener('click', () => {
+    Object.keys(dashboardPreferences.widgets).forEach((widgetId) => {
+      const state = ensureWidgetState(widgetId);
+      state.hidden = false;
+    });
+    applyDashboardPreferences();
+    saveDashboardPreferences();
+  });
 
   const LESSON_STORAGE_KEY = 'memoryCue.dashboardLessons.v1';
   const DEADLINE_STORAGE_KEY = 'memoryCue.dashboardDeadlines.v1';
@@ -340,6 +704,23 @@ const dashboardController = (() => {
   let lessonFeedbackTimer = null;
   let deadlineFeedbackTimer = null;
   let isFetchingWeather = false;
+
+  function addEnterAnimation(el, className = 'animate-widget-pop'){
+    if (!el) return;
+    el.classList.remove(className);
+    void el.offsetWidth;
+    el.classList.add(className);
+    el.addEventListener('animationend', () => {
+      el.classList.remove(className);
+    }, { once: true });
+  }
+
+  function bumpElement(el){
+    if (!el) return;
+    el.classList.remove('dashboard-bump');
+    void el.offsetWidth;
+    el.classList.add('dashboard-bump');
+  }
 
   function randomId(prefix = 'id'){
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -480,10 +861,20 @@ const dashboardController = (() => {
     }
   }
 
+  function updateCounter(el, value){
+    if (!el) return;
+    const next = String(value);
+    const previous = el.textContent;
+    el.textContent = next;
+    if (previous !== next) {
+      bumpElement(el);
+    }
+  }
+
   function applyOverviewCounts(){
-    if (overviewLessonCountEl) overviewLessonCountEl.textContent = String(counts.lessons);
-    if (overviewDeadlineCountEl) overviewDeadlineCountEl.textContent = String(counts.deadlines);
-    if (overviewReminderCountEl) overviewReminderCountEl.textContent = String(counts.reminders);
+    updateCounter(overviewLessonCountEl, counts.lessons);
+    updateCounter(overviewDeadlineCountEl, counts.deadlines);
+    updateCounter(overviewReminderCountEl, counts.reminders);
   }
 
   function parseTimeToDate(baseDate, timeString){
@@ -751,9 +1142,13 @@ const dashboardController = (() => {
       content.appendChild(meta);
 
       button.append(iconEl, content);
+      addEnterAnimation(button);
       li.appendChild(button);
       fragment.appendChild(li);
     });
+    activityLoadingEl?.classList.add('hidden');
+    activityListEl.classList.remove('hidden');
+    activityListEl.setAttribute('aria-busy', 'false');
     activityListEl.replaceChildren(fragment);
     updateActivityEmptyState();
     updateActivityRelativeTimes();
@@ -810,6 +1205,9 @@ const dashboardController = (() => {
     lessonArray.sort((a, b) => minutesFromTimeString(a.start) - minutesFromTimeString(b.start));
 
     lessonListEl.replaceChildren();
+    if (lessonsSkeletonEl) lessonsSkeletonEl.classList.add('hidden');
+    lessonListEl.classList.remove('hidden');
+    lessonListEl.setAttribute('aria-busy', 'false');
     counts.lessons = lessonArray.length;
     applyOverviewCounts();
 
@@ -817,6 +1215,7 @@ const dashboardController = (() => {
       if (lessonsEmptyEl) lessonsEmptyEl.classList.remove('hidden');
       if (lessonStatusEl) lessonStatusEl.classList.add('hidden');
       if (nextLessonEl) nextLessonEl.textContent = '';
+      lessonListEl.classList.add('hidden');
       return;
     }
 
@@ -902,6 +1301,7 @@ const dashboardController = (() => {
       actions.appendChild(removeBtn);
 
       li.append(details, actions);
+      addEnterAnimation(li);
       fragment.appendChild(li);
     });
 
@@ -910,7 +1310,12 @@ const dashboardController = (() => {
     if (lessonStatusEl){
       lessonStatusEl.classList.remove('hidden');
       const finished = Math.min(completed, lessonArray.length);
-      lessonStatusEl.textContent = `${finished} of ${lessonArray.length} complete`;
+      const text = `${finished} of ${lessonArray.length} complete`;
+      const previous = lessonStatusEl.textContent;
+      lessonStatusEl.textContent = text;
+      if (previous !== text) {
+        bumpElement(lessonStatusEl);
+      }
     }
 
     if (nextLessonEl){
@@ -947,11 +1352,15 @@ const dashboardController = (() => {
     upcoming.sort((a, b) => new Date(a.due) - new Date(b.due));
 
     deadlinesListEl.replaceChildren();
+    if (deadlinesSkeletonEl) deadlinesSkeletonEl.classList.add('hidden');
+    deadlinesListEl.classList.remove('hidden');
+    deadlinesListEl.setAttribute('aria-busy', 'false');
     counts.deadlines = upcoming.length;
     applyOverviewCounts();
 
     if (!upcoming.length){
       if (deadlinesEmptyEl) deadlinesEmptyEl.classList.remove('hidden');
+      deadlinesListEl.classList.add('hidden');
       return;
     }
 
@@ -1021,6 +1430,7 @@ const dashboardController = (() => {
 
       top.append(info, actions);
       li.appendChild(top);
+      addEnterAnimation(li);
       fragment.appendChild(li);
     });
 
@@ -1030,6 +1440,9 @@ const dashboardController = (() => {
   function renderReminders(){
     if (!remindersListEl) return;
     remindersListEl.replaceChildren();
+    if (remindersSkeletonEl) remindersSkeletonEl.classList.add('hidden');
+    remindersListEl.classList.remove('hidden');
+    remindersListEl.setAttribute('aria-busy', 'false');
     const now = new Date();
     const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);
@@ -1053,6 +1466,7 @@ const dashboardController = (() => {
 
     if (!filtered.length){
       if (remindersEmptyEl) remindersEmptyEl.classList.remove('hidden');
+      remindersListEl.classList.add('hidden');
       return;
     }
 
@@ -1114,6 +1528,7 @@ const dashboardController = (() => {
 
       header.append(content, status);
       li.appendChild(header);
+      addEnterAnimation(li);
       fragment.appendChild(li);
     });
 
@@ -1262,7 +1677,9 @@ const dashboardController = (() => {
     if (!weatherSummaryEl) return;
     const current = data?.current_weather;
     if (!current) throw new Error('Weather data missing');
+    if (weatherSkeletonEl) weatherSkeletonEl.classList.add('hidden');
     weatherSummaryEl.classList.remove('hidden');
+    addEnterAnimation(weatherSummaryEl);
     const code = WEATHER_CODE_MAP[current.weathercode] || WEATHER_CODE_MAP.default;
     if (weatherIconEl) weatherIconEl.textContent = code.icon;
     if (weatherDescEl) weatherDescEl.textContent = code.label;
@@ -1295,6 +1712,7 @@ const dashboardController = (() => {
     } catch (error) {
       console.error('Weather load failed', error);
       setWeatherStatus('Unable to load weather right now.', 'error');
+      weatherSkeletonEl?.classList.add('hidden');
     }
   }
 
@@ -1303,6 +1721,7 @@ const dashboardController = (() => {
     if (isFetchingWeather) return;
     isFetchingWeather = true;
     setWeatherStatus(message || 'Fetching latest forecast…', 'info');
+    weatherSkeletonEl?.classList.remove('hidden');
     weatherSummaryEl?.classList.add('hidden');
 
     const finish = () => {
