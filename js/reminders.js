@@ -157,12 +157,21 @@ export async function initReminders(sel = {}) {
    }
 
   // Formatting helpers
-  const TZ = 'Australia/Adelaide';
-  const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-  const dayFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+  const navigatorLocale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : '';
+  let locale = navigatorLocale || 'en-US';
+  let TZ = 'UTC';
+  try {
+    const resolved = new Intl.DateTimeFormat().resolvedOptions();
+    if (resolved.timeZone) TZ = resolved.timeZone;
+    if (!navigatorLocale && resolved.locale) locale = resolved.locale;
+  } catch {
+    // Intl not supported; fall back to defaults already set
+  }
+  const timeFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  const dayFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
   const dateOnlyFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
-  const desktopDayLabelFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long' });
-  const desktopShortDateFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, month: 'short', day: 'numeric' });
+  const desktopDayLabelFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: 'long' });
+  const desktopShortDateFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, month: 'short', day: 'numeric' });
   function formatDateLocal(d) {
     const parts = dateOnlyFmt.formatToParts(d);
     const y = parts.find(p => p.type === 'year').value;
@@ -178,8 +187,8 @@ export async function initReminders(sel = {}) {
     dt.setHours(h || 0, m || 0, 0, 0);
     return dt.toISOString();
   }
-  const datePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
-  const timePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
+  const datePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const timePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
   function isoToLocalDate(iso) {
     try {
       const d = new Date(iso);
@@ -351,14 +360,25 @@ export async function initReminders(sel = {}) {
 
   function render(){
     const now = new Date();
-    const adlNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
-    const t0 = new Date(adlNow); t0.setHours(0,0,0,0);
-    const t1 = new Date(adlNow); t1.setHours(23,59,59,999);
-    const w0 = startOfWeek(adlNow);
-    const w1 = endOfWeek(adlNow);
-    const todays = items.filter(x => x.due && new Date(x.due) >= t0 && new Date(x.due) <= t1 && !x.done);
-    const weeks  = items.filter(x => x.due && new Date(x.due) >= w0 && new Date(x.due) <= w1 && !x.done);
-    const overdueCount = items.filter(x => !x.done && x.due && new Date(x.due) < adlNow).length;
+    const localNow = new Date(now);
+    const t0 = new Date(localNow); t0.setHours(0,0,0,0);
+    const t1 = new Date(localNow); t1.setHours(23,59,59,999);
+    const w0 = startOfWeek(localNow);
+    const w1 = endOfWeek(localNow);
+    const todays = items.filter(x => {
+      if (!x.due || x.done) return false;
+      const due = new Date(x.due);
+      return due >= t0 && due <= t1;
+    });
+    const weeks  = items.filter(x => {
+      if (!x.due || x.done) return false;
+      const due = new Date(x.due);
+      return due >= w0 && due <= w1;
+    });
+    const overdueCount = items.filter(x => {
+      if (x.done || !x.due) return false;
+      return new Date(x.due) < localNow;
+    }).length;
     const completedCount = items.filter(x => x.done).length;
     if(countTodayEl) countTodayEl.textContent = String(todays.length);
     if(countWeekEl) countWeekEl.textContent = String(weeks.length);
@@ -371,11 +391,11 @@ export async function initReminders(sel = {}) {
     if(queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr)); }
     rows = rows.filter(r => {
       if(filter==='done') return r.done;
-      if(filter==='overdue') return !r.done && r.due && new Date(r.due) < adlNow;
+      if(filter==='overdue') return !r.done && r.due && new Date(r.due) < localNow;
       if(filter==='today'){
         if(!r.due) return true;
-        const dueAdl = new Date(new Date(r.due).toLocaleString('en-US',{timeZone:TZ}));
-        return dueAdl >= t0 && dueAdl <= t1;
+        const dueLocal = new Date(r.due);
+        return dueLocal >= t0 && dueLocal <= t1;
       }
       return true;
     });
@@ -548,7 +568,7 @@ export async function initReminders(sel = {}) {
   filterBtns.forEach(b => b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
 
   copyMtlBtn?.addEventListener('click', () => {
-    const lines = items.filter(x=>!x.done).map(x=>{ const datePart = x.due ? fmtDayDate(x.due.slice(0,10)) : ''; const timePart = x.due ? new Date(x.due).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}) : ''; const pieces = [ 'mtl '+x.title, x.due ? `Due Date: ${datePart}` : '', x.due ? `Time: ${timePart}` : '', `Status: Not started` ].filter(Boolean); return pieces.join('\n'); });
+    const lines = items.filter(x=>!x.done).map(x=>{ const datePart = x.due ? fmtDayDate(x.due.slice(0,10)) : ''; const timePart = x.due ? new Date(x.due).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit', timeZone: TZ}) : ''; const pieces = [ 'mtl '+x.title, x.due ? `Due Date: ${datePart}` : '', x.due ? `Time: ${timePart}` : '', `Status: Not started` ].filter(Boolean); return pieces.join('\n'); });
     if(lines.length===0){ toast('No active tasks to copy'); return; }
     navigator.clipboard.writeText(lines.join('\n\n')).then(()=>toast('Copied for Master Task List')).catch(()=>toast('Copy failed'));
     closeMenu();
@@ -595,7 +615,7 @@ export async function initReminders(sel = {}) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(SR){
       recog = new SR();
-      recog.lang = 'en-AU';
+      recog.lang = locale;
       recog.interimResults = false;
       recog.onresult = (e)=>{ const t=e.results[0][0].transcript||''; if(title){ title.value = t; toast('Heard: '+t); } };
       recog.onend = ()=>{ listening=false; if(voiceBtn) voiceBtn.textContent='🎙️'; };
