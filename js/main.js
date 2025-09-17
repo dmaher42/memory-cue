@@ -7,6 +7,8 @@ const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
 const views = [...document.querySelectorAll('[data-view]')];
 const viewMap = new Map(views.map(v => [v.dataset.view, v]));
 const DEFAULT_VIEW = 'dashboard';
+const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
+const ACTIVITY_QUEUE_LIMIT = 20;
 
 navButtons.forEach(btn => {
   if (!viewMap.has(btn.dataset.route)) {
@@ -85,6 +87,63 @@ if (!location.hash) {
 
 syncViewFromHash();
 
+function normalizeActivityPayload(entry){
+  if (!entry || typeof entry !== 'object') return null;
+  const label = typeof entry.label === 'string' ? entry.label.trim() : '';
+  if (!label) return null;
+  const timestampSource = entry.timestamp ? new Date(entry.timestamp) : new Date();
+  const tsValid = timestampSource instanceof Date && !Number.isNaN(timestampSource.getTime());
+  const timestamp = tsValid ? timestampSource : new Date();
+  const payload = { ...entry };
+  payload.label = label;
+  payload.timestamp = timestamp.toISOString();
+  if (!payload.target) {
+    payload.target = { view: DEFAULT_VIEW };
+  }
+  if (!payload.id) {
+    const seed = `${payload.type || 'activity'}-${timestamp.getTime()}-${Math.random().toString(16).slice(2, 8)}`;
+    payload.id = seed;
+  }
+  return payload;
+}
+
+function dispatchActivityEvent(entry){
+  const payload = normalizeActivityPayload(entry);
+  if (!payload) return false;
+  if (typeof window !== 'undefined') {
+    const queue = Array.isArray(window.memoryCueActivityQueue) ? window.memoryCueActivityQueue : [];
+    queue.push(payload);
+    while (queue.length > ACTIVITY_QUEUE_LIMIT) queue.shift();
+    window.memoryCueActivityQueue = queue;
+  }
+  if (typeof document === 'undefined' || typeof document.dispatchEvent !== 'function') {
+    return false;
+  }
+  try {
+    if (typeof CustomEvent === 'function') {
+      document.dispatchEvent(new CustomEvent(ACTIVITY_EVENT_NAME, { detail: payload }));
+    } else if (document.createEvent) {
+      const evt = document.createEvent('CustomEvent');
+      if (evt && evt.initCustomEvent) {
+        evt.initCustomEvent(ACTIVITY_EVENT_NAME, false, false, payload);
+        document.dispatchEvent(evt);
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  const existing = typeof window.memoryCueActivity === 'object' && window.memoryCueActivity !== null
+    ? window.memoryCueActivity
+    : {};
+  existing.push = dispatchActivityEvent;
+  existing.eventName = ACTIVITY_EVENT_NAME;
+  window.memoryCueActivity = existing;
+}
+
 // Firebase auth
 const signInBtn = document.getElementById('sign-in-btn');
 const signOutBtn = document.getElementById('sign-out-btn');
@@ -158,14 +217,47 @@ const dashboardController = (() => {
   const deadlinesListEl = document.getElementById('dashboard-deadlines-list');
   const remindersListEl = document.getElementById('dashboard-reminders-list');
   const weatherStatusEl = document.getElementById('weather-status');
+  const activityContainerEl = document.getElementById('dashboard-activity-container');
+  const activityListEl = document.getElementById('dashboard-activity-list');
+  const activityLoadingEl = document.getElementById('dashboard-activity-loading');
+  const activityEmptyEl = document.getElementById('dashboard-activity-empty');
 
-  const hasDashboard = lessonListEl || deadlinesListEl || remindersListEl || weatherStatusEl;
+  const hasDashboard = lessonListEl
+    || deadlinesListEl
+    || remindersListEl
+    || weatherStatusEl
+    || activityContainerEl
+    || activityListEl
+    || activityLoadingEl
+    || activityEmptyEl;
   const locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-AU';
 
   const headlineFormatter = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' });
   const timeFormatter = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });
   const longTimeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
   const dateTimeFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const activityTimestampFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const hasActivityFeed = Boolean(activityContainerEl || activityListEl || activityLoadingEl || activityEmptyEl);
+  const ACTIVITY_MAX_ITEMS = 7;
+  const activityState = { ready: false, items: [] };
+  const activityIconMap = {
+    lesson: '📚',
+    deadline: '⏰',
+    reminder: '🔔',
+    planner: '🗓️',
+    note: '📝',
+    weather: '🌦️',
+    general: '✨',
+  };
+  const activityViewLabels = {
+    dashboard: 'Dashboard',
+    reminders: 'Reminders',
+    planner: 'Planner',
+    notes: 'Notes',
+    resources: 'Resources',
+    templates: 'Templates',
+    settings: 'Settings',
+  };
   const dayLabelFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
 
   const dateEl = document.getElementById('dashboard-date');
@@ -480,6 +572,236 @@ const dashboardController = (() => {
     return { label: 'Completed', tone: 'past' };
   }
 
+  function iconForActivity(type){
+    return activityIconMap[type] || activityIconMap.general;
+  }
+
+  function viewLabel(view){
+    if (!view) return '';
+    if (activityViewLabels[view]) return activityViewLabels[view];
+    if (typeof view === 'string' && view.length){
+      return view.charAt(0).toUpperCase() + view.slice(1);
+    }
+    return '';
+  }
+
+  function normaliseActivityTarget(target){
+    if (!target) return { view: DEFAULT_VIEW, anchor: null, selector: null };
+    if (typeof target === 'string'){
+      const trimmed = target.trim();
+      if (!trimmed) return { view: DEFAULT_VIEW, anchor: null, selector: null };
+      if (trimmed.startsWith('#')){
+        return { view: DEFAULT_VIEW, anchor: trimmed, selector: trimmed };
+      }
+      if (trimmed.includes('#')){
+        const [viewPart, anchorPart] = trimmed.split('#');
+        const viewName = viewMap.has(viewPart) ? viewPart : DEFAULT_VIEW;
+        const anchor = anchorPart ? `#${anchorPart}` : null;
+        return { view: viewName, anchor, selector: anchor };
+      }
+      if (viewMap.has(trimmed)){
+        return { view: trimmed, anchor: null, selector: null };
+      }
+      const selector = trimmed.startsWith('.') || trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+      const anchor = selector.startsWith('#') ? selector : null;
+      return { view: DEFAULT_VIEW, anchor, selector };
+    }
+    if (typeof target === 'object'){
+      let viewName = null;
+      if (typeof target.view === 'string' && viewMap.has(target.view)){
+        viewName = target.view;
+      } else if (typeof target.route === 'string' && viewMap.has(target.route)){
+        viewName = target.route;
+      } else if (typeof target.name === 'string' && viewMap.has(target.name)){
+        viewName = target.name;
+      } else if (typeof target.hash === 'string'){
+        const candidate = target.hash.replace(/^#/, '');
+        if (viewMap.has(candidate)) viewName = candidate;
+      } else if (typeof target.href === 'string'){
+        const candidate = target.href.replace(/^#/, '');
+        if (viewMap.has(candidate)) viewName = candidate;
+      }
+      const finalView = viewName || DEFAULT_VIEW;
+      const anchor = typeof target.anchor === 'string' ? target.anchor : (typeof target.hash === 'string' ? target.hash : null);
+      const selector = typeof target.selector === 'string' ? target.selector : anchor;
+      return { view: finalView, anchor: anchor || null, selector: selector || null };
+    }
+    return { view: DEFAULT_VIEW, anchor: null, selector: null };
+  }
+
+  function relativeActivityLabel(date){
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const now = new Date();
+    const diff = now - date;
+    if (Number.isNaN(diff)) return '';
+    if (diff < 0) return 'Upcoming';
+    if (diff < 45 * 1000) return 'Just now';
+    return `${formatDuration(diff)} ago`;
+  }
+
+  function updateActivityEmptyState(){
+    if (!hasActivityFeed) return;
+    const hasItems = activityState.items.length > 0;
+    if (activityListEl){
+      activityListEl.classList.toggle('hidden', !hasItems);
+    }
+    if (activityEmptyEl){
+      if (activityState.ready && !hasItems){
+        activityEmptyEl.classList.remove('hidden');
+      } else {
+        activityEmptyEl.classList.add('hidden');
+      }
+    }
+  }
+
+  function ensureActivityReady(){
+    if (!hasActivityFeed || activityState.ready) return;
+    activityState.ready = true;
+    if (activityLoadingEl) activityLoadingEl.classList.add('hidden');
+    if (activityListEl) activityListEl.setAttribute('aria-busy', 'false');
+    updateActivityEmptyState();
+  }
+
+  function updateActivityRelativeTimes(){
+    if (!activityListEl) return;
+    const nodes = activityListEl.querySelectorAll('[data-activity-relative-timestamp]');
+    nodes.forEach((node) => {
+      const iso = node.getAttribute('data-activity-relative-timestamp');
+      if (!iso) return;
+      const dt = new Date(iso);
+      if (Number.isNaN(dt.getTime())) return;
+      node.textContent = relativeActivityLabel(dt);
+    });
+  }
+
+  function navigateToTarget(target){
+    const normalized = normaliseActivityTarget(target);
+    const viewName = normalized.view && viewMap.has(normalized.view) ? normalized.view : DEFAULT_VIEW;
+    const selector = normalized.selector || normalized.anchor;
+    const applyAnchor = () => {
+      if (!selector) return;
+      requestAnimationFrame(() => {
+        const el = document.querySelector(selector);
+        if (el && typeof el.scrollIntoView === 'function'){
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    };
+    if (location.hash === `#${viewName}`){
+      show(viewName);
+      applyAnchor();
+      return;
+    }
+    const onHashChange = () => {
+      window.removeEventListener('hashchange', onHashChange);
+      applyAnchor();
+    };
+    window.addEventListener('hashchange', onHashChange, { once: true });
+    location.hash = `#${viewName}`;
+  }
+
+  function renderActivityList(){
+    if (!activityListEl) return;
+    const fragment = document.createDocumentFragment();
+    activityState.items.forEach((item) => {
+      const li = document.createElement('li');
+      li.className = 'list-none';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'flex w-full items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/40 px-4 py-3 text-left transition hover:border-blue-300 hover:shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500';
+      button.dataset.activityId = item.id;
+      button.addEventListener('click', () => navigateToTarget(item.target));
+
+      const iconEl = document.createElement('span');
+      iconEl.className = 'text-xl leading-none';
+      iconEl.textContent = item.icon;
+
+      const content = document.createElement('div');
+      content.className = 'flex-1 space-y-1';
+
+      const labelEl = document.createElement('p');
+      labelEl.className = 'text-sm font-semibold text-slate-900 dark:text-slate-100';
+      labelEl.textContent = item.label;
+      content.appendChild(labelEl);
+
+      if (item.target && item.target.view){
+        const badge = document.createElement('span');
+        badge.className = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300';
+        badge.textContent = viewLabel(item.target.view);
+        content.appendChild(badge);
+      }
+
+      const meta = document.createElement('p');
+      meta.className = 'text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1';
+
+      const relativeEl = document.createElement('span');
+      relativeEl.dataset.activityRelativeTimestamp = item.timestamp;
+      relativeEl.textContent = relativeActivityLabel(item.date);
+      meta.appendChild(relativeEl);
+
+      const timeEl = document.createElement('time');
+      timeEl.dateTime = item.timestamp;
+      timeEl.textContent = activityTimestampFormatter.format(item.date);
+
+      const dot = document.createElement('span');
+      dot.setAttribute('aria-hidden', 'true');
+      dot.textContent = '•';
+      meta.append(dot, timeEl);
+
+      content.appendChild(meta);
+
+      button.append(iconEl, content);
+      li.appendChild(button);
+      fragment.appendChild(li);
+    });
+    activityListEl.replaceChildren(fragment);
+    updateActivityEmptyState();
+    updateActivityRelativeTimes();
+  }
+
+  function addActivityEntry(detail){
+    if (!hasActivityFeed) return;
+    const payload = normalizeActivityPayload(detail);
+    if (!payload) return;
+    ensureActivityReady();
+    const entryDate = new Date(payload.timestamp);
+    const entry = {
+      id: payload.id,
+      label: payload.label,
+      type: payload.type || 'general',
+      action: payload.action || 'update',
+      timestamp: payload.timestamp,
+      date: entryDate,
+      icon: payload.icon || iconForActivity(payload.type),
+      target: normaliseActivityTarget(payload.target),
+    };
+    const existingIndex = activityState.items.findIndex(item => item.id === entry.id);
+    if (existingIndex !== -1){
+      activityState.items.splice(existingIndex, 1);
+    }
+    activityState.items.unshift(entry);
+    if (activityState.items.length > ACTIVITY_MAX_ITEMS){
+      activityState.items.length = ACTIVITY_MAX_ITEMS;
+    }
+    renderActivityList();
+  }
+
+  if (hasActivityFeed){
+    if (activityListEl) activityListEl.setAttribute('aria-busy', 'true');
+    const pending = (typeof window !== 'undefined' && Array.isArray(window.memoryCueActivityQueue))
+      ? window.memoryCueActivityQueue.slice(-ACTIVITY_MAX_ITEMS)
+      : [];
+    pending.forEach(addActivityEntry);
+    if (!activityState.ready){
+      setTimeout(() => { ensureActivityReady(); }, 1200);
+    } else {
+      ensureActivityReady();
+    }
+    document.addEventListener(ACTIVITY_EVENT_NAME, (event) => {
+      addActivityEntry(event?.detail);
+    });
+  }
+
   function renderLessons(){
     if (!lessonListEl) return;
     const today = new Date();
@@ -564,6 +886,16 @@ const dashboardController = (() => {
         if (!Array.isArray(current)) return;
         lessonsState.byDate[todayKey] = current.filter(item => item.id !== lesson.id);
         saveLessons();
+        const timeLabel = buildLessonTimeLabel(today, lesson.start, lesson.end);
+        const removalParts = [lesson.subject || 'Lesson'];
+        if (timeLabel) removalParts.push(timeLabel);
+        if (lesson.location) removalParts.push(lesson.location);
+        dispatchActivityEvent({
+          type: 'lesson',
+          action: 'deleted',
+          label: `Lesson removed · ${removalParts.join(' • ')}`,
+          target: { view: 'dashboard', anchor: '#lessons-heading' },
+        });
         showLessonFeedback('Lesson removed from today.', 'success');
         renderLessons();
       });
@@ -676,6 +1008,12 @@ const dashboardController = (() => {
         if (index === -1) return;
         deadlinesState.items[index].done = true;
         saveDeadlines();
+        dispatchActivityEvent({
+          type: 'deadline',
+          action: 'completed',
+          label: `Deadline completed · ${deadline.title || 'Deadline'}`,
+          target: { view: 'dashboard', anchor: '#deadlines-heading' },
+        });
         showDeadlineFeedback('Deadline marked as complete.', 'success');
         renderDeadlines();
       });
@@ -805,8 +1143,20 @@ const dashboardController = (() => {
       if (!lessonsState.byDate) lessonsState.byDate = {};
       lessonsState.byDate[todayKey] = [];
     }
-    lessonsState.byDate[todayKey].push(createLesson(start, end, subject, lessonLocationInput?.value.trim() || ''));
+    const locationValue = lessonLocationInput?.value.trim() || '';
+    const newLesson = createLesson(start, end, subject, locationValue);
+    lessonsState.byDate[todayKey].push(newLesson);
     saveLessons();
+    const timeLabel = buildLessonTimeLabel(new Date(), start, end);
+    const lessonParts = [subject];
+    if (timeLabel) lessonParts.push(timeLabel);
+    if (locationValue) lessonParts.push(locationValue);
+    dispatchActivityEvent({
+      type: 'lesson',
+      action: 'created',
+      label: `Lesson added · ${lessonParts.join(' • ')}`,
+      target: { view: 'dashboard', anchor: '#lessons-heading' },
+    });
     lessonForm?.reset();
     lessonSubjectInput.focus();
     showLessonFeedback('Lesson added to today.', 'success');
@@ -837,15 +1187,23 @@ const dashboardController = (() => {
     if (!Array.isArray(deadlinesState.items)){
       deadlinesState.items = [];
     }
-    deadlinesState.items.push({
+    const courseValue = deadlineCourseInput?.value.trim() || '';
+    const newDeadline = {
       id: randomId('deadline'),
       title,
       due: dueDate.toISOString(),
-      course: deadlineCourseInput?.value.trim() || '',
+      course: courseValue,
       notes: '',
       done: false,
-    });
+    };
+    deadlinesState.items.push(newDeadline);
     saveDeadlines();
+    dispatchActivityEvent({
+      type: 'deadline',
+      action: 'created',
+      label: `Deadline added · ${title} (${dateTimeFormatter.format(dueDate)})`,
+      target: { view: 'dashboard', anchor: '#deadlines-heading' },
+    });
     deadlineForm?.reset();
     showDeadlineFeedback('Deadline saved for this week.', 'success');
     renderDeadlines();
@@ -990,6 +1348,7 @@ const dashboardController = (() => {
     renderLessons();
     renderDeadlines();
     renderReminders();
+    updateActivityRelativeTimes();
   }, 60 * 1000);
 
   setInterval(() => {
