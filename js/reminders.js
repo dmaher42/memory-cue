@@ -486,6 +486,23 @@ export async function initReminders(sel = {}) {
     if(countTotalEl) countTotalEl.textContent = String(items.length);
     if(countCompletedEl) countCompletedEl.textContent = String(completedCount);
 
+    if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
+      const payload = items.map(item => ({ ...item }));
+      try {
+        if (typeof CustomEvent === 'function') {
+          document.dispatchEvent(new CustomEvent('memoryCue:remindersUpdated', { detail: { items: payload } }));
+        } else if (document.createEvent) {
+          const evt = document.createEvent('CustomEvent');
+          if (evt && evt.initCustomEvent) {
+            evt.initCustomEvent('memoryCue:remindersUpdated', false, false, { items: payload });
+            document.dispatchEvent(evt);
+          }
+        }
+      } catch {
+        // Ignore dispatch errors so reminder rendering can continue.
+      }
+    }
+
     let rows = items.slice();
     const queryStr = q?.value.trim().toLowerCase() || '';
     if(queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr)); }
