@@ -366,6 +366,21 @@ export async function initReminders(sel = {}) {
   function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
 
   function addItem(obj){ if(!userId){ toast('Sign in to add reminders'); return; } const nowMs=Date.now(); const item={ id: uid(), title: obj.title.trim(), priority: obj.priority||'Medium', notes: obj.notes||'', done:false, createdAt: nowMs, updatedAt: nowMs, due: obj.due || null }; items=[item,...items]; render(); saveToFirebase(item); tryCalendarSync(item); scheduleReminder(item); return item; }
+  function addNoteToReminder(id, noteText){
+    if(!userId){ toast('Sign in to add notes'); return null; }
+    if(!id) return null;
+    const reminder = items.find(x=>x.id===id);
+    if(!reminder) return null;
+    const incoming = noteText == null ? '' : (typeof noteText === 'string' ? noteText : String(noteText));
+    const trimmed = incoming.trim();
+    if(!trimmed) return reminder;
+    const existing = typeof reminder.notes === 'string' ? reminder.notes : '';
+    reminder.notes = existing ? `${existing}\n${trimmed}` : trimmed;
+    reminder.updatedAt = Date.now();
+    saveToFirebase(reminder);
+    render();
+    return reminder;
+  }
   function toggleDone(id){ const it=items.find(x=>x.id===id); if(!it) return; it.done=!it.done; it.updatedAt=Date.now(); saveToFirebase(it); tryCalendarSync(it); render(); if(it.done) cancelReminder(id); else scheduleReminder(it); }
   function removeItem(id){ items=items.filter(x=>x.id!==id); render(); deleteFromFirebase(id); cancelReminder(id); }
 
@@ -724,5 +739,6 @@ export async function initReminders(sel = {}) {
     scheduleReminder,
     closeActiveNotifications,
     getActiveNotifications: () => activeNotifications,
+    addNoteToReminder,
   };
 }
