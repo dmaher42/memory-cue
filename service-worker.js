@@ -87,6 +87,7 @@ self.addEventListener('fetch', (event) => {
 
   // Always bypass certain hosts (Apps Script, etc.)
   if (BYPASS_HOSTS.has(url.hostname)) {
+    event.respondWith(fetch(req));
     return; // Let the browser handle it (goes to network)
   }
 

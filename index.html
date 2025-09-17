@@ -200,7 +200,115 @@
             </select>
           </div>
           
-          <div class="flex gap-6 mb-6 text-slate-600 dark:text-slate-400">
+          <div class="flex flex-wrap gap-6 mb-6 text-slate-600 dark:text-slate-400">
             <div class="flex items-center gap-2">
               <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>Today: <span id="inlineTodayCount" class="font-semibold text-slate-900 dark:text-slate-100">0</span></span
+              <span>Today: <span id="inlineTodayCount" class="font-semibold text-slate-900 dark:text-slate-100">0</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
+              <span>Overdue: <span id="inlineOverdueCount" class="font-semibold text-slate-900 dark:text-slate-100">0</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 bg-slate-400 rounded-full"></div>
+              <span>Total: <span id="inlineTotalCount" class="font-semibold text-slate-900 dark:text-slate-100">0</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+              <span>Completed: <span id="inlineCompletedCount" class="font-semibold text-slate-900 dark:text-slate-100">0</span></span>
+            </div>
+          </div>
+
+          <div id="remindersWrapper" class="space-y-4">
+            <p id="emptyState" class="text-slate-500 dark:text-slate-400 text-sm">Add your first reminder to see it here.</p>
+            <ul id="reminderList" class="space-y-4"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section data-view="planner" id="view-planner" hidden>
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
+          <div class="flex flex-wrap items-center gap-4 justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Weekly Planner</h2>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Navigate between weeks to map lessons and key tasks.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="planner-prev" class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" type="button">◀</button>
+              <button id="planner-today" class="px-4 py-2 rounded-lg bg-purple-600 text-white" type="button">This Week</button>
+              <button id="planner-next" class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" type="button">▶</button>
+            </div>
+          </div>
+          <div class="mt-6">
+            <h3 id="planner-week" class="text-lg font-semibold text-slate-900 dark:text-slate-100"></h3>
+            <div id="planner-grid" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section data-view="notes" id="view-notes" hidden>
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+          <div class="flex flex-wrap items-center gap-4 justify-between mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Quick Notes</h2>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Capture ideas and convert them into reusable snippets.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="bullet-btn" class="px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" type="button" aria-label="Insert bullet list">• List</button>
+              <button id="number-btn" class="px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" type="button" aria-label="Insert numbered list">1. List</button>
+            </div>
+          </div>
+          <div id="quick-note" class="min-h-[240px] p-4 border border-slate-300 dark:border-slate-700 rounded-xl bg-white/60 dark:bg-slate-900/40" contenteditable="true" aria-label="Quick note editor"></div>
+          <div class="flex flex-wrap gap-3 items-center mt-4">
+            <div class="flex gap-2">
+              <button id="save-note" class="px-4 py-2 rounded-lg bg-emerald-500 text-white" type="button">Save</button>
+              <button id="load-note" class="px-4 py-2 rounded-lg bg-blue-500 text-white" type="button">Load</button>
+              <button id="clear-note" class="px-4 py-2 rounded-lg bg-red-500 text-white" type="button">Clear</button>
+            </div>
+            <label for="saved-notes" class="text-sm font-medium text-slate-700 dark:text-slate-300">Saved notes</label>
+            <select id="saved-notes" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"></select>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section data-view="resources" id="view-resources" hidden>
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
+          <p>Curated teaching resources will appear here soon.</p>
+        </div>
+      </div>
+    </section>
+    <section data-view="templates" id="view-templates" hidden>
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
+          <p>Template gallery coming soon.</p>
+        </div>
+      </div>
+    </section>
+    <section data-view="settings" id="view-settings" hidden>
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
+          <p>Customisation settings will live here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="bg-slate-900 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <p class="text-sm text-slate-400">© <span id="year"></span> Memory Cue. All rights reserved.</p>
+        <div class="flex gap-4">
+          <a href="#" class="text-slate-400 hover:text-white transition">Privacy</a>
+          <a href="#" class="text-slate-400 hover:text-white transition">Terms</a>
+          <a href="#" class="text-slate-400 hover:text-white transition">Support</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
