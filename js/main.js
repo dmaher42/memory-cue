@@ -347,6 +347,54 @@ const dashboardController = (() => {
     safeWrite(DEADLINE_STORAGE_KEY, deadlinesState);
   }
 
+  const SHARED_ACTIVITY_EVENT = 'memoryCue:activity';
+  const DEADLINE_SNOOZE_PRESETS = [
+    { label: 'Snooze 1 hr', ms: 60 * 60 * 1000 },
+    { label: 'Snooze 1 day', ms: 24 * 60 * 60 * 1000 },
+    { label: 'Snooze 3 days', ms: 3 * 24 * 60 * 60 * 1000 },
+  ];
+
+  function cloneDeadline(item){
+    if (!item || typeof item !== 'object') return null;
+    return {
+      id: item.id,
+      title: item.title || '',
+      due: item.due || '',
+      course: item.course || '',
+      notes: item.notes || '',
+      done: !!item.done,
+    };
+  }
+
+  function dispatchDeadlineActivity(action, item){
+    if (typeof document === 'undefined' || typeof document.dispatchEvent !== 'function') return;
+    const detail = {
+      source: 'deadlines',
+      action,
+      timestamp: Date.now(),
+      item: cloneDeadline(item),
+      items: Array.isArray(deadlinesState.items)
+        ? deadlinesState.items.map(cloneDeadline).filter(Boolean)
+        : [],
+    };
+    try {
+      document.dispatchEvent(new CustomEvent(SHARED_ACTIVITY_EVENT, { detail }));
+    } catch {
+      try {
+        const evt = document.createEvent('CustomEvent');
+        evt.initCustomEvent(SHARED_ACTIVITY_EVENT, false, false, detail);
+        document.dispatchEvent(evt);
+      } catch {
+        // Ignore if the environment cannot dispatch custom events.
+      }
+    }
+  }
+
+  function commitDeadlineChange(action, item){
+    saveDeadlines();
+    dispatchDeadlineActivity(action, item);
+  }
+
   function setFeedbackMessage(el, text, variant = 'info'){
     if (!el) return;
     const colorClasses = ['text-emerald-600', 'text-rose-600', 'text-slate-500'];
@@ -593,32 +641,279 @@ const dashboardController = (() => {
     }
   }
 
-  function renderDeadlines(){
+  const SOURCE_PRIORITY = { deadline: 0, reminder: 1, planner: 2 };
+  let deadlinesRenderToken = 0;
+
+  function parseDueDate(value){
+    if (!value) return null;
+    if (value instanceof Date){
+      const copy = new Date(value);
+      return Number.isNaN(copy.getTime()) ? null : copy;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)){
+      const fromNumber = new Date(value);
+      return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
+    }
+    if (typeof value === 'string' && value.trim()){
+      const fromString = new Date(value);
+      return Number.isNaN(fromString.getTime()) ? null : fromString;
+    }
+    return null;
+  }
+
+  function computeUrgency(dueDate, now, endOfToday, endOfWindow){
+    if (!dueDate) return null;
+    const diffMs = dueDate.getTime() - now.getTime();
+    if (diffMs < 0){
+      return {
+        level: 'overdue',
+        rank: 3,
+        highlightClass: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-200',
+        statusText: `Overdue · ${formatDuration(diffMs)} ago`,
+        ariaLabel: `Overdue. Was due ${dateTimeFormatter.format(dueDate)}.`,
+      };
+    }
+    if (dueDate <= endOfToday){
+      const statusText = diffMs <= 60 * 60 * 1000
+        ? `Due in ${formatDuration(diffMs)}`
+        : `Due today · ${timeFormatter.format(dueDate)}`;
+      return {
+        level: 'today',
+        rank: 2,
+        highlightClass: 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-200',
+        statusText,
+        ariaLabel: `Due today at ${timeFormatter.format(dueDate)}.`,
+      };
+    }
+    if (dueDate <= endOfWindow){
+      return {
+        level: 'week',
+        rank: 1,
+        highlightClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-200',
+        statusText: `Due in ${formatDuration(diffMs)}`,
+        ariaLabel: `Due ${dayLabelFormatter.format(dueDate)} at ${timeFormatter.format(dueDate)}.`,
+      };
+    }
+    return null;
+  }
+
+  function showDeadlinesSkeleton(count = 3){
     if (!deadlinesListEl) return;
-    const now = new Date();
-    const windowStart = new Date(now);
-    windowStart.setHours(0, 0, 0, 0);
-    const windowEnd = new Date(now);
-    windowEnd.setDate(windowEnd.getDate() + 7);
-    windowEnd.setHours(23, 59, 59, 999);
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < count; i += 1) {
+      const li = document.createElement('li');
+      li.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-4';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between animate-pulse';
+      const info = document.createElement('div');
+      info.className = 'space-y-3 flex-1';
+      const line1 = document.createElement('div');
+      line1.className = 'h-4 w-2/3 rounded-full bg-slate-200 dark:bg-slate-700';
+      const line2 = document.createElement('div');
+      line2.className = 'h-3 w-1/2 rounded-full bg-slate-200 dark:bg-slate-700';
+      const line3 = document.createElement('div');
+      line3.className = 'h-3 w-1/3 rounded-full bg-slate-200 dark:bg-slate-700';
+      info.append(line1, line2, line3);
+      const aside = document.createElement('div');
+      aside.className = 'flex flex-col gap-3 items-start sm:items-end w-full sm:w-48';
+      const pill = document.createElement('div');
+      pill.className = 'h-8 w-32 rounded-full bg-slate-200 dark:bg-slate-700';
+      const btn = document.createElement('div');
+      btn.className = 'h-3 w-24 rounded-full bg-slate-200 dark:bg-slate-700';
+      aside.append(pill, btn);
+      wrapper.append(info, aside);
+      li.appendChild(wrapper);
+      fragment.appendChild(li);
+    }
+    deadlinesListEl.replaceChildren(fragment);
+    if (deadlinesEmptyEl) deadlinesEmptyEl.classList.add('hidden');
+  }
 
-    const all = Array.isArray(deadlinesState.items) ? deadlinesState.items : [];
-    const upcoming = all.filter(item => !item.done && item.due).filter(item => {
-      try {
-        const dueDate = new Date(item.due);
-        if (Number.isNaN(dueDate.getTime())) return false;
-        return dueDate >= windowStart && dueDate <= windowEnd;
-      } catch {
-        return false;
+  async function fetchPlannerTasks(){
+    if (typeof window === 'undefined') return [];
+    try {
+      const plannerApi = window.memoryCuePlanner;
+      if (plannerApi?.listUpcomingTasks){
+        const result = plannerApi.listUpcomingTasks();
+        return Array.isArray(result) ? result : await result;
       }
-    });
-    upcoming.sort((a, b) => new Date(a.due) - new Date(b.due));
+      if (typeof window.getMemoryCuePlannerTasks === 'function'){
+        const viaGetter = window.getMemoryCuePlannerTasks();
+        return Array.isArray(viaGetter) ? viaGetter : await viaGetter;
+      }
+      if (Array.isArray(window.memoryCuePlannerTasks)){
+        return window.memoryCuePlannerTasks;
+      }
+    } catch (error) {
+      console.warn('Unable to load planner tasks', error);
+    }
+    return [];
+  }
 
+  async function collectUrgentItems(){
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setHours(23, 59, 59, 999);
+    const endOfWindow = new Date(endOfToday);
+    endOfWindow.setDate(endOfWindow.getDate() + 6);
+
+    const items = [];
+
+    const deadlines = Array.isArray(deadlinesState.items) ? deadlinesState.items : [];
+    deadlines.forEach((deadline) => {
+      if (!deadline || deadline.done) return;
+      const dueDate = parseDueDate(deadline.due);
+      if (!dueDate) return;
+      const urgency = computeUrgency(dueDate, now, endOfToday, endOfWindow);
+      if (!urgency) return;
+      const metaPieces = [];
+      metaPieces.push(dueDate < now ? `Was due ${dateTimeFormatter.format(dueDate)}` : `Due ${dateTimeFormatter.format(dueDate)}`);
+      if (deadline.course) metaPieces.push(deadline.course);
+      items.push({
+        id: deadline.id,
+        type: 'deadline',
+        title: deadline.title || 'Deadline',
+        dueDate,
+        dueIso: deadline.due,
+        urgency,
+        notes: deadline.notes,
+        course: deadline.course,
+        metaParts: metaPieces,
+        sourceLabel: 'Deadline',
+      });
+    });
+
+    const reminderItems = Array.isArray(remindersState) ? remindersState : [];
+    reminderItems.forEach((reminder) => {
+      if (!reminder || reminder.done || !reminder.due) return;
+      const dueDate = parseDueDate(reminder.due);
+      if (!dueDate) return;
+      const urgency = computeUrgency(dueDate, now, endOfToday, endOfWindow);
+      if (!urgency) return;
+      const metaPieces = [];
+      metaPieces.push(dueDate < now ? `Was due ${dateTimeFormatter.format(dueDate)}` : `Due ${dateTimeFormatter.format(dueDate)}`);
+      if (reminder.priority) metaPieces.push(`${reminder.priority} priority`);
+      metaPieces.push('From reminders board');
+      items.push({
+        id: reminder.id,
+        type: 'reminder',
+        title: reminder.title || 'Reminder',
+        dueDate,
+        dueIso: reminder.due,
+        urgency,
+        notes: reminder.notes,
+        metaParts: metaPieces,
+        sourceLabel: 'Reminder',
+        sourceLink: '#reminders',
+        sourceAction: 'Open reminders',
+      });
+    });
+
+    const plannerTasks = await fetchPlannerTasks();
+    plannerTasks.forEach((task) => {
+      if (!task || task.done) return;
+      const dueValue = task.due || task.dueDate || task.date;
+      const dueDate = parseDueDate(dueValue);
+      if (!dueDate) return;
+      const urgency = computeUrgency(dueDate, now, endOfToday, endOfWindow);
+      if (!urgency) return;
+      const metaPieces = [`Due ${dateTimeFormatter.format(dueDate)}`];
+      if (task.location) metaPieces.push(task.location);
+      metaPieces.push('From weekly planner');
+      items.push({
+        id: task.id || `planner-${dueDate.getTime()}-${task.title || ''}`,
+        type: 'planner',
+        title: task.title || 'Planner task',
+        dueDate,
+        dueIso: dueDate.toISOString(),
+        urgency,
+        notes: task.notes || task.description || '',
+        metaParts: metaPieces,
+        sourceLabel: 'Planner',
+        sourceLink: '#planner',
+        sourceAction: 'Open planner',
+      });
+    });
+
+    items.sort((a, b) => {
+      if (b.urgency.rank !== a.urgency.rank) return b.urgency.rank - a.urgency.rank;
+      if (a.dueDate && b.dueDate && a.dueDate.getTime() !== b.dueDate.getTime()){
+        return a.dueDate.getTime() - b.dueDate.getTime();
+      }
+      const priA = SOURCE_PRIORITY[a.type] ?? 99;
+      const priB = SOURCE_PRIORITY[b.type] ?? 99;
+      if (priA !== priB) return priA - priB;
+      return (a.title || '').localeCompare(b.title || '');
+    });
+
+    return items;
+  }
+
+  function markDeadlineComplete(id){
+    const items = Array.isArray(deadlinesState.items) ? deadlinesState.items : [];
+    const index = items.findIndex(item => item?.id === id);
+    if (index === -1) return;
+    items[index].done = true;
+    commitDeadlineChange('completed', items[index]);
+    showDeadlineFeedback('Deadline marked as complete.', 'success');
+    renderDeadlines();
+  }
+
+  function snoozeDeadline(id, ms){
+    const items = Array.isArray(deadlinesState.items) ? deadlinesState.items : [];
+    const index = items.findIndex(item => item?.id === id);
+    if (index === -1) return;
+    const currentDue = parseDueDate(items[index].due);
+    if (!currentDue){
+      showDeadlineFeedback('Unable to snooze this deadline without a due date.', 'error');
+      return;
+    }
+    currentDue.setTime(currentDue.getTime() + ms);
+    items[index].due = currentDue.toISOString();
+    commitDeadlineChange('snoozed', items[index]);
+    showDeadlineFeedback(`Snoozed until ${dateTimeFormatter.format(currentDue)}.`, 'success');
+    renderDeadlines();
+  }
+
+  let deadlinesSkeletonTimer = null;
+
+  async function renderDeadlines(){
+    if (!deadlinesListEl) return;
+    const renderId = ++deadlinesRenderToken;
+    if (deadlinesSkeletonTimer) clearTimeout(deadlinesSkeletonTimer);
+    deadlinesListEl.setAttribute('aria-busy', 'true');
+    deadlinesListEl.dataset.loading = 'pending';
+    deadlinesSkeletonTimer = setTimeout(() => {
+      if (deadlinesListEl.dataset.loading === 'pending' && renderId === deadlinesRenderToken){
+        showDeadlinesSkeleton();
+      }
+    }, 120);
+
+    let entries = [];
+    try {
+      entries = await collectUrgentItems();
+    } catch (error) {
+      console.error('Unable to build deadline overview', error);
+      entries = [];
+    }
+
+    if (renderId !== deadlinesRenderToken) return;
+
+    if (deadlinesSkeletonTimer){
+      clearTimeout(deadlinesSkeletonTimer);
+      deadlinesSkeletonTimer = null;
+    }
+
+    delete deadlinesListEl.dataset.loading;
+    deadlinesListEl.setAttribute('aria-busy', 'false');
     deadlinesListEl.replaceChildren();
-    counts.deadlines = upcoming.length;
+
+    counts.deadlines = entries.length;
     applyOverviewCounts();
 
-    if (!upcoming.length){
+    if (!entries.length){
       if (deadlinesEmptyEl) deadlinesEmptyEl.classList.remove('hidden');
       return;
     }
@@ -626,17 +921,7 @@ const dashboardController = (() => {
     if (deadlinesEmptyEl) deadlinesEmptyEl.classList.add('hidden');
 
     const fragment = document.createDocumentFragment();
-    upcoming.forEach((deadline) => {
-      const due = new Date(deadline.due);
-      const diff = due - now;
-      const overdue = diff < 0;
-      const highlightClass = overdue
-        ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200'
-        : diff <= 24 * 60 * 60 * 1000
-          ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200'
-          : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200';
-      const statusLabel = overdue ? `Overdue by ${formatDuration(diff)}` : `Due in ${formatDuration(diff)}`;
-
+    entries.forEach((entry) => {
       const li = document.createElement('li');
       li.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/40 p-4';
 
@@ -644,42 +929,90 @@ const dashboardController = (() => {
       top.className = 'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between';
 
       const info = document.createElement('div');
-      info.className = 'space-y-1';
+      info.className = 'space-y-2';
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'flex flex-wrap items-center gap-2';
       const title = document.createElement('p');
       title.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
-      title.textContent = deadline.title || 'Deadline';
-      const meta = document.createElement('p');
-      meta.className = 'text-sm text-slate-500 dark:text-slate-400';
-      const dueLabel = overdue ? `Was due ${dateTimeFormatter.format(due)}` : `Due ${dateTimeFormatter.format(due)}`;
-      const metaPieces = [dueLabel];
-      if (deadline.course) metaPieces.push(deadline.course);
-      meta.textContent = metaPieces.join(' • ');
-      info.append(title, meta);
-      if (deadline.notes){
-        const note = document.createElement('p');
-        note.className = 'text-sm text-slate-500 dark:text-slate-400';
-        note.textContent = deadline.notes;
-        info.appendChild(note);
+      title.textContent = entry.title || 'Deadline';
+      titleRow.appendChild(title);
+      if (entry.sourceLabel){
+        const source = document.createElement('span');
+        source.className = 'inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800/70 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300';
+        source.textContent = entry.sourceLabel;
+        titleRow.appendChild(source);
+      }
+      info.appendChild(titleRow);
+
+      if (Array.isArray(entry.metaParts) && entry.metaParts.length){
+        const meta = document.createElement('p');
+        meta.className = 'text-sm text-slate-500 dark:text-slate-400';
+        meta.textContent = entry.metaParts.join(' • ');
+        info.appendChild(meta);
+      }
+
+      if (entry.notes){
+        const rawNotes = String(entry.notes);
+        const noteText = entry.type === 'deadline' ? rawNotes.trim() : rawNotes.split('\n')[0];
+        if (noteText){
+          const note = document.createElement('p');
+          note.className = 'text-sm text-slate-500 dark:text-slate-400';
+          note.textContent = noteText;
+          info.appendChild(note);
+        }
       }
 
       const actions = document.createElement('div');
       actions.className = 'flex flex-col items-start sm:items-end gap-3';
+
       const status = document.createElement('span');
-      status.className = `inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${highlightClass}`;
-      status.textContent = statusLabel;
-      const completeBtn = document.createElement('button');
-      completeBtn.type = 'button';
-      completeBtn.className = 'text-sm font-semibold text-emerald-600 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500';
-      completeBtn.textContent = 'Mark done';
-      completeBtn.addEventListener('click', () => {
-        const index = deadlinesState.items.findIndex(item => item.id === deadline.id);
-        if (index === -1) return;
-        deadlinesState.items[index].done = true;
-        saveDeadlines();
-        showDeadlineFeedback('Deadline marked as complete.', 'success');
-        renderDeadlines();
-      });
-      actions.append(status, completeBtn);
+      status.className = `inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${entry.urgency.highlightClass}`;
+      status.textContent = entry.urgency.statusText;
+      status.setAttribute('aria-label', entry.urgency.ariaLabel);
+      status.dataset.urgency = entry.urgency.level;
+      actions.appendChild(status);
+
+      if (entry.type === 'deadline'){
+        const buttons = document.createElement('div');
+        buttons.className = 'flex flex-wrap gap-2 sm:justify-end';
+
+        const completeBtn = document.createElement('button');
+        completeBtn.type = 'button';
+        completeBtn.className = 'text-sm font-semibold text-emerald-600 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500';
+        completeBtn.textContent = 'Mark done';
+        completeBtn.addEventListener('click', () => markDeadlineComplete(entry.id));
+        buttons.appendChild(completeBtn);
+
+        DEADLINE_SNOOZE_PRESETS.forEach((preset) => {
+          const snoozeBtn = document.createElement('button');
+          snoozeBtn.type = 'button';
+          snoozeBtn.className = 'text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500';
+          snoozeBtn.textContent = preset.label;
+          snoozeBtn.setAttribute('aria-label', `${preset.label} for ${entry.title}`);
+          snoozeBtn.addEventListener('click', () => snoozeDeadline(entry.id, preset.ms));
+          buttons.appendChild(snoozeBtn);
+        });
+
+        actions.appendChild(buttons);
+      } else if (entry.sourceLink && entry.sourceAction){
+        const openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.className = 'text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500';
+        openBtn.textContent = entry.sourceAction;
+        openBtn.addEventListener('click', () => {
+          try {
+            if (entry.sourceLink.startsWith('#')){
+              location.hash = entry.sourceLink;
+            } else {
+              location.href = entry.sourceLink;
+            }
+          } catch {
+            // Ignore navigation errors.
+          }
+        });
+        actions.appendChild(openBtn);
+      }
 
       top.append(info, actions);
       li.appendChild(top);
@@ -837,15 +1170,16 @@ const dashboardController = (() => {
     if (!Array.isArray(deadlinesState.items)){
       deadlinesState.items = [];
     }
-    deadlinesState.items.push({
+    const newDeadline = {
       id: randomId('deadline'),
       title,
       due: dueDate.toISOString(),
       course: deadlineCourseInput?.value.trim() || '',
       notes: '',
       done: false,
-    });
-    saveDeadlines();
+    };
+    deadlinesState.items.push(newDeadline);
+    commitDeadlineChange('added', newDeadline);
     deadlineForm?.reset();
     showDeadlineFeedback('Deadline saved for this week.', 'success');
     renderDeadlines();
@@ -996,12 +1330,13 @@ const dashboardController = (() => {
     requestWeather({ preferGeolocation: false, message: 'Updating forecast…' });
   }, 30 * 60 * 1000);
 
-  return {
-    setReminders(items){
-      remindersState = Array.isArray(items) ? items.map(item => ({ ...item })) : [];
-      renderReminders();
-    },
-  };
+    return {
+      setReminders(items){
+        remindersState = Array.isArray(items) ? items.map(item => ({ ...item })) : [];
+        renderReminders();
+        renderDeadlines();
+      },
+    };
 })();
 
 if (dashboardController) {
