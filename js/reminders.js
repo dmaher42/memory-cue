@@ -36,6 +36,9 @@ export async function initReminders(sel = {}) {
   const filterBtns = $$(sel.filterBtnsSel);
   const countTodayEl = $(sel.countTodaySel);
   const countWeekEl = $(sel.countWeekSel);
+  const countOverdueEl = $(sel.countOverdueSel);
+  const countTotalEl = $(sel.countTotalSel);
+  const countCompletedEl = $(sel.countCompletedSel);
   const googleAvatar = $(sel.googleAvatarSel);
   const googleUserName = $(sel.googleUserNameSel);
   const dateFeedback = $(sel.dateFeedbackSel);
@@ -53,6 +56,11 @@ export async function initReminders(sel = {}) {
   const testSync = $(sel.testSyncSel);
   const openSettings = $(sel.openSettingsSel);
   const settingsSection = $(sel.settingsSectionSel);
+  const emptyStateEl = $(sel.emptyStateSel);
+  const listWrapper = $(sel.listWrapperSel);
+  const variant = sel.variant || 'mobile';
+  const emptyInitialText = sel.emptyStateInitialText || 'Add your first reminder to see it here.';
+  const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
 
    // Placeholder for Firebase modules loaded later
    let initializeApp, initializeFirestore, getFirestore, doc, setDoc, deleteDoc,
@@ -149,10 +157,17 @@ export async function initReminders(sel = {}) {
    }
 
   // Formatting helpers
-  const TZ = 'Australia/Adelaide';
-  const timeFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-  const dayFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+  const locale = (typeof navigator !== 'undefined' && (navigator.languages?.[0] || navigator.language)) || 'en-AU';
+  let TZ = 'UTC';
+  try {
+    const resolvedTz = Intl.DateTimeFormat().resolvedOptions?.().timeZone;
+    if (resolvedTz) TZ = resolvedTz;
+  } catch {}
   const dateOnlyFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const timeFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  const dayFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+  const desktopDayLabelFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: 'long' });
+  const desktopShortDateFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, month: 'short', day: 'numeric' });
   function formatDateLocal(d) {
     const parts = dateOnlyFmt.formatToParts(d);
     const y = parts.find(p => p.type === 'year').value;
@@ -168,8 +183,8 @@ export async function initReminders(sel = {}) {
     dt.setHours(h || 0, m || 0, 0, 0);
     return dt.toISOString();
   }
-  const datePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
-  const timePartsFmt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
+  const datePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const timePartsFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
   function isoToLocalDate(iso) {
     try {
       const d = new Date(iso);
@@ -258,6 +273,11 @@ export async function initReminders(sel = {}) {
       if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
       setupFirestoreSync();
     } else {
+      syncStatus?.classList.remove('online','error');
+      if(syncStatus){
+        syncStatus.classList.add('offline');
+        syncStatus.textContent = 'Offline';
+      }
       googleSignInBtn?.classList.remove('hidden');
       googleSignOutBtn?.classList.add('hidden');
       if(googleAvatar){ googleAvatar.classList.add('hidden'); googleAvatar.src=''; }
@@ -315,6 +335,25 @@ export async function initReminders(sel = {}) {
   function scheduleReminder(item){ if(!item||!item.id) return; if(!item.due || item.done){ cancelReminder(item.id); return; } scheduledReminders[item.id]={ id:item.id, title:item.title, due:item.due }; saveScheduled(); if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; } if(!('Notification' in window) || Notification.permission!=='granted'){ return; } const delay=new Date(item.due).getTime()-Date.now(); if(delay<=0){ showReminder(item); cancelReminder(item.id); return; } reminderTimers[item.id]=setTimeout(()=>{ showReminder(item); cancelReminder(item.id); }, delay); }
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder(it)); }
 
+  const desktopPriorityClasses = {
+    High: 'border-red-200 text-red-600 bg-red-100/70 dark:border-red-400/30 dark:text-red-300 dark:bg-red-500/10',
+    Medium: 'border-amber-200 text-amber-600 bg-amber-100/70 dark:border-amber-400/30 dark:text-amber-300 dark:bg-amber-500/10',
+    Low: 'border-emerald-200 text-emerald-600 bg-emerald-100/70 dark:border-emerald-400/30 dark:text-emerald-300 dark:bg-emerald-500/10'
+  };
+
+  function formatDesktopDue(item){
+    if(!item?.due) return 'No due date';
+    try {
+      const due = new Date(item.due);
+      const dayLabel = desktopDayLabelFmt.format(due);
+      const dateLabel = desktopShortDateFmt.format(due);
+      const timeLabel = fmtTime(due);
+      return `${dayLabel}, ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ''}`;
+    } catch {
+      return 'No due date';
+    }
+  }
+
   function render(){
     const now = new Date();
     const adlNow = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
@@ -324,8 +363,13 @@ export async function initReminders(sel = {}) {
     const w1 = endOfWeek(adlNow);
     const todays = items.filter(x => x.due && new Date(x.due) >= t0 && new Date(x.due) <= t1 && !x.done);
     const weeks  = items.filter(x => x.due && new Date(x.due) >= w0 && new Date(x.due) <= w1 && !x.done);
+    const overdueCount = items.filter(x => !x.done && x.due && new Date(x.due) < adlNow).length;
+    const completedCount = items.filter(x => x.done).length;
     if(countTodayEl) countTodayEl.textContent = String(todays.length);
     if(countWeekEl) countWeekEl.textContent = String(weeks.length);
+    if(countOverdueEl) countOverdueEl.textContent = String(overdueCount);
+    if(countTotalEl) countTotalEl.textContent = String(items.length);
+    if(countCompletedEl) countCompletedEl.textContent = String(completedCount);
 
     let rows = items.slice();
     const queryStr = q?.value.trim().toLowerCase() || '';
@@ -333,16 +377,107 @@ export async function initReminders(sel = {}) {
     rows = rows.filter(r => {
       if(filter==='done') return r.done;
       if(filter==='overdue') return !r.done && r.due && new Date(r.due) < adlNow;
-      if(filter==='today'){ if(!r.due) return true; const dueAdl = new Date(new Date(r.due).toLocaleString('en-US',{timeZone:TZ})); return dueAdl >= t0 && dueAdl <= t1; }
+      if(filter==='today'){
+        if(!r.due) return true;
+        const dueAdl = new Date(new Date(r.due).toLocaleString('en-US',{timeZone:TZ}));
+        return dueAdl >= t0 && dueAdl <= t1;
+      }
       return true;
     });
-    rows.sort((a,b)=>{ if(sortKey==='time') return (+new Date(a.due||0))-(+new Date(b.due||0)); if(sortKey==='priority') return priorityWeight(b.priority)-priorityWeight(a.priority); return smartCompare(a,b); });
-    filterBtns.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-filter')===filter));
-    if(!list) return;
-    if(rows.length===0){ list.innerHTML = '<div class="text-muted">No reminders found.</div>'; return; }
+    rows.sort((a,b)=>{
+      if(sortKey==='time') return (+new Date(a.due||0))-(+new Date(b.due||0));
+      if(sortKey==='priority') return priorityWeight(b.priority)-priorityWeight(a.priority);
+      return smartCompare(a,b);
+    });
+
+    filterBtns.forEach(btn => {
+      const isActive = btn.getAttribute('data-filter')===filter;
+      btn.classList.toggle('active', isActive);
+      btn.classList.toggle('ring-2', isActive);
+      btn.classList.toggle('ring-offset-2', isActive);
+      btn.classList.toggle('ring-purple-400', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
+
+    const hasAny = items.length > 0;
+    const hasRows = rows.length > 0;
+
+    if(emptyStateEl){
+      if(!hasAny){
+        emptyStateEl.textContent = emptyInitialText;
+        emptyStateEl.classList.remove('hidden');
+      } else if(!hasRows){
+        emptyStateEl.textContent = emptyFilteredText;
+        emptyStateEl.classList.remove('hidden');
+      } else {
+        emptyStateEl.classList.add('hidden');
+      }
+    }
+
+    if(listWrapper){
+      listWrapper.classList.toggle('has-items', hasRows);
+    }
+
+    if(!list){
+      return;
+    }
+
+    if(!hasRows){
+      if(emptyStateEl){
+        list.innerHTML = '';
+        list.classList.add('hidden');
+      } else {
+        list.innerHTML = '<div class="text-muted">No reminders found.</div>';
+        list.classList.remove('hidden');
+      }
+      return;
+    }
+
+    list.classList.remove('hidden');
     list.replaceChildren();
     const frag = document.createDocumentFragment();
+    const listIsSemantic = list.tagName === 'UL' || list.tagName === 'OL';
     rows.forEach(r => {
+      if(variant === 'desktop'){
+        const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
+        itemEl.dataset.id = r.id;
+        itemEl.className = 'p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm';
+        const dueLabel = formatDesktopDue(r);
+        const priorityClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
+        const titleClasses = r.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100';
+        const statusLabel = r.done ? 'Completed' : 'Active';
+        const statusClasses = r.done ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400';
+        const toggleClasses = r.done
+          ? 'px-3 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600'
+          : 'px-3 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600';
+        itemEl.innerHTML = `
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-lg font-semibold ${titleClasses}">${escapeHtml(r.title)}</p>
+        <div class="mt-2 flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-400">
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-2 w-2 rounded-full bg-blue-400"></span>
+            ${escapeHtml(dueLabel)}
+          </span>
+          <span class="inline-flex items-center gap-2 px-2 py-1 rounded-full border ${priorityClass}">
+            ${escapeHtml(r.priority)} priority
+          </span>
+          <span class="${statusClasses}">${statusLabel}</span>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 text-sm font-medium">
+        <button data-action="toggle" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
+        <button data-action="edit" class="px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">Edit</button>
+        <button data-action="delete" class="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600">Delete</button>
+      </div>
+    </div>`;
+        itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
+        itemEl.querySelector('[data-action="edit"]').addEventListener('click', () => loadForEdit(r.id));
+        itemEl.querySelector('[data-action="delete"]').addEventListener('click', () => removeItem(r.id));
+        frag.appendChild(itemEl);
+        return;
+      }
+
       const div = document.createElement('div');
       div.className = 'task-item' + (r.done ? ' completed' : '');
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
