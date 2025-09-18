@@ -2,6 +2,19 @@
 
 Memory Cue is a progressive web app for capturing reminders, notes, and study aids. The interface relies on Tailwind CSS v4 via CDN so you can work with the project without compiling styles or running a build pipeline.
 
+## Background reminders
+
+Memory Cue ships with a service worker that now schedules reminders using the Notification Triggers API where supported (currently Chromium-based browsers). When you enable notifications from the Reminders screen the app registers `service-worker.js`, stores each due reminder, and asks the browser to display it even if the page or installed PWA is closed. If Notification Triggers are unavailable the app falls back to in-page timers so you still see alerts while the tab is open.
+
+To test background reminders locally:
+
+1. Serve the project over HTTPS (or `http://localhost`) and open the Reminders view.
+2. Click the bell icon to grant notification permission.
+3. Add a reminder with a future due time.
+4. Close the tab or minimise the app—Chrome on desktop and Android will fire the scheduled notification at the due time.
+
+Each notification links back to the Reminders board; tapping it reopens the PWA if necessary. Remember that browsers can suspend background delivery, so keep critical deadlines in an external calendar as a safety net.
+
 ## Quick Start
 
 1. Clone the repository: `git clone https://github.com/<your-account>/memory-cue.git`
