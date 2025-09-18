@@ -49,6 +49,18 @@ function show(view){
   }
 
   updateNavButtons(navButtons, view);
+  if (!targetView.hasAttribute('tabindex')) {
+    targetView.setAttribute('tabindex', '-1');
+  }
+  requestAnimationFrame(() => {
+    if (typeof targetView.focus === 'function') {
+      try {
+        targetView.focus({ preventScroll: true });
+      } catch (_) {
+        // ignore focus errors
+      }
+    }
+  });
   return view;
 }
 

@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
-  <meta name="theme-color" content="#065f46" />
-  <link rel="manifest" href="#" id="manifestLink" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="/manifest.webmanifest" id="manifestLink" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/a11y.css" />
   <!-- Tailwind v4 (Play CDN) -->
   <script
     defer
@@ -137,6 +139,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to main content</a>
   <header>
     <div class="container">
       <div class="header-content">
@@ -183,7 +186,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
   </nav>
 
   <div id="tasksTab" class="tab-panel" role="tabpanel" aria-labelledby="tab-reminders" tabindex="0">
-    <main class="main-content">
+    <main id="mainContent" class="main-content" tabindex="-1">
     <div class="container">
       <!-- Create Reminder Card -->
       <section class="card section">
@@ -216,7 +219,7 @@ z-index:100;box-shadow:var(--shadow-sm)}
               <button id="cancelEditBtn" class="btn-danger flex-1 hidden" type="button">Cancel</button>
             </div>
           </div>
-          <div id="status" class="status-message" aria-live="polite"></div>
+          <div id="status" class="status-message" role="status" aria-live="polite" aria-atomic="true"></div>
         </div>
       </section>
 

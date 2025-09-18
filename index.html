@@ -11,6 +11,8 @@
   <link rel="dns-prefetch" href="https://www.gstatic.com">
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/a11y.css" />
   <!-- Tailwind v4 (Play CDN) -->
   <script
     defer
@@ -225,7 +227,8 @@
   <script defer src="./js/firebase-init.js"></script>
   <script defer src="./js/main.js"></script>
 </head>
-<body id="top" class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased leading-7 min-h-screen">
+<body id="top" class="bg-[var(--bg)] text-[var(--fg)] antialiased leading-7 min-h-screen">
+  <a class="skip-link" href="#mainContent">Skip to main content</a>
   <!-- Modern Navigation -->
   <nav aria-label="Primary" class="fixed top-0 w-full z-50 nav-gradient border-b border-white/20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -250,18 +253,21 @@
             data-icon-dark="🌙"
             data-icon-light="☀️"
           >🌙</button>
-          <button id="sign-in-btn" class="px-4 py-2 rounded-lg bg-white text-purple-600 font-semibold hover:bg-white/90 transition-all duration-200 hover:scale-105">Sign In</button>
+          <button
+            id="sign-in-btn"
+            class="px-4 py-2 rounded-lg bg-[var(--card)] text-[var(--accent)] font-semibold transition-all duration-200 hover:ring-2 hover:ring-[var(--accent)] hover:ring-offset-2 hover:scale-105"
+          >Sign In</button>
           <button id="sign-out-btn" class="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-all duration-200 hover:scale-105" hidden>Sign Out</button>
         </div>
       </div>
     </div>
     
   </nav>
-  <main class="min-h-screen">
-    <section data-view="dashboard" id="view-dashboard">
-      <section id="dashboard-overview" aria-labelledby="dashboard-heading" class="pt-24 pb-16 bg-slate-50 dark:bg-slate-900">
+  <main id="mainContent" class="min-h-screen" tabindex="-1">
+    <section data-view="dashboard" id="view-dashboard" tabindex="-1">
+      <section id="dashboard-overview" aria-labelledby="dashboard-heading" class="pt-24 pb-16 bg-[var(--bg)]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div class="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-800 shadow-2xl border border-white/60 dark:border-slate-700/60">
+          <div class="relative overflow-hidden rounded-3xl bg-[var(--card)] shadow-2xl border border-white/60 dark:border-slate-700/60">
             <div class="absolute inset-0 bg-gradient-to-br from-blue-100 via-emerald-100 to-amber-100 opacity-60 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900"></div>
             <div class="relative z-10 p-8 sm:p-10">
               <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -300,7 +306,7 @@
               <section
                 data-dashboard-widget="lessons"
                 data-widget-title="Today's lessons"
-                class="xl:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
+                class="xl:col-span-2 bg-[var(--card)] border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
                 aria-labelledby="lessons-heading"
               >
                 <div
@@ -318,7 +324,9 @@
                         <span
                           id="dashboard-lesson-status"
                           class="hidden rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-500/10 dark:text-blue-200"
+                          role="status"
                           aria-live="polite"
+                          aria-atomic="true"
                         ></span>
                       </div>
                       <p class="text-sm text-slate-500 dark:text-slate-400">
@@ -421,7 +429,7 @@
                 </div>
                 <div data-widget-body class="space-y-6 pt-4" aria-live="polite">
                   <div class="flex flex-wrap items-center justify-between gap-3">
-                    <p id="weather-status" class="text-sm text-white/80">Finding your forecast…</p>
+                    <p id="weather-status" class="text-sm text-white/80" role="status" aria-live="polite" aria-atomic="true">Finding your forecast…</p>
                     <button
                       id="weather-refresh"
                       type="button"
@@ -502,7 +510,7 @@
               <section
                 data-dashboard-widget="deadlines"
                 data-widget-title="Upcoming deadlines"
-                class="xl:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
+                class="xl:col-span-2 bg-[var(--card)] border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
                 aria-labelledby="deadlines-heading"
               >
                 <div
@@ -572,7 +580,7 @@
               <section
                 data-dashboard-widget="reminders"
                 data-widget-title="Reminders needing attention"
-                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
+                class="bg-[var(--card)] border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
                 aria-labelledby="reminders-heading"
               >
                 <div
@@ -630,7 +638,7 @@
                 id="dashboard-activity-container"
                 data-dashboard-widget="activity"
                 data-widget-title="Recent activity"
-                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
+                class="bg-[var(--card)] border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-xl transition-all duration-200 hover:shadow-2xl"
                 aria-labelledby="activity-heading"
               >
                 <div
@@ -683,9 +691,9 @@
         </div>
       </section>
     </section>
-    <section data-view="reminders" id="view-reminders" hidden>
+    <section data-view="reminders" id="view-reminders" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8 mb-8">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Create Reminder</h2>
             <span id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</span>
@@ -718,11 +726,11 @@
               <button id="saveBtn" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 hover:scale-105 transition-all duration-200 shadow-lg" type="button">Save Reminder</button>
               <button id="cancelEditBtn" class="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 hover:scale-105 transition-all duration-200 shadow-lg hidden" type="button">Cancel</button>
             </div>
-            <div id="status" class="text-sm"></div>
+            <div id="status" class="text-sm" role="status" aria-live="polite" aria-atomic="true"></div>
           </div>
         </div>
         
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8">
           <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div class="flex gap-2">
               <button class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200" data-filter="today" type="button">Today</button>
@@ -764,9 +772,9 @@
         </div>
       </div>
     </section>
-    <section data-view="planner" id="view-planner" hidden>
+    <section data-view="planner" id="view-planner" hidden tabindex="-1">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8 mb-8">
           <div class="flex flex-wrap items-center gap-4 justify-between">
             <div>
               <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Weekly Planner</h2>
@@ -785,9 +793,9 @@
         </div>
       </div>
     </section>
-    <section data-view="notes" id="view-notes" hidden>
+    <section data-view="notes" id="view-notes" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8">
           <div class="flex flex-wrap items-center gap-4 justify-between mb-4">
             <div>
               <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Quick Notes</h2>
@@ -812,23 +820,23 @@
         </div>
       </div>
     </section>
-    <section data-view="resources" id="view-resources" hidden>
+    <section data-view="resources" id="view-resources" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
           <p>Curated teaching resources will appear here soon.</p>
         </div>
       </div>
     </section>
-    <section data-view="templates" id="view-templates" hidden>
+    <section data-view="templates" id="view-templates" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
           <p>Template gallery coming soon.</p>
         </div>
       </div>
     </section>
-    <section data-view="settings" id="view-settings" hidden>
+    <section data-view="settings" id="view-settings" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
+        <div class="bg-[var(--card)] rounded-2xl shadow-xl p-8 text-center text-slate-500 dark:text-slate-400">
           <p>Customisation settings will live here.</p>
         </div>
       </div>
@@ -850,7 +858,7 @@
     <button
       type="button"
       data-quick-action="note"
-      class="quick-action-btn inline-flex items-center gap-2 rounded-full bg-white/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 hover:bg-white dark:bg-slate-800/90 dark:text-slate-100 dark:hover:bg-slate-700/90"
+      class="quick-action-btn inline-flex items-center gap-2 rounded-full bg-white/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 hover:bg-[var(--card)]/90 dark:text-slate-100 dark:hover:bg-slate-700/90"
     >
       <span aria-hidden="true" class="text-lg">📝</span>
       Create note
