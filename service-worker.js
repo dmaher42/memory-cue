@@ -202,3 +202,47 @@ self.addEventListener('push', (event) => {
   const options = { body: data.body || '', data };
   event.waitUntil(self.registration.showNotification(title, options));
 });
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const data = event.notification?.data || {};
+  const destination = (() => {
+    try {
+      return data.urlPath ? new URL(data.urlPath, self.registration.scope).href : self.registration.scope;
+    } catch (_) {
+      return self.registration.scope;
+    }
+  })();
+  event.waitUntil((async () => {
+    try {
+      const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      let matching = null;
+      const targetUrl = new URL(destination);
+      for (const client of allClients) {
+        try {
+          const clientUrl = new URL(client.url);
+          if (clientUrl.pathname === targetUrl.pathname) {
+            matching = client;
+            break;
+          }
+        } catch (_) {
+          // ignore bad URLs
+        }
+      }
+      if (matching) {
+        await matching.focus();
+        if (targetUrl.hash && matching.navigate) {
+          try { await matching.navigate(destination); } catch (_) { /* ignore navigate failure */ }
+        }
+        return;
+      }
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(destination);
+      }
+    } catch (_) {
+      if (self.clients && self.clients.openWindow) {
+        try { await self.clients.openWindow(destination); } catch (_) { /* ignore */ }
+      }
+    }
+  })());
+});

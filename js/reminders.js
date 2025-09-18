@@ -4,6 +4,82 @@
 const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
 let notificationCleanupBound = false;
+const SERVICE_WORKER_SCRIPT = 'service-worker.js';
+let serviceWorkerReadyPromise = null;
+
+function getGlobalScope() {
+  if (typeof globalThis !== 'undefined') return globalThis;
+  if (typeof self !== 'undefined') return self;
+  if (typeof window !== 'undefined') return window;
+  return {};
+}
+
+function getTimestampTriggerCtor() {
+  const scope = getGlobalScope();
+  const Trigger = scope && scope.TimestampTrigger;
+  return typeof Trigger === 'function' ? Trigger : null;
+}
+
+function supportsNotificationTriggers() {
+  if (typeof window === 'undefined') return false;
+  if (!('Notification' in window)) return false;
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false;
+  if (typeof ServiceWorkerRegistration === 'undefined') return false;
+  if (typeof ServiceWorkerRegistration.prototype?.showNotification !== 'function') return false;
+  return !!getTimestampTriggerCtor();
+}
+
+function resolveServiceWorkerUrl() {
+  if (typeof window === 'undefined' || !window.location) {
+    return SERVICE_WORKER_SCRIPT;
+  }
+  try {
+    return new URL(SERVICE_WORKER_SCRIPT, window.location.href).href;
+  } catch {
+    return SERVICE_WORKER_SCRIPT;
+  }
+}
+
+async function ensureServiceWorkerRegistration() {
+  if (serviceWorkerReadyPromise) {
+    return serviceWorkerReadyPromise;
+  }
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+    return null;
+  }
+  serviceWorkerReadyPromise = (async () => {
+    try {
+      const existing = await navigator.serviceWorker.getRegistration();
+      if (!existing) {
+        await navigator.serviceWorker.register(resolveServiceWorkerUrl());
+      }
+      return await navigator.serviceWorker.ready;
+    } catch (err) {
+      console.warn('Service worker registration failed', err);
+      return null;
+    }
+  })();
+  return serviceWorkerReadyPromise;
+}
+
+async function cancelTriggerNotification(id, registrationOverride) {
+  if (!supportsNotificationTriggers()) return;
+  try {
+    const registration = registrationOverride || (await ensureServiceWorkerRegistration());
+    if (!registration) return;
+    let notifications = [];
+    try {
+      notifications = await registration.getNotifications({ tag: id, includeTriggered: true });
+    } catch {
+      notifications = await registration.getNotifications({ tag: id });
+    }
+    for (const notification of notifications) {
+      try { notification.close(); } catch { /* ignore close issues */ }
+    }
+  } catch {
+    // ignore cancellation errors
+  }
+}
 
 function closeActiveNotifications() {
   for (const notification of Array.from(activeNotifications.values())) {
@@ -90,6 +166,11 @@ export async function initReminders(sel = {}) {
   const variant = sel.variant || 'mobile';
   const emptyInitialText = sel.emptyStateInitialText || 'Add your first reminder to see it here.';
   const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
+  const reminderLandingPath = sel.reminderLandingPath || (variant === 'desktop' ? 'index.html#reminders' : 'mobile.html');
+
+  if (supportsNotificationTriggers()) {
+    ensureServiceWorkerRegistration();
+  }
 
   function emitActivity(detail = {}) {
     const label = typeof detail.label === 'string' ? detail.label.trim() : '';
@@ -514,6 +595,7 @@ export async function initReminders(sel = {}) {
       }
     }
     if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; }
+    cancelTriggerNotification(id);
     if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); }
   }
   function cancelReminder(id){ clearReminderState(id); }
@@ -539,20 +621,78 @@ export async function initReminders(sel = {}) {
       notification.onclick = remove;
     }catch{}
   }
+  async function scheduleTriggerNotification(item){
+    if(!supportsNotificationTriggers()) return false;
+    const Trigger = getTimestampTriggerCtor();
+    if(!Trigger || !item?.due) return false;
+    const dueTime = new Date(item.due).getTime();
+    if(!Number.isFinite(dueTime)) return false;
+    const registration = await ensureServiceWorkerRegistration();
+    if(!registration) return false;
+    await cancelTriggerNotification(item.id, registration);
+    const data = {
+      id: item.id,
+      title: item.title,
+      due: item.due,
+      priority: item.priority || 'Medium',
+      urlPath: reminderLandingPath,
+    };
+    let body = 'Due now';
+    try {
+      const dueDate = new Date(item.due);
+      if(!Number.isNaN(dueDate.getTime())){
+        const timeLabel = fmtTime(dueDate);
+        if(timeLabel){
+          body = `Due ${timeLabel}`;
+        }
+      }
+    } catch {}
+    const options = { body, tag: item.id, data, renotify: true };
+    if(dueTime > Date.now()){
+      options.showTrigger = new Trigger(dueTime);
+    }
+    try {
+      await registration.showNotification(item.title, options);
+      return true;
+    } catch (err) {
+      console.warn('Failed to schedule persistent notification', err);
+      return false;
+    }
+  }
   function scheduleReminder(item){
     if(!item||!item.id) return;
     if(!item.due || item.done){ cancelReminder(item.id); return; }
-    scheduledReminders[item.id]={ id:item.id, title:item.title, due:item.due };
+    const stored = { id:item.id, title:item.title, due:item.due };
+    scheduledReminders[item.id]=stored;
     saveScheduled();
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
     if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
-    const delay=new Date(item.due).getTime()-Date.now();
+    const dueTime = new Date(item.due).getTime();
+    if(!Number.isFinite(dueTime)) return;
+    const delay = dueTime - Date.now();
     if(delay<=0){
+      if(scheduledReminders[item.id]?.viaTrigger){
+        clearReminderState(item.id,{ closeNotification:false });
+        return;
+      }
       showReminder(item);
       clearReminderState(item.id,{ closeNotification:false });
       return;
     }
+    const useTriggers = supportsNotificationTriggers();
+    if(useTriggers){
+      stored.viaTrigger = false;
+      scheduleTriggerNotification(item).then((scheduled) => {
+        if(scheduled && scheduledReminders[item.id]){
+          scheduledReminders[item.id] = { ...scheduledReminders[item.id], viaTrigger: true };
+          saveScheduled();
+        }
+      });
+    }
     reminderTimers[item.id]=setTimeout(()=>{
+      if(useTriggers){
+        cancelTriggerNotification(item.id);
+      }
       showReminder(item);
       clearReminderState(item.id,{ closeNotification:false });
     }, delay);
@@ -876,8 +1016,24 @@ export async function initReminders(sel = {}) {
   });
   notifBtn?.addEventListener('click', async () => {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
-    if(Notification.permission === 'granted'){ toast('Notifications enabled'); return; }
-    const perm = await Notification.requestPermission(); toast(perm==='granted'? 'Notifications enabled':'Notifications blocked');
+    if(Notification.permission === 'granted'){
+      toast('Notifications enabled');
+      if(supportsNotificationTriggers()) ensureServiceWorkerRegistration();
+      rescheduleAllReminders();
+      return;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      if(perm==='granted'){
+        toast('Notifications enabled');
+        if(supportsNotificationTriggers()) ensureServiceWorkerRegistration();
+        rescheduleAllReminders();
+      } else {
+        toast('Notifications blocked');
+      }
+    } catch {
+      toast('Notifications blocked');
+    }
   });
 
   rescheduleAllReminders();
