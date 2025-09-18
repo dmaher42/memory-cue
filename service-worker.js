@@ -17,6 +17,7 @@ const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') |
 const CACHE_PREFIX = 'mc-static-';
 const CACHE_VERSION = 'v9'; // bump this to force clients to update
 const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
+const TAILWIND_CDN = 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4';
 
 const SHELL_URLS = [
   `${APP_PATH}index.html`,
@@ -25,6 +26,7 @@ const SHELL_URLS = [
   // Add your real icons below if present; missing files are skipped.
   `${APP_PATH}icons/icon-192.svg`,
   `${APP_PATH}icons/icon-512.svg`,
+  TAILWIND_CDN,
 ];
 
 // File extensions treated as static assets for SWR caching
