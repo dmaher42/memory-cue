@@ -1,0 +1,16 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f8fafc;
+  --fg: #0f172a;
+  --card: #ffffff;
+  --accent: #10b981;
+  --accent-contrast: #022c22;
+}
+
+.dark {
+  --bg: #0f172a;
+  --fg: #f1f5f9;
+  --card: #1e293b;
+  --accent: #34d399;
+  --accent-contrast: #052e16;
+}

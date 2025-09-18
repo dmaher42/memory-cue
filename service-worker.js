@@ -15,13 +15,15 @@
 
 const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
 const CACHE_PREFIX = 'mc-static-';
-const CACHE_VERSION = 'v10'; // bump this to force clients to update
+const CACHE_VERSION = 'v11'; // bump this to force clients to update
 const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const SHELL_URLS = [
   `${APP_PATH}index.html`,
   `${APP_PATH}mobile.html`,
   `${APP_PATH}manifest.webmanifest`,
+  `${APP_PATH}styles/tokens.css`,
+  `${APP_PATH}styles/a11y.css`,
   // Add your real icons below if present; missing files are skipped.
   `${APP_PATH}icons/icon-192.svg`,
   `${APP_PATH}icons/icon-512.svg`,
@@ -94,7 +96,8 @@ self.addEventListener('fetch', (event) => {
 
   // Handle same-origin navigations with network-first + timeout, fallback to offline shell
   if (req.mode === 'navigate') {
-    event.respondWith(networkFirstWithTimeout(req, 4500, `${APP_PATH}index.html`));
+    const fallbacks = getNavigationFallbacks(url.pathname);
+    event.respondWith(networkFirstWithTimeout(req, 4500, fallbacks));
     return;
   }
 
@@ -132,9 +135,23 @@ async function staleWhileRevalidate(req) {
   return cached || (await fetchPromise) || new Response('', { status: 504, statusText: 'Gateway Timeout' });
 }
 
-async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrl) {
+function getNavigationFallbacks(pathname) {
+  const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  const fallbacks = [`${APP_PATH}index.html`];
+  if (normalizedPath.endsWith('mobile') || normalizedPath.endsWith('mobile.html')) {
+    fallbacks.unshift(`${APP_PATH}mobile.html`);
+  }
+  return [...new Set(fallbacks)];
+}
+
+async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrls) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
+  const fallbacks = Array.isArray(offlineFallbackUrls)
+    ? offlineFallbackUrls.filter(Boolean)
+    : offlineFallbackUrls
+    ? [offlineFallbackUrls]
+    : [];
 
   try {
     const res = await fetch(req, { signal: controller.signal });
@@ -142,7 +159,7 @@ async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrl) {
     if (res && res.ok) return res;
 
     // Non-ok -> try cache fallback for offline shell on navigations
-    const cached = await caches.match(offlineFallbackUrl, { ignoreSearch: true });
+    const cached = await matchFirstAvailable(fallbacks);
     if (cached) return cached;
 
     // As a last resort, return the original (even if non-ok) to surface correct status
@@ -150,7 +167,7 @@ async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrl) {
   } catch (_) {
     clearTimeout(t);
     // On timeout or network error, serve cached offline shell if we have it
-    const cached = await caches.match(offlineFallbackUrl, { ignoreSearch: true });
+    const cached = await matchFirstAvailable(fallbacks);
     if (cached) return cached;
 
     // Fallback to any cached version of the request
@@ -163,6 +180,18 @@ async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrl) {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
   }
+}
+
+async function matchFirstAvailable(fallbackUrls) {
+  for (const url of fallbackUrls) {
+    try {
+      const cached = await caches.match(url, { ignoreSearch: true });
+      if (cached) return cached;
+    } catch (_) {
+      // ignore lookup errors
+    }
+  }
+  return null;
 }
 
 self.addEventListener('push', (event) => {
