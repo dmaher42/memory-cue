@@ -236,6 +236,7 @@ if (typeof window !== 'undefined') {
 
 let supabaseClient = null;
 let resourcesController = null;
+let resourcesControllerAbort = null;
 let authSubscription = null;
 let supabaseInitPromise = null;
 let supabaseModulePromise = null;
@@ -254,6 +255,224 @@ const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 const ACTIVITY_SUBJECTS = new Set(['HPE', 'English', 'HASS']);
 const ACTIVITY_PHASES = new Set(['start', 'middle', 'end']);
+
+function createLogger(namespace){
+  const hasConsole = typeof console !== 'undefined';
+  const prefix = namespace ? `[${namespace}]` : '';
+
+  function withPrefix(args){
+    return prefix ? [prefix, ...args] : args;
+  }
+
+  function isDebugEnabled(){
+    if (typeof window !== 'undefined' && typeof window.DEBUG !== 'undefined'){
+      return Boolean(window.DEBUG);
+    }
+    if (typeof globalThis !== 'undefined' && typeof globalThis.DEBUG !== 'undefined'){
+      return Boolean(globalThis.DEBUG);
+    }
+    return false;
+  }
+
+  return {
+    debug(...args){
+      if (hasConsole && typeof console.debug === 'function' && isDebugEnabled()){
+        console.debug(...withPrefix(args));
+      }
+    },
+    info(...args){
+      if (hasConsole && typeof console.info === 'function'){
+        console.info(...withPrefix(args));
+      }
+    },
+    warn(...args){
+      if (hasConsole && typeof console.warn === 'function'){
+        console.warn(...withPrefix(args));
+      }
+    },
+    error(...args){
+      if (hasConsole && typeof console.error === 'function'){
+        console.error(...withPrefix(args));
+      }
+    },
+  };
+}
+
+function buildFilters(state = {}){
+  const rawSubject = typeof state.subject === 'string' ? state.subject : 'all';
+  const subject = rawSubject === 'all' || ACTIVITY_SUBJECTS.has(rawSubject) ? rawSubject : 'all';
+  const rawPhase = typeof state.phase === 'string' ? state.phase : 'any';
+  const phase = rawPhase === 'any' || ACTIVITY_PHASES.has(rawPhase) ? rawPhase : 'any';
+  const search = typeof state.search === 'string' ? state.search.trim() : '';
+  const pinnedOnly = Boolean(state.pinnedOnly);
+  return { subject, phase, search, pinnedOnly };
+}
+
+function applyFilters(activities, state = {}){
+  const { subject, phase, search, pinnedOnly } = buildFilters(state);
+  const term = search.toLowerCase();
+  return (Array.isArray(activities) ? activities : []).filter((activity) => {
+    if (!activity || typeof activity !== 'object') return false;
+    if (subject !== 'all' && activity.subject !== subject) return false;
+    if (phase !== 'any' && activity.phase !== phase) return false;
+    if (pinnedOnly && !activity.pinned) return false;
+    if (term){
+      const title = typeof activity.title === 'string' ? activity.title.toLowerCase() : '';
+      const description = typeof activity.description === 'string' ? activity.description.toLowerCase() : '';
+      if (!title.includes(term) && !description.includes(term)){
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+function capitalise(value){
+  if (!value) return '';
+  const str = String(value);
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function subjectBadgeClass(subject){
+  switch (subject) {
+    case 'HPE':
+      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200';
+    case 'English':
+      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200';
+    case 'HASS':
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200';
+    default:
+      return 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300';
+  }
+}
+
+function phaseBadgeClass(phase){
+  switch (phase) {
+    case 'start':
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-200';
+    case 'middle':
+      return 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200';
+    case 'end':
+      return 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200';
+    default:
+      return 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300';
+  }
+}
+
+function renderCard(activity, { pinnedIds } = {}){
+  if (typeof document === 'undefined' || !activity) {
+    return { card: null, isPinned: false };
+  }
+  const card = document.createElement('article');
+  card.className = 'flex h-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-emerald-400 dark:border-slate-700 dark:bg-slate-900/50';
+  if (activity?.id) {
+    card.dataset.activityId = String(activity.id);
+  }
+
+  const header = document.createElement('div');
+  header.className = 'flex flex-col gap-3';
+
+  const titleRow = document.createElement('div');
+  titleRow.className = 'flex items-start justify-between gap-3';
+  const titleWrap = document.createElement('div');
+  titleWrap.className = 'min-w-0 flex-1';
+  const title = document.createElement('h3');
+  title.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
+  const titleText = (activity?.title && String(activity.title).trim()) || 'Untitled activity';
+  title.textContent = titleText;
+  titleWrap.appendChild(title);
+  titleRow.appendChild(titleWrap);
+
+  const hasPinnedLookup = pinnedIds && typeof pinnedIds.has === 'function';
+  const isPinned = Boolean(activity?.pinned || (hasPinnedLookup && activity?.id && pinnedIds.has(activity.id)));
+
+  if (activity?.id){
+    const pinButton = document.createElement('button');
+    pinButton.type = 'button';
+    pinButton.dataset.activityPin = String(activity.id);
+    pinButton.dataset.activityTitle = titleText;
+    pinButton.className = 'activity-pin-btn inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400';
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.dataset.pinIcon = 'true';
+    icon.textContent = '☆';
+    const srLabel = document.createElement('span');
+    srLabel.className = 'sr-only';
+    srLabel.dataset.pinLabel = 'true';
+    srLabel.textContent = `Pin ${titleText}`;
+    pinButton.append(icon, srLabel);
+    titleRow.appendChild(pinButton);
+  }
+
+  header.appendChild(titleRow);
+
+  const badgeWrap = document.createElement('div');
+  badgeWrap.className = 'flex flex-wrap gap-2 text-xs font-semibold';
+  if (activity?.subject){
+    const subjectBadge = document.createElement('span');
+    subjectBadge.className = `inline-flex items-center rounded-full px-3 py-1 ${subjectBadgeClass(activity.subject)}`;
+    subjectBadge.textContent = activity.subject;
+    badgeWrap.appendChild(subjectBadge);
+  }
+  if (activity?.phase){
+    const phaseBadge = document.createElement('span');
+    phaseBadge.className = `inline-flex items-center rounded-full px-3 py-1 ${phaseBadgeClass(activity.phase)}`;
+    phaseBadge.textContent = `${capitalise(activity.phase)} phase`;
+    badgeWrap.appendChild(phaseBadge);
+  }
+  if (badgeWrap.childElementCount) {
+    header.appendChild(badgeWrap);
+  }
+  card.appendChild(header);
+
+  const description = document.createElement('p');
+  description.className = 'text-sm leading-6 text-slate-600 dark:text-slate-300';
+  description.textContent = (activity?.description && String(activity.description).trim())
+    || 'No description provided yet.';
+  card.appendChild(description);
+
+  if (activity?.url){
+    const link = document.createElement('a');
+    link.className = 'inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200';
+    link.href = activity.url;
+    link.target = '_blank';
+    link.rel = 'noreferrer noopener';
+    link.textContent = 'Open resource';
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '↗';
+    link.appendChild(icon);
+    card.appendChild(link);
+  }
+
+  if (Array.isArray(activity?.keywords) && activity.keywords.length){
+    const keywordWrap = document.createElement('div');
+    keywordWrap.className = 'flex flex-wrap gap-2 pt-2';
+    activity.keywords.forEach((kw) => {
+      const label = String(kw || '').trim();
+      if (!label) return;
+      const chip = document.createElement('span');
+      chip.className = 'inline-flex items-center rounded-full border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300';
+      chip.textContent = `#${label}`;
+      keywordWrap.appendChild(chip);
+    });
+    if (keywordWrap.childElementCount) {
+      card.appendChild(keywordWrap);
+    }
+  }
+
+  return { card, isPinned };
+}
+
+function setActive(elList, predicate){
+  return Array.from(elList || []).map((el, index) => {
+    if (!el) return { element: el, active: false };
+    const active = Boolean(predicate(el, index));
+    el.dataset.active = active ? 'true' : 'false';
+    el.setAttribute('aria-pressed', String(active));
+    return { element: el, active };
+  });
+}
 
 function loadSupabaseModule(){
   if (supabaseModulePromise) return supabaseModulePromise;
@@ -2205,8 +2424,21 @@ if (dashboardController) {
 }
 
 resourcesController = (() => {
+  if (resourcesControllerAbort){
+    resourcesControllerAbort.abort();
+  }
   const section = document.getElementById('view-resources');
-  if (!section) return null;
+  if (!section) {
+    resourcesControllerAbort = null;
+    return null;
+  }
+
+  const log = createLogger('resources');
+  const eventController = new AbortController();
+  resourcesControllerAbort = eventController;
+  const { signal } = eventController;
+
+  log.debug('Initialising resources controller');
 
   const subjectButtons = [...section.querySelectorAll('[data-subject]')];
   const phaseButtons = [...section.querySelectorAll('[data-phase]')];
@@ -2272,7 +2504,7 @@ resourcesController = (() => {
 
   let ideaRequestController = null;
   const showToast = createToast();
-  const ideaModal = ideaModalEl ? createModal(ideaModalEl) : null;
+  const ideaModal = ideaModalEl ? createModal(ideaModalEl, { signal }) : null;
 
   const state = {
     subject: subjectButtons.find(btn => btn.dataset.default === 'true')?.dataset.subject || 'all',
@@ -2285,6 +2517,17 @@ resourcesController = (() => {
   const pendingPinUpdates = new Set();
 
   let searchDebounce = null;
+
+  eventController.signal.addEventListener('abort', () => {
+    if (searchDebounce) {
+      window.clearTimeout(searchDebounce);
+      searchDebounce = null;
+    }
+    if (ideaRequestController){
+      ideaRequestController.abort();
+      ideaRequestController = null;
+    }
+  });
 
   if (authUser?.id){
     state.pinnedOnly = loadPinnedFilterPreference(authUser.id);
@@ -2300,7 +2543,7 @@ resourcesController = (() => {
         return Boolean(parsed[userId]);
       }
     } catch (error) {
-      console.warn('Unable to load pinned filter preference', error);
+      log.warn('Unable to load pinned filter preference', error);
     }
     return false;
   }
@@ -2314,7 +2557,7 @@ resourcesController = (() => {
       parsed[userId] = Boolean(value);
       localStorage.setItem(PINNED_PREF_STORAGE_KEY, JSON.stringify(parsed));
     } catch (error) {
-      console.warn('Unable to persist pinned filter preference', error);
+      log.warn('Unable to persist pinned filter preference', error);
     }
   }
 
@@ -2342,12 +2585,13 @@ resourcesController = (() => {
   function updateStatusMessage(){
     if (!statusEl) return;
     if (!supabaseClient) return;
+    const filters = buildFilters(state);
     if (!state.items.length){
-      if (state.pinnedOnly && authUser?.id){
+      if (filters.pinnedOnly && authUser?.id){
         setStatus('No pinned activities match your filters yet.', 'warning');
-      } else if (state.search || (state.subject && state.subject !== 'all') || state.phase !== 'any'){
+      } else if (filters.search || (filters.subject && filters.subject !== 'all') || filters.phase !== 'any'){
         setStatus('No activities match your filters yet.', 'warning');
-      } else if (state.pinnedOnly && !authUser?.id){
+      } else if (filters.pinnedOnly && !authUser?.id){
         setStatus('Sign in to view your pinned activities.', 'warning');
       } else {
         setStatus('No activities available yet.', 'warning');
@@ -2355,7 +2599,7 @@ resourcesController = (() => {
       return;
     }
     const label = state.items.length === 1 ? 'activity' : 'activities';
-    if (state.pinnedOnly && authUser?.id){
+    if (filters.pinnedOnly && authUser?.id){
       setStatus(`Showing ${state.items.length} pinned ${label}.`, 'info');
     } else {
       setStatus(`Showing ${state.items.length} ${label}.`, 'info');
@@ -2429,6 +2673,7 @@ resourcesController = (() => {
     if (pendingPinUpdates.has(activityId)) return;
 
     const nextPinned = !activityPinState.ids.has(activityId);
+    log.debug('Pin toggle requested', { activityId, nextPinned });
     const previousPins = new Set(activityPinState.ids);
     const previousItems = state.items.map((item) => ({ ...item }));
 
@@ -2445,7 +2690,7 @@ resourcesController = (() => {
       hadError = true;
       activityPinState.ids = previousPins;
       state.items = previousItems;
-      console.error('Activity pin toggle failed', error);
+      log.error('Activity pin toggle failed', error);
       setStatus('Unable to update pin right now.', 'error');
     } finally {
       pendingPinUpdates.delete(activityId);
@@ -2523,7 +2768,7 @@ resourcesController = (() => {
     };
   }
 
-  function createModal(root){
+  function createModal(root, { signal } = {}){
     if (!root) return null;
     const dialog = root.querySelector('[data-ideas-dialog]') || root;
     if (!dialog.hasAttribute('tabindex')){
@@ -2564,7 +2809,11 @@ resourcesController = (() => {
       lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       root.classList.remove('hidden');
       root.removeAttribute('aria-hidden');
-      document.addEventListener('keydown', handleKeydown);
+      if (signal){
+        document.addEventListener('keydown', handleKeydown, { signal });
+      } else {
+        document.addEventListener('keydown', handleKeydown);
+      }
       requestAnimationFrame(() => {
         const focusable = getFocusable();
         const target = focusable.find((el) => el.dataset.autofocus === 'true') || focusable[0] || dialog;
@@ -2589,6 +2838,12 @@ resourcesController = (() => {
           }
         });
       }
+    }
+
+    if (signal){
+      signal.addEventListener('abort', () => {
+        close();
+      });
     }
 
     return { open, close };
@@ -2987,6 +3242,7 @@ resourcesController = (() => {
     ideaState.items = [];
     ideaState.editingIndex = null;
     ideaState.lastRequest = { ...ideaState.lastSelection };
+    log.debug('Requesting lesson ideas', ideaState.lastRequest);
     renderIdeas();
 
     const baseUrl = SUPABASE_URL.replace(/\/+$/, '');
@@ -3034,6 +3290,7 @@ resourcesController = (() => {
         saved: false,
         saving: false,
       }));
+      log.debug('Idea generation complete', { count: ideaState.items.length });
       if (!ideaState.items.length){
         showToast('No ideas generated this time. Try adding more notes.', 'warning');
       }
@@ -3041,7 +3298,7 @@ resourcesController = (() => {
       if (controller.signal.aborted){
         aborted = true;
       } else {
-        console.error('Idea generation failed', error);
+        log.error('Idea generation failed', error);
         ideaState.items = [];
         showToast('Unable to generate lesson ideas right now.', 'error');
       }
@@ -3083,7 +3340,7 @@ resourcesController = (() => {
       renderIdeas();
       showToast('Idea saved to Activities.', 'success');
     } catch (error) {
-      console.error('Idea save failed', error);
+      log.error('Idea save failed', error);
       ideaState.items[index] = { ...current, saving: false, saved: false };
       if (fromEdit){
         ideaState.editingIndex = index;
@@ -3095,165 +3352,31 @@ resourcesController = (() => {
   }
 
   function updateSubjectButtons(){
-    subjectButtons.forEach((btn) => {
-      const value = btn.dataset.subject || 'all';
-      const isActive = value === state.subject;
-      btn.setAttribute('aria-pressed', String(isActive));
-      if (isActive){
-        btn.classList.add(...SUBJECT_ACTIVE_CLASSES);
-        btn.classList.remove(...SUBJECT_INACTIVE_CLASSES);
+    const states = setActive(subjectButtons, (btn) => (btn.dataset.subject || 'all') === state.subject);
+    states.forEach(({ element, active }) => {
+      if (!element) return;
+      if (active){
+        element.classList.add(...SUBJECT_ACTIVE_CLASSES);
+        element.classList.remove(...SUBJECT_INACTIVE_CLASSES);
       } else {
-        btn.classList.remove(...SUBJECT_ACTIVE_CLASSES);
-        btn.classList.add(...SUBJECT_INACTIVE_CLASSES);
+        element.classList.remove(...SUBJECT_ACTIVE_CLASSES);
+        element.classList.add(...SUBJECT_INACTIVE_CLASSES);
       }
     });
   }
 
   function updatePhaseButtons(){
-    phaseButtons.forEach((btn) => {
-      const value = btn.dataset.phase || 'any';
-      const isActive = value === state.phase;
-      btn.setAttribute('aria-pressed', String(isActive));
-      if (isActive){
-        btn.classList.add(...PHASE_ACTIVE_CLASSES);
-        btn.classList.remove(...PHASE_INACTIVE_CLASSES);
+    const states = setActive(phaseButtons, (btn) => (btn.dataset.phase || 'any') === state.phase);
+    states.forEach(({ element, active }) => {
+      if (!element) return;
+      if (active){
+        element.classList.add(...PHASE_ACTIVE_CLASSES);
+        element.classList.remove(...PHASE_INACTIVE_CLASSES);
       } else {
-        btn.classList.remove(...PHASE_ACTIVE_CLASSES);
-        btn.classList.add(...PHASE_INACTIVE_CLASSES);
+        element.classList.remove(...PHASE_ACTIVE_CLASSES);
+        element.classList.add(...PHASE_INACTIVE_CLASSES);
       }
     });
-  }
-
-  function subjectBadgeClass(subject){
-    switch (subject) {
-      case 'HPE':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200';
-      case 'English':
-        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200';
-      case 'HASS':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200';
-      default:
-        return 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300';
-    }
-  }
-
-  function phaseBadgeClass(phase){
-    switch (phase) {
-      case 'start':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-200';
-      case 'middle':
-        return 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200';
-      case 'end':
-        return 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200';
-      default:
-        return 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300';
-    }
-  }
-
-  function capitalise(value){
-    if (!value) return '';
-    const str = String(value);
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  function buildActivityCard(activity){
-    const card = document.createElement('article');
-    card.className = 'flex h-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-emerald-400 dark:border-slate-700 dark:bg-slate-900/50';
-    if (activity?.id) {
-      card.dataset.activityId = String(activity.id);
-    }
-
-    const header = document.createElement('div');
-    header.className = 'flex flex-col gap-3';
-
-    const titleRow = document.createElement('div');
-    titleRow.className = 'flex items-start justify-between gap-3';
-    const titleWrap = document.createElement('div');
-    titleWrap.className = 'min-w-0 flex-1';
-    const title = document.createElement('h3');
-    title.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
-    const titleText = (activity?.title && String(activity.title).trim()) || 'Untitled activity';
-    title.textContent = titleText;
-    titleWrap.appendChild(title);
-    titleRow.appendChild(titleWrap);
-
-    if (activity?.id){
-      const pinButton = document.createElement('button');
-      pinButton.type = 'button';
-      pinButton.dataset.activityPin = String(activity.id);
-      pinButton.dataset.activityTitle = titleText;
-      pinButton.className = 'activity-pin-btn inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400';
-      const icon = document.createElement('span');
-      icon.setAttribute('aria-hidden', 'true');
-      icon.dataset.pinIcon = 'true';
-      icon.textContent = '☆';
-      const srLabel = document.createElement('span');
-      srLabel.className = 'sr-only';
-      srLabel.dataset.pinLabel = 'true';
-      srLabel.textContent = `Pin ${titleText}`;
-      pinButton.append(icon, srLabel);
-      titleRow.appendChild(pinButton);
-      applyPinButtonState(pinButton, Boolean(activity?.pinned), { pending: pendingPinUpdates.has(String(activity.id)) });
-    }
-
-    header.appendChild(titleRow);
-
-    const badgeWrap = document.createElement('div');
-    badgeWrap.className = 'flex flex-wrap gap-2 text-xs font-semibold';
-    if (activity?.subject){
-      const subjectBadge = document.createElement('span');
-      subjectBadge.className = `inline-flex items-center rounded-full px-3 py-1 ${subjectBadgeClass(activity.subject)}`;
-      subjectBadge.textContent = activity.subject;
-      badgeWrap.appendChild(subjectBadge);
-    }
-    if (activity?.phase){
-      const phaseBadge = document.createElement('span');
-      phaseBadge.className = `inline-flex items-center rounded-full px-3 py-1 ${phaseBadgeClass(activity.phase)}`;
-      phaseBadge.textContent = `${capitalise(activity.phase)} phase`;
-      badgeWrap.appendChild(phaseBadge);
-    }
-    if (badgeWrap.childElementCount) {
-      header.appendChild(badgeWrap);
-    }
-    card.appendChild(header);
-
-    const description = document.createElement('p');
-    description.className = 'text-sm leading-6 text-slate-600 dark:text-slate-300';
-    description.textContent = (activity?.description && String(activity.description).trim())
-      || 'No description provided yet.';
-    card.appendChild(description);
-
-    if (activity?.url){
-      const link = document.createElement('a');
-      link.className = 'inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200';
-      link.href = activity.url;
-      link.target = '_blank';
-      link.rel = 'noreferrer noopener';
-      link.textContent = 'Open resource';
-      const icon = document.createElement('span');
-      icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = '↗';
-      link.appendChild(icon);
-      card.appendChild(link);
-    }
-
-    if (Array.isArray(activity?.keywords) && activity.keywords.length){
-      const keywordWrap = document.createElement('div');
-      keywordWrap.className = 'flex flex-wrap gap-2 pt-2';
-      activity.keywords.forEach((kw) => {
-        const label = String(kw || '').trim();
-        if (!label) return;
-        const chip = document.createElement('span');
-        chip.className = 'inline-flex items-center rounded-full border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300';
-        chip.textContent = `#${label}`;
-        keywordWrap.appendChild(chip);
-      });
-      if (keywordWrap.childElementCount) {
-        card.appendChild(keywordWrap);
-      }
-    }
-
-    return card;
   }
 
   function render(){
@@ -3264,19 +3387,32 @@ resourcesController = (() => {
     if (!state.items.length){
       resultsGrid.classList.add('hidden');
       emptyEl?.classList.remove('hidden');
+      log.debug('Render skipped – no activities to show');
       return;
     }
     emptyEl?.classList.add('hidden');
     const fragment = document.createDocumentFragment();
+    const pinnedIds = activityPinState.ids instanceof Set ? activityPinState.ids : new Set();
     state.items.forEach((activity) => {
-      fragment.appendChild(buildActivityCard(activity));
+      const { card, isPinned } = renderCard(activity, { pinnedIds });
+      if (!card) return;
+      const button = card.querySelector('[data-activity-pin]');
+      if (button){
+        const activityId = button.dataset.activityPin || '';
+        const pending = activityId ? pendingPinUpdates.has(activityId) : false;
+        applyPinButtonState(button, isPinned, { pending });
+      }
+      fragment.appendChild(card);
     });
     resultsGrid.appendChild(fragment);
     resultsGrid.classList.remove('hidden');
+    log.debug('Rendered activity cards', { count: state.items.length });
   }
 
   async function refresh({ showLoading = true } = {}){
     if (showLoading) setLoading(true);
+    const filters = buildFilters(state);
+    log.debug('Refreshing activities', { filters });
     try {
       const client = supabaseClient || await ensureSupabase();
       if (!client){
@@ -3285,15 +3421,14 @@ resourcesController = (() => {
         return;
       }
       const data = await loadActivities({
-        subject: state.subject === 'all' ? undefined : state.subject,
-        phase: state.phase,
-        search: state.search,
-        pinnedOnly: Boolean(authUser?.id && state.pinnedOnly),
+        ...filters,
+        pinnedOnly: Boolean(authUser?.id && filters.pinnedOnly),
       });
-      state.items = data;
+      state.items = applyFilters(data, filters);
       updateStatusMessage();
+      log.debug('Refresh complete', { count: state.items.length });
     } catch (error) {
-      console.error('Activities fetch failed', error);
+      log.error('Activities fetch failed', error);
       state.items = [];
       setStatus('Unable to load activities right now.', 'error');
     } finally {
@@ -3307,9 +3442,10 @@ resourcesController = (() => {
       const value = btn.dataset.subject || 'all';
       if (value === state.subject) return;
       state.subject = value;
+      log.debug('Subject filter updated', { subject: state.subject });
       updateSubjectButtons();
       refresh();
-    });
+    }, { signal });
   });
 
   phaseButtons.forEach((btn) => {
@@ -3317,9 +3453,10 @@ resourcesController = (() => {
       const value = btn.dataset.phase || 'any';
       if (value === state.phase) return;
       state.phase = value;
+      log.debug('Phase filter updated', { phase: state.phase });
       updatePhaseButtons();
       refresh();
-    });
+    }, { signal });
   });
 
   if (pinnedToggle){
@@ -3330,25 +3467,31 @@ resourcesController = (() => {
       }
       state.pinnedOnly = !state.pinnedOnly;
       savePinnedFilterPreference(authUser.id, state.pinnedOnly);
+      log.debug('Pinned filter toggled', { pinnedOnly: state.pinnedOnly });
       updatePinnedToggle();
       refresh({ showLoading: true });
-    });
+    }, { signal });
   }
 
   if (searchInput){
-    const triggerSearch = () => {
-      if (searchDebounce) window.clearTimeout(searchDebounce);
+    const runSearch = (showLoading) => {
       state.search = searchInput.value || '';
-      refresh({ showLoading: true });
+      log.debug('Applying search filter', { value: state.search, showLoading });
+      refresh({ showLoading });
     };
     searchInput.addEventListener('input', () => {
       state.search = searchInput.value || '';
       if (searchDebounce) window.clearTimeout(searchDebounce);
       searchDebounce = window.setTimeout(() => {
-        refresh({ showLoading: false });
-      }, 250);
-    });
-    searchInput.addEventListener('search', triggerSearch);
+        runSearch(false);
+        searchDebounce = null;
+      }, 150);
+    }, { signal });
+    searchInput.addEventListener('search', () => {
+      if (searchDebounce) window.clearTimeout(searchDebounce);
+      searchDebounce = null;
+      runSearch(true);
+    }, { signal });
   }
 
   if (ideasButton){
@@ -3358,18 +3501,19 @@ resourcesController = (() => {
       if (ideaModalSubject) ideaModalSubject.value = defaults.subject;
       if (ideaModalPhase) ideaModalPhase.value = defaults.phase;
       if (ideaModalNotes) ideaModalNotes.value = defaults.notes || '';
+      log.debug('Opening idea modal', defaults);
       ideaModal?.open();
-    });
+    }, { signal });
   }
 
   ideaModalOverlay?.addEventListener('click', () => {
     ideaModal?.close();
-  });
+  }, { signal });
 
   ideaModalCloseButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       ideaModal?.close();
-    });
+    }, { signal });
   });
 
   ideaModalForm?.addEventListener('submit', (event) => {
@@ -3391,7 +3535,7 @@ resourcesController = (() => {
     }
     ideaModal?.close();
     requestIdeas({ subject, phase, notes: notesValue });
-  });
+  }, { signal });
 
   ideasClearBtn?.addEventListener('click', () => {
     if (ideaState.loading) return;
@@ -3400,7 +3544,7 @@ resourcesController = (() => {
     ideaState.pendingFocus = null;
     ideaState.lastRequest = null;
     renderIdeas();
-  });
+  }, { signal });
 
   if (ideasList){
     ideasList.addEventListener('click', (event) => {
@@ -3422,7 +3566,7 @@ resourcesController = (() => {
         requestIdeaFocus('action', index);
         renderIdeas();
       }
-    });
+    }, { signal });
     ideasList.addEventListener('submit', (event) => {
       const form = event.target.closest('[data-idea-edit-form]');
       if (!form) return;
@@ -3437,12 +3581,13 @@ resourcesController = (() => {
         keywords: String(formData.get('keywords') || ''),
       };
       handleIdeaSave(index, overrides, { fromEdit: true });
-    });
+    }, { signal });
   }
 
-  resultsGrid?.addEventListener('click', handlePinButtonClick);
+  resultsGrid?.addEventListener('click', handlePinButtonClick, { signal });
 
   function handleAuthChange(user){
+    log.debug('Auth change received', { userId: user?.id || null });
     pendingPinUpdates.clear();
     if (!user?.id){
       state.pinnedOnly = false;
