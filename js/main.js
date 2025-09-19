@@ -540,11 +540,14 @@ async function addActivity(record = {}){
     url: typeof record.url === 'string' ? record.url : '',
     keywords,
   };
+  if (authUser?.id){
+    payload.created_by = authUser.id;
+  }
   if (record.id) payload.id = record.id;
   const { data, error } = await client
     .from('activities')
     .insert(payload)
-    .select('id,title,subject,phase,description,url,keywords')
+    .select('id,title,subject,phase,description,url,keywords,created_by')
     .single();
   if (error) throw error;
   resourcesController?.refresh();
@@ -2213,6 +2216,24 @@ resourcesController = (() => {
   const emptyEl = section.querySelector('#activity-empty');
   const loadingEl = section.querySelector('#activity-loading');
   const statusEl = section.querySelector('#activity-status');
+  const ideasButton = section.querySelector('#activity-ideas-button');
+  const ideasButtonIcon = ideasButton?.querySelector('[data-idea-icon]') || null;
+  const ideasButtonLabel = ideasButton?.querySelector('[data-idea-label]') || null;
+  const ideaButtonDefaultIcon = ideasButtonIcon?.textContent?.trim() || '✨';
+  const ideaButtonDefaultLabel = ideasButtonLabel?.textContent?.trim() || 'Get ideas';
+  const ideasSection = section.querySelector('#activity-ideas');
+  const ideasLoadingEl = section.querySelector('#activity-ideas-loading');
+  const ideasList = section.querySelector('#activity-ideas-list');
+  const ideasSummaryEl = section.querySelector('#activity-ideas-summary');
+  const ideasClearBtn = section.querySelector('#activity-ideas-clear');
+  const ideasEmptyEl = section.querySelector('#activity-ideas-empty');
+  const ideaModalEl = document.getElementById('activity-ideas-modal');
+  const ideaModalForm = document.getElementById('activity-ideas-form');
+  const ideaModalSubject = ideaModalForm?.querySelector('[name="subject"]') || null;
+  const ideaModalPhase = ideaModalForm?.querySelector('[name="phase"]') || null;
+  const ideaModalNotes = ideaModalForm?.querySelector('[name="notes"]') || null;
+  const ideaModalOverlay = ideaModalEl?.querySelector('[data-ideas-overlay]') || null;
+  const ideaModalCloseButtons = ideaModalEl ? [...ideaModalEl.querySelectorAll('[data-ideas-close]')] : [];
 
   const SUBJECT_ACTIVE_CLASSES = ['bg-emerald-500', 'border-emerald-500', 'text-white', 'shadow'];
   const SUBJECT_INACTIVE_CLASSES = ['bg-white/80', 'border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-200'];
@@ -2232,6 +2253,26 @@ resourcesController = (() => {
   const PIN_BUTTON_ACTIVE_CLASSES = ['border-amber-400', 'bg-amber-100', 'text-amber-700', 'dark:border-amber-400', 'dark:bg-amber-500/20', 'dark:text-amber-200'];
   const PIN_BUTTON_INACTIVE_CLASSES = ['border-slate-200', 'bg-white/70', 'text-slate-500', 'dark:border-slate-700', 'dark:bg-slate-900/40', 'dark:text-slate-300'];
   const PIN_BUTTON_PENDING_CLASSES = ['opacity-60'];
+  const TOAST_TONE_CLASSES = {
+    info: ['bg-slate-900/90', 'text-white'],
+    success: ['bg-emerald-600', 'text-white'],
+    warning: ['bg-amber-400', 'text-slate-900'],
+    error: ['bg-rose-600', 'text-white'],
+  };
+  const ALL_TOAST_CLASSES = Object.values(TOAST_TONE_CLASSES).flat();
+
+  const ideaState = {
+    items: [],
+    loading: false,
+    editingIndex: null,
+    lastRequest: null,
+    lastSelection: null,
+    pendingFocus: null,
+  };
+
+  let ideaRequestController = null;
+  const showToast = createToast();
+  const ideaModal = ideaModalEl ? createModal(ideaModalEl) : null;
 
   const state = {
     subject: subjectButtons.find(btn => btn.dataset.default === 'true')?.dataset.subject || 'all',
@@ -2437,6 +2478,622 @@ resourcesController = (() => {
     }
   }
 
+  function createToast(){
+    let container = null;
+    let messageEl = null;
+    let hideTimer = null;
+
+    function ensureElements(){
+      if (container && messageEl) return;
+      container = document.getElementById('memory-cue-toast');
+      if (!container){
+        container = document.createElement('div');
+        container.id = 'memory-cue-toast';
+        container.className = 'pointer-events-none fixed inset-x-0 top-4 z-[60] flex justify-center px-4 sm:top-6';
+        messageEl = document.createElement('div');
+        messageEl.className = 'pointer-events-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-lg ring-1 ring-black/10 transition duration-200 ease-out transform opacity-0 translate-y-2';
+        messageEl.setAttribute('role', 'status');
+        messageEl.setAttribute('aria-live', 'polite');
+        messageEl.setAttribute('aria-atomic', 'true');
+        container.appendChild(messageEl);
+        document.body.appendChild(container);
+      } else {
+        messageEl = container.firstElementChild;
+      }
+    }
+
+    return function toast(message, tone = 'info'){
+      if (!message) return;
+      ensureElements();
+      if (!messageEl) return;
+      messageEl.classList.remove(...ALL_TOAST_CLASSES);
+      messageEl.classList.add(...(TOAST_TONE_CLASSES[tone] || TOAST_TONE_CLASSES.info));
+      messageEl.textContent = message;
+      window.clearTimeout(hideTimer);
+      messageEl.classList.remove('opacity-100', 'translate-y-0');
+      messageEl.classList.add('opacity-0', 'translate-y-2');
+      void messageEl.offsetWidth;
+      messageEl.classList.remove('opacity-0', 'translate-y-2');
+      messageEl.classList.add('opacity-100', 'translate-y-0');
+      hideTimer = window.setTimeout(() => {
+        if (!messageEl) return;
+        messageEl.classList.remove('opacity-100', 'translate-y-0');
+        messageEl.classList.add('opacity-0', 'translate-y-2');
+      }, 3800);
+    };
+  }
+
+  function createModal(root){
+    if (!root) return null;
+    const dialog = root.querySelector('[data-ideas-dialog]') || root;
+    if (!dialog.hasAttribute('tabindex')){
+      dialog.setAttribute('tabindex', '-1');
+    }
+    let lastFocused = null;
+
+    function getFocusable(){
+      return [...dialog.querySelectorAll('a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+        .filter((el) => !el.hasAttribute('hidden') && !el.closest('[hidden]') && el.offsetParent !== null);
+    }
+
+    function handleKeydown(event){
+      if (event.key === 'Escape'){
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key === 'Tab'){
+        const focusable = getFocusable();
+        if (!focusable.length){
+          event.preventDefault();
+          return;
+        }
+        const currentIndex = focusable.indexOf(document.activeElement);
+        let nextIndex = currentIndex;
+        if (event.shiftKey){
+          nextIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+        } else {
+          nextIndex = currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
+        }
+        event.preventDefault();
+        focusable[nextIndex]?.focus();
+      }
+    }
+
+    function open(){
+      lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      root.classList.remove('hidden');
+      root.removeAttribute('aria-hidden');
+      document.addEventListener('keydown', handleKeydown);
+      requestAnimationFrame(() => {
+        const focusable = getFocusable();
+        const target = focusable.find((el) => el.dataset.autofocus === 'true') || focusable[0] || dialog;
+        try {
+          target?.focus();
+        } catch {
+          // ignore focus errors
+        }
+      });
+    }
+
+    function close(){
+      root.classList.add('hidden');
+      root.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', handleKeydown);
+      if (lastFocused && typeof lastFocused.focus === 'function'){
+        requestAnimationFrame(() => {
+          try {
+            lastFocused.focus();
+          } catch {
+            // ignore focus errors
+          }
+        });
+      }
+    }
+
+    return { open, close };
+  }
+
+  function updateIdeaButtonState(){
+    if (!ideasButton) return;
+    const busy = Boolean(ideaState.loading);
+    ideasButton.disabled = busy;
+    if (busy){
+      ideasButton.setAttribute('aria-busy', 'true');
+      if (ideasButtonLabel) ideasButtonLabel.textContent = 'Generating…';
+      if (ideasButtonIcon) ideasButtonIcon.textContent = '⏳';
+    } else {
+      ideasButton.removeAttribute('aria-busy');
+      if (ideasButtonLabel) ideasButtonLabel.textContent = ideaButtonDefaultLabel;
+      if (ideasButtonIcon) ideasButtonIcon.textContent = ideaButtonDefaultIcon;
+    }
+  }
+
+  function getIdeaFormDefaults(){
+    const defaults = {
+      subject: ACTIVITY_SUBJECTS.has(state.subject) ? state.subject : 'HPE',
+      phase: ACTIVITY_PHASES.has(state.phase) ? state.phase : 'start',
+      notes: '',
+    };
+    const selection = ideaState.lastSelection;
+    if (selection){
+      if (ACTIVITY_SUBJECTS.has(selection.subject)){
+        defaults.subject = selection.subject;
+      }
+      if (ACTIVITY_PHASES.has(selection.phase)){
+        defaults.phase = selection.phase;
+      }
+      if (typeof selection.notes === 'string'){
+        defaults.notes = selection.notes;
+      }
+    }
+    return defaults;
+  }
+
+  function requestIdeaFocus(type, index){
+    ideaState.pendingFocus = { type, index };
+  }
+
+  function applyPendingIdeaFocus(){
+    if (!ideaState.pendingFocus) return;
+    const { type, index } = ideaState.pendingFocus;
+    ideaState.pendingFocus = null;
+    if (!ideasList) return;
+    const card = ideasList.querySelector(`[data-idea-index="${index}"]`);
+    if (!card) return;
+    if (type === 'edit'){
+      const target = card.querySelector('[data-idea-edit-title]');
+      if (target){
+        requestAnimationFrame(() => {
+          try {
+            target.focus();
+            if (typeof target.select === 'function'){
+              target.select();
+            }
+          } catch {
+            // ignore focus errors
+          }
+        });
+      }
+    } else if (type === 'action'){
+      const target = card.querySelector('[data-idea-action="edit"]') || card.querySelector('[data-idea-action="save"]');
+      if (target){
+        requestAnimationFrame(() => {
+          try {
+            target.focus();
+          } catch {
+            // ignore focus errors
+          }
+        });
+      }
+    }
+  }
+
+  function normaliseKeywords(value){
+    if (Array.isArray(value)){
+      return value.map((kw) => String(kw).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string'){
+      return value.split(',').map((kw) => kw.trim()).filter(Boolean);
+    }
+    return [];
+  }
+
+  function buildIdeaCard(idea, index, { editing = false } = {}){
+    const card = document.createElement('article');
+    card.className = 'flex h-full flex-col gap-4 rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-within:outline-none focus-within:ring-2 focus-within:ring-emerald-400 dark:border-emerald-500/30 dark:bg-slate-900/60';
+    card.dataset.ideaIndex = String(index);
+
+    const header = document.createElement('div');
+    header.className = 'flex flex-col gap-3';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'flex items-start justify-between gap-3';
+
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'min-w-0 flex-1';
+
+    const title = document.createElement('h3');
+    title.className = 'text-lg font-semibold text-emerald-900 dark:text-emerald-100';
+    const titleText = (idea?.title && String(idea.title).trim()) || 'Lesson idea';
+    title.textContent = titleText;
+
+    titleWrap.appendChild(title);
+    titleRow.appendChild(titleWrap);
+    header.appendChild(titleRow);
+
+    const badgeWrap = document.createElement('div');
+    badgeWrap.className = 'flex flex-wrap gap-2 text-xs font-semibold';
+    if (idea?.subject && ACTIVITY_SUBJECTS.has(idea.subject)){
+      const badge = document.createElement('span');
+      badge.className = `inline-flex items-center rounded-full px-3 py-1 ${subjectBadgeClass(idea.subject)}`;
+      badge.textContent = idea.subject;
+      badgeWrap.appendChild(badge);
+    }
+    if (idea?.phase && ACTIVITY_PHASES.has(idea.phase)){
+      const badge = document.createElement('span');
+      badge.className = `inline-flex items-center rounded-full px-3 py-1 ${phaseBadgeClass(idea.phase)}`;
+      badge.textContent = `${capitalise(idea.phase)} phase`;
+      badgeWrap.appendChild(badge);
+    }
+    if (badgeWrap.childElementCount){
+      header.appendChild(badgeWrap);
+    }
+
+    card.appendChild(header);
+
+    if (editing){
+      const form = document.createElement('form');
+      form.className = 'mt-2 space-y-4';
+      form.dataset.ideaEditForm = 'true';
+      form.dataset.ideaIndex = String(index);
+
+      const titleField = document.createElement('label');
+      titleField.className = 'block text-sm font-semibold text-emerald-900 dark:text-emerald-100';
+      titleField.textContent = 'Title';
+      const titleInput = document.createElement('input');
+      titleInput.name = 'title';
+      titleInput.type = 'text';
+      titleInput.required = true;
+      titleInput.value = titleText;
+      titleInput.dataset.ideaEditTitle = 'true';
+      titleInput.className = 'mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-emerald-500/40 dark:bg-slate-900 dark:text-slate-100';
+      titleField.appendChild(titleInput);
+      form.appendChild(titleField);
+
+      const descField = document.createElement('label');
+      descField.className = 'block text-sm font-semibold text-emerald-900 dark:text-emerald-100';
+      descField.textContent = 'Description';
+      const descArea = document.createElement('textarea');
+      descArea.name = 'description';
+      descArea.rows = 3;
+      descArea.className = 'mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-emerald-500/40 dark:bg-slate-900 dark:text-slate-100';
+      descArea.value = (idea?.description && String(idea.description)) || '';
+      descField.appendChild(descArea);
+      form.appendChild(descField);
+
+      const urlField = document.createElement('label');
+      urlField.className = 'block text-sm font-semibold text-emerald-900 dark:text-emerald-100';
+      urlField.textContent = 'Link (optional)';
+      const urlInput = document.createElement('input');
+      urlInput.name = 'url';
+      urlInput.type = 'url';
+      urlInput.value = typeof idea?.url === 'string' ? idea.url : '';
+      urlInput.placeholder = 'https://…';
+      urlInput.className = 'mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-emerald-500/40 dark:bg-slate-900 dark:text-slate-100';
+      urlField.appendChild(urlInput);
+      form.appendChild(urlField);
+
+      const keywordsField = document.createElement('label');
+      keywordsField.className = 'block text-sm font-semibold text-emerald-900 dark:text-emerald-100';
+      keywordsField.textContent = 'Keywords (comma separated)';
+      const keywordsInput = document.createElement('input');
+      keywordsInput.name = 'keywords';
+      keywordsInput.type = 'text';
+      keywordsInput.value = Array.isArray(idea?.keywords) ? idea.keywords.join(', ') : '';
+      keywordsInput.placeholder = 'movement, warm-up, teamwork';
+      keywordsInput.className = 'mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-emerald-500/40 dark:bg-slate-900 dark:text-slate-100';
+      keywordsField.appendChild(keywordsInput);
+      form.appendChild(keywordsField);
+
+      const actions = document.createElement('div');
+      actions.className = 'flex flex-wrap items-center gap-3 pt-2';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'submit';
+      saveBtn.dataset.ideaAction = 'save-edit';
+      saveBtn.dataset.ideaIndex = String(index);
+      saveBtn.className = 'inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:opacity-60';
+      if (idea?.saving){
+        saveBtn.textContent = 'Saving…';
+        saveBtn.disabled = true;
+      } else {
+        saveBtn.textContent = 'Save activity';
+      }
+      actions.appendChild(saveBtn);
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.dataset.ideaAction = 'cancel-edit';
+      cancelBtn.dataset.ideaIndex = String(index);
+      cancelBtn.className = 'text-sm font-semibold text-emerald-700 hover:text-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:text-emerald-200 dark:hover:text-emerald-100';
+      cancelBtn.textContent = 'Cancel';
+      actions.appendChild(cancelBtn);
+
+      form.appendChild(actions);
+      card.appendChild(form);
+      return card;
+    }
+
+    const description = document.createElement('p');
+    description.className = 'text-sm leading-6 text-emerald-900/80 dark:text-emerald-100/80';
+    description.textContent = (idea?.description && String(idea.description).trim()) || 'No description provided yet.';
+    card.appendChild(description);
+
+    if (idea?.url){
+      const link = document.createElement('a');
+      link.className = 'inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:text-emerald-200 dark:hover:text-emerald-100';
+      link.href = idea.url;
+      link.target = '_blank';
+      link.rel = 'noreferrer noopener';
+      link.textContent = 'Open resource';
+      const icon = document.createElement('span');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '↗';
+      link.appendChild(icon);
+      card.appendChild(link);
+    }
+
+    if (Array.isArray(idea?.keywords) && idea.keywords.length){
+      const keywordWrap = document.createElement('div');
+      keywordWrap.className = 'flex flex-wrap gap-2 pt-2';
+      idea.keywords.forEach((kw) => {
+        const label = String(kw || '').trim();
+        if (!label) return;
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100/80 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/20 dark:text-emerald-100';
+        chip.textContent = `#${label}`;
+        keywordWrap.appendChild(chip);
+      });
+      if (keywordWrap.childElementCount){
+        card.appendChild(keywordWrap);
+      }
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'mt-auto flex flex-wrap items-center gap-3';
+    actions.dataset.ideaActions = 'true';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.dataset.ideaAction = 'save';
+    saveBtn.dataset.ideaIndex = String(index);
+    saveBtn.className = 'inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:opacity-60';
+    if (idea?.saved){
+      saveBtn.textContent = 'Saved to Activities';
+      saveBtn.disabled = true;
+    } else if (idea?.saving){
+      saveBtn.textContent = 'Saving…';
+      saveBtn.disabled = true;
+    } else {
+      saveBtn.textContent = '➕ Save to Activities';
+    }
+    actions.appendChild(saveBtn);
+
+    if (idea?.saved){
+      const savedLabel = document.createElement('span');
+      savedLabel.className = 'inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 dark:text-emerald-200';
+      const icon = document.createElement('span');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '✓';
+      savedLabel.append(icon, document.createTextNode('Saved to Activities'));
+      actions.appendChild(savedLabel);
+    } else {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.dataset.ideaAction = 'edit';
+      editBtn.dataset.ideaIndex = String(index);
+      editBtn.className = 'text-sm font-semibold text-emerald-700 hover:text-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:text-emerald-200 dark:hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-60';
+      editBtn.textContent = 'Edit before saving';
+      editBtn.disabled = Boolean(idea?.saving);
+      actions.appendChild(editBtn);
+    }
+
+    card.appendChild(actions);
+    return card;
+  }
+
+  function renderIdeas(){
+    updateIdeaButtonState();
+    if (!ideasSection) return;
+    const hasIdeas = Array.isArray(ideaState.items) && ideaState.items.length > 0;
+    const showEmpty = !ideaState.loading && !hasIdeas && Boolean(ideaState.lastRequest);
+    const shouldShowSection = ideaState.loading || hasIdeas || showEmpty;
+    ideasSection.classList.toggle('hidden', !shouldShowSection);
+
+    if (ideasLoadingEl){
+      ideasLoadingEl.classList.toggle('hidden', !ideaState.loading);
+    }
+
+    if (ideasList){
+      ideasList.innerHTML = '';
+      if (hasIdeas){
+        const fragment = document.createDocumentFragment();
+        ideaState.items.forEach((idea, index) => {
+          fragment.appendChild(buildIdeaCard(idea, index, { editing: ideaState.editingIndex === index }));
+        });
+        ideasList.appendChild(fragment);
+        ideasList.classList.remove('hidden');
+      } else {
+        ideasList.classList.add('hidden');
+      }
+    }
+
+    if (ideasEmptyEl){
+      ideasEmptyEl.classList.toggle('hidden', !showEmpty);
+    }
+
+    if (ideasSummaryEl){
+      if (!shouldShowSection){
+        ideasSummaryEl.textContent = '';
+        ideasSummaryEl.classList.add('hidden');
+      } else if (ideaState.lastRequest){
+        const { subject, phase } = ideaState.lastRequest;
+        const parts = [];
+        if (subject && ACTIVITY_SUBJECTS.has(subject)){
+          parts.push(subject);
+        }
+        if (phase && ACTIVITY_PHASES.has(phase)){
+          parts.push(`${capitalise(phase)} phase`);
+        }
+        const summary = parts.join(' • ');
+        if (ideaState.loading){
+          ideasSummaryEl.textContent = summary ? `Generating ideas for ${summary}…` : 'Generating lesson ideas…';
+        } else if (hasIdeas){
+          ideasSummaryEl.textContent = summary ? `Ideas for ${summary}` : 'Lesson ideas ready';
+        } else {
+          ideasSummaryEl.textContent = summary ? `No ideas generated for ${summary}. Try adjusting your notes.` : 'No ideas generated yet.';
+        }
+        ideasSummaryEl.classList.toggle('hidden', !ideasSummaryEl.textContent);
+      } else {
+        ideasSummaryEl.textContent = '';
+        ideasSummaryEl.classList.add('hidden');
+      }
+    }
+
+    if (ideasClearBtn){
+      const shouldShowClear = hasIdeas || showEmpty;
+      ideasClearBtn.classList.toggle('hidden', !shouldShowClear);
+      const disableClear = Boolean(ideaState.loading);
+      ideasClearBtn.disabled = disableClear;
+      ideasClearBtn.classList.toggle('opacity-60', disableClear);
+      ideasClearBtn.classList.toggle('cursor-not-allowed', disableClear);
+      ideasClearBtn.setAttribute('aria-disabled', String(disableClear));
+    }
+
+    applyPendingIdeaFocus();
+  }
+
+  function prepareIdeaForSave(idea, overrides = {}){
+    const merged = { ...idea, ...overrides };
+    return {
+      title: typeof merged.title === 'string' ? merged.title.trim() : '',
+      description: typeof merged.description === 'string' ? merged.description.trim() : '',
+      url: typeof merged.url === 'string' ? merged.url.trim() : '',
+      keywords: normaliseKeywords(merged.keywords),
+      subject: ACTIVITY_SUBJECTS.has(merged.subject) ? merged.subject : null,
+      phase: ACTIVITY_PHASES.has(merged.phase) ? merged.phase : null,
+    };
+  }
+
+  async function requestIdeas(payload){
+    if (!payload || !payload.subject || !payload.phase) return;
+    ideaState.lastSelection = {
+      subject: ACTIVITY_SUBJECTS.has(payload.subject) ? payload.subject : 'HPE',
+      phase: ACTIVITY_PHASES.has(payload.phase) ? payload.phase : 'start',
+      notes: typeof payload.notes === 'string' ? payload.notes.trim() : '',
+    };
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY){
+      showToast('Add Supabase credentials to generate lesson ideas.', 'warning');
+      return;
+    }
+    if (ideaRequestController){
+      ideaRequestController.abort();
+    }
+    const controller = new AbortController();
+    ideaRequestController = controller;
+
+    ideaState.loading = true;
+    ideaState.items = [];
+    ideaState.editingIndex = null;
+    ideaState.lastRequest = { ...ideaState.lastSelection };
+    renderIdeas();
+
+    const baseUrl = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${baseUrl}/functions/v1/ideas`;
+    const requestBody = {
+      subject: ideaState.lastRequest.subject,
+      phase: ideaState.lastRequest.phase,
+    };
+    if (ideaState.lastRequest.notes){
+      requestBody.notes = ideaState.lastRequest.notes;
+    }
+
+    let aborted = false;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+      if (!response.ok){
+        let detail = `Request failed (${response.status})`;
+        try {
+          const text = await response.text();
+          if (text) detail = text.slice(0, 160);
+        } catch {
+          // ignore
+        }
+        throw new Error(detail);
+      }
+      const result = await response.json();
+      const ideas = Array.isArray(result?.ideas) ? result.ideas : [];
+      ideaState.items = ideas.map((item) => ({
+        title: typeof item?.title === 'string' ? item.title.trim() : '',
+        description: typeof item?.description === 'string' ? item.description.trim() : '',
+        url: typeof item?.url === 'string' ? item.url.trim() : '',
+        keywords: normaliseKeywords(item?.keywords),
+        subject: ideaState.lastRequest.subject,
+        phase: ideaState.lastRequest.phase,
+        saved: false,
+        saving: false,
+      }));
+      if (!ideaState.items.length){
+        showToast('No ideas generated this time. Try adding more notes.', 'warning');
+      }
+    } catch (error) {
+      if (controller.signal.aborted){
+        aborted = true;
+      } else {
+        console.error('Idea generation failed', error);
+        ideaState.items = [];
+        showToast('Unable to generate lesson ideas right now.', 'error');
+      }
+    } finally {
+      ideaState.loading = false;
+      if (ideaRequestController === controller){
+        ideaRequestController = null;
+      }
+      if (!aborted){
+        renderIdeas();
+      }
+    }
+  }
+
+  async function handleIdeaSave(index, overrides = {}, { fromEdit = false } = {}){
+    if (!Array.isArray(ideaState.items)) return;
+    if (index < 0 || index >= ideaState.items.length) return;
+    const current = ideaState.items[index];
+    if (!current || current.saving || current.saved) return;
+    if (!authUser?.id){
+      showToast('Sign in to save ideas to your Activities.', 'warning');
+      return;
+    }
+    const payload = prepareIdeaForSave(current, overrides);
+    if (!payload.title){
+      showToast('Add a title before saving this idea.', 'warning');
+      ideaState.editingIndex = index;
+      requestIdeaFocus('edit', index);
+      renderIdeas();
+      return;
+    }
+    const savingState = { ...current, ...payload, keywords: payload.keywords, saving: true, saved: false };
+    ideaState.items[index] = savingState;
+    renderIdeas();
+    try {
+      await addActivity(payload);
+      ideaState.items[index] = { ...savingState, saving: false, saved: true };
+      ideaState.editingIndex = null;
+      renderIdeas();
+      showToast('Idea saved to Activities.', 'success');
+    } catch (error) {
+      console.error('Idea save failed', error);
+      ideaState.items[index] = { ...current, saving: false, saved: false };
+      if (fromEdit){
+        ideaState.editingIndex = index;
+        requestIdeaFocus('edit', index);
+      }
+      renderIdeas();
+      showToast('Unable to save idea right now.', 'error');
+    }
+  }
+
   function updateSubjectButtons(){
     subjectButtons.forEach((btn) => {
       const value = btn.dataset.subject || 'all';
@@ -2601,6 +3258,7 @@ resourcesController = (() => {
 
   function render(){
     updatePinnedToggle();
+    renderIdeas();
     if (!resultsGrid) return;
     resultsGrid.innerHTML = '';
     if (!state.items.length){
@@ -2691,6 +3349,95 @@ resourcesController = (() => {
       }, 250);
     });
     searchInput.addEventListener('search', triggerSearch);
+  }
+
+  if (ideasButton){
+    ideasButton.addEventListener('click', () => {
+      if (ideaState.loading) return;
+      const defaults = getIdeaFormDefaults();
+      if (ideaModalSubject) ideaModalSubject.value = defaults.subject;
+      if (ideaModalPhase) ideaModalPhase.value = defaults.phase;
+      if (ideaModalNotes) ideaModalNotes.value = defaults.notes || '';
+      ideaModal?.open();
+    });
+  }
+
+  ideaModalOverlay?.addEventListener('click', () => {
+    ideaModal?.close();
+  });
+
+  ideaModalCloseButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      ideaModal?.close();
+    });
+  });
+
+  ideaModalForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (ideaState.loading) return;
+    const formData = new FormData(ideaModalForm);
+    const subject = String(formData.get('subject') || '').trim();
+    const phase = String(formData.get('phase') || '').trim();
+    const notesValue = String(formData.get('notes') || '').trim();
+    if (!ACTIVITY_SUBJECTS.has(subject)){
+      showToast('Choose a subject to generate ideas.', 'warning');
+      ideaModalSubject?.focus();
+      return;
+    }
+    if (!ACTIVITY_PHASES.has(phase)){
+      showToast('Choose a lesson phase to generate ideas.', 'warning');
+      ideaModalPhase?.focus();
+      return;
+    }
+    ideaModal?.close();
+    requestIdeas({ subject, phase, notes: notesValue });
+  });
+
+  ideasClearBtn?.addEventListener('click', () => {
+    if (ideaState.loading) return;
+    ideaState.items = [];
+    ideaState.editingIndex = null;
+    ideaState.pendingFocus = null;
+    ideaState.lastRequest = null;
+    renderIdeas();
+  });
+
+  if (ideasList){
+    ideasList.addEventListener('click', (event) => {
+      const actionBtn = event.target.closest('[data-idea-action]');
+      if (!actionBtn) return;
+      const index = Number.parseInt(actionBtn.dataset.ideaIndex || '', 10);
+      if (Number.isNaN(index)) return;
+      const action = actionBtn.dataset.ideaAction;
+      if (action === 'save'){
+        handleIdeaSave(index);
+      } else if (action === 'edit'){
+        const item = ideaState.items[index];
+        if (!item || item.saving || item.saved) return;
+        ideaState.editingIndex = index;
+        requestIdeaFocus('edit', index);
+        renderIdeas();
+      } else if (action === 'cancel-edit'){
+        ideaState.editingIndex = null;
+        requestIdeaFocus('action', index);
+        renderIdeas();
+      }
+    });
+    ideasList.addEventListener('submit', (event) => {
+      const form = event.target.closest('[data-idea-edit-form]');
+      if (!form) return;
+      event.preventDefault();
+      const index = Number.parseInt(form.dataset.ideaIndex || '', 10);
+      if (Number.isNaN(index)) return;
+      const formData = new FormData(form);
+      const overrides = {
+        title: String(formData.get('title') || ''),
+        description: String(formData.get('description') || ''),
+        url: String(formData.get('url') || ''),
+        keywords: String(formData.get('keywords') || ''),
+      };
+      handleIdeaSave(index, overrides, { fromEdit: true });
+    });
   }
 
   resultsGrid?.addEventListener('click', handlePinButtonClick);
