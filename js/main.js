@@ -253,6 +253,9 @@ const SUPABASE_ANON_KEY = (typeof globalEnv.VITE_SUPABASE_ANON_KEY === 'string' 
   || '';
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
+let supabaseInitialSessionPromise = null;
+let supabaseInitialSessionResolved = !hasSupabaseConfig;
+
 const ACTIVITY_SUBJECTS = new Set(['HPE', 'English', 'HASS']);
 const ACTIVITY_PHASES = new Set(['start', 'middle', 'end']);
 
@@ -488,10 +491,24 @@ function loadSupabaseModule(){
   return supabaseModulePromise;
 }
 
+function markInitialAuthReady(){
+  supabaseInitialSessionResolved = true;
+}
+
+async function waitForInitialAuth(){
+  if (supabaseInitialSessionResolved) return;
+  if (!supabaseInitialSessionPromise) return;
+  try {
+    await supabaseInitialSessionPromise;
+  } catch {
+    // Errors are logged when the initial session request fails.
+  }
+}
+
 function setupSupabaseAuth(){
   if (!supabaseClient || setupSupabaseAuth.initialised) return;
   setupSupabaseAuth.initialised = true;
-  supabaseClient.auth.getSession()
+  supabaseInitialSessionPromise = supabaseClient.auth.getSession()
     .then(async ({ data }) => {
       const session = data?.session || null;
       const nextUser = session?.user ?? null;
@@ -510,9 +527,14 @@ function setupSupabaseAuth(){
       if (userChanged){
         resourcesController?.refresh({ showLoading: true });
       }
+      return authUser;
     })
     .catch((error) => {
       console.error('Initial Supabase session fetch failed', error);
+      return null;
+    })
+    .finally(() => {
+      markInitialAuthReady();
     });
   const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
     handleAuthStateChange(event, session);
@@ -709,6 +731,7 @@ function escapeIlike(term){
 async function loadActivities({ subject, phase, search, pinnedOnly } = {}){
   const client = supabaseClient || await ensureSupabase();
   if (!client) return [];
+  await waitForInitialAuth();
   let pinnedIds = new Set();
   if (authUser?.id){
     pinnedIds = await ensureActivityPins();
@@ -808,6 +831,7 @@ async function handleAuthStateChange(event, session){
   } else {
     resourcesController?.refresh();
   }
+  markInitialAuthReady();
 }
 
 if (authForm) {
