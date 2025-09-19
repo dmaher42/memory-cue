@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- === SUPABASE CONFIG (put before your main JS) === -->
+<script>
+  // Replace with your real values from Supabase → Settings → API
+  window.SUPABASE_URL = "https://yhfxsbeglqkmovokhiqg.supabase.co";
+  window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZnhzYmVnbHFrbW92b2toaXFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzMDgyNjcsImV4cCI6MjA3Mzg4NDI2N30.DzQwvLx4_Omdrh_p_fC_c83MxpfJ7G9d1HRKreRZSWo";
+</script>
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+</script>
+<!-- === /SUPABASE CONFIG === -->
+  <script type="module">
+  // 1) Check auth works
+  const { data: session } = await window.supabase.auth.getSession();
+  console.log('Auth session?', session);
+  // 2) Ping the DB (assumes you created the 'activities' table)
+  const { data, error } = await window.supabase.from('activities').select('*').limit(1);
+  console.log('DB test:', { data, error });
+</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="Memory Cue helps teachers stay organised with integrated dashboards, reminders, planners, and curated resources in one streamlined app." />
