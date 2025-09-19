@@ -234,33 +234,292 @@ if (typeof window !== 'undefined') {
   window.memoryCueActivity = existing;
 }
 
-// Firebase auth
+let supabaseClient = null;
+let resourcesController = null;
+let authSubscription = null;
+let supabaseInitPromise = null;
+let supabaseModulePromise = null;
+
+const globalEnv = (typeof globalThis !== 'undefined' && (globalThis.__SUPABASE_ENV__ || globalThis.__supabaseEnv__)) || {};
+const nodeEnv = (typeof process !== 'undefined' && process?.env) ? process.env : {};
+const SUPABASE_URL = (typeof globalEnv.VITE_SUPABASE_URL === 'string' && globalEnv.VITE_SUPABASE_URL)
+  || (typeof nodeEnv.VITE_SUPABASE_URL === 'string' && nodeEnv.VITE_SUPABASE_URL)
+  || (typeof window !== 'undefined' ? window.SUPABASE_URL : undefined)
+  || '';
+const SUPABASE_ANON_KEY = (typeof globalEnv.VITE_SUPABASE_ANON_KEY === 'string' && globalEnv.VITE_SUPABASE_ANON_KEY)
+  || (typeof nodeEnv.VITE_SUPABASE_ANON_KEY === 'string' && nodeEnv.VITE_SUPABASE_ANON_KEY)
+  || (typeof window !== 'undefined' ? window.SUPABASE_ANON_KEY : undefined)
+  || '';
+const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+const ACTIVITY_SUBJECTS = new Set(['HPE', 'English', 'HASS']);
+const ACTIVITY_PHASES = new Set(['start', 'middle', 'end']);
+
+function loadSupabaseModule(){
+  if (supabaseModulePromise) return supabaseModulePromise;
+  if (typeof window === 'undefined') {
+    supabaseModulePromise = Promise.resolve(null);
+    return supabaseModulePromise;
+  }
+  supabaseModulePromise = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')
+    .catch((error) => {
+      console.error('Supabase library failed to load', error);
+      return null;
+    });
+  return supabaseModulePromise;
+}
+
+function setupSupabaseAuth(){
+  if (!supabaseClient || setupSupabaseAuth.initialised) return;
+  setupSupabaseAuth.initialised = true;
+  supabaseClient.auth.getSession().then(({ data }) => {
+    const session = data?.session || null;
+    authUser = session?.user ?? null;
+    updateAuthUI(authUser);
+    if (authUser) {
+      upsertProfile(authUser);
+    }
+  });
+  const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
+    handleAuthStateChange(event, session);
+  });
+  authSubscription = data?.subscription || authSubscription;
+  if (authSubscription && typeof window !== 'undefined' && !setupSupabaseAuth.cleanupRegistered) {
+    window.addEventListener('beforeunload', () => {
+      try {
+        authSubscription.unsubscribe();
+      } catch {
+        // ignore cleanup errors
+      }
+    }, { once: true });
+    setupSupabaseAuth.cleanupRegistered = true;
+  }
+}
+setupSupabaseAuth.initialised = false;
+setupSupabaseAuth.cleanupRegistered = false;
+
+function ensureSupabase(){
+  if (supabaseClient) return Promise.resolve(supabaseClient);
+  if (!hasSupabaseConfig) return Promise.resolve(null);
+  if (!supabaseInitPromise) {
+    supabaseInitPromise = loadSupabaseModule().then((mod) => {
+      if (!mod || typeof mod.createClient !== 'function') return null;
+      try {
+        const client = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
+        });
+        supabaseClient = client;
+        if (typeof window !== 'undefined') {
+          window.supabaseClient = supabaseClient;
+        }
+        setupSupabaseAuth();
+        resourcesController?.refresh({ showLoading: true });
+        return supabaseClient;
+      } catch (error) {
+        console.error('Supabase initialisation failed', error);
+        supabaseClient = null;
+        return null;
+      }
+    });
+  }
+  return supabaseInitPromise;
+}
+
+const authForm = document.getElementById('auth-form');
+const authEmailInput = document.getElementById('auth-email');
+const authFeedbackEl = document.getElementById('auth-feedback');
 const signInBtn = document.getElementById('sign-in-btn');
 const signOutBtn = document.getElementById('sign-out-btn');
+const userBadge = document.getElementById('user-badge');
+const userBadgeEmail = document.getElementById('user-badge-email');
+const userBadgeInitial = document.getElementById('user-badge-initial');
+const signInDefaultLabel = signInBtn?.textContent || 'Send link';
 
-if (typeof firebase !== 'undefined' && firebase.auth) {
-  const auth = firebase.auth();
+let authUser = null;
 
-  signInBtn?.addEventListener('click', async () => {
+function setAuthFeedback(message = '', tone = 'info'){
+  if (!authFeedbackEl) return;
+  const toneClasses = {
+    info: 'text-white/80',
+    success: 'text-emerald-200',
+    warning: 'text-amber-200',
+    error: 'text-rose-200',
+  };
+  authFeedbackEl.classList.remove('text-white/80', 'text-emerald-200', 'text-amber-200', 'text-rose-200');
+  if (!message){
+    authFeedbackEl.textContent = '';
+    authFeedbackEl.classList.add('hidden');
+    return;
+  }
+  authFeedbackEl.classList.remove('hidden');
+  authFeedbackEl.classList.add(toneClasses[tone] || toneClasses.info);
+  authFeedbackEl.textContent = message;
+}
+
+function updateAuthUI(user){
+  const isSignedIn = Boolean(user);
+  if (authForm) authForm.classList.toggle('hidden', isSignedIn);
+  if (signOutBtn) signOutBtn.classList.toggle('hidden', !isSignedIn);
+  if (userBadge) userBadge.classList.toggle('hidden', !isSignedIn);
+  if (isSignedIn){
+    const email = user?.email || '';
+    if (userBadgeEmail) userBadgeEmail.textContent = email;
+    if (userBadgeInitial) userBadgeInitial.textContent = email ? email.charAt(0).toUpperCase() : 'U';
+  } else if (authEmailInput){
+    authEmailInput.value = '';
+  }
+}
+
+function escapeIlike(term){
+  return term.replace(/[%_,]/g, (match) => `\\${match}`);
+}
+
+async function loadActivities({ subject, phase, search } = {}){
+  const client = await ensureSupabase();
+  if (!client) return [];
+  let query = client
+    .from('activities')
+    .select('id,title,subject,phase,description,url,keywords')
+    .order('title', { ascending: true });
+  if (subject && subject !== 'all'){
+    query = query.eq('subject', subject);
+  }
+  if (phase && phase !== 'any'){
+    query = query.eq('phase', phase);
+  }
+  if (search && search.trim()){
+    const pattern = `%${escapeIlike(search.trim())}%`;
+    query = query.or(`title.ilike.${pattern},description.ilike.${pattern}`);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+
+async function addActivity(record = {}){
+  const client = await ensureSupabase();
+  if (!client) throw new Error('Supabase client not available');
+  const subject = typeof record.subject === 'string' && ACTIVITY_SUBJECTS.has(record.subject) ? record.subject : null;
+  const phase = typeof record.phase === 'string' && ACTIVITY_PHASES.has(record.phase) ? record.phase : null;
+  const keywords = Array.isArray(record.keywords)
+    ? record.keywords.map((kw) => String(kw).trim()).filter(Boolean)
+    : [];
+  const payload = {
+    title: typeof record.title === 'string' ? record.title : '',
+    subject,
+    phase,
+    description: typeof record.description === 'string' ? record.description : '',
+    url: typeof record.url === 'string' ? record.url : '',
+    keywords,
+  };
+  if (record.id) payload.id = record.id;
+  const { data, error } = await client
+    .from('activities')
+    .insert(payload)
+    .select('id,title,subject,phase,description,url,keywords')
+    .single();
+  if (error) throw error;
+  resourcesController?.refresh();
+  return data;
+}
+
+async function upsertProfile(user){
+  if (!supabaseClient || !user) return;
+  try {
+    await supabaseClient
+      .from('profiles')
+      .upsert({ id: user.id, email: user.email || '' }, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Profile upsert failed', error);
+  }
+}
+
+async function handleAuthStateChange(event, session){
+  authUser = session?.user ?? null;
+  updateAuthUI(authUser);
+  if (authUser) {
+    await upsertProfile(authUser);
+  }
+  if (event === 'SIGNED_IN' && authUser?.email){
+    setAuthFeedback(`Signed in as ${authUser.email}`, 'success');
+  } else if (event === 'SIGNED_OUT') {
+    setAuthFeedback('Signed out.', 'info');
+  }
+  resourcesController?.refresh();
+}
+
+if (authForm) {
+  authForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const email = authEmailInput?.value?.trim();
+    if (!email) {
+      setAuthFeedback('Enter your email address to sign in.', 'warning');
+      authEmailInput?.focus();
+      return;
+    }
+    if (signInBtn) {
+      signInBtn.disabled = true;
+      signInBtn.textContent = 'Sending…';
+    }
     try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-    } catch (err) {
-      alert(err.message);
+      const client = await ensureSupabase();
+      if (!client) {
+        setAuthFeedback('Supabase is not configured yet.', 'warning');
+        return;
+      }
+      const redirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}${window.location.pathname}`
+        : undefined;
+      const { error } = await client.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirectTo },
+      });
+      if (error) throw error;
+      setAuthFeedback(`Magic link sent to ${email}. Check your inbox.`, 'success');
+    } catch (error) {
+      console.error('Supabase sign-in failed', error);
+      setAuthFeedback(error?.message || 'Unable to send sign-in link right now.', 'error');
+    } finally {
+      if (signInBtn) {
+        signInBtn.disabled = false;
+        signInBtn.textContent = signInDefaultLabel;
+      }
     }
   });
+}
 
-  signOutBtn?.addEventListener('click', () => auth.signOut());
+signOutBtn?.addEventListener('click', async () => {
+  const client = await ensureSupabase();
+  if (!client) return;
+  signOutBtn.disabled = true;
+  try {
+    const { error } = await client.auth.signOut();
+    if (error) throw error;
+  } catch (error) {
+    console.error('Supabase sign-out failed', error);
+    setAuthFeedback('Unable to sign out right now.', 'error');
+  } finally {
+    signOutBtn.disabled = false;
+  }
+});
 
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-      signInBtn.hidden = true;
-      signOutBtn.hidden = false;
-    } else {
-      signInBtn.hidden = false;
-      signOutBtn.hidden = true;
-    }
+if (!hasSupabaseConfig) {
+  authEmailInput?.setAttribute('disabled', 'true');
+  signInBtn?.setAttribute('disabled', 'true');
+  setAuthFeedback('Configure Supabase environment keys to enable sign-in and activities.', 'warning');
+} else {
+  ensureSupabase().catch((error) => {
+    console.error('Supabase load failed', error);
+    setAuthFeedback('Unable to initialise Supabase right now.', 'error');
   });
+}
+
+if (typeof window !== 'undefined') {
+  window.memoryCueResources = {
+    loadActivities,
+    addActivity,
+    refresh: () => resourcesController?.refresh(),
+  };
 }
 
 // Theme toggle
@@ -1801,6 +2060,291 @@ if (dashboardController) {
     dashboardController.setReminders(items);
   });
 }
+
+resourcesController = (() => {
+  const section = document.getElementById('view-resources');
+  if (!section) return null;
+
+  const subjectButtons = [...section.querySelectorAll('[data-subject]')];
+  const phaseButtons = [...section.querySelectorAll('[data-phase]')];
+  const searchInput = section.querySelector('#activity-search');
+  const resultsGrid = section.querySelector('#activity-results');
+  const emptyEl = section.querySelector('#activity-empty');
+  const loadingEl = section.querySelector('#activity-loading');
+  const statusEl = section.querySelector('#activity-status');
+
+  const SUBJECT_ACTIVE_CLASSES = ['bg-emerald-500', 'border-emerald-500', 'text-white', 'shadow'];
+  const SUBJECT_INACTIVE_CLASSES = ['bg-white/80', 'border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-200'];
+  const PHASE_ACTIVE_CLASSES = ['bg-blue-500', 'border-blue-500', 'text-white', 'shadow'];
+  const PHASE_INACTIVE_CLASSES = ['bg-white/70', 'border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-200'];
+  const STATUS_TONE_CLASSES = {
+    info: ['text-slate-500', 'dark:text-slate-400'],
+    success: ['text-emerald-600', 'dark:text-emerald-300'],
+    warning: ['text-amber-600', 'dark:text-amber-300'],
+    error: ['text-rose-600', 'dark:text-rose-300'],
+  };
+  const ALL_STATUS_CLASSES = Object.values(STATUS_TONE_CLASSES).flat();
+
+  const state = {
+    subject: subjectButtons.find(btn => btn.dataset.default === 'true')?.dataset.subject || 'all',
+    phase: 'any',
+    search: '',
+    items: [],
+  };
+
+  let searchDebounce = null;
+
+  function setStatus(message = '', tone = 'info'){
+    if (!statusEl) return;
+    statusEl.classList.remove(...ALL_STATUS_CLASSES);
+    if (!message){
+      statusEl.textContent = '';
+      statusEl.classList.add('hidden');
+      return;
+    }
+    statusEl.classList.remove('hidden');
+    const toneClasses = STATUS_TONE_CLASSES[tone] || STATUS_TONE_CLASSES.info;
+    statusEl.classList.add(...toneClasses);
+    statusEl.textContent = message;
+  }
+
+  function setLoading(flag){
+    if (!loadingEl) return;
+    if (flag){
+      loadingEl.classList.remove('hidden');
+      resultsGrid?.classList.add('hidden');
+      emptyEl?.classList.add('hidden');
+    } else {
+      loadingEl.classList.add('hidden');
+    }
+  }
+
+  function updateSubjectButtons(){
+    subjectButtons.forEach((btn) => {
+      const value = btn.dataset.subject || 'all';
+      const isActive = value === state.subject;
+      btn.setAttribute('aria-pressed', String(isActive));
+      if (isActive){
+        btn.classList.add(...SUBJECT_ACTIVE_CLASSES);
+        btn.classList.remove(...SUBJECT_INACTIVE_CLASSES);
+      } else {
+        btn.classList.remove(...SUBJECT_ACTIVE_CLASSES);
+        btn.classList.add(...SUBJECT_INACTIVE_CLASSES);
+      }
+    });
+  }
+
+  function updatePhaseButtons(){
+    phaseButtons.forEach((btn) => {
+      const value = btn.dataset.phase || 'any';
+      const isActive = value === state.phase;
+      btn.setAttribute('aria-pressed', String(isActive));
+      if (isActive){
+        btn.classList.add(...PHASE_ACTIVE_CLASSES);
+        btn.classList.remove(...PHASE_INACTIVE_CLASSES);
+      } else {
+        btn.classList.remove(...PHASE_ACTIVE_CLASSES);
+        btn.classList.add(...PHASE_INACTIVE_CLASSES);
+      }
+    });
+  }
+
+  function subjectBadgeClass(subject){
+    switch (subject) {
+      case 'HPE':
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200';
+      case 'English':
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200';
+      case 'HASS':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200';
+      default:
+        return 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300';
+    }
+  }
+
+  function phaseBadgeClass(phase){
+    switch (phase) {
+      case 'start':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-200';
+      case 'middle':
+        return 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200';
+      case 'end':
+        return 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200';
+      default:
+        return 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300';
+    }
+  }
+
+  function capitalise(value){
+    if (!value) return '';
+    const str = String(value);
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  function buildActivityCard(activity){
+    const card = document.createElement('article');
+    card.className = 'flex h-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-emerald-400 dark:border-slate-700 dark:bg-slate-900/50';
+
+    const header = document.createElement('div');
+    header.className = 'flex flex-wrap items-start justify-between gap-3';
+    const title = document.createElement('h3');
+    title.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
+    title.textContent = (activity?.title && String(activity.title).trim()) || 'Untitled activity';
+    header.appendChild(title);
+
+    const badgeWrap = document.createElement('div');
+    badgeWrap.className = 'flex flex-wrap gap-2 text-xs font-semibold';
+    if (activity?.subject){
+      const subjectBadge = document.createElement('span');
+      subjectBadge.className = `inline-flex items-center rounded-full px-3 py-1 ${subjectBadgeClass(activity.subject)}`;
+      subjectBadge.textContent = activity.subject;
+      badgeWrap.appendChild(subjectBadge);
+    }
+    if (activity?.phase){
+      const phaseBadge = document.createElement('span');
+      phaseBadge.className = `inline-flex items-center rounded-full px-3 py-1 ${phaseBadgeClass(activity.phase)}`;
+      phaseBadge.textContent = `${capitalise(activity.phase)} phase`;
+      badgeWrap.appendChild(phaseBadge);
+    }
+    if (badgeWrap.childElementCount) {
+      header.appendChild(badgeWrap);
+    }
+    card.appendChild(header);
+
+    const description = document.createElement('p');
+    description.className = 'text-sm leading-6 text-slate-600 dark:text-slate-300';
+    description.textContent = (activity?.description && String(activity.description).trim())
+      || 'No description provided yet.';
+    card.appendChild(description);
+
+    if (activity?.url){
+      const link = document.createElement('a');
+      link.className = 'inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200';
+      link.href = activity.url;
+      link.target = '_blank';
+      link.rel = 'noreferrer noopener';
+      link.textContent = 'Open resource';
+      const icon = document.createElement('span');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '↗';
+      link.appendChild(icon);
+      card.appendChild(link);
+    }
+
+    if (Array.isArray(activity?.keywords) && activity.keywords.length){
+      const keywordWrap = document.createElement('div');
+      keywordWrap.className = 'flex flex-wrap gap-2 pt-2';
+      activity.keywords.forEach((kw) => {
+        const label = String(kw || '').trim();
+        if (!label) return;
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center rounded-full border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300';
+        chip.textContent = `#${label}`;
+        keywordWrap.appendChild(chip);
+      });
+      if (keywordWrap.childElementCount) {
+        card.appendChild(keywordWrap);
+      }
+    }
+
+    return card;
+  }
+
+  function render(){
+    if (!resultsGrid) return;
+    resultsGrid.innerHTML = '';
+    if (!state.items.length){
+      resultsGrid.classList.add('hidden');
+      emptyEl?.classList.remove('hidden');
+      return;
+    }
+    emptyEl?.classList.add('hidden');
+    const fragment = document.createDocumentFragment();
+    state.items.forEach((activity) => {
+      fragment.appendChild(buildActivityCard(activity));
+    });
+    resultsGrid.appendChild(fragment);
+    resultsGrid.classList.remove('hidden');
+  }
+
+  async function refresh({ showLoading = true } = {}){
+    if (showLoading) setLoading(true);
+    try {
+      if (!supabaseClient){
+        state.items = [];
+        setStatus('Add Supabase credentials to browse shared activities.', 'warning');
+        render();
+        return;
+      }
+      const data = await loadActivities({
+        subject: state.subject === 'all' ? undefined : state.subject,
+        phase: state.phase,
+        search: state.search,
+      });
+      state.items = data;
+      if (data.length){
+        const label = data.length === 1 ? 'activity' : 'activities';
+        setStatus(`Showing ${data.length} ${label}.`, 'info');
+      } else if (state.search || (state.subject && state.subject !== 'all') || state.phase !== 'any'){
+        setStatus('No activities match your filters yet.', 'warning');
+      } else {
+        setStatus('No activities available yet.', 'warning');
+      }
+    } catch (error) {
+      console.error('Activities fetch failed', error);
+      state.items = [];
+      setStatus('Unable to load activities right now.', 'error');
+    } finally {
+      setLoading(false);
+      render();
+    }
+  }
+
+  subjectButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.subject || 'all';
+      if (value === state.subject) return;
+      state.subject = value;
+      updateSubjectButtons();
+      refresh();
+    });
+  });
+
+  phaseButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.phase || 'any';
+      if (value === state.phase) return;
+      state.phase = value;
+      updatePhaseButtons();
+      refresh();
+    });
+  });
+
+  if (searchInput){
+    const triggerSearch = () => {
+      if (searchDebounce) window.clearTimeout(searchDebounce);
+      state.search = searchInput.value || '';
+      refresh({ showLoading: true });
+    };
+    searchInput.addEventListener('input', () => {
+      state.search = searchInput.value || '';
+      if (searchDebounce) window.clearTimeout(searchDebounce);
+      searchDebounce = window.setTimeout(() => {
+        refresh({ showLoading: false });
+      }, 250);
+    });
+    searchInput.addEventListener('search', triggerSearch);
+  }
+
+  updateSubjectButtons();
+  updatePhaseButtons();
+
+  return {
+    refresh: (options) => refresh(options || {}),
+  };
+})();
+
+resourcesController?.refresh({ showLoading: true });
 
 // Planner
 const plannerWeekEl = document.getElementById('planner-week');
