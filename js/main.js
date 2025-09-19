@@ -1292,7 +1292,6 @@ const dashboardController = (() => {
 
   const LESSON_STORAGE_KEY = 'memoryCue.dashboardLessons.v1';
   const DEADLINE_STORAGE_KEY = 'memoryCue.dashboardDeadlines.v1';
-  const DEFAULT_WEATHER_LOCATION = { latitude: -33.8688, longitude: 151.2093, label: 'Sydney, AU' };
   const WEATHER_CODE_MAP = {
     0: { icon: '☀️', label: 'Clear sky' },
     1: { icon: '🌤️', label: 'Mostly clear' },
@@ -2294,40 +2293,42 @@ const dashboardController = (() => {
     }
   }
 
-  async function fetchWeather(lat, lon){
+  function getCurrentCoords(){
+    return new Promise((resolve, reject) => {
+      if (typeof navigator === 'undefined' || !navigator.geolocation){
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        (err) => reject(err)
+      );
+    });
+  }
+
+  async function getLocationName(lat, lon){
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Geocode error ${res.status}`);
+    const data = await res.json();
+    return data.city || data.locality || data.principalSubdivision || 'Unknown location';
+  }
+
+  async function fetchWeather(latitude, longitude, place){
     const params = new URLSearchParams({
-      latitude: lat.toFixed(2),
-      longitude: lon.toFixed(2),
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
       current_weather: 'true',
       daily: 'precipitation_probability_max,sunrise,sunset',
       timezone: 'auto',
     });
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
-    if (!res.ok){
-      throw new Error('Weather fetch failed');
-    }
-    return res.json();
-  }
-
-  async function resolveLocationLabel(lat, lon, fallbackLabel){
-    try {
-      const params = new URLSearchParams({ latitude: lat.toFixed(2), longitude: lon.toFixed(2), count: '1', language: 'en' });
-      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?${params.toString()}`);
-      if (!res.ok) throw new Error('Reverse geocode failed');
-      const data = await res.json();
-      const result = data?.results?.[0];
-      if (result){
-        const pieces = [result.name, result.admin1, result.country_code].filter(Boolean);
-        const unique = [];
-        pieces.forEach((piece) => {
-          if (!unique.includes(piece)) unique.push(piece);
-        });
-        return unique.join(', ');
-      }
-    } catch {
-      // ignore, fallback below
-    }
-    return fallbackLabel || `Lat ${lat.toFixed(2)}, Lon ${lon.toFixed(2)}`;
+    if (!res.ok) throw new Error(`Weather error ${res.status}`);
+    const data = await res.json();
+    const locationLabel = place || 'Unknown location';
+    renderWeather(data, locationLabel, { fallback: false });
+    setWeatherStatus('Updated', 'success');
+    return data;
   }
 
   function renderWeather(data, locationLabel, { fallback } = {}){
@@ -2339,7 +2340,10 @@ const dashboardController = (() => {
     addEnterAnimation(weatherSummaryEl);
     const code = WEATHER_CODE_MAP[current.weathercode] || WEATHER_CODE_MAP.default;
     if (weatherIconEl) weatherIconEl.textContent = code.icon;
-    if (weatherDescEl) weatherDescEl.textContent = code.label;
+    if (weatherDescEl){
+      const descriptor = locationLabel ? `${code.label} · ${locationLabel}` : code.label;
+      weatherDescEl.textContent = descriptor;
+    }
     if (weatherTempEl) weatherTempEl.textContent = `${Math.round(current.temperature)}°C`;
     if (weatherLocationEl) weatherLocationEl.textContent = locationLabel;
     if (weatherWindEl) weatherWindEl.textContent = `${Math.round(current.windspeed)} km/h`;
@@ -2360,45 +2364,31 @@ const dashboardController = (() => {
     }
   }
 
-  async function loadWeatherFor(lat, lon, { fallback }){
-    try {
-      const data = await fetchWeather(lat, lon);
-      const label = await resolveLocationLabel(lat, lon, fallback ? DEFAULT_WEATHER_LOCATION.label : '');
-      renderWeather(data, label || DEFAULT_WEATHER_LOCATION.label, { fallback });
-      setWeatherStatus(fallback ? 'Showing default location forecast.' : 'Forecast updated just now.', 'success');
-    } catch (error) {
-      console.error('Weather load failed', error);
-      setWeatherStatus('Unable to load weather right now.', 'error');
-      weatherSkeletonEl?.classList.add('hidden');
-    }
-  }
-
-  function requestWeather({ preferGeolocation = true, message } = {}){
+  async function initWeather(statusMessage = 'Finding your forecast…'){
     if (!weatherStatusEl) return;
     if (isFetchingWeather) return;
     isFetchingWeather = true;
-    setWeatherStatus(message || 'Fetching latest forecast…', 'info');
-    weatherSkeletonEl?.classList.remove('hidden');
-    weatherSummaryEl?.classList.add('hidden');
+    try {
+      setWeatherStatus(statusMessage, 'info');
+      weatherSkeletonEl?.classList.remove('hidden');
+      weatherSummaryEl?.classList.add('hidden');
 
-    const finish = () => {
+      const { latitude, longitude } = await getCurrentCoords();
+      let place = 'Unknown location';
+      try {
+        place = await getLocationName(latitude, longitude);
+      } catch (nameError) {
+        console.warn('Reverse geocode failed', nameError);
+      }
+      await fetchWeather(latitude, longitude, place);
+    } catch (err) {
+      console.error('Weather init failed', err);
+      setWeatherStatus('Location unavailable', 'error');
+      weatherSkeletonEl?.classList.add('hidden');
+      weatherSummaryEl?.classList.add('hidden');
+    } finally {
       isFetchingWeather = false;
-    };
-
-    if (preferGeolocation && navigator?.geolocation){
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          loadWeatherFor(pos.coords.latitude, pos.coords.longitude, { fallback: false }).finally(finish);
-        },
-        () => {
-          loadWeatherFor(DEFAULT_WEATHER_LOCATION.latitude, DEFAULT_WEATHER_LOCATION.longitude, { fallback: true }).finally(finish);
-        },
-        { maximumAge: 15 * 60 * 1000, timeout: 8000 }
-      );
-      return;
     }
-
-    loadWeatherFor(DEFAULT_WEATHER_LOCATION.latitude, DEFAULT_WEATHER_LOCATION.longitude, { fallback: true }).finally(finish);
   }
 
   if (lessonForm){
@@ -2411,14 +2401,14 @@ const dashboardController = (() => {
 
   if (weatherRefreshBtn){
     weatherRefreshBtn.addEventListener('click', () => {
-      requestWeather({ preferGeolocation: true, message: 'Refreshing forecast…' });
+      initWeather('Refreshing forecast…');
     });
   }
 
   renderLessons();
   renderDeadlines();
   renderReminders();
-  requestWeather({ preferGeolocation: true });
+  initWeather();
 
   setInterval(() => {
     renderLessons();
@@ -2428,7 +2418,7 @@ const dashboardController = (() => {
   }, 60 * 1000);
 
   setInterval(() => {
-    requestWeather({ preferGeolocation: false, message: 'Updating forecast…' });
+    initWeather('Updating forecast…');
   }, 30 * 60 * 1000);
 
   return {
