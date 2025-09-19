@@ -879,6 +879,14 @@
               <span aria-hidden="true" class="text-base">★</span>
               <span>Pinned</span>
             </button>
+            <button
+              type="button"
+              id="activity-ideas-button"
+              class="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50/80 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
+            >
+              <span aria-hidden="true" class="text-base" data-idea-icon>✨</span>
+              <span data-idea-label>Get ideas</span>
+            </button>
             <label for="activity-search" class="sr-only">Search activities</label>
             <div class="relative flex-1 min-w-[220px] max-w-md">
               <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">🔍</span>
@@ -891,6 +899,51 @@
             </div>
           </div>
         </header>
+        <div
+          id="activity-ideas"
+          class="hidden space-y-4 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 p-6 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="space-y-1">
+              <h3 class="text-lg font-semibold text-emerald-900 dark:text-emerald-100">Fresh lesson ideas</h3>
+              <p id="activity-ideas-summary" class="hidden text-sm text-emerald-700/80 dark:text-emerald-200/80"></p>
+            </div>
+            <button
+              type="button"
+              id="activity-ideas-clear"
+              class="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white/80 px-3 py-1.5 text-sm font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:border-emerald-400/60 dark:bg-emerald-500/10 dark:text-emerald-200"
+            >
+              Clear ideas
+            </button>
+          </div>
+          <div id="activity-ideas-loading" class="hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="animate-pulse rounded-2xl border border-emerald-200/70 bg-white/80 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-slate-900/50">
+              <div class="h-5 w-3/4 rounded bg-emerald-200/70 dark:bg-emerald-500/40"></div>
+              <div class="mt-4 h-3 w-full rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-2 h-3 w-4/5 rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-4 h-8 w-2/3 rounded-full bg-emerald-200/60 dark:bg-emerald-500/30"></div>
+            </div>
+            <div class="animate-pulse rounded-2xl border border-emerald-200/70 bg-white/80 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-slate-900/50">
+              <div class="h-5 w-2/3 rounded bg-emerald-200/70 dark:bg-emerald-500/40"></div>
+              <div class="mt-4 h-3 w-full rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-2 h-3 w-3/4 rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-4 h-8 w-1/2 rounded-full bg-emerald-200/60 dark:bg-emerald-500/30"></div>
+            </div>
+            <div class="animate-pulse rounded-2xl border border-emerald-200/70 bg-white/80 p-5 shadow-sm max-sm:hidden dark:border-emerald-500/30 dark:bg-slate-900/50">
+              <div class="h-5 w-1/2 rounded bg-emerald-200/70 dark:bg-emerald-500/40"></div>
+              <div class="mt-4 h-3 w-full rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-2 h-3 w-2/3 rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-4 h-8 w-2/3 rounded-full bg-emerald-200/60 dark:bg-emerald-500/30"></div>
+            </div>
+          </div>
+          <p
+            id="activity-ideas-empty"
+            class="hidden rounded-xl border border-emerald-200/70 bg-white/80 p-6 text-sm text-emerald-800 shadow-sm dark:border-emerald-500/30 dark:bg-slate-900/60 dark:text-emerald-100"
+          >
+            No ideas yet. Try adjusting your notes and generate again.
+          </p>
+          <div id="activity-ideas-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        </div>
         <div id="activity-loading" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div class="animate-pulse rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/40">
             <div class="h-5 w-3/5 rounded bg-slate-200/80 dark:bg-slate-700/60"></div>
@@ -974,6 +1027,90 @@
       </div>
     </div>
   </footer>
+  <div id="activity-ideas-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" data-ideas-overlay="true"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+      <div
+        data-ideas-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="activity-ideas-modal-title"
+        aria-describedby="activity-ideas-modal-description"
+        class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl outline-none dark:bg-slate-900 dark:text-slate-100"
+        tabindex="-1"
+      >
+        <button
+          type="button"
+          class="absolute right-4 top-4 text-slate-400 transition hover:text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:hover:text-slate-200"
+          data-ideas-close
+        >
+          <span class="sr-only">Close</span>
+          ✕
+        </button>
+        <form id="activity-ideas-form" class="space-y-5" novalidate>
+          <div class="space-y-2">
+            <h2 id="activity-ideas-modal-title" class="text-xl font-semibold text-slate-900 dark:text-slate-100">
+              Generate fresh lesson ideas
+            </h2>
+            <p id="activity-ideas-modal-description" class="text-sm text-slate-500 dark:text-slate-400">
+              Share your lesson focus and we'll suggest practical activities tailored to your class.
+            </p>
+          </div>
+          <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Subject
+            <select
+              name="subject"
+              class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              required
+              data-autofocus="true"
+            >
+              <option value="HPE">HPE</option>
+              <option value="English">English</option>
+              <option value="HASS">HASS</option>
+            </select>
+          </label>
+          <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Lesson phase
+            <select
+              name="phase"
+              class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              required
+            >
+              <option value="start">Start</option>
+              <option value="middle">Middle</option>
+              <option value="end">End</option>
+            </select>
+          </label>
+          <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Notes for AI (optional)
+            <textarea
+              name="notes"
+              rows="4"
+              class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              placeholder="Specific learning goals, equipment available, class dynamics…"
+            ></textarea>
+          </label>
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              data-ideas-close
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              data-ideas-submit
+              class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            >
+              <span aria-hidden="true">✨</span>
+              <span>Generate ideas</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
   <script type="module">
     import { initReminders } from './js/reminders.js';
 
