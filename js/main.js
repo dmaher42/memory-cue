@@ -2488,8 +2488,16 @@ resourcesController = (() => {
   const ideaModalSubject = ideaModalForm?.querySelector('[name="subject"]') || null;
   const ideaModalPhase = ideaModalForm?.querySelector('[name="phase"]') || null;
   const ideaModalNotes = ideaModalForm?.querySelector('[name="notes"]') || null;
-  const ideaModalOverlay = ideaModalEl?.querySelector('[data-ideas-overlay]') || null;
-  const ideaModalCloseButtons = ideaModalEl ? [...ideaModalEl.querySelectorAll('[data-ideas-close]')] : [];
+  const closeIdeaModal = () => {
+    if (!ideaModalEl) return;
+    if (typeof ideaModalEl.closeActivityIdeasModal === 'function') {
+      ideaModalEl.closeActivityIdeasModal();
+      return;
+    }
+    ideaModalEl.classList.add('hidden');
+    ideaModalEl.setAttribute('inert', '');
+    ideaModalEl.setAttribute('aria-hidden', 'true');
+  };
 
   const SUBJECT_ACTIVE_CLASSES = ['bg-emerald-500', 'border-emerald-500', 'text-white', 'shadow'];
   const SUBJECT_INACTIVE_CLASSES = ['bg-white/80', 'border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-200'];
@@ -2528,8 +2536,6 @@ resourcesController = (() => {
 
   let ideaRequestController = null;
   const showToast = createToast();
-  const ideaModal = ideaModalEl ? createModal(ideaModalEl, { signal }) : null;
-
   const state = {
     subject: subjectButtons.find(btn => btn.dataset.default === 'true')?.dataset.subject || 'all',
     phase: 'any',
@@ -2790,87 +2796,6 @@ resourcesController = (() => {
         messageEl.classList.add('opacity-0', 'translate-y-2');
       }, 3800);
     };
-  }
-
-  function createModal(root, { signal } = {}){
-    if (!root) return null;
-    const dialog = root.querySelector('[data-ideas-dialog]') || root;
-    if (!dialog.hasAttribute('tabindex')){
-      dialog.setAttribute('tabindex', '-1');
-    }
-    let lastFocused = null;
-
-    function getFocusable(){
-      return [...dialog.querySelectorAll('a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')]
-        .filter((el) => !el.hasAttribute('hidden') && !el.closest('[hidden]') && el.offsetParent !== null);
-    }
-
-    function handleKeydown(event){
-      if (event.key === 'Escape'){
-        event.preventDefault();
-        close();
-        return;
-      }
-      if (event.key === 'Tab'){
-        const focusable = getFocusable();
-        if (!focusable.length){
-          event.preventDefault();
-          return;
-        }
-        const currentIndex = focusable.indexOf(document.activeElement);
-        let nextIndex = currentIndex;
-        if (event.shiftKey){
-          nextIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
-        } else {
-          nextIndex = currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
-        }
-        event.preventDefault();
-        focusable[nextIndex]?.focus();
-      }
-    }
-
-    function open(){
-      lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      root.classList.remove('hidden');
-      root.removeAttribute('aria-hidden');
-      if (signal){
-        document.addEventListener('keydown', handleKeydown, { signal });
-      } else {
-        document.addEventListener('keydown', handleKeydown);
-      }
-      requestAnimationFrame(() => {
-        const focusable = getFocusable();
-        const target = focusable.find((el) => el.dataset.autofocus === 'true') || focusable[0] || dialog;
-        try {
-          target?.focus();
-        } catch {
-          // ignore focus errors
-        }
-      });
-    }
-
-    function close(){
-      root.classList.add('hidden');
-      root.setAttribute('aria-hidden', 'true');
-      document.removeEventListener('keydown', handleKeydown);
-      if (lastFocused && typeof lastFocused.focus === 'function'){
-        requestAnimationFrame(() => {
-          try {
-            lastFocused.focus();
-          } catch {
-            // ignore focus errors
-          }
-        });
-      }
-    }
-
-    if (signal){
-      signal.addEventListener('abort', () => {
-        close();
-      });
-    }
-
-    return { open, close };
   }
 
   function updateIdeaButtonState(){
@@ -3519,26 +3444,19 @@ resourcesController = (() => {
   }
 
   if (ideasButton){
-    ideasButton.addEventListener('click', () => {
-      if (ideaState.loading) return;
+    ideasButton.addEventListener('click', (event) => {
+      if (ideaState.loading){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
       const defaults = getIdeaFormDefaults();
       if (ideaModalSubject) ideaModalSubject.value = defaults.subject;
       if (ideaModalPhase) ideaModalPhase.value = defaults.phase;
       if (ideaModalNotes) ideaModalNotes.value = defaults.notes || '';
       log.debug('Opening idea modal', defaults);
-      ideaModal?.open();
     }, { signal });
   }
-
-  ideaModalOverlay?.addEventListener('click', () => {
-    ideaModal?.close();
-  }, { signal });
-
-  ideaModalCloseButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      ideaModal?.close();
-    }, { signal });
-  });
 
   ideaModalForm?.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -3557,7 +3475,7 @@ resourcesController = (() => {
       ideaModalPhase?.focus();
       return;
     }
-    ideaModal?.close();
+    closeIdeaModal();
     requestIdeas({ subject, phase, notes: notesValue });
   }, { signal });
 
@@ -3834,3 +3752,141 @@ if(noteEl){
     document.execCommand('insertOrderedList');
   });
 }
+
+// === Activity Ideas Modal (a11y-safe) ===
+(() => {
+  const modal = document.getElementById('activity-ideas-modal');
+  if (!modal) return;
+
+  const openers = document.querySelectorAll('[data-open-modal="activity-ideas"]');
+  const closers = modal.querySelectorAll('[data-close-modal]');
+  const dialog = modal.querySelector('[role="dialog"]') || modal;
+  const backdrop = modal.firstElementChild || modal;
+
+  if (!dialog.hasAttribute('tabindex')) {
+    dialog.setAttribute('tabindex', '-1');
+  }
+
+  let lastFocused = null;
+
+  const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const getFocusables = () =>
+    Array.from(dialog.querySelectorAll(FOCUSABLE)).filter(
+      el =>
+        !el.hasAttribute('disabled') &&
+        !el.getAttribute('aria-hidden') &&
+        !el.closest('[aria-hidden="true"]')
+    );
+
+  const focusFirst = () => {
+    const focusables = getFocusables();
+    const target =
+      focusables.find(el => el.dataset.autofocus === 'true') ||
+      focusables[0] ||
+      dialog;
+    try {
+      target.focus();
+    } catch (error) {
+      // ignore focus issues
+    }
+  };
+
+  function openModal() {
+    if (!modal.classList.contains('hidden')) return;
+
+    lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modal.classList.remove('hidden');
+    modal.removeAttribute('inert');
+    modal.setAttribute('aria-hidden', 'false');
+
+    focusFirst();
+
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('focus', trapFocus, true);
+    backdrop.addEventListener('click', onBackdropClick);
+  }
+
+  function closeModal() {
+    if (modal.classList.contains('hidden')) return;
+
+    modal.classList.add('hidden');
+    modal.setAttribute('inert', '');
+    modal.setAttribute('aria-hidden', 'true');
+
+    document.removeEventListener('keydown', onKeyDown, true);
+    document.removeEventListener('focus', trapFocus, true);
+    backdrop.removeEventListener('click', onBackdropClick);
+
+    if (lastFocused && typeof lastFocused.focus === 'function') {
+      try {
+        lastFocused.focus();
+      } catch (error) {
+        // ignore focus restoration issues
+      }
+    }
+  }
+
+  function onKeyDown(event) {
+    if (modal.classList.contains('hidden')) return;
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      event.preventDefault();
+      closeModal();
+    } else if (event.key === 'Tab') {
+      const focusables = getFocusables();
+      if (!focusables.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  function trapFocus(event) {
+    if (modal.classList.contains('hidden')) return;
+    if (!dialog.contains(event.target)) {
+      event.stopPropagation();
+      focusFirst();
+    }
+  }
+
+  function onBackdropClick(event) {
+    if (!dialog.contains(event.target)) closeModal();
+  }
+
+  openers.forEach(btn => {
+    if (btn._wiredIdeasModal) return;
+    btn._wiredIdeasModal = true;
+    btn.addEventListener('click', openModal);
+  });
+
+  closers.forEach(btn => {
+    if (btn._wiredIdeasModalClose) return;
+    btn._wiredIdeasModalClose = true;
+    btn.addEventListener('click', event => {
+      event.preventDefault();
+      closeModal();
+    });
+  });
+
+  if (modal.classList.contains('hidden')) {
+    modal.setAttribute('inert', '');
+    modal.setAttribute('aria-hidden', 'true');
+  } else {
+    modal.removeAttribute('inert');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  modal.openActivityIdeasModal = openModal;
+  modal.closeActivityIdeasModal = closeModal;
+})();
+// === /Activity Ideas Modal ===
+
