@@ -272,14 +272,29 @@ function loadSupabaseModule(){
 function setupSupabaseAuth(){
   if (!supabaseClient || setupSupabaseAuth.initialised) return;
   setupSupabaseAuth.initialised = true;
-  supabaseClient.auth.getSession().then(({ data }) => {
-    const session = data?.session || null;
-    authUser = session?.user ?? null;
-    updateAuthUI(authUser);
-    if (authUser) {
-      upsertProfile(authUser);
-    }
-  });
+  supabaseClient.auth.getSession()
+    .then(async ({ data }) => {
+      const session = data?.session || null;
+      const nextUser = session?.user ?? null;
+      const previousUserId = authUser?.id || null;
+      const nextUserId = nextUser?.id || null;
+      const userChanged = previousUserId !== nextUserId;
+      authUser = nextUser;
+      if (userChanged){
+        resetActivityPins();
+      }
+      updateAuthUI(authUser);
+      if (authUser) {
+        await upsertProfile(authUser);
+      }
+      resourcesController?.handleAuthChange(authUser);
+      if (userChanged){
+        resourcesController?.refresh({ showLoading: true });
+      }
+    })
+    .catch((error) => {
+      console.error('Initial Supabase session fetch failed', error);
+    });
   const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
     handleAuthStateChange(event, session);
   });
@@ -337,6 +352,104 @@ const signInDefaultLabel = signInBtn?.textContent || 'Send link';
 
 let authUser = null;
 
+const activityPinState = {
+  userId: null,
+  ids: new Set(),
+  loading: null,
+};
+
+function resetActivityPins(){
+  activityPinState.userId = null;
+  activityPinState.ids = new Set();
+  activityPinState.loading = null;
+}
+
+function setActivityPinLocally(activityId, pinned){
+  if (!activityId) return;
+  if (pinned){
+    activityPinState.ids.add(activityId);
+  } else {
+    activityPinState.ids.delete(activityId);
+  }
+  if (authUser?.id && activityPinState.userId !== authUser.id){
+    activityPinState.userId = authUser.id;
+  }
+}
+
+async function ensureActivityPins(){
+  if (!authUser?.id){
+    resetActivityPins();
+    return activityPinState.ids;
+  }
+  if (activityPinState.userId === authUser.id && !activityPinState.loading){
+    return activityPinState.ids;
+  }
+  if (activityPinState.loading){
+    try {
+      await activityPinState.loading;
+    } catch {
+      // Ignore concurrent load errors; fall back to current cache
+    }
+    return activityPinState.ids;
+  }
+  const userId = authUser.id;
+  const loadPromise = (async () => {
+    const client = supabaseClient || await ensureSupabase();
+    if (!client){
+      activityPinState.ids = new Set();
+      activityPinState.userId = userId;
+      return activityPinState.ids;
+    }
+    const { data, error } = await client
+      .from('activity_pins')
+      .select('activity_id')
+      .eq('user_id', userId);
+    if (error) throw error;
+    const nextIds = new Set(
+      Array.isArray(data)
+        ? data.map((row) => row?.activity_id).filter((value) => typeof value === 'string' && value)
+        : []
+    );
+    activityPinState.ids = nextIds;
+    activityPinState.userId = userId;
+    return activityPinState.ids;
+  })();
+  activityPinState.loading = loadPromise;
+  try {
+    await loadPromise;
+  } catch (error) {
+    console.error('Pinned activities fetch failed', error);
+  } finally {
+    if (activityPinState.loading === loadPromise){
+      activityPinState.loading = null;
+    }
+  }
+  return activityPinState.ids;
+}
+
+async function persistActivityPin(activityId, pinned){
+  if (!authUser?.id) throw new Error('User must be signed in to pin activities');
+  const client = supabaseClient || await ensureSupabase();
+  if (!client) throw new Error('Supabase client not available');
+  if (pinned){
+    const { error } = await client
+      .from('activity_pins')
+      .upsert({
+        user_id: authUser.id,
+        activity_id: activityId,
+        pinned_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,activity_id' });
+    if (error) throw error;
+  } else {
+    const { error } = await client
+      .from('activity_pins')
+      .delete()
+      .eq('user_id', authUser.id)
+      .eq('activity_id', activityId);
+    if (error) throw error;
+  }
+}
+
 function setAuthFeedback(message = '', tone = 'info'){
   if (!authFeedbackEl) return;
   const toneClasses = {
@@ -374,13 +487,24 @@ function escapeIlike(term){
   return term.replace(/[%_,]/g, (match) => `\\${match}`);
 }
 
-async function loadActivities({ subject, phase, search } = {}){
-  const client = await ensureSupabase();
+async function loadActivities({ subject, phase, search, pinnedOnly } = {}){
+  const client = supabaseClient || await ensureSupabase();
   if (!client) return [];
+  let pinnedIds = new Set();
+  if (authUser?.id){
+    pinnedIds = await ensureActivityPins();
+  }
+  const filterPinned = Boolean(pinnedOnly && authUser?.id);
+  if (filterPinned && pinnedIds.size === 0){
+    return [];
+  }
   let query = client
     .from('activities')
     .select('id,title,subject,phase,description,url,keywords')
     .order('title', { ascending: true });
+  if (filterPinned){
+    query = query.in('id', Array.from(pinnedIds));
+  }
   if (subject && subject !== 'all'){
     query = query.eq('subject', subject);
   }
@@ -393,7 +517,11 @@ async function loadActivities({ subject, phase, search } = {}){
   }
   const { data, error } = await query;
   if (error) throw error;
-  return Array.isArray(data) ? data : [];
+  const items = Array.isArray(data) ? data : [];
+  if (!authUser?.id){
+    return items.map((item) => ({ ...item, pinned: false }));
+  }
+  return items.map((item) => ({ ...item, pinned: pinnedIds.has(item.id) }));
 }
 
 async function addActivity(record = {}){
@@ -435,7 +563,14 @@ async function upsertProfile(user){
 }
 
 async function handleAuthStateChange(event, session){
-  authUser = session?.user ?? null;
+  const nextUser = session?.user ?? null;
+  const previousUserId = authUser?.id || null;
+  const nextUserId = nextUser?.id || null;
+  const userChanged = previousUserId !== nextUserId;
+  authUser = nextUser;
+  if (userChanged){
+    resetActivityPins();
+  }
   updateAuthUI(authUser);
   if (authUser) {
     await upsertProfile(authUser);
@@ -445,7 +580,12 @@ async function handleAuthStateChange(event, session){
   } else if (event === 'SIGNED_OUT') {
     setAuthFeedback('Signed out.', 'info');
   }
-  resourcesController?.refresh();
+  resourcesController?.handleAuthChange(authUser);
+  if (userChanged){
+    resourcesController?.refresh({ showLoading: true });
+  } else {
+    resourcesController?.refresh();
+  }
 }
 
 if (authForm) {
@@ -2067,6 +2207,7 @@ resourcesController = (() => {
 
   const subjectButtons = [...section.querySelectorAll('[data-subject]')];
   const phaseButtons = [...section.querySelectorAll('[data-phase]')];
+  const pinnedToggle = section.querySelector('#activity-pinned-toggle');
   const searchInput = section.querySelector('#activity-search');
   const resultsGrid = section.querySelector('#activity-results');
   const emptyEl = section.querySelector('#activity-empty');
@@ -2077,6 +2218,9 @@ resourcesController = (() => {
   const SUBJECT_INACTIVE_CLASSES = ['bg-white/80', 'border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-200'];
   const PHASE_ACTIVE_CLASSES = ['bg-blue-500', 'border-blue-500', 'text-white', 'shadow'];
   const PHASE_INACTIVE_CLASSES = ['bg-white/70', 'border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-200'];
+  const PIN_FILTER_ACTIVE_CLASSES = ['border-amber-400', 'bg-amber-100', 'text-amber-700', 'shadow', 'dark:border-amber-400', 'dark:bg-amber-500/20', 'dark:text-amber-200'];
+  const PIN_FILTER_INACTIVE_CLASSES = ['border-slate-200', 'bg-white/80', 'text-slate-600', 'dark:border-slate-700', 'dark:bg-slate-900/40', 'dark:text-slate-200'];
+  const PIN_FILTER_DISABLED_CLASSES = ['opacity-60', 'cursor-not-allowed'];
   const STATUS_TONE_CLASSES = {
     info: ['text-slate-500', 'dark:text-slate-400'],
     success: ['text-emerald-600', 'dark:text-emerald-300'],
@@ -2084,15 +2228,189 @@ resourcesController = (() => {
     error: ['text-rose-600', 'dark:text-rose-300'],
   };
   const ALL_STATUS_CLASSES = Object.values(STATUS_TONE_CLASSES).flat();
+  const PINNED_PREF_STORAGE_KEY = 'memoryCue.resourcesPinnedPreference';
+  const PIN_BUTTON_ACTIVE_CLASSES = ['border-amber-400', 'bg-amber-100', 'text-amber-700', 'dark:border-amber-400', 'dark:bg-amber-500/20', 'dark:text-amber-200'];
+  const PIN_BUTTON_INACTIVE_CLASSES = ['border-slate-200', 'bg-white/70', 'text-slate-500', 'dark:border-slate-700', 'dark:bg-slate-900/40', 'dark:text-slate-300'];
+  const PIN_BUTTON_PENDING_CLASSES = ['opacity-60'];
 
   const state = {
     subject: subjectButtons.find(btn => btn.dataset.default === 'true')?.dataset.subject || 'all',
     phase: 'any',
     search: '',
     items: [],
+    pinnedOnly: false,
   };
 
+  const pendingPinUpdates = new Set();
+
   let searchDebounce = null;
+
+  if (authUser?.id){
+    state.pinnedOnly = loadPinnedFilterPreference(authUser.id);
+  }
+
+  function loadPinnedFilterPreference(userId){
+    if (!userId || typeof localStorage === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(PINNED_PREF_STORAGE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && Object.prototype.hasOwnProperty.call(parsed, userId)){
+        return Boolean(parsed[userId]);
+      }
+    } catch (error) {
+      console.warn('Unable to load pinned filter preference', error);
+    }
+    return false;
+  }
+
+  function savePinnedFilterPreference(userId, value){
+    if (!userId || typeof localStorage === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(PINNED_PREF_STORAGE_KEY);
+      let parsed = raw ? JSON.parse(raw) : {};
+      if (!parsed || typeof parsed !== 'object') parsed = {};
+      parsed[userId] = Boolean(value);
+      localStorage.setItem(PINNED_PREF_STORAGE_KEY, JSON.stringify(parsed));
+    } catch (error) {
+      console.warn('Unable to persist pinned filter preference', error);
+    }
+  }
+
+  function updatePinnedToggle(){
+    if (!pinnedToggle) return;
+    const canUsePinned = Boolean(authUser?.id);
+    const isActive = Boolean(canUsePinned && state.pinnedOnly);
+    pinnedToggle.setAttribute('aria-pressed', String(isActive));
+    pinnedToggle.classList.remove(...PIN_FILTER_ACTIVE_CLASSES, ...PIN_FILTER_INACTIVE_CLASSES, ...PIN_FILTER_DISABLED_CLASSES);
+    if (isActive){
+      pinnedToggle.classList.add(...PIN_FILTER_ACTIVE_CLASSES);
+    } else {
+      pinnedToggle.classList.add(...PIN_FILTER_INACTIVE_CLASSES);
+    }
+    if (!canUsePinned){
+      pinnedToggle.classList.add(...PIN_FILTER_DISABLED_CLASSES);
+      pinnedToggle.setAttribute('aria-disabled', 'true');
+      pinnedToggle.setAttribute('title', 'Sign in to view pinned activities');
+    } else {
+      pinnedToggle.removeAttribute('aria-disabled');
+      pinnedToggle.setAttribute('title', isActive ? 'Showing pinned activities' : 'Show only pinned activities');
+    }
+  }
+
+  function updateStatusMessage(){
+    if (!statusEl) return;
+    if (!supabaseClient) return;
+    if (!state.items.length){
+      if (state.pinnedOnly && authUser?.id){
+        setStatus('No pinned activities match your filters yet.', 'warning');
+      } else if (state.search || (state.subject && state.subject !== 'all') || state.phase !== 'any'){
+        setStatus('No activities match your filters yet.', 'warning');
+      } else if (state.pinnedOnly && !authUser?.id){
+        setStatus('Sign in to view your pinned activities.', 'warning');
+      } else {
+        setStatus('No activities available yet.', 'warning');
+      }
+      return;
+    }
+    const label = state.items.length === 1 ? 'activity' : 'activities';
+    if (state.pinnedOnly && authUser?.id){
+      setStatus(`Showing ${state.items.length} pinned ${label}.`, 'info');
+    } else {
+      setStatus(`Showing ${state.items.length} ${label}.`, 'info');
+    }
+  }
+
+  function applyPinButtonState(button, pinned, { pending } = {}){
+    if (!button) return;
+    const isPinned = Boolean(pinned);
+    button.setAttribute('aria-pressed', String(isPinned));
+    button.classList.remove(...PIN_BUTTON_ACTIVE_CLASSES, ...PIN_BUTTON_INACTIVE_CLASSES, ...PIN_BUTTON_PENDING_CLASSES);
+    if (isPinned){
+      button.classList.add(...PIN_BUTTON_ACTIVE_CLASSES);
+    } else {
+      button.classList.add(...PIN_BUTTON_INACTIVE_CLASSES);
+    }
+    const icon = button.querySelector('[data-pin-icon]');
+    if (icon) icon.textContent = isPinned ? '★' : '☆';
+    const activityTitle = button.dataset.activityTitle || 'activity';
+    const srText = button.querySelector('[data-pin-label]');
+    const actionLabel = isPinned ? 'Unpin' : 'Pin';
+    if (srText){
+      srText.textContent = `${actionLabel} ${activityTitle}`;
+      button.setAttribute('aria-label', srText.textContent);
+    } else {
+      button.setAttribute('aria-label', `${actionLabel} activity`);
+    }
+    if (!authUser?.id){
+      button.setAttribute('title', 'Sign in to pin');
+      button.dataset.requiresAuth = 'true';
+    } else {
+      button.setAttribute('title', `${actionLabel} activity`);
+      button.removeAttribute('data-requires-auth');
+    }
+    if (pending){
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('data-pin-pending', 'true');
+      button.classList.add(...PIN_BUTTON_PENDING_CLASSES);
+    } else {
+      button.setAttribute('data-pin-pending', 'false');
+      if (!authUser?.id){
+        button.setAttribute('aria-disabled', 'true');
+        button.classList.add(...PIN_BUTTON_PENDING_CLASSES);
+      } else {
+        button.removeAttribute('aria-disabled');
+      }
+    }
+  }
+
+  function applyActivityPinnedToState(activityId, pinned){
+    if (!activityId) return;
+    const index = state.items.findIndex((item) => item.id === activityId);
+    if (index === -1) return;
+    if (state.pinnedOnly && !pinned){
+      state.items = state.items.filter((item) => item.id !== activityId);
+      return;
+    }
+    const current = state.items[index];
+    state.items[index] = { ...current, pinned: Boolean(pinned) };
+  }
+
+  async function handlePinButtonClick(event){
+    const button = event.target.closest('[data-activity-pin]');
+    if (!button) return;
+    const activityId = button.dataset.activityPin;
+    if (!activityId) return;
+    if (!authUser?.id){
+      setStatus('Sign in to pin activities for quick access.', 'warning');
+      return;
+    }
+    if (pendingPinUpdates.has(activityId)) return;
+
+    const nextPinned = !activityPinState.ids.has(activityId);
+    const previousPins = new Set(activityPinState.ids);
+    const previousItems = state.items.map((item) => ({ ...item }));
+
+    pendingPinUpdates.add(activityId);
+    setActivityPinLocally(activityId, nextPinned);
+    applyActivityPinnedToState(activityId, nextPinned);
+    updateStatusMessage();
+    render();
+
+    let hadError = false;
+    try {
+      await persistActivityPin(activityId, nextPinned);
+    } catch (error) {
+      hadError = true;
+      activityPinState.ids = previousPins;
+      state.items = previousItems;
+      console.error('Activity pin toggle failed', error);
+      setStatus('Unable to update pin right now.', 'error');
+    } finally {
+      pendingPinUpdates.delete(activityId);
+      render();
+    }
+  }
 
   function setStatus(message = '', tone = 'info'){
     if (!statusEl) return;
@@ -2184,13 +2502,44 @@ resourcesController = (() => {
   function buildActivityCard(activity){
     const card = document.createElement('article');
     card.className = 'flex h-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-emerald-400 dark:border-slate-700 dark:bg-slate-900/50';
+    if (activity?.id) {
+      card.dataset.activityId = String(activity.id);
+    }
 
     const header = document.createElement('div');
-    header.className = 'flex flex-wrap items-start justify-between gap-3';
+    header.className = 'flex flex-col gap-3';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'flex items-start justify-between gap-3';
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'min-w-0 flex-1';
     const title = document.createElement('h3');
     title.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
-    title.textContent = (activity?.title && String(activity.title).trim()) || 'Untitled activity';
-    header.appendChild(title);
+    const titleText = (activity?.title && String(activity.title).trim()) || 'Untitled activity';
+    title.textContent = titleText;
+    titleWrap.appendChild(title);
+    titleRow.appendChild(titleWrap);
+
+    if (activity?.id){
+      const pinButton = document.createElement('button');
+      pinButton.type = 'button';
+      pinButton.dataset.activityPin = String(activity.id);
+      pinButton.dataset.activityTitle = titleText;
+      pinButton.className = 'activity-pin-btn inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400';
+      const icon = document.createElement('span');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.dataset.pinIcon = 'true';
+      icon.textContent = '☆';
+      const srLabel = document.createElement('span');
+      srLabel.className = 'sr-only';
+      srLabel.dataset.pinLabel = 'true';
+      srLabel.textContent = `Pin ${titleText}`;
+      pinButton.append(icon, srLabel);
+      titleRow.appendChild(pinButton);
+      applyPinButtonState(pinButton, Boolean(activity?.pinned), { pending: pendingPinUpdates.has(String(activity.id)) });
+    }
+
+    header.appendChild(titleRow);
 
     const badgeWrap = document.createElement('div');
     badgeWrap.className = 'flex flex-wrap gap-2 text-xs font-semibold';
@@ -2251,6 +2600,7 @@ resourcesController = (() => {
   }
 
   function render(){
+    updatePinnedToggle();
     if (!resultsGrid) return;
     resultsGrid.innerHTML = '';
     if (!state.items.length){
@@ -2270,26 +2620,20 @@ resourcesController = (() => {
   async function refresh({ showLoading = true } = {}){
     if (showLoading) setLoading(true);
     try {
-      if (!supabaseClient){
+      const client = supabaseClient || await ensureSupabase();
+      if (!client){
         state.items = [];
         setStatus('Add Supabase credentials to browse shared activities.', 'warning');
-        render();
         return;
       }
       const data = await loadActivities({
         subject: state.subject === 'all' ? undefined : state.subject,
         phase: state.phase,
         search: state.search,
+        pinnedOnly: Boolean(authUser?.id && state.pinnedOnly),
       });
       state.items = data;
-      if (data.length){
-        const label = data.length === 1 ? 'activity' : 'activities';
-        setStatus(`Showing ${data.length} ${label}.`, 'info');
-      } else if (state.search || (state.subject && state.subject !== 'all') || state.phase !== 'any'){
-        setStatus('No activities match your filters yet.', 'warning');
-      } else {
-        setStatus('No activities available yet.', 'warning');
-      }
+      updateStatusMessage();
     } catch (error) {
       console.error('Activities fetch failed', error);
       state.items = [];
@@ -2320,6 +2664,19 @@ resourcesController = (() => {
     });
   });
 
+  if (pinnedToggle){
+    pinnedToggle.addEventListener('click', () => {
+      if (!authUser?.id){
+        setStatus('Sign in to view pinned activities.', 'warning');
+        return;
+      }
+      state.pinnedOnly = !state.pinnedOnly;
+      savePinnedFilterPreference(authUser.id, state.pinnedOnly);
+      updatePinnedToggle();
+      refresh({ showLoading: true });
+    });
+  }
+
   if (searchInput){
     const triggerSearch = () => {
       if (searchDebounce) window.clearTimeout(searchDebounce);
@@ -2336,11 +2693,31 @@ resourcesController = (() => {
     searchInput.addEventListener('search', triggerSearch);
   }
 
+  resultsGrid?.addEventListener('click', handlePinButtonClick);
+
+  function handleAuthChange(user){
+    pendingPinUpdates.clear();
+    if (!user?.id){
+      state.pinnedOnly = false;
+      state.items = state.items.map((item) => ({ ...item, pinned: false }));
+      updatePinnedToggle();
+      updateStatusMessage();
+      render();
+      return;
+    }
+    state.pinnedOnly = loadPinnedFilterPreference(user.id);
+    updatePinnedToggle();
+    updateStatusMessage();
+    render();
+  }
+
   updateSubjectButtons();
   updatePhaseButtons();
+  updatePinnedToggle();
 
   return {
     refresh: (options) => refresh(options || {}),
+    handleAuthChange,
   };
 })();
 
