@@ -795,10 +795,21 @@ export async function initReminders(sel = {}) {
     filterBtns.forEach(btn => {
       const isActive = btn.getAttribute('data-filter')===filter;
       btn.classList.toggle('active', isActive);
-      btn.classList.toggle('ring-2', isActive);
-      btn.classList.toggle('ring-offset-2', isActive);
-      btn.classList.toggle('ring-purple-400', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
+      if (!btn.classList.contains('btn-ghost')) {
+        btn.classList.toggle('bg-slate-900', isActive);
+        btn.classList.toggle('text-white', isActive);
+        btn.classList.toggle('border-slate-900', isActive);
+        btn.classList.toggle('dark:bg-slate-200', isActive);
+        btn.classList.toggle('dark:text-slate-900', isActive);
+        btn.classList.toggle('dark:border-slate-200', isActive);
+        btn.classList.toggle('bg-white', !isActive);
+        btn.classList.toggle('text-slate-700', !isActive);
+        btn.classList.toggle('border-slate-300', !isActive);
+        btn.classList.toggle('dark:bg-slate-800', !isActive);
+        btn.classList.toggle('dark:text-slate-200', !isActive);
+        btn.classList.toggle('dark:border-slate-600', !isActive);
+      }
     });
 
     const hasAny = items.length > 0;
