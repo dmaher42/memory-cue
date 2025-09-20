@@ -3804,6 +3804,188 @@ async function togglePin(activityId, shouldPin){
 
 resourcesController?.refresh({ showLoading: true });
 
+if (typeof window !== 'undefined') {
+  (function initSupabaseResourcesFallback(){
+    if (resourcesController) return;
+    if (!window.supabase) return;
+
+    // ====== Resources: Add/Filter My Ideas (Supabase) ======
+    const sb = window.supabase;
+    if (!sb) return;
+
+    // Helpers
+    async function getUser(){
+      const { data } = await sb.auth.getUser();
+      return data.user || null;
+    }
+    function parseKeywords(s){
+      return (s || '')
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+
+    // Create idea
+    async function createIdea({ title, subject, phase, description, url, keywords }){
+      const user = await getUser();
+      if (!user) throw new Error('Please sign in to save your ideas.');
+      const { data, error } = await sb
+        .from('activities')
+        .insert([
+          {
+            title,
+            subject,
+            phase,
+            description: description || '',
+            url: url || '',
+            keywords: parseKeywords(keywords),
+            created_by: user.id,
+          },
+        ])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    }
+
+    // Load ideas (with filters)
+    async function loadIdeas({ subject = null, phase = 'any', q = '', mine = false } = {}){
+      let query = sb.from('activities').select('*').order('created_at', { ascending: false });
+
+      if (subject && subject !== 'all') query = query.eq('subject', subject);
+      if (phase && phase !== 'any') query = query.eq('phase', phase);
+      if (q && q.trim()) {
+        const like = `%${q.trim()}%`;
+        query = query.or(`title.ilike.${like},description.ilike.${like}`);
+      }
+      if (mine) {
+        const user = await getUser();
+        if (!user) return [];
+        query = query.eq('created_by', user.id);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('[resources] loadIdeas error', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    // Optional: per-user pin toggle
+    async function togglePin(activityId, shouldPin){
+      const user = await getUser();
+      if (!user) throw new Error('Please sign in to pin ideas.');
+      if (shouldPin) {
+        const { error } = await sb.from('activity_pins').upsert({ user_id: user.id, activity_id: activityId });
+        if (error) throw error;
+      } else {
+        const { error } = await sb.from('activity_pins').delete().eq('user_id', user.id).eq('activity_id', activityId);
+        if (error) throw error;
+      }
+    }
+
+    // Minimal renderer fallback if renderActivities doesn't exist
+    async function ensureRenderer(){
+      if (typeof window.renderActivities === 'function') return;
+      const grid = document.getElementById('activity-results');
+      const empty = document.getElementById('activity-empty');
+      window.renderActivities = function(items){
+        if (!grid || !empty) return;
+        grid.innerHTML = '';
+        if (!items.length){
+          empty.classList.remove('hidden');
+          return;
+        }
+        empty.classList.add('hidden');
+        for (const a of items) {
+          const card = document.createElement('article');
+          card.className = 'rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/40';
+          card.innerHTML = `
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">${a.title}</h3>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">${a.subject} • ${a.phase}</p>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">${a.description || ''}</p>
+        ${a.url ? `<a class="mt-3 inline-block text-sm text-emerald-700 hover:underline" href="${a.url}" target="_blank" rel="noopener">Open resource →</a>` : ''}
+        <div class="mt-3 flex gap-2">
+          <button type="button" class="pin-btn rounded-full border px-3 py-1.5 text-xs" data-id="${a.id}">★ Pin</button>
+        </div>
+      `;
+          grid.appendChild(card);
+        }
+        // wire pins (fallback only)
+        grid.querySelectorAll('.pin-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            try {
+              await togglePin(btn.dataset.id, true);
+              btn.textContent = '★ Pinned';
+            } catch (e) {
+              alert(e.message);
+            }
+          });
+        });
+      };
+    }
+    ensureRenderer();
+
+    // Wire the Add Idea form + quick filters
+    (function wireIdeaUI(){
+      const form = document.getElementById('idea-form');
+      const results = document.getElementById('activity-results');
+      if (!form || !results) return;
+
+      const titleEl = document.getElementById('idea-title');
+      const subjEl = document.getElementById('idea-subject');
+      const phaseEl = document.getElementById('idea-phase');
+      const descEl = document.getElementById('idea-description');
+      const urlEl = document.getElementById('idea-url');
+      const kwEl = document.getElementById('idea-keywords');
+      const btnMine = document.getElementById('filter-mine');
+      const btnAll = document.getElementById('filter-all');
+      const searchEl = document.getElementById('activity-search');
+
+      async function refresh({ mine = false } = {}){
+        const activeSubject = document.querySelector('.subject-filter[aria-pressed="true"]')?.dataset.subject || null;
+        const activePhase = document.querySelector('.phase-filter[aria-pressed="true"]')?.dataset.phase || 'any';
+        const q = (searchEl?.value || '').trim();
+        const items = await loadIdeas({ subject: activeSubject, phase: activePhase, q, mine });
+        window.renderActivities(items);
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await createIdea({
+            title: titleEl.value.trim(),
+            subject: subjEl.value,
+            phase: phaseEl.value,
+            description: descEl.value.trim(),
+            url: urlEl.value.trim(),
+            keywords: kwEl.value,
+          });
+          form.reset();
+          await refresh({ mine: true }); // show yours after saving
+        } catch (err) {
+          console.error('[resources] createIdea failed', err);
+          alert(err.message || 'Could not save idea');
+        }
+      });
+
+      btnMine?.addEventListener('click', () => refresh({ mine: true }));
+      btnAll?.addEventListener('click', () => refresh({ mine: false }));
+
+      // Re-render when search input changes (debounced)
+      let t;
+      searchEl?.addEventListener('input', () => {
+        window.clearTimeout(t);
+        t = window.setTimeout(() => refresh({}), 250);
+      });
+
+      // Initial load
+      refresh({});
+    })();
+  })();
+}
+
 // Planner
 const plannerWeekEl = document.getElementById('planner-week');
 const plannerGrid = document.getElementById('planner-grid');
