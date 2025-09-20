@@ -126,6 +126,7 @@ export async function initReminders(sel = {}) {
   const title = $(sel.titleSel);
   const date = $(sel.dateSel);
   const time = $(sel.timeSel);
+  const details = $(sel.detailsSel);
   const priority = $(sel.prioritySel);
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
@@ -392,6 +393,11 @@ export async function initReminders(sel = {}) {
   function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
   function fmtTime(d){ return timeFmt.format(d); }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  function notesToHtml(note){
+    if(!note) return '';
+    const safe = escapeHtml(note).replace(/\r\n/g,'\n');
+    return safe.replace(/\n/g,'<br>');
+  }
   function toast(msg){ if(!statusEl) return; statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='',2500); }
   function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
@@ -501,17 +507,18 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(priority) priority.value='Medium'; editingId=null; if(saveBtn) saveBtn.textContent='Save Reminder'; cancelEditBtn?.classList.add('hidden'); }
-  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
+  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; if(priority) priority.value='Medium'; editingId=null; if(saveBtn) saveBtn.textContent='Save Reminder'; cancelEditBtn?.classList.add('hidden'); }
+  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
 
   function addItem(obj){
     if(!userId){ toast('Sign in to add reminders'); return; }
     const nowMs = Date.now();
+    const note = obj.notes == null ? '' : (typeof obj.notes === 'string' ? obj.notes.trim() : String(obj.notes).trim());
     const item = {
       id: uid(),
       title: obj.title.trim(),
       priority: obj.priority||'Medium',
-      notes: obj.notes||'',
+      notes: note,
       done:false,
       createdAt: nowMs,
       updatedAt: nowMs,
@@ -637,13 +644,16 @@ export async function initReminders(sel = {}) {
       priority: item.priority || 'Medium',
       urlPath: reminderLandingPath,
     };
-    let body = 'Due now';
+    const primaryNote = typeof item.notes === 'string'
+      ? item.notes.split(/\r?\n/).find(line => line.trim()) || ''
+      : '';
+    let body = primaryNote || 'Due now';
     try {
       const dueDate = new Date(item.due);
       if(!Number.isNaN(dueDate.getTime())){
         const timeLabel = fmtTime(dueDate);
         if(timeLabel){
-          body = `Due ${timeLabel}`;
+          body = primaryNote ? `${primaryNote} • ${timeLabel}` : `Due ${timeLabel}`;
         }
       }
     } catch {}
@@ -842,6 +852,7 @@ export async function initReminders(sel = {}) {
         const toggleClasses = r.done
           ? 'px-3 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600'
           : 'px-3 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600';
+        const notesHtml = r.notes ? `<p class="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">${notesToHtml(r.notes)}</p>` : '';
         itemEl.innerHTML = `
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
@@ -856,6 +867,7 @@ export async function initReminders(sel = {}) {
           </span>
           <span class="${statusClasses}">${statusLabel}</span>
         </div>
+        ${notesHtml}
       </div>
       <div class="flex flex-wrap gap-2 text-sm font-medium">
         <button data-action="toggle" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
@@ -874,6 +886,7 @@ export async function initReminders(sel = {}) {
       div.className = 'task-item' + (r.done ? ' completed' : '');
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
       const priorityClass = `priority-${r.priority.toLowerCase()}`;
+      const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
       div.innerHTML = `
         <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
         <div class="task-content">
@@ -884,6 +897,7 @@ export async function initReminders(sel = {}) {
               <span class="priority-badge ${priorityClass}">${r.priority}</span>
             </div>
           </div>
+          ${notesHtml}
         </div>
         <div class="task-actions">
           <button class="btn-ghost" data-edit type="button">Edit</button>
@@ -926,6 +940,7 @@ export async function initReminders(sel = {}) {
       it.title = tNew;
       it.priority=priority.value;
       it.due = due;
+      if(details){ it.notes = details.value.trim(); }
       it.updatedAt=Date.now();
       saveToFirebase(it);
       tryCalendarSync(it);
@@ -937,11 +952,12 @@ export async function initReminders(sel = {}) {
       return;
     }
     const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
+    const noteText = details ? details.value.trim() : '';
     let due=null;
     if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
     else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:t, priority:priority.value, due });
-    title.value=''; time.value='';
+    addItem({ title:t, priority:priority.value, due, notes: noteText });
+    title.value=''; time.value=''; if(details) details.value='';
   });
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
 
