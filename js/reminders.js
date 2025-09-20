@@ -6,6 +6,7 @@ const activeNotifications = new Map();
 let notificationCleanupBound = false;
 const SERVICE_WORKER_SCRIPT = 'service-worker.js';
 let serviceWorkerReadyPromise = null;
+const DEFAULT_CATEGORY = 'General';
 
 function getGlobalScope() {
   if (typeof globalThis !== 'undefined') return globalThis;
@@ -110,6 +111,16 @@ function bindNotificationCleanupHandlers() {
   notificationCleanupBound = true;
 }
 
+function normalizeCategory(value) {
+  if (typeof value === 'string') {
+    const trimmed = value.replace(/\s+/g, ' ').trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  return DEFAULT_CATEGORY;
+}
+
 /**
  * Initialise the reminders UI and sync logic.
  * Pass in selectors for the elements the module should control.
@@ -128,6 +139,7 @@ export async function initReminders(sel = {}) {
   const time = $(sel.timeSel);
   const details = $(sel.detailsSel);
   const priority = $(sel.prioritySel);
+  const categoryInput = $(sel.categorySel);
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
@@ -164,10 +176,16 @@ export async function initReminders(sel = {}) {
   const settingsSection = $(sel.settingsSectionSel);
   const emptyStateEl = $(sel.emptyStateSel);
   const listWrapper = $(sel.listWrapperSel);
+  const categoryFilter = $(sel.categoryFilterSel);
+  const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
   const emptyInitialText = sel.emptyStateInitialText || 'Add your first reminder to see it here.';
   const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
   const reminderLandingPath = sel.reminderLandingPath || (variant === 'desktop' ? 'index.html#reminders' : 'mobile.html');
+
+  if (categoryInput && !categoryInput.value) {
+    categoryInput.value = DEFAULT_CATEGORY;
+  }
 
   if (supportsNotificationTriggers()) {
     ensureServiceWorkerRegistration();
@@ -316,9 +334,10 @@ export async function initReminders(sel = {}) {
    const auth = getAuth(app);
 
    // State
-   let items = [];
-   let filter = 'today';
-   let sortKey = 'smart';
+  let items = [];
+  let filter = 'today';
+  let categoryFilterValue = categoryFilter?.value || 'all';
+  let sortKey = 'smart';
    let listening = false;
    let recog = null;
    let userId = null;
@@ -326,11 +345,18 @@ export async function initReminders(sel = {}) {
    let editingId = null;
    const reminderTimers = {};
    let scheduledReminders = {};
-   try {
-     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
-   } catch {
-     scheduledReminders = {};
-   }
+  try {
+    scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
+  } catch {
+    scheduledReminders = {};
+  }
+  if (scheduledReminders && typeof scheduledReminders === 'object') {
+    Object.values(scheduledReminders).forEach((entry) => {
+      if (entry && typeof entry === 'object') {
+        entry.category = normalizeCategory(entry.category);
+      }
+    });
+  }
 
   // Formatting helpers
   const navigatorLocale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : '';
@@ -481,7 +507,7 @@ export async function initReminders(sel = {}) {
       const remoteItems = [];
       snapshot.forEach((d)=>{
         const data = d.data();
-        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0 });
+        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0 });
       });
       items = remoteItems;
       render();
@@ -496,6 +522,7 @@ export async function initReminders(sel = {}) {
     try {
       await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
         title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
+        category: item.category || DEFAULT_CATEGORY,
         createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -505,19 +532,21 @@ export async function initReminders(sel = {}) {
   }
   async function deleteFromFirebase(id){ if(!userId) return; try { await deleteDoc(doc(db,'users',userId,'reminders',id)); } catch { toast('Delete queued (offline)'); } }
 
-  async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
+  async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; if(priority) priority.value='Medium'; editingId=null; if(saveBtn) saveBtn.textContent='Save Reminder'; cancelEditBtn?.classList.add('hidden'); }
-  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
+  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; if(priority) priority.value='Medium'; if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Reminder'; cancelEditBtn?.classList.add('hidden'); }
+  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
 
   function addItem(obj){
     if(!userId){ toast('Sign in to add reminders'); return; }
     const nowMs = Date.now();
     const note = obj.notes == null ? '' : (typeof obj.notes === 'string' ? obj.notes.trim() : String(obj.notes).trim());
+    const categoryValue = normalizeCategory(obj.category ?? (categoryInput ? categoryInput.value : ''));
     const item = {
       id: uid(),
       title: obj.title.trim(),
       priority: obj.priority||'Medium',
+      category: categoryValue,
       notes: note,
       done:false,
       createdAt: nowMs,
@@ -642,6 +671,7 @@ export async function initReminders(sel = {}) {
       title: item.title,
       due: item.due,
       priority: item.priority || 'Medium',
+      category: item.category || DEFAULT_CATEGORY,
       urlPath: reminderLandingPath,
     };
     const primaryNote = typeof item.notes === 'string'
@@ -671,8 +701,9 @@ export async function initReminders(sel = {}) {
   }
   function scheduleReminder(item){
     if(!item||!item.id) return;
+    item.category = normalizeCategory(item.category);
     if(!item.due || item.done){ cancelReminder(item.id); return; }
-    const stored = { id:item.id, title:item.title, due:item.due };
+    const stored = { id:item.id, title:item.title, due:item.due, category: item.category || DEFAULT_CATEGORY };
     scheduledReminders[item.id]=stored;
     saveScheduled();
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
@@ -707,7 +738,7 @@ export async function initReminders(sel = {}) {
       clearReminderState(item.id,{ closeNotification:false });
     }, delay);
   }
-  function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder(it)); }
+  function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
 
   const desktopPriorityClasses = {
     High: 'bg-rose-400/80 dark:bg-rose-300/80',
@@ -756,6 +787,48 @@ export async function initReminders(sel = {}) {
     if(countTotalEl) countTotalEl.textContent = String(items.length);
     if(countCompletedEl) countCompletedEl.textContent = String(completedCount);
 
+    items.forEach(item => {
+      if (item && typeof item === 'object') {
+        item.category = normalizeCategory(item.category);
+      }
+    });
+    const allCategories = Array.from(new Set(items.map(item => (item && item.category) ? item.category : DEFAULT_CATEGORY))).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    if (categoryFilter) {
+      const previous = categoryFilterValue;
+      categoryFilter.replaceChildren();
+      const allOption = document.createElement('option');
+      allOption.value = 'all';
+      allOption.textContent = 'All categories';
+      categoryFilter.appendChild(allOption);
+      allCategories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categoryFilter.appendChild(option);
+      });
+      if (previous !== 'all' && !allCategories.includes(previous)) {
+        categoryFilterValue = 'all';
+      }
+      categoryFilter.value = categoryFilterValue;
+    }
+
+    if (categoryDatalist) {
+      const existing = new Set();
+      Array.from(categoryDatalist.querySelectorAll('option')).forEach(opt => {
+        existing.add(opt.value.trim().toLowerCase());
+      });
+      allCategories.forEach(cat => {
+        const key = cat.toLowerCase();
+        if (!existing.has(key)) {
+          const option = document.createElement('option');
+          option.value = cat;
+          categoryDatalist.appendChild(option);
+          existing.add(key);
+        }
+      });
+    }
+
     if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
       const payload = items.map(item => ({ ...item }));
       try {
@@ -775,7 +848,10 @@ export async function initReminders(sel = {}) {
 
     let rows = items.slice();
     const queryStr = q?.value.trim().toLowerCase() || '';
-    if(queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr)); }
+    if(queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr) || (r.category||'').toLowerCase().includes(queryStr)); }
+    if(categoryFilterValue && categoryFilterValue !== 'all'){
+      rows = rows.filter(r => normalizeCategory(r.category) === categoryFilterValue);
+    }
     rows = rows.filter(r => {
       if(filter==='done') return r.done;
       if(filter==='overdue') return !r.done && r.due && new Date(r.due) < localNow;
@@ -850,26 +926,65 @@ export async function initReminders(sel = {}) {
     list.replaceChildren();
     const frag = document.createDocumentFragment();
     const listIsSemantic = list.tagName === 'UL' || list.tagName === 'OL';
+    const grouped = new Map();
     rows.forEach(r => {
-      if(variant === 'desktop'){
-        const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
-        itemEl.dataset.id = r.id;
-        itemEl.className = 'px-4 py-3 bg-white/95 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 rounded-lg';
-        const dueLabel = formatDesktopDue(r);
-        const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
-        const titleClasses = r.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100';
-        const statusLabel = r.done ? 'Completed' : 'Active';
-        const statusClasses = r.done
-          ? 'inline-flex items-center gap-1.5 rounded-full border border-emerald-300/70 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:border-emerald-400/60 dark:text-emerald-300'
-          : 'inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:text-slate-300';
-        const statusIndicatorClass = r.done
-          ? 'bg-emerald-400/80 dark:bg-emerald-300/70'
-          : 'bg-slate-400/80 dark:bg-slate-500/70';
-        const toggleClasses = r.done
-          ? 'px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/60'
-          : 'px-3 py-1.5 rounded-md border border-emerald-300 text-emerald-600 transition-colors hover:bg-emerald-50 dark:border-emerald-400/60 dark:text-emerald-300 dark:hover:bg-emerald-500/10';
-        const notesHtml = r.notes ? `<p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">${notesToHtml(r.notes)}</p>` : '';
-        itemEl.innerHTML = `
+      const catName = r.category || DEFAULT_CATEGORY;
+      if (!grouped.has(catName)) {
+        grouped.set(catName, []);
+      }
+      grouped.get(catName).push(r);
+    });
+    const sortedGroups = Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }));
+    let firstGroup = true;
+    sortedGroups.forEach(([catName, catRows]) => {
+      const headingWrapper = document.createElement(listIsSemantic ? 'li' : 'div');
+      headingWrapper.dataset.categoryHeading = catName;
+      if (listIsSemantic) {
+        headingWrapper.setAttribute('role', 'presentation');
+        headingWrapper.style.listStyle = 'none';
+      }
+      headingWrapper.className = variant === 'desktop'
+        ? 'text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400'
+        : 'text-xs font-semibold uppercase text-slate-400';
+      if (!firstGroup) {
+        headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
+      }
+      const headingInner = document.createElement('div');
+      headingInner.setAttribute('role', 'heading');
+      headingInner.setAttribute('aria-level', '3');
+      headingInner.className = variant === 'desktop'
+        ? 'flex items-center justify-between gap-2 px-1 text-slate-500 dark:text-slate-400'
+        : 'flex items-center justify-between gap-2 text-slate-400';
+      const headingLabel = document.createElement('span');
+      headingLabel.textContent = catName;
+      const headingCount = document.createElement('span');
+      headingCount.className = 'text-[0.7rem] font-medium text-slate-400 dark:text-slate-500';
+      headingCount.textContent = `${catRows.length} ${catRows.length === 1 ? 'item' : 'items'}`;
+      headingInner.append(headingLabel, headingCount);
+      headingWrapper.appendChild(headingInner);
+      frag.appendChild(headingWrapper);
+
+      catRows.forEach(r => {
+        if(variant === 'desktop'){
+          const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
+          itemEl.dataset.id = r.id;
+          itemEl.dataset.category = catName;
+          itemEl.className = 'px-4 py-3 bg-white/95 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 rounded-lg';
+          const dueLabel = formatDesktopDue(r);
+          const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
+          const titleClasses = r.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100';
+          const statusLabel = r.done ? 'Completed' : 'Active';
+          const statusClasses = r.done
+            ? 'inline-flex items-center gap-1.5 rounded-full border border-emerald-300/70 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:border-emerald-400/60 dark:text-emerald-300'
+            : 'inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:text-slate-300';
+          const statusIndicatorClass = r.done
+            ? 'bg-emerald-400/80 dark:bg-emerald-300/70'
+            : 'bg-slate-400/80 dark:bg-slate-500/70';
+          const toggleClasses = r.done
+            ? 'px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/60'
+            : 'px-3 py-1.5 rounded-md border border-emerald-300 text-emerald-600 transition-colors hover:bg-emerald-50 dark:border-emerald-400/60 dark:text-emerald-300 dark:hover:bg-emerald-500/10';
+          const notesHtml = r.notes ? `<p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">${notesToHtml(r.notes)}</p>` : '';
+          itemEl.innerHTML = `
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <p class="text-base font-semibold ${titleClasses}">${escapeHtml(r.title)}</p>
@@ -877,6 +992,10 @@ export async function initReminders(sel = {}) {
           <span class="inline-flex items-center gap-1.5">
             <span class="inline-flex h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
             ${escapeHtml(dueLabel)}
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-white/60 px-2 py-0.5 text-xs font-medium text-blue-600 dark:border-blue-500/70 dark:bg-slate-900/40 dark:text-blue-300">
+            <span class="h-1.5 w-1.5 rounded-full bg-sky-400/80 dark:bg-sky-300/80"></span>
+            ${escapeHtml(catName)}
           </span>
           <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/60 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:bg-slate-900/40 dark:text-slate-300">
             <span class="h-1.5 w-1.5 rounded-full ${priorityIndicatorClass}"></span>
@@ -895,26 +1014,28 @@ export async function initReminders(sel = {}) {
         <button data-action="delete" class="px-3 py-1.5 rounded-md border border-rose-300 text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-400/60 dark:text-rose-300 dark:hover:bg-rose-500/10">Delete</button>
       </div>
     </div>`;
-        itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
-        itemEl.querySelector('[data-action="edit"]').addEventListener('click', () => loadForEdit(r.id));
-        itemEl.querySelector('[data-action="delete"]').addEventListener('click', () => removeItem(r.id));
-        frag.appendChild(itemEl);
-        return;
-      }
+          itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
+          itemEl.querySelector('[data-action="edit"]').addEventListener('click', () => loadForEdit(r.id));
+          itemEl.querySelector('[data-action="delete"]').addEventListener('click', () => removeItem(r.id));
+          frag.appendChild(itemEl);
+          return;
+        }
 
-      const div = document.createElement('div');
-      div.className = 'task-item' + (r.done ? ' completed' : '');
-      const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-      const priorityClass = `priority-${r.priority.toLowerCase()}`;
-      const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
-      div.innerHTML = `
+        const div = document.createElement('div');
+        div.className = 'task-item' + (r.done ? ' completed' : '');
+        div.dataset.category = catName;
+        const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
+        const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
+        const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
+        div.innerHTML = `
         <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
         <div class="task-content">
           <div class="task-title">${escapeHtml(r.title)}</div>
           <div class="task-meta">
-            <div class="task-meta-row">
+            <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
               <span>${dueTxt}</span>
               <span class="priority-badge ${priorityClass}">${r.priority}</span>
+              <span class="priority-badge" style="background:rgba(56,189,248,.14);color:#0284c7;border-color:rgba(56,189,248,.26);">${escapeHtml(catName)}</span>
             </div>
           </div>
           ${notesHtml}
@@ -923,10 +1044,13 @@ export async function initReminders(sel = {}) {
           <button class="btn-ghost" data-edit type="button">Edit</button>
           <button class="btn-ghost" data-del type="button">Del</button>
         </div>`;
-      div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-      div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
-      div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
-      frag.appendChild(div);
+        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
+        div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
+        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
+        frag.appendChild(div);
+      });
+
+      firstGroup = false;
     });
     list.appendChild(frag);
   }
@@ -959,6 +1083,7 @@ export async function initReminders(sel = {}) {
       else { const p=parseQuickWhen(tNew); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
       it.title = tNew;
       it.priority=priority.value;
+      if(categoryInput){ it.category = normalizeCategory(categoryInput.value); }
       it.due = due;
       if(details){ it.notes = details.value.trim(); }
       it.updatedAt=Date.now();
@@ -976,7 +1101,7 @@ export async function initReminders(sel = {}) {
     let due=null;
     if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
     else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:t, priority:priority.value, due, notes: noteText });
+    addItem({ title:t, priority:priority.value, category: categoryInput ? categoryInput.value : '', due, notes: noteText });
     title.value=''; time.value=''; if(details) details.value='';
   });
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
@@ -989,6 +1114,7 @@ export async function initReminders(sel = {}) {
   addQuickBtn?.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
   q?.addEventListener('input', debounce(render,150));
   sortSel?.addEventListener('change', ()=>{ sortKey = sortSel.value; render(); });
+  categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
   filterBtns.forEach(b => b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
 
   copyMtlBtn?.addEventListener('click', () => {
@@ -1004,7 +1130,7 @@ export async function initReminders(sel = {}) {
     rd.onload = () => {
       try {
         const importedItems = JSON.parse(String(rd.result) || '[]').slice(0,500);
-        importedItems.forEach(item => { item.id = uid(); items=[item,...items]; saveToFirebase(item); });
+        importedItems.forEach(item => { item.id = uid(); item.category = normalizeCategory(item.category); items=[item,...items]; saveToFirebase(item); });
         render(); toast('Import successful');
       } catch { toast('Invalid JSON'); }
     };
@@ -1023,7 +1149,7 @@ export async function initReminders(sel = {}) {
     const chunkSize=20; let fail=0;
     for(let i=0;i<items.length;i+=chunkSize){
       const chunk=items.slice(i,i+chunkSize);
-      const results=await Promise.allSettled(chunk.map(task=>{ const payload={ id:task.id, title:task.title, dueIso:task.due||null, priority:task.priority||'Medium', done:!!task.done, source:'memory-cue-mobile' }; return fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }));
+      const results=await Promise.allSettled(chunk.map(task=>{ const payload={ id:task.id, title:task.title, dueIso:task.due||null, priority:task.priority||'Medium', category:task.category||DEFAULT_CATEGORY, done:!!task.done, source:'memory-cue-mobile' }; return fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }));
       fail += results.filter(r=>r.status==='rejected').length;
       await new Promise(res=>setTimeout(res,400));
     }
@@ -1080,5 +1206,15 @@ export async function initReminders(sel = {}) {
     closeActiveNotifications,
     getActiveNotifications: () => activeNotifications,
     addNoteToReminder,
+    __testing: {
+      setItems(listItems = []) {
+        items = Array.isArray(listItems)
+          ? listItems.map(item => ({ ...item, category: normalizeCategory(item?.category) }))
+          : [];
+        render();
+      },
+      render,
+      getItems: () => items.map(item => ({ ...item })),
+    },
   };
 }
