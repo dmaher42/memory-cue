@@ -918,104 +918,58 @@
               />
             </div>
           </div>
-          <form
-            id="idea-form"
-            class="w-full space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition dark:border-slate-700 dark:bg-slate-900/40"
-          >
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Title
-                <input
-                  id="idea-title"
-                  name="idea-title"
-                  type="text"
-                  required
-                  placeholder="Quick warm-up"
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </label>
-              <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Subject
-                <select
-                  id="idea-subject"
-                  name="idea-subject"
-                  required
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  <option value="HPE">HPE</option>
-                  <option value="English">English</option>
-                  <option value="HASS">HASS</option>
-                </select>
-              </label>
-              <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Lesson phase
-                <select
-                  id="idea-phase"
-                  name="idea-phase"
-                  required
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  <option value="start">Start</option>
-                  <option value="middle">Middle</option>
-                  <option value="end">End</option>
-                </select>
-              </label>
-              <label class="sm:col-span-2 lg:col-span-3 flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Description
-                <textarea
-                  id="idea-description"
-                  name="idea-description"
-                  rows="2"
-                  placeholder="Short description of the activity"
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                ></textarea>
-              </label>
-              <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Resource link
-                <input
-                  id="idea-url"
-                  name="idea-url"
-                  type="url"
-                  placeholder="https://"
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </label>
-              <label class="flex flex-col gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Keywords
-                <input
-                  id="idea-keywords"
-                  name="idea-keywords"
-                  type="text"
-                  placeholder="movement, teamwork"
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </label>
-            </div>
-            <div class="flex justify-end">
-              <button
-                id="idea-save"
-                type="submit"
-                class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
-              >
-                Save idea
-              </button>
-            </div>
+          <!-- Add Idea form -->
+          <form id="idea-form" class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <input
+              id="idea-title"
+              name="idea-title"
+              type="text"
+              required
+              placeholder="Title (e.g., 3-2-1 Exit Ticket)"
+              class="rounded-xl border px-3 py-2"
+            />
+            <select id="idea-subject" name="idea-subject" required class="rounded-xl border px-3 py-2">
+              <option value="" disabled selected>Subject</option>
+              <option>HPE</option><option>English</option><option>HASS</option>
+            </select>
+            <select id="idea-phase" name="idea-phase" required class="rounded-xl border px-3 py-2">
+              <option value="" disabled selected>Phase</option>
+              <option value="start">Start</option><option value="middle">Middle</option><option value="end">End</option>
+            </select>
+            <input
+              id="idea-url"
+              name="idea-url"
+              type="url"
+              placeholder="Optional link (https://…)"
+              class="rounded-xl border px-3 py-2 sm:col-span-2"
+            />
+            <input
+              id="idea-keywords"
+              name="idea-keywords"
+              type="text"
+              placeholder="Keywords (comma, separated)"
+              class="rounded-xl border px-3 py-2"
+            />
+            <textarea
+              id="idea-description"
+              name="idea-description"
+              rows="2"
+              placeholder="Short description"
+              class="rounded-xl border px-3 py-2 sm:col-span-3"
+            ></textarea>
+            <button
+              id="idea-save"
+              type="submit"
+              class="rounded-xl bg-emerald-600 text-white px-4 py-2 font-semibold"
+            >
+              Save idea
+            </button>
           </form>
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              id="filter-all"
-              class="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200"
-            >
-              All ideas
-            </button>
-            <button
-              type="button"
-              id="filter-mine"
-              class="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200"
-            >
-              My ideas
-            </button>
+
+          <!-- Quick filters -->
+          <div class="flex gap-2 mt-3" id="idea-quick-filters">
+            <button id="filter-mine" type="button" class="rounded-full border px-3 py-1.5 text-sm">My ideas</button>
+            <button id="filter-all" type="button" class="rounded-full border px-3 py-1.5 text-sm">All ideas</button>
           </div>
         </header>
         <div
