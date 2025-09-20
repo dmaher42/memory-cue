@@ -2458,6 +2458,12 @@ resourcesController = (() => {
   const phaseButtons = [...section.querySelectorAll('[data-phase]')];
   const pinnedToggle = section.querySelector('#activity-pinned-toggle');
   const searchInput = section.querySelector('#activity-search');
+  const ideaForm = section.querySelector('#idea-form');
+  const ideaSubjectInput = section.querySelector('#idea-subject');
+  const ideaPhaseInput = section.querySelector('#idea-phase');
+  const ideaSubmitBtn = section.querySelector('#idea-save');
+  const mineFilterBtn = section.querySelector('#filter-mine');
+  const allFilterBtn = section.querySelector('#filter-all');
   const resultsGrid = section.querySelector('#activity-results');
   const emptyEl = section.querySelector('#activity-empty');
   const loadingEl = section.querySelector('#activity-loading');
@@ -2507,6 +2513,9 @@ resourcesController = (() => {
   const PIN_BUTTON_ACTIVE_CLASSES = ['border-amber-400', 'bg-amber-100', 'text-amber-700', 'dark:border-amber-400', 'dark:bg-amber-500/20', 'dark:text-amber-200'];
   const PIN_BUTTON_INACTIVE_CLASSES = ['border-slate-200', 'bg-white/70', 'text-slate-500', 'dark:border-slate-700', 'dark:bg-slate-900/40', 'dark:text-slate-300'];
   const PIN_BUTTON_PENDING_CLASSES = ['opacity-60'];
+  const MINE_ACTIVE_CLASSES = ['border-emerald-400', 'bg-emerald-500', 'text-white', 'shadow', 'dark:border-emerald-400', 'dark:bg-emerald-500/20', 'dark:text-emerald-200'];
+  const MINE_INACTIVE_CLASSES = ['border-slate-200', 'bg-white/80', 'text-slate-600', 'dark:border-slate-700', 'dark:bg-slate-900/40', 'dark:text-slate-200'];
+  const MINE_DISABLED_CLASSES = ['opacity-60', 'cursor-not-allowed'];
   const TOAST_TONE_CLASSES = {
     info: ['bg-slate-900/90', 'text-white'],
     success: ['bg-emerald-600', 'text-white'],
@@ -2532,6 +2541,7 @@ resourcesController = (() => {
     search: '',
     items: [],
     pinnedOnly: false,
+    mineOnly: false,
   };
 
   const pendingPinUpdates = new Set();
@@ -2606,8 +2616,13 @@ resourcesController = (() => {
     if (!statusEl) return;
     if (!supabaseClient) return;
     const filters = buildFilters(state);
+    const showingMine = Boolean(state.mineOnly && authUser?.id);
     if (!state.items.length){
-      if (filters.pinnedOnly && authUser?.id){
+      if (showingMine){
+        setStatus('No saved ideas yet. Use the form above to add one.', 'warning');
+      } else if (state.mineOnly && !authUser?.id){
+        setStatus('Sign in to view your saved ideas.', 'warning');
+      } else if (filters.pinnedOnly && authUser?.id){
         setStatus('No pinned activities match your filters yet.', 'warning');
       } else if (filters.search || (filters.subject && filters.subject !== 'all') || filters.phase !== 'any'){
         setStatus('No activities match your filters yet.', 'warning');
@@ -2619,11 +2634,19 @@ resourcesController = (() => {
       return;
     }
     const label = state.items.length === 1 ? 'activity' : 'activities';
+    if (filters.pinnedOnly && showingMine){
+      setStatus(`Showing ${state.items.length} of your pinned ${label}.`, 'info');
+      return;
+    }
     if (filters.pinnedOnly && authUser?.id){
       setStatus(`Showing ${state.items.length} pinned ${label}.`, 'info');
-    } else {
-      setStatus(`Showing ${state.items.length} ${label}.`, 'info');
+      return;
     }
+    if (showingMine){
+      setStatus(`Showing ${state.items.length} of your ${label}.`, 'info');
+      return;
+    }
+    setStatus(`Showing ${state.items.length} ${label}.`, 'info');
   }
 
   function applyPinButtonState(button, pinned, { pending } = {}){
@@ -2705,7 +2728,7 @@ resourcesController = (() => {
 
     let hadError = false;
     try {
-      await persistActivityPin(activityId, nextPinned);
+      await togglePin(activityId, nextPinned);
     } catch (error) {
       hadError = true;
       activityPinState.ids = previousPins;
@@ -3318,8 +3341,50 @@ resourcesController = (() => {
     });
   }
 
+  function updateMineFilterButtons(){
+    if (allFilterBtn){
+      const allActive = !state.mineOnly;
+      allFilterBtn.setAttribute('aria-pressed', String(allActive));
+      allFilterBtn.classList.remove(...MINE_ACTIVE_CLASSES, ...MINE_INACTIVE_CLASSES);
+      if (allActive){
+        allFilterBtn.classList.add(...MINE_ACTIVE_CLASSES);
+      } else {
+        allFilterBtn.classList.add(...MINE_INACTIVE_CLASSES);
+      }
+    }
+    if (mineFilterBtn){
+      const canShowMine = Boolean(authUser?.id);
+      const mineActive = Boolean(state.mineOnly && canShowMine);
+      mineFilterBtn.setAttribute('aria-pressed', String(mineActive));
+      mineFilterBtn.classList.remove(...MINE_ACTIVE_CLASSES, ...MINE_INACTIVE_CLASSES, ...MINE_DISABLED_CLASSES);
+      if (mineActive){
+        mineFilterBtn.classList.add(...MINE_ACTIVE_CLASSES);
+      } else {
+        mineFilterBtn.classList.add(...MINE_INACTIVE_CLASSES);
+      }
+      if (!canShowMine){
+        mineFilterBtn.classList.add(...MINE_DISABLED_CLASSES);
+        mineFilterBtn.setAttribute('aria-disabled', 'true');
+        if (!mineFilterBtn.getAttribute('title')){
+          mineFilterBtn.setAttribute('title', 'Sign in to view your saved ideas');
+        }
+      } else {
+        mineFilterBtn.removeAttribute('aria-disabled');
+        mineFilterBtn.removeAttribute('title');
+      }
+    }
+  }
+
+  function assignItems(items){
+    const nextItems = Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
+    state.items = nextItems;
+    updateStatusMessage();
+    render();
+  }
+
   function render(){
     updatePinnedToggle();
+    updateMineFilterButtons();
     renderIdeas();
     if (!resultsGrid) return;
     resultsGrid.innerHTML = '';
@@ -3351,28 +3416,31 @@ resourcesController = (() => {
   async function refresh({ showLoading = true } = {}){
     if (showLoading) setLoading(true);
     const filters = buildFilters(state);
-    log.debug('Refreshing activities', { filters });
+    log.debug('Refreshing activities', { filters, mineOnly: state.mineOnly });
     try {
       const client = supabaseClient || await ensureSupabase();
       if (!client){
         state.items = [];
         setStatus('Add Supabase credentials to browse shared activities.', 'warning');
+        render();
         return;
       }
-      const data = await loadActivities({
-        ...filters,
-        pinnedOnly: Boolean(authUser?.id && filters.pinnedOnly),
+      const data = await listIdeas({
+        subject: filters.subject,
+        phase: filters.phase,
+        q: filters.search,
+        mine: state.mineOnly,
       });
-      state.items = applyFilters(data, filters);
-      updateStatusMessage();
-      log.debug('Refresh complete', { count: state.items.length });
+      const filteredItems = applyFilters(data, filters);
+      assignItems(filteredItems);
+      log.debug('Refresh complete', { count: filteredItems.length });
     } catch (error) {
       log.error('Activities fetch failed', error);
       state.items = [];
       setStatus('Unable to load activities right now.', 'error');
+      render();
     } finally {
       setLoading(false);
-      render();
     }
   }
 
@@ -3430,6 +3498,79 @@ resourcesController = (() => {
       if (searchDebounce) window.clearTimeout(searchDebounce);
       searchDebounce = null;
       runSearch(true);
+    }, { signal });
+  }
+
+  if (allFilterBtn){
+    allFilterBtn.addEventListener('click', () => {
+      if (!state.mineOnly) return;
+      state.mineOnly = false;
+      updateMineFilterButtons();
+      refresh({ showLoading: true });
+    }, { signal });
+  }
+
+  if (mineFilterBtn){
+    mineFilterBtn.addEventListener('click', () => {
+      if (!authUser?.id){
+        setStatus('Sign in to view your saved ideas.', 'warning');
+        return;
+      }
+      if (state.mineOnly) return;
+      state.mineOnly = true;
+      updateMineFilterButtons();
+      refresh({ showLoading: true });
+    }, { signal });
+  }
+
+  if (ideaForm){
+    ideaForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!authUser?.id){
+        alert('Sign in to save ideas first.');
+        return;
+      }
+      const formData = new FormData(ideaForm);
+      const payload = {
+        title: String(formData.get('idea-title') || ''),
+        subject: String(formData.get('idea-subject') || ''),
+        phase: String(formData.get('idea-phase') || ''),
+        description: String(formData.get('idea-description') || ''),
+        url: String(formData.get('idea-url') || ''),
+        keywords: String(formData.get('idea-keywords') || ''),
+      };
+      const submitBtn = ideaSubmitBtn || ideaForm.querySelector('button[type="submit"]');
+      if (submitBtn){
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
+      }
+      try {
+        await createIdea(payload);
+        ideaForm.reset();
+        if (ideaSubjectInput && state.subject && ACTIVITY_SUBJECTS.has(state.subject) && state.subject !== 'all'){
+          ideaSubjectInput.value = state.subject;
+        }
+        if (ideaPhaseInput && state.phase && ACTIVITY_PHASES.has(state.phase) && state.phase !== 'any'){
+          ideaPhaseInput.value = state.phase;
+        }
+        const filters = buildFilters(state);
+        const data = await listIdeas({
+          subject: filters.subject,
+          phase: filters.phase,
+          q: filters.search,
+          mine: state.mineOnly,
+        });
+        const filtered = applyFilters(data, filters);
+        renderActivities(filtered);
+      } catch (error) {
+        console.error('Idea creation failed', error);
+        alert(error?.message || 'Unable to save idea right now.');
+      } finally {
+        if (submitBtn){
+          submitBtn.disabled = false;
+          submitBtn.removeAttribute('aria-busy');
+        }
+      }
     }, { signal });
   }
 
@@ -3523,14 +3664,17 @@ resourcesController = (() => {
     pendingPinUpdates.clear();
     if (!user?.id){
       state.pinnedOnly = false;
+      state.mineOnly = false;
       state.items = state.items.map((item) => ({ ...item, pinned: false }));
       updatePinnedToggle();
+      updateMineFilterButtons();
       updateStatusMessage();
       render();
       return;
     }
     state.pinnedOnly = loadPinnedFilterPreference(user.id);
     updatePinnedToggle();
+    updateMineFilterButtons();
     updateStatusMessage();
     render();
   }
@@ -3538,12 +3682,125 @@ resourcesController = (() => {
   updateSubjectButtons();
   updatePhaseButtons();
   updatePinnedToggle();
+  updateMineFilterButtons();
 
   return {
     refresh: (options) => refresh(options || {}),
     handleAuthChange,
+    setItems: (items) => assignItems(Array.isArray(items) ? items : []),
   };
 })();
+
+function renderActivities(items){
+  if (resourcesController && typeof resourcesController.setItems === 'function'){
+    resourcesController.setItems(Array.isArray(items) ? items : []);
+    return;
+  }
+  const section = document.getElementById('view-resources');
+  if (!section) return;
+  const resultsGrid = section.querySelector('#activity-results');
+  const emptyEl = section.querySelector('#activity-empty');
+  if (!resultsGrid) return;
+  const nextItems = Array.isArray(items) ? items : [];
+  const fragment = document.createDocumentFragment();
+  const pinnedIds = activityPinState.ids instanceof Set ? activityPinState.ids : new Set();
+  nextItems.forEach((activity) => {
+    const { card } = renderCard(activity, { pinnedIds });
+    if (card) fragment.appendChild(card);
+  });
+  resultsGrid.replaceChildren(fragment);
+  if (!nextItems.length){
+    resultsGrid.classList.add('hidden');
+    emptyEl?.classList.remove('hidden');
+  } else {
+    resultsGrid.classList.remove('hidden');
+    emptyEl?.classList.add('hidden');
+  }
+}
+
+async function createIdea({ title = '', subject, phase, description = '', url = '', keywords = [] } = {}){
+  const client = supabaseClient || await ensureSupabase();
+  if (!client) throw new Error('Supabase client not available');
+  await waitForInitialAuth();
+  if (!authUser?.id) throw new Error('Sign in to save ideas first.');
+  const cleanTitle = String(title || '').trim();
+  if (!cleanTitle) throw new Error('Add a title for your idea.');
+  const cleanSubject = ACTIVITY_SUBJECTS.has(subject) ? subject : null;
+  if (!cleanSubject) throw new Error('Choose a subject for your idea.');
+  const cleanPhase = ACTIVITY_PHASES.has(phase) ? phase : null;
+  if (!cleanPhase) throw new Error('Choose a lesson phase for your idea.');
+  const cleanDescription = String(description || '').trim();
+  const cleanUrl = String(url || '').trim();
+  const keywordList = Array.isArray(keywords)
+    ? keywords.map((kw) => String(kw).trim()).filter(Boolean)
+    : String(keywords || '').split(',').map((kw) => kw.trim()).filter(Boolean);
+  const { data, error } = await client
+    .from('activities')
+    .insert({
+      title: cleanTitle,
+      subject: cleanSubject,
+      phase: cleanPhase,
+      description: cleanDescription,
+      url: cleanUrl,
+      keywords: keywordList,
+      created_by: authUser.id,
+    })
+    .select('id,title,subject,phase,description,url,keywords,created_by')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function listIdeas({ subject, phase, q, mine } = {}){
+  const client = supabaseClient || await ensureSupabase();
+  if (!client) return [];
+  await waitForInitialAuth();
+  let query = client
+    .from('activities')
+    .select('id,title,subject,phase,description,url,keywords,created_by')
+    .order('title', { ascending: true });
+  if (mine){
+    if (!authUser?.id) return [];
+    query = query.eq('created_by', authUser.id);
+  }
+  if (subject && subject !== 'all' && ACTIVITY_SUBJECTS.has(subject)){
+    query = query.eq('subject', subject);
+  }
+  if (phase && phase !== 'any' && ACTIVITY_PHASES.has(phase)){
+    query = query.eq('phase', phase);
+  }
+  if (q && String(q).trim()){
+    const pattern = `%${escapeIlike(String(q).trim())}%`;
+    query = query.or(`title.ilike.${pattern},description.ilike.${pattern}`);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  const rows = Array.isArray(data) ? data : [];
+  let pinnedIds = new Set();
+  if (authUser?.id){
+    pinnedIds = await ensureActivityPins();
+  }
+  return rows.map((row) => {
+    const keywordValue = Array.isArray(row?.keywords)
+      ? row.keywords
+      : String(row?.keywords || '')
+          .split(',')
+          .map((kw) => kw.trim())
+          .filter(Boolean);
+    return {
+      ...row,
+      keywords: keywordValue,
+      pinned: row?.id ? pinnedIds.has(row.id) : false,
+    };
+  });
+}
+
+async function togglePin(activityId, shouldPin){
+  if (!authUser?.id) throw new Error('User must be signed in to pin activities');
+  if (!activityId) throw new Error('Activity ID is required to update pin state.');
+  await persistActivityPin(activityId, shouldPin);
+  return { activityId, pinned: shouldPin };
+}
 
 resourcesController?.refresh({ showLoading: true });
 
