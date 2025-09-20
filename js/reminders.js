@@ -7,6 +7,12 @@ let notificationCleanupBound = false;
 const SERVICE_WORKER_SCRIPT = 'service-worker.js';
 let serviceWorkerReadyPromise = null;
 const DEFAULT_CATEGORY = 'General';
+const SEEDED_CATEGORIES = Object.freeze([
+  DEFAULT_CATEGORY,
+  'General Appointments',
+  'School – Appointments/Meetings',
+  'School – To-Do',
+]);
 
 function getGlobalScope() {
   if (typeof globalThis !== 'undefined') return globalThis;
@@ -792,7 +798,13 @@ export async function initReminders(sel = {}) {
         item.category = normalizeCategory(item.category);
       }
     });
-    const allCategories = Array.from(new Set(items.map(item => (item && item.category) ? item.category : DEFAULT_CATEGORY))).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const categorySet = new Set(SEEDED_CATEGORIES.map(cat => normalizeCategory(cat)));
+    items.forEach(item => {
+      if (item && typeof item === 'object') {
+        categorySet.add(normalizeCategory(item.category));
+      }
+    });
+    const allCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
     if (categoryFilter) {
       const previous = categoryFilterValue;

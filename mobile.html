@@ -216,13 +216,13 @@ z-index:100;box-shadow:var(--shadow-sm)}
               </div>
               <div class="form-group" style="min-width: 140px;">
                 <label class="sr-only" for="category">Category</label>
-                <input id="category" list="categorySuggestions" placeholder="Category" aria-label="Category" />
+                <input id="category" list="categorySuggestions" placeholder="School – To-Do" aria-label="Category" />
               </div>
               <datalist id="categorySuggestions">
                 <option value="General"></option>
-                <option value="Admin"></option>
-                <option value="Planning"></option>
-                <option value="Communication"></option>
+                <option value="General Appointments"></option>
+                <option value="School – Appointments/Meetings"></option>
+                <option value="School – To-Do"></option>
               </datalist>
             </div>
             <div class="form-group">
@@ -264,6 +264,9 @@ z-index:100;box-shadow:var(--shadow-sm)}
                 <select id="categoryFilter">
                   <option value="all" selected>All categories</option>
                   <option value="General">General</option>
+                  <option value="General Appointments">General Appointments</option>
+                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                  <option value="School – To-Do">School – To-Do</option>
                 </select>
               </div>
               <div class="sort-control">

@@ -176,3 +176,60 @@ test('mobile reminders group uncategorised items under General', async () => {
   const excursionItems = document.querySelectorAll('[data-category="Excursion"]');
   expect(excursionItems).toHaveLength(1);
 });
+
+test('category selectors include school and general presets', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <input id="category" list="categorySuggestions" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+    <select id="categoryFilter"><option value="all" selected>All</option></select>
+  `;
+
+  await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    categoryFilterSel: '#categoryFilter',
+    categoryOptionsSel: '#categorySuggestions',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  const datalistValues = Array.from(document.querySelectorAll('#categorySuggestions option')).map((opt) => opt.value);
+  expect(datalistValues).toEqual([
+    'General',
+    'General Appointments',
+    'School – Appointments/Meetings',
+    'School – To-Do',
+  ]);
+
+  const filterOptions = Array.from(document.querySelectorAll('#categoryFilter option'));
+  expect(filterOptions.map((opt) => opt.value)).toEqual([
+    'all',
+    'General',
+    'General Appointments',
+    'School – Appointments/Meetings',
+    'School – To-Do',
+  ]);
+  expect(filterOptions.map((opt) => opt.textContent)).toEqual([
+    'All categories',
+    'General',
+    'General Appointments',
+    'School – Appointments/Meetings',
+    'School – To-Do',
+  ]);
+});
