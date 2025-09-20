@@ -710,9 +710,9 @@ export async function initReminders(sel = {}) {
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder(it)); }
 
   const desktopPriorityClasses = {
-    High: 'border-red-200 text-red-600 bg-red-100/70 dark:border-red-400/30 dark:text-red-300 dark:bg-red-500/10',
-    Medium: 'border-amber-200 text-amber-600 bg-amber-100/70 dark:border-amber-400/30 dark:text-amber-300 dark:bg-amber-500/10',
-    Low: 'border-emerald-200 text-emerald-600 bg-emerald-100/70 dark:border-emerald-400/30 dark:text-emerald-300 dark:bg-emerald-500/10'
+    High: 'bg-rose-400/80 dark:bg-rose-300/80',
+    Medium: 'bg-amber-400/80 dark:bg-amber-300/80',
+    Low: 'bg-emerald-400/80 dark:bg-emerald-300/80'
   };
 
   function formatDesktopDue(item){
@@ -854,36 +854,45 @@ export async function initReminders(sel = {}) {
       if(variant === 'desktop'){
         const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
         itemEl.dataset.id = r.id;
-        itemEl.className = 'p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm';
+        itemEl.className = 'px-4 py-3 bg-white/95 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 rounded-lg';
         const dueLabel = formatDesktopDue(r);
-        const priorityClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
+        const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
         const titleClasses = r.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100';
         const statusLabel = r.done ? 'Completed' : 'Active';
-        const statusClasses = r.done ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400';
+        const statusClasses = r.done
+          ? 'inline-flex items-center gap-1.5 rounded-full border border-emerald-300/70 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:border-emerald-400/60 dark:text-emerald-300'
+          : 'inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:text-slate-300';
+        const statusIndicatorClass = r.done
+          ? 'bg-emerald-400/80 dark:bg-emerald-300/70'
+          : 'bg-slate-400/80 dark:bg-slate-500/70';
         const toggleClasses = r.done
-          ? 'px-3 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600'
-          : 'px-3 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600';
-        const notesHtml = r.notes ? `<p class="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">${notesToHtml(r.notes)}</p>` : '';
+          ? 'px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/60'
+          : 'px-3 py-1.5 rounded-md border border-emerald-300 text-emerald-600 transition-colors hover:bg-emerald-50 dark:border-emerald-400/60 dark:text-emerald-300 dark:hover:bg-emerald-500/10';
+        const notesHtml = r.notes ? `<p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">${notesToHtml(r.notes)}</p>` : '';
         itemEl.innerHTML = `
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <p class="text-lg font-semibold ${titleClasses}">${escapeHtml(r.title)}</p>
-        <div class="mt-2 flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-400">
-          <span class="inline-flex items-center gap-2">
-            <span class="inline-flex h-2 w-2 rounded-full bg-blue-400"></span>
+        <p class="text-base font-semibold ${titleClasses}">${escapeHtml(r.title)}</p>
+        <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="inline-flex h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
             ${escapeHtml(dueLabel)}
           </span>
-          <span class="inline-flex items-center gap-2 px-2 py-1 rounded-full border ${priorityClass}">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/60 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:bg-slate-900/40 dark:text-slate-300">
+            <span class="h-1.5 w-1.5 rounded-full ${priorityIndicatorClass}"></span>
             ${escapeHtml(r.priority)} priority
           </span>
-          <span class="${statusClasses}">${statusLabel}</span>
+          <span class="${statusClasses}">
+            <span class="h-1.5 w-1.5 rounded-full ${statusIndicatorClass}"></span>
+            ${statusLabel}
+          </span>
         </div>
         ${notesHtml}
       </div>
       <div class="flex flex-wrap gap-2 text-sm font-medium">
         <button data-action="toggle" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
-        <button data-action="edit" class="px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">Edit</button>
-        <button data-action="delete" class="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600">Delete</button>
+        <button data-action="edit" class="px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/60">Edit</button>
+        <button data-action="delete" class="px-3 py-1.5 rounded-md border border-rose-300 text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-400/60 dark:text-rose-300 dark:hover:bg-rose-500/10">Delete</button>
       </div>
     </div>`;
         itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
