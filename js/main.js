@@ -2135,10 +2135,10 @@ const dashboardController = (() => {
       const overdue = diff < 0;
       const soon = !overdue && diff <= 60 * 60 * 1000;
       const highlightClass = overdue
-        ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200'
+        ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-200 dark:border-rose-500/30'
         : soon
-          ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200'
-          : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200';
+          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-200 dark:border-amber-500/30'
+          : 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-200 dark:border-sky-500/30';
       let statusLabel = '';
       if (overdue){
         statusLabel = `Overdue by ${formatDuration(diff)}`;
@@ -2149,7 +2149,7 @@ const dashboardController = (() => {
       }
 
       const li = document.createElement('li');
-      li.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/40 p-4';
+      li.className = 'rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900/50 p-4 shadow-sm';
 
       const header = document.createElement('div');
       header.className = 'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between';
@@ -2179,7 +2179,7 @@ const dashboardController = (() => {
       }
 
       const status = document.createElement('span');
-      status.className = `inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${highlightClass}`;
+      status.className = `inline-flex items-center rounded-md px-3 py-1 text-sm font-medium border ${highlightClass}`;
       status.textContent = statusLabel;
 
       header.append(content, status);
