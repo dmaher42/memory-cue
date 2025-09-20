@@ -2168,6 +2168,15 @@ const dashboardController = (() => {
       if (reminder.priority) metaParts.push(`${reminder.priority} priority`);
       meta.textContent = metaParts.join(' • ');
       content.append(title, meta);
+      if (reminder.category){
+        const chipRow = document.createElement('div');
+        chipRow.className = 'flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400';
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50/70 px-2 py-0.5 font-medium text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200';
+        chip.textContent = reminder.category;
+        chipRow.appendChild(chip);
+        content.appendChild(chipRow);
+      }
       if (reminder.notes){
         const [firstLine] = String(reminder.notes).split('\n');
         if (firstLine){

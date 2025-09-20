@@ -760,7 +760,7 @@
               <input id="title" class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors" placeholder="Reminder title" />
             </div>
             <div id="dateFeedback" class="text-sm text-slate-500 hidden"></div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div class="space-y-2">
                 <label for="date" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Date</label>
                 <input id="date" type="date" class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors" />
@@ -776,6 +776,21 @@
                   <option selected>Medium</option>
                   <option>Low</option>
                 </select>
+              </div>
+              <div class="space-y-2">
+                <label for="category" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
+                <input
+                  id="category"
+                  list="categorySuggestions"
+                  class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors"
+                  placeholder="e.g., Admin"
+                />
+                <datalist id="categorySuggestions">
+                  <option value="General"></option>
+                  <option value="Admin"></option>
+                  <option value="Planning"></option>
+                  <option value="Communication"></option>
+                </datalist>
               </div>
             </div>
             <div class="space-y-2">
@@ -797,18 +812,32 @@
 
         <div class="bg-[var(--card)] rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-sm p-8">
           <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap">
               <button class="px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/60" data-filter="today" type="button">Today</button>
               <button class="px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/60" data-filter="overdue" type="button">Overdue</button>
               <button class="px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/60" data-filter="all" type="button">All</button>
               <button class="px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/60" data-filter="done" type="button">Done</button>
             </div>
-            <label for="sort" class="sr-only">Sort reminders</label>
-            <select id="sort" class="px-4 py-2 border border-slate-300/80 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors">
-              <option value="smart">Smart sort</option>
-              <option value="time">Time</option>
-              <option value="priority">Priority</option>
-            </select>
+            <div class="flex items-center gap-3">
+              <div>
+                <label for="categoryFilter" class="sr-only">Filter by category</label>
+                <select
+                  id="categoryFilter"
+                  class="px-4 py-2 border border-slate-300/80 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors"
+                >
+                  <option value="all" selected>All categories</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+              <div>
+                <label for="sort" class="sr-only">Sort reminders</label>
+                <select id="sort" class="px-4 py-2 border border-slate-300/80 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors">
+                  <option value="smart">Smart sort</option>
+                  <option value="time">Time</option>
+                  <option value="priority">Priority</option>
+                </select>
+              </div>
+            </div>
           </div>
           
           <div class="flex flex-wrap gap-6 mb-6 text-slate-600 dark:text-slate-400">
@@ -1222,6 +1251,7 @@
       timeSel: '#time',
       detailsSel: '#details',
       prioritySel: '#priority',
+      categorySel: '#category',
       saveBtnSel: '#saveBtn',
       cancelEditBtnSel: '#cancelEditBtn',
       listSel: '#reminderList',
@@ -1229,6 +1259,8 @@
       syncStatusSel: '#syncStatus',
       filterBtnsSel: '[data-filter]',
       sortSel: '#sort',
+      categoryFilterSel: '#categoryFilter',
+      categoryOptionsSel: '#categorySuggestions',
       countTodaySel: '#inlineTodayCount',
       countOverdueSel: '#inlineOverdueCount',
       countTotalSel: '#inlineTotalCount',
