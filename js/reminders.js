@@ -344,8 +344,9 @@ export async function initReminders(sel = {}) {
   let filter = 'today';
   let categoryFilterValue = categoryFilter?.value || 'all';
   let sortKey = 'smart';
-   let listening = false;
-   let recog = null;
+  let listening = false;
+  let recog = null;
+  let voiceRestartTimer = null;
    let userId = null;
    let unsubscribe = null;
    let editingId = null;
@@ -1173,20 +1174,85 @@ export async function initReminders(sel = {}) {
   saveSettings?.addEventListener('click', () => { if(!syncUrlInput) return; localStorage.setItem('syncUrl', syncUrlInput.value.trim()); toast('Settings saved'); });
   testSync?.addEventListener('click', async () => { if(!syncUrlInput) return; const url = syncUrlInput.value.trim(); if(!url){ toast('Enter URL first'); return; } try{ const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ test:true }) }); toast(res.ok ? 'Test ok' : 'Test failed'); } catch { toast('Test failed'); } });
 
+  function setVoiceButtonActive(isActive) {
+    if (!voiceBtn) return;
+    voiceBtn.textContent = isActive ? '👂' : '🎙️';
+  }
+
+  function startVoiceRecognition(forceRestart = false) {
+    if (!recog) return false;
+    if (listening && !forceRestart) return true;
+    try {
+      recog.start();
+      listening = true;
+      setVoiceButtonActive(true);
+      return true;
+    } catch {
+      listening = false;
+      setVoiceButtonActive(false);
+      return false;
+    }
+  }
+
+  function stopVoiceRecognition() {
+    if (!recog) return;
+    listening = false;
+    clearTimeout(voiceRestartTimer);
+    try {
+      recog.stop();
+    } catch {
+      // ignore stop failures so the UI can recover on the next attempt
+    }
+    setVoiceButtonActive(false);
+  }
+
+  function scheduleVoiceRestart() {
+    clearTimeout(voiceRestartTimer);
+    voiceRestartTimer = setTimeout(() => {
+      voiceRestartTimer = null;
+      if (!listening || !recog) return;
+      if (!startVoiceRecognition(true)) {
+        listening = false;
+        setVoiceButtonActive(false);
+      }
+    }, 400);
+  }
+
   try {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(SR){
+    if (SR) {
       recog = new SR();
       recog.lang = locale;
       recog.interimResults = false;
-      recog.onresult = (e)=>{ const t=e.results[0][0].transcript||''; if(title){ title.value = t; toast('Heard: '+t); } };
-      recog.onend = ()=>{ listening=false; if(voiceBtn) voiceBtn.textContent='🎙️'; };
+      if ('continuous' in recog) {
+        try { recog.continuous = true; } catch { /* some browsers disallow setting this */ }
+      }
+      recog.onresult = (e) => {
+        const t = e.results?.[0]?.[0]?.transcript || '';
+        if (title) {
+          title.value = t;
+          toast('Heard: ' + t);
+        }
+      };
+      recog.onend = () => {
+        if (!listening) {
+          setVoiceButtonActive(false);
+          return;
+        }
+        scheduleVoiceRestart();
+      };
     }
-  } catch {}
+  } catch {
+    // Speech recognition not available; ignore errors so the rest of the app works normally.
+  }
+
   voiceBtn?.addEventListener('click', () => {
-    if(!recog) return;
-    if(!listening){ try{ recog.start(); listening=true; if(voiceBtn) voiceBtn.textContent='👂'; }catch{} }
-    else { try{ recog.stop(); }catch{} listening=false; if(voiceBtn) voiceBtn.textContent='🎙️'; }
+    if (!recog) return;
+    if (listening) {
+      stopVoiceRecognition();
+    } else {
+      startVoiceRecognition();
+    }
   });
   notifBtn?.addEventListener('click', async () => {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
