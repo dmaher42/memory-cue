@@ -752,7 +752,19 @@
         <div class="bg-[var(--card)] rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-sm p-8 mb-8">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Create Reminder</h2>
-            <span id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</span>
+            <div class="flex items-center gap-3">
+              <span id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</span>
+              <button
+                id="voiceBtn"
+                type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-lg shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600 text-white"
+                title="Voice quick add"
+                aria-label="Start voice input"
+              >
+                <span aria-hidden="true">🎙️</span>
+                <span class="sr-only">Start voice input</span>
+              </button>
+            </div>
           </div>
           <div class="space-y-4">
             <div class="space-y-2">
@@ -1260,6 +1272,7 @@
       listSel: '#reminderList',
       statusSel: '#status',
       syncStatusSel: '#syncStatus',
+      voiceBtnSel: '#voiceBtn',
       filterBtnsSel: '[data-filter]',
       sortSel: '#sort',
       categoryFilterSel: '#categoryFilter',
