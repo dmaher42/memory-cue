@@ -10,8 +10,14 @@ const DEFAULT_CATEGORY = 'General';
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
   'General Appointments',
+  'Home & Personal',
   'School – Appointments/Meetings',
+  'School – Communication & Families',
+  'School – Excursions & Events',
+  'School – Grading & Assessment',
+  'School – Prep & Resources',
   'School – To-Do',
+  'Wellbeing & Support',
 ]);
 
 function getGlobalScope() {

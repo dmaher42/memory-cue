@@ -213,8 +213,14 @@ test('category selectors include school and general presets', async () => {
   expect(datalistValues).toEqual([
     'General',
     'General Appointments',
+    'Home & Personal',
     'School – Appointments/Meetings',
+    'School – Communication & Families',
+    'School – Excursions & Events',
+    'School – Grading & Assessment',
+    'School – Prep & Resources',
     'School – To-Do',
+    'Wellbeing & Support',
   ]);
 
   const filterOptions = Array.from(document.querySelectorAll('#categoryFilter option'));
@@ -222,14 +228,26 @@ test('category selectors include school and general presets', async () => {
     'all',
     'General',
     'General Appointments',
+    'Home & Personal',
     'School – Appointments/Meetings',
+    'School – Communication & Families',
+    'School – Excursions & Events',
+    'School – Grading & Assessment',
+    'School – Prep & Resources',
     'School – To-Do',
+    'Wellbeing & Support',
   ]);
   expect(filterOptions.map((opt) => opt.textContent)).toEqual([
     'All categories',
     'General',
     'General Appointments',
+    'Home & Personal',
     'School – Appointments/Meetings',
+    'School – Communication & Families',
+    'School – Excursions & Events',
+    'School – Grading & Assessment',
+    'School – Prep & Resources',
     'School – To-Do',
+    'Wellbeing & Support',
   ]);
 });
