@@ -191,8 +191,12 @@ export async function initReminders(sel = {}) {
   const categoryFilter = $(sel.categoryFilterSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
-  const emptyInitialText = sel.emptyStateInitialText || 'Add your first reminder to see it here.';
-  const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
+  const emptyInitialText = sel.emptyStateInitialText || 'Create your first reminder to keep important tasks in view.';
+  const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match the current filter. Adjust your filters or add a new cue.';
+  const sharedEmptyStateMount = (typeof window !== 'undefined' && typeof window.memoryCueMountEmptyState === 'function') ? window.memoryCueMountEmptyState : null;
+  const sharedEmptyStateCtaClasses = (typeof window !== 'undefined' && typeof window.memoryCueEmptyStateCtaClasses === 'string')
+    ? window.memoryCueEmptyStateCtaClasses
+    : 'inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-400';
   const reminderLandingPath = sel.reminderLandingPath || (variant === 'desktop' ? 'index.html#reminders' : 'mobile.html');
 
   const dispatchCueEvent = (name, detail = {}) => {
@@ -896,18 +900,18 @@ export async function initReminders(sel = {}) {
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
       if (!btn.classList.contains('btn-ghost')) {
-        btn.classList.toggle('bg-slate-900', isActive);
+        btn.classList.toggle('bg-gray-900', isActive);
         btn.classList.toggle('text-white', isActive);
-        btn.classList.toggle('border-slate-900', isActive);
-        btn.classList.toggle('dark:bg-slate-200', isActive);
-        btn.classList.toggle('dark:text-slate-900', isActive);
-        btn.classList.toggle('dark:border-slate-200', isActive);
+        btn.classList.toggle('border-gray-900', isActive);
+        btn.classList.toggle('dark:bg-gray-100', isActive);
+        btn.classList.toggle('dark:text-gray-900', isActive);
+        btn.classList.toggle('dark:border-gray-100', isActive);
         btn.classList.toggle('bg-white', !isActive);
-        btn.classList.toggle('text-slate-700', !isActive);
-        btn.classList.toggle('border-slate-300', !isActive);
-        btn.classList.toggle('dark:bg-slate-800', !isActive);
-        btn.classList.toggle('dark:text-slate-200', !isActive);
-        btn.classList.toggle('dark:border-slate-600', !isActive);
+        btn.classList.toggle('text-gray-600', !isActive);
+        btn.classList.toggle('border-gray-200', !isActive);
+        btn.classList.toggle('dark:bg-gray-800', !isActive);
+        btn.classList.toggle('dark:text-gray-400', !isActive);
+        btn.classList.toggle('dark:border-gray-700', !isActive);
       }
     });
 
@@ -916,10 +920,27 @@ export async function initReminders(sel = {}) {
 
     if(emptyStateEl){
       if(!hasAny){
-        emptyStateEl.textContent = emptyInitialText;
+        if(sharedEmptyStateMount){
+          sharedEmptyStateMount(emptyStateEl, {
+            icon: 'bell',
+            title: 'Create your first cue',
+            description: emptyInitialText,
+            action: `<button type="button" class="${sharedEmptyStateCtaClasses}" data-trigger="open-cue">Create reminder</button>`
+          });
+        } else {
+          emptyStateEl.textContent = emptyInitialText;
+        }
         emptyStateEl.classList.remove('hidden');
       } else if(!hasRows){
-        emptyStateEl.textContent = emptyFilteredText;
+        if(sharedEmptyStateMount){
+          sharedEmptyStateMount(emptyStateEl, {
+            icon: 'sparkles',
+            title: 'No reminders match this view',
+            description: emptyFilteredText
+          });
+        } else {
+          emptyStateEl.textContent = emptyFilteredText;
+        }
         emptyStateEl.classList.remove('hidden');
       } else {
         emptyStateEl.classList.add('hidden');
@@ -967,8 +988,8 @@ export async function initReminders(sel = {}) {
         headingWrapper.style.listStyle = 'none';
       }
       headingWrapper.className = variant === 'desktop'
-        ? 'text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400'
-        : 'text-xs font-semibold uppercase text-slate-400';
+        ? 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500'
+        : 'text-xs font-semibold uppercase text-gray-500 dark:text-gray-500';
       if (!firstGroup) {
         headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
       }
@@ -976,12 +997,12 @@ export async function initReminders(sel = {}) {
       headingInner.setAttribute('role', 'heading');
       headingInner.setAttribute('aria-level', '3');
       headingInner.className = variant === 'desktop'
-        ? 'flex items-center justify-between gap-2 px-1 text-slate-500 dark:text-slate-400'
-        : 'flex items-center justify-between gap-2 text-slate-400';
+        ? 'flex items-center justify-between gap-2 px-1 text-gray-500 dark:text-gray-500'
+        : 'flex items-center justify-between gap-2 text-gray-500 dark:text-gray-500';
       const headingLabel = document.createElement('span');
       headingLabel.textContent = catName;
       const headingCount = document.createElement('span');
-      headingCount.className = 'text-[0.7rem] font-medium text-slate-400 dark:text-slate-500';
+      headingCount.className = 'text-[0.7rem] font-medium text-gray-500 dark:text-gray-500';
       headingCount.textContent = `${catRows.length} ${catRows.length === 1 ? 'item' : 'items'}`;
       headingInner.append(headingLabel, headingCount);
       headingWrapper.appendChild(headingInner);
@@ -1016,7 +1037,7 @@ export async function initReminders(sel = {}) {
           <h3 class="card-title text-base sm:text-lg font-semibold ${titleClasses}">${escapeHtml(r.title)}</h3>
           <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-base-content/70">
             <span class="badge badge-outline gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+              <span class="h-2 w-2 rounded-full bg-gray-400"></span>
               ${escapeHtml(dueLabel)}
             </span>
             <span class="badge badge-outline border-primary text-primary gap-2 text-[0.7rem] sm:text-xs">

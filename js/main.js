@@ -10,6 +10,53 @@ const DEFAULT_VIEW = 'dashboard';
 const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const ACTIVITY_QUEUE_LIMIT = 20;
 
+const lucideIcons = {
+  bell: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>',
+  bookOpen: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M12 7v14" /><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></svg>',
+  layoutDashboard: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>',
+  sparkles: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></svg>'
+};
+
+const EMPTY_STATE_CTA_CLASSES = 'inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-400';
+
+function createEmptyStateMarkup({ icon = 'sparkles', title = '', description = '', action = '' }){
+  const iconMarkup = lucideIcons[icon] || lucideIcons.sparkles;
+  const actionMarkup = action ? `<div class="mt-2">${action}</div>` : '';
+  return `
+    <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 shadow-sm ring-1 ring-inset ring-gray-200 dark:ring-gray-700">
+      ${iconMarkup}
+    </span>
+    <div class="space-y-2">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">${title}</h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400">${description}</p>
+    </div>
+    ${actionMarkup}
+  `;
+}
+
+function mountEmptyState(target, config = {}){
+  if (!target) return;
+  const {
+    hostClasses = 'flex flex-col items-center justify-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-6 text-center text-sm text-gray-600 dark:text-gray-400',
+    icon,
+    title,
+    description,
+    action,
+  } = config;
+  hostClasses
+    .split(' ')
+    .map(cls => cls.trim())
+    .filter(Boolean)
+    .forEach(cls => target.classList.add(cls));
+  target.innerHTML = createEmptyStateMarkup({ icon, title, description, action });
+}
+
+if (typeof window !== 'undefined') {
+  window.memoryCueMountEmptyState = mountEmptyState;
+  window.memoryCueCreateEmptyStateMarkup = createEmptyStateMarkup;
+  window.memoryCueEmptyStateCtaClasses = EMPTY_STATE_CTA_CLASSES;
+}
+
 navButtons.forEach(btn => {
   if (!viewMap.has(btn.dataset.route)) {
     btn.setAttribute('aria-disabled', 'true');
@@ -111,6 +158,19 @@ document.addEventListener('click', (e) => {
     show(route);
   } else {
     location.hash = targetHash;
+  }
+});
+
+document.addEventListener('click', (event) => {
+  const cueTrigger = event.target.closest('[data-trigger="open-cue"]');
+  if (cueTrigger) {
+    event.preventDefault();
+    const openCueButton = document.getElementById('openCueModal');
+    if (openCueButton) {
+      openCueButton.click();
+    } else {
+      document.dispatchEvent(new CustomEvent('cue:open'));
+    }
   }
 });
 
@@ -1371,6 +1431,33 @@ const dashboardController = (() => {
   const weatherFootnoteEl = document.getElementById('weather-footnote');
   const weatherRefreshBtn = document.getElementById('weather-refresh');
 
+  mountEmptyState(lessonsEmptyEl, {
+    icon: 'bookOpen',
+    title: 'Plan your first lesson',
+    description: 'Use the lesson form below to map today’s sessions and keep your timetable on track.',
+    action: `<a href="#lesson-form" class="${EMPTY_STATE_CTA_CLASSES}">Add a lesson</a>`
+  });
+
+  mountEmptyState(deadlinesEmptyEl, {
+    icon: 'bell',
+    title: 'No deadlines scheduled',
+    description: 'Capture upcoming assessments or milestones so countdowns appear here automatically.',
+    action: `<a href="#deadline-form" class="${EMPTY_STATE_CTA_CLASSES}">Add a deadline</a>`
+  });
+
+  mountEmptyState(remindersEmptyEl, {
+    icon: 'bell',
+    title: 'You’re all caught up',
+    description: 'Create your next cue to stay ahead of tasks and see them highlighted here.',
+    action: `<a href="#reminders" class="${EMPTY_STATE_CTA_CLASSES}">Open reminders</a>`
+  });
+
+  mountEmptyState(activityEmptyEl, {
+    icon: 'sparkles',
+    title: 'Your activity will appear here',
+    description: 'As you add lessons, deadlines, and reminders, quick links will populate this feed.'
+  });
+
   const lessonForm = document.getElementById('lesson-form');
   const lessonSubjectInput = document.getElementById('lesson-subject');
   const lessonStartInput = document.getElementById('lesson-start');
@@ -2471,6 +2558,32 @@ if (dashboardController) {
     dashboardController.setReminders(items);
   });
 }
+
+const resourcesEmptyEl = document.getElementById('activity-empty');
+const templatesEmptyEl = document.getElementById('templates-empty');
+const settingsEmptyEl = document.getElementById('settings-empty');
+
+mountEmptyState(resourcesEmptyEl, {
+  icon: 'bookOpen',
+  title: 'Curated resources incoming',
+  description: 'We’re tailoring a fresh batch of teaching activities. In the meantime, pin your own ideas or adjust the filters.',
+  action: `<a href="#activity-ideas" class="${EMPTY_STATE_CTA_CLASSES}">Share an idea</a>`
+});
+
+mountEmptyState(templatesEmptyEl, {
+  icon: 'layoutDashboard',
+  title: 'Template gallery in progress',
+  description: 'Reusable planning templates are on the way. Soon you’ll be able to copy, tweak, and share favourites.',
+  hostClasses: 'flex flex-col items-center justify-center gap-3 text-center text-sm text-gray-600 dark:text-gray-400',
+  action: `<a href="#view-planner" class="${EMPTY_STATE_CTA_CLASSES}">Open planner</a>`
+});
+
+mountEmptyState(settingsEmptyEl, {
+  icon: 'sparkles',
+  title: 'Personalisation coming soon',
+  description: 'Theme, notification, and automation controls will live here shortly. Stay tuned for more ways to customise Memory Cue.',
+  hostClasses: 'flex flex-col items-center justify-center gap-3 text-center text-sm text-gray-600 dark:text-gray-400'
+});
 
 resourcesController = (() => {
   if (resourcesControllerAbort){
