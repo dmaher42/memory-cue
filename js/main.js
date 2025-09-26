@@ -944,7 +944,10 @@ function updateThemeToggleState(isDark){
 }
 
 function setTheme(t){
-  document.documentElement.classList.toggle('dark', t === 'dark');
+  const isDark = t === 'dark';
+  document.documentElement.classList.toggle('dark', isDark);
+  const dataTheme = isDark ? 'dark' : 'caramellatte';
+  document.documentElement.setAttribute('data-theme', dataTheme);
   localStorage.setItem('theme', t);
 }
 

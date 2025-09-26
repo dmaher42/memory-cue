@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="caramellatte">
 <head>
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
 <script>
@@ -333,6 +333,13 @@
 
         <div class="flex flex-col items-end gap-2">
           <div class="flex flex-wrap items-center justify-end gap-3">
+            <button
+              id="theme-toggle"
+              type="button"
+              class="btn btn-sm btn-ghost border border-white/10 text-white/80 hover:border-white/30 hover:bg-white/15 hover:text-white transition-all duration-200"
+              data-icon-dark="🌙"
+              data-icon-light="☀️"
+            ></button>
             <div class="dropdown dropdown-end">
               <button
                 type="button"
