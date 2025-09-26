@@ -536,15 +536,15 @@ function renderDailyTasks(tasks) {
     .map((task, index) => {
       const safeText = escapeCueText(task?.text || '');
       const completed = Boolean(task?.completed);
-      const textClasses = ['flex-1', 'text-sm', 'sm:text-base', 'text-base-content'];
+      const textClasses = ['ml-3', 'flex-1', 'text-sm', 'sm:text-base', 'text-base-content'];
       if (completed) {
-        textClasses.push('line-through', 'opacity-60');
+        textClasses.push('line-through', 'text-opacity-50');
       }
       return `
-        <label class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100/70 p-3 shadow-sm" data-task-index="${index}">
-          <input type="checkbox" class="checkbox checkbox-sm" data-task-index="${index}" ${completed ? 'checked' : ''} />
+        <div class="flex items-center p-3 border-b border-base-200" data-task-index="${index}">
+          <input type="checkbox" class="checkbox checkbox-sm" data-task-index="${index}" data-task-text="${safeText}" ${completed ? 'checked' : ''} />
           <span class="${textClasses.join(' ')}">${safeText}</span>
-        </label>
+        </div>
       `;
     })
     .join('');
