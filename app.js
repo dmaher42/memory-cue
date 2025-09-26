@@ -1048,7 +1048,8 @@ function applyTheme(themeName) {
   }
   const normalisedTheme = themeName.trim();
   document.documentElement.setAttribute('data-theme', normalisedTheme);
-  document.documentElement.classList.toggle('dark', normalisedTheme === 'dark');
+  const darkThemes = new Set(['dark', 'dracula', 'synthwave']);
+  document.documentElement.classList.toggle('dark', darkThemes.has(normalisedTheme));
 }
 
 function saveTheme(themeName) {
