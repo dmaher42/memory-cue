@@ -450,3 +450,58 @@ if (cueForm && cueIdInput && cuesList) {
     console.error('Failed to initialise cue editing', error);
   });
 }
+
+const THEME_STORAGE_KEY = 'theme';
+const themeMenu = document.getElementById('theme-menu');
+
+function applyTheme(themeName) {
+  if (typeof themeName !== 'string' || !themeName.trim()) {
+    return;
+  }
+  const normalisedTheme = themeName.trim();
+  document.documentElement.setAttribute('data-theme', normalisedTheme);
+  document.documentElement.classList.toggle('dark', normalisedTheme === 'dark');
+}
+
+function saveTheme(themeName) {
+  if (typeof themeName !== 'string' || !themeName.trim()) {
+    return;
+  }
+  const normalisedTheme = themeName.trim();
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, normalisedTheme);
+  } catch (error) {
+    console.warn('Unable to save theme preference', error);
+  }
+}
+
+function loadSavedTheme() {
+  let storedTheme = '';
+  try {
+    storedTheme = localStorage.getItem(THEME_STORAGE_KEY) || '';
+  } catch (error) {
+    console.warn('Unable to load theme preference', error);
+  }
+
+  if (storedTheme) {
+    applyTheme(storedTheme);
+  }
+}
+
+themeMenu?.addEventListener('click', (event) => {
+  const target = event.target instanceof HTMLElement ? event.target.closest('[data-theme-name]') : null;
+  if (!target) {
+    return;
+  }
+
+  event.preventDefault();
+  const themeName = target.getAttribute('data-theme-name');
+  if (!themeName) {
+    return;
+  }
+
+  applyTheme(themeName);
+  saveTheme(themeName);
+});
+
+loadSavedTheme();
