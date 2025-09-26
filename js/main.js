@@ -36,12 +36,35 @@ function show(view){
   function updateNavButtons(buttons, activeView){
     buttons.forEach(btn => {
       const isActive = btn.dataset.route === activeView;
-      btn.classList.remove('bg-white/20', 'text-white');
-      btn.classList.add('hover:bg-white/20', 'text-white/80', 'hover:text-white');
+      const inactiveClasses = [
+        'btn-ghost',
+        'border-white/10',
+        'text-white/80',
+        'hover:border-white/30',
+        'hover:bg-white/15',
+        'hover:text-white'
+      ];
+      const activeClasses = [
+        'btn-active',
+        'btn-primary',
+        'text-white',
+        'border-transparent',
+        'shadow-lg',
+        'shadow-emerald-500/30',
+        'hover:text-white'
+      ];
+
+      btn.classList.remove(...activeClasses);
+      inactiveClasses.forEach(cls => {
+        if (!btn.classList.contains(cls)) {
+          btn.classList.add(cls);
+        }
+      });
+
       if (isActive) {
         btn.setAttribute('aria-current', 'page');
-        btn.classList.add('bg-white/20', 'text-white');
-        btn.classList.remove('hover:bg-white/20', 'text-white/80', 'hover:text-white');
+        btn.classList.remove(...inactiveClasses);
+        activeClasses.forEach(cls => btn.classList.add(cls));
       } else {
         btn.removeAttribute('aria-current');
       }
