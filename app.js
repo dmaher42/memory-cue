@@ -108,6 +108,7 @@ const quickAddForm = document.getElementById('quick-add-form');
 const quickAddInput = document.getElementById('quick-add-input');
 const dailyTasksContainer = document.getElementById('daily-tasks-container');
 const clearCompletedButton = document.getElementById('clear-completed-btn');
+const dailyListPermissionNotice = document.getElementById('daily-list-permission-notice');
 
 const cueFieldDefinitions = [
   { key: 'title', ids: ['cue-title', 'title'] },
@@ -482,6 +483,9 @@ if (cueForm && cueIdInput && cuesList) {
 
 let currentDailyTasks = [];
 let dailyListLoadPromise = null;
+let shouldUseLocalDailyList = false;
+
+const DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
 let firestoreDailyListContextPromise = null;
 
 function getTodayDateId() {
@@ -548,6 +552,90 @@ function renderDailyTasks(tasks) {
   updateClearCompletedButtonState(tasks);
 }
 
+function showDailyListPermissionNotice() {
+  if (dailyListPermissionNotice) {
+    dailyListPermissionNotice.classList.remove('hidden');
+  }
+}
+
+function hideDailyListPermissionNotice() {
+  if (dailyListPermissionNotice) {
+    dailyListPermissionNotice.classList.add('hidden');
+  }
+}
+
+function normaliseDailyTask(task) {
+  return {
+    text: typeof task?.text === 'string' ? task.text : '',
+    completed: Boolean(task?.completed)
+  };
+}
+
+function normaliseDailyTaskArray(tasks) {
+  return Array.isArray(tasks) ? tasks.map((task) => normaliseDailyTask(task)) : [];
+}
+
+function readDailyTaskStorage() {
+  if (typeof localStorage === 'undefined') {
+    return {};
+  }
+  try {
+    const raw = localStorage.getItem(DAILY_TASKS_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    console.warn('Unable to read daily tasks from storage', error);
+    return {};
+  }
+}
+
+function writeDailyTaskStorage(map) {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    const payload = map && typeof map === 'object' ? map : {};
+    localStorage.setItem(DAILY_TASKS_STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.warn('Unable to persist daily tasks locally', error);
+  }
+}
+
+function getLocalDailyTasks(dateId) {
+  const map = readDailyTaskStorage();
+  const tasks = map && typeof map === 'object' ? map[dateId] : [];
+  return normaliseDailyTaskArray(tasks);
+}
+
+function setLocalDailyTasks(dateId, tasks) {
+  const map = readDailyTaskStorage();
+  const payload = normaliseDailyTaskArray(tasks);
+  map[dateId] = payload;
+  writeDailyTaskStorage(map);
+  return payload;
+}
+
+function appendLocalDailyTask(dateId, task) {
+  const map = readDailyTaskStorage();
+  const existing = normaliseDailyTaskArray(map[dateId]);
+  existing.push(normaliseDailyTask(task));
+  map[dateId] = existing;
+  writeDailyTaskStorage(map);
+  return existing;
+}
+
+function isPermissionDeniedError(error) {
+  const code = typeof error?.code === 'string' ? error.code.toLowerCase() : '';
+  if (code) {
+    return code.includes('permission-denied') || code.includes('insufficient-permission');
+  }
+  const message = typeof error?.message === 'string' ? error.message.toLowerCase() : '';
+  return Boolean(message && message.includes('permission'));
+}
+
 async function ensureDailyListFirestore() {
   if (firestoreDailyListContextPromise) {
     return firestoreDailyListContextPromise;
@@ -583,6 +671,13 @@ async function loadDailyList() {
   const todayId = getTodayDateId();
   const formatted = formatDateForHeader(todayId);
   dailyListHeader.textContent = formatted ? `Today's List - ${formatted}` : "Today's List";
+  if (shouldUseLocalDailyList) {
+    showDailyListPermissionNotice();
+    const localTasks = getLocalDailyTasks(todayId);
+    currentDailyTasks = localTasks;
+    renderDailyTasks(localTasks);
+    return Promise.resolve(localTasks);
+  }
   if (!dailyListLoadPromise) {
     dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60">Loading tasks…</p>';
     updateClearCompletedButtonState([]);
@@ -592,14 +687,21 @@ async function loadDailyList() {
         const ref = getDailyListDocRef(firestore, todayId);
         const snapshot = await firestore.getDoc(ref);
         const rawTasks = snapshot.exists() ? snapshot.data()?.tasks : [];
-        currentDailyTasks = Array.isArray(rawTasks)
-          ? rawTasks.map((task) => ({
-              text: typeof task?.text === 'string' ? task.text : '',
-              completed: Boolean(task?.completed)
-            }))
-          : [];
+        currentDailyTasks = normaliseDailyTaskArray(rawTasks);
         renderDailyTasks(currentDailyTasks);
+        setLocalDailyTasks(todayId, currentDailyTasks);
+        shouldUseLocalDailyList = false;
+        hideDailyListPermissionNotice();
       } catch (error) {
+        if (isPermissionDeniedError(error)) {
+          console.warn('Falling back to local daily tasks due to permission issue', error);
+          shouldUseLocalDailyList = true;
+          showDailyListPermissionNotice();
+          const localTasks = getLocalDailyTasks(todayId);
+          currentDailyTasks = localTasks;
+          renderDailyTasks(localTasks);
+          return;
+        }
         console.error('Failed to load daily list', error);
         dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
         currentDailyTasks = [];
@@ -613,35 +715,66 @@ async function loadDailyList() {
 }
 
 async function addTaskToDailyList(task) {
-  const firestore = await ensureDailyListFirestore();
   const todayId = getTodayDateId();
-  const ref = getDailyListDocRef(firestore, todayId);
-  const snapshot = await firestore.getDoc(ref);
-  if (snapshot.exists() && typeof firestore.arrayUnion === 'function') {
-    await firestore.updateDoc(ref, { tasks: firestore.arrayUnion(task) });
+  const normalisedTask = normaliseDailyTask(task);
+  if (shouldUseLocalDailyList) {
+    appendLocalDailyTask(todayId, normalisedTask);
     return;
   }
-  const existing = snapshot.exists() ? snapshot.data()?.tasks : [];
-  const nextTasks = Array.isArray(existing) ? existing.slice() : [];
-  nextTasks.push(task);
-  if (typeof firestore.setDoc === 'function') {
-    await firestore.setDoc(ref, { tasks: nextTasks }, { merge: true });
-  } else {
-    await firestore.updateDoc(ref, { tasks: nextTasks });
+  try {
+    const firestore = await ensureDailyListFirestore();
+    const ref = getDailyListDocRef(firestore, todayId);
+    const snapshot = await firestore.getDoc(ref);
+    if (snapshot.exists() && typeof firestore.arrayUnion === 'function') {
+      await firestore.updateDoc(ref, { tasks: firestore.arrayUnion(normalisedTask) });
+    } else {
+      const existing = snapshot.exists() ? snapshot.data()?.tasks : [];
+      const nextTasks = Array.isArray(existing) ? normaliseDailyTaskArray(existing) : [];
+      nextTasks.push(normalisedTask);
+      if (typeof firestore.setDoc === 'function') {
+        await firestore.setDoc(ref, { tasks: nextTasks }, { merge: true });
+      } else {
+        await firestore.updateDoc(ref, { tasks: nextTasks });
+      }
+    }
+    appendLocalDailyTask(todayId, normalisedTask);
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      console.warn('Saving task locally because cloud sync is unavailable', error);
+      shouldUseLocalDailyList = true;
+      showDailyListPermissionNotice();
+      appendLocalDailyTask(todayId, normalisedTask);
+      return;
+    }
+    throw error;
   }
 }
 
 async function saveDailyTasks(tasks) {
-  const firestore = await ensureDailyListFirestore();
   const todayId = getTodayDateId();
-  const ref = getDailyListDocRef(firestore, todayId);
-  const payload = Array.isArray(tasks)
-    ? tasks.map((task) => ({ text: task?.text || '', completed: Boolean(task?.completed) }))
-    : [];
-  if (typeof firestore.setDoc === 'function') {
-    await firestore.setDoc(ref, { tasks: payload }, { merge: true });
-  } else {
-    await firestore.updateDoc(ref, { tasks: payload });
+  const payload = normaliseDailyTaskArray(tasks);
+  if (shouldUseLocalDailyList) {
+    setLocalDailyTasks(todayId, payload);
+    return;
+  }
+  try {
+    const firestore = await ensureDailyListFirestore();
+    const ref = getDailyListDocRef(firestore, todayId);
+    if (typeof firestore.setDoc === 'function') {
+      await firestore.setDoc(ref, { tasks: payload }, { merge: true });
+    } else {
+      await firestore.updateDoc(ref, { tasks: payload });
+    }
+    setLocalDailyTasks(todayId, payload);
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      console.warn('Persisting daily tasks locally because cloud sync is unavailable', error);
+      shouldUseLocalDailyList = true;
+      showDailyListPermissionNotice();
+      setLocalDailyTasks(todayId, payload);
+      return;
+    }
+    throw error;
   }
 }
 

@@ -972,6 +972,13 @@
         <div id="daily-list-view" class="hidden">
           <div class="bg-[var(--card)] rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-sm p-8 space-y-4">
             <h2 id="daily-list-header" class="text-2xl font-bold text-slate-900 dark:text-slate-100"></h2>
+            <p
+              id="daily-list-permission-notice"
+              class="hidden rounded-lg border border-amber-300/70 bg-amber-100/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-400/50 dark:bg-amber-500/10 dark:text-amber-100"
+              role="status"
+            >
+              Daily tasks are stored locally on this device because cloud sync isn't available right now.
+            </p>
             <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row" novalidate>
               <label for="quick-add-input" class="sr-only">Add a task</label>
               <input
