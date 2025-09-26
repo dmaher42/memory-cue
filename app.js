@@ -106,6 +106,7 @@ const dailyListView = document.getElementById('daily-list-view');
 const dailyListHeader = document.getElementById('daily-list-header');
 const quickAddForm = document.getElementById('quick-add-form');
 const quickAddInput = document.getElementById('quick-add-input');
+const quickAddVoiceButton = document.getElementById('daily-voice-btn');
 const dailyTasksContainer = document.getElementById('daily-tasks-container');
 const clearCompletedButton = document.getElementById('clear-completed-btn');
 const dailyListPermissionNotice = document.getElementById('daily-list-permission-notice');
@@ -818,6 +819,156 @@ if (cuesTab && dailyTab && cuesView && dailyListView) {
     showDailyTab();
   });
 }
+
+let quickAddVoiceRecognition = null;
+let quickAddVoiceListening = false;
+let quickAddVoiceRestartTimer = null;
+
+function setQuickAddVoiceButtonActive(isActive) {
+  if (!quickAddVoiceButton) {
+    return;
+  }
+  quickAddVoiceButton.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  const iconSpan = quickAddVoiceButton.querySelector('[aria-hidden="true"]');
+  if (iconSpan) {
+    iconSpan.textContent = isActive ? '👂' : '🎙️';
+  } else {
+    quickAddVoiceButton.textContent = isActive ? '👂' : '🎙️';
+  }
+}
+
+function scheduleQuickAddVoiceRestart() {
+  if (!quickAddVoiceListening) {
+    return;
+  }
+  window.clearTimeout(quickAddVoiceRestartTimer);
+  quickAddVoiceRestartTimer = window.setTimeout(() => {
+    quickAddVoiceRestartTimer = null;
+    if (quickAddVoiceListening) {
+      startQuickAddVoiceRecognition(true);
+    }
+  }, 400);
+}
+
+function startQuickAddVoiceRecognition(forceRestart = false) {
+  if (!quickAddVoiceRecognition) {
+    return false;
+  }
+  if (quickAddVoiceListening && !forceRestart) {
+    return true;
+  }
+  try {
+    quickAddVoiceRecognition.start();
+    quickAddVoiceListening = true;
+    setQuickAddVoiceButtonActive(true);
+    return true;
+  } catch {
+    quickAddVoiceListening = false;
+    setQuickAddVoiceButtonActive(false);
+    return false;
+  }
+}
+
+function stopQuickAddVoiceRecognition() {
+  if (!quickAddVoiceRecognition) {
+    return;
+  }
+  quickAddVoiceListening = false;
+  window.clearTimeout(quickAddVoiceRestartTimer);
+  try {
+    quickAddVoiceRecognition.stop();
+  } catch {
+    // ignore stop errors so the UI can recover
+  }
+  setQuickAddVoiceButtonActive(false);
+}
+
+function initialiseQuickAddVoiceRecognition() {
+  if (!quickAddVoiceButton) {
+    return;
+  }
+  try {
+    const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      quickAddVoiceButton.setAttribute('disabled', 'true');
+      quickAddVoiceButton.setAttribute('aria-disabled', 'true');
+      quickAddVoiceButton.title = 'Voice input is not supported in this browser.';
+      return;
+    }
+    quickAddVoiceRecognition = new SpeechRecognitionCtor();
+    const lang = document.documentElement?.lang || navigator?.language || 'en-AU';
+    quickAddVoiceRecognition.lang = lang;
+    quickAddVoiceRecognition.interimResults = false;
+    if ('continuous' in quickAddVoiceRecognition) {
+      try {
+        quickAddVoiceRecognition.continuous = true;
+      } catch {
+        // ignore unsupported assignments
+      }
+    }
+    quickAddVoiceRecognition.onresult = (event) => {
+      const transcript = event?.results?.[0]?.[0]?.transcript || '';
+      if (!transcript) {
+        return;
+      }
+      if (quickAddInput) {
+        quickAddInput.value = transcript.trim();
+        try {
+          quickAddInput.focus({ preventScroll: true });
+        } catch {
+          quickAddInput.focus();
+        }
+        try {
+          const length = quickAddInput.value.length;
+          quickAddInput.setSelectionRange(length, length);
+        } catch {
+          // ignore selection errors in unsupported browsers
+        }
+      }
+    };
+    quickAddVoiceRecognition.onend = () => {
+      if (!quickAddVoiceListening) {
+        setQuickAddVoiceButtonActive(false);
+        return;
+      }
+      scheduleQuickAddVoiceRestart();
+    };
+    quickAddVoiceRecognition.onerror = () => {
+      quickAddVoiceListening = false;
+      setQuickAddVoiceButtonActive(false);
+    };
+  } catch {
+    quickAddVoiceRecognition = null;
+    setQuickAddVoiceButtonActive(false);
+    quickAddVoiceButton.setAttribute('disabled', 'true');
+    quickAddVoiceButton.setAttribute('aria-disabled', 'true');
+  }
+}
+
+initialiseQuickAddVoiceRecognition();
+
+quickAddVoiceButton?.addEventListener('click', () => {
+  if (!quickAddVoiceRecognition) {
+    return;
+  }
+  if (quickAddVoiceListening) {
+    stopQuickAddVoiceRecognition();
+  } else {
+    startQuickAddVoiceRecognition();
+  }
+});
+
+quickAddForm?.addEventListener('submit', () => {
+  if (quickAddVoiceListening) {
+    stopQuickAddVoiceRecognition();
+  }
+});
+
+window.addEventListener('pagehide', () => {
+  if (quickAddVoiceListening) {
+    stopQuickAddVoiceRecognition();
+  }
+});
 
 quickAddForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
