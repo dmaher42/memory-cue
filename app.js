@@ -99,6 +99,16 @@ const cueModalTitle = document.getElementById('modal-title');
 const defaultCueModalTitle = cueModalTitle?.textContent?.trim() || '';
 const editCueModalTitle = 'Edit Cue';
 
+const cuesTab = document.getElementById('tab-cues');
+const dailyTab = document.getElementById('tab-daily');
+const cuesView = document.getElementById('cues-view');
+const dailyListView = document.getElementById('daily-list-view');
+const dailyListHeader = document.getElementById('daily-list-header');
+const quickAddForm = document.getElementById('quick-add-form');
+const quickAddInput = document.getElementById('quick-add-input');
+const dailyTasksContainer = document.getElementById('daily-tasks-container');
+const clearCompletedButton = document.getElementById('clear-completed-btn');
+
 const cueFieldDefinitions = [
   { key: 'title', ids: ['cue-title', 'title'] },
   { key: 'details', ids: ['cue-details', 'details', 'cue-description'] },
@@ -288,7 +298,23 @@ async function ensureCueFirestore() {
     return firestoreCueContextPromise;
   }
   firestoreCueContextPromise = (async () => {
-    const [{ initializeApp, getApps }, { getFirestore, collection, doc, getDoc, addDoc, updateDoc, getDocs, query, orderBy, serverTimestamp }]
+    const [
+      { initializeApp, getApps },
+      {
+        getFirestore,
+        collection: getCollection,
+        doc,
+        getDoc,
+        addDoc,
+        updateDoc,
+        getDocs,
+        query,
+        orderBy,
+        serverTimestamp,
+        setDoc,
+        arrayUnion
+      }
+    ]
       = await Promise.all([
         import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
         import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js')
@@ -296,10 +322,11 @@ async function ensureCueFirestore() {
     const apps = getApps();
     const app = apps && apps.length ? apps[0] : initializeApp(firebaseCueConfig);
     const db = getFirestore(app);
-    const cuesCollection = collection(db, 'cues');
+    const cuesCollection = getCollection(db, 'cues');
     return {
       db,
       cuesCollection,
+      getCollection,
       doc,
       getDoc,
       addDoc,
@@ -307,7 +334,9 @@ async function ensureCueFirestore() {
       getDocs,
       query,
       orderBy,
-      serverTimestamp
+      serverTimestamp,
+      setDoc,
+      arrayUnion
     };
   })().catch((error) => {
     console.error('Failed to initialise Firestore for cues', error);
@@ -450,6 +479,281 @@ if (cueForm && cueIdInput && cuesList) {
     console.error('Failed to initialise cue editing', error);
   });
 }
+
+let currentDailyTasks = [];
+let dailyListLoadPromise = null;
+let firestoreDailyListContextPromise = null;
+
+function getTodayDateId() {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateForHeader(dateId) {
+  if (typeof dateId !== 'string') {
+    return '';
+  }
+  const [yearRaw, monthRaw, dayRaw] = dateId.split('-');
+  const year = Number.parseInt(yearRaw, 10);
+  const month = Number.parseInt(monthRaw, 10);
+  const day = Number.parseInt(dayRaw, 10);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return dateId;
+  }
+  const displayDate = new Date(year, month - 1, day);
+  if (Number.isNaN(displayDate.getTime())) {
+    return dateId;
+  }
+  const formatter = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  return formatter.format(displayDate);
+}
+
+function updateClearCompletedButtonState(tasks) {
+  if (!clearCompletedButton) {
+    return;
+  }
+  const hasCompletedTasks = Array.isArray(tasks) && tasks.some((task) => Boolean(task?.completed));
+  clearCompletedButton.disabled = !hasCompletedTasks;
+}
+
+function renderDailyTasks(tasks) {
+  if (!dailyTasksContainer) {
+    return;
+  }
+  if (!Array.isArray(tasks) || tasks.length === 0) {
+    dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60">No tasks for today yet.</p>';
+    updateClearCompletedButtonState([]);
+    return;
+  }
+  const markup = tasks
+    .map((task, index) => {
+      const safeText = escapeCueText(task?.text || '');
+      const completed = Boolean(task?.completed);
+      const textClasses = ['flex-1', 'text-sm', 'sm:text-base', 'text-base-content'];
+      if (completed) {
+        textClasses.push('line-through', 'opacity-60');
+      }
+      return `
+        <label class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100/70 p-3 shadow-sm" data-task-index="${index}">
+          <input type="checkbox" class="checkbox checkbox-sm" data-task-index="${index}" ${completed ? 'checked' : ''} />
+          <span class="${textClasses.join(' ')}">${safeText}</span>
+        </label>
+      `;
+    })
+    .join('');
+  dailyTasksContainer.innerHTML = markup;
+  updateClearCompletedButtonState(tasks);
+}
+
+async function ensureDailyListFirestore() {
+  if (firestoreDailyListContextPromise) {
+    return firestoreDailyListContextPromise;
+  }
+  firestoreDailyListContextPromise = ensureCueFirestore()
+    .then((base) => {
+      const { db, getCollection } = base;
+      const dailyListsCollection = typeof getCollection === 'function' && db ? getCollection(db, 'dailyLists') : null;
+      return { ...base, dailyListsCollection };
+    })
+    .catch((error) => {
+      console.error('Failed to initialise Firestore for daily lists', error);
+      throw error;
+    });
+  return firestoreDailyListContextPromise;
+}
+
+function getDailyListDocRef(firestore, dateId) {
+  const { doc, dailyListsCollection, db } = firestore || {};
+  if (typeof doc !== 'function') {
+    throw new Error('Firestore document helper is unavailable');
+  }
+  if (dailyListsCollection) {
+    return doc(dailyListsCollection, dateId);
+  }
+  return doc(db, 'dailyLists', dateId);
+}
+
+async function loadDailyList() {
+  if (!dailyListHeader || !dailyTasksContainer) {
+    return;
+  }
+  const todayId = getTodayDateId();
+  const formatted = formatDateForHeader(todayId);
+  dailyListHeader.textContent = formatted ? `Today's List - ${formatted}` : "Today's List";
+  if (!dailyListLoadPromise) {
+    dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60">Loading tasks…</p>';
+    updateClearCompletedButtonState([]);
+    dailyListLoadPromise = (async () => {
+      try {
+        const firestore = await ensureDailyListFirestore();
+        const ref = getDailyListDocRef(firestore, todayId);
+        const snapshot = await firestore.getDoc(ref);
+        const rawTasks = snapshot.exists() ? snapshot.data()?.tasks : [];
+        currentDailyTasks = Array.isArray(rawTasks)
+          ? rawTasks.map((task) => ({
+              text: typeof task?.text === 'string' ? task.text : '',
+              completed: Boolean(task?.completed)
+            }))
+          : [];
+        renderDailyTasks(currentDailyTasks);
+      } catch (error) {
+        console.error('Failed to load daily list', error);
+        dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
+        currentDailyTasks = [];
+        updateClearCompletedButtonState(currentDailyTasks);
+      }
+    })().finally(() => {
+      dailyListLoadPromise = null;
+    });
+  }
+  return dailyListLoadPromise;
+}
+
+async function addTaskToDailyList(task) {
+  const firestore = await ensureDailyListFirestore();
+  const todayId = getTodayDateId();
+  const ref = getDailyListDocRef(firestore, todayId);
+  const snapshot = await firestore.getDoc(ref);
+  if (snapshot.exists() && typeof firestore.arrayUnion === 'function') {
+    await firestore.updateDoc(ref, { tasks: firestore.arrayUnion(task) });
+    return;
+  }
+  const existing = snapshot.exists() ? snapshot.data()?.tasks : [];
+  const nextTasks = Array.isArray(existing) ? existing.slice() : [];
+  nextTasks.push(task);
+  if (typeof firestore.setDoc === 'function') {
+    await firestore.setDoc(ref, { tasks: nextTasks }, { merge: true });
+  } else {
+    await firestore.updateDoc(ref, { tasks: nextTasks });
+  }
+}
+
+async function saveDailyTasks(tasks) {
+  const firestore = await ensureDailyListFirestore();
+  const todayId = getTodayDateId();
+  const ref = getDailyListDocRef(firestore, todayId);
+  const payload = Array.isArray(tasks)
+    ? tasks.map((task) => ({ text: task?.text || '', completed: Boolean(task?.completed) }))
+    : [];
+  if (typeof firestore.setDoc === 'function') {
+    await firestore.setDoc(ref, { tasks: payload }, { merge: true });
+  } else {
+    await firestore.updateDoc(ref, { tasks: payload });
+  }
+}
+
+function activateTab(tabToActivate) {
+  [cuesTab, dailyTab].forEach((tab) => {
+    if (!tab) {
+      return;
+    }
+    const isActive = tab === tabToActivate;
+    tab.classList.toggle('tab-active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+}
+
+function showCuesTab() {
+  if (!cuesView || !dailyListView) {
+    return;
+  }
+  cuesView.classList.remove('hidden');
+  dailyListView.classList.add('hidden');
+  activateTab(cuesTab);
+}
+
+function showDailyTab() {
+  if (!cuesView || !dailyListView) {
+    return;
+  }
+  cuesView.classList.add('hidden');
+  dailyListView.classList.remove('hidden');
+  activateTab(dailyTab);
+  loadDailyList();
+}
+
+if (cuesTab && dailyTab && cuesView && dailyListView) {
+  cuesTab.addEventListener('click', (event) => {
+    event.preventDefault();
+    showCuesTab();
+  });
+  dailyTab.addEventListener('click', (event) => {
+    event.preventDefault();
+    showDailyTab();
+  });
+}
+
+quickAddForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!quickAddInput) {
+    return;
+  }
+  const value = quickAddInput.value.trim();
+  if (!value) {
+    quickAddInput.focus();
+    return;
+  }
+  const task = { text: value, completed: false };
+  quickAddInput.value = '';
+  quickAddInput.focus();
+  try {
+    await addTaskToDailyList(task);
+    await loadDailyList();
+  } catch (error) {
+    console.error('Failed to add task to the daily list', error);
+    quickAddInput.value = value;
+    quickAddInput.focus();
+  }
+});
+
+dailyTasksContainer?.addEventListener('change', async (event) => {
+  const target = event.target instanceof HTMLInputElement ? event.target : null;
+  if (!target || target.type !== 'checkbox') {
+    return;
+  }
+  const index = Number.parseInt(target.getAttribute('data-task-index') || '', 10);
+  if (!Array.isArray(currentDailyTasks) || Number.isNaN(index) || !currentDailyTasks[index]) {
+    return;
+  }
+  const previousState = currentDailyTasks.map((task) => ({ ...task }));
+  const updatedTasks = previousState.map((task, taskIndex) =>
+    taskIndex === index ? { ...task, completed: target.checked } : task
+  );
+  currentDailyTasks = updatedTasks;
+  renderDailyTasks(updatedTasks);
+  try {
+    await saveDailyTasks(updatedTasks);
+  } catch (error) {
+    console.error('Failed to update task completion state', error);
+    currentDailyTasks = previousState;
+    renderDailyTasks(previousState);
+  }
+});
+
+clearCompletedButton?.addEventListener('click', async () => {
+  if (!Array.isArray(currentDailyTasks) || currentDailyTasks.length === 0) {
+    return;
+  }
+  const remainingTasks = currentDailyTasks.filter((task) => !task.completed);
+  if (remainingTasks.length === currentDailyTasks.length) {
+    return;
+  }
+  const previousState = currentDailyTasks.map((task) => ({ ...task }));
+  currentDailyTasks = remainingTasks;
+  renderDailyTasks(remainingTasks);
+  try {
+    await saveDailyTasks(remainingTasks);
+  } catch (error) {
+    console.error('Failed to clear completed tasks', error);
+    currentDailyTasks = previousState;
+    renderDailyTasks(previousState);
+  }
+});
+
+updateClearCompletedButtonState(currentDailyTasks);
 
 const THEME_STORAGE_KEY = 'theme';
 const themeMenu = document.getElementById('theme-menu');

@@ -780,12 +780,35 @@
     </section>
     <section data-view="reminders" id="view-reminders" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-[var(--card)] rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-sm p-8 mb-8">
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Create Reminder</h2>
-            <div class="flex items-center gap-3">
-              <span id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</span>
-              <button
+        <div class="mb-6">
+          <div role="tablist" aria-label="Cues and daily tasks" class="tabs tabs-boxed">
+            <button
+              id="tab-cues"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              class="tab tab-active"
+            >
+              Cues
+            </button>
+            <button
+              id="tab-daily"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              class="tab"
+            >
+              Today's List
+            </button>
+          </div>
+        </div>
+        <div id="cues-view" class="space-y-8">
+          <div class="bg-[var(--card)] rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-sm p-8">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Create Reminder</h2>
+              <div class="flex items-center gap-3">
+                <span id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</span>
+                <button
                 id="voiceBtn"
                 type="button"
                 class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-lg shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600 text-white"
@@ -943,6 +966,27 @@
           <div id="remindersWrapper" class="space-y-4">
             <p id="emptyState" class="text-slate-500 dark:text-slate-400 text-sm">Add your first reminder to see it here.</p>
             <ul id="reminderList" class="space-y-4"></ul>
+          </div>
+        </div>
+        </div>
+        <div id="daily-list-view" class="hidden">
+          <div class="bg-[var(--card)] rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-sm p-8 space-y-4">
+            <h2 id="daily-list-header" class="text-2xl font-bold text-slate-900 dark:text-slate-100"></h2>
+            <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row" novalidate>
+              <label for="quick-add-input" class="sr-only">Add a task</label>
+              <input
+                id="quick-add-input"
+                type="text"
+                class="input input-bordered flex-1"
+                placeholder="Quick add a task for today"
+                autocomplete="off"
+              />
+              <button type="submit" class="btn btn-primary sm:w-auto">Add</button>
+            </form>
+            <div id="daily-tasks-container" class="mt-4 space-y-3"></div>
+            <button id="clear-completed-btn" type="button" class="btn btn-sm btn-outline mt-4" disabled>
+              Clear Completed Tasks
+            </button>
           </div>
         </div>
       </div>
