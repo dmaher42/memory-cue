@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,878 +8,91 @@
   <link rel="manifest" href="/manifest.webmanifest" id="manifestLink" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
-    integrity="sha384-aBFqgs/2/LnJgaMMgSS2crfvhDZ0Pwt+8G8G8yD1l9jvVkhiswvBgKnL0IUaxh9U"
-    crossorigin="anonymous"
-  />
-  <!-- Tailwind v4 (Play CDN) -->
-  <script
-    defer
-    src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"
-    integrity="sha384-YJvHoUr6w1FlD9gzD41c9ztiiG5wIJ9fhnawEIqr4iNzJgEpeI++XwO6yjHdcDte"
-    crossorigin="anonymous"
-  ></script>
-  <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    body {
-      min-height: 100vh;
-    }
-
-    .skip-link {
-      position: absolute;
-      top: -40px;
-      left: 0;
-      padding: 0.75rem 1.5rem;
-      border-radius: 9999px;
-      background: var(--fallback-p, #2563eb);
-      color: #fff;
-      font-weight: 600;
-      transition: top 0.2s ease;
-      z-index: 1000;
-    }
-
-    .skip-link:focus {
-      top: 1rem;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .sync-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.35rem 0.75rem;
-      border: 1px solid transparent;
-      background: rgba(234, 179, 8, 0.12);
-      color: #b45309;
-    }
-
-    .sync-status.online {
-      background: rgba(34, 197, 94, 0.12);
-      color: #15803d;
-      border-color: rgba(34, 197, 94, 0.2);
-    }
-
-    .sync-status.offline {
-      background: rgba(234, 179, 8, 0.12);
-      color: #b45309;
-      border-color: rgba(234, 179, 8, 0.2);
-    }
-
-    .sync-status.error {
-      background: rgba(239, 68, 68, 0.12);
-      color: #b91c1c;
-      border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .panel-header {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    @media (min-width: 640px) {
-      .panel-header {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-      }
-    }
-
-    .summary-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .summary-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.65rem 1rem;
-      border-radius: 9999px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      background: rgba(56, 189, 248, 0.12);
-      color: #0284c7;
-      font-weight: 600;
-    }
-
-    .summary-pill .count {
-      font-size: 1.35rem;
-      font-weight: 700;
-      line-height: 1;
-    }
-
-    .filters {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      align-items: flex-start;
-    }
-
-    @media (min-width: 640px) {
-      .filters {
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-end;
-      }
-    }
-
-    .filter-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .tab-panel {
-      display: block;
-    }
-
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .task-item {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 1rem;
-      align-items: flex-start;
-      padding: 1rem;
-      border-radius: 1rem;
-      background: rgba(15, 23, 42, 0.04);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      box-shadow: 0 18px 38px -24px rgba(15, 23, 42, 0.45);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-
-    .task-item:hover {
-      transform: translateY(-2px);
-      border-color: rgba(56, 189, 248, 0.35);
-      box-shadow: 0 22px 48px -28px rgba(15, 23, 42, 0.5);
-    }
-
-    .task-item.completed .task-title {
-      text-decoration: line-through;
-      color: rgba(148, 163, 184, 1);
-    }
-
-    .task-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      min-width: 0;
-      padding-top: 0.15rem;
-    }
-
-    .task-title {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-      color: inherit;
-    }
-
-    .task-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      color: rgba(100, 116, 139, 0.9);
-    }
-
-    .task-meta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .task-notes {
-      font-size: 0.85rem;
-      color: rgba(226, 232, 240, 0.7);
-    }
-
-    .priority-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      border-radius: 9999px;
-      padding: 0.35rem 0.75rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border: 1px solid transparent;
-    }
-
-    .priority-high {
-      background: rgba(239, 68, 68, 0.12);
-      color: #dc2626;
-      border-color: rgba(239, 68, 68, 0.3);
-    }
-
-    .priority-medium {
-      background: rgba(245, 158, 11, 0.12);
-      color: #b45309;
-      border-color: rgba(245, 158, 11, 0.3);
-    }
-
-    .priority-low {
-      background: rgba(16, 185, 129, 0.12);
-      color: #0f766e;
-      border-color: rgba(16, 185, 129, 0.3);
-    }
-
-    .daily-task-list {
-      list-style: none;
-      padding: 1rem 0 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .daily-task-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding: 0.75rem;
-      border-radius: 0.85rem;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: rgba(15, 23, 42, 0.05);
-      box-shadow: 0 16px 38px -30px rgba(15, 23, 42, 0.6);
-    }
-
-    .daily-task-label {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      width: 100%;
-    }
-
-    .daily-task-text {
-      flex: 1;
-      color: inherit;
-      font-size: 0.95rem;
-    }
-
-    .daily-task-text-completed {
-      text-decoration: line-through;
-      color: rgba(148, 163, 184, 1);
-    }
-
-    .daily-task-empty {
-      list-style: none;
-      padding: 1rem;
-      text-align: center;
-      color: rgba(148, 163, 184, 0.9);
-      font-size: 0.9rem;
-      border: 1px dashed rgba(148, 163, 184, 0.35);
-      border-radius: 0.75rem;
-      background: rgba(15, 23, 42, 0.05);
-    }
-
-    .status-message {
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
-      color: rgba(148, 163, 184, 0.9);
-    }
-
-    .menu-sep {
-      height: 1px;
-      width: 100%;
-      background: rgba(148, 163, 184, 0.2);
-      margin: 0.5rem 0;
-    }
-
-    .menu-item {
-      width: 100%;
-      display: inline-flex;
-      justify-content: flex-start;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.75rem;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .menu-item:hover,
-    .menu-item:focus {
-      background: rgba(37, 99, 235, 0.12);
-      color: inherit;
-      outline: none;
-    }
-
-    .google-avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 9999px;
-      object-fit: cover;
-    }
-
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 1px, 1px) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-  </style>
+  <link rel="stylesheet" href="dist/styles.css" />
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
-  <a class="skip-link" href="#mainContent">Skip to main content</a>
-  <header class="sticky top-0 z-20 border-b border-base-200 bg-base-100/80 backdrop-blur supports-[backdrop-filter]:backdrop-blur">
-    <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5">
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 class="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Memory Cue</h1>
-        <div id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</div>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <input id="q" class="input input-bordered input-sm flex-1 min-w-[200px] bg-base-200/70" placeholder="Search reminders or #tags" aria-label="Search reminders" />
-        <button id="voiceBtn" class="btn btn-sm btn-secondary" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
-        <button id="notifBtn" class="btn btn-sm btn-secondary" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
-        <button id="addQuickBtn" class="btn btn-sm btn-primary" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
-        <div class="dropdown dropdown-end">
-          <button id="moreBtn" class="btn btn-sm btn-ghost" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
-          <ul id="moreMenu" class="menu menu-sm dropdown-content mt-3 w-56 rounded-box bg-base-100 p-2 shadow hidden" role="menu" aria-label="More actions">
-            <li><button id="copyMtlBtn" class="menu-item" role="menuitem">Copy MTL</button></li>
-            <li>
-              <label class="menu-item" role="menuitem" for="importFile" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                Import
-                <input id="importFile" type="file" accept="application/json" class="sr-only" />
-              </label>
-            </li>
-            <li><button id="exportBtn" class="menu-item" role="menuitem">Export</button></li>
-            <li><button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button></li>
-            <li><div class="menu-sep" role="presentation"></div></li>
-            <li><button id="openSettings" class="menu-item" role="menuitem">Settings</button></li>
-          </ul>
-        </div>
-      </div>
+  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#mainContent">Skip to main content</a>
+
+  <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
+    <div class="flex-1">
+      <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
+    </div>
+    <div class="flex-none gap-2">
+      <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
+      <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
+      <button class="btn btn-primary" type="button">Sign in</button>
     </div>
   </header>
-  <nav class="border-b border-base-300 bg-base-100/70 backdrop-blur supports-[backdrop-filter]:backdrop-blur" role="tablist" aria-label="Sections">
-    <div class="mx-auto flex w-full max-w-3xl px-4">
-      <div class="tabs tabs-lifted w-full">
-        <button
-          id="tab-reminders"
-          class="tab tab-lg tab-lifted tab-btn flex-1"
-          data-target="tasksTab"
-          role="tab"
-          aria-controls="tasksTab"
-          aria-selected="true"
-          tabindex="0">Reminders</button>
-        <button
-          id="tab-today"
-          class="tab tab-lg tab-lifted tab-btn flex-1"
-          data-target="todayTab"
-          role="tab"
-          aria-controls="todayTab"
-          aria-selected="false"
-          tabindex="-1">Today's List</button>
-        <button
-          id="tab-notebook"
-          class="tab tab-lg tab-lifted tab-btn flex-1"
-          data-target="notebookTab"
-          role="tab"
-          aria-controls="notebookTab"
-          aria-selected="false"
-          tabindex="-1">Notebook</button>
+
+  <main id="mainContent" class="max-w-md mx-auto px-4 pb-24 pt-4 space-y-6" tabindex="-1">
+    <section class="card bg-base-100 border">
+      <div class="card-body gap-4">
+        <h2 class="card-title text-base">Create Reminder</h2>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text">Reminder</span></div>
+          <input id="reminderText" type="text" placeholder="e.g., Call Alex at 3pm" class="input input-bordered w-full" />
+        </label>
+
+        <div class="grid grid-cols-2 gap-3">
+          <label class="form-control">
+            <div class="label"><span class="label-text">Date</span></div>
+            <input id="reminderDate" type="date" class="input input-bordered" />
+          </label>
+          <label class="form-control">
+            <div class="label"><span class="label-text">Time</span></div>
+            <input id="reminderTime" type="time" class="input input-bordered" />
+          </label>
+        </div>
+
+        <div class="card-actions justify-stretch">
+          <button id="saveReminder" class="btn btn-primary w-full">Save Reminder</button>
+          <button class="btn btn-outline w-full">Cancel</button>
+        </div>
       </div>
+    </section>
+
+    <div class="flex items-center gap-2 overflow-x-auto">
+      <div class="badge badge-outline">Today · 0</div>
+      <div class="badge badge-outline">This Week · 0</div>
+      <div class="badge badge-primary">Smart sort</div>
     </div>
+
+    <div class="text-center py-10 text-base-content/60">
+      <p class="mb-3">No reminders yet.</p>
+      <button class="btn btn-primary">Add your first reminder</button>
+    </div>
+
+    <section id="settingsSection" class="card bg-base-100 border">
+      <div class="card-body gap-4">
+        <h2 class="card-title text-base">Sync Settings</h2>
+        <label class="form-control">
+          <div class="label"><span class="label-text">Google Account</span></div>
+          <input type="email" class="input input-bordered" placeholder="name@example.com" />
+        </label>
+        <div class="card-actions">
+          <button class="btn btn-outline">Connect</button>
+          <button class="btn">Sync All</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100">
+    <button class="active"><span class="btm-nav-label">Reminders</span></button>
+    <button><span class="btm-nav-label">Today</span></button>
+    <button><span class="btm-nav-label">Notebook</span></button>
   </nav>
 
-  <div id="tasksTab" class="tab-panel" role="tabpanel" aria-labelledby="tab-reminders" tabindex="0">
-    <main id="mainContent" class="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8" tabindex="-1">
-      <!-- Create Reminder Card -->
-      <section class="card border border-base-300 bg-base-100 shadow-xl">
-        <div class="card-body gap-6">
-          <div class="flex items-center justify-between">
-            <h2 class="card-title text-2xl font-semibold">Create Reminder</h2>
-          </div>
-          <div class="grid gap-4">
-            <div class="form-control">
-              <label class="sr-only" for="title">Reminder</label>
-              <input id="title" class="input input-bordered w-full" placeholder="e.g., Email parents about camp #admin" aria-label="Reminder title" />
-              <div id="dateFeedback" class="status-message" style="display: none;"></div>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div class="form-control">
-                <label class="sr-only" for="date">Date</label>
-                <input id="date" type="date" class="input input-bordered w-full" aria-label="Due date" />
-              </div>
-              <div class="form-control">
-                <label class="sr-only" for="time">Time</label>
-                <input id="time" type="time" class="input input-bordered w-full" aria-label="Due time" />
-              </div>
-              <div class="form-control">
-                <label class="sr-only" for="priority">Priority</label>
-                <select id="priority" class="select select-bordered w-full" aria-label="Priority">
-                  <option>High</option>
-                  <option selected>Medium</option>
-                  <option>Low</option>
-                </select>
-              </div>
-              <div class="form-control">
-                <label class="sr-only" for="category">Category</label>
-                <input id="category" list="categorySuggestions" class="input input-bordered w-full" placeholder="School – Communication &amp; Families" aria-label="Category" />
-              </div>
-              <datalist id="categorySuggestions">
-                <option value="General"></option>
-                <option value="General Appointments"></option>
-                <option value="Home &amp; Personal"></option>
-                <option value="School – Appointments/Meetings"></option>
-                <option value="School – Communication &amp; Families"></option>
-                <option value="School – Excursions &amp; Events"></option>
-                <option value="School – Grading &amp; Assessment"></option>
-                <option value="School – Prep &amp; Resources"></option>
-                <option value="School – To-Do"></option>
-                <option value="Wellbeing &amp; Support"></option>
-              </datalist>
-            </div>
-            <div class="form-control">
-              <label class="sr-only" for="details">Details</label>
-              <textarea id="details" rows="3" class="textarea textarea-bordered w-full" placeholder="Add details or notes (optional)" aria-label="Reminder details"></textarea>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <button id="saveBtn" class="btn btn-primary" type="button">Save Reminder</button>
-              <button id="cancelEditBtn" class="btn btn-outline btn-error hidden" type="button">Cancel</button>
-            </div>
-          </div>
-          <div id="status" class="status-message" role="status" aria-live="polite" aria-atomic="true"></div>
-        </div>
-      </section>
-
-      <!-- Reminders List with inline counters -->
-      <section class="card border border-base-300 bg-base-100 shadow-xl">
-        <div class="card-body gap-6">
-          <div class="panel-header">
-            <div class="summary-pills">
-              <div class="summary-pill" title="Tasks due today">
-                <span>Today</span>
-                <span class="count" id="inlineTodayCount">0</span>
-              </div>
-              <div class="summary-pill" title="Tasks due this week">
-                <span>This Week</span>
-                <span class="count" id="inlineWeekCount">0</span>
-              </div>
-            </div>
-            <div class="filters">
-              <div class="filter-buttons" role="group" aria-label="Filter reminders">
-                <button class="btn btn-sm btn-ghost active" data-filter="today" type="button">Today</button>
-                <button class="btn btn-sm btn-ghost" data-filter="overdue" type="button">Overdue</button>
-                <button class="btn btn-sm btn-ghost" data-filter="all" type="button">All</button>
-                <button class="btn btn-sm btn-ghost" data-filter="done" type="button">Done</button>
-              </div>
-              <div class="flex flex-wrap gap-3">
-                <label class="sr-only" for="categoryFilter">Category</label>
-                <select id="categoryFilter" class="select select-bordered select-sm min-w-[160px]">
-                  <option value="all" selected>All categories</option>
-                  <option value="General">General</option>
-                  <option value="General Appointments">General Appointments</option>
-                  <option value="Home &amp; Personal">Home &amp; Personal</option>
-                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                  <option value="School – To-Do">School – To-Do</option>
-                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                </select>
-                <label class="sr-only" for="sort">Sort</label>
-                <select id="sort" class="select select-bordered select-sm min-w-[140px]">
-                  <option value="smart">Smart sort</option>
-                  <option value="time">Time</option>
-                  <option value="priority">Priority</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div id="list" class="task-list" aria-live="polite">
-            <div class="text-sm text-base-content/60">No reminders yet.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Settings (hidden by default) -->
-      <section class="card border border-base-300 bg-base-100 shadow-xl hidden" id="settingsSection">
-        <div class="card-body gap-6">
-          <div class="grid gap-4">
-            <div class="grid gap-3 sm:grid-cols-2">
-              <button id="googleSignInBtn" class="btn btn-secondary" type="button" aria-label="Sign in with Google">Sign in with Google</button>
-              <button id="googleSignOutBtn" class="btn btn-outline btn-error hidden" type="button" aria-label="Sign out">
-                <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" />
-                Sign out
-              </button>
-            </div>
-            <div id="googleUserName" class="text-sm text-base-content/70" aria-live="polite"></div>
-            <div class="form-control">
-              <input id="syncUrl" class="input input-bordered w-full" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" />
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <button id="saveSettings" class="btn btn-primary" type="button">Save</button>
-              <button id="testSync" class="btn btn-outline" type="button">Test</button>
-            </div>
-          </div>
-          <div class="text-sm text-base-content/70">
-            <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>, set <strong>Execute as: Me</strong>,
-            <strong>Who has access: Anyone with the link</strong>, then copy the URL.
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <div id="todayTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-today" tabindex="0">
-    <div class="mx-auto w-full max-w-3xl px-4 py-8">
-      <section class="card border border-base-300 bg-base-100 shadow-xl">
-        <div class="card-body gap-6">
-          <div>
-            <h2 id="todayListHeader" class="card-title text-2xl font-semibold">Today's List</h2>
-            <p id="todayListSubheading" class="text-sm text-base-content/70">
-              Capture your quick wins for the day. Tasks are stored on this device.
-            </p>
-          </div>
-          <form id="todayQuickAddForm" class="grid gap-3 sm:grid-cols-[1fr_auto]" novalidate>
-            <div class="form-control">
-              <label class="sr-only" for="todayQuickAddInput">Add a task for today</label>
-              <input id="todayQuickAddInput" autocomplete="off" class="input input-bordered w-full" placeholder="Add a task for today" aria-label="Add a task for today" />
-            </div>
-            <button id="todayQuickAddButton" class="btn btn-primary" type="submit">Add</button>
-          </form>
-          <ul id="todayTasks" class="daily-task-list" aria-live="polite" aria-busy="false"></ul>
-          <button id="todayClearCompleted" class="btn btn-sm btn-outline" type="button" disabled>Clear completed</button>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <div id="notebookTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-notebook" tabindex="0">
-    <div class="mx-auto w-full max-w-3xl px-4 py-8">
-      <section class="card border border-base-300 bg-base-100 shadow-xl">
-        <div class="card-body gap-6">
-          <textarea id="notes" class="textarea textarea-bordered w-full" placeholder="Type notes..."></textarea>
-          <div class="grid gap-3 sm:grid-cols-2">
-            <button id="saveNotesBtn" class="btn btn-primary" type="button">Save Notes</button>
-            <button id="loadNotesBtn" class="btn btn-outline" type="button">Load Notes</button>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <!-- Shared reminder logic -->
-  <script type="module">
-    import { initReminders } from './js/reminders.js';
-    initReminders({
-      titleSel: '#title',
-      dateSel: '#date',
-      timeSel: '#time',
-      detailsSel: '#details',
-      prioritySel: '#priority',
-      categorySel: '#category',
-      saveBtnSel: '#saveBtn',
-      cancelEditBtnSel: '#cancelEditBtn',
-      listSel: '#list',
-      googleSignInBtnSel: '#googleSignInBtn',
-      googleSignOutBtnSel: '#googleSignOutBtn',
-      statusSel: '#status',
-      syncStatusSel: '#syncStatus',
-      notesSel: '#notes',
-      saveNotesBtnSel: '#saveNotesBtn',
-      loadNotesBtnSel: '#loadNotesBtn',
-      filterBtnsSel: '[data-filter]',
-      sortSel: '#sort',
-      categoryFilterSel: '#categoryFilter',
-      categoryOptionsSel: '#categorySuggestions',
-      countTodaySel: '#inlineTodayCount',
-      countWeekSel: '#inlineWeekCount',
-      qSel: '#q',
-      voiceBtnSel: '#voiceBtn',
-      notifBtnSel: '#notifBtn',
-      addQuickBtnSel: '#addQuickBtn',
-      dateFeedbackSel: '#dateFeedback',
-      googleAvatarSel: '#googleAvatar',
-      googleUserNameSel: '#googleUserName',
-      moreBtnSel: '#moreBtn',
-      moreMenuSel: '#moreMenu',
-      copyMtlBtnSel: '#copyMtlBtn',
-      importFileSel: '#importFile',
-      exportBtnSel: '#exportBtn',
-      syncAllBtnSel: '#syncAllBtn',
-      syncUrlInputSel: '#syncUrl',
-      saveSettingsSel: '#saveSettings',
-      testSyncSel: '#testSync',
-      openSettingsSel: '#openSettings',
-      settingsSectionSel: '#settingsSection'
-    });
-  </script>
   <script>
-    const tabs = document.querySelectorAll('[role="tab"]');
-    const panels = document.querySelectorAll('[role="tabpanel"]');
-    function setActive(current) {
-      tabs.forEach(tab => {
-        const isActive = tab === current;
-        tab.setAttribute('aria-selected', String(isActive));
-        tab.tabIndex = isActive ? 0 : -1;
-        tab.classList.toggle('active', isActive);
-        tab.classList.toggle('tab-active', isActive);
+    (function () {
+      const html = document.documentElement;
+      const stored = localStorage.getItem('theme');
+      if (stored) html.setAttribute('data-theme', stored);
+      document.getElementById('themeToggle')?.addEventListener('click', () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
       });
-      panels.forEach(panel => {
-        const show = panel.id === current.getAttribute('aria-controls');
-        panel.hidden = !show;
-        panel.classList.toggle('hidden', !show);
-        if (!panel.hasAttribute('aria-labelledby')) {
-          panel.setAttribute('aria-labelledby', current.id);
-        }
-      });
-      current.focus({ preventScroll: true });
-    }
-    tabs.forEach((tab, i) => {
-      tab.addEventListener('click', () => setActive(tab));
-      tab.addEventListener('keydown', (e) => {
-        const last = tabs.length - 1;
-        let next = null;
-        if (e.key === 'ArrowRight') next = tabs[i === last ? 0 : i + 1];
-        if (e.key === 'ArrowLeft') next = tabs[i === 0 ? last : i - 1];
-        if (e.key === 'Home') next = tabs[0];
-        if (e.key === 'End') next = tabs[last];
-        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setActive(tab); return; }
-        if (next) { e.preventDefault(); setActive(next); }
-      });
-    });
-    setActive(document.getElementById('tab-reminders'));
-  </script>
-  <script>
-    (function initialiseTodayList() {
-      const header = document.getElementById('todayListHeader');
-      const subheading = document.getElementById('todayListSubheading');
-      const form = document.getElementById('todayQuickAddForm');
-      const input = document.getElementById('todayQuickAddInput');
-      const tasksList = document.getElementById('todayTasks');
-      const clearButton = document.getElementById('todayClearCompleted');
-      if (!header || !form || !input || !tasksList || !clearButton) {
-        return;
-      }
-
-      const STORAGE_KEY = 'dailyTasksByDate';
-      let currentTasks = [];
-      let memoryFallback = {};
-
-      function escapeHtml(value) {
-        return String(value ?? '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
-
-      function formatDateForHeader(dateId) {
-        if (typeof dateId !== 'string') {
-          return '';
-        }
-        const [yearRaw, monthRaw, dayRaw] = dateId.split('-');
-        const year = Number.parseInt(yearRaw, 10);
-        const month = Number.parseInt(monthRaw, 10);
-        const day = Number.parseInt(dayRaw, 10);
-        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-          return dateId;
-        }
-        const displayDate = new Date(year, month - 1, day);
-        if (Number.isNaN(displayDate.getTime())) {
-          return dateId;
-        }
-        try {
-          const formatter = new Intl.DateTimeFormat(undefined, {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric'
-          });
-          return formatter.format(displayDate);
-        } catch (error) {
-          console.warn('Unable to format today\'s date', error);
-          return dateId;
-        }
-      }
-
-      function getTodayDateId() {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-
-      function readStorageMap() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) {
-            return memoryFallback;
-          }
-          const parsed = JSON.parse(raw);
-          if (typeof parsed !== 'object' || parsed === null) {
-            return memoryFallback;
-          }
-          return parsed;
-        } catch (error) {
-          console.warn('Unable to read today\'s list from storage', error);
-          return memoryFallback;
-        }
-      }
-
-      function writeStorageMap(map) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-          memoryFallback = map;
-        } catch (error) {
-          console.warn('Unable to persist today\'s list', error);
-          memoryFallback = map;
-        }
-      }
-
-      function normaliseTask(task) {
-        if (typeof task !== 'object' || task === null) {
-          return { text: '', completed: false };
-        }
-        const text = typeof task.text === 'string' ? task.text.trim() : '';
-        const completed = Boolean(task.completed);
-        return { text, completed };
-      }
-
-      function getTasksForDate(dateId) {
-        const map = readStorageMap();
-        const tasks = Array.isArray(map?.[dateId]) ? map[dateId] : [];
-        return tasks.map((task) => normaliseTask(task));
-      }
-
-      function setTasksForDate(dateId, tasks) {
-        const map = readStorageMap();
-        map[dateId] = Array.isArray(tasks) ? tasks.map((task) => normaliseTask(task)) : [];
-        writeStorageMap(map);
-      }
-
-      function updateClearButtonState(tasks) {
-        const hasCompleted = Array.isArray(tasks) && tasks.some((task) => task.completed);
-        clearButton.disabled = !hasCompleted;
-      }
-
-      function renderTasks(tasks) {
-        if (!Array.isArray(tasks) || tasks.length === 0) {
-          tasksList.innerHTML = '<li class="daily-task-empty">No tasks for today yet.</li>';
-          tasksList.setAttribute('aria-busy', 'false');
-          updateClearButtonState([]);
-          return;
-        }
-        const markup = tasks
-          .map((task, index) => {
-            const safeText = escapeHtml(task?.text || '');
-            const completedClass = task?.completed ? ' daily-task-text-completed' : '';
-            const checked = task?.completed ? 'checked' : '';
-            return `
-              <li class="daily-task-item">
-                <label class="daily-task-label">
-                  <input type="checkbox" data-task-index="${index}" ${checked} />
-                  <span class="daily-task-text${completedClass}">${safeText}</span>
-                </label>
-              </li>
-            `;
-          })
-          .join('');
-        tasksList.innerHTML = markup;
-        tasksList.setAttribute('aria-busy', 'false');
-        updateClearButtonState(tasks);
-      }
-
-      const todayId = getTodayDateId();
-      const formattedDate = formatDateForHeader(todayId);
-      if (formattedDate) {
-        header.textContent = `Today's List — ${formattedDate}`;
-      }
-
-      function syncFromStorage() {
-        currentTasks = getTasksForDate(todayId);
-        renderTasks(currentTasks);
-      }
-
-      syncFromStorage();
-
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const value = input.value.trim();
-        if (!value) {
-          input.focus();
-          return;
-        }
-        const nextTasks = currentTasks.concat({ text: value, completed: false });
-        currentTasks = nextTasks;
-        setTasksForDate(todayId, currentTasks);
-        renderTasks(currentTasks);
-        input.value = '';
-        input.focus();
-      });
-
-      tasksList.addEventListener('change', (event) => {
-        const target = event.target instanceof HTMLInputElement ? event.target : null;
-        if (!target || target.type !== 'checkbox') {
-          return;
-        }
-        const index = Number.parseInt(target.getAttribute('data-task-index') || '', 10);
-        if (Number.isNaN(index) || !currentTasks[index]) {
-          return;
-        }
-        currentTasks = currentTasks.map((task, taskIndex) =>
-          taskIndex === index ? { ...task, completed: target.checked } : task
-        );
-        setTasksForDate(todayId, currentTasks);
-        renderTasks(currentTasks);
-      });
-
-      clearButton.addEventListener('click', () => {
-        if (!Array.isArray(currentTasks) || currentTasks.length === 0) {
-          return;
-        }
-        const remaining = currentTasks.filter((task) => !task.completed);
-        if (remaining.length === currentTasks.length) {
-          return;
-        }
-        currentTasks = remaining;
-        setTasksForDate(todayId, currentTasks);
-        renderTasks(currentTasks);
-      });
-
-      window.addEventListener('storage', (event) => {
-        if (event && event.key === STORAGE_KEY) {
-          syncFromStorage();
-        }
-      });
-    })();
-  </script>
-  <script>
-    (function registerServiceWorker() {
-      if (!('serviceWorker' in navigator)) return;
-      const register = () => {
-        navigator.serviceWorker
-          .register('./service-worker.js')
-          .catch((err) => console.warn('SW registration failed', err));
-      };
-      if (document.readyState === 'complete') {
-        register();
-      } else {
-        window.addEventListener('load', register, { once: true });
-      }
     })();
   </script>
 </body>
