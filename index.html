@@ -1021,15 +1021,28 @@
             >
               Daily tasks are stored locally on this device because cloud sync isn't available right now.
             </p>
-            <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row" novalidate>
+            <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row sm:items-stretch" novalidate>
               <label for="quick-add-input" class="sr-only">Add a task</label>
-              <input
-                id="quick-add-input"
-                type="text"
-                class="input input-bordered flex-1"
-                placeholder="Quick add a task for today"
-                autocomplete="off"
-              />
+              <div class="flex flex-col gap-3 sm:flex-row sm:flex-1">
+                <input
+                  id="quick-add-input"
+                  type="text"
+                  class="input input-bordered flex-1"
+                  placeholder="Quick add a task for today"
+                  autocomplete="off"
+                />
+                <button
+                  id="daily-voice-btn"
+                  type="button"
+                  class="btn btn-ghost sm:w-auto"
+                  title="Voice quick add"
+                  aria-label="Start voice input for today's list"
+                  aria-pressed="false"
+                >
+                  <span aria-hidden="true">🎙️</span>
+                  <span class="sr-only">Start voice input for today's list</span>
+                </button>
+              </div>
               <button type="submit" class="btn btn-primary sm:w-auto">Add</button>
             </form>
             <div id="daily-tasks-container" class="mt-4 space-y-3"></div>
