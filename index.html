@@ -278,14 +278,39 @@
 
         <div class="flex flex-col items-end gap-2">
           <div class="flex flex-wrap items-center justify-end gap-3">
-            <button
-              id="theme-toggle"
-              class="px-3 py-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-all duration-200"
-              aria-label="Activate dark mode"
-              aria-pressed="false"
-              data-icon-dark="🌙"
-              data-icon-light="☀️"
-            >🌙</button>
+            <div class="dropdown dropdown-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost text-white/90 hover:bg-white/20 gap-2"
+                aria-haspopup="menu"
+                aria-expanded="false"
+              >
+                <span>Theme</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-4"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              <ul
+                id="theme-menu"
+                class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-48 p-2 shadow"
+                role="menu"
+                tabindex="0"
+              >
+                <li><a href="#" data-theme-name="light" role="menuitem">Light</a></li>
+                <li><a href="#" data-theme-name="dark" role="menuitem">Dark</a></li>
+                <li><a href="#" data-theme-name="cupcake" role="menuitem">Cupcake</a></li>
+                <li><a href="#" data-theme-name="caramellatte" role="menuitem">Caramellatte</a></li>
+                <li><a href="#" data-theme-name="synthwave" role="menuitem">Synthwave</a></li>
+              </ul>
+            </div>
             <div
               id="user-badge"
               class="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-white shadow-inner"
