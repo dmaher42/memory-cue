@@ -195,6 +195,10 @@ export async function initReminders(sel = {}) {
   const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match this filter yet.';
   const reminderLandingPath = sel.reminderLandingPath || (variant === 'desktop' ? 'index.html#reminders' : 'mobile.html');
 
+  const dispatchCueEvent = (name, detail = {}) => {
+    document.dispatchEvent(new CustomEvent(name, { detail }));
+  };
+
   if (categoryInput && !categoryInput.value) {
     categoryInput.value = DEFAULT_CATEGORY;
   }
@@ -547,8 +551,8 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; if(priority) priority.value='Medium'; if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Reminder'; cancelEditBtn?.classList.add('hidden'); }
-  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Reminder'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); }
+  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; if(priority) priority.value='Medium'; if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Cue'; cancelEditBtn?.classList.add('hidden'); }
+  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
 
   function addItem(obj){
     if(!userId){ toast('Sign in to add reminders'); return; }
@@ -988,49 +992,57 @@ export async function initReminders(sel = {}) {
           const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
           itemEl.dataset.id = r.id;
           itemEl.dataset.category = catName;
-          itemEl.className = 'px-4 py-3 bg-white/95 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 rounded-lg';
+          itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
           const dueLabel = formatDesktopDue(r);
           const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
-          const titleClasses = r.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100';
+          const titleClasses = r.done ? 'line-through text-base-content/50' : 'text-base-content';
           const statusLabel = r.done ? 'Completed' : 'Active';
-          const statusClasses = r.done
-            ? 'inline-flex items-center gap-1.5 rounded-full border border-emerald-300/70 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:border-emerald-400/60 dark:text-emerald-300'
-            : 'inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:text-slate-300';
-          const statusIndicatorClass = r.done
-            ? 'bg-emerald-400/80 dark:bg-emerald-300/70'
-            : 'bg-slate-400/80 dark:bg-slate-500/70';
+          const priorityBadgeClass = r.priority === 'High'
+            ? 'badge badge-outline border-error text-error'
+            : r.priority === 'Medium'
+              ? 'badge badge-outline border-warning text-warning'
+              : 'badge badge-outline border-success text-success';
+          const statusBadgeClass = r.done
+            ? 'badge badge-outline border-success text-success'
+            : 'badge badge-outline border-neutral text-neutral';
           const toggleClasses = r.done
-            ? 'px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/60'
-            : 'px-3 py-1.5 rounded-md border border-emerald-300 text-emerald-600 transition-colors hover:bg-emerald-50 dark:border-emerald-400/60 dark:text-emerald-300 dark:hover:bg-emerald-500/10';
-          const notesHtml = r.notes ? `<p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">${notesToHtml(r.notes)}</p>` : '';
+            ? 'btn btn-sm btn-outline'
+            : 'btn btn-sm btn-outline btn-success';
+          const notesHtml = r.notes ? `<p class="text-sm leading-relaxed text-base-content/70">${notesToHtml(r.notes)}</p>` : '';
           itemEl.innerHTML = `
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <p class="text-base font-semibold ${titleClasses}">${escapeHtml(r.title)}</p>
-        <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-          <span class="inline-flex items-center gap-1.5">
-            <span class="inline-flex h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
-            ${escapeHtml(dueLabel)}
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-white/60 px-2 py-0.5 text-xs font-medium text-blue-600 dark:border-blue-500/70 dark:bg-slate-900/40 dark:text-blue-300">
-            <span class="h-1.5 w-1.5 rounded-full bg-sky-400/80 dark:bg-sky-300/80"></span>
-            ${escapeHtml(catName)}
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/60 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-600/70 dark:bg-slate-900/40 dark:text-slate-300">
-            <span class="h-1.5 w-1.5 rounded-full ${priorityIndicatorClass}"></span>
-            ${escapeHtml(r.priority)} priority
-          </span>
-          <span class="${statusClasses}">
-            <span class="h-1.5 w-1.5 rounded-full ${statusIndicatorClass}"></span>
-            ${statusLabel}
-          </span>
+    <div class="card-body gap-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="space-y-3">
+          <h3 class="card-title text-base sm:text-lg font-semibold ${titleClasses}">${escapeHtml(r.title)}</h3>
+          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-base-content/70">
+            <span class="badge badge-outline gap-2 text-[0.7rem] sm:text-xs">
+              <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+              ${escapeHtml(dueLabel)}
+            </span>
+            <span class="badge badge-outline border-primary text-primary gap-2 text-[0.7rem] sm:text-xs">
+              <span class="h-2 w-2 rounded-full bg-sky-400"></span>
+              ${escapeHtml(catName)}
+            </span>
+            <span class="${priorityBadgeClass} gap-2 text-[0.7rem] sm:text-xs">
+              <span class="h-2 w-2 rounded-full ${priorityIndicatorClass}"></span>
+              ${escapeHtml(r.priority)} priority
+            </span>
+            <span class="${statusBadgeClass} text-[0.7rem] sm:text-xs">${statusLabel}</span>
+          </div>
         </div>
-        ${notesHtml}
+        <div class="dropdown dropdown-end">
+          <button type="button" tabindex="0" class="btn btn-ghost btn-circle btn-sm" aria-label="Cue actions">
+            <span class="text-xl leading-none">⋮</span>
+          </button>
+          <ul tabindex="0" class="dropdown-content menu menu-sm p-2 shadow bg-base-100 rounded-box w-40">
+            <li><button type="button" data-action="edit" class="justify-start">Edit</button></li>
+            <li><button type="button" data-action="delete" class="justify-start text-error">Delete</button></li>
+          </ul>
+        </div>
       </div>
-      <div class="flex flex-wrap gap-2 text-sm font-medium">
-        <button data-action="toggle" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
-        <button data-action="edit" class="px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/60">Edit</button>
-        <button data-action="delete" class="px-3 py-1.5 rounded-md border border-rose-300 text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-400/60 dark:text-rose-300 dark:hover:bg-rose-500/10">Delete</button>
+      ${notesHtml}
+      <div class="card-actions justify-end">
+        <button data-action="toggle" type="button" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
       </div>
     </div>`;
           itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
@@ -1113,6 +1125,7 @@ export async function initReminders(sel = {}) {
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
       resetForm();
       toast('Reminder updated');
+      dispatchCueEvent('cue:close', { reason: 'updated' });
       return;
     }
     const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
@@ -1122,13 +1135,16 @@ export async function initReminders(sel = {}) {
     else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
     addItem({ title:t, priority:priority.value, category: categoryInput ? categoryInput.value : '', due, notes: noteText });
     title.value=''; time.value=''; if(details) details.value='';
+    dispatchCueEvent('cue:close', { reason: 'created' });
   });
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
 
   function updateDateFeedback(){ if(!title || !dateFeedback) return; const text = title.value.trim(); if(!text){ dateFeedback.style.display='none'; return; } try{ const parsed=parseQuickWhen(text); const today=todayISO(); if(parsed.date !== today || parsed.time){ let feedback=''; if(parsed.date !== today){ const dateObj = new Date(parsed.date+'T00:00:00'); feedback+=`📅 ${fmtDayDate(parsed.date)}`; } if(parsed.time){ feedback+=`${feedback ? ' ' : ''}🕐 ${parsed.time}`; } if(feedback){ dateFeedback.textContent=`Parsed: ${feedback}`; dateFeedback.style.display='block'; } else { dateFeedback.style.display='none'; } } else { dateFeedback.style.display='none'; } } catch { dateFeedback.style.display='none'; } }
 
   title?.addEventListener('input', debounce(updateDateFeedback,300));
-  cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); });
+  cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); dispatchCueEvent('cue:close', { reason: 'edit-cancelled' }); });
+  document.addEventListener('cue:cancelled', () => { resetForm(); });
+  document.addEventListener('cue:prepare', () => { resetForm(); });
   window.addEventListener('load', ()=> title?.focus());
   addQuickBtn?.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
   q?.addEventListener('input', debounce(render,150));
