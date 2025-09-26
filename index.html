@@ -39,6 +39,12 @@
     integrity="sha384-YJvHoUr6w1FlD9gzD41c9ztiiG5wIJ9fhnawEIqr4iNzJgEpeI++XwO6yjHdcDte"
     crossorigin="anonymous"
   ></script>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+    integrity="sha384-D3c3L2pP+J2Rw8cnq/n6Bmx0vB3P0vyvnkCozXoLqhXnSWMM2n3AH22Mxeb5t0Eo"
+    crossorigin="anonymous"
+  />
   <style>
     html { scroll-behavior: smooth; }
     /* Your existing Tailwind / other styles here */
@@ -767,64 +773,86 @@
             </div>
           </div>
           <div class="space-y-4">
-            <div class="space-y-2">
-              <label for="title" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Title</label>
-              <input id="title" class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors" placeholder="Reminder title" />
-            </div>
-            <div id="dateFeedback" class="text-sm text-slate-500 hidden"></div>
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div class="space-y-2">
-                <label for="date" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Date</label>
-                <input id="date" type="date" class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors" />
-              </div>
-              <div class="space-y-2">
-                <label for="time" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Time</label>
-                <input id="time" type="time" class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors" />
-              </div>
-              <div class="space-y-2">
-                <label for="priority" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Priority</label>
-                <select id="priority" class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors">
-                  <option>High</option>
-                  <option selected>Medium</option>
-                  <option>Low</option>
-                </select>
-              </div>
-              <div class="space-y-2">
-                <label for="category" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
-                <input
-                  id="category"
-                  list="categorySuggestions"
-                  class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors"
-                  placeholder="e.g., School – Communication & Families"
-                />
-                <datalist id="categorySuggestions">
-                  <option value="General"></option>
-                  <option value="General Appointments"></option>
-                  <option value="Home &amp; Personal"></option>
-                  <option value="School – Appointments/Meetings"></option>
-                  <option value="School – Communication &amp; Families"></option>
-                  <option value="School – Excursions &amp; Events"></option>
-                  <option value="School – Grading &amp; Assessment"></option>
-                  <option value="School – Prep &amp; Resources"></option>
-                  <option value="School – To-Do"></option>
-                  <option value="Wellbeing &amp; Support"></option>
-                </datalist>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <label for="details" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Details</label>
-              <textarea
-                id="details"
-                rows="3"
-                class="w-full px-4 py-3 border border-slate-300/80 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 dark:focus:border-slate-500 transition-colors"
-                placeholder="Add details or notes (optional)"
-              ></textarea>
-            </div>
-            <div class="flex gap-4">
-              <button id="saveBtn" class="flex-1 px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900/40 transition-colors shadow-sm" type="button">Save Reminder</button>
-              <button id="cancelEditBtn" class="flex-1 px-6 py-3 border border-slate-300/80 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400/40 transition-colors shadow-sm hidden" type="button">Cancel</button>
-            </div>
+            <button id="openCueModal" type="button" class="btn btn-primary">Add New Cue</button>
             <div id="status" class="text-sm" role="status" aria-live="polite" aria-atomic="true"></div>
+            <dialog id="cue-modal" class="modal">
+              <div class="modal-box space-y-6">
+                <div class="space-y-1">
+                  <h3 class="text-lg font-semibold text-base-content">Add a new Cue</h3>
+                  <p class="text-sm text-base-content/70">Capture a reminder with a title, timing, and details.</p>
+                </div>
+                <form id="cue-form" class="space-y-4" novalidate>
+                  <div class="space-y-2">
+                    <label for="title" class="block text-sm font-medium text-base-content/80">Title</label>
+                    <input
+                      id="title"
+                      class="input input-bordered w-full"
+                      placeholder="Reminder title"
+                      type="text"
+                    />
+                  </div>
+                  <div id="dateFeedback" class="text-sm text-base-content/70 hidden"></div>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                    <div class="space-y-2">
+                      <label for="date" class="block text-sm font-medium text-base-content/80">Date</label>
+                      <input id="date" type="date" class="input input-bordered w-full" />
+                    </div>
+                    <div class="space-y-2">
+                      <label for="time" class="block text-sm font-medium text-base-content/80">Time</label>
+                      <input id="time" type="time" class="input input-bordered w-full" />
+                    </div>
+                    <div class="space-y-2">
+                      <label for="priority" class="block text-sm font-medium text-base-content/80">Priority</label>
+                      <select id="priority" class="select select-bordered w-full">
+                        <option>High</option>
+                        <option selected>Medium</option>
+                        <option>Low</option>
+                      </select>
+                    </div>
+                    <div class="space-y-2">
+                      <label for="category" class="block text-sm font-medium text-base-content/80">Category</label>
+                      <input
+                        id="category"
+                        list="categorySuggestions"
+                        class="input input-bordered w-full"
+                        placeholder="e.g., School – Communication &amp; Families"
+                      />
+                      <datalist id="categorySuggestions">
+                        <option value="General"></option>
+                        <option value="General Appointments"></option>
+                        <option value="Home &amp; Personal"></option>
+                        <option value="School – Appointments/Meetings"></option>
+                        <option value="School – Communication &amp; Families"></option>
+                        <option value="School – Excursions &amp; Events"></option>
+                        <option value="School – Grading &amp; Assessment"></option>
+                        <option value="School – Prep &amp; Resources"></option>
+                        <option value="School – To-Do"></option>
+                        <option value="Wellbeing &amp; Support"></option>
+                      </datalist>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <label for="details" class="block text-sm font-medium text-base-content/80">Details</label>
+                    <textarea
+                      id="details"
+                      rows="3"
+                      class="textarea textarea-bordered w-full"
+                      placeholder="Add details or notes (optional)"
+                    ></textarea>
+                  </div>
+                  <div class="modal-action flex w-full flex-wrap items-center gap-3">
+                    <button id="cancelEditBtn" class="btn btn-ghost hidden" type="button">Cancel Edit</button>
+                    <div class="ml-auto flex gap-2">
+                      <button id="closeCueModal" type="button" class="btn btn-outline">Cancel</button>
+                      <button id="saveBtn" class="btn btn-primary" type="button">Save Cue</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <form method="dialog" class="modal-backdrop">
+                <button aria-label="Close">close</button>
+              </form>
+            </dialog>
           </div>
         </div>
 
@@ -1269,36 +1297,7 @@
       </div>
     </div>
   </div>
-  <script type="module">
-    import { initReminders } from './js/reminders.js';
-
-    initReminders({
-      titleSel: '#title',
-      dateSel: '#date',
-      timeSel: '#time',
-      detailsSel: '#details',
-      prioritySel: '#priority',
-      categorySel: '#category',
-      saveBtnSel: '#saveBtn',
-      cancelEditBtnSel: '#cancelEditBtn',
-      listSel: '#reminderList',
-      statusSel: '#status',
-      syncStatusSel: '#syncStatus',
-      voiceBtnSel: '#voiceBtn',
-      filterBtnsSel: '[data-filter]',
-      sortSel: '#sort',
-      categoryFilterSel: '#categoryFilter',
-      categoryOptionsSel: '#categorySuggestions',
-      countTodaySel: '#inlineTodayCount',
-      countOverdueSel: '#inlineOverdueCount',
-      countTotalSel: '#inlineTotalCount',
-      countCompletedSel: '#inlineCompletedCount',
-      emptyStateSel: '#emptyState',
-      listWrapperSel: '#remindersWrapper',
-      dateFeedbackSel: '#dateFeedback',
-      variant: 'desktop'
-    });
-  </script>
+  <script type="module" src="./app.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
