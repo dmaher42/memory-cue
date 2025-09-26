@@ -127,6 +127,12 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
       .panel-header { grid-template-columns: 1fr; gap: var(--space-2); }
       .filters { justify-content: flex-start; }
     }
+    .daily-task-list{list-style:none;padding:var(--space-4) 0 0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);}
+    .daily-task-item{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3);background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);}
+    .daily-task-label{display:flex;align-items:flex-start;gap:var(--space-3);width:100%;}
+    .daily-task-text{flex:1;color:var(--text-primary);font-size:var(--text-base);}
+    .daily-task-text-completed{text-decoration:line-through;color:var(--text-muted);}
+    .daily-task-empty{list-style:none;padding:var(--space-4);text-align:center;color:var(--text-muted);font-size:var(--text-sm);border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg-secondary);}
   /* Visually hidden but accessible */
     .sr-only {
       position: absolute !important;
@@ -178,6 +184,14 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
             aria-controls="tasksTab"
             aria-selected="true"
             tabindex="0">Reminders</button>
+
+    <button id="tab-today"
+            class="tab-btn"
+            data-target="todayTab"
+            role="tab"
+            aria-controls="todayTab"
+            aria-selected="false"
+            tabindex="-1">Today's List</button>
 
     <button id="tab-notebook"
             class="tab-btn"
@@ -328,6 +342,32 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
   </main>
   </div>
 
+  <div id="todayTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-today" tabindex="0">
+    <div class="container">
+      <section class="card section">
+        <div class="card-header">
+          <div>
+            <h2 id="todayListHeader" class="card-title">Today's List</h2>
+            <p id="todayListSubheading" style="margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--text-xs);">
+              Capture your quick wins for the day. Tasks are stored on this device.
+            </p>
+          </div>
+        </div>
+        <div class="card-content">
+          <form id="todayQuickAddForm" class="form-row" style="flex-wrap: wrap; gap: var(--space-2);" novalidate>
+            <div class="form-group flex-1">
+              <label class="sr-only" for="todayQuickAddInput">Add a task for today</label>
+              <input id="todayQuickAddInput" autocomplete="off" placeholder="Add a task for today" aria-label="Add a task for today" />
+            </div>
+            <button id="todayQuickAddButton" class="btn-success" type="submit">Add</button>
+          </form>
+          <ul id="todayTasks" class="daily-task-list" aria-live="polite" aria-busy="false"></ul>
+          <button id="todayClearCompleted" class="btn-ghost btn-compact" type="button" disabled>Clear completed</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <div id="notebookTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-notebook" tabindex="0">
     <div class="container">
       <section class="card section">
@@ -422,6 +462,215 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
       });
     });
     setActive(document.getElementById('tab-reminders'));
+  </script>
+  <script>
+    (function initialiseTodayList() {
+      const header = document.getElementById('todayListHeader');
+      const subheading = document.getElementById('todayListSubheading');
+      const form = document.getElementById('todayQuickAddForm');
+      const input = document.getElementById('todayQuickAddInput');
+      const tasksList = document.getElementById('todayTasks');
+      const clearButton = document.getElementById('todayClearCompleted');
+      if (!header || !form || !input || !tasksList || !clearButton) {
+        return;
+      }
+
+      const STORAGE_KEY = 'dailyTasksByDate';
+      let currentTasks = [];
+      let memoryFallback = {};
+
+      function escapeHtml(value) {
+        return String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatDateForHeader(dateId) {
+        if (typeof dateId !== 'string') {
+          return '';
+        }
+        const [yearRaw, monthRaw, dayRaw] = dateId.split('-');
+        const year = Number.parseInt(yearRaw, 10);
+        const month = Number.parseInt(monthRaw, 10);
+        const day = Number.parseInt(dayRaw, 10);
+        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+          return dateId;
+        }
+        const displayDate = new Date(year, month - 1, day);
+        if (Number.isNaN(displayDate.getTime())) {
+          return dateId;
+        }
+        try {
+          const formatter = new Intl.DateTimeFormat(undefined, {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          return formatter.format(displayDate);
+        } catch (error) {
+          console.warn('Unable to format today\'s date', error);
+          return dateId;
+        }
+      }
+
+      function getTodayDateId() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      function normaliseTask(task) {
+        return {
+          text: typeof task?.text === 'string' ? task.text : '',
+          completed: Boolean(task?.completed)
+        };
+      }
+
+      function readStorageMap() {
+        try {
+          const raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : null;
+          if (!raw) {
+            return { ...memoryFallback };
+          }
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            memoryFallback = { ...parsed };
+            return parsed;
+          }
+          return { ...memoryFallback };
+        } catch (error) {
+          console.warn('Falling back to in-memory storage for daily tasks', error);
+          if (subheading) {
+            subheading.textContent = 'Capture your quick wins for the day. Storage is unavailable so tasks reset when you close this tab.';
+          }
+          return { ...memoryFallback };
+        }
+      }
+
+      function writeStorageMap(map) {
+        memoryFallback = { ...map };
+        try {
+          if (!window.localStorage) {
+            return;
+          }
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryFallback));
+        } catch (error) {
+          console.warn('Unable to persist today\'s list to localStorage', error);
+        }
+      }
+
+      function getTasksForDate(dateId) {
+        const map = readStorageMap();
+        const tasks = Array.isArray(map?.[dateId]) ? map[dateId] : [];
+        return tasks.map((task) => normaliseTask(task));
+      }
+
+      function setTasksForDate(dateId, tasks) {
+        const map = readStorageMap();
+        map[dateId] = Array.isArray(tasks) ? tasks.map((task) => normaliseTask(task)) : [];
+        writeStorageMap(map);
+      }
+
+      function updateClearButtonState(tasks) {
+        const hasCompleted = Array.isArray(tasks) && tasks.some((task) => task.completed);
+        clearButton.disabled = !hasCompleted;
+      }
+
+      function renderTasks(tasks) {
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+          tasksList.innerHTML = '<li class="daily-task-empty">No tasks for today yet.</li>';
+          tasksList.setAttribute('aria-busy', 'false');
+          updateClearButtonState([]);
+          return;
+        }
+        const markup = tasks
+          .map((task, index) => {
+            const safeText = escapeHtml(task?.text || '');
+            const completedClass = task?.completed ? ' daily-task-text-completed' : '';
+            const checked = task?.completed ? 'checked' : '';
+            return `
+              <li class="daily-task-item">
+                <label class="daily-task-label">
+                  <input type="checkbox" data-task-index="${index}" ${checked} />
+                  <span class="daily-task-text${completedClass}">${safeText}</span>
+                </label>
+              </li>
+            `;
+          })
+          .join('');
+        tasksList.innerHTML = markup;
+        tasksList.setAttribute('aria-busy', 'false');
+        updateClearButtonState(tasks);
+      }
+
+      const todayId = getTodayDateId();
+      const formattedDate = formatDateForHeader(todayId);
+      if (formattedDate) {
+        header.textContent = `Today's List — ${formattedDate}`;
+      }
+
+      function syncFromStorage() {
+        currentTasks = getTasksForDate(todayId);
+        renderTasks(currentTasks);
+      }
+
+      syncFromStorage();
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const value = input.value.trim();
+        if (!value) {
+          input.focus();
+          return;
+        }
+        const nextTasks = currentTasks.concat({ text: value, completed: false });
+        currentTasks = nextTasks;
+        setTasksForDate(todayId, currentTasks);
+        renderTasks(currentTasks);
+        input.value = '';
+        input.focus();
+      });
+
+      tasksList.addEventListener('change', (event) => {
+        const target = event.target instanceof HTMLInputElement ? event.target : null;
+        if (!target || target.type !== 'checkbox') {
+          return;
+        }
+        const index = Number.parseInt(target.getAttribute('data-task-index') || '', 10);
+        if (Number.isNaN(index) || !currentTasks[index]) {
+          return;
+        }
+        currentTasks = currentTasks.map((task, taskIndex) =>
+          taskIndex === index ? { ...task, completed: target.checked } : task
+        );
+        setTasksForDate(todayId, currentTasks);
+        renderTasks(currentTasks);
+      });
+
+      clearButton.addEventListener('click', () => {
+        if (!Array.isArray(currentTasks) || currentTasks.length === 0) {
+          return;
+        }
+        const remaining = currentTasks.filter((task) => !task.completed);
+        if (remaining.length === currentTasks.length) {
+          return;
+        }
+        currentTasks = remaining;
+        setTasksForDate(todayId, currentTasks);
+        renderTasks(currentTasks);
+      });
+
+      window.addEventListener('storage', (event) => {
+        if (event && event.key === STORAGE_KEY) {
+          syncFromStorage();
+        }
+      });
+    })();
   </script>
   <script>
     (function registerServiceWorker() {
