@@ -8,6 +8,12 @@
   <link rel="manifest" href="/manifest.webmanifest" id="manifestLink" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+    integrity="sha384-aBFqgs/2/LnJgaMMgSS2crfvhDZ0Pwt+8G8G8yD1l9jvVkhiswvBgKnL0IUaxh9U"
+    crossorigin="anonymous"
+  />
   <!-- Tailwind v4 (Play CDN) -->
   <script
     defer
@@ -16,124 +22,309 @@
     crossorigin="anonymous"
   ></script>
   <style>
-    :root{
-      --bg-primary:#0b1220; --bg-secondary:#0f172a; --bg-tertiary:#1e2536;
-      --text-primary:#f8fafc; --text-secondary:#cbd5e1; --text-muted:#94a3b8;
-      --accent:#38bdf8; --accent-hover:#0ea5e9;
-      --success:#22c55e; --success-hover:#16a34a;
-      --warning:#f59e0b; --warning-hover:#ea580c;
-      --danger:#ef4444; --danger-hover:#dc2626;
-      --purple:#8b5cf6; --purple-hover:#7c3aed;
-      --border:#334155; --border-light:#475569;
-      --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
-      --text-xs:11px; --text-sm:13px; --text-base:15px; --text-lg:17px; --text-xl:19px; --text-2xl:22px;
-      --radius-sm:6px; --radius:8px; --radius-md:10px; --radius-lg:12px;
-      --touch-target:44px; --button-height:42px;
-      --shadow-sm:0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow:0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-      --shadow-md:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    :root {
+      color-scheme: light dark;
     }
-    *{box-sizing:border-box} html,body{height:100%;margin:0;padding:0}
-    body{background:linear-gradient(180deg,var(--bg-primary) 0%,#0a0f1c 100%);color:var(--text-primary);
-         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
-         font-size:var(--text-base);line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-         -webkit-tap-highlight-color:transparent;}
-    .container{max-width:520px;margin:0 auto;padding:0 var(--space-3)}
-    header{position:sticky;top:0;padding-top:env(safe-area-inset-top,0px);background:rgba(11,18,32,.85);backdrop-filter:blur(12px);
-border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
-    .header-content{padding:var(--space-3) 0}
-    .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)}
-    h1{font-size:var(--text-2xl);font-weight:700;margin:0;letter-spacing:-.025em;background:linear-gradient(135deg,var(--text-primary),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .header-controls{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center}
-    input,select,button,textarea{font-family:inherit;font-size:var(--text-sm);line-height:1.4;border:1px solid var(--border);border-radius:var(--radius);transition:.2s all;-webkit-appearance:none;appearance:none}
-    input,select,textarea{background:var(--bg-secondary);color:var(--text-primary);padding:var(--space-3);min-height:var(--button-height);box-shadow:none}
-    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.1)}
-    input::placeholder,textarea::placeholder{color:var(--text-muted)}
-    .search-input{flex:1;min-width:160px}
-    button{cursor:pointer;font-weight:500;padding:var(--space-3);min-height:var(--touch-target);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1);white-space:nowrap;border:1px solid transparent;transition:.2s all;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-    button:active{transform:none}
-    .btn-primary{background:var(--accent);color:var(--bg-primary);border-color:var(--accent);font-weight:600}
-    .btn-primary:hover,.btn-primary:focus{background:var(--accent-hover);border-color:var(--accent-hover)}
-    .btn-success{background:var(--success);color:var(--bg-primary);border-color:var(--success);font-weight:600}
-    .btn-success:hover,.btn-success:focus{background:var(--success-hover);border-color:var(--success-hover)}
-    .btn-warning{background:var(--warning);color:var(--bg-primary);border-color:var(--warning);font-weight:600}
-    .btn-warning:hover,.btn-warning:focus{background:var(--warning-hover);border-color:var(--warning-hover)}
-    .btn-danger{background:var(--danger);color:var(--bg-primary);border-color:var(--danger);font-weight:600}
-    .btn-danger:hover,.btn-danger:focus{background:var(--danger-hover);border-color:var(--danger-hover)}
-    .btn-purple{background:var(--purple);color:var(--bg-primary);border-color:var(--purple);font-weight:600}
-    .btn-purple:hover,.btn-purple:focus{background:var(--purple-hover);border-color:var(--purple-hover)}
-    .btn-ghost{background:var(--bg-secondary);color:var(--text-secondary);border-color:var(--border)}
-    .btn-ghost:hover,.btn-ghost:focus{background:var(--bg-tertiary);color:var(--text-primary);border-color:var(--border-light)}
-    .btn-compact{padding:var(--space-2) var(--space-3);min-height:36px;font-size:var(--text-xs)}
-    .tabs{display:flex;border-bottom:1px solid var(--border);}
-    .tab-btn{flex:1;background:var(--bg-secondary);color:var(--text-secondary);border:0;border-bottom:2px solid transparent;padding:var(--space-3);font-weight:600}
-    .tab-btn.active{color:var(--text-primary);background:var(--bg-tertiary);border-bottom-color:var(--accent)}
-    .main-content{padding:var(--space-4) 0}
-    .section{margin-bottom:var(--space-6)}
-    .card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);overflow:hidden}
-    .card-header{padding:var(--space-4);border-bottom:1px solid var(--border);background:var(--bg-secondary)}
-    .card-content{padding:var(--space-4)}
-    .card-title{font-size:var(--text-lg);font-weight:600;margin:0;color:var(--text-primary)}
-    .section-subtitle{font-size:var(--text-xs);font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:var(--space-4) 0 var(--space-3)}
-    .form-stack{display:flex;flex-direction:column;gap:var(--space-3)}
-    .form-row{display:flex;gap:var(--space-2);align-items:flex-end}
-    .form-group{display:flex;flex-direction:column;gap:var(--space-1)}
-    .form-group.flex-1{flex:1}
-    .task-list{display:flex;flex-direction:column;gap:var(--space-3)}
-    .task-item{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-3);align-items:flex-start;padding:var(--space-4);background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:.2s color,.2s background-color}
-    .task-item:active{transform:none}
-    .task-item.completed .task-title{text-decoration:line-through;color:var(--text-muted)}
-    .task-content{min-width:0;padding-top:2px}
-    .task-title{font-size:var(--text-base);font-weight:500;margin:0 0 var(--space-1);color:var(--text-primary)}
-    .task-meta{display:flex;flex-direction:column;gap:var(--space-1);font-size:var(--text-xs);color:var(--text-muted)}
-    .task-meta-row{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}
-    .priority-badge{padding:2px var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:500;border:1px solid transparent;flex-shrink:0;letter-spacing:0.01em}
-    .task-notes{margin-top:var(--space-2);font-size:var(--text-sm);color:var(--text-secondary);line-height:1.5}
-    .priority-high{background:rgba(220,38,38,.12);color:#b91c1c;border-color:rgba(220,38,38,.24)}
-    .priority-medium{background:rgba(217,119,6,.14);color:#b45309;border-color:rgba(217,119,6,.26)}
-    .priority-low{background:rgba(16,185,129,.12);color:#0f766e;border-color:rgba(16,185,129,.24)}
-    input[type="checkbox"]{width:18px;height:18px;cursor:pointer;margin-top:2px}
-    .sync-status{padding:var(--space-1) var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:600;border:1px solid transparent}
-    .sync-status.online{background:rgba(34,197,94,.1);color:var(--success);border-color:rgba(34,197,94,.2)}
-    .sync-status.offline{background:rgba(245,158,11,.1);color:var(--warning);border-color:rgba(245,158,11,.2)}
-    .sync-status.error{background:rgba(239,68,68,.1);color:var(--danger);border-color:rgba(239,68,68,.2)}
-    .google-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:var(--space-1)}
-    .auth-info{font-size:var(--text-xs);color:var(--text-muted);display:flex;align-items:center;gap:var(--space-1)}
-    .status-message{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-2)}
-    .footer{text-align:center;padding:var(--space-6) 0;color:var(--text-muted);font-size:var(--text-xs);border-top:1px solid var(--border);margin-top:var(--space-8)}
 
-    /* Utils */
-    .hidden{display:none !important;}
-
-    /* Header tools menu */
-    .menu-wrap { position: relative; margin-left: auto; }
-    .menu { position: absolute; right: 0; top: calc(100% + 6px); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); min-width: 200px; padding: 6px; z-index: 200; }
-    .menu.hidden { display: none; }
-    .menu-item { width: 100%; text-align: left; background: transparent; border: 0; padding: 10px 12px; border-radius: var(--radius-sm); font-size: var(--text-sm); color: var(--text-primary); }
-    .menu-item:hover, .menu-item:focus { background: var(--bg-tertiary); outline: none; }
-    .menu-sep { height: 1px; background: var(--border); margin: 6px 0; }
-
-    /* Inline agenda counters */
-    .panel-header { display:grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items:center; }
-    .summary-pills { display:flex; gap: var(--space-2); align-items:center; }
-    .pill { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); background:var(--bg-secondary); border-radius: var(--radius-sm); }
-    .pill .count { font-weight:700; font-size: 18px; line-height: 1; }
-    .filters { display:flex; gap: var(--space-2); align-items:center; flex-wrap:wrap; justify-content:flex-end; }
-    .filter-buttons { display:flex; gap: var(--space-2); }
-    .filter-buttons .btn-ghost.active { outline:2px solid rgba(56,189,248,.35); outline-offset:0; }
-    .sort-control select { min-width: 120px; }
-
-    @media (max-width: 430px){
-      .panel-header { grid-template-columns: 1fr; gap: var(--space-2); }
-      .filters { justify-content: flex-start; }
+    body {
+      min-height: 100vh;
     }
-    .daily-task-list{list-style:none;padding:var(--space-4) 0 0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);}
-    .daily-task-item{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3);background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);}
-    .daily-task-label{display:flex;align-items:flex-start;gap:var(--space-3);width:100%;}
-    .daily-task-text{flex:1;color:var(--text-primary);font-size:var(--text-base);}
-    .daily-task-text-completed{text-decoration:line-through;color:var(--text-muted);}
-    .daily-task-empty{list-style:none;padding:var(--space-4);text-align:center;color:var(--text-muted);font-size:var(--text-sm);border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg-secondary);}
-  /* Visually hidden but accessible */
+
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      background: var(--fallback-p, #2563eb);
+      color: #fff;
+      font-weight: 600;
+      transition: top 0.2s ease;
+      z-index: 1000;
+    }
+
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid transparent;
+      background: rgba(234, 179, 8, 0.12);
+      color: #b45309;
+    }
+
+    .sync-status.online {
+      background: rgba(34, 197, 94, 0.12);
+      color: #15803d;
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .sync-status.offline {
+      background: rgba(234, 179, 8, 0.12);
+      color: #b45309;
+      border-color: rgba(234, 179, 8, 0.2);
+    }
+
+    .sync-status.error {
+      background: rgba(239, 68, 68, 0.12);
+      color: #b91c1c;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .panel-header {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 640px) {
+      .panel-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .summary-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      background: rgba(56, 189, 248, 0.12);
+      color: #0284c7;
+      font-weight: 600;
+    }
+
+    .summary-pill .count {
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .filters {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    @media (min-width: 640px) {
+      .filters {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+      }
+    }
+
+    .filter-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tab-panel {
+      display: block;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .task-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem;
+      border-radius: 1rem;
+      background: rgba(15, 23, 42, 0.04);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: 0 18px 38px -24px rgba(15, 23, 42, 0.45);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .task-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 22px 48px -28px rgba(15, 23, 42, 0.5);
+    }
+
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: rgba(148, 163, 184, 1);
+    }
+
+    .task-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 0;
+      padding-top: 0.15rem;
+    }
+
+    .task-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: inherit;
+    }
+
+    .task-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: rgba(100, 116, 139, 0.9);
+    }
+
+    .task-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .task-notes {
+      font-size: 0.85rem;
+      color: rgba(226, 232, 240, 0.7);
+    }
+
+    .priority-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 9999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .priority-high {
+      background: rgba(239, 68, 68, 0.12);
+      color: #dc2626;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .priority-medium {
+      background: rgba(245, 158, 11, 0.12);
+      color: #b45309;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .priority-low {
+      background: rgba(16, 185, 129, 0.12);
+      color: #0f766e;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .daily-task-list {
+      list-style: none;
+      padding: 1rem 0 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .daily-task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.05);
+      box-shadow: 0 16px 38px -30px rgba(15, 23, 42, 0.6);
+    }
+
+    .daily-task-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .daily-task-text {
+      flex: 1;
+      color: inherit;
+      font-size: 0.95rem;
+    }
+
+    .daily-task-text-completed {
+      text-decoration: line-through;
+      color: rgba(148, 163, 184, 1);
+    }
+
+    .daily-task-empty {
+      list-style: none;
+      padding: 1rem;
+      text-align: center;
+      color: rgba(148, 163, 184, 0.9);
+      font-size: 0.9rem;
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      border-radius: 0.75rem;
+      background: rgba(15, 23, 42, 0.05);
+    }
+
+    .status-message {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .menu-sep {
+      height: 1px;
+      width: 100%;
+      background: rgba(148, 163, 184, 0.2);
+      margin: 0.5rem 0;
+    }
+
+    .menu-item {
+      width: 100%;
+      display: inline-flex;
+      justify-content: flex-start;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.75rem;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .menu-item:hover,
+    .menu-item:focus {
+      background: rgba(37, 99, 235, 0.12);
+      color: inherit;
+      outline: none;
+    }
+
+    .google-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 9999px;
+      object-fit: cover;
+    }
+
     .sr-only {
       position: absolute !important;
       width: 1px !important;
@@ -147,92 +338,103 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
     }
   </style>
 </head>
-<body>
+<body class="min-h-screen bg-base-200 text-base-content">
   <a class="skip-link" href="#mainContent">Skip to main content</a>
-  <header>
-    <div class="container">
-      <div class="header-content">
-        <div class="header-top">
-          <h1>Memory Cue</h1>
-          <div id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</div>
-        </div>
-        <div class="header-controls">
-          <input id="q" class="search-input" placeholder="Search reminders or #tags" aria-label="Search reminders" />
-          <button id="voiceBtn" class="btn-success btn-compact" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
-          <button id="notifBtn" class="btn-success btn-compact" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
-          <button id="addQuickBtn" class="btn-success btn-compact" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
-          <div class="menu-wrap">
-            <button id="moreBtn" class="btn-ghost btn-compact" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
-            <div id="moreMenu" class="menu hidden" role="menu" aria-label="More actions">
-              <button id="copyMtlBtn" class="menu-item" role="menuitem">Copy MTL</button>
-              <label class="menu-item" role="menuitem" for="importFile" style="display:flex; align-items:center; gap:8px; cursor:pointer;">Import<input id="importFile" type="file" accept="application/json" class="sr-only" /></label>
-              <button id="exportBtn" class="menu-item" role="menuitem">Export</button>
-              <button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button>
-              <div class="menu-sep"></div>
-              <button id="openSettings" class="menu-item" role="menuitem">Settings</button>
-            </div>
-          </div>
+  <header class="sticky top-0 z-20 border-b border-base-200 bg-base-100/80 backdrop-blur supports-[backdrop-filter]:backdrop-blur">
+    <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h1 class="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Memory Cue</h1>
+        <div id="syncStatus" class="sync-status offline" role="status" aria-live="polite" aria-atomic="true">Offline</div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="q" class="input input-bordered input-sm flex-1 min-w-[200px] bg-base-200/70" placeholder="Search reminders or #tags" aria-label="Search reminders" />
+        <button id="voiceBtn" class="btn btn-sm btn-secondary" type="button" title="Voice quick add" aria-label="Start voice input">🎙️</button>
+        <button id="notifBtn" class="btn btn-sm btn-secondary" type="button" title="Enable notifications" aria-label="Enable notifications">🔔</button>
+        <button id="addQuickBtn" class="btn btn-sm btn-primary" type="button" title="Add quick reminder" aria-label="Add quick reminder">+</button>
+        <div class="dropdown dropdown-end">
+          <button id="moreBtn" class="btn btn-sm btn-ghost" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" title="More actions" aria-label="More actions">⋯</button>
+          <ul id="moreMenu" class="menu menu-sm dropdown-content mt-3 w-56 rounded-box bg-base-100 p-2 shadow hidden" role="menu" aria-label="More actions">
+            <li><button id="copyMtlBtn" class="menu-item" role="menuitem">Copy MTL</button></li>
+            <li>
+              <label class="menu-item" role="menuitem" for="importFile" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                Import
+                <input id="importFile" type="file" accept="application/json" class="sr-only" />
+              </label>
+            </li>
+            <li><button id="exportBtn" class="menu-item" role="menuitem">Export</button></li>
+            <li><button id="syncAllBtn" class="menu-item" role="menuitem">Sync All Now</button></li>
+            <li><div class="menu-sep" role="presentation"></div></li>
+            <li><button id="openSettings" class="menu-item" role="menuitem">Settings</button></li>
+          </ul>
         </div>
       </div>
     </div>
   </header>
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button id="tab-reminders"
-            class="tab-btn active"
-            data-target="tasksTab"
-            role="tab"
-            aria-controls="tasksTab"
-            aria-selected="true"
-            tabindex="0">Reminders</button>
-
-    <button id="tab-today"
-            class="tab-btn"
-            data-target="todayTab"
-            role="tab"
-            aria-controls="todayTab"
-            aria-selected="false"
-            tabindex="-1">Today's List</button>
-
-    <button id="tab-notebook"
-            class="tab-btn"
-            data-target="notebookTab"
-            role="tab"
-            aria-controls="notebookTab"
-            aria-selected="false"
-            tabindex="-1">Notebook</button>
+  <nav class="border-b border-base-300 bg-base-100/70 backdrop-blur supports-[backdrop-filter]:backdrop-blur" role="tablist" aria-label="Sections">
+    <div class="mx-auto flex w-full max-w-3xl px-4">
+      <div class="tabs tabs-lifted w-full">
+        <button
+          id="tab-reminders"
+          class="tab tab-lg tab-lifted tab-btn flex-1"
+          data-target="tasksTab"
+          role="tab"
+          aria-controls="tasksTab"
+          aria-selected="true"
+          tabindex="0">Reminders</button>
+        <button
+          id="tab-today"
+          class="tab tab-lg tab-lifted tab-btn flex-1"
+          data-target="todayTab"
+          role="tab"
+          aria-controls="todayTab"
+          aria-selected="false"
+          tabindex="-1">Today's List</button>
+        <button
+          id="tab-notebook"
+          class="tab tab-lg tab-lifted tab-btn flex-1"
+          data-target="notebookTab"
+          role="tab"
+          aria-controls="notebookTab"
+          aria-selected="false"
+          tabindex="-1">Notebook</button>
+      </div>
+    </div>
   </nav>
 
   <div id="tasksTab" class="tab-panel" role="tabpanel" aria-labelledby="tab-reminders" tabindex="0">
-    <main id="mainContent" class="main-content" tabindex="-1">
-    <div class="container">
+    <main id="mainContent" class="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8" tabindex="-1">
       <!-- Create Reminder Card -->
-      <section class="card section">
-        <div class="card-header"><h2 class="card-title">Create Reminder</h2></div>
-        <div class="card-content">
-          <div class="form-stack">
-            <div class="form-group">
+      <section class="card border border-base-300 bg-base-100 shadow-xl">
+        <div class="card-body gap-6">
+          <div class="flex items-center justify-between">
+            <h2 class="card-title text-2xl font-semibold">Create Reminder</h2>
+          </div>
+          <div class="grid gap-4">
+            <div class="form-control">
               <label class="sr-only" for="title">Reminder</label>
-              <input id="title" placeholder="e.g., Email parents about camp #admin" aria-label="Reminder title" />
-              <div id="dateFeedback" style="margin-top: 4px; font-size: 12px; color: var(--text-muted); display: none;"></div>
+              <input id="title" class="input input-bordered w-full" placeholder="e.g., Email parents about camp #admin" aria-label="Reminder title" />
+              <div id="dateFeedback" class="status-message" style="display: none;"></div>
             </div>
-            <div class="form-row" style="flex-wrap: wrap;">
-              <div class="form-group flex-1">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div class="form-control">
                 <label class="sr-only" for="date">Date</label>
-                <input id="date" type="date" aria-label="Due date" />
+                <input id="date" type="date" class="input input-bordered w-full" aria-label="Due date" />
               </div>
-              <div class="form-group flex-1">
+              <div class="form-control">
                 <label class="sr-only" for="time">Time</label>
-                <input id="time" type="time" aria-label="Due time" />
+                <input id="time" type="time" class="input input-bordered w-full" aria-label="Due time" />
               </div>
-              <div class="form-group">
+              <div class="form-control">
                 <label class="sr-only" for="priority">Priority</label>
-                <select id="priority" aria-label="Priority">
-                  <option>High</option><option selected>Medium</option><option>Low</option>
+                <select id="priority" class="select select-bordered w-full" aria-label="Priority">
+                  <option>High</option>
+                  <option selected>Medium</option>
+                  <option>Low</option>
                 </select>
               </div>
-              <div class="form-group" style="min-width: 140px;">
+              <div class="form-control">
                 <label class="sr-only" for="category">Category</label>
-                <input id="category" list="categorySuggestions" placeholder="School – Communication &amp; Families" aria-label="Category" />
+                <input id="category" list="categorySuggestions" class="input input-bordered w-full" placeholder="School – Communication &amp; Families" aria-label="Category" />
               </div>
               <datalist id="categorySuggestions">
                 <option value="General"></option>
@@ -247,13 +449,13 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
                 <option value="Wellbeing &amp; Support"></option>
               </datalist>
             </div>
-            <div class="form-group">
+            <div class="form-control">
               <label class="sr-only" for="details">Details</label>
-              <textarea id="details" rows="3" placeholder="Add details or notes (optional)" aria-label="Reminder details"></textarea>
+              <textarea id="details" rows="3" class="textarea textarea-bordered w-full" placeholder="Add details or notes (optional)" aria-label="Reminder details"></textarea>
             </div>
-            <div class="form-row">
-              <button id="saveBtn" class="btn-success flex-1" type="button">Save Reminder</button>
-              <button id="cancelEditBtn" class="btn-danger flex-1 hidden" type="button">Cancel</button>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <button id="saveBtn" class="btn btn-primary" type="button">Save Reminder</button>
+              <button id="cancelEditBtn" class="btn btn-outline btn-error hidden" type="button">Cancel</button>
             </div>
           </div>
           <div id="status" class="status-message" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -261,29 +463,29 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
       </section>
 
       <!-- Reminders List with inline counters -->
-      <section class="card section">
-        <div class="card-header">
+      <section class="card border border-base-300 bg-base-100 shadow-xl">
+        <div class="card-body gap-6">
           <div class="panel-header">
             <div class="summary-pills">
-              <div class="pill" title="Tasks due today">
+              <div class="summary-pill" title="Tasks due today">
                 <span>Today</span>
                 <span class="count" id="inlineTodayCount">0</span>
               </div>
-              <div class="pill" title="Tasks due this week">
+              <div class="summary-pill" title="Tasks due this week">
                 <span>This Week</span>
                 <span class="count" id="inlineWeekCount">0</span>
               </div>
             </div>
             <div class="filters">
-              <div class="filter-buttons">
-                <button class="btn-ghost active" data-filter="today" type="button">Today</button>
-                <button class="btn-ghost" data-filter="overdue" type="button">Overdue</button>
-                <button class="btn-ghost" data-filter="all" type="button">All</button>
-                <button class="btn-ghost" data-filter="done" type="button">Done</button>
+              <div class="filter-buttons" role="group" aria-label="Filter reminders">
+                <button class="btn btn-sm btn-ghost active" data-filter="today" type="button">Today</button>
+                <button class="btn btn-sm btn-ghost" data-filter="overdue" type="button">Overdue</button>
+                <button class="btn btn-sm btn-ghost" data-filter="all" type="button">All</button>
+                <button class="btn btn-sm btn-ghost" data-filter="done" type="button">Done</button>
               </div>
-              <div class="sort-control">
+              <div class="flex flex-wrap gap-3">
                 <label class="sr-only" for="categoryFilter">Category</label>
-                <select id="categoryFilter">
+                <select id="categoryFilter" class="select select-bordered select-sm min-w-[160px]">
                   <option value="all" selected>All categories</option>
                   <option value="General">General</option>
                   <option value="General Appointments">General Appointments</option>
@@ -296,10 +498,8 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
                   <option value="School – To-Do">School – To-Do</option>
                   <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
                 </select>
-              </div>
-              <div class="sort-control">
                 <label class="sr-only" for="sort">Sort</label>
-                <select id="sort">
+                <select id="sort" class="select select-bordered select-sm min-w-[140px]">
                   <option value="smart">Smart sort</option>
                   <option value="time">Time</option>
                   <option value="priority">Priority</option>
@@ -307,75 +507,73 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
               </div>
             </div>
           </div>
-        </div>
-        <div class="card-content">
           <div id="list" class="task-list" aria-live="polite">
-            <div class="text-muted">No reminders yet.</div>
+            <div class="text-sm text-base-content/60">No reminders yet.</div>
           </div>
         </div>
       </section>
 
       <!-- Settings (hidden by default) -->
-      <section class="card section hidden" id="settingsSection">
-        <div class="card-header"><h2 class="card-title">Settings</h2></div>
-        <div class="card-content">
-          <div class="form-stack">
-            <div class="form-row">
-              <button id="googleSignInBtn" class="btn-purple flex-1" type="button" aria-label="Sign in with Google">Sign in with Google</button>
-              <button id="googleSignOutBtn" class="btn-danger flex-1 hidden" type="button" aria-label="Sign out">
+      <section class="card border border-base-300 bg-base-100 shadow-xl hidden" id="settingsSection">
+        <div class="card-body gap-6">
+          <div class="grid gap-4">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <button id="googleSignInBtn" class="btn btn-secondary" type="button" aria-label="Sign in with Google">Sign in with Google</button>
+              <button id="googleSignOutBtn" class="btn btn-outline btn-error hidden" type="button" aria-label="Sign out">
                 <img id="googleAvatar" class="google-avatar hidden" alt="Google avatar" />
                 Sign out
               </button>
             </div>
-            <div id="googleUserName" class="auth-info" aria-live="polite"></div>
-
-            <div class="form-group"><input id="syncUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" /></div>
-            <div class="form-row"><button id="saveSettings" class="btn-success flex-1" type="button">Save</button><button id="testSync" class="btn-ghost flex-1" type="button">Test</button></div>
+            <div id="googleUserName" class="text-sm text-base-content/70" aria-live="polite"></div>
+            <div class="form-control">
+              <input id="syncUrl" class="input input-bordered w-full" placeholder="https://script.google.com/macros/s/AKfycb.../exec" aria-label="Google Apps Script URL" />
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <button id="saveSettings" class="btn btn-primary" type="button">Save</button>
+              <button id="testSync" class="btn btn-outline" type="button">Test</button>
+            </div>
           </div>
-          <div class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-xs);">
-            <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>,
-            set <strong>Execute as: Me</strong>, <strong>Who has access: Anyone with the link</strong>, then copy the URL.
+          <div class="text-sm text-base-content/70">
+            <strong>Tip:</strong> In Google Apps Script, click <strong>Deploy → New deployment → Web app</strong>, set <strong>Execute as: Me</strong>,
+            <strong>Who has access: Anyone with the link</strong>, then copy the URL.
           </div>
         </div>
       </section>
-    </div>
-  </main>
+    </main>
   </div>
 
   <div id="todayTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-today" tabindex="0">
-    <div class="container">
-      <section class="card section">
-        <div class="card-header">
+    <div class="mx-auto w-full max-w-3xl px-4 py-8">
+      <section class="card border border-base-300 bg-base-100 shadow-xl">
+        <div class="card-body gap-6">
           <div>
-            <h2 id="todayListHeader" class="card-title">Today's List</h2>
-            <p id="todayListSubheading" style="margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--text-xs);">
+            <h2 id="todayListHeader" class="card-title text-2xl font-semibold">Today's List</h2>
+            <p id="todayListSubheading" class="text-sm text-base-content/70">
               Capture your quick wins for the day. Tasks are stored on this device.
             </p>
           </div>
-        </div>
-        <div class="card-content">
-          <form id="todayQuickAddForm" class="form-row" style="flex-wrap: wrap; gap: var(--space-2);" novalidate>
-            <div class="form-group flex-1">
+          <form id="todayQuickAddForm" class="grid gap-3 sm:grid-cols-[1fr_auto]" novalidate>
+            <div class="form-control">
               <label class="sr-only" for="todayQuickAddInput">Add a task for today</label>
-              <input id="todayQuickAddInput" autocomplete="off" placeholder="Add a task for today" aria-label="Add a task for today" />
+              <input id="todayQuickAddInput" autocomplete="off" class="input input-bordered w-full" placeholder="Add a task for today" aria-label="Add a task for today" />
             </div>
-            <button id="todayQuickAddButton" class="btn-success" type="submit">Add</button>
+            <button id="todayQuickAddButton" class="btn btn-primary" type="submit">Add</button>
           </form>
           <ul id="todayTasks" class="daily-task-list" aria-live="polite" aria-busy="false"></ul>
-          <button id="todayClearCompleted" class="btn-ghost btn-compact" type="button" disabled>Clear completed</button>
+          <button id="todayClearCompleted" class="btn btn-sm btn-outline" type="button" disabled>Clear completed</button>
         </div>
       </section>
     </div>
   </div>
 
   <div id="notebookTab" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-notebook" tabindex="0">
-    <div class="container">
-      <section class="card section">
-        <div class="card-content">
-          <textarea id="notes" placeholder="Type notes..." style="width:100%;min-height:200px;"></textarea>
-          <div class="form-row" style="margin-top: var(--space-3);">
-            <button id="saveNotesBtn" class="btn-success flex-1" type="button">Save Notes</button>
-            <button id="loadNotesBtn" class="btn-ghost flex-1" type="button">Load Notes</button>
+    <div class="mx-auto w-full max-w-3xl px-4 py-8">
+      <section class="card border border-base-300 bg-base-100 shadow-xl">
+        <div class="card-body gap-6">
+          <textarea id="notes" class="textarea textarea-bordered w-full" placeholder="Type notes..."></textarea>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <button id="saveNotesBtn" class="btn btn-primary" type="button">Save Notes</button>
+            <button id="loadNotesBtn" class="btn btn-outline" type="button">Load Notes</button>
           </div>
         </div>
       </section>
@@ -437,6 +635,7 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
         tab.setAttribute('aria-selected', String(isActive));
         tab.tabIndex = isActive ? 0 : -1;
         tab.classList.toggle('active', isActive);
+        tab.classList.toggle('tab-active', isActive);
       });
       panels.forEach(panel => {
         const show = panel.id === current.getAttribute('aria-controls');
@@ -524,44 +723,40 @@ border-bottom:1px solid var(--border);z-index:100;box-shadow:var(--shadow-sm)}
         return `${year}-${month}-${day}`;
       }
 
-      function normaliseTask(task) {
-        return {
-          text: typeof task?.text === 'string' ? task.text : '',
-          completed: Boolean(task?.completed)
-        };
-      }
-
       function readStorageMap() {
         try {
-          const raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : null;
+          const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) {
-            return { ...memoryFallback };
+            return memoryFallback;
           }
           const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            memoryFallback = { ...parsed };
-            return parsed;
+          if (typeof parsed !== 'object' || parsed === null) {
+            return memoryFallback;
           }
-          return { ...memoryFallback };
+          return parsed;
         } catch (error) {
-          console.warn('Falling back to in-memory storage for daily tasks', error);
-          if (subheading) {
-            subheading.textContent = 'Capture your quick wins for the day. Storage is unavailable so tasks reset when you close this tab.';
-          }
-          return { ...memoryFallback };
+          console.warn('Unable to read today\'s list from storage', error);
+          return memoryFallback;
         }
       }
 
       function writeStorageMap(map) {
-        memoryFallback = { ...map };
         try {
-          if (!window.localStorage) {
-            return;
-          }
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryFallback));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+          memoryFallback = map;
         } catch (error) {
-          console.warn('Unable to persist today\'s list to localStorage', error);
+          console.warn('Unable to persist today\'s list', error);
+          memoryFallback = map;
         }
+      }
+
+      function normaliseTask(task) {
+        if (typeof task !== 'object' || task === null) {
+          return { text: '', completed: false };
+        }
+        const text = typeof task.text === 'string' ? task.text.trim() : '';
+        const completed = Boolean(task.completed);
+        return { text, completed };
       }
 
       function getTasksForDate(dateId) {
