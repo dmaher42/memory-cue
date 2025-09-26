@@ -14,13 +14,18 @@
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#mainContent">Skip to main content</a>
 
   <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
-    <div class="flex-1">
+    <div class="flex-1 items-center gap-2">
       <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
+      <span id="syncStatus" class="badge badge-outline">Offline</span>
     </div>
-    <div class="flex-none gap-2">
-      <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
-      <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
-      <button class="btn btn-primary" type="button">Sign in</button>
+    <div class="flex-none flex flex-col gap-1 text-right">
+      <div class="flex justify-end gap-2">
+        <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
+        <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
+        <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
+        <button id="googleSignOutBtn" class="btn btn-ghost hidden" type="button">Sign out</button>
+      </div>
+      <p id="googleUserName" class="text-xs text-base-content/70"></p>
     </div>
   </header>
 
@@ -48,6 +53,7 @@
           <button id="saveReminder" class="btn btn-primary w-full">Save Reminder</button>
           <button class="btn btn-outline w-full">Cancel</button>
         </div>
+        <p id="statusMessage" class="text-sm text-base-content/70"></p>
       </div>
     </section>
 
@@ -65,14 +71,19 @@
     <section id="settingsSection" class="card bg-base-100 border">
       <div class="card-body gap-4">
         <h2 class="card-title text-base">Sync Settings</h2>
+        <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
         <label class="form-control">
-          <div class="label"><span class="label-text">Google Account</span></div>
-          <input type="email" class="input input-bordered" placeholder="name@example.com" />
+          <div class="label"><span class="label-text">Apps Script URL</span></div>
+          <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
         </label>
-        <div class="card-actions">
-          <button class="btn btn-outline">Connect</button>
-          <button class="btn">Sync All</button>
+        <div class="card-actions flex-col gap-2">
+          <div class="flex gap-2 w-full">
+            <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
+            <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
+          </div>
+          <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
         </div>
+        <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
       </div>
     </section>
   </main>
@@ -94,6 +105,184 @@
         localStorage.setItem('theme', next);
       });
     })();
+  </script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
+      authDomain: 'memory-cue-app.firebaseapp.com',
+      projectId: 'memory-cue-app',
+      storageBucket: 'memory-cue-app.firebasestorage.app',
+      messagingSenderId: '751284466633',
+      appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
+      measurementId: 'G-R0V4M7VCE6'
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let currentUser = null;
+
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    const googleSignOutBtn = document.getElementById('googleSignOutBtn');
+    const googleUserName = document.getElementById('googleUserName');
+    const syncStatus = document.getElementById('syncStatus');
+    const statusMessage = document.getElementById('statusMessage');
+    const syncUrlInput = document.getElementById('syncUrl');
+    const saveSyncSettings = document.getElementById('saveSyncSettings');
+    const testSync = document.getElementById('testSync');
+    const syncAll = document.getElementById('syncAll');
+
+    const toast = (message, timeout = 2600) => {
+      if (!statusMessage) return;
+      statusMessage.textContent = message;
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        statusMessage.textContent = '';
+      }, timeout);
+    };
+
+    function setSyncBadge(state) {
+      if (!syncStatus) return;
+      syncStatus.classList.remove('badge-outline', 'badge-error', 'badge-success');
+      if (state === 'online') {
+        syncStatus.textContent = 'Online';
+        syncStatus.classList.add('badge-success');
+      } else if (state === 'error') {
+        syncStatus.textContent = 'Sync Error';
+        syncStatus.classList.add('badge-error');
+      } else if (state === 'signedout') {
+        syncStatus.textContent = 'Signed out';
+        syncStatus.classList.add('badge-outline');
+      } else {
+        syncStatus.textContent = 'Offline';
+        syncStatus.classList.add('badge-outline');
+      }
+    }
+
+    function updateNetworkState() {
+      if (!currentUser) {
+        setSyncBadge(navigator.onLine ? 'signedout' : 'offline');
+      } else {
+        setSyncBadge(navigator.onLine ? 'online' : 'offline');
+      }
+    }
+
+    googleSignInBtn?.addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        try {
+          await signInWithRedirect(auth, provider);
+        } catch (err) {
+          console.error('Google sign-in failed', err);
+          toast('Google sign-in failed');
+        }
+      }
+    });
+
+    getRedirectResult(auth).catch(() => {});
+
+    googleSignOutBtn?.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        toast('Signed out');
+      } catch (error) {
+        console.error('Sign-out failed', error);
+        toast('Sign-out failed');
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        googleUserName.textContent = user.displayName || user.email || '';
+        googleSignInBtn?.classList.add('hidden');
+        googleSignOutBtn?.classList.remove('hidden');
+        updateNetworkState();
+      } else {
+        googleUserName.textContent = '';
+        googleSignInBtn?.classList.remove('hidden');
+        googleSignOutBtn?.classList.add('hidden');
+        updateNetworkState();
+      }
+    });
+
+    if (syncUrlInput) {
+      syncUrlInput.value = localStorage.getItem('syncUrl') || '';
+    }
+
+    saveSyncSettings?.addEventListener('click', () => {
+      const url = syncUrlInput?.value.trim() || '';
+      if (!url) {
+        toast('Enter your Apps Script URL first');
+        return;
+      }
+      localStorage.setItem('syncUrl', url);
+      toast('Sync settings saved');
+    });
+
+    testSync?.addEventListener('click', async () => {
+      const url = (syncUrlInput?.value || '').trim();
+      if (!url) {
+        toast('Enter your Apps Script URL first');
+        return;
+      }
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ test: true })
+        });
+        if (response.ok) {
+          toast('Connection OK');
+          updateNetworkState();
+        } else {
+          toast('Connection failed');
+          setSyncBadge('error');
+        }
+      } catch (error) {
+        console.error('Test sync failed', error);
+        toast('Connection failed');
+        setSyncBadge('error');
+      }
+    });
+
+    syncAll?.addEventListener('click', async () => {
+      const url = (syncUrlInput?.value || '').trim();
+      if (!url) {
+        toast('Enter your Apps Script URL first');
+        return;
+      }
+      try {
+        const payload = {
+          syncAll: true,
+          timestamp: new Date().toISOString()
+        };
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          toast('Sync started');
+          updateNetworkState();
+        } else {
+          toast('Sync failed');
+          setSyncBadge('error');
+        }
+      } catch (error) {
+        console.error('Sync all failed', error);
+        toast('Sync failed');
+        setSyncBadge('error');
+      }
+    });
+
+    window.addEventListener('online', updateNetworkState);
+    window.addEventListener('offline', updateNetworkState);
+    updateNetworkState();
   </script>
 </body>
 </html>
