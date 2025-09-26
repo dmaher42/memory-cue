@@ -32,6 +32,18 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
+  <style>
+    /* Example: Make text in the 'dark' theme a light gray instead of pure white */
+    [data-theme="dark"] body {
+      color: #d1d5db; /* Tailwind's gray-300 */
+    }
+
+    /* Example: Make headings in the 'retro' theme a different color */
+    [data-theme="retro"] h1,
+    [data-theme="retro"] h2 {
+      color: #facc15; /* Tailwind's yellow-400, for a retro vibe */
+    }
+  </style>
   <!-- Tailwind v4 (Play CDN) -->
   <script
     defer
@@ -260,7 +272,7 @@
   </script>
   <script type="module" src="./js/main.js"></script>
 </head>
-<body id="top" class="bg-[var(--bg)] text-[var(--fg)] antialiased leading-7 min-h-screen">
+<body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen">
   <a class="skip-link" href="#mainContent">Skip to main content</a>
   <!-- Modern Navigation -->
   <nav aria-label="Primary" class="fixed top-0 w-full z-50 nav-gradient border-b border-white/20">
