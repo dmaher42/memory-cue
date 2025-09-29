@@ -1322,8 +1322,30 @@
     </section>
     <section data-view="settings" id="view-settings" hidden tabindex="-1">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
-          <div id="settings-empty"></div>
+        <div class="space-y-6">
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div class="flex flex-col gap-4">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Google Calendar sync</h2>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Deploy the companion Google Apps Script to bridge Memory Cue reminders with your calendar. Follow the deployment guide and paste the resulting Web App URL into the mobile settings screen.
+                </p>
+              </div>
+              <div>
+                <a
+                  class="btn btn-primary"
+                  href="https://script.google.com/home/start"
+                  rel="noopener"
+                  target="_blank"
+                >
+                  Open Google Apps Script setup
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div id="settings-empty"></div>
+          </div>
         </div>
       </div>
     </section>
