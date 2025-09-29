@@ -143,6 +143,29 @@
       }, timeout);
     };
 
+    async function postToAppsScript(url, payload) {
+      const defaultOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      };
+
+      try {
+        const response = await fetch(url, defaultOptions);
+        return { response, usedFallback: false };
+      } catch (error) {
+        console.warn('Primary Apps Script request failed, retrying without CORS', error);
+        const fallbackOptions = {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          mode: 'no-cors'
+        };
+
+        const fallbackResponse = await fetch(url, fallbackOptions);
+        return { response: fallbackResponse, usedFallback: true };
+      }
+    }
+
     function setSyncBadge(state) {
       if (!syncStatus) return;
       syncStatus.classList.remove('badge-outline', 'badge-error', 'badge-success');
@@ -231,13 +254,9 @@
         return;
       }
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ test: true })
-        });
-        if (response.ok) {
-          toast('Connection OK');
+        const { response, usedFallback } = await postToAppsScript(url, { test: true });
+        if (response.ok || usedFallback) {
+          toast(usedFallback ? 'Connection sent (no response due to CORS)' : 'Connection OK');
           updateNetworkState();
         } else {
           toast('Connection failed');
@@ -261,13 +280,9 @@
           syncAll: true,
           timestamp: new Date().toISOString()
         };
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (response.ok) {
-          toast('Sync started');
+        const { response, usedFallback } = await postToAppsScript(url, payload);
+        if (response.ok || usedFallback) {
+          toast(usedFallback ? 'Sync sent to Apps Script' : 'Sync started');
           updateNetworkState();
         } else {
           toast('Sync failed');
