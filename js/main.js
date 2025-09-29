@@ -2,6 +2,39 @@
 
 // Navigation helpers
 const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
+const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+const mobileNavMenu = document.getElementById('mobile-nav-menu');
+
+if (mobileNavToggle && mobileNavMenu){
+  const closeMobileMenu = () => {
+    mobileNavMenu.classList.add('hidden');
+    mobileNavToggle.setAttribute('aria-expanded', 'false');
+  };
+
+  mobileNavToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const isOpen = !mobileNavMenu.classList.contains('hidden');
+    if (isOpen) {
+      closeMobileMenu();
+    } else {
+      mobileNavMenu.classList.remove('hidden');
+      mobileNavToggle.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  mobileNavMenu.addEventListener('click', (event) => {
+    const navItem = event.target.closest('[data-route]');
+    if (navItem) {
+      closeMobileMenu();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target === mobileNavToggle) return;
+    if (mobileNavMenu.contains(event.target)) return;
+    closeMobileMenu();
+  });
+}
 
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
@@ -2572,17 +2605,17 @@ mountEmptyState(resourcesEmptyEl, {
 
 mountEmptyState(templatesEmptyEl, {
   icon: 'layoutDashboard',
-  title: 'Template gallery in progress',
-  description: 'Reusable planning templates are on the way. Soon you’ll be able to copy, tweak, and share favourites.',
-  hostClasses: 'flex flex-col items-center justify-center gap-3 text-center text-sm text-gray-600 dark:text-gray-400',
+  title: 'Choose a blueprint to start faster',
+  description: 'Pair these planning templates with your weekly planner or duplicate them to create your own.',
+  hostClasses: 'alert alert-info flex flex-col items-start gap-2 text-left text-sm text-base-content/80',
   action: `<a href="#view-planner" class="${EMPTY_STATE_CTA_CLASSES}">Open planner</a>`
 });
 
 mountEmptyState(settingsEmptyEl, {
   icon: 'sparkles',
-  title: 'Personalisation coming soon',
-  description: 'Theme, notification, and automation controls will live here shortly. Stay tuned for more ways to customise Memory Cue.',
-  hostClasses: 'flex flex-col items-center justify-center gap-3 text-center text-sm text-gray-600 dark:text-gray-400'
+  title: 'Tune Memory Cue to match your day',
+  description: 'Adjust notifications, layout, and integrations. Changes save to your profile.',
+  hostClasses: 'alert alert-success flex flex-col items-start gap-2 text-left text-sm text-base-content/80'
 });
 
 resourcesController = (() => {
