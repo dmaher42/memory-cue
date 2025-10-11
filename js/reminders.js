@@ -355,7 +355,7 @@ export async function initReminders(sel = {}) {
 
    // State
   let items = [];
-  let filter = 'today';
+  let filter = filterBtns.length ? 'today' : 'all';
   let categoryFilterValue = categoryFilter?.value || 'all';
   let sortKey = 'smart';
   let listening = false;

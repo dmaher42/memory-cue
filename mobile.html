@@ -9,6 +9,46 @@
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
   <link rel="stylesheet" href="dist/styles.css" />
+  <style>
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(148, 163, 184, 0.1);
+      color: rgb(15 23 42);
+      transition: all 0.2s ease;
+    }
+    .dark .sync-status {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(148, 163, 184, 0.15);
+      color: rgb(226 232 240);
+    }
+    .sync-status.online {
+      background: rgba(22, 163, 74, 0.12);
+      color: rgb(22 163 74);
+      border-color: rgba(22, 163, 74, 0.3);
+    }
+    .dark .sync-status.online {
+      background: rgba(34, 197, 94, 0.16);
+      color: rgb(187 247 208);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+    .sync-status.error {
+      background: rgba(248, 113, 113, 0.16);
+      color: rgb(220 38 38);
+      border-color: rgba(248, 113, 113, 0.32);
+    }
+    .dark .sync-status.error {
+      background: rgba(248, 113, 113, 0.22);
+      color: rgb(254 205 211);
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#mainContent">Skip to main content</a>
@@ -16,10 +56,22 @@
   <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
     <div class="flex-1 items-center gap-2">
       <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
-      <span id="syncStatus" class="badge badge-outline">Offline</span>
+      <span
+        id="syncStatus"
+        class="sync-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >Offline</span>
     </div>
     <div class="flex-none flex flex-col gap-1 text-right">
-      <div class="flex justify-end gap-2">
+      <div class="flex justify-end items-center gap-2">
+        <img
+          id="googleAvatar"
+          src=""
+          alt=""
+          class="hidden h-8 w-8 rounded-full border border-base-300"
+        />
         <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
         <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
         <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
@@ -35,7 +87,23 @@
         <h2 class="card-title text-base">Create Reminder</h2>
         <label class="form-control w-full">
           <div class="label"><span class="label-text">Reminder</span></div>
-          <input id="reminderText" type="text" placeholder="e.g., Call Alex at 3pm" class="input input-bordered w-full" />
+          <input
+            id="reminderText"
+            type="text"
+            placeholder="e.g., Call Alex at 3pm"
+            class="input input-bordered w-full"
+            autocomplete="off"
+          />
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text">Notes</span></div>
+          <textarea
+            id="reminderDetails"
+            class="textarea textarea-bordered"
+            rows="3"
+            placeholder="Optional context for the reminder"
+          ></textarea>
         </label>
 
         <div class="grid grid-cols-2 gap-3">
@@ -49,26 +117,109 @@
           </label>
         </div>
 
-        <div class="card-actions justify-stretch">
-          <button id="saveReminder" class="btn btn-primary w-full">Save Reminder</button>
-          <button class="btn btn-outline w-full">Cancel</button>
+        <div id="dateFeedback" class="text-xs text-info"></div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <label class="form-control">
+            <div class="label"><span class="label-text">Priority</span></div>
+            <select id="priority" class="select select-bordered">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </label>
+          <label class="form-control">
+            <div class="label"><span class="label-text">Category</span></div>
+            <input
+              id="category"
+              class="input input-bordered"
+              list="categorySuggestions"
+              placeholder="General"
+              value="General"
+            />
+            <datalist id="categorySuggestions">
+              <option value="General"></option>
+              <option value="General Appointments"></option>
+              <option value="Home &amp; Personal"></option>
+              <option value="School – Appointments/Meetings"></option>
+              <option value="School – Communication &amp; Families"></option>
+              <option value="School – Excursions &amp; Events"></option>
+              <option value="School – Grading &amp; Assessment"></option>
+              <option value="School – Prep &amp; Resources"></option>
+              <option value="School – To-Do"></option>
+              <option value="Wellbeing &amp; Support"></option>
+            </datalist>
+          </label>
         </div>
-        <p id="statusMessage" class="text-sm text-base-content/70"></p>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="voiceBtn" class="btn btn-ghost" type="button" aria-label="Voice input">🎙️</button>
+          <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
+          <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
+        </div>
+
+        <div class="card-actions justify-stretch">
+          <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
+          <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
+        </div>
+        <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
       </div>
     </section>
 
-    <div class="flex items-center gap-2 overflow-x-auto">
-      <div class="badge badge-outline">Today · 0</div>
-      <div class="badge badge-outline">This Week · 0</div>
-      <div class="badge badge-primary">Smart sort</div>
-    </div>
+    <section class="card bg-base-100 border">
+      <div class="card-body gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
+            <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="true">Today · <span id="todayCount">0</span></button>
+            <button class="btn btn-xs" type="button" data-filter="overdue">Overdue · <span id="overdueCount">0</span></button>
+            <button class="btn btn-xs" type="button" data-filter="all">All · <span id="totalCountBadge">0</span></button>
+            <button class="btn btn-xs" type="button" data-filter="done">Done · <span id="completedCount">0</span></button>
+          </div>
+          <label class="form-control w-full sm:w-auto">
+            <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+            <select id="categoryFilter" class="select select-bordered select-sm">
+              <option value="all" selected>All categories</option>
+              <option value="General">General</option>
+              <option value="General Appointments">General Appointments</option>
+              <option value="Home &amp; Personal">Home &amp; Personal</option>
+              <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+              <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+              <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+              <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+              <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+              <option value="School – To-Do">School – To-Do</option>
+              <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+            </select>
+          </label>
+        </div>
 
-    <div class="text-center py-10 text-base-content/60">
-      <p class="mb-3">No reminders yet.</p>
-      <button class="btn btn-primary">Add your first reminder</button>
-    </div>
+        <label class="form-control">
+          <div class="label"><span class="label-text">Search</span></div>
+          <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" />
+        </label>
+      </div>
+    </section>
 
-    <section id="settingsSection" class="card bg-base-100 border">
+    <section class="card bg-base-100 border">
+      <div class="card-body gap-4" id="remindersWrapper">
+        <div id="emptyState" class="hidden text-center text-base-content/60"></div>
+        <ul id="reminderList" class="hidden space-y-3"></ul>
+        <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
+      </div>
+    </section>
+
+    <section class="card bg-base-100 border">
+      <div class="card-body gap-3">
+        <h2 class="card-title text-base">Scratch Notes</h2>
+        <textarea id="notes" class="textarea textarea-bordered" rows="4" placeholder="Quick personal notes"></textarea>
+        <div class="flex gap-2">
+          <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
+          <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="settingsSection" class="card bg-base-100 border hidden">
       <div class="card-body gap-4">
         <h2 class="card-title text-base">Sync Settings</h2>
         <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
@@ -106,198 +257,6 @@
       });
     })();
   </script>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-
-    const firebaseConfig = {
-      apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-      authDomain: 'memory-cue-app.firebaseapp.com',
-      projectId: 'memory-cue-app',
-      storageBucket: 'memory-cue-app.firebasestorage.app',
-      messagingSenderId: '751284466633',
-      appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-      measurementId: 'G-R0V4M7VCE6'
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    let currentUser = null;
-
-    const googleSignInBtn = document.getElementById('googleSignInBtn');
-    const googleSignOutBtn = document.getElementById('googleSignOutBtn');
-    const googleUserName = document.getElementById('googleUserName');
-    const syncStatus = document.getElementById('syncStatus');
-    const statusMessage = document.getElementById('statusMessage');
-    const syncUrlInput = document.getElementById('syncUrl');
-    const saveSyncSettings = document.getElementById('saveSyncSettings');
-    const testSync = document.getElementById('testSync');
-    const syncAll = document.getElementById('syncAll');
-
-    const toast = (message, timeout = 2600) => {
-      if (!statusMessage) return;
-      statusMessage.textContent = message;
-      clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => {
-        statusMessage.textContent = '';
-      }, timeout);
-    };
-
-    async function postToAppsScript(url, payload) {
-      const defaultOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      };
-
-      try {
-        const response = await fetch(url, defaultOptions);
-        return { response, usedFallback: false };
-      } catch (error) {
-        console.warn('Primary Apps Script request failed, retrying without CORS', error);
-        const fallbackOptions = {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          mode: 'no-cors'
-        };
-
-        const fallbackResponse = await fetch(url, fallbackOptions);
-        return { response: fallbackResponse, usedFallback: true };
-      }
-    }
-
-    function setSyncBadge(state) {
-      if (!syncStatus) return;
-      syncStatus.classList.remove('badge-outline', 'badge-error', 'badge-success');
-      if (state === 'online') {
-        syncStatus.textContent = 'Online';
-        syncStatus.classList.add('badge-success');
-      } else if (state === 'error') {
-        syncStatus.textContent = 'Sync Error';
-        syncStatus.classList.add('badge-error');
-      } else if (state === 'signedout') {
-        syncStatus.textContent = 'Signed out';
-        syncStatus.classList.add('badge-outline');
-      } else {
-        syncStatus.textContent = 'Offline';
-        syncStatus.classList.add('badge-outline');
-      }
-    }
-
-    function updateNetworkState() {
-      if (!currentUser) {
-        setSyncBadge(navigator.onLine ? 'signedout' : 'offline');
-      } else {
-        setSyncBadge(navigator.onLine ? 'online' : 'offline');
-      }
-    }
-
-    googleSignInBtn?.addEventListener('click', async () => {
-      const provider = new GoogleAuthProvider();
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (error) {
-        try {
-          await signInWithRedirect(auth, provider);
-        } catch (err) {
-          console.error('Google sign-in failed', err);
-          toast('Google sign-in failed');
-        }
-      }
-    });
-
-    getRedirectResult(auth).catch(() => {});
-
-    googleSignOutBtn?.addEventListener('click', async () => {
-      try {
-        await signOut(auth);
-        toast('Signed out');
-      } catch (error) {
-        console.error('Sign-out failed', error);
-        toast('Sign-out failed');
-      }
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      if (user) {
-        googleUserName.textContent = user.displayName || user.email || '';
-        googleSignInBtn?.classList.add('hidden');
-        googleSignOutBtn?.classList.remove('hidden');
-        updateNetworkState();
-      } else {
-        googleUserName.textContent = '';
-        googleSignInBtn?.classList.remove('hidden');
-        googleSignOutBtn?.classList.add('hidden');
-        updateNetworkState();
-      }
-    });
-
-    if (syncUrlInput) {
-      syncUrlInput.value = localStorage.getItem('syncUrl') || '';
-    }
-
-    saveSyncSettings?.addEventListener('click', () => {
-      const url = syncUrlInput?.value.trim() || '';
-      if (!url) {
-        toast('Enter your Apps Script URL first');
-        return;
-      }
-      localStorage.setItem('syncUrl', url);
-      toast('Sync settings saved');
-    });
-
-    testSync?.addEventListener('click', async () => {
-      const url = (syncUrlInput?.value || '').trim();
-      if (!url) {
-        toast('Enter your Apps Script URL first');
-        return;
-      }
-      try {
-        const { response, usedFallback } = await postToAppsScript(url, { test: true });
-        if (response.ok || usedFallback) {
-          toast(usedFallback ? 'Connection sent (no response due to CORS)' : 'Connection OK');
-          updateNetworkState();
-        } else {
-          toast('Connection failed');
-          setSyncBadge('error');
-        }
-      } catch (error) {
-        console.error('Test sync failed', error);
-        toast('Connection failed');
-        setSyncBadge('error');
-      }
-    });
-
-    syncAll?.addEventListener('click', async () => {
-      const url = (syncUrlInput?.value || '').trim();
-      if (!url) {
-        toast('Enter your Apps Script URL first');
-        return;
-      }
-      try {
-        const payload = {
-          syncAll: true,
-          timestamp: new Date().toISOString()
-        };
-        const { response, usedFallback } = await postToAppsScript(url, payload);
-        if (response.ok || usedFallback) {
-          toast(usedFallback ? 'Sync sent to Apps Script' : 'Sync started');
-          updateNetworkState();
-        } else {
-          toast('Sync failed');
-          setSyncBadge('error');
-        }
-      } catch (error) {
-        console.error('Sync all failed', error);
-        toast('Sync failed');
-        setSyncBadge('error');
-      }
-    });
-
-    window.addEventListener('online', updateNetworkState);
-    window.addEventListener('offline', updateNetworkState);
-    updateNetworkState();
-  </script>
+  <script type="module" src="./mobile.js"></script>
 </body>
 </html>
