@@ -476,6 +476,39 @@ quickActionButtons.forEach((button) => {
   });
 });
 
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest('[data-scroll-target], [data-focus-target]');
+  if (!trigger) return;
+
+  const scrollSelector = trigger.dataset.scrollTarget;
+  const focusSelector = trigger.dataset.focusTarget || scrollSelector;
+
+  const preventDefault = () => {
+    if (event.type === 'click') {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
+  preventDefault();
+
+  if (scrollSelector) {
+    const scrollTarget = document.querySelector(scrollSelector);
+    if (scrollTarget && typeof scrollTarget.scrollIntoView === 'function') {
+      scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  if (focusSelector) {
+    window.setTimeout(() => {
+      const focusTarget = resolveFocusTarget(focusSelector);
+      if (focusTarget) {
+        focusElementWithHighlight(focusTarget);
+      }
+    }, 180);
+  }
+});
+
 function normalizeActivityPayload(entry){
   if (!entry || typeof entry !== 'object') return null;
   const label = typeof entry.label === 'string' ? entry.label.trim() : '';

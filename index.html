@@ -239,43 +239,104 @@
       <div class="view-container">
         <header class="view-header view-header--hero" aria-labelledby="dashboard-heading">
           <div class="hero rounded-2xl border border-base-200/70 bg-base-100/90 shadow-xl">
-            <div class="hero-content w-full flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between">
-              <div class="max-w-xl space-y-4">
-                <div class="badge badge-primary badge-outline">Today's overview</div>
-                <h1 id="dashboard-heading" class="text-3xl sm:text-4xl font-bold text-base-content">Your teaching day at a glance</h1>
-                <p id="dashboard-date" class="text-base text-base-content/70"></p>
-                <div class="flex flex-wrap gap-3">
-                  <a href="#planner" class="btn btn-primary btn-sm md:btn-md">Open weekly planner<span aria-hidden="true">→</span></a>
-                  <a href="#reminders" class="btn btn-outline btn-sm md:btn-md">Review reminders<span aria-hidden="true">→</span></a>
+            <div class="hero-content w-full flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
+              <div class="dashboard-hero-copy">
+                <span class="dashboard-hero-eyebrow">Teacher control centre</span>
+                <h1 id="dashboard-heading" class="dashboard-hero-title">Your teaching day at a glance</h1>
+                <p id="dashboard-date" class="dashboard-hero-date"></p>
+                <p class="dashboard-hero-subtitle">Use quick actions to capture what matters, then move straight into the workspace you need.</p>
+                <div class="dashboard-quick-actions" role="list">
+                  <button type="button" data-quick-action="reminder" class="dashboard-quick-action" role="listitem">
+                    <span class="dashboard-quick-action-icon" aria-hidden="true">🔔</span>
+                    <span class="dashboard-quick-action-content">
+                      <span class="dashboard-quick-action-label">Log a cue</span>
+                      <span class="dashboard-quick-action-help">Open the reminder composer</span>
+                    </span>
+                  </button>
+                  <button type="button" data-quick-action="planner" class="dashboard-quick-action" role="listitem">
+                    <span class="dashboard-quick-action-icon" aria-hidden="true">🗓️</span>
+                    <span class="dashboard-quick-action-content">
+                      <span class="dashboard-quick-action-label">Plan the week</span>
+                      <span class="dashboard-quick-action-help">Jump to your weekly grid</span>
+                    </span>
+                  </button>
+                  <button type="button" data-quick-action="note" class="dashboard-quick-action" role="listitem">
+                    <span class="dashboard-quick-action-icon" aria-hidden="true">📝</span>
+                    <span class="dashboard-quick-action-content">
+                      <span class="dashboard-quick-action-label">Capture a note</span>
+                      <span class="dashboard-quick-action-help">Drop into the scratch pad</span>
+                    </span>
+                  </button>
                 </div>
               </div>
-              <div class="stats stats-vertical bg-base-100 shadow-lg md:stats-horizontal">
-                <div class="stat">
-                  <div class="stat-title">Lessons today</div>
-                  <div id="dashboard-lesson-count" class="stat-value text-primary">0</div>
-                  <div id="dashboard-next-lesson" class="stat-desc text-base-content/70"></div>
-                </div>
-                <div class="stat">
-                  <div class="stat-title">Deadlines this week</div>
-                  <div id="dashboard-deadline-count" class="stat-value text-secondary">0</div>
-                  <div class="stat-desc text-base-content/70">Countdowns auto-refresh</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-title">Reminders to action</div>
-                  <div id="dashboard-reminder-count" class="stat-value text-accent">0</div>
-                  <div class="stat-desc text-base-content/70">Due today or overdue</div>
-                </div>
+              <div class="dashboard-hero-summary" role="list" aria-label="Today&#39;s snapshot">
+                <article class="dashboard-hero-card" role="listitem">
+                  <p class="dashboard-hero-card-label">Lessons today</p>
+                  <p id="dashboard-lesson-count" class="dashboard-hero-card-value">0</p>
+                  <p id="dashboard-next-lesson" class="dashboard-hero-card-meta"></p>
+                </article>
+                <article class="dashboard-hero-card" role="listitem">
+                  <p class="dashboard-hero-card-label">Deadlines this week</p>
+                  <p id="dashboard-deadline-count" class="dashboard-hero-card-value">0</p>
+                  <p class="dashboard-hero-card-meta">Countdowns refresh automatically</p>
+                </article>
+                <article class="dashboard-hero-card" role="listitem">
+                  <p class="dashboard-hero-card-label">Reminders to action</p>
+                  <p id="dashboard-reminder-count" class="dashboard-hero-card-value">0</p>
+                  <p class="dashboard-hero-card-meta">Due today or overdue</p>
+                </article>
               </div>
             </div>
           </div>
         </header>
 
-        <div class="view-body space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-dashboard-area="primary">
+        <div class="view-body space-y-10">
+          <section class="dashboard-focus" aria-labelledby="dashboard-focus-heading">
+            <div class="dashboard-focus-header">
+              <div>
+                <p class="dashboard-focus-eyebrow">Jump to a workspace</p>
+                <h2 id="dashboard-focus-heading">Focus lanes</h2>
+              </div>
+              <p class="dashboard-focus-description">Shortcuts that open the right board or scroll to the panel you need on this page.</p>
+            </div>
+            <div class="dashboard-focus-grid">
+              <a href="#reminders" data-route="reminders" class="dashboard-focus-card" aria-describedby="dashboard-focus-reminders">
+                <span class="dashboard-focus-icon" aria-hidden="true">✅</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Action reminders</span>
+                  <span id="dashboard-focus-reminders" class="dashboard-focus-copy">Open the cues workspace</span>
+                </span>
+              </a>
+              <button type="button" class="dashboard-focus-card" data-scroll-target="#lesson-form" data-focus-target="#lesson-subject">
+                <span class="dashboard-focus-icon" aria-hidden="true">📚</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Log a lesson</span>
+                  <span class="dashboard-focus-copy">Jump to today&#39;s lesson planner</span>
+                </span>
+              </button>
+              <button type="button" class="dashboard-focus-card" data-scroll-target="#dashboard-activity-container">
+                <span class="dashboard-focus-icon" aria-hidden="true">🗂️</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Review activity</span>
+                  <span class="dashboard-focus-copy">Latest changes and sync events</span>
+                </span>
+              </button>
+              <button type="button" class="dashboard-focus-card" data-scroll-target="#widget-outdoor-body">
+                <span class="dashboard-focus-icon" aria-hidden="true">🌦️</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Check weather</span>
+                  <span class="dashboard-focus-copy">Forecast before outdoor sessions</span>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <div class="dashboard-main-grid">
+            <div class="dashboard-widgets-grid" data-dashboard-area="primary">
               <section
                 data-dashboard-widget="reminders"
                 data-widget-title="Reminders needing attention"
-                class="order-1 md:col-span-2 lg:col-span-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                class="dashboard-widget dashboard-widget--wide bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
                 aria-labelledby="reminders-heading"
               >
                 <div
@@ -324,24 +385,20 @@
                   </div>
                 </div>
                 <div id="widget-reminders-body" data-widget-body class="space-y-6 pt-4">
-                  <!-- BEGIN GPT FIX: reminders-header-dup -->
                   <div id="dashboard-reminders-skeleton" class="space-y-3 rounded-2xl border border-dashed border-gray-200 bg-white/70 p-4 text-gray-500 dark:text-gray-500 animate-pulse dark:border-gray-700 dark:bg-gray-900/40" aria-hidden="true">
                     <div class="h-4 w-1/3 rounded bg-gray-200/70 dark:bg-gray-700/70"></div>
                     <div class="h-16 rounded-2xl bg-gray-100/90 dark:bg-gray-800/60"></div>
                     <div class="h-4 w-1/2 rounded bg-gray-200/60 dark:bg-gray-700/60"></div>
                   </div>
-                  <!-- BEGIN GPT FIX: reminders-list-force -->
                   <ul id="dashboard-reminders-list" class="hidden space-y-4" aria-live="polite" aria-busy="true"></ul>
-                  <!-- END GPT FIX -->
                   <div id="dashboard-reminders-empty" class="hidden"></div>
-                  <!-- END GPT FIX -->
                 </div>
               </section>
 
               <section
                 data-dashboard-widget="lessons"
-                data-widget-title="Today's lessons"
-                class="order-2 md:col-span-1 lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                data-widget-title="Today&#39;s lessons"
+                class="dashboard-widget dashboard-widget--primary bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
                 aria-labelledby="lessons-heading"
               >
                 <div
@@ -355,7 +412,7 @@
                     >📘</span>
                     <div class="min-w-0 space-y-1">
                       <div class="flex flex-wrap items-center gap-2">
-                        <h2 id="lessons-heading" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Today's lessons</h2>
+                        <h2 id="lessons-heading" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Today&#39;s lessons</h2>
                         <span
                           id="dashboard-lesson-status"
                           class="hidden rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-500/10 dark:text-blue-200"
@@ -383,7 +440,7 @@
                       class="widget-control-btn"
                       data-widget-action="collapse"
                       data-widget-toggle
-                      data-widget-name="Today's lessons"
+                      data-widget-name="Today&#39;s lessons"
                       aria-expanded="true"
                       aria-controls="widget-lessons-body"
                       aria-label="Collapse widget"
@@ -424,9 +481,6 @@
                       <label for="lesson-location" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Location</label>
                       <input id="lesson-location" name="lesson-location" type="text" placeholder="e.g. Lab 2" class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
-                    <!-- BEGIN GPT FIX: lessons-location-dedup -->
-                    <!-- TODO: selector not found -->
-                    <!-- END GPT FIX -->
                     <div class="flex items-end">
                       <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">Add lesson</button>
                     </div>
@@ -438,7 +492,7 @@
               <section
                 data-dashboard-widget="deadlines"
                 data-widget-title="Upcoming deadlines"
-                class="order-2 md:col-span-1 lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                class="dashboard-widget dashboard-widget--primary bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
                 aria-labelledby="deadlines-heading"
               >
                 <div
@@ -516,7 +570,7 @@
                 id="dashboard-activity-container"
                 data-dashboard-widget="activity"
                 data-widget-title="Recent activity"
-                class="order-3 md:col-span-2 lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                class="dashboard-widget dashboard-widget--wide bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
                 aria-labelledby="activity-heading"
               >
                 <div
@@ -578,7 +632,7 @@
                 data-dashboard-widget="weather"
                 data-widget-title="Outdoor planning"
                 data-widget-theme="inverted"
-                class="order-3 md:col-span-1 lg:col-span-1 bg-gradient-to-br from-sky-500 via-indigo-500 to-emerald-500 text-white rounded-lg shadow-sm border border-white/40 p-6 transition-shadow duration-200 hover:shadow-md"
+                class="dashboard-widget dashboard-widget--secondary bg-gradient-to-br from-sky-500 via-indigo-500 to-emerald-500 text-white rounded-lg shadow-sm border border-white/40 p-6 transition-shadow duration-200 hover:shadow-md"
                 aria-labelledby="weather-heading"
               >
                 <div
@@ -678,38 +732,28 @@
               </section>
             </div>
 
-            <aside
-              id="dashboard-hidden-tray"
-              class="hidden rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-5 shadow-sm"
-            >
-              <div class="flex flex-wrap items-center gap-3">
-                <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">Hidden dashboard widgets</p>
-                <div id="dashboard-hidden-list" class="flex flex-wrap gap-2"></div>
-                <button
-                  type="button"
-                  id="dashboard-show-all"
-                  class="hidden inline-flex items-center gap-2 rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-white/85 dark:text-gray-900 dark:text-gray-100 dark:hover:bg-white"
-                >
-                  <span aria-hidden="true">↺</span>
-                  Restore all
-                </button>
-              </div>
-              <p class="mt-3 text-xs text-gray-500 dark:text-gray-500">
-                Use the widget chrome to collapse, hide, or reorder cards. Restore any hidden widgets here.
-              </p>
+            <aside class="dashboard-secondary">
+              <section
+                id="dashboard-hidden-tray"
+                class="dashboard-widget-tray hidden rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-5 shadow-sm"
+              >
+                <div class="flex flex-wrap items-center gap-3">
+                  <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">Hidden dashboard widgets</p>
+                  <div id="dashboard-hidden-list" class="flex flex-wrap gap-2"></div>
+                  <button
+                    type="button"
+                    id="dashboard-show-all"
+                    class="hidden inline-flex items-center gap-2 rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-white/85 dark:text-gray-900 dark:text-gray-100 dark:hover:bg-white"
+                  >
+                    <span aria-hidden="true">↺</span>
+                    Restore all
+                  </button>
+                </div>
+                <p class="mt-3 text-xs text-gray-500 dark:text-gray-500">
+                  Use the widget controls to collapse, hide, or reorder cards. Restore any hidden widgets here.
+                </p>
+              </section>
             </aside>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div class="rounded-lg border-2 border-dashed border-gray-200 bg-white/60 p-6 text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-500">
-                Placeholder widget slot
-              </div>
-              <div class="rounded-lg border-2 border-dashed border-gray-200 bg-white/60 p-6 text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-500">
-                Placeholder widget slot
-              </div>
-              <div class="rounded-lg border-2 border-dashed border-gray-200 bg-white/60 p-6 text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-500">
-                Placeholder widget slot
-              </div>
-            </div>
           </div>
         </div>
       </div>
