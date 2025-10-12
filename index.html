@@ -179,7 +179,7 @@
             </div>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2">
-            <form id="auth-form" class="flex flex-wrap items-center justify-end gap-2">
+            <form id="auth-form" class="flex flex-wrap items-center justify-end gap-2" hidden>
               <label for="auth-email" class="sr-only">Email address</label>
               <input
                 id="auth-email"
@@ -193,7 +193,9 @@
             </form>
             <button id="sign-out-btn" type="button" hidden class="btn btn-sm btn-error">Sign out</button>
           </div>
-          <p id="auth-feedback" class="hidden text-xs font-medium text-base-content" role="status" aria-live="polite"></p>
+          <!-- BEGIN GPT CHANGE: auth feedback -->
+          <div id="auth-feedback" role="status" aria-live="polite" hidden></div>
+          <!-- END GPT CHANGE -->
         </div>
       </div>
     </div>

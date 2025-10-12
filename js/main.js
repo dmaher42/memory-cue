@@ -924,10 +924,10 @@ function setAuthFeedback(message = '', tone = 'info'){
   authFeedbackEl.classList.remove('text-white/80', 'text-emerald-200', 'text-amber-200', 'text-rose-200');
   if (!message){
     authFeedbackEl.textContent = '';
-    authFeedbackEl.classList.add('hidden');
+    authFeedbackEl.hidden = true;
     return;
   }
-  authFeedbackEl.classList.remove('hidden');
+  authFeedbackEl.hidden = false;
   authFeedbackEl.classList.add(toneClasses[tone] || toneClasses.info);
   authFeedbackEl.textContent = message;
 }
@@ -1056,44 +1056,51 @@ async function handleAuthStateChange(event, session){
   markInitialAuthReady();
 }
 
-if (authForm) {
-  authForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const email = authEmailInput?.value?.trim();
-    if (!email) {
-      setAuthFeedback('Enter your email address to sign in.', 'warning');
-      authEmailInput?.focus();
-      return;
-    }
-    if (signInBtn) {
+async function handleAuthFormSubmit(event){
+  event.preventDefault();
+  const email = authEmailInput?.value?.trim();
+  if (!email) {
+    setAuthFeedback('Enter your email address to sign in.', 'warning');
+    authEmailInput?.focus();
+    return { status: 'invalid' };
+  }
+
+  const buttonInitiallyDisabled = Boolean(signInBtn?.disabled);
+  if (signInBtn) {
+    if (!buttonInitiallyDisabled) {
       signInBtn.disabled = true;
-      signInBtn.textContent = 'Sending…';
     }
-    try {
-      const client = await ensureSupabase();
-      if (!client) {
-        setAuthFeedback('Supabase is not configured yet.', 'warning');
-        return;
-      }
-      const redirectTo = typeof window !== 'undefined'
-        ? `${window.location.origin}${window.location.pathname}`
-        : undefined;
-      const { error } = await client.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirectTo },
-      });
-      if (error) throw error;
-      setAuthFeedback(`Magic link sent to ${email}. Check your inbox.`, 'success');
-    } catch (error) {
-      console.error('Supabase sign-in failed', error);
-      setAuthFeedback(error?.message || 'Unable to send sign-in link right now.', 'error');
-    } finally {
-      if (signInBtn) {
+    signInBtn.textContent = 'Sending…';
+  }
+
+  try {
+    const client = await ensureSupabase();
+    if (!client) {
+      setAuthFeedback('Supabase is not configured yet.', 'warning');
+      return { status: 'warning' };
+    }
+    const redirectTo = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : undefined;
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo },
+    });
+    if (error) throw error;
+    setAuthFeedback(`Magic link sent to ${email}. Check your inbox.`, 'success');
+    return { status: 'success' };
+  } catch (error) {
+    console.error('Supabase sign-in failed', error);
+    setAuthFeedback(error?.message || 'Unable to send sign-in link right now.', 'error');
+    return { status: 'error', error };
+  } finally {
+    if (signInBtn) {
+      if (!buttonInitiallyDisabled) {
         signInBtn.disabled = false;
-        signInBtn.textContent = signInDefaultLabel;
       }
+      signInBtn.textContent = signInDefaultLabel;
     }
-  });
+  }
 }
 
 signOutBtn?.addEventListener('click', async () => {
