@@ -4633,40 +4633,21 @@ if(noteEl){
 })();
 /* END GPT CHANGE */
 
-/* BEGIN GPT CHANGE: auth enhancement */
+/* BEGIN GPT CHANGE: session-driven user badge */
 (function () {
-  const form = document.getElementById('auth-form');
-  const feedback = document.getElementById('auth-feedback');
-  if (!form || !feedback) return;
+  const badge = document.getElementById('user-badge');
+  const signout = document.getElementById('signout-btn');
+  if (!badge) return;
 
-  form.hidden = false;
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = form.querySelector('button[type="submit"]');
-    btn?.setAttribute('disabled', 'true');
-    form.setAttribute('aria-busy', 'true');
-    feedback.hidden = false;
-    feedback.classList.remove('text-white/80', 'text-emerald-200', 'text-amber-200', 'text-rose-200');
-    feedback.textContent = 'Sending magic link…';
-    try {
-      const result = typeof handleAuthFormSubmit === 'function'
-        ? await handleAuthFormSubmit(e)
-        : undefined;
-      if (feedback.textContent === 'Sending magic link…') {
-        feedback.textContent = result && result.status === 'success'
-          ? 'Check your inbox for the sign-in link.'
-          : 'Sign-in failed. Please try again.';
-      }
-    } catch (err) {
-      if (feedback.textContent === 'Sending magic link…') {
-        feedback.textContent = 'Sign-in failed. Please try again.';
-      }
-    } finally {
-      form.removeAttribute('aria-busy');
-      btn?.removeAttribute('disabled');
-    }
-  });
+  async function refreshSession() {
+    // Replace with your existing session getter
+    // const { data: { session } } = await supabase.auth.getSession();
+    const session = null; // placeholder
+    badge.hidden = !session;
+    signout && (signout.hidden = !session);
+  }
+  document.addEventListener('DOMContentLoaded', refreshSession);
+  // If your auth library emits events, also subscribe and call refreshSession().
 })();
 /* END GPT CHANGE */
 
