@@ -6,6 +6,85 @@ import { ENV } from './env.js';
 // Navigation helpers
 const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
 
+const mainContentEl = document.getElementById('mainContent');
+const skipLinkEl = document.querySelector('a.skip-link');
+if (mainContentEl && !mainContentEl.hasAttribute('tabindex')) {
+  mainContentEl.setAttribute('tabindex', '-1');
+}
+if (skipLinkEl && mainContentEl) {
+  skipLinkEl.addEventListener('click', (event) => {
+    const targetId = (skipLinkEl.getAttribute('href') || '').replace('#', '');
+    if (targetId !== mainContentEl.id) return;
+    event.preventDefault();
+    window.requestAnimationFrame(() => {
+      mainContentEl.focus({ preventScroll: false });
+    });
+  });
+}
+
+function createSyncStatusController() {
+  const element = document.getElementById('syncStatus');
+  if (!element) {
+    return {
+      element,
+      set: () => {},
+      checking: () => {},
+      syncing: () => {},
+      online: () => {},
+      offline: () => {},
+      error: () => {},
+      info: () => {},
+    };
+  }
+
+  element.setAttribute('role', 'status');
+  element.setAttribute('aria-live', element.getAttribute('aria-live') || 'polite');
+
+  const ACTIVE_CLASSES = ['online', 'error'];
+  const STATE_CONFIG = {
+    checking: { message: 'Checking connection…' },
+    syncing: { message: 'Syncing your latest changes…' },
+    online: { message: 'Connected. Changes sync automatically.', className: 'online' },
+    offline: { message: 'You\'re offline. Changes are saved on this device until you reconnect.', className: 'error' },
+    error: { message: 'We couldn\'t sync right now. We\'ll retry soon.', className: 'error' },
+    info: { message: '' },
+  };
+
+  function setState(state, overrideMessage) {
+    if (!state) return;
+    const config = STATE_CONFIG[state] || {};
+    const message = typeof overrideMessage === 'string' && overrideMessage.trim()
+      ? overrideMessage
+      : config.message;
+    ACTIVE_CLASSES.forEach((cls) => element.classList.remove(cls));
+    if (config.className) {
+      element.classList.add(config.className);
+    }
+    if (message) {
+      element.textContent = message;
+    }
+    element.dataset.state = state;
+  }
+
+  return {
+    element,
+    set: (state, message) => setState(state, message),
+    checking: (message) => setState('checking', message),
+    syncing: (message) => setState('syncing', message),
+    online: (message) => setState('online', message),
+    offline: (message) => setState('offline', message),
+    error: (message) => setState('error', message),
+    info: (message) => setState('info', message),
+  };
+}
+
+const syncStatus = createSyncStatusController();
+syncStatus.checking();
+
+if (typeof window !== 'undefined') {
+  window.memoryCueSyncStatus = syncStatus;
+}
+
 /* BEGIN GPT CHANGE: mobile menu a11y */
 (function () {
   const toggle = document.getElementById('mobile-nav-toggle');
@@ -475,6 +554,31 @@ const SUPABASE_ANON_KEY = (typeof globalEnv.VITE_SUPABASE_ANON_KEY === 'string' 
 /* END GPT CHANGE */
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
+if (!hasSupabaseConfig) {
+  syncStatus.info('Cloud sync is disabled for this preview. Data stays on this device.');
+} else if (typeof navigator !== 'undefined') {
+  if (navigator.onLine) {
+    syncStatus.online('Connected. Changes sync automatically.');
+  } else {
+    syncStatus.offline('You\'re offline. Changes are saved on this device until you reconnect.');
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    if (!hasSupabaseConfig) return;
+    syncStatus.syncing('You\'re back online. Syncing your latest changes…');
+    window.setTimeout(() => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      syncStatus.online('Connected. Changes sync automatically.');
+    }, 1200);
+  });
+  window.addEventListener('offline', () => {
+    if (!hasSupabaseConfig) return;
+    syncStatus.offline('You\'re offline. Changes are saved on this device until you reconnect.');
+  });
+}
+
 let supabaseInitialSessionPromise = null;
 let supabaseInitialSessionResolved = !hasSupabaseConfig;
 
@@ -780,8 +884,12 @@ function ensureSupabase(){
   if (supabaseClient) return Promise.resolve(supabaseClient);
   if (!hasSupabaseConfig) return Promise.resolve(null);
   if (!supabaseInitPromise) {
+    syncStatus.syncing('Connecting to sync services…');
     supabaseInitPromise = loadSupabaseModule().then((mod) => {
-      if (!mod || typeof mod.createClient !== 'function') return null;
+      if (!mod || typeof mod.createClient !== 'function') {
+        syncStatus.error('Cloud sync is unavailable right now. Changes are saved locally.');
+        return null;
+      }
       try {
         const client = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
@@ -791,13 +899,34 @@ function ensureSupabase(){
           window.supabaseClient = supabaseClient;
         }
         setupSupabaseAuth();
-        resourcesController?.refresh({ showLoading: true });
+        if (typeof navigator === 'undefined' || navigator.onLine) {
+          syncStatus.online('Connected. Changes sync automatically.');
+        } else {
+          syncStatus.offline('You\'re offline. Changes are saved on this device until you reconnect.');
+        }
+        const refreshResult = resourcesController?.refresh({ showLoading: true });
+        if (refreshResult && typeof refreshResult.then === 'function') {
+          refreshResult
+            .then(() => {
+              if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+              syncStatus.online('All caught up. Changes are synced.');
+            })
+            .catch(() => {
+              syncStatus.error('We couldn\'t refresh cloud data. Showing local results.');
+            });
+        }
         return supabaseClient;
       } catch (error) {
         console.error('Supabase initialisation failed', error);
         supabaseClient = null;
+        syncStatus.error('We couldn\'t connect to sync services. Changes are saved locally.');
         return null;
       }
+    }).catch((error) => {
+      console.error('Supabase module load failed', error);
+      supabaseClient = null;
+      syncStatus.error('We couldn\'t connect to sync services. Changes are saved locally.');
+      throw error;
     });
   }
   return supabaseInitPromise;
@@ -3709,6 +3838,9 @@ resourcesController = (() => {
 
   async function refresh({ showLoading = true } = {}){
     if (showLoading) setLoading(true);
+    if (hasSupabaseConfig) {
+      syncStatus.syncing('Syncing your latest changes…');
+    }
     const filters = buildFilters(state);
     log.debug('Refreshing activities', { filters, mineOnly: state.mineOnly });
     try {
@@ -3716,6 +3848,9 @@ resourcesController = (() => {
       if (!client){
         state.items = [];
         setStatus('Add Supabase credentials to browse shared activities.', 'warning');
+        if (hasSupabaseConfig) {
+          syncStatus.error('Cloud sync is unavailable right now. Showing local data.');
+        }
         render();
         return;
       }
@@ -3728,10 +3863,20 @@ resourcesController = (() => {
       const filteredItems = applyFilters(data, filters);
       assignItems(filteredItems);
       log.debug('Refresh complete', { count: filteredItems.length });
+      if (hasSupabaseConfig) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          syncStatus.offline('You\'re offline. Changes are saved on this device until you reconnect.');
+        } else {
+          syncStatus.online('All caught up. Changes are synced.');
+        }
+      }
     } catch (error) {
       log.error('Activities fetch failed', error);
       state.items = [];
       setStatus('Unable to load activities right now.', 'error');
+      if (hasSupabaseConfig) {
+        syncStatus.error('We couldn\'t refresh cloud data. Showing local results.');
+      }
       render();
     } finally {
       setLoading(false);
