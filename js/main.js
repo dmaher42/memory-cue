@@ -4606,3 +4606,23 @@ if(noteEl){
 })();
 // === /Activity Ideas Modal ===
 
+/* BEGIN GPT CHANGE: theme persistence */
+(function () {
+  const html = document.documentElement;
+  const saved = localStorage.getItem('theme');
+  if (saved) html.setAttribute('data-theme', saved);
+
+  const items = document.querySelectorAll('[data-theme-option]');
+  items.forEach((el) => {
+    el.setAttribute('role', 'menuitemradio');
+    el.setAttribute('aria-checked', String(html.getAttribute('data-theme') === el.dataset.themeOption));
+    el.addEventListener('click', () => {
+      const theme = el.dataset.themeOption;
+      html.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+      items.forEach(i => i.setAttribute('aria-checked', String(i === el)));
+    });
+  });
+})();
+/* END GPT CHANGE */
+
