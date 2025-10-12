@@ -48,6 +48,48 @@
       color: rgb(254 205 211);
       border-color: rgba(248, 113, 113, 0.45);
     }
+    .notes-editor {
+      min-height: 10rem;
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      padding: 0.75rem 1rem;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: inherit;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dark .notes-editor {
+      border-color: rgba(148, 163, 184, 0.35);
+      background-color: rgba(15, 23, 42, 0.65);
+    }
+    .notes-editor:focus-visible {
+      border-color: rgb(37 99 235);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    .notes-editor:empty::before {
+      content: attr(data-placeholder);
+      color: rgba(100, 116, 139, 0.7);
+    }
+    .dark .notes-editor:empty::before {
+      color: rgba(148, 163, 184, 0.7);
+    }
+    .notes-editor ul,
+    .notes-editor ol {
+      margin: 0.25rem 0 0.25rem 1.25rem;
+      padding-left: 0.75rem;
+    }
+    .notes-editor ul li,
+    .notes-editor ol li {
+      margin-bottom: 0.25rem;
+    }
+    .notes-editor--columns {
+      column-width: 16rem;
+      column-gap: 1.5rem;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
@@ -211,7 +253,33 @@
     <section class="card bg-base-100 border">
       <div class="card-body gap-3">
         <h2 class="card-title text-base">Scratch Notes</h2>
-        <textarea id="notes" class="textarea textarea-bordered" rows="4" placeholder="Quick personal notes"></textarea>
+        <div
+          id="notesToolbar"
+          class="flex flex-wrap gap-2"
+          role="toolbar"
+          aria-label="Scratch notes formatting options"
+          aria-controls="notes"
+        >
+          <button type="button" class="btn btn-xs" data-action="bullets">• Bullets</button>
+          <button type="button" class="btn btn-xs" data-action="numbers">1. Numbers</button>
+          <button
+            type="button"
+            class="btn btn-xs"
+            data-action="columns"
+            aria-pressed="false"
+          >
+            Columns
+          </button>
+        </div>
+        <div
+          id="notes"
+          class="notes-editor"
+          contenteditable="true"
+          role="textbox"
+          aria-multiline="true"
+          spellcheck="true"
+          data-placeholder="Quick personal notes"
+        ></div>
         <div class="flex gap-2">
           <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
           <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
