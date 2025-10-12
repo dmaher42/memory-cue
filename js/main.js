@@ -1,4 +1,7 @@
 // js/main.js
+/* BEGIN GPT CHANGE: import ENV */
+import { ENV } from './env.js';
+/* END GPT CHANGE */
 
 // Navigation helpers
 const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
@@ -359,14 +362,16 @@ let supabaseModulePromise = null;
 
 const globalEnv = (typeof globalThis !== 'undefined' && (globalThis.__SUPABASE_ENV__ || globalThis.__supabaseEnv__)) || {};
 const nodeEnv = (typeof process !== 'undefined' && process?.env) ? process.env : {};
+/* BEGIN GPT CHANGE: supabase env usage */
 const SUPABASE_URL = (typeof globalEnv.VITE_SUPABASE_URL === 'string' && globalEnv.VITE_SUPABASE_URL)
   || (typeof nodeEnv.VITE_SUPABASE_URL === 'string' && nodeEnv.VITE_SUPABASE_URL)
-  || (typeof window !== 'undefined' ? window.SUPABASE_URL : undefined)
+  || ENV.SUPABASE_URL
   || '';
 const SUPABASE_ANON_KEY = (typeof globalEnv.VITE_SUPABASE_ANON_KEY === 'string' && globalEnv.VITE_SUPABASE_ANON_KEY)
   || (typeof nodeEnv.VITE_SUPABASE_ANON_KEY === 'string' && nodeEnv.VITE_SUPABASE_ANON_KEY)
-  || (typeof window !== 'undefined' ? window.SUPABASE_ANON_KEY : undefined)
+  || ENV.SUPABASE_ANON_KEY
   || '';
+/* END GPT CHANGE */
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 let supabaseInitialSessionPromise = null;
