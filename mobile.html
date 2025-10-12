@@ -423,18 +423,7 @@
     </button>
   </nav>
 
-  <script>
-    (function () {
-      const html = document.documentElement;
-      const stored = localStorage.getItem('theme');
-      if (stored) html.setAttribute('data-theme', stored);
-      document.getElementById('themeToggle')?.addEventListener('click', () => {
-        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
-      });
-    })();
-  </script>
+  <script src="./js/mobile-theme-toggle.js" defer></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1">
     <div class="sheet-panel bg-base-100 border-t border-base-200">
