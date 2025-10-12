@@ -116,9 +116,142 @@
       background-color: rgba(15, 23, 42, 0.88);
     }
   </style>
+  <!-- BEGIN GPT CHANGE: bottom sheet styles -->
+  <style>
+    .hidden {
+      display: none !important;
+    }
+    .fab {
+      position: fixed;
+      right: 16px;
+      bottom: 88px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--fallback-p, #2563eb);
+      color: var(--fallback-pc, #fff);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+      border: none;
+      cursor: pointer;
+      z-index: 60;
+    }
+    .fab:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+    .sheet {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      z-index: 70;
+    }
+    .sheet-panel {
+      position: relative;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 85vh;
+      overflow: auto;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      background: var(--fallback-b1, #ffffff);
+      color: inherit;
+      box-shadow: 0 -16px 32px rgba(15, 23, 42, 0.25);
+      padding: 16px;
+    }
+    .dark .sheet-panel {
+      background: rgba(30, 41, 59, 0.97);
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+    }
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+    }
+    #settingsModal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 80;
+    }
+    .modal-panel {
+      position: relative;
+      max-width: 420px;
+      width: calc(100% - 32px);
+      background: var(--fallback-b1, #ffffff);
+      color: inherit;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3);
+      overflow: hidden;
+    }
+    .dark .modal-panel {
+      background: rgba(30, 41, 59, 0.97);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+    }
+  </style>
+  <!-- END GPT CHANGE: bottom sheet styles -->
+  <!-- BEGIN GPT CHANGE: rhythm -->
+  <style>
+    .card-body.compact {
+      gap: 0.5rem;
+    }
+    .inputs-compact input,
+    .inputs-compact select,
+    .inputs-compact textarea,
+    .inputs-compact button {
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    main {
+      padding-bottom: 96px;
+    }
+    .chip-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .chip-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .chip-row input[type='radio'] {
+      accent-color: currentColor;
+    }
+  </style>
+  <!-- END GPT CHANGE: rhythm -->
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
-  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#mainContent">Skip to main content</a>
+  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
     <div class="flex-1 items-center gap-2">
@@ -148,215 +281,63 @@
     </div>
   </header>
 
-  <main id="mainContent" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1">
-    <div data-view="reminders" id="view-reminders" class="view-panel" aria-hidden="false">
-      <div class="glass-panel sticky top-[4.75rem] z-40 -mx-4 px-4 pb-3">
-        <nav class="section-jump" aria-label="Reminders quick navigation">
-          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="reminderComposer">Create</button>
-          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="reminderFilters">Filter</button>
-          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="reminderListSection">All reminders</button>
-          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="settingsSection">Sync</button>
-          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-jump-view="notebook">Scratch notes</button>
-        </nav>
-      </div>
-
-      <section id="reminderComposer" class="card bg-base-100 border">
-        <div class="card-body gap-4">
-          <h2 class="card-title text-base">Create Reminder</h2>
-          <label class="form-control w-full">
-            <div class="label"><span class="label-text">Reminder</span></div>
-            <input
-              id="reminderText"
-              type="text"
-              placeholder="e.g., Call Alex at 3pm"
-              class="input input-bordered w-full"
-              autocomplete="off"
-            />
-          </label>
-
-          <label class="form-control w-full">
-            <div class="label"><span class="label-text">Notes</span></div>
-            <textarea
-              id="reminderDetails"
-              class="textarea textarea-bordered"
-              rows="3"
-              placeholder="Optional context for the reminder"
-            ></textarea>
-          </label>
-
-          <div class="grid grid-cols-2 gap-3">
-            <label class="form-control">
-              <div class="label"><span class="label-text">Date</span></div>
-              <input id="reminderDate" type="date" class="input input-bordered" />
-            </label>
-            <label class="form-control">
-              <div class="label"><span class="label-text">Time</span></div>
-              <input id="reminderTime" type="time" class="input input-bordered" />
-            </label>
-          </div>
-
-          <div id="dateFeedback" class="text-xs text-info"></div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <label class="form-control">
-              <div class="label"><span class="label-text">Priority</span></div>
-              <select id="priority" class="select select-bordered">
-                <option value="High">High</option>
-                <option value="Medium" selected>Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </label>
-            <label class="form-control">
-              <div class="label"><span class="label-text">Category</span></div>
-              <input
-                id="category"
-                class="input input-bordered"
-                list="categorySuggestions"
-                placeholder="General"
-                value="General"
-              />
-              <datalist id="categorySuggestions">
-                <option value="General"></option>
-                <option value="General Appointments"></option>
-                <option value="Home &amp; Personal"></option>
-                <option value="School – Appointments/Meetings"></option>
-                <option value="School – Communication &amp; Families"></option>
-                <option value="School – Excursions &amp; Events"></option>
-                <option value="School – Grading &amp; Assessment"></option>
-                <option value="School – Prep &amp; Resources"></option>
-                <option value="School – To-Do"></option>
-                <option value="Wellbeing &amp; Support"></option>
-              </datalist>
-            </label>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-3">
-            <button id="voiceBtn" class="btn btn-ghost" type="button" aria-label="Voice input">🎙️</button>
-            <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
-            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
-          </div>
-
-          <div class="card-actions justify-stretch">
-            <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
-            <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
-          </div>
-          <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
-        </div>
-      </section>
-
-      <section id="reminderFilters" class="card bg-base-100 border">
-        <div class="card-body gap-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
-              <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="true">Today · <span id="todayCount">0</span></button>
-              <button class="btn btn-xs" type="button" data-filter="overdue">Overdue · <span id="overdueCount">0</span></button>
-              <button class="btn btn-xs" type="button" data-filter="all">All · <span id="totalCountBadge">0</span></button>
-              <button class="btn btn-xs" type="button" data-filter="done">Done · <span id="completedCount">0</span></button>
+  <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+    <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
+    <!-- END GPT CHANGE -->
+    <!-- BEGIN GPT CHANGE: reminders view -->
+    <section data-view="reminders" id="view-reminders" class="view-panel">
+      <!-- BEGIN GPT CHANGE: sticky filters -->
+      <div id="stickyFilters" style="position:sticky; top:56px; z-index: 10;">
+        <section id="reminderFilters" class="card bg-base-100 border">
+          <div class="card-body gap-4 compact">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
+                <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="true">Today · <span id="todayCount">0</span></button>
+                <button class="btn btn-xs" type="button" data-filter="overdue">Overdue · <span id="overdueCount">0</span></button>
+                <button class="btn btn-xs" type="button" data-filter="all">All · <span id="totalCountBadge">0</span></button>
+                <button class="btn btn-xs" type="button" data-filter="done">Done · <span id="completedCount">0</span></button>
+              </div>
+              <label class="form-control w-full sm:w-auto">
+                <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+                <select id="categoryFilter" class="select select-bordered select-sm">
+                  <option value="all" selected>All categories</option>
+                  <option value="General">General</option>
+                  <option value="General Appointments">General Appointments</option>
+                  <option value="Home &amp; Personal">Home &amp; Personal</option>
+                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                  <option value="School – To-Do">School – To-Do</option>
+                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                </select>
+              </label>
             </div>
-            <label class="form-control w-full sm:w-auto">
-              <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
-              <select id="categoryFilter" class="select select-bordered select-sm">
-                <option value="all" selected>All categories</option>
-                <option value="General">General</option>
-                <option value="General Appointments">General Appointments</option>
-                <option value="Home &amp; Personal">Home &amp; Personal</option>
-                <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                <option value="School – To-Do">School – To-Do</option>
-                <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-              </select>
+
+            <label class="form-control">
+              <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" aria-label="Search" />
             </label>
           </div>
-
-          <label class="form-control">
-            <div class="label"><span class="label-text">Search</span></div>
-            <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" />
-          </label>
-        </div>
-      </section>
-
+        </section>
+      </div>
+      <!-- END GPT CHANGE -->
       <section id="reminderListSection" class="card bg-base-100 border">
-        <div class="card-body gap-4" id="remindersWrapper">
+        <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
           <ul id="reminderList" class="hidden space-y-3"></ul>
           <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
-
-      <section id="settingsSection" class="card bg-base-100 border hidden">
-        <div class="card-body gap-4">
-          <h2 class="card-title text-base">Sync Settings</h2>
-          <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
-          <label class="form-control">
-            <div class="label"><span class="label-text">Apps Script URL</span></div>
-            <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
-          </label>
-          <div class="card-actions flex-col gap-2">
-            <div class="flex gap-2 w-full">
-              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
-              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
-            </div>
-            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
-          </div>
-          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
-        </div>
-      </section>
-    </div>
-
-    <div data-view="today" id="view-today" class="view-panel hidden" aria-hidden="true">
+    </section>
+    <!-- END GPT CHANGE -->
+    <!-- BEGIN GPT CHANGE: today view -->
+    <section data-view="today" id="view-today" class="view-panel hidden"></section>
+    <!-- END GPT CHANGE -->
+    <!-- BEGIN GPT CHANGE: notebook view -->
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden">
       <section class="card bg-base-100 border">
-        <div class="card-body gap-4">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="card-title text-base">Today overview</h2>
-            <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Open reminders</button>
-          </div>
-          <div class="grid grid-cols-2 gap-3 text-left text-sm">
-            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
-              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Due today</p>
-              <p id="snapshotToday" class="text-2xl font-semibold">0</p>
-            </div>
-            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
-              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Upcoming week</p>
-              <p id="snapshotWeek" class="text-2xl font-semibold">0</p>
-            </div>
-            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
-              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Overdue</p>
-              <p id="snapshotOverdue" class="text-2xl font-semibold">0</p>
-            </div>
-            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
-              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Completed</p>
-              <p id="snapshotDone" class="text-2xl font-semibold">0</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card bg-base-100 border">
-        <div class="card-body gap-4">
-          <div class="flex items-center justify-between">
-            <h2 class="card-title text-base">Focus for today</h2>
-            <button type="button" class="btn btn-outline btn-xs" data-jump-view="reminders">Jump to full list</button>
-          </div>
-          <ul id="todayFocusList" class="space-y-3"></ul>
-          <p id="todayEmptyState" class="text-sm text-base-content/70">You're all caught up for today.</p>
-        </div>
-      </section>
-
-      <section class="card bg-base-100 border">
-        <div class="card-body gap-3">
-          <h2 class="card-title text-base">Need to jot something down?</h2>
-          <p class="text-sm text-base-content/70">Open the notebook to capture scratch notes, meeting agendas, or quick checklists without leaving this screen.</p>
-          <button type="button" class="btn btn-primary" data-jump-view="notebook">Go to notebook</button>
-        </div>
-      </section>
-    </div>
-
-    <div data-view="notebook" id="view-notebook" class="view-panel hidden" aria-hidden="true">
-      <section class="card bg-base-100 border">
-        <div class="card-body gap-3">
+        <div class="card-body gap-3 compact">
           <div class="flex items-center justify-between gap-2">
             <h2 class="card-title text-base">Scratch Notes</h2>
             <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
@@ -396,7 +377,7 @@
       </section>
 
       <section class="card bg-base-100 border">
-        <div class="card-body gap-3">
+        <div class="card-body gap-3 compact">
           <h2 class="card-title text-base">Stay organised</h2>
           <p class="text-sm text-base-content/70">Use columns to create side-by-side checklists, or switch back to a single column for longer thoughts. Notes are saved locally so you can revisit them anytime.</p>
           <div class="flex flex-wrap gap-2">
@@ -405,7 +386,8 @@
           </div>
         </div>
       </section>
-    </div>
+    </section>
+    <!-- END GPT CHANGE -->
   </main>
 
   <nav
@@ -417,24 +399,24 @@
       type="button"
       class="active"
       data-view-target="reminders"
-      aria-pressed="true"
       aria-controls="view-reminders"
+      aria-current="page"
     >
       <span class="btm-nav-label">Reminders</span>
     </button>
     <button
       type="button"
       data-view-target="today"
-      aria-pressed="false"
       aria-controls="view-today"
+      aria-current="false"
     >
       <span class="btm-nav-label">Today</span>
     </button>
     <button
       type="button"
       data-view-target="notebook"
-      aria-pressed="false"
       aria-controls="view-notebook"
+      aria-current="false"
     >
       <span class="btm-nav-label">Notebook</span>
     </button>
@@ -452,246 +434,143 @@
       });
     })();
   </script>
-  <script>
-    (function () {
-      const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
-      const viewPanels = Array.from(document.querySelectorAll('[data-view]'));
-      if (!viewButtons.length || !viewPanels.length) return;
+  <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
+  <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1">
+    <div class="sheet-panel bg-base-100 border-t border-base-200">
+      <header class="sheet-header">
+        <h2 id="createSheetTitle">Create Reminder</h2>
+        <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+      </header>
+      <form id="createReminderForm" class="inputs-compact">
+        <div class="card-body gap-4 compact">
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text">Reminder</span></div>
+            <input
+              id="reminderText"
+              type="text"
+              placeholder="e.g., Call Alex at 3pm"
+              class="input input-bordered w-full"
+              autocomplete="off"
+            />
+          </label>
 
-      const panelMap = new Map(viewPanels.map((panel) => [panel.dataset.view, panel]));
-      let activeView = viewPanels.find((panel) => !panel.classList.contains('hidden'))?.dataset.view || 'reminders';
-      let lastReminderFilter = document.querySelector('[data-filter][aria-pressed="true"]')?.dataset.filter || 'today';
-      const reduceQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-        ? window.matchMedia('(prefers-reduced-motion: reduce)')
-        : null;
-      let reduceMotion = !!reduceQuery?.matches;
-      reduceQuery?.addEventListener?.('change', (event) => {
-        reduceMotion = !!event.matches;
-      });
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text">Notes</span></div>
+            <textarea
+              id="reminderDetails"
+              class="textarea textarea-bordered"
+              rows="3"
+              placeholder="Optional context for the reminder"
+            ></textarea>
+          </label>
 
-      function setActiveView(next) {
-        if (!panelMap.has(next)) return;
-        panelMap.forEach((panel, name) => {
-          const isActive = name === next;
-          panel.classList.toggle('hidden', !isActive);
-          panel.setAttribute('aria-hidden', String(!isActive));
-        });
-        viewButtons.forEach((button) => {
-          const isActive = button.dataset.viewTarget === next;
-          button.classList.toggle('active', isActive);
-          button.setAttribute('aria-pressed', String(isActive));
-        });
-        activeView = next;
-        requestAnimationFrame(() => {
-          if (reduceMotion) {
-            window.scrollTo(0, 0);
-          } else {
-            try {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            } catch {
-              window.scrollTo(0, 0);
-            }
-          }
-        });
-      }
+          <div class="grid grid-cols-2 gap-3">
+            <label class="form-control">
+              <div class="label"><span class="label-text">Date</span></div>
+              <input id="reminderDate" type="date" class="input input-bordered" />
+            </label>
+            <label class="form-control">
+              <div class="label"><span class="label-text">Time</span></div>
+              <input id="reminderTime" type="time" class="input input-bordered" />
+            </label>
+          </div>
 
-      viewButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-          const target = button.dataset.viewTarget;
-          if (!target || target === activeView) return;
-          if (target === 'today') {
-            const activeFilterButton = document.querySelector('[data-filter][aria-pressed="true"]');
-            if (activeFilterButton?.dataset.filter) {
-              lastReminderFilter = activeFilterButton.dataset.filter;
-            }
-            const todayButton = document.querySelector('[data-filter="today"]');
-            if (todayButton && todayButton.getAttribute('aria-pressed') !== 'true') {
-              todayButton.click();
-            }
-          } else if (activeView === 'today' && target === 'reminders' && lastReminderFilter) {
-            const selector = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-              ? `[data-filter="${CSS.escape(lastReminderFilter)}"]`
-              : `[data-filter="${lastReminderFilter}"]`;
-            const restoreButton = document.querySelector(selector);
-            if (restoreButton && restoreButton.getAttribute('aria-pressed') !== 'true') {
-              restoreButton.click();
-            }
-          }
-          setActiveView(target);
-        });
-      });
+          <div id="dateFeedback" class="text-xs text-info"></div>
 
-      document.querySelectorAll('[data-jump-view]').forEach((control) => {
-        control.addEventListener('click', () => {
-          const target = control.getAttribute('data-jump-view');
-          if (!target) return;
-          const navButton = viewButtons.find((btn) => btn.dataset.viewTarget === target);
-          navButton?.click();
-        });
-      });
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-control">
+              <div class="label"><span class="label-text">Priority</span></div>
+              <select id="priority" class="select select-bordered hidden" aria-hidden="true" tabindex="-1">
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+              </select>
+              <!-- BEGIN GPT CHANGE: priority chips -->
+              <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
+                <label><input type="radio" name="priority" value="High"> High</label>
+                <label><input type="radio" name="priority" value="Medium" checked> Medium</label>
+                <label><input type="radio" name="priority" value="Low"> Low</label>
+              </fieldset>
+              <!-- END GPT CHANGE: priority chips -->
+            </div>
+            <label class="form-control">
+              <div class="label"><span class="label-text">Category</span></div>
+              <input
+                id="category"
+                class="input input-bordered"
+                list="categorySuggestions"
+                placeholder="General"
+                value="General"
+              />
+              <datalist id="categorySuggestions">
+                <option value="General"></option>
+                <option value="General Appointments"></option>
+                <option value="Home &amp; Personal"></option>
+                <option value="School – Appointments/Meetings"></option>
+                <option value="School – Communication &amp; Families"></option>
+                <option value="School – Excursions &amp; Events"></option>
+                <option value="School – Grading &amp; Assessment"></option>
+                <option value="School – Prep &amp; Resources"></option>
+                <option value="School – To-Do"></option>
+                <option value="Wellbeing &amp; Support"></option>
+              </datalist>
+            </label>
+          </div>
 
-      document.querySelectorAll('[data-scroll-target]').forEach((control) => {
-        control.addEventListener('click', () => {
-          const targetId = control.getAttribute('data-scroll-target');
-          if (!targetId) return;
-          const el = document.getElementById(targetId);
-          if (!el) return;
-          try {
-            el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-          } catch {
-            el.scrollIntoView(true);
-          }
-        });
-      });
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="voiceBtn" class="btn btn-ghost" type="button" aria-label="Voice input">🎙️</button>
+            <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
+            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
+          </div>
 
-      document.querySelectorAll('[data-filter]').forEach((button) => {
-        button.addEventListener('click', () => {
-          if (button.getAttribute('aria-pressed') === 'true' && button.dataset.filter) {
-            lastReminderFilter = button.dataset.filter;
-          }
-        });
-      });
+          <div class="card-actions justify-stretch">
+            <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
+            <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
+          </div>
+          <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+    <div class="sheet-backdrop" data-close></div>
+  </div>
+  <!-- END GPT CHANGE: bottom sheet for Create Reminder -->
 
-      const snapshotEls = {
-        today: document.getElementById('snapshotToday'),
-        week: document.getElementById('snapshotWeek'),
-        overdue: document.getElementById('snapshotOverdue'),
-        done: document.getElementById('snapshotDone'),
-      };
-      const focusList = document.getElementById('todayFocusList');
-      const focusEmpty = document.getElementById('todayEmptyState');
-      const weekdayFmt = typeof Intl !== 'undefined'
-        ? new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
-        : null;
-      const timeFmt = typeof Intl !== 'undefined'
-        ? new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
-        : null;
+  <!-- BEGIN GPT CHANGE: settings modal -->
+  <div id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" class="hidden">
+    <div class="modal-panel">
+      <header class="modal-header">
+        <h2 id="settingsTitle">Settings</h2>
+        <button type="button" id="closeSettings" aria-label="Close">✕</button>
+      </header>
+      <div class="card bg-base-100 border-0">
+        <div class="card-body gap-4 compact">
+          <h2 class="card-title text-base">Sync Settings</h2>
+          <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
+          <label class="form-control">
+            <div class="label"><span class="label-text">Apps Script URL</span></div>
+            <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
+          </label>
+          <div class="card-actions flex-col gap-2">
+            <div class="flex gap-2 w-full">
+              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
+              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
+            </div>
+            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
+          </div>
+          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop" data-close></div>
+  </div>
+  <!-- END GPT CHANGE: settings modal -->
 
-      function startOfWeek(date) {
-        const copy = new Date(date);
-        const day = (copy.getDay() + 6) % 7;
-        copy.setDate(copy.getDate() - day);
-        copy.setHours(0, 0, 0, 0);
-        return copy;
-      }
+  <!-- BEGIN GPT CHANGE: global FAB -->
+  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
+  <!-- END GPT CHANGE: global FAB -->
 
-      function endOfWeek(date) {
-        const start = startOfWeek(date);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
-        return end;
-      }
-
-      function renderDigest(rawItems) {
-        const items = Array.isArray(rawItems) ? rawItems : [];
-        const now = new Date();
-        const todayStart = new Date(now);
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date(now);
-        todayEnd.setHours(23, 59, 59, 999);
-        const weekStart = startOfWeek(now);
-        const weekEnd = endOfWeek(now);
-
-        const todays = [];
-        const weekUpcoming = [];
-        const overdue = [];
-        let completed = 0;
-
-        items.forEach((item) => {
-          if (!item || typeof item !== 'object') return;
-          if (item.done) {
-            completed += 1;
-            return;
-          }
-          if (!item.due) return;
-          const dueDate = new Date(item.due);
-          if (Number.isNaN(dueDate.getTime())) return;
-          if (dueDate < now) {
-            overdue.push({ item, dueDate });
-          }
-          if (dueDate >= todayStart && dueDate <= todayEnd) {
-            todays.push({ item, dueDate });
-          }
-          if (dueDate >= weekStart && dueDate <= weekEnd) {
-            weekUpcoming.push({ item, dueDate });
-          }
-        });
-
-        if (snapshotEls.today) snapshotEls.today.textContent = String(todays.length);
-        if (snapshotEls.week) snapshotEls.week.textContent = String(weekUpcoming.length);
-        if (snapshotEls.overdue) snapshotEls.overdue.textContent = String(overdue.length);
-        if (snapshotEls.done) snapshotEls.done.textContent = String(completed);
-
-        if (!focusList) return;
-        focusList.replaceChildren();
-
-        const focusItems = [...overdue, ...todays]
-          .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
-          .slice(0, 4);
-
-        if (!focusItems.length) {
-          if (focusEmpty) {
-            focusEmpty.classList.remove('hidden');
-            focusEmpty.textContent = items.length ? 'No reminders need attention right now.' : 'Add a reminder to see it here.';
-          }
-          return;
-        }
-
-        if (focusEmpty) {
-          focusEmpty.classList.add('hidden');
-        }
-
-        focusItems.forEach(({ item, dueDate }) => {
-          const li = document.createElement('li');
-          li.className = 'rounded-xl border border-base-300 bg-base-100/70 p-3 shadow-sm';
-
-          const header = document.createElement('div');
-          header.className = 'flex items-center justify-between gap-2';
-
-          const title = document.createElement('p');
-          title.className = 'text-sm font-medium';
-          title.textContent = item.title || 'Untitled reminder';
-
-          const category = document.createElement('span');
-          category.className = 'badge badge-ghost badge-sm';
-          category.textContent = item.category || 'General';
-
-          header.appendChild(title);
-          header.appendChild(category);
-          li.appendChild(header);
-
-          const meta = document.createElement('p');
-          meta.className = 'text-xs text-base-content/60';
-
-          if (dueDate instanceof Date && !Number.isNaN(dueDate.getTime())) {
-            const parts = [];
-            if (dueDate < todayStart) {
-              parts.push('Overdue');
-              if (weekdayFmt) {
-                parts.push(weekdayFmt.format(dueDate));
-              }
-            } else {
-              parts.push('Due today');
-            }
-            if (timeFmt) {
-              parts.push(timeFmt.format(dueDate));
-            }
-            meta.textContent = parts.join(' • ');
-          } else {
-            meta.textContent = 'No due time';
-          }
-
-          li.appendChild(meta);
-          focusList.appendChild(li);
-        });
-      }
-
-      document.addEventListener('memoryCue:remindersUpdated', (event) => {
-        renderDigest(event?.detail?.items);
-      });
-    })();
-  </script>
-  <script type="module" src="./mobile.js"></script>
+  <!-- BEGIN GPT CHANGE: include mobile.js -->
+  <script src="mobile.js" defer></script>
+  <!-- END GPT CHANGE: include mobile.js -->
 </body>
 </html>
