@@ -5,39 +5,6 @@ import { ENV } from './env.js';
 
 // Navigation helpers
 const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
-const mobileNavToggle = document.getElementById('mobile-nav-toggle');
-const mobileNavMenu = document.getElementById('mobile-nav-menu');
-
-if (mobileNavToggle && mobileNavMenu){
-  const closeMobileMenu = () => {
-    mobileNavMenu.classList.add('hidden');
-    mobileNavToggle.setAttribute('aria-expanded', 'false');
-  };
-
-  mobileNavToggle.addEventListener('click', (event) => {
-    event.stopPropagation();
-    const isOpen = !mobileNavMenu.classList.contains('hidden');
-    if (isOpen) {
-      closeMobileMenu();
-    } else {
-      mobileNavMenu.classList.remove('hidden');
-      mobileNavToggle.setAttribute('aria-expanded', 'true');
-    }
-  });
-
-  mobileNavMenu.addEventListener('click', (event) => {
-    const navItem = event.target.closest('[data-route]');
-    if (navItem) {
-      closeMobileMenu();
-    }
-  });
-
-  document.addEventListener('click', (event) => {
-    if (event.target === mobileNavToggle) return;
-    if (mobileNavMenu.contains(event.target)) return;
-    closeMobileMenu();
-  });
-}
 
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
@@ -97,9 +64,93 @@ navButtons.forEach(btn => {
   if (!viewMap.has(btn.dataset.route)) {
     btn.setAttribute('aria-disabled', 'true');
     btn.classList.add('cursor-not-allowed', 'opacity-60');
-    btn.disabled = true;
+    if (btn instanceof HTMLButtonElement) {
+      btn.disabled = true;
+    } else if (btn instanceof HTMLAnchorElement) {
+      btn.setAttribute('tabindex', '-1');
+    }
   }
 });
+
+/* BEGIN GPT CHANGE: mobile menu a11y */
+(function () {
+  const toggle = document.getElementById('mobile-nav-toggle');
+  const menu = document.getElementById('mobile-nav-menu');
+  if (!toggle || !menu) return;
+
+  function focusableElements() {
+    return Array.from(menu.querySelectorAll('a,button,[tabindex]:not([tabindex="-1"])'))
+      .filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-disabled') !== 'true' && el.tabIndex !== -1);
+  }
+
+  function open() {
+    menu.hidden = false;
+    toggle.setAttribute('aria-expanded', 'true');
+    const focusables = focusableElements();
+    if (focusables.length > 0) {
+      focusables[0].focus();
+    }
+    document.addEventListener('keydown', esc);
+    document.addEventListener('keydown', trapTab);
+    document.addEventListener('click', outside, true);
+  }
+
+  function close() {
+    if (menu.hidden) return;
+    menu.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.focus();
+    document.removeEventListener('keydown', esc);
+    document.removeEventListener('keydown', trapTab);
+    document.removeEventListener('click', outside, true);
+  }
+
+  function esc(e) {
+    if (e.key === 'Escape') {
+      close();
+    }
+  }
+
+  function trapTab(e) {
+    if (e.key !== 'Tab' || menu.hidden) return;
+    const focusables = focusableElements();
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || !menu.contains(active)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else if (active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  function outside(e) {
+    if (!menu.contains(e.target) && e.target !== toggle) {
+      close();
+    }
+  }
+
+  toggle.addEventListener('click', () => {
+    if (menu.hidden) {
+      open();
+    } else {
+      close();
+    }
+  });
+
+  menu.addEventListener('click', (event) => {
+    const navItem = event.target.closest('[data-route]');
+    if (navItem) {
+      close();
+    }
+  });
+})();
+/* END GPT CHANGE */
 
 function show(view){
   let targetView = viewMap.get(view);
