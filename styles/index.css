@@ -87,6 +87,146 @@ html {
   border-color: rgba(248, 113, 113, 0.45);
 }
 
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 4vw, 4.5rem);
+}
+
+.app-view {
+  padding-block: clamp(5rem, 7vw, 6.5rem);
+  padding-inline: clamp(1.5rem, 4vw, 3rem);
+}
+
+.view-container {
+  margin-inline: auto;
+  width: min(100%, 72rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 3vw, 3.25rem);
+}
+
+.view-container--wide {
+  width: min(100%, 80rem);
+}
+
+.view-container--narrow {
+  width: min(100%, 64rem);
+}
+
+.view-container--stacked {
+  gap: clamp(2.5rem, 3vw, 3.5rem);
+}
+
+.view-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(1.5rem, 2vw, 2.25rem);
+}
+
+.view-header--hero {
+  gap: clamp(1.5rem, 2.5vw, 2.75rem);
+}
+
+.view-header--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(1.75rem, 3vw, 2.75rem);
+}
+
+.view-header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 36rem;
+}
+
+.view-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.view-tabs {
+  justify-content: center;
+}
+
+.view-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.65);
+}
+
+.dark .view-eyebrow {
+  color: rgba(203, 213, 225, 0.8);
+}
+
+.view-title {
+  font-size: clamp(1.75rem, 2.2vw + 1rem, 2.5rem);
+  line-height: 1.1;
+  font-weight: 700;
+  color: inherit;
+}
+
+.view-subtitle {
+  font-size: 0.95rem;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.dark .view-subtitle {
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.view-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 2.5vw, 2.5rem);
+}
+
+.view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.view-panel--sidebar {
+  position: sticky;
+  top: 6.5rem;
+  align-self: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .view-panel--sidebar {
+    position: static;
+    top: auto;
+  }
+}
+
+.view-grid {
+  display: grid;
+  gap: clamp(1.5rem, 2vw, 2.25rem);
+}
+
+.view-grid--two {
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .view-grid--two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.view-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 2.5vw, 2.5rem);
+}
+
 @keyframes widget-pop {
   0% {
     opacity: 0;
