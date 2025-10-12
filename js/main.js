@@ -924,10 +924,10 @@ function setAuthFeedback(message = '', tone = 'info'){
   authFeedbackEl.classList.remove('text-white/80', 'text-emerald-200', 'text-amber-200', 'text-rose-200');
   if (!message){
     authFeedbackEl.textContent = '';
-    authFeedbackEl.classList.add('hidden');
+    authFeedbackEl.hidden = true;
     return;
   }
-  authFeedbackEl.classList.remove('hidden');
+  authFeedbackEl.hidden = false;
   authFeedbackEl.classList.add(toneClasses[tone] || toneClasses.info);
   authFeedbackEl.textContent = message;
 }
@@ -1056,44 +1056,51 @@ async function handleAuthStateChange(event, session){
   markInitialAuthReady();
 }
 
-if (authForm) {
-  authForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const email = authEmailInput?.value?.trim();
-    if (!email) {
-      setAuthFeedback('Enter your email address to sign in.', 'warning');
-      authEmailInput?.focus();
-      return;
-    }
-    if (signInBtn) {
+async function handleAuthFormSubmit(event){
+  event.preventDefault();
+  const email = authEmailInput?.value?.trim();
+  if (!email) {
+    setAuthFeedback('Enter your email address to sign in.', 'warning');
+    authEmailInput?.focus();
+    return { status: 'invalid' };
+  }
+
+  const buttonInitiallyDisabled = Boolean(signInBtn?.disabled);
+  if (signInBtn) {
+    if (!buttonInitiallyDisabled) {
       signInBtn.disabled = true;
-      signInBtn.textContent = 'Sending…';
     }
-    try {
-      const client = await ensureSupabase();
-      if (!client) {
-        setAuthFeedback('Supabase is not configured yet.', 'warning');
-        return;
-      }
-      const redirectTo = typeof window !== 'undefined'
-        ? `${window.location.origin}${window.location.pathname}`
-        : undefined;
-      const { error } = await client.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirectTo },
-      });
-      if (error) throw error;
-      setAuthFeedback(`Magic link sent to ${email}. Check your inbox.`, 'success');
-    } catch (error) {
-      console.error('Supabase sign-in failed', error);
-      setAuthFeedback(error?.message || 'Unable to send sign-in link right now.', 'error');
-    } finally {
-      if (signInBtn) {
+    signInBtn.textContent = 'Sending…';
+  }
+
+  try {
+    const client = await ensureSupabase();
+    if (!client) {
+      setAuthFeedback('Supabase is not configured yet.', 'warning');
+      return { status: 'warning' };
+    }
+    const redirectTo = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : undefined;
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo },
+    });
+    if (error) throw error;
+    setAuthFeedback(`Magic link sent to ${email}. Check your inbox.`, 'success');
+    return { status: 'success' };
+  } catch (error) {
+    console.error('Supabase sign-in failed', error);
+    setAuthFeedback(error?.message || 'Unable to send sign-in link right now.', 'error');
+    return { status: 'error', error };
+  } finally {
+    if (signInBtn) {
+      if (!buttonInitiallyDisabled) {
         signInBtn.disabled = false;
-        signInBtn.textContent = signInDefaultLabel;
       }
+      signInBtn.textContent = signInDefaultLabel;
     }
-  });
+  }
 }
 
 signOutBtn?.addEventListener('click', async () => {
@@ -4622,6 +4629,43 @@ if(noteEl){
       localStorage.setItem('theme', theme);
       items.forEach(i => i.setAttribute('aria-checked', String(i === el)));
     });
+  });
+})();
+/* END GPT CHANGE */
+
+/* BEGIN GPT CHANGE: auth enhancement */
+(function () {
+  const form = document.getElementById('auth-form');
+  const feedback = document.getElementById('auth-feedback');
+  if (!form || !feedback) return;
+
+  form.hidden = false;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    btn?.setAttribute('disabled', 'true');
+    form.setAttribute('aria-busy', 'true');
+    feedback.hidden = false;
+    feedback.classList.remove('text-white/80', 'text-emerald-200', 'text-amber-200', 'text-rose-200');
+    feedback.textContent = 'Sending magic link…';
+    try {
+      const result = typeof handleAuthFormSubmit === 'function'
+        ? await handleAuthFormSubmit(e)
+        : undefined;
+      if (feedback.textContent === 'Sending magic link…') {
+        feedback.textContent = result && result.status === 'success'
+          ? 'Check your inbox for the sign-in link.'
+          : 'Sign-in failed. Please try again.';
+      }
+    } catch (err) {
+      if (feedback.textContent === 'Sending magic link…') {
+        feedback.textContent = 'Sign-in failed. Please try again.';
+      }
+    } finally {
+      form.removeAttribute('aria-busy');
+      btn?.removeAttribute('disabled');
+    }
   });
 })();
 /* END GPT CHANGE */
