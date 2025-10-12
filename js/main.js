@@ -39,6 +39,23 @@ const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
 })();
 /* END GPT CHANGE */
 
+/* BEGIN GPT CHANGE: widget a11y state */
+(function () {
+  const live = document.getElementById('live-status');
+  if (!live) return;
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-widget-toggle]');
+    if (!btn) return;
+    const panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!panel) return;
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!expanded));
+    panel.hidden = expanded;
+    live.textContent = `${btn.getAttribute('data-widget-name') || 'Section'} ${expanded ? 'collapsed' : 'expanded'}.`;
+  }, true);
+})();
+/* END GPT CHANGE */
+
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
 const viewMap = new Map(views.map(v => [v.dataset.view, v]));
