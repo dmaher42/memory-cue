@@ -280,42 +280,136 @@ export async function initReminders(sel = {}) {
 
    // Notes (runs before Firebase modules load)
    function initNotebook() {
-     let notesMemory = '';
-     if (notesEl) {
-       try {
-         notesMemory = localStorage.getItem('mobileNotes') || '';
-       } catch {
-         toast('Unable to access saved notes');
+     if (!notesEl) return;
+
+     const notesToolbar = document.getElementById('notesToolbar');
+     const columnsToggleBtn = notesToolbar?.querySelector('[data-action="columns"]');
+     const storageKey = 'mobileNotes';
+     const columnsKey = 'mobileNotesColumns';
+
+     const supportsRichFormatting = typeof document !== 'undefined' && typeof document.execCommand === 'function';
+
+     const readEditorValue = () => {
+       if ('value' in notesEl) {
+         return notesEl.value;
        }
-       notesEl.value = notesMemory;
-       notesEl.addEventListener('input', () => {
-         notesMemory = notesEl.value;
-         try {
-           localStorage.setItem('mobileNotes', notesMemory);
-         } catch {
-           toast('Notes saved for this session only');
-         }
-       });
-       saveNotesBtn?.addEventListener('click', () => {
-         notesMemory = notesEl.value;
-         try {
-           localStorage.setItem('mobileNotes', notesMemory);
-           toast('Notes saved');
-         } catch {
-           toast('Notes saved for this session only');
-         }
-       });
-       loadNotesBtn?.addEventListener('click', () => {
-         try {
-           notesMemory = localStorage.getItem('mobileNotes') || notesMemory;
-           notesEl.value = notesMemory;
-           toast('Notes loaded');
-         } catch {
-           notesEl.value = notesMemory;
-           toast('Unable to load saved notes');
-         }
-       });
+       return notesEl.innerHTML;
+     };
+
+     const writeEditorValue = (value) => {
+       if ('value' in notesEl) {
+         notesEl.value = value;
+         return;
+       }
+       if (typeof value !== 'string' || value.length === 0) {
+         notesEl.innerHTML = '';
+         return;
+       }
+
+       const trimmed = value.trim();
+       const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(trimmed);
+
+       if (looksLikeHtml) {
+         notesEl.innerHTML = value;
+         return;
+       }
+
+       const escaped = value
+         .replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;')
+         .replace(/\n/g, '<br>');
+       notesEl.innerHTML = escaped;
+     };
+
+     const applyColumnsPreference = (enabled) => {
+       if (enabled) {
+         notesEl.classList.add('notes-editor--columns');
+       } else {
+         notesEl.classList.remove('notes-editor--columns');
+       }
+       if (columnsToggleBtn) {
+         columnsToggleBtn.setAttribute('aria-pressed', String(Boolean(enabled)));
+       }
+     };
+
+     let notesMemory = '';
+     try {
+       notesMemory = localStorage.getItem(storageKey) || '';
+     } catch {
+       toast('Unable to access saved notes');
      }
+
+     writeEditorValue(notesMemory);
+
+     let columnsPreference = false;
+     try {
+       columnsPreference = localStorage.getItem(columnsKey) === '1';
+     } catch {
+       columnsPreference = false;
+     }
+     applyColumnsPreference(columnsPreference);
+
+     notesEl.addEventListener('input', () => {
+       notesMemory = readEditorValue();
+       try {
+         localStorage.setItem(storageKey, notesMemory);
+       } catch {
+         toast('Notes saved for this session only');
+       }
+     });
+
+     saveNotesBtn?.addEventListener('click', () => {
+       notesMemory = readEditorValue();
+       try {
+         localStorage.setItem(storageKey, notesMemory);
+         toast('Notes saved');
+       } catch {
+         toast('Notes saved for this session only');
+       }
+     });
+
+     loadNotesBtn?.addEventListener('click', () => {
+       let stored = notesMemory;
+       try {
+         stored = localStorage.getItem(storageKey) || notesMemory;
+       } catch {
+         toast('Unable to load saved notes');
+       }
+       notesMemory = stored;
+       writeEditorValue(notesMemory);
+     });
+
+     notesToolbar?.addEventListener('click', (event) => {
+       const target = event.target;
+       if (!(target instanceof Element)) return;
+       const button = target.closest('button[data-action]');
+       if (!button) return;
+       const action = button.getAttribute('data-action');
+
+       if (action === 'columns') {
+         const nextState = !notesEl.classList.contains('notes-editor--columns');
+         applyColumnsPreference(nextState);
+         try {
+           localStorage.setItem(columnsKey, nextState ? '1' : '0');
+         } catch {
+           toast('Column preference saved for this session only');
+         }
+         return;
+       }
+
+       if (!supportsRichFormatting) {
+         toast('Formatting controls are not supported in this browser');
+         return;
+       }
+
+       notesEl.focus();
+       if (action === 'bullets') {
+         document.execCommand('insertUnorderedList');
+       } else if (action === 'numbers') {
+         document.execCommand('insertOrderedList');
+       }
+     });
    }
    initNotebook();
 
