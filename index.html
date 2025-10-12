@@ -238,6 +238,44 @@
   <main id="mainContent" class="app-shell min-h-screen" tabindex="-1">
     <section data-view="dashboard" id="view-dashboard" class="app-view" tabindex="-1">
       <div class="view-container">
+        <section class="dashboard-intro" aria-labelledby="dashboard-intro-heading">
+          <header class="dashboard-intro-header">
+            <div>
+              <p class="dashboard-intro-eyebrow">Welcome to Memory Cue</p>
+              <h2 id="dashboard-intro-heading">How to get organised in three simple steps</h2>
+            </div>
+            <p class="dashboard-intro-copy">
+              Start with the reminders that need your attention, then jump into the planner and notes when you are ready.
+              Each card below opens the right workspace so you never lose track of what to do next.
+            </p>
+          </header>
+          <ol class="dashboard-intro-steps">
+            <li class="dashboard-intro-step">
+              <span class="dashboard-intro-icon" aria-hidden="true">✅</span>
+              <div class="dashboard-intro-content">
+                <h3>Capture urgent cues</h3>
+                <p>Open the reminders board and log any tasks or student follow-ups that cannot wait.</p>
+                <a class="dashboard-intro-action" href="#reminders" data-route="reminders">Go to Reminders</a>
+              </div>
+            </li>
+            <li class="dashboard-intro-step">
+              <span class="dashboard-intro-icon" aria-hidden="true">🗓️</span>
+              <div class="dashboard-intro-content">
+                <h3>Plan your lessons</h3>
+                <p>Block the key sessions for the week, including focus areas and locations, so you can teach with clarity.</p>
+                <a class="dashboard-intro-action" href="#planner" data-route="planner">Open the Planner</a>
+              </div>
+            </li>
+            <li class="dashboard-intro-step">
+              <span class="dashboard-intro-icon" aria-hidden="true">📝</span>
+              <div class="dashboard-intro-content">
+                <h3>Keep quick notes tidy</h3>
+                <p>Use the notes workspace to capture observations and ideas, then pin them to your lessons later.</p>
+                <a class="dashboard-intro-action" href="#notes" data-route="notes">Review Notes</a>
+              </div>
+            </li>
+          </ol>
+        </section>
         <header class="view-header view-header--hero" aria-labelledby="dashboard-heading">
           <div class="hero rounded-2xl border border-base-200/70 bg-base-100/90 shadow-xl">
             <!-- BEGIN GPT FIX: widget-density -->
