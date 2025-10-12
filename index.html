@@ -16,6 +16,17 @@
 <!-- END GPT CHANGE -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- BEGIN GPT CHANGE: basic CSP -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' data:;
+                 style-src 'self' 'unsafe-inline';
+                 script-src 'self';
+                 connect-src 'self' https://*.supabase.co;
+                 font-src 'self' data:;
+                 base-uri 'self';
+                 form-action 'self'">
+  <!-- END GPT CHANGE -->
   <meta name="description" content="Memory Cue helps teachers stay organised with integrated dashboards, reminders, planners, and curated resources in one streamlined app." />
   <title>Memory Cue — Teacher One-Stop Shop Organiser</title>
   <meta name="theme-color" content="#10b981" media="(prefers-color-scheme: light)">
