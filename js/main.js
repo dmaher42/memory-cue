@@ -4626,3 +4626,21 @@ if(noteEl){
 })();
 /* END GPT CHANGE */
 
+/* BEGIN GPT CHANGE: session-driven user badge */
+(function () {
+  const badge = document.getElementById('user-badge');
+  const signout = document.getElementById('signout-btn');
+  if (!badge) return;
+
+  async function refreshSession() {
+    // Replace with your existing session getter
+    // const { data: { session } } = await supabase.auth.getSession();
+    const session = null; // placeholder
+    badge.hidden = !session;
+    signout && (signout.hidden = !session);
+  }
+  document.addEventListener('DOMContentLoaded', refreshSession);
+  // If your auth library emits events, also subscribe and call refreshSession().
+})();
+/* END GPT CHANGE */
+
