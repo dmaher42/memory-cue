@@ -234,10 +234,10 @@
       </div>
     </div>
   </nav>
-  <main id="mainContent" class="min-h-screen" tabindex="-1">
-    <section data-view="dashboard" id="view-dashboard" tabindex="-1">
-      <section id="dashboard-overview" aria-labelledby="dashboard-heading" class="pt-24 pb-16 bg-[var(--bg)]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+  <main id="mainContent" class="app-shell min-h-screen" tabindex="-1">
+    <section data-view="dashboard" id="view-dashboard" class="app-view" tabindex="-1">
+      <div class="view-container">
+        <header class="view-header view-header--hero" aria-labelledby="dashboard-heading">
           <div class="hero rounded-2xl border border-base-200/70 bg-base-100/90 shadow-xl">
             <div class="hero-content w-full flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div class="max-w-xl space-y-4">
@@ -268,9 +268,10 @@
               </div>
             </div>
           </div>
+        </header>
 
-          <div class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-dashboard-area="primary">
+        <div class="view-body space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-dashboard-area="primary">
               <section
                 data-dashboard-widget="reminders"
                 data-widget-title="Reminders needing attention"
@@ -711,54 +712,62 @@
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </section>
-    <section data-view="reminders" id="view-reminders" hidden tabindex="-1">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="mb-6">
-          <div role="tablist" aria-label="Cues and daily tasks" class="tabs tabs-boxed">
-            <button
-              id="tab-cues"
-              type="button"
-              role="tab"
-              aria-selected="true"
-              class="tab tab-active"
-            >
-              Cues
-            </button>
-            <button
-              id="tab-daily"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              class="tab"
-            >
-              Today's List
-            </button>
+    <section data-view="reminders" id="view-reminders" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <header class="view-header" aria-labelledby="reminders-view-heading">
+          <div class="view-header-copy">
+            <p class="view-eyebrow">Reminders</p>
+            <h2 id="reminders-view-heading" class="view-title">Stay ahead of cues and daily tasks</h2>
+            <p class="view-subtitle">Capture key actions, then filter and focus on what matters today.</p>
           </div>
-        </div>
-        <div id="cues-view" class="space-y-8">
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Reminder</h2>
-              <div class="flex items-center gap-3">
-                <span id="syncStatus" class="sync-status" role="status" aria-live="polite" aria-atomic="true">Checking connection...</span>
-                <button
-                id="voiceBtn"
+          <div class="view-header-actions">
+            <div role="tablist" aria-label="Cues and daily tasks" class="tabs tabs-boxed view-tabs">
+              <button
+                id="tab-cues"
                 type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-lg shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600 text-white"
-                title="Voice quick add"
-                aria-label="Start voice input"
+                role="tab"
+                aria-selected="true"
+                class="tab tab-active"
               >
-                <span aria-hidden="true">🎙️</span>
-                <span class="sr-only">Start voice input</span>
+                Cues
+              </button>
+              <button
+                id="tab-daily"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                class="tab"
+              >
+                Today's List
               </button>
             </div>
           </div>
-          <div class="space-y-4">
-            <button id="openCueModal" type="button" class="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-400">Add New Cue</button>
-            <div id="status" class="text-sm" role="status" aria-live="polite" aria-atomic="true"></div>
-            <dialog id="cue-modal" class="modal">
+        </header>
+        <div id="cues-view" class="view-grid view-grid--two">
+          <aside class="view-panel view-panel--sidebar">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Reminder</h2>
+                <div class="flex items-center gap-3">
+                  <span id="syncStatus" class="sync-status" role="status" aria-live="polite" aria-atomic="true">Checking connection...</span>
+                  <button
+                    id="voiceBtn"
+                    type="button"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-lg shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600 text-white"
+                    title="Voice quick add"
+                    aria-label="Start voice input"
+                  >
+                    <span aria-hidden="true">🎙️</span>
+                    <span class="sr-only">Start voice input</span>
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <button id="openCueModal" type="button" class="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-400">Add New Cue</button>
+                <div id="status" class="text-sm" role="status" aria-live="polite" aria-atomic="true"></div>
+                <dialog id="cue-modal" class="modal">
               <div class="modal-box space-y-6">
                 <div class="space-y-1">
                   <h3 class="text-lg font-semibold text-base-content">Add a new Cue</h3>
@@ -837,118 +846,123 @@
                 <button aria-label="Close">close</button>
               </form>
             </dialog>
-          </div>
+              </div>
+            </div>
+          </aside>
+          <section class="view-panel view-panel--main">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div class="flex gap-2 flex-wrap">
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="today" type="button">Today</button>
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="overdue" type="button">Overdue</button>
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="all" type="button">All</button>
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="done" type="button">Done</button>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div>
+                    <label for="categoryFilter" class="sr-only">Filter by category</label>
+                    <select
+                      id="categoryFilter"
+                      class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
+                    >
+                      <option value="all" selected>All categories</option>
+                      <option value="General">General</option>
+                      <option value="General Appointments">General Appointments</option>
+                      <option value="Home &amp; Personal">Home &amp; Personal</option>
+                      <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                      <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                      <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                      <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                      <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                      <option value="School – To-Do">School – To-Do</option>
+                      <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="sort" class="sr-only">Sort reminders</label>
+                    <select id="sort" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors">
+                      <option value="smart">Smart sort</option>
+                      <option value="time">Time</option>
+                      <option value="priority">Priority</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-6 mb-6 text-gray-600 dark:text-gray-400">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Today: <span id="inlineTodayCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <span>Overdue: <span id="inlineOverdueCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                  <span>Total: <span id="inlineTotalCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                  <span>Completed: <span id="inlineCompletedCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+              </div>
+
+              <div id="remindersWrapper" class="space-y-4">
+                <div id="emptyState" class="text-sm"></div>
+                <ul id="reminderList" class="space-y-4"></ul>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
-          <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div class="flex gap-2 flex-wrap">
-              <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="today" type="button">Today</button>
-              <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="overdue" type="button">Overdue</button>
-              <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="all" type="button">All</button>
-              <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="done" type="button">Done</button>
+        <div id="daily-list-view" class="hidden view-stack">
+          <section class="view-panel view-panel--main">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-4">
+              <h2 id="daily-list-header" class="text-2xl font-bold text-gray-900 dark:text-gray-100"></h2>
+              <p
+                id="daily-list-permission-notice"
+                class="hidden rounded-lg border border-amber-300/70 bg-amber-100/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-400/50 dark:bg-amber-500/10 dark:text-amber-100"
+                role="status"
+              >
+                Daily tasks are stored locally on this device because cloud sync isn't available right now.
+              </p>
+              <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row sm:items-stretch" novalidate>
+                <label for="quick-add-input" class="sr-only">Add a task</label>
+                <div class="flex flex-col gap-3 sm:flex-row sm:flex-1">
+                  <input
+                    id="quick-add-input"
+                    type="text"
+                    class="input input-bordered flex-1"
+                    placeholder="Quick add a task for today"
+                    autocomplete="off"
+                  />
+                  <button
+                    id="daily-voice-btn"
+                    type="button"
+                    class="btn btn-ghost sm:w-auto"
+                    title="Voice quick add"
+                    aria-label="Start voice input for today's list"
+                    aria-pressed="false"
+                  >
+                    <span aria-hidden="true">🎙️</span>
+                    <span class="sr-only">Start voice input for today's list</span>
+                  </button>
+                </div>
+                <button type="submit" class="btn btn-primary sm:w-auto">Add</button>
+              </form>
+              <div id="daily-tasks-container" class="mt-4 space-y-3"></div>
+              <button id="clear-completed-btn" type="button" class="btn btn-sm btn-outline mt-4" disabled>
+                Clear Completed Tasks
+              </button>
             </div>
-            <div class="flex items-center gap-3">
-              <div>
-                <label for="categoryFilter" class="sr-only">Filter by category</label>
-                <select
-                  id="categoryFilter"
-                  class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
-                >
-                  <option value="all" selected>All categories</option>
-                  <option value="General">General</option>
-                  <option value="General Appointments">General Appointments</option>
-                  <option value="Home &amp; Personal">Home &amp; Personal</option>
-                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                  <option value="School – To-Do">School – To-Do</option>
-                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                </select>
-              </div>
-              <div>
-                <label for="sort" class="sr-only">Sort reminders</label>
-                <select id="sort" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors">
-                  <option value="smart">Smart sort</option>
-                  <option value="time">Time</option>
-                  <option value="priority">Priority</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          
-          <div class="flex flex-wrap gap-6 mb-6 text-gray-600 dark:text-gray-400">
-            <div class="flex items-center gap-2">
-              <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>Today: <span id="inlineTodayCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
-              <span>Overdue: <span id="inlineOverdueCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
-              <span>Total: <span id="inlineTotalCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
-              <span>Completed: <span id="inlineCompletedCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-            </div>
-          </div>
-
-          <div id="remindersWrapper" class="space-y-4">
-            <div id="emptyState" class="text-sm"></div>
-            <ul id="reminderList" class="space-y-4"></ul>
-          </div>
-        </div>
-        </div>
-        <div id="daily-list-view" class="hidden">
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-4">
-            <h2 id="daily-list-header" class="text-2xl font-bold text-gray-900 dark:text-gray-100"></h2>
-            <p
-              id="daily-list-permission-notice"
-              class="hidden rounded-lg border border-amber-300/70 bg-amber-100/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-400/50 dark:bg-amber-500/10 dark:text-amber-100"
-              role="status"
-            >
-              Daily tasks are stored locally on this device because cloud sync isn't available right now.
-            </p>
-            <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row sm:items-stretch" novalidate>
-              <label for="quick-add-input" class="sr-only">Add a task</label>
-              <div class="flex flex-col gap-3 sm:flex-row sm:flex-1">
-                <input
-                  id="quick-add-input"
-                  type="text"
-                  class="input input-bordered flex-1"
-                  placeholder="Quick add a task for today"
-                  autocomplete="off"
-                />
-                <button
-                  id="daily-voice-btn"
-                  type="button"
-                  class="btn btn-ghost sm:w-auto"
-                  title="Voice quick add"
-                  aria-label="Start voice input for today's list"
-                  aria-pressed="false"
-                >
-                  <span aria-hidden="true">🎙️</span>
-                  <span class="sr-only">Start voice input for today's list</span>
-                </button>
-              </div>
-              <button type="submit" class="btn btn-primary sm:w-auto">Add</button>
-            </form>
-            <div id="daily-tasks-container" class="mt-4 space-y-3"></div>
-            <button id="clear-completed-btn" type="button" class="btn btn-sm btn-outline mt-4" disabled>
-              Clear Completed Tasks
-            </button>
-          </div>
+          </section>
         </div>
       </div>
     </section>
-    <section data-view="planner" id="view-planner" hidden tabindex="-1">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md mb-8">
+    <section data-view="planner" id="view-planner" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--wide">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="flex flex-wrap items-center gap-4 justify-between">
             <div>
               <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Weekly Planner</h2>
@@ -964,12 +978,12 @@
             <h3 id="planner-week" class="text-lg font-semibold text-gray-900 dark:text-gray-100"></h3>
             <div id="planner-grid" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
           </div>
-        </div>
+        </article>
       </div>
     </section>
-    <section data-view="notes" id="view-notes" hidden tabindex="-1">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <section data-view="notes" id="view-notes" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="flex flex-wrap items-center gap-4 justify-between mb-4">
             <div>
               <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Quick Notes</h2>
@@ -991,20 +1005,20 @@
             <label for="saved-notes" class="text-sm font-medium text-gray-600 dark:text-gray-400">Saved notes</label>
             <select id="saved-notes" class="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"></select>
           </div>
-        </div>
+        </article>
       </div>
     </section>
-    <section data-view="resources" id="view-resources" hidden tabindex="-1">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-8">
-        <header class="space-y-8">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="space-y-2">
-              <p class="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300">Resource library</p>
-              <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Activities for every lesson phase</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-500">Browse ready-to-go activities curated for HPE, English, and HASS.</p>
-            </div>
-            <p id="activity-status" class="hidden text-sm font-medium text-gray-500 dark:text-gray-500"></p>
+    <section data-view="resources" id="view-resources" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--wide view-container--stacked">
+        <header class="view-header view-header--stack" aria-labelledby="resources-heading">
+          <div class="view-header-copy space-y-2">
+            <p class="view-eyebrow text-emerald-600 dark:text-emerald-300">Resource library</p>
+            <h2 id="resources-heading" class="view-title">Activities for every lesson phase</h2>
+            <p class="view-subtitle">Browse ready-to-go activities curated for HPE, English, and HASS.</p>
           </div>
+          <p id="activity-status" class="hidden text-sm font-medium text-gray-500 dark:text-gray-500"></p>
+        </header>
+        <div class="view-body space-y-8">
           <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             <div class="space-y-4 rounded-2xl border border-gray-200 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/50">
               <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Subjects">
@@ -1119,7 +1133,7 @@
               </div>
             </div>
           </div>
-        </header>
+        </div>
         <div
           id="activity-ideas"
           class="hidden space-y-4 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 p-6 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10"
@@ -1188,10 +1202,11 @@
         <div id="activity-empty" class="hidden"></div>
         <div id="activity-results" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
       </div>
+      </div>
     </section>
-    <section data-view="templates" id="view-templates" hidden tabindex="-1">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-8">
+    <section data-view="templates" id="view-templates" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-8">
           <div id="templates-empty" class="mb-2"></div>
           <div class="grid gap-6 lg:grid-cols-2">
             <article class="card border border-base-200 bg-base-100 shadow-sm">
@@ -1288,12 +1303,12 @@
               <button type="reset" class="btn btn-outline btn-sm md:btn-md">Reset</button>
             </div>
           </form>
-        </div>
+        </article>
       </div>
     </section>
-    <section data-view="settings" id="view-settings" hidden tabindex="-1">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-8">
+    <section data-view="settings" id="view-settings" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-8">
           <div id="settings-empty" class="mb-2"></div>
           <form id="settings-form" class="space-y-8" novalidate>
             <section class="space-y-4">
@@ -1414,7 +1429,7 @@
               </div>
             </div>
           </form>
-        </div>
+        </article>
       </div>
     </section>
   </main>
