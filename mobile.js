@@ -1,3 +1,5 @@
+import { initReminders } from './js/reminders.js';
+
 /* BEGIN GPT CHANGE: tabbed navigation */
 (function () {
   const views = {
@@ -147,6 +149,56 @@
   });
 })();
 /* END GPT CHANGE */
+
+initReminders({
+  qSel: '#searchReminders',
+  titleSel: '#reminderText',
+  dateSel: '#reminderDate',
+  timeSel: '#reminderTime',
+  detailsSel: '#reminderDetails',
+  prioritySel: '#priority',
+  categorySel: '#category',
+  saveBtnSel: '#saveReminder',
+  cancelEditBtnSel: '#cancelEditBtn',
+  listSel: '#reminderList',
+  statusSel: '#statusMessage',
+  syncStatusSel: '#syncStatus',
+  voiceBtnSel: '#voiceBtn',
+  notifBtnSel: '#notifBtn',
+  addQuickBtnSel: '#quickAdd',
+  filterBtnsSel: '[data-filter]',
+  categoryFilterSel: '#categoryFilter',
+  categoryOptionsSel: '#categorySuggestions',
+  countTodaySel: '#todayCount',
+  countOverdueSel: '#overdueCount',
+  countTotalSel: '#totalCountBadge, #totalCount',
+  countCompletedSel: '#completedCount',
+  googleSignInBtnSel: '#googleSignInBtn',
+  googleSignOutBtnSel: '#googleSignOutBtn',
+  googleAvatarSel: '#googleAvatar',
+  googleUserNameSel: '#googleUserName',
+  syncAllBtnSel: '#syncAll',
+  syncUrlInputSel: '#syncUrl',
+  saveSettingsSel: '#saveSyncSettings',
+  testSyncSel: '#testSync',
+  openSettingsSel: '#openSettings',
+  emptyStateSel: '#emptyState',
+  listWrapperSel: '#remindersWrapper',
+  notesSel: '#notes',
+  saveNotesBtnSel: '#saveNotes',
+  loadNotesBtnSel: '#loadNotes',
+  dateFeedbackSel: '#dateFeedback',
+  variant: 'mobile',
+}).catch((error) => {
+  console.error('Failed to initialise reminders:', error);
+});
+
+document.addEventListener('memoryCue:remindersUpdated', (event) => {
+  const totalCountEl = document.getElementById('totalCount');
+  if (!totalCountEl) return;
+  const total = Array.isArray(event?.detail?.items) ? event.detail.items.length : 0;
+  totalCountEl.textContent = String(total);
+});
 
 /* BEGIN GPT CHANGE: today view population */
 (function () {
