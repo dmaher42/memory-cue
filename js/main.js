@@ -5,39 +5,39 @@ import { ENV } from './env.js';
 
 // Navigation helpers
 const navButtons = [...document.querySelectorAll('.nav-desktop [data-route]')];
-const mobileNavToggle = document.getElementById('mobile-nav-toggle');
-const mobileNavMenu = document.getElementById('mobile-nav-menu');
 
-if (mobileNavToggle && mobileNavMenu){
-  const closeMobileMenu = () => {
-    mobileNavMenu.classList.add('hidden');
-    mobileNavToggle.setAttribute('aria-expanded', 'false');
-  };
+/* BEGIN GPT CHANGE: mobile menu a11y */
+(function () {
+  const toggle = document.getElementById('mobile-nav-toggle');
+  const menu = document.getElementById('mobile-nav-menu');
+  if (!toggle || !menu) return;
 
-  mobileNavToggle.addEventListener('click', (event) => {
-    event.stopPropagation();
-    const isOpen = !mobileNavMenu.classList.contains('hidden');
-    if (isOpen) {
-      closeMobileMenu();
-    } else {
-      mobileNavMenu.classList.remove('hidden');
-      mobileNavToggle.setAttribute('aria-expanded', 'true');
+  function open() {
+    menu.hidden = false;
+    toggle.setAttribute('aria-expanded', 'true');
+    const first = menu.querySelector('a,button,[tabindex]:not([tabindex="-1"])');
+    if (first) first.focus();
+    document.addEventListener('keydown', esc);
+    document.addEventListener('click', outside, true);
+  }
+  function close() {
+    menu.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.focus();
+    document.removeEventListener('keydown', esc);
+    document.removeEventListener('click', outside, true);
+  }
+  function esc(e){ if (e.key === 'Escape') close(); }
+  function outside(e){ if (!menu.contains(e.target) && e.target !== toggle) close(); }
+
+  toggle.addEventListener('click', () => (menu.hidden ? open() : close()));
+  menu.addEventListener('click', (event) => {
+    if (event.target.closest('[data-route]')) {
+      close();
     }
   });
-
-  mobileNavMenu.addEventListener('click', (event) => {
-    const navItem = event.target.closest('[data-route]');
-    if (navItem) {
-      closeMobileMenu();
-    }
-  });
-
-  document.addEventListener('click', (event) => {
-    if (event.target === mobileNavToggle) return;
-    if (mobileNavMenu.contains(event.target)) return;
-    closeMobileMenu();
-  });
-}
+})();
+/* END GPT CHANGE */
 
 // Routing
 const views = [...document.querySelectorAll('[data-view]')];
