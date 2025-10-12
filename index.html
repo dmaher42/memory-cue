@@ -8,11 +8,7 @@
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
-<script type="module">
-  import { ENV } from './js/env.js';
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-  window.supabase = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
-</script>
+<script type="module" src="./js/config-supabase.js" defer></script>
 <!-- END GPT CHANGE -->
 <!-- === /SUPABASE CONFIG === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
@@ -30,15 +26,17 @@
   <meta name="twitter:card" content="summary_large_image">
   <!-- END GPT CHANGE -->
   <!-- BEGIN GPT CHANGE: basic CSP -->
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self';
-                 img-src 'self' data:;
-                 style-src 'self' 'unsafe-inline';
-                 script-src 'self';
-                 connect-src 'self' https://*.supabase.co;
-                 font-src 'self' data:;
-                 base-uri 'self';
-                 form-action 'self'">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             img-src 'self' data:;
+             style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
+             connect-src 'self' https://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com;
+             font-src 'self' data:;
+             base-uri 'self';
+             form-action 'self'"
+  >
   <!-- END GPT CHANGE -->
   <meta name="description" content="Memory Cue helps teachers stay organised with integrated dashboards, reminders, planners, and curated resources in one streamlined app." />
   <!-- BEGIN GPT CHANGE: canonical -->
@@ -75,9 +73,7 @@
   <link rel="stylesheet" href="./styles/daisy-themes.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
-  <script type="module">
-    window.__SUPABASE_ENV__ = typeof import.meta !== 'undefined' && import.meta ? import.meta.env : undefined;
-  </script>
+  <script src="./js/runtime-env-shim.js" defer></script>
   <script type="module" src="./js/main.js" defer></script>
 </head>
 <body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen">
@@ -1613,31 +1609,9 @@
       </div>
     </div>
   </div>
-  <!-- BEGIN GPT CHANGE: runtime env shim -->
-  <script>
-    window.__ENV = window.__ENV || {};
-    // Optionally, set values via server or dev-only override.
-  </script>
-  <!-- END GPT CHANGE -->
   <script type="module" src="./app.js" defer></script>
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
-  <script>
-    (function registerServiceWorker() {
-      if (!('serviceWorker' in navigator)) return;
-      const register = () => {
-        navigator.serviceWorker
-          .register('./service-worker.js')
-          .catch((err) => console.warn('SW registration failed', err));
-      };
-      if (document.readyState === 'complete') {
-        register();
-      } else {
-        window.addEventListener('load', register, { once: true });
-      }
-    })();
-  </script>
+  <script src="./js/update-footer-year.js" defer></script>
+  <script src="./js/register-service-worker.js" defer></script>
 </body>
 </html>
 <!-- BEGIN GPT FIX: change-summary -->
