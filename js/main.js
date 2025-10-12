@@ -1531,7 +1531,16 @@ const dashboardController = (() => {
     if (collapseBtn) {
       collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
       const icon = collapseBtn.querySelector('[data-icon]');
-      if (icon) icon.textContent = collapsed ? '+' : '−';
+      if (icon) {
+        const minusIcon = icon.querySelector('[data-icon-minus]');
+        const plusIcon = icon.querySelector('[data-icon-plus]');
+        if (minusIcon && plusIcon) {
+          minusIcon.hidden = collapsed;
+          plusIcon.hidden = !collapsed;
+        } else {
+          icon.textContent = collapsed ? '+' : '−';
+        }
+      }
       const sr = collapseBtn.querySelector('.sr-only');
       if (sr) sr.textContent = collapsed ? 'Expand widget' : 'Collapse widget';
       collapseBtn.setAttribute('title', collapsed ? 'Expand widget' : 'Collapse widget');
