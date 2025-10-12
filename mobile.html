@@ -90,6 +90,31 @@
       column-width: 16rem;
       column-gap: 1.5rem;
     }
+    .view-panel {
+      display: grid;
+      gap: 1.5rem;
+    }
+    .section-jump {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+    }
+    .section-jump::-webkit-scrollbar {
+      display: none;
+    }
+    .section-jump .btn {
+      scroll-snap-align: start;
+    }
+    .glass-panel {
+      background-color: rgba(248, 250, 252, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .dark .glass-panel {
+      background-color: rgba(15, 23, 42, 0.88);
+    }
   </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
@@ -123,194 +148,296 @@
     </div>
   </header>
 
-  <main id="mainContent" class="max-w-md mx-auto px-4 pb-24 pt-4 space-y-6" tabindex="-1">
-    <section class="card bg-base-100 border">
-      <div class="card-body gap-4">
-        <h2 class="card-title text-base">Create Reminder</h2>
-        <label class="form-control w-full">
-          <div class="label"><span class="label-text">Reminder</span></div>
-          <input
-            id="reminderText"
-            type="text"
-            placeholder="e.g., Call Alex at 3pm"
-            class="input input-bordered w-full"
-            autocomplete="off"
-          />
-        </label>
+  <main id="mainContent" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1">
+    <div data-view="reminders" id="view-reminders" class="view-panel" aria-hidden="false">
+      <div class="glass-panel sticky top-[4.75rem] z-40 -mx-4 px-4 pb-3">
+        <nav class="section-jump" aria-label="Reminders quick navigation">
+          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="reminderComposer">Create</button>
+          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="reminderFilters">Filter</button>
+          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="reminderListSection">All reminders</button>
+          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-scroll-target="settingsSection">Sync</button>
+          <button type="button" class="btn btn-xs btn-ghost border border-base-200 dark:border-base-300" data-jump-view="notebook">Scratch notes</button>
+        </nav>
+      </div>
 
-        <label class="form-control w-full">
-          <div class="label"><span class="label-text">Notes</span></div>
-          <textarea
-            id="reminderDetails"
-            class="textarea textarea-bordered"
-            rows="3"
-            placeholder="Optional context for the reminder"
-          ></textarea>
-        </label>
-
-        <div class="grid grid-cols-2 gap-3">
-          <label class="form-control">
-            <div class="label"><span class="label-text">Date</span></div>
-            <input id="reminderDate" type="date" class="input input-bordered" />
-          </label>
-          <label class="form-control">
-            <div class="label"><span class="label-text">Time</span></div>
-            <input id="reminderTime" type="time" class="input input-bordered" />
-          </label>
-        </div>
-
-        <div id="dateFeedback" class="text-xs text-info"></div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <label class="form-control">
-            <div class="label"><span class="label-text">Priority</span></div>
-            <select id="priority" class="select select-bordered">
-              <option value="High">High</option>
-              <option value="Medium" selected>Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </label>
-          <label class="form-control">
-            <div class="label"><span class="label-text">Category</span></div>
+      <section id="reminderComposer" class="card bg-base-100 border">
+        <div class="card-body gap-4">
+          <h2 class="card-title text-base">Create Reminder</h2>
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text">Reminder</span></div>
             <input
-              id="category"
-              class="input input-bordered"
-              list="categorySuggestions"
-              placeholder="General"
-              value="General"
+              id="reminderText"
+              type="text"
+              placeholder="e.g., Call Alex at 3pm"
+              class="input input-bordered w-full"
+              autocomplete="off"
             />
-            <datalist id="categorySuggestions">
-              <option value="General"></option>
-              <option value="General Appointments"></option>
-              <option value="Home &amp; Personal"></option>
-              <option value="School – Appointments/Meetings"></option>
-              <option value="School – Communication &amp; Families"></option>
-              <option value="School – Excursions &amp; Events"></option>
-              <option value="School – Grading &amp; Assessment"></option>
-              <option value="School – Prep &amp; Resources"></option>
-              <option value="School – To-Do"></option>
-              <option value="Wellbeing &amp; Support"></option>
-            </datalist>
           </label>
-        </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <button id="voiceBtn" class="btn btn-ghost" type="button" aria-label="Voice input">🎙️</button>
-          <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
-          <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
-        </div>
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text">Notes</span></div>
+            <textarea
+              id="reminderDetails"
+              class="textarea textarea-bordered"
+              rows="3"
+              placeholder="Optional context for the reminder"
+            ></textarea>
+          </label>
 
-        <div class="card-actions justify-stretch">
-          <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
-          <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
-        </div>
-        <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
-      </div>
-    </section>
-
-    <section class="card bg-base-100 border">
-      <div class="card-body gap-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
-            <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="true">Today · <span id="todayCount">0</span></button>
-            <button class="btn btn-xs" type="button" data-filter="overdue">Overdue · <span id="overdueCount">0</span></button>
-            <button class="btn btn-xs" type="button" data-filter="all">All · <span id="totalCountBadge">0</span></button>
-            <button class="btn btn-xs" type="button" data-filter="done">Done · <span id="completedCount">0</span></button>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="form-control">
+              <div class="label"><span class="label-text">Date</span></div>
+              <input id="reminderDate" type="date" class="input input-bordered" />
+            </label>
+            <label class="form-control">
+              <div class="label"><span class="label-text">Time</span></div>
+              <input id="reminderTime" type="time" class="input input-bordered" />
+            </label>
           </div>
-          <label class="form-control w-full sm:w-auto">
-            <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
-            <select id="categoryFilter" class="select select-bordered select-sm">
-              <option value="all" selected>All categories</option>
-              <option value="General">General</option>
-              <option value="General Appointments">General Appointments</option>
-              <option value="Home &amp; Personal">Home &amp; Personal</option>
-              <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-              <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-              <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-              <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-              <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-              <option value="School – To-Do">School – To-Do</option>
-              <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-            </select>
+
+          <div id="dateFeedback" class="text-xs text-info"></div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="form-control">
+              <div class="label"><span class="label-text">Priority</span></div>
+              <select id="priority" class="select select-bordered">
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </label>
+            <label class="form-control">
+              <div class="label"><span class="label-text">Category</span></div>
+              <input
+                id="category"
+                class="input input-bordered"
+                list="categorySuggestions"
+                placeholder="General"
+                value="General"
+              />
+              <datalist id="categorySuggestions">
+                <option value="General"></option>
+                <option value="General Appointments"></option>
+                <option value="Home &amp; Personal"></option>
+                <option value="School – Appointments/Meetings"></option>
+                <option value="School – Communication &amp; Families"></option>
+                <option value="School – Excursions &amp; Events"></option>
+                <option value="School – Grading &amp; Assessment"></option>
+                <option value="School – Prep &amp; Resources"></option>
+                <option value="School – To-Do"></option>
+                <option value="Wellbeing &amp; Support"></option>
+              </datalist>
+            </label>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="voiceBtn" class="btn btn-ghost" type="button" aria-label="Voice input">🎙️</button>
+            <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
+            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
+          </div>
+
+          <div class="card-actions justify-stretch">
+            <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
+            <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
+          </div>
+          <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="reminderFilters" class="card bg-base-100 border">
+        <div class="card-body gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
+              <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="true">Today · <span id="todayCount">0</span></button>
+              <button class="btn btn-xs" type="button" data-filter="overdue">Overdue · <span id="overdueCount">0</span></button>
+              <button class="btn btn-xs" type="button" data-filter="all">All · <span id="totalCountBadge">0</span></button>
+              <button class="btn btn-xs" type="button" data-filter="done">Done · <span id="completedCount">0</span></button>
+            </div>
+            <label class="form-control w-full sm:w-auto">
+              <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+              <select id="categoryFilter" class="select select-bordered select-sm">
+                <option value="all" selected>All categories</option>
+                <option value="General">General</option>
+                <option value="General Appointments">General Appointments</option>
+                <option value="Home &amp; Personal">Home &amp; Personal</option>
+                <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                <option value="School – To-Do">School – To-Do</option>
+                <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="form-control">
+            <div class="label"><span class="label-text">Search</span></div>
+            <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" />
           </label>
         </div>
+      </section>
 
-        <label class="form-control">
-          <div class="label"><span class="label-text">Search</span></div>
-          <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" />
-        </label>
-      </div>
-    </section>
+      <section id="reminderListSection" class="card bg-base-100 border">
+        <div class="card-body gap-4" id="remindersWrapper">
+          <div id="emptyState" class="hidden text-center text-base-content/60"></div>
+          <ul id="reminderList" class="hidden space-y-3"></ul>
+          <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
+        </div>
+      </section>
 
-    <section class="card bg-base-100 border">
-      <div class="card-body gap-4" id="remindersWrapper">
-        <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-        <ul id="reminderList" class="hidden space-y-3"></ul>
-        <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
-      </div>
-    </section>
+      <section id="settingsSection" class="card bg-base-100 border hidden">
+        <div class="card-body gap-4">
+          <h2 class="card-title text-base">Sync Settings</h2>
+          <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
+          <label class="form-control">
+            <div class="label"><span class="label-text">Apps Script URL</span></div>
+            <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
+          </label>
+          <div class="card-actions flex-col gap-2">
+            <div class="flex gap-2 w-full">
+              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
+              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
+            </div>
+            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
+          </div>
+          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
+        </div>
+      </section>
+    </div>
 
-    <section class="card bg-base-100 border">
-      <div class="card-body gap-3">
-        <h2 class="card-title text-base">Scratch Notes</h2>
-        <div
-          id="notesToolbar"
-          class="flex flex-wrap gap-2"
-          role="toolbar"
-          aria-label="Scratch notes formatting options"
-          aria-controls="notes"
-        >
-          <button type="button" class="btn btn-xs" data-action="bullets">• Bullets</button>
-          <button type="button" class="btn btn-xs" data-action="numbers">1. Numbers</button>
-          <button
-            type="button"
-            class="btn btn-xs"
-            data-action="columns"
-            aria-pressed="false"
+    <div data-view="today" id="view-today" class="view-panel hidden" aria-hidden="true">
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-4">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="card-title text-base">Today overview</h2>
+            <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Open reminders</button>
+          </div>
+          <div class="grid grid-cols-2 gap-3 text-left text-sm">
+            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
+              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Due today</p>
+              <p id="snapshotToday" class="text-2xl font-semibold">0</p>
+            </div>
+            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
+              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Upcoming week</p>
+              <p id="snapshotWeek" class="text-2xl font-semibold">0</p>
+            </div>
+            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
+              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Overdue</p>
+              <p id="snapshotOverdue" class="text-2xl font-semibold">0</p>
+            </div>
+            <div class="rounded-xl border border-base-300 bg-base-100/60 p-3 shadow-sm">
+              <p class="text-xs font-medium uppercase tracking-wide text-base-content/60">Completed</p>
+              <p id="snapshotDone" class="text-2xl font-semibold">0</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-4">
+          <div class="flex items-center justify-between">
+            <h2 class="card-title text-base">Focus for today</h2>
+            <button type="button" class="btn btn-outline btn-xs" data-jump-view="reminders">Jump to full list</button>
+          </div>
+          <ul id="todayFocusList" class="space-y-3"></ul>
+          <p id="todayEmptyState" class="text-sm text-base-content/70">You're all caught up for today.</p>
+        </div>
+      </section>
+
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-3">
+          <h2 class="card-title text-base">Need to jot something down?</h2>
+          <p class="text-sm text-base-content/70">Open the notebook to capture scratch notes, meeting agendas, or quick checklists without leaving this screen.</p>
+          <button type="button" class="btn btn-primary" data-jump-view="notebook">Go to notebook</button>
+        </div>
+      </section>
+    </div>
+
+    <div data-view="notebook" id="view-notebook" class="view-panel hidden" aria-hidden="true">
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="card-title text-base">Scratch Notes</h2>
+            <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
+          </div>
+          <div
+            id="notesToolbar"
+            class="flex flex-wrap gap-2"
+            role="toolbar"
+            aria-label="Scratch notes formatting options"
+            aria-controls="notes"
           >
-            Columns
-          </button>
-        </div>
-        <div
-          id="notes"
-          class="notes-editor"
-          contenteditable="true"
-          role="textbox"
-          aria-multiline="true"
-          spellcheck="true"
-          data-placeholder="Quick personal notes"
-        ></div>
-        <div class="flex gap-2">
-          <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
-          <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="settingsSection" class="card bg-base-100 border hidden">
-      <div class="card-body gap-4">
-        <h2 class="card-title text-base">Sync Settings</h2>
-        <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
-        <label class="form-control">
-          <div class="label"><span class="label-text">Apps Script URL</span></div>
-          <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
-        </label>
-        <div class="card-actions flex-col gap-2">
-          <div class="flex gap-2 w-full">
-            <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
-            <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
+            <button type="button" class="btn btn-xs" data-action="bullets">• Bullets</button>
+            <button type="button" class="btn btn-xs" data-action="numbers">1. Numbers</button>
+            <button
+              type="button"
+              class="btn btn-xs"
+              data-action="columns"
+              aria-pressed="false"
+            >
+              Columns
+            </button>
           </div>
-          <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
+          <div
+            id="notes"
+            class="notes-editor"
+            contenteditable="true"
+            role="textbox"
+            aria-multiline="true"
+            spellcheck="true"
+            data-placeholder="Quick personal notes"
+          ></div>
+          <div class="flex gap-2">
+            <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
+            <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
+          </div>
         </div>
-        <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
-      </div>
-    </section>
+      </section>
+
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-3">
+          <h2 class="card-title text-base">Stay organised</h2>
+          <p class="text-sm text-base-content/70">Use columns to create side-by-side checklists, or switch back to a single column for longer thoughts. Notes are saved locally so you can revisit them anytime.</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline btn-sm" data-scroll-target="notes">Jump to editor</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-jump-view="reminders">Create a reminder instead</button>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <nav class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100">
-    <button class="active"><span class="btm-nav-label">Reminders</span></button>
-    <button><span class="btm-nav-label">Today</span></button>
-    <button><span class="btm-nav-label">Notebook</span></button>
+  <nav
+    class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100"
+    role="tablist"
+    aria-label="Primary navigation"
+  >
+    <button
+      type="button"
+      class="active"
+      data-view-target="reminders"
+      aria-pressed="true"
+      aria-controls="view-reminders"
+    >
+      <span class="btm-nav-label">Reminders</span>
+    </button>
+    <button
+      type="button"
+      data-view-target="today"
+      aria-pressed="false"
+      aria-controls="view-today"
+    >
+      <span class="btm-nav-label">Today</span>
+    </button>
+    <button
+      type="button"
+      data-view-target="notebook"
+      aria-pressed="false"
+      aria-controls="view-notebook"
+    >
+      <span class="btm-nav-label">Notebook</span>
+    </button>
   </nav>
 
   <script>
@@ -322,6 +449,246 @@
         const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         html.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
+      const viewPanels = Array.from(document.querySelectorAll('[data-view]'));
+      if (!viewButtons.length || !viewPanels.length) return;
+
+      const panelMap = new Map(viewPanels.map((panel) => [panel.dataset.view, panel]));
+      let activeView = viewPanels.find((panel) => !panel.classList.contains('hidden'))?.dataset.view || 'reminders';
+      let lastReminderFilter = document.querySelector('[data-filter][aria-pressed="true"]')?.dataset.filter || 'today';
+      const reduceQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
+      let reduceMotion = !!reduceQuery?.matches;
+      reduceQuery?.addEventListener?.('change', (event) => {
+        reduceMotion = !!event.matches;
+      });
+
+      function setActiveView(next) {
+        if (!panelMap.has(next)) return;
+        panelMap.forEach((panel, name) => {
+          const isActive = name === next;
+          panel.classList.toggle('hidden', !isActive);
+          panel.setAttribute('aria-hidden', String(!isActive));
+        });
+        viewButtons.forEach((button) => {
+          const isActive = button.dataset.viewTarget === next;
+          button.classList.toggle('active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+        activeView = next;
+        requestAnimationFrame(() => {
+          if (reduceMotion) {
+            window.scrollTo(0, 0);
+          } else {
+            try {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch {
+              window.scrollTo(0, 0);
+            }
+          }
+        });
+      }
+
+      viewButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const target = button.dataset.viewTarget;
+          if (!target || target === activeView) return;
+          if (target === 'today') {
+            const activeFilterButton = document.querySelector('[data-filter][aria-pressed="true"]');
+            if (activeFilterButton?.dataset.filter) {
+              lastReminderFilter = activeFilterButton.dataset.filter;
+            }
+            const todayButton = document.querySelector('[data-filter="today"]');
+            if (todayButton && todayButton.getAttribute('aria-pressed') !== 'true') {
+              todayButton.click();
+            }
+          } else if (activeView === 'today' && target === 'reminders' && lastReminderFilter) {
+            const selector = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+              ? `[data-filter="${CSS.escape(lastReminderFilter)}"]`
+              : `[data-filter="${lastReminderFilter}"]`;
+            const restoreButton = document.querySelector(selector);
+            if (restoreButton && restoreButton.getAttribute('aria-pressed') !== 'true') {
+              restoreButton.click();
+            }
+          }
+          setActiveView(target);
+        });
+      });
+
+      document.querySelectorAll('[data-jump-view]').forEach((control) => {
+        control.addEventListener('click', () => {
+          const target = control.getAttribute('data-jump-view');
+          if (!target) return;
+          const navButton = viewButtons.find((btn) => btn.dataset.viewTarget === target);
+          navButton?.click();
+        });
+      });
+
+      document.querySelectorAll('[data-scroll-target]').forEach((control) => {
+        control.addEventListener('click', () => {
+          const targetId = control.getAttribute('data-scroll-target');
+          if (!targetId) return;
+          const el = document.getElementById(targetId);
+          if (!el) return;
+          try {
+            el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+          } catch {
+            el.scrollIntoView(true);
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-filter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          if (button.getAttribute('aria-pressed') === 'true' && button.dataset.filter) {
+            lastReminderFilter = button.dataset.filter;
+          }
+        });
+      });
+
+      const snapshotEls = {
+        today: document.getElementById('snapshotToday'),
+        week: document.getElementById('snapshotWeek'),
+        overdue: document.getElementById('snapshotOverdue'),
+        done: document.getElementById('snapshotDone'),
+      };
+      const focusList = document.getElementById('todayFocusList');
+      const focusEmpty = document.getElementById('todayEmptyState');
+      const weekdayFmt = typeof Intl !== 'undefined'
+        ? new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+        : null;
+      const timeFmt = typeof Intl !== 'undefined'
+        ? new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
+        : null;
+
+      function startOfWeek(date) {
+        const copy = new Date(date);
+        const day = (copy.getDay() + 6) % 7;
+        copy.setDate(copy.getDate() - day);
+        copy.setHours(0, 0, 0, 0);
+        return copy;
+      }
+
+      function endOfWeek(date) {
+        const start = startOfWeek(date);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+        return end;
+      }
+
+      function renderDigest(rawItems) {
+        const items = Array.isArray(rawItems) ? rawItems : [];
+        const now = new Date();
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999);
+        const weekStart = startOfWeek(now);
+        const weekEnd = endOfWeek(now);
+
+        const todays = [];
+        const weekUpcoming = [];
+        const overdue = [];
+        let completed = 0;
+
+        items.forEach((item) => {
+          if (!item || typeof item !== 'object') return;
+          if (item.done) {
+            completed += 1;
+            return;
+          }
+          if (!item.due) return;
+          const dueDate = new Date(item.due);
+          if (Number.isNaN(dueDate.getTime())) return;
+          if (dueDate < now) {
+            overdue.push({ item, dueDate });
+          }
+          if (dueDate >= todayStart && dueDate <= todayEnd) {
+            todays.push({ item, dueDate });
+          }
+          if (dueDate >= weekStart && dueDate <= weekEnd) {
+            weekUpcoming.push({ item, dueDate });
+          }
+        });
+
+        if (snapshotEls.today) snapshotEls.today.textContent = String(todays.length);
+        if (snapshotEls.week) snapshotEls.week.textContent = String(weekUpcoming.length);
+        if (snapshotEls.overdue) snapshotEls.overdue.textContent = String(overdue.length);
+        if (snapshotEls.done) snapshotEls.done.textContent = String(completed);
+
+        if (!focusList) return;
+        focusList.replaceChildren();
+
+        const focusItems = [...overdue, ...todays]
+          .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+          .slice(0, 4);
+
+        if (!focusItems.length) {
+          if (focusEmpty) {
+            focusEmpty.classList.remove('hidden');
+            focusEmpty.textContent = items.length ? 'No reminders need attention right now.' : 'Add a reminder to see it here.';
+          }
+          return;
+        }
+
+        if (focusEmpty) {
+          focusEmpty.classList.add('hidden');
+        }
+
+        focusItems.forEach(({ item, dueDate }) => {
+          const li = document.createElement('li');
+          li.className = 'rounded-xl border border-base-300 bg-base-100/70 p-3 shadow-sm';
+
+          const header = document.createElement('div');
+          header.className = 'flex items-center justify-between gap-2';
+
+          const title = document.createElement('p');
+          title.className = 'text-sm font-medium';
+          title.textContent = item.title || 'Untitled reminder';
+
+          const category = document.createElement('span');
+          category.className = 'badge badge-ghost badge-sm';
+          category.textContent = item.category || 'General';
+
+          header.appendChild(title);
+          header.appendChild(category);
+          li.appendChild(header);
+
+          const meta = document.createElement('p');
+          meta.className = 'text-xs text-base-content/60';
+
+          if (dueDate instanceof Date && !Number.isNaN(dueDate.getTime())) {
+            const parts = [];
+            if (dueDate < todayStart) {
+              parts.push('Overdue');
+              if (weekdayFmt) {
+                parts.push(weekdayFmt.format(dueDate));
+              }
+            } else {
+              parts.push('Due today');
+            }
+            if (timeFmt) {
+              parts.push(timeFmt.format(dueDate));
+            }
+            meta.textContent = parts.join(' • ');
+          } else {
+            meta.textContent = 'No due time';
+          }
+
+          li.appendChild(meta);
+          focusList.appendChild(li);
+        });
+      }
+
+      document.addEventListener('memoryCue:remindersUpdated', (event) => {
+        renderDigest(event?.detail?.items);
       });
     })();
   </script>
