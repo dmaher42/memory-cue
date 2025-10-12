@@ -276,59 +276,82 @@
             </li>
           </ol>
         </section>
-        <header class="view-header view-header--hero" aria-labelledby="dashboard-heading">
-          <div class="hero rounded-2xl border border-base-200/70 bg-base-100/90 shadow-xl">
-            <!-- BEGIN GPT FIX: widget-density -->
-            <div class="hero-content w-full flex-col gap-6 lg:gap-10 lg:flex-row lg:items-start lg:justify-between">
-              <div class="dashboard-hero-copy">
+        <section class="dashboard-overview" aria-labelledby="dashboard-overview-heading">
+          <div class="dashboard-overview-card">
+            <header class="dashboard-overview-header">
+              <div class="dashboard-overview-title">
                 <span class="dashboard-hero-eyebrow">Teacher control centre</span>
-                <h1 id="dashboard-heading" class="dashboard-hero-title">Your teaching day at a glance</h1>
-                <p id="dashboard-date" class="dashboard-hero-date"></p>
-                <p class="dashboard-hero-subtitle">Use quick actions to capture what matters, then move straight into the workspace you need.</p>
-                <div class="dashboard-quick-actions" role="list">
-                  <button type="button" data-quick-action="reminder" class="dashboard-quick-action" role="listitem">
-                    <span class="dashboard-quick-action-icon" aria-hidden="true">🔔</span>
-                    <span class="dashboard-quick-action-content">
-                      <span class="dashboard-quick-action-label">Log a cue</span>
-                      <span class="dashboard-quick-action-help">Open the reminder composer</span>
-                    </span>
-                  </button>
-                  <button type="button" data-quick-action="planner" class="dashboard-quick-action" role="listitem">
-                    <span class="dashboard-quick-action-icon" aria-hidden="true">🗓️</span>
-                    <span class="dashboard-quick-action-content">
-                      <span class="dashboard-quick-action-label">Plan the week</span>
-                      <span class="dashboard-quick-action-help">Jump to your weekly grid</span>
-                    </span>
-                  </button>
-                  <button type="button" data-quick-action="note" class="dashboard-quick-action" role="listitem">
-                    <span class="dashboard-quick-action-icon" aria-hidden="true">📝</span>
-                    <span class="dashboard-quick-action-content">
-                      <span class="dashboard-quick-action-label">Capture a note</span>
-                      <span class="dashboard-quick-action-help">Drop into the scratch pad</span>
-                    </span>
-                  </button>
+                <h1 id="dashboard-overview-heading" class="dashboard-hero-title">Your teaching day at a glance</h1>
+              </div>
+              <p id="dashboard-date" class="dashboard-overview-date dashboard-hero-date"></p>
+              <p class="dashboard-overview-subtitle dashboard-hero-subtitle">
+                Use the quick capture tools, check the live counts, then jump into the workspace that needs your attention first.
+              </p>
+            </header>
+            <div class="dashboard-overview-grid">
+              <section class="dashboard-overview-panel" aria-labelledby="dashboard-quick-actions-heading">
+                <header class="dashboard-panel-header">
+                  <h2 id="dashboard-quick-actions-heading">Quick capture</h2>
+                  <p class="dashboard-panel-copy">
+                    These shortcuts open the relevant workspace so you can log cues and plans without losing your rhythm.
+                  </p>
+                </header>
+                <ul class="dashboard-quick-actions" role="list">
+                  <li class="dashboard-quick-actions-item">
+                    <button type="button" data-quick-action="reminder" class="dashboard-quick-action">
+                      <span class="dashboard-quick-action-icon" aria-hidden="true">🔔</span>
+                      <span class="dashboard-quick-action-content">
+                        <span class="dashboard-quick-action-label">Log a cue</span>
+                        <span class="dashboard-quick-action-help">Open the reminder composer</span>
+                      </span>
+                    </button>
+                  </li>
+                  <li class="dashboard-quick-actions-item">
+                    <button type="button" data-quick-action="planner" class="dashboard-quick-action">
+                      <span class="dashboard-quick-action-icon" aria-hidden="true">🗓️</span>
+                      <span class="dashboard-quick-action-content">
+                        <span class="dashboard-quick-action-label">Plan the week</span>
+                        <span class="dashboard-quick-action-help">Jump to your weekly grid</span>
+                      </span>
+                    </button>
+                  </li>
+                  <li class="dashboard-quick-actions-item">
+                    <button type="button" data-quick-action="note" class="dashboard-quick-action">
+                      <span class="dashboard-quick-action-icon" aria-hidden="true">📝</span>
+                      <span class="dashboard-quick-action-content">
+                        <span class="dashboard-quick-action-label">Capture a note</span>
+                        <span class="dashboard-quick-action-help">Drop into the scratch pad</span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+              </section>
+              <section class="dashboard-overview-panel" aria-labelledby="dashboard-snapshot-heading">
+                <header class="dashboard-panel-header">
+                  <h2 id="dashboard-snapshot-heading">Today&#39;s snapshot</h2>
+                  <p class="dashboard-panel-copy">Live counts refresh as you update reminders, lessons, and notes.</p>
+                </header>
+                <div class="dashboard-hero-summary" role="list" aria-label="Today&#39;s snapshot">
+                  <article class="dashboard-hero-card" role="listitem">
+                    <p class="dashboard-hero-card-label">Lessons today</p>
+                    <p id="dashboard-lesson-count" class="dashboard-hero-card-value">0</p>
+                    <p id="dashboard-next-lesson" class="dashboard-hero-card-meta"></p>
+                  </article>
+                  <article class="dashboard-hero-card" role="listitem">
+                    <p class="dashboard-hero-card-label">Deadlines this week</p>
+                    <p id="dashboard-deadline-count" class="dashboard-hero-card-value">0</p>
+                    <p class="dashboard-hero-card-meta">Countdowns refresh automatically</p>
+                  </article>
+                  <article class="dashboard-hero-card" role="listitem">
+                    <p class="dashboard-hero-card-label">Reminders to action</p>
+                    <p id="dashboard-reminder-count" class="dashboard-hero-card-value">0</p>
+                    <p class="dashboard-hero-card-meta">Due today or overdue</p>
+                  </article>
                 </div>
-              </div>
-              <div class="dashboard-hero-summary" role="list" aria-label="Today&#39;s snapshot">
-                <article class="dashboard-hero-card" role="listitem">
-                  <p class="dashboard-hero-card-label">Lessons today</p>
-                  <p id="dashboard-lesson-count" class="dashboard-hero-card-value">0</p>
-                  <p id="dashboard-next-lesson" class="dashboard-hero-card-meta"></p>
-                </article>
-                <article class="dashboard-hero-card" role="listitem">
-                  <p class="dashboard-hero-card-label">Deadlines this week</p>
-                  <p id="dashboard-deadline-count" class="dashboard-hero-card-value">0</p>
-                  <p class="dashboard-hero-card-meta">Countdowns refresh automatically</p>
-                </article>
-                <article class="dashboard-hero-card" role="listitem">
-                  <p class="dashboard-hero-card-label">Reminders to action</p>
-                  <p id="dashboard-reminder-count" class="dashboard-hero-card-value">0</p>
-                  <p class="dashboard-hero-card-meta">Due today or overdue</p>
-                </article>
-              </div>
+              </section>
             </div>
           </div>
-        </header>
+        </section>
 
         <div class="view-body space-y-10">
           <section class="dashboard-focus" aria-labelledby="dashboard-focus-heading">
