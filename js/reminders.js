@@ -270,11 +270,12 @@ export async function initReminders(sel = {}) {
 
   bindNotificationCleanupHandlers();
 
-   // Placeholder for Firebase modules loaded later
-   let initializeApp, initializeFirestore, getFirestore, doc, setDoc, deleteDoc,
-     onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp,
-     getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
-      signInWithRedirect, getRedirectResult, signOut;
+  // Placeholder for Firebase modules loaded later
+  let initializeApp, getFirestore, enableMultiTabIndexedDbPersistence,
+    enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection,
+    query, orderBy, serverTimestamp, getAuth, onAuthStateChanged,
+    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+    signOut;
 
   const firebaseDeps = sel.firebaseDeps;
 
@@ -413,39 +414,66 @@ export async function initReminders(sel = {}) {
    }
    initNotebook();
 
-   if (firebaseDeps) {
-     ({ initializeApp, initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
-   } else {
-     try {
-       ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
-       ({ initializeFirestore, getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, persistentLocalCache, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
-       ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
-     } catch (err) {
-       console.warn('Firebase modules failed to load:', err);
-       toast('Firebase failed to load; notes available offline');
-       return;
+  if (firebaseDeps) {
+    ({ initializeApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
+  } else {
+    try {
+      ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
+      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+      ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
+    } catch (err) {
+      console.warn('Firebase modules failed to load:', err);
+      toast('Firebase failed to load; notes available offline');
+      return;
      }
    }
 
    // Firebase
-   const firebaseConfig = {
-     apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-     authDomain: 'memory-cue-app.firebaseapp.com',
-     projectId: 'memory-cue-app',
-     storageBucket: 'memory-cue-app.firebasestorage.app',
-     messagingSenderId: '751284466633',
-     appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-     measurementId: 'G-R0V4M7VCE6'
-   };
-   const app = initializeApp(firebaseConfig);
-   let db;
-   try {
-     db = initializeFirestore(app, { cache: persistentLocalCache() });
-   } catch (err) {
-     console.warn('Firestore persistence not enabled:', err?.code || err);
-     db = getFirestore(app);
-   }
-   const auth = getAuth(app);
+  const firebaseConfig = {
+    apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
+    authDomain: 'memory-cue-app.firebaseapp.com',
+    projectId: 'memory-cue-app',
+    storageBucket: 'memory-cue-app.firebasestorage.app',
+    messagingSenderId: '751284466633',
+    appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
+    measurementId: 'G-R0V4M7VCE6'
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  // Firestore offline persistence: prefer multi-tab, fallback to single-tab
+  // Runs once per app load, before any reads/writes/listeners.
+  (function initFirestorePersistence() {
+    const scope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+    if (!scope) {
+      return;
+    }
+    // Guard against accidental double-initialization
+    if (scope.__persistenceInitialized__) return;
+    scope.__persistenceInitialized__ = true;
+
+    (async () => {
+      try {
+        await enableMultiTabIndexedDbPersistence(db);
+        console.info('[Firestore] Persistence: multi-tab enabled');
+      } catch (err) {
+        if (err && err.code === 'failed-precondition') {
+          // Multi-tab not available (e.g., private mode or another constraint) -> try single-tab
+          try {
+            await enableIndexedDbPersistence(db);
+            console.info('[Firestore] Persistence: single-tab fallback enabled');
+          } catch (e2) {
+            console.warn('[Firestore] Persistence disabled (single-tab fallback failed):', e2?.code || e2);
+          }
+        } else if (err && err.code === 'unimplemented') {
+          // IndexedDB not supported in this browser/environment
+          console.warn('[Firestore] Persistence not supported in this browser (online-only).');
+        } else {
+          console.warn('[Firestore] Persistence initialization error:', err?.code || err);
+        }
+      }
+    })();
+  })();
+  const auth = getAuth(app);
 
    // State
   let items = [];
