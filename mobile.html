@@ -250,11 +250,71 @@
     }
   </style>
   <!-- END GPT CHANGE: rhythm -->
+  <style>
+    /* Focus Mode toggles */
+    body.focus-mode .nonFocusUI {
+      display: none !important;
+    }
+
+    /* Focus List */
+    .focus-list {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+    }
+    .focus-list__item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .focus-list__title {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .focus-list__date {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+    .focus-list__btn {
+      width: 100%;
+      text-align: left;
+    }
+
+    /* Focus Detail */
+    .focus-detail {
+      position: fixed;
+      inset: 0;
+      background: var(--fallback-b1, #fff);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .focus-detail__header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .focus-detail__body {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    /* Safe-area padding */
+    .focus-list,
+    .focus-detail__body {
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
+  <header class="navbar bg-base-100 sticky top-0 z-50 border-b nonFocusUI">
     <div class="flex-1 items-center gap-2">
       <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
       <span
@@ -283,12 +343,34 @@
   </header>
 
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+    <!-- Focus List: minimal tasks-only home state -->
+    <section id="focusList" class="focus-list" aria-label="Tasks">
+      <!-- populated by JS: renderList() -->
+    </section>
+
+    <!-- Per-task detail surface used when a task is selected -->
+    <section
+      id="focusDetail"
+      class="focus-detail"
+      hidden
+      aria-labelledby="focusDetailTitle"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+    >
+      <header class="focus-detail__header">
+        <button id="focusBackBtn" class="btn btn-ghost" aria-label="Back to task list">← Back</button>
+        <h2 id="focusDetailTitle" class="text-lg font-semibold">Task</h2>
+      </header>
+      <div id="focusDetailBody" class="focus-detail__body"></div>
+    </section>
+
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel">
+    <section data-view="reminders" id="view-reminders" class="view-panel nonFocusUI">
       <!-- BEGIN GPT CHANGE: sticky filters -->
-      <div id="stickyFilters" style="position:sticky; top:56px; z-index: 10;">
+      <div id="stickyFilters" class="nonFocusUI" style="position:sticky; top:56px; z-index: 10;">
         <section id="reminderFilters" class="card bg-base-100 border">
           <div class="card-body gap-4 compact">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -333,10 +415,10 @@
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: today view -->
-    <section data-view="today" id="view-today" class="view-panel hidden"></section>
+    <section data-view="today" id="view-today" class="view-panel hidden nonFocusUI"></section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden">
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden nonFocusUI">
       <section class="card bg-base-100 border">
         <div class="card-body gap-3 compact">
           <div class="flex items-center justify-between gap-2">
@@ -392,7 +474,7 @@
   </main>
 
   <nav
-    class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100"
+    class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100 nonFocusUI"
     role="tablist"
     aria-label="Primary navigation"
   >
@@ -556,11 +638,147 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <!-- BEGIN GPT CHANGE: global FAB -->
-  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
+  <button id="fabCreate" class="fab nonFocusUI" aria-label="Add reminder">＋</button>
   <!-- END GPT CHANGE: global FAB -->
 
   <!-- BEGIN GPT CHANGE: include mobile.js -->
   <script type="module" src="./mobile.js"></script>
   <!-- END GPT CHANGE: include mobile.js -->
+  <script>
+    /* Focus Mode controller */
+    const Focus = (() => {
+      const listEl = document.getElementById('focusList');
+      const detailEl = document.getElementById('focusDetail');
+      const detailBody = document.getElementById('focusDetailBody');
+      const backBtn = document.getElementById('focusBackBtn');
+
+      function enable() {
+        document.body.classList.add('focus-mode');
+        renderList();
+      }
+
+      function disable() {
+        document.body.classList.remove('focus-mode');
+        if (listEl) listEl.innerHTML = '';
+        hideDetail();
+      }
+
+      function renderList() {
+        if (!listEl) return;
+        const tasks = (window.getAllReminders ? window.getAllReminders() : [])
+          .sort((a, b) => new Date(a.dueISO || 0) - new Date(b.dueISO || 0));
+
+        if (!tasks.length) {
+          listEl.innerHTML = '<p role="status" class="opacity-70 p-3">No tasks yet.</p>';
+          return;
+        }
+
+        listEl.innerHTML = tasks
+          .map((t) => {
+            const date = t.dueISO ? new Date(t.dueISO) : null;
+            const dateStr = date
+              ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+              : '';
+            const aria = t.notes ? `aria-describedby="note-hint-${t.id}"` : '';
+            const noteHint = t.notes
+              ? `<span id="note-hint-${t.id}" class="sr-only">Has notes</span>`
+              : '';
+            return `
+      <article class="focus-list__item">
+        <button class="focus-list__btn" data-taskid="${t.id}" aria-expanded="false" ${aria}>
+          <div class="focus-list__title">${escapeHTML(t.title || 'Untitled')}</div>
+          ${noteHint}
+        </button>
+        <time class="focus-list__date" datetime="${t.dueISO || ''}">${dateStr}</time>
+      </article>`;
+          })
+          .join('');
+
+        listEl.addEventListener(
+          'click',
+          (e) => {
+            const btn = e.target.closest('button[data-taskid]');
+            if (!btn) return;
+            const id = btn.getAttribute('data-taskid');
+            showDetail(id, btn);
+          },
+          { once: true }
+        );
+      }
+
+      function showDetail(taskId, triggerEl) {
+        const t = window.getReminderById ? window.getReminderById(taskId) : null;
+        if (!t) return;
+
+        if (triggerEl) triggerEl.setAttribute('aria-expanded', 'true');
+
+        detailBody.innerHTML = `
+      <h3 class="text-xl font-semibold">${escapeHTML(t.title || 'Untitled')}</h3>
+      <div class="opacity-70">Due:
+        <time datetime="${t.dueISO || ''}">${
+          t.dueISO ? new Date(t.dueISO).toLocaleString() : '—'
+        }</time>
+      </div>
+
+      <details class="mt-2">
+        <summary class="cursor-pointer">Show notes</summary>
+        <div class="mt-2 whitespace-pre-wrap">${escapeHTML(t.notes || '')}</div>
+      </details>
+
+      <div id="focusControls"></div>
+    `;
+
+        if (window.mountTaskControls) {
+          window.mountTaskControls('focusControls', taskId);
+        }
+
+        detailEl.hidden = false;
+        detailEl.focus();
+        setInertExcept(detailEl);
+
+        backBtn.onclick = () => {
+          hideDetail(triggerEl);
+          renderList();
+        };
+      }
+
+      function hideDetail(triggerEl) {
+        if (!detailEl.hidden) {
+          detailEl.hidden = true;
+          clearInert();
+          if (triggerEl) {
+            triggerEl.setAttribute('aria-expanded', 'false');
+            triggerEl.focus();
+          }
+        }
+      }
+
+      function setInertExcept(el) {
+        const els = Array.from(document.body.children).filter((n) => n !== el && !n.contains(el));
+        els.forEach((n) => n.setAttribute('inert', ''));
+      }
+      function clearInert() {
+        Array.from(document.querySelectorAll('[inert]')).forEach((n) => n.removeAttribute('inert'));
+      }
+      function escapeHTML(str) {
+        return (str + '').replace(/[&<>"']/g, (s) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[s]);
+      }
+
+      return { enable, disable };
+    })();
+
+    /* Enable Focus Mode on initial load */
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!document.body.classList.contains('focus-mode')) {
+        Focus.enable();
+      }
+    });
+  </script>
 </body>
 </html>
