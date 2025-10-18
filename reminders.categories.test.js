@@ -43,6 +43,8 @@ function createFirebaseStubs() {
     initializeApp: () => ({}),
     initializeFirestore: () => ({}),
     getFirestore: () => ({}),
+    enableMultiTabIndexedDbPersistence: () => Promise.resolve(),
+    enableIndexedDbPersistence: () => Promise.resolve(),
     doc: () => ({}),
     setDoc: () => Promise.resolve(),
     deleteDoc: () => Promise.resolve(),

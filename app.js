@@ -304,6 +304,8 @@ async function ensureCueFirestore() {
       { initializeApp, getApps },
       {
         getFirestore,
+        enableMultiTabIndexedDbPersistence,
+        enableIndexedDbPersistence,
         collection: getCollection,
         doc,
         getDoc,
@@ -324,6 +326,39 @@ async function ensureCueFirestore() {
     const apps = getApps();
     const app = apps && apps.length ? apps[0] : initializeApp(firebaseCueConfig);
     const db = getFirestore(app);
+    // Firestore offline persistence: prefer multi-tab, fallback to single-tab
+    // Runs once per app load, before any reads/writes/listeners.
+    (function initFirestorePersistence() {
+      const scope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+      if (!scope) {
+        return;
+      }
+      // Guard against accidental double-initialization
+      if (scope.__persistenceInitialized__) return;
+      scope.__persistenceInitialized__ = true;
+
+      (async () => {
+        try {
+          await enableMultiTabIndexedDbPersistence(db);
+          console.info('[Firestore] Persistence: multi-tab enabled');
+        } catch (err) {
+          if (err && err.code === 'failed-precondition') {
+            // Multi-tab not available (e.g., private mode or another constraint) -> try single-tab
+            try {
+              await enableIndexedDbPersistence(db);
+              console.info('[Firestore] Persistence: single-tab fallback enabled');
+            } catch (e2) {
+              console.warn('[Firestore] Persistence disabled (single-tab fallback failed):', e2?.code || e2);
+            }
+          } else if (err && err.code === 'unimplemented') {
+            // IndexedDB not supported in this browser/environment
+            console.warn('[Firestore] Persistence not supported in this browser (online-only).');
+          } else {
+            console.warn('[Firestore] Persistence initialization error:', err?.code || err);
+          }
+        }
+      })();
+    })();
     const cuesCollection = getCollection(db, 'cues');
     return {
       db,
