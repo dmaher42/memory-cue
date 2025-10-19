@@ -352,13 +352,19 @@
   <style id="voice-add-css">
     .voice-add-wrap{
       position: fixed; right: 12px; bottom: 12px; z-index: 50;
-      display: flex; align-items: center; gap: 8px;
+      display: inline-flex; align-items: center; gap: 8px;
       padding: 6px 8px; border-radius: 9999px; background: var(--fallback-b1,#fff);
       box-shadow: 0 2px 8px rgba(0,0,0,.15);
     }
-    .voice-status{ font-size: 12px; opacity: .75; }
-    /* Keep voice UI visible even if the rest of the chrome is hidden */
-    .nonEssential .voice-add-wrap { display: flex; }
+
+    /* Hide the status text by default */
+    .voice-status { display: none; }
+
+    /* Only show status while actively listening */
+    .voice-add-wrap.listening .voice-status { display: inline; font-size: 12px; opacity: .75; }
+
+    /* Keep mic visible even in minimal mode */
+    .nonEssential .voice-add-wrap { display: inline-flex; }
   </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
@@ -880,6 +886,7 @@
     (function(){
       const btn = document.getElementById('voiceAddBtn');
       const statusEl = document.getElementById('voiceStatus');
+      const wrap = document.getElementById('voiceAddWrap');
 
       if (!btn) return;
 
@@ -942,6 +949,7 @@
         finalTranscript = '';
         collecting = true;
         btn.setAttribute('aria-pressed', 'true');
+        if (wrap) wrap.classList.add('listening');
         setStatus('Listening… speak your task');
         try { recog.start(); } catch(_) {}
       }
@@ -950,6 +958,7 @@
         if (!collecting) return;
         collecting = false;
         btn.setAttribute('aria-pressed', 'false');
+        if (wrap) wrap.classList.remove('listening');
         setStatus('Processing…');
         try { recog.stop(); } catch(_) {}
       }
@@ -970,6 +979,7 @@
         setStatus('Mic error: ' + (e.error || 'unknown'));
         collecting = false;
         btn.setAttribute('aria-pressed','false');
+        if (wrap) wrap.classList.remove('listening');
       };
 
       recog.onend = async () => {
@@ -985,6 +995,7 @@
         }
         collecting = false;
         btn.setAttribute('aria-pressed','false');
+        if (wrap) wrap.classList.remove('listening');
       };
     })();
   </script>
