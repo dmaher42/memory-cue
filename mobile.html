@@ -217,6 +217,25 @@
       background: rgba(15, 23, 42, 0.55);
     }
   </style>
+  <style id="add-task-stability-css">
+    /* Make sure modal/sheet stays interactive and above other layers */
+    [data-add-task-dialog] {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+    }
+    [data-add-task-dialog] [data-dialog-content] {
+      position: relative;
+      z-index: 61;
+      pointer-events: auto;
+    }
+    /* Backdrop element (if you have one) should sit under content but accept clicks */
+    [data-add-task-dialog] .backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 59;
+    }
+  </style>
   <!-- END GPT CHANGE: bottom sheet styles -->
   <!-- BEGIN GPT CHANGE: rhythm -->
   <style>
@@ -603,8 +622,8 @@
 
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
-  <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1">
-    <div class="sheet-panel bg-base-100 border-t border-base-200">
+  <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
+    <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
       <header class="sheet-header">
         <h2 id="createSheetTitle">Create Reminder</h2>
         <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
@@ -699,7 +718,7 @@
         </div>
       </form>
     </div>
-    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-backdrop backdrop" data-close></div>
   </div>
   <!-- END GPT CHANGE: bottom sheet for Create Reminder -->
 
@@ -1045,6 +1064,41 @@
         btn.setAttribute('aria-pressed','false');
         if (wrap) wrap.classList.remove('listening');
       };
+    })();
+  </script>
+  <script id="add-task-guard-script">
+    (function(){
+      var dialog = document.querySelector('[data-add-task-dialog]');
+      if (!dialog) return;
+
+      var content = dialog.querySelector('[data-dialog-content]') || dialog;
+      var backdrop = dialog.querySelector('.backdrop') || dialog;
+
+      content.addEventListener('click', function(e){
+        e.stopPropagation();
+      }, true);
+
+      backdrop.addEventListener('click', function(e){
+        if (e.target !== backdrop) return;
+        if (typeof window.closeAddTask === 'function') return window.closeAddTask();
+
+        if (dialog.hasAttribute('open')) dialog.removeAttribute('open');
+        else dialog.hidden = true;
+      });
+
+      function focusFirst(){
+        var first = dialog.querySelector('input, textarea, [contenteditable="true"]');
+        if (first) setTimeout(function(){ try { first.focus(); } catch(_){} }, 0);
+      }
+
+      var openers = document.querySelectorAll('[data-open-add-task], #addReminderFab, #fabCreate, [aria-controls="createReminderModal"]');
+      openers.forEach(function(btn){
+        btn.addEventListener('click', function(){
+          dialog.hidden = false;
+          dialog.setAttribute('open','');
+          focusFirst();
+        });
+      });
     })();
   </script>
   <script id="min-expand-script">
