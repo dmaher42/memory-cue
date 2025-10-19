@@ -313,11 +313,47 @@
       padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
   </style>
+  <style id="minimal-tasks-css">
+    /* Hide chrome by default so the page opens with tasks only */
+    .nonEssential { display: none !important; }
+
+    /* Optional: simple, clean list styling */
+    .task-list-min { display: grid; gap: 8px; padding: 12px; }
+    .task-row-min {
+      display: grid; grid-template-columns: 1fr auto; align-items: center;
+      padding: 12px 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .task-row-min .title { font-size: 16px; line-height: 1.2; }
+    .task-row-min time { font-size: 13px; opacity: .7; }
+
+    body.show-full .task-list-min { display: block; padding: 0; gap: 0; }
+    body.show-full .task-row-min {
+      display: block; padding: 0; border-radius: 0; box-shadow: none;
+    }
+    body.show-full .task-row-min .title { font-size: inherit; line-height: inherit; }
+    body.show-full .task-row-min time { font-size: inherit; opacity: 1; }
+
+    /* Optional toggle: when body.show-full is set, reveal everything */
+    body.show-full .nonEssential { display: initial !important; }
+
+    /* Minimal layout overrides */
+    body:not(.show-full) #reminderListSection { background: transparent; border: none; box-shadow: none; }
+    body:not(.show-full) #remindersWrapper { padding: 0; gap: 12px; }
+    body:not(.show-full) .task-list-min .task-item { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); background: var(--fallback-b1, #fff); }
+    body:not(.show-full) .task-list-min .task-item .task-title { font-size: 16px; line-height: 1.2; }
+    body:not(.show-full) .task-list-min .task-item .task-meta { justify-self: end; }
+    body:not(.show-full) .task-list-min .task-item .task-meta-row { display: contents; }
+    body:not(.show-full) .task-list-min .task-item .task-meta-row span:first-child { font-size: 13px; opacity: .7; }
+    body:not(.show-full) .task-list-min .task-item .task-meta-row span:not(:first-child),
+    body:not(.show-full) .task-list-min .task-item .task-actions,
+    body:not(.show-full) .task-list-min .task-item input,
+    body:not(.show-full) .task-list-min .task-item .task-notes { display: none !important; }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar bg-base-100 sticky top-0 z-50 border-b nonFocusUI">
+  <header class="navbar bg-base-100 sticky top-0 z-50 border-b nonFocusUI nonEssential">
     <div class="flex-1 items-center gap-2">
       <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
       <span
@@ -346,15 +382,16 @@
   </header>
 
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+    <button id="toggleUiBtn" class="btn btn-ghost" style="position:fixed;top:12px;right:12px;z-index:40">Full UI</button>
     <!-- Focus List: minimal tasks-only home state -->
-    <section id="focusList" class="focus-list" aria-label="Tasks">
+    <section id="focusList" class="focus-list nonEssential" aria-label="Tasks">
       <!-- populated by JS: renderList() -->
     </section>
 
     <!-- Per-task detail surface used when a task is selected -->
     <section
       id="focusDetail"
-      class="focus-detail"
+      class="focus-detail nonEssential"
       hidden
       aria-labelledby="focusDetailTitle"
       role="dialog"
@@ -373,7 +410,7 @@
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel nonFocusUI">
       <!-- BEGIN GPT CHANGE: sticky filters -->
-      <div id="stickyFilters" class="nonFocusUI" style="position:sticky; top:56px; z-index: 10;">
+      <div id="stickyFilters" class="nonFocusUI nonEssential" style="position:sticky; top:56px; z-index: 10;">
         <section id="reminderFilters" class="card bg-base-100 border">
           <div class="card-body gap-4 compact">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -411,17 +448,17 @@
       <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="hidden space-y-3"></ul>
-          <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
+          <ul id="reminderList" class="hidden space-y-3 task-list-min"></ul>
+          <p class="text-xs text-base-content/60 nonEssential">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: today view -->
-    <section data-view="today" id="view-today" class="view-panel hidden nonFocusUI"></section>
+    <section data-view="today" id="view-today" class="view-panel hidden nonFocusUI nonEssential"></section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden nonFocusUI">
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden nonFocusUI nonEssential">
       <section class="card bg-base-100 border">
         <div class="card-body gap-3 compact">
           <div class="flex items-center justify-between gap-2">
@@ -477,7 +514,7 @@
   </main>
 
   <nav
-    class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100 nonFocusUI"
+    class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100 nonFocusUI nonEssential"
     role="tablist"
     aria-label="Primary navigation"
   >
@@ -641,12 +678,13 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <!-- BEGIN GPT CHANGE: global FAB -->
-  <button id="fabCreate" class="fab nonFocusUI" aria-label="Add reminder">＋</button>
+  <button id="fabCreate" class="fab nonFocusUI nonEssential" aria-label="Add reminder">＋</button>
   <!-- END GPT CHANGE: global FAB -->
 
   <!-- BEGIN GPT CHANGE: include mobile.js -->
   <script type="module" src="./mobile.js"></script>
   <!-- END GPT CHANGE: include mobile.js -->
+  <!--
   <script>
     /* Focus Mode controller */
     const Focus = (() => {
@@ -783,6 +821,44 @@
       }
     });
   </script>
+  -->
   <script src="app.js" type="module"></script>
+  <script>
+    (function () {
+      var btn = document.getElementById('toggleUiBtn');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        document.body.classList.toggle('show-full');
+        btn.textContent = document.body.classList.contains('show-full') ? 'Minimal' : 'Full UI';
+      });
+    })();
+    (function () {
+      function applyMinimalLayout() {
+        var list = document.getElementById('reminderList');
+        if (!list) return;
+        list.querySelectorAll('.task-item').forEach(function (item) {
+          item.classList.add('task-row-min');
+          var title = item.querySelector('.task-title');
+          if (title) {
+            title.classList.add('title');
+          }
+          var due = item.querySelector('.task-meta-row span');
+          if (due && !due.querySelector('time')) {
+            var text = due.textContent.trim();
+            var timeEl = document.createElement('time');
+            var iso = item.getAttribute('data-due') || (item.dataset ? item.dataset.due : '');
+            if (iso) {
+              timeEl.setAttribute('datetime', iso);
+            }
+            timeEl.textContent = text;
+            due.textContent = '';
+            due.appendChild(timeEl);
+          }
+        });
+      }
+      document.addEventListener('DOMContentLoaded', applyMinimalLayout);
+      document.addEventListener('reminders:updated', applyMinimalLayout);
+    })();
+  </script>
 </body>
 </html>
