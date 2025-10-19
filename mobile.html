@@ -347,7 +347,7 @@
     body:not(.show-full) .task-list-min .task-item .task-meta-row span:not(:first-child),
     body:not(.show-full) .task-list-min .task-item .task-actions,
     body:not(.show-full) .task-list-min .task-item input,
-    body:not(.show-full) .task-list-min .task-item .task-notes { display: none !important; }
+    body:not(.show-full) .task-list-min .task-item .task-notes:not(.min-notes) { display: none !important; }
   </style>
   <style id="voice-add-css">
     .voice-add-wrap{
@@ -365,6 +365,40 @@
 
     /* Keep mic visible even in minimal mode */
     .nonEssential .voice-add-wrap { display: inline-flex; }
+  </style>
+  <style id="min-expand-css">
+    /* Expand/collapse behavior */
+    .task-row-min {
+      cursor: pointer;
+      outline: none;
+    }
+    .task-row-min:focus {
+      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+    }
+    .task-row-min .min-notes {
+      display: none;
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.35;
+      opacity: .95;
+      white-space: pre-wrap;
+    }
+    .task-row-min.expanded .min-notes {
+      display: block;
+    }
+    /* Slightly larger title when expanded */
+    .task-row-min.expanded .title {
+      font-weight: 600;
+    }
+    /* Optional small chevron indicator */
+    .task-row-min::after {
+      content: "▾";
+      justify-self: end;
+      opacity: .5;
+      font-size: 12px;
+    }
+    .task-row-min.expanded::after { transform: rotate(180deg); }
   </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
@@ -876,6 +910,20 @@
             due.textContent = '';
             due.appendChild(timeEl);
           }
+          var notes = item.querySelector('.task-notes');
+          if (notes) {
+            if (!notes.classList.contains('min-notes')) {
+              notes.classList.add('min-notes');
+            }
+          } else {
+            var content = item.querySelector('.task-content') || item;
+            if (content && !content.querySelector('.min-notes')) {
+              var notesDiv = document.createElement('div');
+              notesDiv.className = 'min-notes';
+              notesDiv.setAttribute('data-source', 'auto');
+              content.appendChild(notesDiv);
+            }
+          }
         });
       }
       document.addEventListener('DOMContentLoaded', applyMinimalLayout);
@@ -998,6 +1046,105 @@
         if (wrap) wrap.classList.remove('listening');
       };
     })();
+  </script>
+  <script id="min-expand-script">
+(function(){
+  // Find the list container for minimal tasks
+  // Prefer an element with class 'task-list-min'; fallback to common ids.
+  var list = document.querySelector('.task-list-min')
+         || document.getElementById('remindersList')
+         || document.getElementById('tasks')
+         || document.querySelector('[data-list="reminders"]');
+  if (!list) return;
+
+  // Utility: find or create a .min-notes element in a row
+  function ensureNotesEl(row){
+    var el = row.querySelector('.min-notes');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'min-notes';
+      el.setAttribute('data-source','auto');
+      row.appendChild(el);
+    }
+    return el;
+  }
+
+  // Utility: get task id/title/notes from dataset or known child selectors
+  function getTaskData(row){
+    // Prefer data attributes if your renderer sets them
+    var id    = row.getAttribute('data-taskid') || row.dataset.taskid;
+    var title = row.querySelector('.title')?.textContent?.trim() || row.getAttribute('data-title') || '';
+    // Try to read an existing notes element if already rendered but hidden
+    var existing = row.querySelector('.notes, .note, [data-notes]');
+    var notes = existing ? (existing.textContent || existing.getAttribute('data-notes') || '').trim() : '';
+
+    // If no notes in DOM, try app hooks (non-breaking)
+    if (!notes && window.getReminderById && id) {
+      try { notes = (window.getReminderById(id)?.notes || '').trim(); } catch(_) {}
+    }
+    return { id, title, notes };
+  }
+
+  // Make rows focusable and togglable
+  function prepareRow(row){
+    if (!row.classList.contains('task-row-min')) return;
+    // ARIA / keyboard
+    row.setAttribute('role','button');
+    row.setAttribute('tabindex','0');
+    row.setAttribute('aria-expanded','false');
+
+    function toggle(){
+      var expanded = row.classList.toggle('expanded');
+      row.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+
+      // Fill notes on first expand if needed
+      if (expanded) {
+        var data = getTaskData(row);
+        var notesEl = ensureNotesEl(row);
+        if (notesEl && !notesEl.textContent.trim()) {
+          // prefer existing notes text if already present
+          if (data.notes) {
+            notesEl.textContent = data.notes;
+          } else {
+            notesEl.textContent = 'No notes';
+            notesEl.style.opacity = '.6';
+          }
+        }
+        // Optionally ensure full title is visible (if row truncates)
+        var titleEl = row.querySelector('.title');
+        if (titleEl) titleEl.title = data.title || titleEl.textContent;
+      }
+    }
+
+    row.addEventListener('click', function(e){
+      // Avoid toggling when clicking links/buttons inside the row
+      if (e.target.closest('a,button,input,textarea,select')) return;
+      toggle();
+    });
+
+    row.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); toggle();
+      }
+    });
+  }
+
+  // Prepare existing rows
+  Array.from(list.querySelectorAll('.task-row-min')).forEach(prepareRow);
+
+  // If your list re-renders dynamically, observe and apply to new rows
+  var mo = new MutationObserver(function(muts){
+    for (var m of muts) {
+      m.addedNodes && m.addedNodes.forEach(function(n){
+        if (!(n instanceof Element)) return;
+        if (n.classList && n.classList.contains('task-row-min')) prepareRow(n);
+        // Also catch rows generated within a fragment
+        n.querySelectorAll && n.querySelectorAll('.task-row-min').forEach(prepareRow);
+      });
+    }
+  });
+  mo.observe(list, { childList: true, subtree: true });
+})();
   </script>
 </body>
 </html>
