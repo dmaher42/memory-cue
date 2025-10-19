@@ -349,6 +349,17 @@
     body:not(.show-full) .task-list-min .task-item input,
     body:not(.show-full) .task-list-min .task-item .task-notes { display: none !important; }
   </style>
+  <style id="voice-add-css">
+    .voice-add-wrap{
+      position: fixed; right: 12px; bottom: 12px; z-index: 50;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 9999px; background: var(--fallback-b1,#fff);
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .voice-status{ font-size: 12px; opacity: .75; }
+    /* Keep voice UI visible even if the rest of the chrome is hidden */
+    .nonEssential .voice-add-wrap { display: flex; }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
@@ -382,6 +393,11 @@
   </header>
 
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+    <!-- Voice Add Task UI -->
+    <div id="voiceAddWrap" class="voice-add-wrap" aria-live="polite" aria-atomic="true">
+      <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
+      <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
+    </div>
     <button id="toggleUiBtn" class="btn btn-ghost" style="position:fixed;top:12px;right:12px;z-index:40">Full UI</button>
     <!-- Focus List: minimal tasks-only home state -->
     <section id="focusList" class="focus-list nonEssential" aria-label="Tasks">
@@ -858,6 +874,118 @@
       }
       document.addEventListener('DOMContentLoaded', applyMinimalLayout);
       document.addEventListener('reminders:updated', applyMinimalLayout);
+    })();
+  </script>
+  <script id="voice-add-script">
+    (function(){
+      const btn = document.getElementById('voiceAddBtn');
+      const statusEl = document.getElementById('voiceStatus');
+
+      if (!btn) return;
+
+      // Web Speech API (Chrome/Edge/Android via webkit*, some desktop Chrome; graceful fallback elsewhere)
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      // Helper: best-effort task creator using whatever the app exposes
+      async function createTaskFromText(text){
+        if (!text || !text.trim()) return;
+        // Preferred hooks, if present:
+        if (typeof window.addReminderFromVoice === 'function') return window.addReminderFromVoice(text);
+        if (typeof window.createReminder === 'function') return window.createReminder(text);
+        if (typeof window.createReminderFromInput === 'function') return window.createReminderFromInput(text);
+
+        // Fallbacks: try to populate a known input and submit
+        const input = document.getElementById('reminderText');
+        if (input) {
+          input.value = text;
+          // try submit the nearest form
+          const form = input.form || document.querySelector('form');
+          if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
+        }
+
+        // Emit an app-level event so existing code can listen and handle creation
+        document.dispatchEvent(new CustomEvent('voice:addTask', { detail: { text } }));
+      }
+
+      function setStatus(msg, show=true){
+        if (!statusEl) return;
+        if (show) {
+          statusEl.hidden = false;
+          statusEl.textContent = msg;
+        } else {
+          statusEl.hidden = true;
+        }
+      }
+
+      if (!SpeechRecognition) {
+        // Graceful fallback: clicking mic prompts for manual entry
+        btn.addEventListener('click', async () => {
+          const text = window.prompt('Speak-to-text not supported here. Type your task:','');
+          if (text) await createTaskFromText(text);
+        });
+        setStatus('Voice not supported here', true);
+        return;
+      }
+
+      // Configure recognizer
+      const recog = new SpeechRecognition();
+      recog.lang = 'en-AU';          // Australian English
+      recog.interimResults = true;    // show progress
+      recog.maxAlternatives = 1;
+      recog.continuous = false;       // single utterance per tap
+
+      let collecting = false;
+      let finalTranscript = '';
+
+      function start(){
+        if (collecting) return;
+        finalTranscript = '';
+        collecting = true;
+        btn.setAttribute('aria-pressed', 'true');
+        setStatus('Listening… speak your task');
+        try { recog.start(); } catch(_) {}
+      }
+
+      function stop(){
+        if (!collecting) return;
+        collecting = false;
+        btn.setAttribute('aria-pressed', 'false');
+        setStatus('Processing…');
+        try { recog.stop(); } catch(_) {}
+      }
+
+      btn.addEventListener('click', () => (collecting ? stop() : start()));
+
+      recog.onresult = async (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const transcript = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalTranscript += transcript;
+          else interim += transcript;
+        }
+        if (interim) setStatus('…' + interim);
+      };
+
+      recog.onerror = (e) => {
+        setStatus('Mic error: ' + (e.error || 'unknown'));
+        collecting = false;
+        btn.setAttribute('aria-pressed','false');
+      };
+
+      recog.onend = async () => {
+        // Called after stop or timeout
+        const text = (finalTranscript || '').trim();
+        if (text) {
+          setStatus('Adding: ' + text);
+          try { await createTaskFromText(text); }
+          catch (err) { setStatus('Could not add task'); console.warn(err); }
+          setStatus('Tap 🎤 to speak', true);
+        } else {
+          setStatus('Tap 🎤 to speak', true);
+        }
+        collecting = false;
+        btn.setAttribute('aria-pressed','false');
+      };
     })();
   </script>
 </body>
