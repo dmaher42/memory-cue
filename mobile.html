@@ -454,6 +454,16 @@
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
     <!-- Voice Add Task UI -->
     <div id="voiceAddWrap" class="voice-add-wrap" aria-live="polite" aria-atomic="true">
+      <button
+        id="quickAddMinimal"
+        class="btn btn-circle btn-primary"
+        type="button"
+        data-open-add-task
+        aria-label="Quick add reminder"
+        title="Quick add reminder"
+      >
+        ＋
+      </button>
       <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
       <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
     </div>
