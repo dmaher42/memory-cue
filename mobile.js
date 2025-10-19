@@ -81,7 +81,24 @@ import { initReminders } from './js/reminders.js';
   const fab = document.getElementById('fabCreate');
   const sheet = document.getElementById('create-sheet');
   const closeBtn = document.getElementById('closeCreateSheet');
-  if (!fab || !sheet || !closeBtn) return;
+  if (!sheet || !closeBtn) return;
+
+  sheet.classList.add('hidden');
+  sheet.setAttribute('hidden', '');
+  sheet.setAttribute('aria-hidden', 'true');
+  sheet.removeAttribute('open');
+
+  const openerSet = new Set();
+  if (fab) openerSet.add(fab);
+  document
+    .querySelectorAll('[data-open-add-task]')
+    .forEach((button) => openerSet.add(button));
+
+  const openers = Array.from(openerSet).filter((button) =>
+    button instanceof HTMLElement
+  );
+
+  let lastTrigger = null;
 
   const prioritySelect = document.getElementById('priority');
   const chips = document.getElementById('priorityChips');
@@ -126,17 +143,44 @@ import { initReminders } from './js/reminders.js';
     }, 250);
   }
 
-  function openSheet() {
+  function openSheet(trigger) {
+    lastTrigger = trigger ?? null;
     sheet.classList.remove('hidden');
+    sheet.removeAttribute('hidden');
+    sheet.setAttribute('aria-hidden', 'false');
+    sheet.setAttribute('open', '');
     const firstInput = sheet.querySelector('input,select,textarea,button');
-    if (firstInput) firstInput.focus();
+    if (firstInput instanceof HTMLElement) {
+      firstInput.focus();
+    } else if (sheet instanceof HTMLElement) {
+      sheet.focus();
+    }
   }
   function closeSheet() {
     sheet.classList.add('hidden');
-    fab.focus();
+    sheet.setAttribute('hidden', '');
+    sheet.setAttribute('aria-hidden', 'true');
+    sheet.removeAttribute('open');
+    const focusTarget =
+      (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) || fab;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      focusTarget.focus();
+    }
+    lastTrigger = null;
   }
-  fab.addEventListener('click', openSheet);
-  closeBtn.addEventListener('click', closeSheet);
+
+  openers.forEach((trigger) => {
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openSheet(trigger);
+    });
+  });
+
+  closeBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeSheet();
+  });
   sheet.addEventListener('click', (event) => {
     if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
       closeSheet();
@@ -147,6 +191,10 @@ import { initReminders } from './js/reminders.js';
       closeSheet();
     }
   });
+
+  if (typeof window !== 'undefined') {
+    window.closeAddTask = closeSheet;
+  }
 })();
 /* END GPT CHANGE */
 
