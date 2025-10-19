@@ -192,6 +192,13 @@ import { initReminders } from './js/reminders.js';
     }
   });
 
+  document.addEventListener('cue:open', () => {
+    openSheet();
+  });
+  document.addEventListener('cue:close', () => {
+    closeSheet();
+  });
+
   if (typeof window !== 'undefined') {
     window.closeAddTask = closeSheet;
   }

@@ -19,6 +19,7 @@ const SEEDED_CATEGORIES = Object.freeze([
   'School – To-Do',
   'Wellbeing & Support',
 ]);
+const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 
 function getGlobalScope() {
   if (typeof globalThis !== 'undefined') return globalThis;
@@ -475,7 +476,7 @@ export async function initReminders(sel = {}) {
   })();
   const auth = getAuth(app);
 
-   // State
+  // State
   let items = [];
   let filter = filterBtns.length ? 'today' : 'all';
   let categoryFilterValue = categoryFilter?.value || 'all';
@@ -483,11 +484,108 @@ export async function initReminders(sel = {}) {
   let listening = false;
   let recog = null;
   let voiceRestartTimer = null;
-   let userId = null;
-   let unsubscribe = null;
-   let editingId = null;
-   const reminderTimers = {};
-   let scheduledReminders = {};
+  let userId = null;
+  let unsubscribe = null;
+  let editingId = null;
+  const reminderTimers = {};
+  let scheduledReminders = {};
+
+  function loadOfflineRemindersFromStorage() {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(OFFLINE_REMINDERS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now();
+          const updatedAt = Number.isFinite(entry.updatedAt) ? entry.updatedAt : createdAt;
+          return {
+            id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
+            title: typeof entry.title === 'string' ? entry.title : '',
+            priority: entry.priority || 'Medium',
+            category: normalizeCategory(entry.category),
+            notes: typeof entry.notes === 'string' ? entry.notes : '',
+            done: !!entry.done,
+            createdAt,
+            updatedAt,
+            due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+            pendingSync: !!entry.pendingSync,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.warn('Failed to load offline reminders', error);
+      return [];
+    }
+  }
+
+  function persistOfflineReminders(reminders = []) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      if (!Array.isArray(reminders) || reminders.length === 0) {
+        localStorage.removeItem(OFFLINE_REMINDERS_KEY);
+        return;
+      }
+      const serialisable = reminders
+        .filter((entry) => entry && typeof entry === 'object')
+        .map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          priority: entry.priority || 'Medium',
+          category: normalizeCategory(entry.category),
+          notes: typeof entry.notes === 'string' ? entry.notes : '',
+          done: !!entry.done,
+          createdAt: Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now(),
+          updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
+          due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+          pendingSync: !!entry.pendingSync,
+        }));
+      localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
+    } catch (error) {
+      console.warn('Failed to persist offline reminders', error);
+    }
+  }
+
+  function persistItems() {
+    persistOfflineReminders(items);
+  }
+
+  function hydrateOfflineReminders() {
+    items = loadOfflineRemindersFromStorage();
+  }
+
+  hydrateOfflineReminders();
+
+  async function migrateOfflineRemindersIfNeeded() {
+    if (!userId) {
+      items = loadOfflineRemindersFromStorage();
+      return;
+    }
+    const offline = loadOfflineRemindersFromStorage();
+    if (!offline.length) {
+      items = [];
+      persistItems();
+      return;
+    }
+    const unsynced = offline.filter((entry) => entry?.pendingSync);
+    if (unsynced.length) {
+      for (const entry of unsynced) {
+        try {
+          await saveToFirebase(entry);
+          entry.pendingSync = false;
+        } catch (error) {
+          console.warn('Failed to sync offline reminder', error);
+        }
+      }
+    }
+    items = offline.map((entry) => ({ ...entry, pendingSync: false }));
+    persistItems();
+    render();
+    rescheduleAllReminders();
+  }
   try {
     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
   } catch {
@@ -614,8 +712,8 @@ export async function initReminders(sel = {}) {
     try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch { toast('Google sign-in failed'); } }
   });
   getRedirectResult(auth).catch(()=>{});
-  googleSignOutBtn?.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); items=[]; render(); } catch { toast('Sign-out failed'); } });
-  onAuthStateChanged(auth, (user) => {
+  googleSignOutBtn?.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); } catch { toast('Sign-out failed'); } });
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
       syncStatus?.classList.remove('offline','error');
@@ -626,7 +724,9 @@ export async function initReminders(sel = {}) {
       if(googleAvatar){ if(user.photoURL){ googleAvatar.classList.remove('hidden'); googleAvatar.src=user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src=''; } }
       if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
       setupFirestoreSync();
+      await migrateOfflineRemindersIfNeeded();
     } else {
+      userId = null;
       syncStatus?.classList.remove('online','error');
       if(syncStatus){
         syncStatus.classList.add('offline');
@@ -636,13 +736,24 @@ export async function initReminders(sel = {}) {
       googleSignOutBtn?.classList.add('hidden');
       if(googleAvatar){ googleAvatar.classList.add('hidden'); googleAvatar.src=''; }
       if(googleUserName) googleUserName.textContent='';
-      items=[]; render();
+      unsubscribe?.();
+      unsubscribe = null;
+      hydrateOfflineReminders();
+      render();
+      persistItems();
+      rescheduleAllReminders();
     }
   });
 
   // Firestore sync
   function setupFirestoreSync(){
-    if(!userId){ items=[]; render(); return; }
+    if(!userId){
+      hydrateOfflineReminders();
+      render();
+      persistItems();
+      rescheduleAllReminders();
+      return;
+    }
     if(unsubscribe) unsubscribe();
     const userCollection = collection(db, 'users', userId, 'reminders');
     const qSnap = query(userCollection, orderBy('updatedAt','desc'));
@@ -650,10 +761,12 @@ export async function initReminders(sel = {}) {
       const remoteItems = [];
       snapshot.forEach((d)=>{
         const data = d.data();
-        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0 });
+        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0, pendingSync: false });
       });
       items = remoteItems;
       render();
+      persistItems();
+      rescheduleAllReminders();
     }, (error)=>{
       console.error('Firestore sync error:', error);
       if(syncStatus){ syncStatus.textContent='Sync Error'; syncStatus.className='sync-status error'; }
@@ -681,7 +794,6 @@ export async function initReminders(sel = {}) {
   function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
 
   function addItem(obj){
-    if(!userId){ toast('Sign in to add reminders'); return; }
     const nowMs = Date.now();
     const note = obj.notes == null ? '' : (typeof obj.notes === 'string' ? obj.notes.trim() : String(obj.notes).trim());
     const categoryValue = normalizeCategory(obj.category ?? (categoryInput ? categoryInput.value : ''));
@@ -695,9 +807,11 @@ export async function initReminders(sel = {}) {
       createdAt: nowMs,
       updatedAt: nowMs,
       due: obj.due || null,
+      pendingSync: !userId,
     };
     items = [item, ...items];
     render();
+    persistItems();
     saveToFirebase(item);
     tryCalendarSync(item);
     scheduleReminder(item);
@@ -720,6 +834,7 @@ export async function initReminders(sel = {}) {
     reminder.updatedAt = Date.now();
     saveToFirebase(reminder);
     render();
+    persistItems();
     emitActivity({
       action: 'updated',
       label: `Reminder notes updated · ${reminder.title}`,
@@ -734,6 +849,7 @@ export async function initReminders(sel = {}) {
     saveToFirebase(it);
     tryCalendarSync(it);
     render();
+    persistItems();
     if(it.done){
       cancelReminder(id);
       emitActivity({
@@ -752,6 +868,7 @@ export async function initReminders(sel = {}) {
     const removed = items.find(x=>x.id===id);
     items = items.filter(x=>x.id!==id);
     render();
+    persistItems();
     deleteFromFirebase(id);
     cancelReminder(id);
     if(removed){
@@ -1265,6 +1382,7 @@ export async function initReminders(sel = {}) {
       tryCalendarSync(it);
       render();
       scheduleReminder(it);
+      persistItems();
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
       resetForm();
       toast('Reminder updated');
@@ -1308,8 +1426,10 @@ export async function initReminders(sel = {}) {
     rd.onload = () => {
       try {
         const importedItems = JSON.parse(String(rd.result) || '[]').slice(0,500);
-        importedItems.forEach(item => { item.id = uid(); item.category = normalizeCategory(item.category); items=[item,...items]; saveToFirebase(item); });
-        render(); toast('Import successful');
+        importedItems.forEach(item => { item.id = uid(); item.category = normalizeCategory(item.category); item.pendingSync = !userId; items=[item,...items]; saveToFirebase(item); });
+        render();
+        persistItems();
+        toast('Import successful');
       } catch { toast('Invalid JSON'); }
     };
     rd.readAsText(f); importFile.value='';
@@ -1443,6 +1563,7 @@ export async function initReminders(sel = {}) {
 
   rescheduleAllReminders();
   render();
+  persistItems();
   return {
     cancelReminder,
     scheduleReminder,
