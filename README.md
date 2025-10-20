@@ -45,6 +45,21 @@ firebase deploy --only hosting
 
 Refer to Firebase documentation for setup steps such as creating a project, initializing hosting, and adding a `firebase.json` configuration file.
 
+## Configuration
+
+Memory Cue expects Supabase credentials to be available at runtime via `window.__ENV`. Add the following snippet to your production `index.html` (or equivalent template) **before** loading the main JavaScript bundle so the app can read the values when it starts:
+
+```html
+<script>
+  window.__ENV = {
+    SUPABASE_URL: "https://YOUR-PROJECT.supabase.co",
+    SUPABASE_ANON_KEY: "YOUR_ANON_KEY"
+  };
+</script>
+```
+
+Keep your real Supabase URL and anon key out of version control—set them through deployment-specific templating or secrets management rather than committing them to the repository.
+
 ## Privacy & Data
 
 Memory Cue stores notes and reminders in Firebase services (e.g., Firestore or Realtime Database). Review your Firebase security rules to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. As with any Firebase-backed app, do not commit private API keys or service credentials to the repository.
