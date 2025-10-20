@@ -1,0 +1,1777 @@
+<!doctype html>
+<html lang="en" data-theme="caramellatte">
+<head>
+  <base href="/memory-cue/">
+  <!-- BEGIN GPT CHANGE: external styles -->
+  <link rel="stylesheet" href="./dist/styles.css">
+  <!-- END GPT CHANGE -->
+  <!-- === SUPABASE CONFIG (put before your main JS) === -->
+<!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
+<!-- END GPT CHANGE -->
+<!-- BEGIN GPT CHANGE: supabase init via env module -->
+<script type="module" src="./js/config-supabase.js" defer></script>
+<!-- END GPT CHANGE -->
+<!-- === /SUPABASE CONFIG === -->
+<!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
+<!-- END GPT CHANGE -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- BEGIN GPT CHANGE: social meta -->
+  <meta property="og:title" content="Memory Cue — Teacher One-Stop Shop Organiser">
+  <meta
+    property="og:description"
+    content="Memory Cue helps teachers stay organised with integrated dashboards, reminders, planners, and curated resources in one streamlined app."
+  >
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/icons/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- END GPT CHANGE -->
+  <!-- BEGIN GPT CHANGE: basic CSP -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             img-src 'self' data:;
+             style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
+             connect-src 'self' https://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com;
+             font-src 'self' data:;
+             base-uri 'self';
+             form-action 'self'"
+  >
+  <!-- END GPT CHANGE -->
+  <meta name="description" content="Memory Cue helps teachers stay organised with integrated dashboards, reminders, planners, and curated resources in one streamlined app." />
+  <!-- BEGIN GPT CHANGE: canonical -->
+  <link rel="canonical" href="https://memorycue.app/">
+  <!-- END GPT CHANGE -->
+  <title>Memory Cue — Teacher One-Stop Shop Organiser</title>
+  <meta name="theme-color" content="#10b981" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+  <!-- BEGIN GPT CHANGE: head cleanup -->
+  <!-- END GPT CHANGE -->
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <!-- BEGIN GPT CHANGE: apple icon -->
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <!-- END GPT CHANGE -->
+  <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/a11y.css" />
+  <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
+  <!-- END GPT CHANGE -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+    integrity="sha384-yxrQVVFFRZdq4Z/YbeTDzSYbn1W6VnVonm2vAgnxtxUMehcccE4k2NufOz2tJnOe"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="./styles/daisy-themes.css" />
+  <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
+  <!-- END GPT CHANGE -->
+  <!-- BEGIN GPT FIX: compact-skeleton-style -->
+  <style>
+    .dashboard-widget [aria-hidden="true"].animate-pulse { opacity: .85; }
+  </style>
+  <!-- END GPT FIX: compact-skeleton-style -->
+  <script src="./js/runtime-env-shim.js" defer></script>
+  <script type="module" src="./js/main.js" defer></script>
+</head>
+<body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen">
+  <a class="skip-link" href="#mainContent">Skip to main content</a>
+  <!-- Modern Navigation -->
+  <nav
+    aria-label="Primary"
+    class="relative fixed top-0 z-50 w-full border-b border-base-200/70 bg-base-100/80 backdrop-blur"
+  >
+    <div class="navbar mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="navbar-start gap-2">
+        <button
+          id="mobile-nav-toggle"
+          type="button"
+          class="btn btn-ghost btn-circle text-base-content lg:hidden"
+          aria-label="Toggle navigation"
+          aria-expanded="false"
+          aria-controls="mobile-nav-menu"
+        >
+          <span class="sr-only">Open navigation</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            class="size-6"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <a href="#dashboard" class="btn btn-ghost text-xl font-bold normal-case text-base-content">Memory Cue</a>
+      </div>
+      <div class="navbar-center nav-desktop hidden lg:flex">
+        <ul class="menu menu-horizontal gap-1 rounded-box bg-base-100/70 p-1 text-sm shadow-sm">
+          <li>
+            <a href="#dashboard" data-route="dashboard" id="nav-dashboard" class="btn btn-sm btn-ghost">Dashboard</a>
+          </li>
+          <li>
+            <a href="#reminders" data-route="reminders" id="nav-reminders" class="btn btn-sm btn-ghost">Reminders</a>
+          </li>
+          <li>
+            <a href="#planner" data-route="planner" id="nav-planner" class="btn btn-sm btn-ghost">Planner</a>
+          </li>
+          <li>
+            <a href="#notes" data-route="notes" id="nav-notes" class="btn btn-sm btn-ghost">Notes</a>
+          </li>
+          <li>
+            <a href="#resources" data-route="resources" id="nav-resources" class="btn btn-sm btn-ghost">Resources</a>
+          </li>
+          <li>
+            <a href="#templates" data-route="templates" id="nav-templates" class="btn btn-sm btn-ghost">Templates</a>
+          </li>
+          <li>
+            <a href="#settings" data-route="settings" id="nav-settings" class="btn btn-sm btn-ghost">Settings</a>
+          </li>
+        </ul>
+      </div>
+      <div class="navbar-end">
+        <div class="flex flex-col items-end gap-2">
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <button
+              id="theme-toggle"
+              type="button"
+              class="btn btn-sm btn-ghost text-base-content"
+              data-icon-dark="🌙"
+              data-icon-light="☀️"
+            ></button>
+            <div class="dropdown dropdown-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost gap-2 text-base-content"
+                aria-haspopup="menu"
+                aria-expanded="false"
+              >
+                <span>Theme</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-4"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              <ul
+                id="theme-menu"
+                class="menu dropdown-content bg-base-100 text-base-content rounded-box z-[1] mt-3 w-48 p-2 shadow"
+                role="menu"
+                tabindex="0"
+              >
+                <li><a href="#" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
+                <li><a href="#" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
+                <li><a href="#" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
+                <li><a href="#" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
+                <li><a href="#" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
+                <li><a href="#" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
+              </ul>
+            </div>
+            <div
+              id="user-badge"
+              hidden
+              class="items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary-content shadow"
+            >
+              <span
+                id="user-badge-initial"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-content"
+                aria-hidden="true"
+              >T</span>
+              <span id="user-badge-email" class="max-w-[160px] truncate"></span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <form id="auth-form" class="flex flex-wrap items-center justify-end gap-2" hidden>
+              <label for="auth-email" class="sr-only">Email address</label>
+              <input
+                id="auth-email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@school.edu"
+                class="input input-sm input-bordered w-48"
+              />
+              <button id="sign-in-btn" type="submit" class="btn btn-sm btn-primary">Send link</button>
+            </form>
+            <button id="sign-out-btn" type="button" hidden class="btn btn-sm btn-error">Sign out</button>
+          </div>
+          <!-- BEGIN GPT CHANGE: auth feedback -->
+          <div id="auth-feedback" role="status" aria-live="polite" hidden></div>
+          <!-- END GPT CHANGE -->
+        </div>
+      </div>
+    </div>
+    <div
+      id="mobile-nav-menu"
+      role="menu"
+      hidden
+      class="absolute left-0 right-0 top-full z-40 gap-2 px-4 pb-4 sm:px-6 lg:hidden"
+    >
+      <div class="rounded-box border border-base-200 bg-base-100/95 p-3 shadow-lg">
+        <ul class="menu menu-vertical gap-1 text-base-content">
+          <li><a href="#dashboard" data-route="dashboard" class="btn btn-ghost justify-start">Dashboard</a></li>
+          <li><a href="#reminders" data-route="reminders" class="btn btn-ghost justify-start">Reminders</a></li>
+          <li><a href="#planner" data-route="planner" class="btn btn-ghost justify-start">Planner</a></li>
+          <li><a href="#notes" data-route="notes" class="btn btn-ghost justify-start">Notes</a></li>
+          <li><a href="#resources" data-route="resources" class="btn btn-ghost justify-start">Resources</a></li>
+          <li><a href="#templates" data-route="templates" class="btn btn-ghost justify-start">Templates</a></li>
+          <li><a href="#settings" data-route="settings" class="btn btn-ghost justify-start">Settings</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main id="mainContent" class="app-shell min-h-screen" tabindex="-1">
+    <section data-view="dashboard" id="view-dashboard" class="app-view" tabindex="-1">
+      <div class="view-container">
+        <section class="dashboard-intro" aria-labelledby="dashboard-intro-heading">
+          <header class="dashboard-intro-header">
+            <div>
+              <p class="dashboard-intro-eyebrow">Welcome to Memory Cue</p>
+              <h2 id="dashboard-intro-heading">How to get organised in three simple steps</h2>
+            </div>
+            <p class="dashboard-intro-copy">
+              Start with the reminders that need your attention, then jump into the planner and notes when you are ready.
+              Each card below opens the right workspace so you never lose track of what to do next.
+            </p>
+          </header>
+          <ol class="dashboard-intro-steps">
+            <li class="dashboard-intro-step">
+              <span class="dashboard-intro-icon" aria-hidden="true">✅</span>
+              <div class="dashboard-intro-content">
+                <h3>Capture urgent cues</h3>
+                <p>Open the reminders board and log any tasks or student follow-ups that cannot wait.</p>
+                <a class="dashboard-intro-action" href="#reminders" data-route="reminders">Go to Reminders</a>
+              </div>
+            </li>
+            <li class="dashboard-intro-step">
+              <span class="dashboard-intro-icon" aria-hidden="true">🗓️</span>
+              <div class="dashboard-intro-content">
+                <h3>Plan your lessons</h3>
+                <p>Block the key sessions for the week, including focus areas and locations, so you can teach with clarity.</p>
+                <a class="dashboard-intro-action" href="#planner" data-route="planner">Open the Planner</a>
+              </div>
+            </li>
+            <li class="dashboard-intro-step">
+              <span class="dashboard-intro-icon" aria-hidden="true">📝</span>
+              <div class="dashboard-intro-content">
+                <h3>Keep quick notes tidy</h3>
+                <p>Use the notes workspace to capture observations and ideas, then pin them to your lessons later.</p>
+                <a class="dashboard-intro-action" href="#notes" data-route="notes">Review Notes</a>
+              </div>
+            </li>
+          </ol>
+        </section>
+        <section class="dashboard-overview" aria-labelledby="dashboard-overview-heading">
+          <div class="dashboard-overview-card">
+            <header class="dashboard-overview-header">
+              <div class="dashboard-overview-title">
+                <span class="dashboard-hero-eyebrow">Teacher control centre</span>
+                <h1 id="dashboard-overview-heading" class="dashboard-hero-title">Your teaching day at a glance</h1>
+              </div>
+              <p id="dashboard-date" class="dashboard-overview-date dashboard-hero-date"></p>
+              <p class="dashboard-overview-subtitle dashboard-hero-subtitle">
+                Use the quick capture tools, check the live counts, then jump into the workspace that needs your attention first.
+              </p>
+            </header>
+            <div class="dashboard-overview-grid">
+              <section class="dashboard-overview-panel" aria-labelledby="dashboard-quick-actions-heading">
+                <header class="dashboard-panel-header">
+                  <h2 id="dashboard-quick-actions-heading">Quick capture</h2>
+                  <p class="dashboard-panel-copy">
+                    These shortcuts open the relevant workspace so you can log cues and plans without losing your rhythm.
+                  </p>
+                </header>
+                <ul class="dashboard-quick-actions" role="list">
+                  <li class="dashboard-quick-actions-item">
+                    <button type="button" data-quick-action="reminder" class="dashboard-quick-action">
+                      <span class="dashboard-quick-action-icon" aria-hidden="true">🔔</span>
+                      <span class="dashboard-quick-action-content">
+                        <span class="dashboard-quick-action-label">Log a cue</span>
+                        <span class="dashboard-quick-action-help">Open the reminder composer</span>
+                      </span>
+                    </button>
+                  </li>
+                  <li class="dashboard-quick-actions-item">
+                    <button type="button" data-quick-action="planner" class="dashboard-quick-action">
+                      <span class="dashboard-quick-action-icon" aria-hidden="true">🗓️</span>
+                      <span class="dashboard-quick-action-content">
+                        <span class="dashboard-quick-action-label">Plan the week</span>
+                        <span class="dashboard-quick-action-help">Jump to your weekly grid</span>
+                      </span>
+                    </button>
+                  </li>
+                  <li class="dashboard-quick-actions-item">
+                    <button type="button" data-quick-action="note" class="dashboard-quick-action">
+                      <span class="dashboard-quick-action-icon" aria-hidden="true">📝</span>
+                      <span class="dashboard-quick-action-content">
+                        <span class="dashboard-quick-action-label">Capture a note</span>
+                        <span class="dashboard-quick-action-help">Drop into the scratch pad</span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+              </section>
+              <section class="dashboard-overview-panel" aria-labelledby="dashboard-snapshot-heading">
+                <header class="dashboard-panel-header">
+                  <h2 id="dashboard-snapshot-heading">Today&#39;s snapshot</h2>
+                  <p class="dashboard-panel-copy">Live counts refresh as you update reminders, lessons, and notes.</p>
+                </header>
+                <div class="dashboard-hero-summary" role="list" aria-label="Today&#39;s snapshot">
+                  <article class="dashboard-hero-card" role="listitem">
+                    <p class="dashboard-hero-card-label">Lessons today</p>
+                    <p id="dashboard-lesson-count" class="dashboard-hero-card-value">0</p>
+                    <p id="dashboard-next-lesson" class="dashboard-hero-card-meta"></p>
+                  </article>
+                  <article class="dashboard-hero-card" role="listitem">
+                    <p class="dashboard-hero-card-label">Deadlines this week</p>
+                    <p id="dashboard-deadline-count" class="dashboard-hero-card-value">0</p>
+                    <p class="dashboard-hero-card-meta">Countdowns refresh automatically</p>
+                  </article>
+                  <article class="dashboard-hero-card" role="listitem">
+                    <p class="dashboard-hero-card-label">Reminders to action</p>
+                    <p id="dashboard-reminder-count" class="dashboard-hero-card-value">0</p>
+                    <p class="dashboard-hero-card-meta">Due today or overdue</p>
+                  </article>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <div class="view-body space-y-10">
+          <section class="dashboard-focus" aria-labelledby="dashboard-focus-heading">
+            <div class="dashboard-focus-header">
+              <div>
+                <p class="dashboard-focus-eyebrow">Jump to a workspace</p>
+                <h2 id="dashboard-focus-heading">Focus lanes</h2>
+              </div>
+              <p class="dashboard-focus-description">Shortcuts that open the right board or scroll to the panel you need on this page.</p>
+            </div>
+            <div class="dashboard-focus-grid">
+              <a href="#reminders" data-route="reminders" class="dashboard-focus-card" aria-describedby="dashboard-focus-reminders">
+                <span class="dashboard-focus-icon" aria-hidden="true">✅</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Action reminders</span>
+                  <span id="dashboard-focus-reminders" class="dashboard-focus-copy">Open the cues workspace</span>
+                </span>
+              </a>
+              <button type="button" class="dashboard-focus-card" data-scroll-target="#lesson-form" data-focus-target="#lesson-subject">
+                <span class="dashboard-focus-icon" aria-hidden="true">📚</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Log a lesson</span>
+                  <span class="dashboard-focus-copy">Jump to today&#39;s lesson planner</span>
+                </span>
+              </button>
+              <button type="button" class="dashboard-focus-card" data-scroll-target="#dashboard-activity-container">
+                <span class="dashboard-focus-icon" aria-hidden="true">🗂️</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Review activity</span>
+                  <span class="dashboard-focus-copy">Latest changes and sync events</span>
+                </span>
+              </button>
+              <button type="button" class="dashboard-focus-card" data-scroll-target="#widget-outdoor-body">
+                <span class="dashboard-focus-icon" aria-hidden="true">🌦️</span>
+                <span class="dashboard-focus-content">
+                  <span class="dashboard-focus-title">Check weather</span>
+                  <span class="dashboard-focus-copy">Forecast before outdoor sessions</span>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <div class="dashboard-main-grid">
+            <div class="dashboard-widgets-grid" data-dashboard-area="primary">
+              <section
+                data-dashboard-widget="reminders"
+                data-widget-title="Reminders needing attention"
+                class="dashboard-widget dashboard-widget--wide bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                aria-labelledby="reminders-heading"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700 pb-3 sm:pb-4"
+                  data-widget-header
+                >
+                  <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-white text-xl dark:bg-white dark:text-gray-900 dark:text-gray-100" aria-hidden="true">🔔</span>
+                    <div class="min-w-0 space-y-1">
+                      <h2 id="reminders-heading" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Reminders needing attention</h2>
+                      <p class="text-sm text-gray-500 dark:text-gray-500">These are pulled automatically from the Reminders board and show tasks due today or overdue.</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a
+                      href="#reminders"
+                      class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                    >
+                      Open reminders<span aria-hidden="true">→</span>
+                    </a>
+                    <div class="hidden overflow-hidden rounded-full border border-gray-200 dark:border-gray-700 sm:flex" role="group" aria-label="Reorder widget">
+                      <button type="button" class="widget-control-btn" data-widget-action="move-up" aria-label="Move widget up">
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button type="button" class="widget-control-btn" data-widget-action="move-down" aria-label="Move widget down">
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="widget-control-btn"
+                      data-widget-action="collapse"
+                      data-widget-toggle
+                      data-widget-name="Reminders needing attention"
+                      aria-expanded="true"
+                      aria-controls="widget-reminders-body"
+                      aria-label="Collapse widget"
+                    >
+                      <span aria-hidden="true" data-icon class="widget-control-icon">
+                        <svg
+                          data-icon-minus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d="M3 7.25h10v1.5H3z" fill="currentColor" />
+                        </svg>
+                        <svg
+                          data-icon-plus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                          hidden
+                        >
+                          <path d="M7.25 3v4.25H3v1.5h4.25V13h1.5V8.75H13v-1.5H8.75V3z" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <span class="sr-only">Collapse widget</span>
+                    </button>
+                    <button type="button" class="widget-control-btn" data-widget-action="hide" aria-label="Hide widget">
+                      <span aria-hidden="true">✕</span>
+                      <span class="sr-only">Hide widget</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="widget-reminders-body" data-widget-body class="space-y-6 pt-3 sm:pt-4">
+                  <div id="dashboard-reminders-skeleton" class="space-y-3 rounded-2xl border border-dashed border-gray-200 bg-white/70 p-4 text-gray-500 dark:text-gray-500 animate-pulse dark:border-gray-700 dark:bg-gray-900/40" aria-hidden="true">
+                    <div class="h-4 w-1/3 rounded bg-gray-200/70 dark:bg-gray-700/70"></div>
+                    <div class="h-16 rounded-2xl bg-gray-100/90 dark:bg-gray-800/60"></div>
+                    <div class="h-4 w-1/2 rounded bg-gray-200/60 dark:bg-gray-700/60"></div>
+                  </div>
+                  <ul id="dashboard-reminders-list" class="hidden space-y-4" aria-live="polite" aria-busy="true"></ul>
+                  <div id="dashboard-reminders-empty" class="hidden"></div>
+                </div>
+              </section>
+
+              <section
+                data-dashboard-widget="lessons"
+                data-widget-title="Today&#39;s lessons"
+                class="dashboard-widget dashboard-widget--primary bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                aria-labelledby="lessons-heading"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700 pb-3 sm:pb-4"
+                  data-widget-header
+                >
+                  <div class="flex min-w-0 flex-1 items-center gap-3">
+                    <span
+                      class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-200 text-xl"
+                      aria-hidden="true"
+                    >📘</span>
+                    <div class="min-w-0 space-y-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h2 id="lessons-heading" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Today&#39;s lessons</h2>
+                        <span
+                          id="dashboard-lesson-status"
+                          class="hidden rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-500/10 dark:text-blue-200"
+                          role="status"
+                          aria-live="polite"
+                          aria-atomic="true"
+                        ></span>
+                      </div>
+                      <p class="text-sm text-gray-500 dark:text-gray-500">
+                        Keep track of sessions, locations, and focus areas for a smooth teaching flow.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="hidden overflow-hidden rounded-full border border-gray-200 dark:border-gray-700 sm:flex" role="group" aria-label="Reorder widget">
+                      <button type="button" class="widget-control-btn" data-widget-action="move-up" aria-label="Move widget up">
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button type="button" class="widget-control-btn" data-widget-action="move-down" aria-label="Move widget down">
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="widget-control-btn"
+                      data-widget-action="collapse"
+                      data-widget-toggle
+                      data-widget-name="Today&#39;s lessons"
+                      aria-expanded="true"
+                      aria-controls="widget-lessons-body"
+                      aria-label="Collapse widget"
+                    >
+                      <span aria-hidden="true" data-icon class="widget-control-icon">
+                        <svg
+                          data-icon-minus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d="M3 7.25h10v1.5H3z" fill="currentColor" />
+                        </svg>
+                        <svg
+                          data-icon-plus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                          hidden
+                        >
+                          <path d="M7.25 3v4.25H3v1.5h4.25V13h1.5V8.75H13v-1.5H8.75V3z" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <span class="sr-only">Collapse widget</span>
+                    </button>
+                    <button type="button" class="widget-control-btn" data-widget-action="hide" aria-label="Hide widget">
+                      <span aria-hidden="true">✕</span>
+                      <span class="sr-only">Hide widget</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="widget-lessons-body" data-widget-body class="space-y-6 pt-3 sm:pt-4">
+                  <div>
+                    <div id="dashboard-lessons-skeleton" class="space-y-3 rounded-2xl bg-white/60 p-4 text-gray-500 dark:bg-gray-900/40 dark:text-gray-500 animate-pulse" aria-hidden="true">
+                      <div class="h-4 w-2/3 rounded bg-gray-200/80 dark:bg-gray-700/70"></div>
+                      <div class="h-4 w-1/2 rounded bg-gray-200/60 dark:bg-gray-700/60"></div>
+                      <div class="mt-4 h-20 rounded-2xl bg-gray-100/80 dark:bg-gray-800/60"></div>
+                    </div>
+                    <ul id="dashboard-lessons-list" class="hidden space-y-4" aria-live="polite" aria-busy="true"></ul>
+                    <div id="dashboard-lessons-empty" class="hidden"></div>
+                  </div>
+                  <form id="lesson-form" class="grid grid-cols-1 gap-3 md:grid-cols-5" aria-describedby="lesson-feedback">
+                    <div>
+                      <label for="lesson-subject" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Lesson or group</label>
+                      <input id="lesson-subject" name="lesson-subject" type="text" required placeholder="e.g. Year 8 Science" class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label for="lesson-start" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Start</label>
+                      <input id="lesson-start" name="lesson-start" type="time" required class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label for="lesson-end" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Finish</label>
+                      <input id="lesson-end" name="lesson-end" type="time" required class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label for="lesson-location" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Location</label>
+                      <input id="lesson-location" name="lesson-location" type="text" placeholder="e.g. Lab 2" class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div class="flex items-end">
+                      <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">Add lesson</button>
+                    </div>
+                  </form>
+                  <p id="lesson-feedback" class="hidden text-sm font-medium"></p>
+                </div>
+              </section>
+
+              <section
+                data-dashboard-widget="deadlines"
+                data-widget-title="Upcoming deadlines"
+                class="dashboard-widget dashboard-widget--primary bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                aria-labelledby="deadlines-heading"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700 pb-3 sm:pb-4"
+                  data-widget-header
+                >
+                  <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-200 text-xl" aria-hidden="true">⏰</span>
+                    <div class="min-w-0 space-y-1">
+                      <h2 id="deadlines-heading" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Upcoming deadlines</h2>
+                      <p class="text-sm text-gray-500 dark:text-gray-500">Deadlines due in the next seven days with live countdowns.</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/10 dark:text-amber-200">Next 7 days</span>
+                    <div class="hidden overflow-hidden rounded-full border border-gray-200 dark:border-gray-700 sm:flex" role="group" aria-label="Reorder widget">
+                      <button type="button" class="widget-control-btn" data-widget-action="move-up" aria-label="Move widget up">
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button type="button" class="widget-control-btn" data-widget-action="move-down" aria-label="Move widget down">
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="widget-control-btn"
+                      data-widget-action="collapse"
+                      data-widget-toggle
+                      data-widget-name="Upcoming deadlines"
+                      aria-expanded="true"
+                      aria-controls="widget-deadlines-body"
+                      aria-label="Collapse widget"
+                    >
+                      <span aria-hidden="true" data-icon class="widget-control-icon">
+                        <svg
+                          data-icon-minus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d="M3 7.25h10v1.5H3z" fill="currentColor" />
+                        </svg>
+                        <svg
+                          data-icon-plus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                          hidden
+                        >
+                          <path d="M7.25 3v4.25H3v1.5h4.25V13h1.5V8.75H13v-1.5H8.75V3z" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <span class="sr-only">Collapse widget</span>
+                    </button>
+                    <button type="button" class="widget-control-btn" data-widget-action="hide" aria-label="Hide widget">
+                      <span aria-hidden="true">✕</span>
+                      <span class="sr-only">Hide widget</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="widget-deadlines-body" data-widget-body class="space-y-6 pt-3 sm:pt-4">
+                  <div>
+                    <div id="dashboard-deadlines-skeleton" class="space-y-3 rounded-2xl border border-dashed border-gray-200 bg-white/70 p-4 text-gray-500 dark:text-gray-500 animate-pulse dark:border-gray-700/70 dark:bg-gray-900/40" aria-hidden="true">
+                      <div class="h-4 w-1/2 rounded bg-gray-200/70 dark:bg-gray-700/70"></div>
+                      <div class="h-16 rounded-2xl bg-gray-100/90 dark:bg-gray-800/60"></div>
+                      <div class="h-4 w-2/3 rounded bg-gray-200/70 dark:bg-gray-700/70"></div>
+                    </div>
+                    <ul id="dashboard-deadlines-list" class="hidden space-y-4" aria-live="polite" aria-busy="true"></ul>
+                    <div id="dashboard-deadlines-empty" class="hidden"></div>
+                  </div>
+                  <form id="deadline-form" class="grid grid-cols-1 gap-3 md:grid-cols-5" aria-describedby="deadline-feedback">
+                    <div class="md:col-span-2">
+                      <label for="deadline-title" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Deadline</label>
+                      <input id="deadline-title" name="deadline-title" type="text" required placeholder="e.g. Year 9 essays" class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    </div>
+                    <div>
+                      <label for="deadline-due" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Due</label>
+                      <input id="deadline-due" name="deadline-due" type="datetime-local" required class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    </div>
+                    <div>
+                      <label for="deadline-course" class="block text-sm font-medium text-gray-600 dark:text-gray-400">Class / group</label>
+                      <input id="deadline-course" name="deadline-course" type="text" placeholder="Optional" class="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    </div>
+                    <div class="flex items-end">
+                      <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-white shadow transition hover:bg-amber-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">Add deadline</button>
+                    </div>
+                  </form>
+                  <p id="deadline-feedback" class="hidden text-sm font-medium"></p>
+                </div>
+              </section>
+              <!-- END GPT FIX: widget-density -->
+
+              <section
+                id="dashboard-activity-container"
+                data-dashboard-widget="activity"
+                data-widget-title="Recent activity"
+                class="dashboard-widget dashboard-widget--wide bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
+                aria-labelledby="activity-heading"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700 pb-4"
+                  data-widget-header
+                >
+                  <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xl dark:bg-blue-500/10 dark:text-blue-200" aria-hidden="true">🗂️</span>
+                    <div class="min-w-0 space-y-1">
+                      <h2 id="activity-heading" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Recent activity</h2>
+                      <p class="text-sm text-gray-500 dark:text-gray-500">Keep track of updates across lessons, deadlines, and reminders.</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="hidden overflow-hidden rounded-full border border-gray-200 dark:border-gray-700 sm:flex" role="group" aria-label="Reorder widget">
+                      <button type="button" class="widget-control-btn" data-widget-action="move-up" aria-label="Move widget up">
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button type="button" class="widget-control-btn" data-widget-action="move-down" aria-label="Move widget down">
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="widget-control-btn"
+                      data-widget-action="collapse"
+                      data-widget-toggle
+                      data-widget-name="Recent activity"
+                      aria-expanded="true"
+                      aria-controls="widget-activity-body"
+                      aria-label="Collapse widget"
+                    >
+                      <span aria-hidden="true" data-icon class="widget-control-icon">
+                        <svg
+                          data-icon-minus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d="M3 7.25h10v1.5H3z" fill="currentColor" />
+                        </svg>
+                        <svg
+                          data-icon-plus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                          hidden
+                        >
+                          <path d="M7.25 3v4.25H3v1.5h4.25V13h1.5V8.75H13v-1.5H8.75V3z" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <span class="sr-only">Collapse widget</span>
+                    </button>
+                    <button type="button" class="widget-control-btn" data-widget-action="hide" aria-label="Hide widget">
+                      <span aria-hidden="true">✕</span>
+                      <span class="sr-only">Hide widget</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="widget-activity-body" data-widget-body class="space-y-6 pt-4">
+                  <div id="dashboard-activity-loading" class="space-y-3" aria-live="polite">
+                    <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-500">
+                      <span class="inline-flex h-2 w-2 animate-ping rounded-full bg-blue-500"></span>
+                      <span>Preparing your activity feed…</span>
+                    </div>
+                    <div class="rounded-2xl border border-dashed border-gray-200 bg-white/70 p-4 text-gray-500 dark:text-gray-500 animate-pulse dark:border-gray-700 dark:bg-gray-900/40" aria-hidden="true">
+                      <div class="h-3 w-2/3 rounded bg-gray-200/70 dark:bg-gray-700/70"></div>
+                      <div class="mt-2 h-3 w-1/2 rounded bg-gray-200/60 dark:bg-gray-700/60"></div>
+                    </div>
+                  </div>
+                  <div id="dashboard-activity-empty" class="hidden"></div>
+                  <ul id="dashboard-activity-list" class="hidden space-y-3" aria-live="polite" aria-busy="true"></ul>
+                </div>
+              </section>
+
+              <section
+                data-dashboard-widget="weather"
+                data-widget-title="Outdoor planning"
+                data-widget-theme="inverted"
+                class="dashboard-widget dashboard-widget--secondary bg-gradient-to-br from-sky-500 via-indigo-500 to-emerald-500 text-white rounded-lg shadow-sm border border-white/40 p-6 transition-shadow duration-200 hover:shadow-md"
+                aria-labelledby="weather-heading"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-3 border-b border-white/40 pb-4"
+                  data-widget-header
+                >
+                  <div class="flex min-w-0 flex-1 items-center gap-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-xl" aria-hidden="true">🌦️</span>
+                    <div class="min-w-0 space-y-1">
+                      <h2 id="weather-heading" class="text-xl font-semibold">Outdoor planning</h2>
+                      <p class="text-sm text-white/80">Check the forecast before excursions or sport.</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="hidden overflow-hidden rounded-full border border-white/40 sm:flex" role="group" aria-label="Reorder widget">
+                      <button type="button" class="widget-control-btn" data-widget-action="move-up" aria-label="Move widget up">
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button type="button" class="widget-control-btn" data-widget-action="move-down" aria-label="Move widget down">
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="widget-control-btn"
+                      data-widget-action="collapse"
+                      data-widget-toggle
+                      data-widget-name="Outdoor planning"
+                      aria-expanded="true"
+                      aria-controls="widget-outdoor-body"
+                      aria-label="Collapse widget"
+                    >
+                      <span aria-hidden="true" data-icon class="widget-control-icon">
+                        <svg
+                          data-icon-minus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d="M3 7.25h10v1.5H3z" fill="currentColor" />
+                        </svg>
+                        <svg
+                          data-icon-plus
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          focusable="false"
+                          hidden
+                        >
+                          <path d="M7.25 3v4.25H3v1.5h4.25V13h1.5V8.75H13v-1.5H8.75V3z" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <span class="sr-only">Collapse widget</span>
+                    </button>
+                    <button type="button" class="widget-control-btn" data-widget-action="hide" aria-label="Hide widget">
+                      <span aria-hidden="true">✕</span>
+                      <span class="sr-only">Hide widget</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="widget-outdoor-body" data-widget-body class="space-y-6 pt-4" aria-live="polite">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p id="weather-status" class="text-sm text-white/80" role="status" aria-live="polite" aria-atomic="true">Finding your forecast…</p>
+                    <button
+                      id="weather-refresh"
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                  <div id="weather-skeleton" class="space-y-4 rounded-2xl bg-white/10 p-4 text-white/80 animate-pulse" aria-hidden="true">
+                    <div class="flex items-end gap-4">
+                      <div class="h-14 w-14 rounded-full bg-white/20"></div>
+                      <div class="space-y-2">
+                        <div class="h-6 w-24 rounded bg-white/20"></div>
+                        <div class="h-4 w-32 rounded bg-white/10"></div>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                      <div class="h-4 w-24 rounded bg-white/10"></div>
+                      <div class="h-4 w-16 rounded bg-white/10"></div>
+                      <div class="h-4 w-20 rounded bg-white/10"></div>
+                      <div class="h-4 w-20 rounded bg-white/10"></div>
+                    </div>
+                  </div>
+                  <div id="weather-summary" class="hidden space-y-6">
+                    <div class="flex items-end gap-4">
+                      <span id="weather-icon" class="text-5xl" aria-hidden="true">☀️</span>
+                      <div>
+                        <p id="weather-temperature" class="text-5xl font-semibold">--°C</p>
+                        <p id="weather-description" class="text-lg text-white/90"></p>
+                      </div>
+                    </div>
+                    <dl class="grid grid-cols-2 gap-4 text-sm text-white/80">
+                      <div>
+                        <dt class="font-semibold text-white/90">Location</dt>
+                        <dd id="weather-location">Loading…</dd>
+                      </div>
+                      <div>
+                        <dt class="font-semibold text-white/90">Wind</dt>
+                        <dd id="weather-wind">-- km/h</dd>
+                      </div>
+                      <div>
+                        <dt class="font-semibold text-white/90">Rain chance</dt>
+                        <dd id="weather-rain">--%</dd>
+                      </div>
+                      <div>
+                        <dt class="font-semibold text-white/90">Sunset</dt>
+                        <dd id="weather-sunset">--:--</dd>
+                      </div>
+                    </dl>
+                    <p id="weather-footnote" class="text-xs text-white/70"></p>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="dashboard-secondary">
+              <section
+                id="dashboard-hidden-tray"
+                class="dashboard-widget-tray hidden rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-5 shadow-sm"
+              >
+                <div class="flex flex-wrap items-center gap-3">
+                  <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">Hidden dashboard widgets</p>
+                  <div id="dashboard-hidden-list" class="flex flex-wrap gap-2"></div>
+                  <button
+                    type="button"
+                    id="dashboard-show-all"
+                    class="hidden inline-flex items-center gap-2 rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-white/85 dark:text-gray-900 dark:text-gray-100 dark:hover:bg-white"
+                  >
+                    <span aria-hidden="true">↺</span>
+                    Restore all
+                  </button>
+                </div>
+                <p class="mt-3 text-xs text-gray-500 dark:text-gray-500">
+                  Use the widget controls to collapse, hide, or reorder cards. Restore any hidden widgets here.
+                </p>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section data-view="reminders" id="view-reminders" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <header class="view-header" aria-labelledby="reminders-view-heading">
+          <div class="view-header-copy">
+            <p class="view-eyebrow">Reminders</p>
+            <h2 id="reminders-view-heading" class="view-title">Stay ahead of cues and daily tasks</h2>
+            <p class="view-subtitle">Capture key actions, then filter and focus on what matters today.</p>
+          </div>
+          <div class="view-header-actions">
+            <div role="tablist" aria-label="Cues and daily tasks" class="tabs tabs-boxed view-tabs">
+              <button
+                id="tab-cues"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                class="tab tab-active"
+              >
+                Cues
+              </button>
+              <button
+                id="tab-daily"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                class="tab"
+              >
+                Today's List
+              </button>
+            </div>
+          </div>
+        </header>
+        <div id="cues-view" class="view-grid view-grid--two">
+          <aside class="view-panel view-panel--sidebar">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Reminder</h2>
+                <div class="flex items-center gap-3">
+                  <span id="syncStatus" class="sync-status" role="status" aria-live="polite" aria-atomic="true">Checking connection...</span>
+                  <button
+                    id="voiceBtn"
+                    type="button"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-lg shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600 text-white"
+                    title="Voice quick add"
+                    aria-label="Start voice input"
+                  >
+                    <span aria-hidden="true">🎙️</span>
+                    <span class="sr-only">Start voice input</span>
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <button id="openCueModal" type="button" class="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-400">Add New Cue</button>
+                <div id="status" class="text-sm" role="status" aria-live="polite" aria-atomic="true"></div>
+                <dialog id="cue-modal" class="modal">
+              <div class="modal-box space-y-6">
+                <div class="space-y-1">
+                  <h3 class="text-lg font-semibold text-base-content">Add a new Cue</h3>
+                  <p class="text-sm text-base-content/70">Capture a reminder with a title, timing, and details.</p>
+                </div>
+                <form id="cue-form" class="space-y-4" novalidate>
+                  <input type="hidden" id="cue-id-input" name="cueId" />
+                  <div class="space-y-2">
+                    <label for="title" class="block text-sm font-medium text-base-content/80">Title</label>
+                    <input
+                      id="title"
+                      class="input input-bordered w-full"
+                      placeholder="Reminder title"
+                      type="text"
+                    />
+                  </div>
+                  <div id="dateFeedback" class="text-sm text-base-content/70 hidden"></div>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                    <div class="space-y-2">
+                      <label for="date" class="block text-sm font-medium text-base-content/80">Date</label>
+                      <input id="date" type="date" class="input input-bordered w-full" />
+                    </div>
+                    <div class="space-y-2">
+                      <label for="time" class="block text-sm font-medium text-base-content/80">Time</label>
+                      <input id="time" type="time" class="input input-bordered w-full" />
+                    </div>
+                    <div class="space-y-2">
+                      <label for="priority" class="block text-sm font-medium text-base-content/80">Priority</label>
+                      <select id="priority" class="select select-bordered w-full">
+                        <option>High</option>
+                        <option selected>Medium</option>
+                        <option>Low</option>
+                      </select>
+                    </div>
+                    <div class="space-y-2">
+                      <label for="category" class="block text-sm font-medium text-base-content/80">Category</label>
+                      <input
+                        id="category"
+                        list="categorySuggestions"
+                        class="input input-bordered w-full"
+                        placeholder="e.g., School – Communication &amp; Families"
+                      />
+                      <datalist id="categorySuggestions">
+                        <option value="General"></option>
+                        <option value="General Appointments"></option>
+                        <option value="Home &amp; Personal"></option>
+                        <option value="School – Appointments/Meetings"></option>
+                        <option value="School – Communication &amp; Families"></option>
+                        <option value="School – Excursions &amp; Events"></option>
+                        <option value="School – Grading &amp; Assessment"></option>
+                        <option value="School – Prep &amp; Resources"></option>
+                        <option value="School – To-Do"></option>
+                        <option value="Wellbeing &amp; Support"></option>
+                      </datalist>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <label for="details" class="block text-sm font-medium text-base-content/80">Details</label>
+                    <textarea
+                      id="details"
+                      rows="3"
+                      class="textarea textarea-bordered w-full"
+                      placeholder="Add details or notes (optional)"
+                    ></textarea>
+                  </div>
+                  <div class="modal-action flex w-full flex-wrap items-center gap-3">
+                    <button id="cancelEditBtn" class="btn btn-ghost hidden" type="button">Cancel Edit</button>
+                    <div class="ml-auto flex gap-2">
+                      <button id="closeCueModal" type="button" class="btn btn-outline">Cancel</button>
+                      <button id="saveBtn" class="btn btn-primary" type="button">Save Cue</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <form method="dialog" class="modal-backdrop">
+                <button aria-label="Close">close</button>
+              </form>
+            </dialog>
+              </div>
+            </div>
+          </aside>
+          <section class="view-panel view-panel--main">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div class="flex gap-2 flex-wrap">
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="today" type="button">Today</button>
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="overdue" type="button">Overdue</button>
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="all" type="button">All</button>
+                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="done" type="button">Done</button>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div>
+                    <label for="categoryFilter" class="sr-only">Filter by category</label>
+                    <select
+                      id="categoryFilter"
+                      class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
+                    >
+                      <option value="all" selected>All categories</option>
+                      <option value="General">General</option>
+                      <option value="General Appointments">General Appointments</option>
+                      <option value="Home &amp; Personal">Home &amp; Personal</option>
+                      <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                      <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                      <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                      <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                      <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                      <option value="School – To-Do">School – To-Do</option>
+                      <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="sort" class="sr-only">Sort reminders</label>
+                    <select id="sort" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors">
+                      <option value="smart">Smart sort</option>
+                      <option value="time">Time</option>
+                      <option value="priority">Priority</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-6 mb-6 text-gray-600 dark:text-gray-400">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Today: <span id="inlineTodayCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <span>Overdue: <span id="inlineOverdueCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                  <span>Total: <span id="inlineTotalCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                  <span>Completed: <span id="inlineCompletedCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
+                </div>
+              </div>
+
+              <div id="remindersWrapper" class="space-y-4">
+                <div id="emptyState" class="text-sm"></div>
+                <ul id="reminderList" class="space-y-4"></ul>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="daily-list-view" class="hidden view-stack">
+          <section class="view-panel view-panel--main">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-4">
+              <h2 id="daily-list-header" class="text-2xl font-bold text-gray-900 dark:text-gray-100"></h2>
+              <p
+                id="daily-list-permission-notice"
+                class="hidden rounded-lg border border-amber-300/70 bg-amber-100/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-400/50 dark:bg-amber-500/10 dark:text-amber-100"
+                role="status"
+              >
+                Daily tasks are stored locally on this device because cloud sync isn't available right now.
+              </p>
+              <form id="quick-add-form" class="flex flex-col gap-3 sm:flex-row sm:items-stretch" novalidate>
+                <label for="quick-add-input" class="sr-only">Add a task</label>
+                <div class="flex flex-col gap-3 sm:flex-row sm:flex-1">
+                  <input
+                    id="quick-add-input"
+                    type="text"
+                    class="input input-bordered flex-1"
+                    placeholder="Quick add a task for today"
+                    autocomplete="off"
+                  />
+                  <button
+                    id="daily-voice-btn"
+                    type="button"
+                    class="btn btn-ghost sm:w-auto"
+                    title="Voice quick add"
+                    aria-label="Start voice input for today's list"
+                    aria-pressed="false"
+                  >
+                    <span aria-hidden="true">🎙️</span>
+                    <span class="sr-only">Start voice input for today's list</span>
+                  </button>
+                </div>
+                <button type="submit" class="btn btn-primary sm:w-auto">Add</button>
+              </form>
+              <div id="daily-tasks-container" class="mt-4 space-y-3"></div>
+              <button id="clear-completed-btn" type="button" class="btn btn-sm btn-outline mt-4" disabled>
+                Clear Completed Tasks
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+    <section data-view="planner" id="view-planner" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--wide">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <div class="flex flex-wrap items-center gap-4 justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Weekly Planner</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-500">Navigate between weeks to map lessons and key tasks.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="planner-prev" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400" type="button">◀</button>
+              <button id="planner-today" class="px-4 py-2 rounded-lg bg-purple-600 text-white" type="button">This Week</button>
+              <button id="planner-next" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400" type="button">▶</button>
+            </div>
+          </div>
+          <div class="mt-6">
+            <h3 id="planner-week" class="text-lg font-semibold text-gray-900 dark:text-gray-100"></h3>
+            <div id="planner-grid" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section data-view="notes" id="view-notes" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <div class="flex flex-wrap items-center gap-4 justify-between mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Quick Notes</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-500">Capture ideas and convert them into reusable snippets.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="bullet-btn" class="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400" type="button" aria-label="Insert bullet list">• List</button>
+              <button id="number-btn" class="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400" type="button" aria-label="Insert numbered list">1. List</button>
+            </div>
+          </div>
+          <div id="quick-note" class="min-h-[240px] p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/60 dark:bg-gray-900/40" contenteditable="true" aria-label="Quick note editor"></div>
+          <div class="flex flex-wrap gap-3 items-center mt-4">
+            <div class="flex gap-2">
+              <button id="save-note" class="px-4 py-2 rounded-lg bg-emerald-500 text-white" type="button">Save</button>
+              <button id="load-note" class="px-4 py-2 rounded-lg bg-blue-500 text-white" type="button">Load</button>
+              <button id="delete-note" class="px-4 py-2 rounded-lg bg-rose-500 text-white" type="button">Delete</button>
+              <button id="clear-note" class="px-4 py-2 rounded-lg bg-red-500 text-white" type="button">Clear</button>
+            </div>
+            <label for="saved-notes" class="text-sm font-medium text-gray-600 dark:text-gray-400">Saved notes</label>
+            <select id="saved-notes" class="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"></select>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section data-view="resources" id="view-resources" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--wide view-container--stacked">
+        <header class="view-header view-header--stack" aria-labelledby="resources-heading">
+          <div class="view-header-copy space-y-2">
+            <p class="view-eyebrow text-emerald-600 dark:text-emerald-300">Resource library</p>
+            <h2 id="resources-heading" class="view-title">Activities for every lesson phase</h2>
+            <p class="view-subtitle">Browse ready-to-go activities curated for HPE, English, and HASS.</p>
+          </div>
+          <p id="activity-status" class="hidden text-sm font-medium text-gray-500 dark:text-gray-500"></p>
+        </header>
+        <div class="view-body space-y-8">
+          <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            <div class="space-y-4 rounded-2xl border border-gray-200 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/50">
+              <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Subjects">
+                <button type="button" data-subject="all" data-default="true" class="subject-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">All subjects</button>
+                <button type="button" data-subject="HPE" class="subject-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">HPE</button>
+                <button type="button" data-subject="English" class="subject-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">English</button>
+                <button type="button" data-subject="HASS" class="subject-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">HASS</button>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Lesson phase">
+                  <button type="button" data-phase="any" class="phase-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">Any phase</button>
+                  <button type="button" data-phase="start" class="phase-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">Start</button>
+                  <button type="button" data-phase="middle" class="phase-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">Middle</button>
+                  <button type="button" data-phase="end" class="phase-filter inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">End</button>
+                </div>
+                <button
+                  type="button"
+                  id="activity-pinned-toggle"
+                  aria-pressed="false"
+                  class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1.5 text-sm font-semibold text-amber-600 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-200"
+                >
+                  <span aria-hidden="true" class="text-base">★</span>
+                  <span>Pinned</span>
+                </button>
+                <button
+                  type="button"
+                  id="activity-ideas-button"
+                  data-open-modal="activity-ideas"
+                  class="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
+                >
+                  <span aria-hidden="true" class="text-base" data-idea-icon>✨</span>
+                  <span data-idea-label>Get ideas</span>
+                </button>
+                <label for="activity-search" class="sr-only">Search activities</label>
+                <div class="relative order-last w-full sm:order-none sm:flex-1 sm:min-w-[220px] md:max-w-xs lg:max-w-sm">
+                  <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-gray-500" aria-hidden="true">🔍</span>
+                  <input
+                    id="activity-search"
+                    type="search"
+                    placeholder="Search activities"
+                    class="w-full rounded-full border border-gray-200 bg-white px-4 py-2 pl-10 text-sm text-gray-600 dark:text-gray-400 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="space-y-4 rounded-2xl border border-gray-200 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/50">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Add your own idea</h3>
+              <form id="idea-form" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input
+                  id="idea-title"
+                  name="idea-title"
+                  type="text"
+                  required
+                  placeholder="Title (e.g., 3-2-1 Exit Ticket)"
+                  class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100"
+                />
+                <select
+                  id="idea-subject"
+                  name="idea-subject"
+                  required
+                  class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100"
+                >
+                  <option value="" disabled selected>Subject</option>
+                  <option>HPE</option><option>English</option><option>HASS</option>
+                </select>
+                <select
+                  id="idea-phase"
+                  name="idea-phase"
+                  required
+                  class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100"
+                >
+                  <option value="" disabled selected>Phase</option>
+                  <option value="start">Start</option><option value="middle">Middle</option><option value="end">End</option>
+                </select>
+                <input
+                  id="idea-url"
+                  name="idea-url"
+                  type="url"
+                  placeholder="Optional link (https://…)"
+                  class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100 sm:col-span-2"
+                />
+                <input
+                  id="idea-keywords"
+                  name="idea-keywords"
+                  type="text"
+                  placeholder="Keywords (comma, separated)"
+                  class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100 sm:col-span-2"
+                />
+                <textarea
+                  id="idea-description"
+                  name="idea-description"
+                  rows="3"
+                  placeholder="Short description"
+                  class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100 sm:col-span-2"
+                ></textarea>
+                <button
+                  id="idea-save"
+                  type="submit"
+                  class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 sm:col-span-2"
+                >
+                  Save idea
+                </button>
+              </form>
+              <div class="flex flex-wrap gap-2" id="idea-quick-filters">
+                <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500">View</span>
+                <button id="filter-mine" type="button" class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">
+                  My ideas
+                </button>
+                <button id="filter-all" type="button" class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-400">
+                  All ideas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          id="activity-ideas"
+          class="hidden space-y-4 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 p-6 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="space-y-1">
+              <h3 class="text-lg font-semibold text-emerald-900 dark:text-emerald-100">Fresh lesson ideas</h3>
+              <p id="activity-ideas-summary" class="hidden text-sm text-emerald-700/80 dark:text-emerald-200/80"></p>
+            </div>
+            <button
+              type="button"
+              id="activity-ideas-clear"
+              class="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white/80 px-3 py-1.5 text-sm font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 dark:border-emerald-400/60 dark:bg-emerald-500/10 dark:text-emerald-200"
+            >
+              Clear ideas
+            </button>
+          </div>
+          <div id="activity-ideas-loading" class="hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="animate-pulse rounded-2xl border border-emerald-200/70 bg-white/80 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-gray-900/50">
+              <div class="h-5 w-3/4 rounded bg-emerald-200/70 dark:bg-emerald-500/40"></div>
+              <div class="mt-4 h-3 w-full rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-2 h-3 w-4/5 rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-4 h-8 w-2/3 rounded-full bg-emerald-200/60 dark:bg-emerald-500/30"></div>
+            </div>
+            <div class="animate-pulse rounded-2xl border border-emerald-200/70 bg-white/80 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-gray-900/50">
+              <div class="h-5 w-2/3 rounded bg-emerald-200/70 dark:bg-emerald-500/40"></div>
+              <div class="mt-4 h-3 w-full rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-2 h-3 w-3/4 rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-4 h-8 w-1/2 rounded-full bg-emerald-200/60 dark:bg-emerald-500/30"></div>
+            </div>
+            <div class="animate-pulse rounded-2xl border border-emerald-200/70 bg-white/80 p-5 shadow-sm max-sm:hidden dark:border-emerald-500/30 dark:bg-gray-900/50">
+              <div class="h-5 w-1/2 rounded bg-emerald-200/70 dark:bg-emerald-500/40"></div>
+              <div class="mt-4 h-3 w-full rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-2 h-3 w-2/3 rounded bg-emerald-200/50 dark:bg-emerald-500/20"></div>
+              <div class="mt-4 h-8 w-2/3 rounded-full bg-emerald-200/60 dark:bg-emerald-500/30"></div>
+            </div>
+          </div>
+          <p
+            id="activity-ideas-empty"
+            class="hidden rounded-xl border border-emerald-200/70 bg-white/80 p-6 text-sm text-emerald-800 shadow-sm dark:border-emerald-500/30 dark:bg-gray-900/60 dark:text-emerald-100"
+          >
+            No ideas yet. Try adjusting your notes and generate again.
+          </p>
+          <div id="activity-ideas-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        </div>
+        <div id="activity-loading" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="animate-pulse rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/40">
+            <div class="h-5 w-3/5 rounded bg-gray-200/80 dark:bg-gray-700/60"></div>
+            <div class="mt-4 h-3 w-full rounded bg-gray-200/60 dark:bg-gray-700/50"></div>
+            <div class="mt-2 h-3 w-4/5 rounded bg-gray-200/60 dark:bg-gray-700/50"></div>
+            <div class="mt-4 h-8 w-1/2 rounded-full bg-gray-200/70 dark:bg-gray-700/60"></div>
+          </div>
+          <div class="animate-pulse rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/40">
+            <div class="h-5 w-2/3 rounded bg-gray-200/80 dark:bg-gray-700/60"></div>
+            <div class="mt-4 h-3 w-full rounded bg-gray-200/60 dark:bg-gray-700/50"></div>
+            <div class="mt-2 h-3 w-3/4 rounded bg-gray-200/60 dark:bg-gray-700/50"></div>
+            <div class="mt-4 h-8 w-1/3 rounded-full bg-gray-200/70 dark:bg-gray-700/60"></div>
+          </div>
+          <div class="animate-pulse rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/40 max-sm:hidden sm:block">
+            <div class="h-5 w-1/2 rounded bg-gray-200/80 dark:bg-gray-700/60"></div>
+            <div class="mt-4 h-3 w-full rounded bg-gray-200/60 dark:bg-gray-700/50"></div>
+            <div class="mt-2 h-3 w-2/3 rounded bg-gray-200/60 dark:bg-gray-700/50"></div>
+            <div class="mt-4 h-8 w-2/5 rounded-full bg-gray-200/70 dark:bg-gray-700/60"></div>
+          </div>
+        </div>
+        <div id="activity-empty" class="hidden"></div>
+        <div id="activity-results" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+      </div>
+      </div>
+    </section>
+    <section data-view="templates" id="view-templates" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-8">
+          <div id="templates-empty" class="mb-2"></div>
+          <div class="grid gap-6 lg:grid-cols-2">
+            <article class="card border border-base-200 bg-base-100 shadow-sm">
+              <div class="card-body space-y-4">
+                <div class="space-y-1">
+                  <h3 class="card-title text-lg">Starter &amp; Review Cycle</h3>
+                  <p class="text-sm text-base-content/70">Prime attention with retrieval prompts, a mini teach, and reflection prompts.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge badge-outline">Warm up</span>
+                  <span class="badge badge-outline">Check for understanding</span>
+                  <span class="badge badge-outline">Exit ticket</span>
+                </div>
+                <div class="card-actions justify-between">
+                  <button type="button" class="btn btn-sm btn-primary" data-template="starter">Use template</button>
+                  <button type="button" class="btn btn-sm btn-ghost" data-template-preview="starter">Preview</button>
+                </div>
+              </div>
+            </article>
+            <article class="card border border-base-200 bg-base-100 shadow-sm">
+              <div class="card-body space-y-4">
+                <div class="space-y-1">
+                  <h3 class="card-title text-lg">Workshop Rotation</h3>
+                  <p class="text-sm text-base-content/70">Guide stations for small group instruction, independent practice, and extension tasks.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge badge-outline">3x20 minute blocks</span>
+                  <span class="badge badge-outline">Formative notes</span>
+                  <span class="badge badge-outline">Extension</span>
+                </div>
+                <div class="card-actions justify-between">
+                  <button type="button" class="btn btn-sm btn-primary" data-template="rotation">Use template</button>
+                  <button type="button" class="btn btn-sm btn-ghost" data-template-preview="rotation">Preview</button>
+                </div>
+              </div>
+            </article>
+            <article class="card border border-base-200 bg-base-100 shadow-sm">
+              <div class="card-body space-y-4">
+                <div class="space-y-1">
+                  <h3 class="card-title text-lg">Assessment Conference</h3>
+                  <p class="text-sm text-base-content/70">Schedule checkpoints, moderation prompts, and next step actions for feedback days.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge badge-outline">Feedback focus</span>
+                  <span class="badge badge-outline">Student evidence</span>
+                  <span class="badge badge-outline">Parent follow up</span>
+                </div>
+                <div class="card-actions justify-between">
+                  <button type="button" class="btn btn-sm btn-primary" data-template="conference">Use template</button>
+                  <button type="button" class="btn btn-sm btn-ghost" data-template-preview="conference">Preview</button>
+                </div>
+              </div>
+            </article>
+            <article class="card border border-base-200 bg-base-100 shadow-sm">
+              <div class="card-body space-y-4">
+                <div class="space-y-1">
+                  <h3 class="card-title text-lg">Revision Sprint</h3>
+                  <p class="text-sm text-base-content/70">Map retrieval cycles, mini challenges, and stretch goals leading into exams.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge badge-outline">Retrieval</span>
+                  <span class="badge badge-outline">Group challenge</span>
+                  <span class="badge badge-outline">Goal setting</span>
+                </div>
+                <div class="card-actions justify-between">
+                  <button type="button" class="btn btn-sm btn-primary" data-template="revision">Use template</button>
+                  <button type="button" class="btn btn-sm btn-ghost" data-template-preview="revision">Preview</button>
+                </div>
+              </div>
+            </article>
+          </div>
+          <div class="divider">Build your own</div>
+          <form id="template-create-form" class="space-y-4" novalidate>
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="form-control w-full">
+                <span class="label-text font-semibold">Template name</span>
+                <input type="text" class="input input-bordered" placeholder="e.g. Station rotation" required />
+              </label>
+              <label class="form-control w-full">
+                <span class="label-text font-semibold">Subject focus</span>
+                <input type="text" class="input input-bordered" placeholder="HPE, English, multi-age..." />
+              </label>
+            </div>
+            <label class="form-control">
+              <span class="label-text font-semibold">Guiding notes</span>
+              <textarea class="textarea textarea-bordered h-32" placeholder="Outline the flow, prompts, or equipment needed"></textarea>
+            </label>
+            <div class="flex flex-wrap items-center gap-3">
+              <label class="label cursor-pointer gap-2">
+                <input type="checkbox" class="checkbox checkbox-primary" id="template-share" />
+                <span class="label-text">Share with my team workspace</span>
+              </label>
+              <button type="submit" class="btn btn-primary btn-sm md:btn-md">Save template</button>
+              <button type="reset" class="btn btn-outline btn-sm md:btn-md">Reset</button>
+            </div>
+          </form>
+        </article>
+      </div>
+    </section>
+    <section data-view="settings" id="view-settings" class="app-view" hidden tabindex="-1">
+      <div class="view-container view-container--narrow">
+        <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md space-y-8">
+          <div id="settings-empty" class="mb-2"></div>
+          <form id="settings-form" class="space-y-8" novalidate>
+            <section class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-base-content">Notifications</h3>
+                <span class="badge badge-outline">Syncs with Supabase</span>
+              </div>
+              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-3">
+                <label class="label cursor-pointer justify-between gap-4">
+                  <span class="label-text">Daily briefing email</span>
+                  <input type="checkbox" class="toggle toggle-primary" id="setting-briefing" checked />
+                </label>
+                <div class="flex flex-wrap items-center gap-3 ps-1">
+                  <label for="setting-briefing-time" class="label-text text-sm">Send at</label>
+                  <input id="setting-briefing-time" type="time" value="07:00" class="input input-sm input-bordered w-28" />
+                </div>
+                <label class="label cursor-pointer justify-between gap-4">
+                  <span class="label-text">Lesson reminders</span>
+                  <input type="checkbox" class="toggle toggle-primary" id="setting-lesson-reminders" checked />
+                </label>
+                <label class="label cursor-pointer justify-between gap-4">
+                  <span class="label-text">Quiet hours</span>
+                  <input type="checkbox" class="toggle toggle-primary" id="setting-quiet-hours" />
+                </label>
+                <div class="grid gap-2 sm:grid-cols-2" aria-hidden="true">
+                  <div class="stat bg-base-200/60 shadow-inner">
+                    <div class="stat-title">Notifications today</div>
+                    <div class="stat-value text-secondary">5</div>
+                    <div class="stat-desc text-base-content/70">Auto clears overnight</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="space-y-4">
+              <h3 class="text-lg font-semibold text-base-content">Appearance</h3>
+              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-4">
+                <div class="flex flex-wrap gap-3">
+                  <label class="btn btn-sm btn-outline" aria-pressed="true">
+                    <input type="radio" name="accent" class="sr-only" value="emerald" checked />
+                    Emerald accent
+                  </label>
+                  <label class="btn btn-sm btn-outline">
+                    <input type="radio" name="accent" class="sr-only" value="violet" />
+                    Violet accent
+                  </label>
+                  <label class="btn btn-sm btn-outline">
+                    <input type="radio" name="accent" class="sr-only" value="amber" />
+                    Amber accent
+                  </label>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <label class="form-control">
+                    <span class="label-text">Interface density</span>
+                    <select class="select select-bordered" id="setting-density">
+                      <option value="comfortable" selected>Comfortable</option>
+                      <option value="compact">Compact</option>
+                      <option value="spacious">Spacious</option>
+                    </select>
+                  </label>
+                  <label class="form-control">
+                    <span class="label-text">Default dashboard view</span>
+                    <select class="select select-bordered" id="setting-default-view">
+                      <option value="dashboard" selected>Dashboard</option>
+                      <option value="reminders">Reminders</option>
+                      <option value="planner">Planner</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </section>
+            <section class="space-y-4">
+              <h3 class="text-lg font-semibold text-base-content">Integrations</h3>
+              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-4">
+                <p class="text-sm text-base-content/70">Connect tools you already use to keep Memory Cue in sync.</p>
+                <div class="rounded-box border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <div class="flex items-start gap-3">
+                    <span class="text-2xl" aria-hidden="true">📅</span>
+                    <div class="flex-1 space-y-2">
+                      <h4 class="font-medium text-base-content">Google Calendar Sync</h4>
+                      <p class="text-sm text-base-content/70">
+                        Deploy the companion Google Apps Script to bridge Memory Cue reminders with your calendar. Follow the deployment guide and paste the resulting Web App URL into the mobile settings screen.
+                      </p>
+                      <a
+                        class="btn btn-primary btn-sm"
+                        href="https://script.google.com/home/start"
+                        rel="noopener"
+                        target="_blank"
+                      >
+                        Open Google Apps Script setup
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <button type="button" class="btn btn-outline justify-start gap-2" data-integration="google-calendar">
+                    <span aria-hidden="true">📅</span> Link Google Calendar
+                  </button>
+                  <button type="button" class="btn btn-outline justify-start gap-2" data-integration="onenote">
+                    <span aria-hidden="true">🗒️</span> Connect OneNote
+                  </button>
+                  <button type="button" class="btn btn-outline justify-start gap-2" data-integration="classroom">
+                    <span aria-hidden="true">🏫</span> Sync Google Classroom
+                  </button>
+                  <button type="button" class="btn btn-outline justify-start gap-2" data-integration="teams">
+                    <span aria-hidden="true">💬</span> Microsoft Teams posts
+                  </button>
+                </div>
+              </div>
+            </section>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <progress class="progress progress-primary w-40" value="32" max="100"></progress>
+                <span class="text-sm text-base-content/70">Cloud storage 32% full</span>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" class="btn btn-ghost btn-sm">Reset</button>
+                <button type="submit" class="btn btn-primary btn-sm">Save preferences</button>
+              </div>
+            </div>
+          </form>
+        </article>
+      </div>
+    </section>
+  </main>
+  <!-- BEGIN GPT CHANGE: live region -->
+  <div id="live-status" class="sr-only" aria-live="polite" role="status"></div>
+  <!-- END GPT CHANGE -->
+  <nav
+    id="quick-action-toolbar"
+    aria-label="Quick actions"
+    class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 max-sm:bottom-3 max-sm:right-3"
+  >
+    <button
+      type="button"
+      data-quick-action="reminder"
+      class="quick-action-btn bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-300"
+      title="Add reminder"
+      aria-label="Add reminder"
+    >
+      <span aria-hidden="true">🔔</span>
+      <span class="sr-only">Add reminder</span>
+    </button>
+    <button
+      type="button"
+      data-quick-action="note"
+      class="quick-action-btn bg-white/90 text-xl text-gray-900 dark:text-gray-100 shadow-md backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 hover:bg-white dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:focus-visible:outline-gray-500 border border-white/60 dark:border-gray-700/60"
+      title="Create note"
+      aria-label="Create note"
+    >
+      <span aria-hidden="true">📝</span>
+      <span class="sr-only">Create note</span>
+    </button>
+    <button
+      type="button"
+      data-quick-action="planner"
+      class="quick-action-btn bg-emerald-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600"
+      title="New lesson plan"
+      aria-label="New lesson plan"
+    >
+      <span aria-hidden="true">🗓️</span>
+      <span class="sr-only">New lesson plan</span>
+    </button>
+  </nav>
+  <footer class="bg-gray-900 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <p class="text-sm text-gray-500 dark:text-gray-500">© <span id="year"></span> Memory Cue. All rights reserved.</p>
+        <div class="flex gap-4">
+          <a href="#" class="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">Privacy</a>
+          <a href="#" class="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">Terms</a>
+          <a href="#" class="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">Support</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <div id="activity-ideas-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
+    <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center">
+      <div
+        class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-900"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ideas-title"
+      >
+        <div class="flex items-center justify-between">
+          <h3 id="ideas-title" class="text-lg font-semibold">Get activity ideas</h3>
+          <button
+            type="button"
+            data-close-modal
+            class="rounded px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="mt-4 space-y-3" id="ideas-body">
+          <form id="activity-ideas-form" class="space-y-5" novalidate>
+            <div class="space-y-2">
+              <h2 id="activity-ideas-modal-title" class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Generate fresh lesson ideas
+              </h2>
+              <p id="activity-ideas-modal-description" class="text-sm text-gray-500 dark:text-gray-500">
+                Share your lesson focus and we'll suggest practical activities tailored to your class.
+              </p>
+            </div>
+            <label class="block text-sm font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-400">
+              Subject
+              <select
+                name="subject"
+                class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                required
+                data-autofocus="true"
+              >
+                <option value="HPE">HPE</option>
+                <option value="English">English</option>
+                <option value="HASS">HASS</option>
+              </select>
+            </label>
+            <label class="block text-sm font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-400">
+              Lesson phase
+              <select
+                name="phase"
+                class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                required
+              >
+                <option value="start">Start</option>
+                <option value="middle">Middle</option>
+                <option value="end">End</option>
+              </select>
+            </label>
+            <label class="block text-sm font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-400">
+              Notes for AI (optional)
+              <textarea
+                name="notes"
+                rows="4"
+                class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                placeholder="Specific learning goals, equipment available, class dynamics…"
+              ></textarea>
+            </label>
+            <div class="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                data-close-modal
+                class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                data-ideas-submit
+                class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+              >
+                <span aria-hidden="true">✨</span>
+                <span>Generate ideas</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./app.js" defer></script>
+  <script src="./js/update-footer-year.js" defer></script>
+  <script src="./js/register-service-worker.js" defer></script>
+</body>
+</html>
+<!-- BEGIN GPT FIX: change-summary -->
+<!--
+CHANGE SUMMARY:
+- Reminders: ensured skeleton/list/empty containers live in the body and cleared header placeholders.
+- Lessons: confirmed duplicate lesson-location fields removed so one pair remains.
+- Density: applied p-4 on mobile with sm:p-6, adjusted header/body spacing, hero gap set to gap-6 lg:gap-10, and added skeleton opacity helper.
+- TODOs: none.
+-->
+<!-- END GPT FIX -->
