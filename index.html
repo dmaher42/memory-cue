@@ -110,12 +110,37 @@
     }
   </style>
   <!-- END GPT FIX: compact-skeleton-style -->
+  <style>
+    .btn-sm {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      transition: border-color 150ms ease, background-color 150ms ease;
+    }
+    .btn-sm:hover {
+      border-color: rgba(148, 163, 184, 0.9);
+      background-color: rgba(148, 163, 184, 0.08);
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+  </style>
   <script src="./js/runtime-env-shim.js" defer></script>
-  <script type="module" src="./js/main.js" defer></script>
 </head>
 <body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen">
   <a class="skip-link" href="#mainContent">Skip to main content</a>
-  <!-- Modern Navigation -->
   <nav
     aria-label="Primary"
     class="relative fixed top-0 z-50 w-full border-b border-base-200/70 bg-base-100/80 backdrop-blur"
@@ -171,81 +196,7 @@
         </ul>
       </div>
       <div class="navbar-end">
-        <div class="flex flex-col items-end gap-2">
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <button
-              id="theme-toggle"
-              type="button"
-              class="btn btn-sm btn-ghost text-base-content"
-              data-icon-dark="🌙"
-              data-icon-light="☀️"
-            ></button>
-            <div class="dropdown dropdown-end">
-              <button
-                type="button"
-                class="btn btn-sm btn-ghost gap-2 text-base-content"
-                aria-haspopup="menu"
-                aria-expanded="false"
-              >
-                <span>Theme</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-4"
-                  aria-hidden="true"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <ul
-                id="theme-menu"
-                class="menu dropdown-content bg-base-100 text-base-content rounded-box z-[1] mt-3 w-48 p-2 shadow"
-                role="menu"
-                tabindex="0"
-              >
-                <li><a href="#" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
-                <li><a href="#" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
-                <li><a href="#" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
-                <li><a href="#" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
-                <li><a href="#" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
-                <li><a href="#" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
-              </ul>
-            </div>
-            <div
-              id="user-badge"
-              hidden
-              class="items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary-content shadow"
-            >
-              <span
-                id="user-badge-initial"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-content"
-                aria-hidden="true"
-              >T</span>
-              <span id="user-badge-email" class="max-w-[160px] truncate"></span>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <form id="auth-form" class="flex flex-wrap items-center justify-end gap-2" hidden>
-              <label for="auth-email" class="sr-only">Email address</label>
-              <input
-                id="auth-email"
-                type="email"
-                required
-                autocomplete="email"
-                placeholder="you@school.edu"
-                class="input input-sm input-bordered w-48"
-              />
-              <button id="sign-in-btn" type="submit" class="btn btn-sm btn-primary">Send link</button>
-            </form>
-            <button id="sign-out-btn" type="button" hidden class="btn btn-sm btn-error">Sign out</button>
-          </div>
-          <!-- BEGIN GPT CHANGE: auth feedback -->
-          <div id="auth-feedback" role="status" aria-live="polite" hidden></div>
-          <!-- END GPT CHANGE -->
-        </div>
+        <button id="theme-toggle" type="button" class="btn btn-sm btn-ghost text-base-content">Toggle theme</button>
       </div>
     </div>
     <div
@@ -308,6 +259,7 @@
                   <button class="tag" type="button">Medium</button>
                   <button class="tag" type="button">High</button>
                 </div>
+                <p class="text-neutral-400">Group reading circles with comprehension checkpoints.</p>
               </div>
             </div>
             <ul class="space-y-2">
@@ -379,6 +331,15 @@
             </ul>
           </section>
         </div>
+        <section class="space-y-3">
+          <h2 class="text-lg font-medium">Quick links</h2>
+          <div class="flex flex-wrap gap-2 text-sm">
+            <a href="#reminders" class="btn-sm">Open Reminders</a>
+            <a href="#planner" class="btn-sm">Weekly Planner</a>
+            <a href="#notes" class="btn-sm">Daily Notes</a>
+          </div>
+        </section>
+      </section>
 
         <section class="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 space-y-3">
           <div class="flex items-center justify-between">
@@ -594,8 +555,11 @@
           <a href="#" class="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">Terms</a>
           <a href="#" class="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">Support</a>
         </div>
-      </div>
+      </section>
     </div>
+  </main>
+  <footer class="border-t border-base-200/70 py-6 text-center text-sm text-base-content/70">
+    © <span id="footer-year"></span> Memory Cue. All rights reserved.
   </footer>
   <div id="activity-ideas-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
     <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center">
@@ -698,12 +662,3 @@
   <script src="./js/register-service-worker.js" defer></script>
 </body>
 </html>
-<!-- BEGIN GPT FIX: change-summary -->
-<!--
-CHANGE SUMMARY:
-- Reminders: ensured skeleton/list/empty containers live in the body and cleared header placeholders.
-- Lessons: confirmed duplicate lesson-location fields removed so one pair remains.
-- Density: applied p-4 on mobile with sm:p-6, adjusted header/body spacing, hero gap set to gap-6 lg:gap-10, and added skeleton opacity helper.
-- TODOs: none.
--->
-<!-- END GPT FIX -->
