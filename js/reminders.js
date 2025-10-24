@@ -279,8 +279,31 @@ export async function initReminders(sel = {}) {
     signOut;
 
   const firebaseDeps = sel.firebaseDeps;
+  const importModule = typeof sel.importModule === 'function'
+    ? sel.importModule
+    : (specifier) => import(specifier);
+  const globalScope = getGlobalScope();
 
-   // Notes (runs before Firebase modules load)
+  let firebaseModulesLoaded = false;
+  let firebaseReady = false;
+
+  const recordFirebaseAvailability = (available) => {
+    if (!globalScope) return;
+    const targets = [globalScope];
+    if (globalScope.window && !targets.includes(globalScope.window)) {
+      targets.push(globalScope.window);
+    }
+    const unavailable = !available;
+    targets.forEach((target) => {
+      try {
+        target.__memoryCueFirebaseUnavailable__ = unavailable;
+      } catch {
+        // Ignore write failures (e.g., frozen global scope)
+      }
+    });
+  };
+
+  // Notes (runs before Firebase modules load)
    function initNotebook() {
      if (!notesEl) return;
 
@@ -417,64 +440,92 @@ export async function initReminders(sel = {}) {
 
   if (firebaseDeps) {
     ({ initializeApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
+    firebaseModulesLoaded = true;
   } else {
     try {
-      ({ initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
-      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
-      ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
+      ({ initializeApp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
+      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+      ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
+      firebaseModulesLoaded = true;
     } catch (err) {
+      firebaseModulesLoaded = false;
       console.warn('Firebase modules failed to load:', err);
       toast('Firebase failed to load; notes available offline');
-      return;
-     }
-   }
-
-   // Firebase
-  const firebaseConfig = {
-    apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-    authDomain: 'memory-cue-app.firebaseapp.com',
-    projectId: 'memory-cue-app',
-    storageBucket: 'memory-cue-app.firebasestorage.app',
-    messagingSenderId: '751284466633',
-    appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-    measurementId: 'G-R0V4M7VCE6'
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  // Firestore offline persistence: prefer multi-tab, fallback to single-tab
-  // Runs once per app load, before any reads/writes/listeners.
-  (function initFirestorePersistence() {
-    const scope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
-    if (!scope) {
-      return;
+      recordFirebaseAvailability(false);
     }
-    // Guard against accidental double-initialization
-    if (scope.__persistenceInitialized__) return;
-    scope.__persistenceInitialized__ = true;
+  }
 
-    (async () => {
-      try {
-        await enableMultiTabIndexedDbPersistence(db);
-        console.info('[Firestore] Persistence: multi-tab enabled');
-      } catch (err) {
-        if (err && err.code === 'failed-precondition') {
-          // Multi-tab not available (e.g., private mode or another constraint) -> try single-tab
-          try {
-            await enableIndexedDbPersistence(db);
-            console.info('[Firestore] Persistence: single-tab fallback enabled');
-          } catch (e2) {
-            console.warn('[Firestore] Persistence disabled (single-tab fallback failed):', e2?.code || e2);
-          }
-        } else if (err && err.code === 'unimplemented') {
-          // IndexedDB not supported in this browser/environment
-          console.warn('[Firestore] Persistence not supported in this browser (online-only).');
-        } else {
-          console.warn('[Firestore] Persistence initialization error:', err?.code || err);
-        }
+  let app = null;
+  let db = null;
+  let auth = null;
+
+  if (firebaseModulesLoaded && typeof initializeApp === 'function' && typeof getFirestore === 'function' && typeof getAuth === 'function') {
+    try {
+      const firebaseConfig = {
+        apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
+        authDomain: 'memory-cue-app.firebaseapp.com',
+        projectId: 'memory-cue-app',
+        storageBucket: 'memory-cue-app.firebasestorage.app',
+        messagingSenderId: '751284466633',
+        appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
+        measurementId: 'G-R0V4M7VCE6'
+      };
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      firebaseReady = true;
+      recordFirebaseAvailability(true);
+    } catch (err) {
+      firebaseReady = false;
+      console.warn('Firebase initialization failed:', err);
+      toast('Firebase failed to load; notes available offline');
+      recordFirebaseAvailability(false);
+    }
+  } else if (!firebaseModulesLoaded) {
+    firebaseReady = false;
+  } else {
+    firebaseReady = false;
+    recordFirebaseAvailability(false);
+  }
+
+  if (firebaseReady && typeof enableMultiTabIndexedDbPersistence === 'function' && typeof enableIndexedDbPersistence === 'function') {
+    // Firestore offline persistence: prefer multi-tab, fallback to single-tab
+    // Runs once per app load, before any reads/writes/listeners.
+    (function initFirestorePersistence() {
+      const scope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+      if (!scope) {
+        return;
       }
+      // Guard against accidental double-initialization
+      if (scope.__persistenceInitialized__) return;
+      scope.__persistenceInitialized__ = true;
+
+      (async () => {
+        try {
+          await enableMultiTabIndexedDbPersistence(db);
+          console.info('[Firestore] Persistence: multi-tab enabled');
+        } catch (err) {
+          if (err && err.code === 'failed-precondition') {
+            // Multi-tab not available (e.g., private mode or another constraint) -> try single-tab
+            try {
+              await enableIndexedDbPersistence(db);
+              console.info('[Firestore] Persistence: single-tab fallback enabled');
+            } catch (e2) {
+              console.warn('[Firestore] Persistence disabled (single-tab fallback failed):', e2?.code || e2);
+            }
+          } else if (err && err.code === 'unimplemented') {
+            // IndexedDB not supported in this browser/environment
+            console.warn('[Firestore] Persistence not supported in this browser (online-only).');
+          } else {
+            console.warn('[Firestore] Persistence initialization error:', err?.code || err);
+          }
+        }
+      })();
     })();
-  })();
-  const auth = getAuth(app);
+  }
+
+  if (firebaseReady && typeof getAuth === 'function') {
+    auth = getAuth(app);
+  }
 
   // State
   let items = [];
@@ -489,6 +540,30 @@ export async function initReminders(sel = {}) {
   let editingId = null;
   const reminderTimers = {};
   let scheduledReminders = {};
+
+  function applySignedOutState() {
+    userId = null;
+    syncStatus?.classList.remove('online', 'error');
+    if (syncStatus) {
+      syncStatus.classList.add('offline');
+      syncStatus.textContent = 'Offline';
+    }
+    googleSignInBtn?.classList.remove('hidden');
+    googleSignOutBtn?.classList.add('hidden');
+    if (googleAvatar) {
+      googleAvatar.classList.add('hidden');
+      googleAvatar.src = '';
+    }
+    if (googleUserName) {
+      googleUserName.textContent = '';
+    }
+    unsubscribe?.();
+    unsubscribe = null;
+    hydrateOfflineReminders();
+    render();
+    persistItems();
+    rescheduleAllReminders();
+  }
 
   function loadOfflineRemindersFromStorage() {
     if (typeof localStorage === 'undefined') return [];
@@ -707,46 +782,55 @@ export async function initReminders(sel = {}) {
   }
 
   // Auth
+  const authReady = firebaseReady && auth && typeof GoogleAuthProvider === 'function';
+
   googleSignInBtn?.addEventListener('click', async () => {
+    if (!authReady || typeof signInWithPopup !== 'function' || typeof signInWithRedirect !== 'function') {
+      toast('Sign-in unavailable offline');
+      return;
+    }
     const provider = new GoogleAuthProvider();
     try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch { toast('Google sign-in failed'); } }
   });
-  getRedirectResult(auth).catch(()=>{});
-  googleSignOutBtn?.addEventListener('click', async () => { try { await signOut(auth); toast('Signed out'); } catch { toast('Sign-out failed'); } });
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      userId = user.uid;
-      syncStatus?.classList.remove('offline','error');
-      syncStatus?.classList.add('online');
-      if(syncStatus) syncStatus.textContent = 'Online';
-      googleSignInBtn?.classList.add('hidden');
-      googleSignOutBtn?.classList.remove('hidden');
-      if(googleAvatar){ if(user.photoURL){ googleAvatar.classList.remove('hidden'); googleAvatar.src=user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src=''; } }
-      if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
-      setupFirestoreSync();
-      await migrateOfflineRemindersIfNeeded();
-    } else {
-      userId = null;
-      syncStatus?.classList.remove('online','error');
-      if(syncStatus){
-        syncStatus.classList.add('offline');
-        syncStatus.textContent = 'Offline';
-      }
-      googleSignInBtn?.classList.remove('hidden');
-      googleSignOutBtn?.classList.add('hidden');
-      if(googleAvatar){ googleAvatar.classList.add('hidden'); googleAvatar.src=''; }
-      if(googleUserName) googleUserName.textContent='';
-      unsubscribe?.();
-      unsubscribe = null;
-      hydrateOfflineReminders();
-      render();
-      persistItems();
-      rescheduleAllReminders();
+
+  if (authReady && typeof getRedirectResult === 'function') {
+    getRedirectResult(auth).catch(()=>{});
+  }
+
+  googleSignOutBtn?.addEventListener('click', async () => {
+    if (!authReady || typeof signOut !== 'function') {
+      toast('Sign-out unavailable offline');
+      return;
     }
+    try { await signOut(auth); toast('Signed out'); } catch { toast('Sign-out failed'); }
   });
+
+  if (authReady && typeof onAuthStateChanged === 'function') {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        userId = user.uid;
+        syncStatus?.classList.remove('offline','error');
+        syncStatus?.classList.add('online');
+        if(syncStatus) syncStatus.textContent = 'Online';
+        googleSignInBtn?.classList.add('hidden');
+        googleSignOutBtn?.classList.remove('hidden');
+        if(googleAvatar){ if(user.photoURL){ googleAvatar.classList.remove('hidden'); googleAvatar.src=user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src=''; } }
+        if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
+        setupFirestoreSync();
+        await migrateOfflineRemindersIfNeeded();
+      } else {
+        applySignedOutState();
+      }
+    });
+  } else {
+    applySignedOutState();
+  }
 
   // Firestore sync
   function setupFirestoreSync(){
+    if(!firebaseReady || !db || typeof collection !== 'function' || typeof query !== 'function' || typeof orderBy !== 'function' || typeof onSnapshot !== 'function'){
+      return;
+    }
     if(!userId){
       hydrateOfflineReminders();
       render();
@@ -774,7 +858,7 @@ export async function initReminders(sel = {}) {
   }
 
   async function saveToFirebase(item){
-    if(!userId) return;
+    if(!firebaseReady || !userId || !db || typeof doc !== 'function' || typeof setDoc !== 'function' || typeof serverTimestamp !== 'function') return;
     try {
       await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
         title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
@@ -786,7 +870,7 @@ export async function initReminders(sel = {}) {
       console.error('Save failed:', error); toast('Save queued (offline)');
     }
   }
-  async function deleteFromFirebase(id){ if(!userId) return; try { await deleteDoc(doc(db,'users',userId,'reminders',id)); } catch { toast('Delete queued (offline)'); } }
+  async function deleteFromFirebase(id){ if(!firebaseReady || !userId || !db || typeof doc !== 'function' || typeof deleteDoc !== 'function') return; try { await deleteDoc(doc(db,'users',userId,'reminders',id)); } catch { toast('Delete queued (offline)'); } }
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
