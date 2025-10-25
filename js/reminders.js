@@ -165,6 +165,20 @@ export async function initReminders(sel = {}) {
   const loadNotesBtn = $(sel.loadNotesBtnSel);
   const sortSel = $(sel.sortSel);
   const filterBtns = $$(sel.filterBtnsSel);
+  const normaliseFilterValue = (value) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : '';
+  const filterLookup = new Map();
+  filterBtns.forEach((btn) => {
+    const raw = btn?.getAttribute('data-filter');
+    const normalised = normaliseFilterValue(raw);
+    if (normalised && !filterLookup.has(normalised)) {
+      filterLookup.set(normalised, raw);
+    }
+  });
+  const providedDefaultFilter = normaliseFilterValue(sel.defaultFilter);
+  const resolvedDefaultFilter =
+    (providedDefaultFilter && filterLookup.get(providedDefaultFilter)) ||
+    (providedDefaultFilter && !filterLookup.size ? providedDefaultFilter : null);
   const countTodayEl = $(sel.countTodaySel);
   const countWeekEl = $(sel.countWeekSel);
   const countOverdueEl = $(sel.countOverdueSel);
@@ -529,7 +543,7 @@ export async function initReminders(sel = {}) {
 
   // State
   let items = [];
-  let filter = filterBtns.length ? 'today' : 'all';
+  let filter = resolvedDefaultFilter || (filterBtns.length ? 'today' : 'all');
   let categoryFilterValue = categoryFilter?.value || 'all';
   let sortKey = 'smart';
   let listening = false;

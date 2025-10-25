@@ -228,6 +228,7 @@ initReminders({
   countOverdueSel: '#overdueCount',
   countTotalSel: '#totalCountBadge, #totalCount',
   countCompletedSel: '#completedCount',
+  defaultFilter: 'all',
   googleSignInBtnSel: '#googleSignInBtn',
   googleSignOutBtnSel: '#googleSignOutBtn',
   googleAvatarSel: '#googleAvatar',

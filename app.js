@@ -82,6 +82,7 @@ initReminders({
   sortSel: '#sort',
   categoryFilterSel: '#categoryFilter',
   categoryOptionsSel: '#categorySuggestions',
+  defaultFilter: 'today',
   countTodaySel: '#inlineTodayCount',
   countOverdueSel: '#inlineOverdueCount',
   countTotalSel: '#inlineTotalCount',
