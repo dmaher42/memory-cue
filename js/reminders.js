@@ -675,7 +675,26 @@ export async function initReminders(sel = {}) {
   }
 
   // Formatting helpers
-  const navigatorLocale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : '';
+  function sanitizeLocaleTag(tag) {
+    if (typeof tag !== 'string') return '';
+    let value = tag.trim();
+    if (!value) return '';
+    const atIndex = value.indexOf('@');
+    if (atIndex >= 0) {
+      value = value.slice(0, atIndex);
+    }
+    value = value.replace(/_/g, '-');
+    try {
+      // Validate via Intl API – throws if the tag is invalid.
+      new Intl.DateTimeFormat(value);
+      return value;
+    } catch {
+      return '';
+    }
+  }
+
+  const navigatorLocaleRaw = typeof navigator !== 'undefined' && navigator.language ? navigator.language : '';
+  const navigatorLocale = sanitizeLocaleTag(navigatorLocaleRaw);
   let locale = navigatorLocale || 'en-US';
   let TZ = 'UTC';
   try {
