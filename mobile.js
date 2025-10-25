@@ -249,6 +249,32 @@ initReminders({
   console.error('Failed to initialise reminders:', error);
 });
 
+// Ensure Enter/Go on mobile submits the same save path
+(() => {
+  const form = document.getElementById('createReminderForm');
+  const saveBtn = document.getElementById('saveReminder');
+  if (!form || !saveBtn) return;
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveBtn.click();
+  });
+})();
+
+(() => {
+  const sheet = document.getElementById('create-sheet');
+
+  function closeSheetIfOpen() {
+    if (!sheet) return;
+    if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
+      window.closeAddTask();
+    }
+  }
+
+  document.addEventListener('memoryCue:remindersUpdated', closeSheetIfOpen);
+  document.addEventListener('reminders:updated', closeSheetIfOpen);
+})();
+
 document.addEventListener('memoryCue:remindersUpdated', (event) => {
   const totalCountEl = document.getElementById('totalCount');
   if (!totalCountEl) return;
