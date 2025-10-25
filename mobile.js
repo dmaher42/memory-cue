@@ -251,21 +251,30 @@ initReminders({
 
 // Ensure Enter/Go on mobile submits the same save path
 (() => {
-  const form = document.getElementById('createReminderForm');
+  const formEl = document.getElementById('createReminderForm');
   const saveBtn = document.getElementById('saveReminder');
-  if (!form || !saveBtn) return;
+  if (!(formEl instanceof HTMLFormElement) || !(saveBtn instanceof HTMLButtonElement)) {
+    return;
+  }
 
-  form.addEventListener('submit', (event) => {
+  formEl.addEventListener('submit', (event) => {
     event.preventDefault();
+    if (saveBtn.matches(':disabled')) return;
     saveBtn.click();
   });
 })();
 
 (() => {
-  const sheet = document.getElementById('create-sheet');
+  const sheetEl = document.getElementById('create-sheet');
+
+  if (!(sheetEl instanceof HTMLElement)) {
+    return;
+  }
 
   function closeSheetIfOpen() {
-    if (!sheet) return;
+    if (sheetEl.classList.contains('hidden')) {
+      return;
+    }
     if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
       window.closeAddTask();
     }
