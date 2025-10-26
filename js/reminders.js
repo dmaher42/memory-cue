@@ -1326,6 +1326,54 @@ export async function initReminders(sel = {}) {
     list.replaceChildren();
     const frag = document.createDocumentFragment();
     const listIsSemantic = list.tagName === 'UL' || list.tagName === 'OL';
+
+    const isMinimalLayout = (() => {
+      if (typeof document === 'undefined') return false;
+      const body = document.body;
+      if (!body || typeof body.classList?.contains !== 'function') return false;
+      return !body.classList.contains('show-full');
+    })();
+    const shouldGroupCategories = variant === 'desktop' || !isMinimalLayout;
+
+    const createMobileItem = (r, catName) => {
+      const div = document.createElement('div');
+      div.className = 'task-item' + (r.done ? ' completed' : '');
+      div.dataset.category = catName;
+      const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
+      const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
+      const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
+      div.innerHTML = `
+        <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
+        <div class="task-content">
+          <div class="task-title">${escapeHtml(r.title)}</div>
+          <div class="task-meta">
+            <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
+              <span>${dueTxt}</span>
+              <span class="priority-badge ${priorityClass}">${r.priority}</span>
+              <span class="priority-badge" style="background:rgba(56,189,248,.14);color:#0284c7;border-color:rgba(56,189,248,.26);">${escapeHtml(catName)}</span>
+            </div>
+          </div>
+          ${notesHtml}
+        </div>
+        <div class="task-actions">
+          <button class="btn-ghost" data-edit type="button">Edit</button>
+          <button class="btn-ghost" data-del type="button">Del</button>
+        </div>`;
+      div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
+      div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
+      div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
+      return div;
+    };
+
+    if (variant !== 'desktop' && !shouldGroupCategories) {
+      rows.forEach((r) => {
+        const catName = r.category || DEFAULT_CATEGORY;
+        frag.appendChild(createMobileItem(r, catName));
+      });
+      list.appendChild(frag);
+      return;
+    }
+
     const grouped = new Map();
     rows.forEach(r => {
       const catName = r.category || DEFAULT_CATEGORY;
@@ -1429,33 +1477,7 @@ export async function initReminders(sel = {}) {
           return;
         }
 
-        const div = document.createElement('div');
-        div.className = 'task-item' + (r.done ? ' completed' : '');
-        div.dataset.category = catName;
-        const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-        const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
-        const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
-        div.innerHTML = `
-        <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
-        <div class="task-content">
-          <div class="task-title">${escapeHtml(r.title)}</div>
-          <div class="task-meta">
-            <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
-              <span>${dueTxt}</span>
-              <span class="priority-badge ${priorityClass}">${r.priority}</span>
-              <span class="priority-badge" style="background:rgba(56,189,248,.14);color:#0284c7;border-color:rgba(56,189,248,.26);">${escapeHtml(catName)}</span>
-            </div>
-          </div>
-          ${notesHtml}
-        </div>
-        <div class="task-actions">
-          <button class="btn-ghost" data-edit type="button">Edit</button>
-          <button class="btn-ghost" data-del type="button">Del</button>
-        </div>`;
-        div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-        div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
-        div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
-        frag.appendChild(div);
+        frag.appendChild(createMobileItem(r, catName));
       });
 
       firstGroup = false;
