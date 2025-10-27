@@ -206,6 +206,13 @@ export async function initReminders(sel = {}) {
   const categoryFilter = $(sel.categoryFilterSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
+  try {
+    if (variant === 'mobile' && typeof document !== 'undefined') {
+      document.body?.classList?.add('show-full');
+    }
+  } catch {
+    /* ignore environments without DOM */
+  }
   const emptyInitialText = sel.emptyStateInitialText || 'Create your first reminder to keep important tasks in view.';
   const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match the current filter. Adjust your filters or add a new cue.';
   const sharedEmptyStateMount = (typeof window !== 'undefined' && typeof window.memoryCueMountEmptyState === 'function') ? window.memoryCueMountEmptyState : null;
