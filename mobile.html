@@ -119,6 +119,82 @@
       background-color: rgba(15, 23, 42, 0.88);
     }
   </style>
+  <style id="minimal-mode-unified">
+    /* ============ Minimal Mode: Rules apply when body does NOT have .show-full ============ */
+
+    /* Hide everything marked as non-essential or non-focus UI */
+    body:not(.show-full) .nonEssential,
+    body:not(.show-full) .nonFocusUI {
+      display: none !important;
+    }
+
+    /* Always show these in Minimal Mode */
+    body:not(.show-full) #voiceAddWrap,
+    body:not(.show-full) #toggleUiBtn,
+    body:not(.show-full) #reminderList {
+      display: block !important;
+    }
+
+    /* Minimal list presentation */
+    body:not(.show-full) #reminderList.task-list-min {
+      display: grid !important;
+      gap: 8px;
+      padding: 12px;
+      background: transparent;
+    }
+
+    /* Minimal row styling (works with your existing renderers) */
+    body:not(.show-full) #reminderList .task-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      background: var(--fallback-b1, #fff);
+    }
+    body:not(.show-full) #reminderList .task-item .task-title {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    body:not(.show-full) #reminderList .task-item .task-meta {
+      justify-self: end;
+    }
+    /* Keep the first meta (usually time/date) subtle; suppress extras */
+    body:not(.show-full) #reminderList .task-item .task-meta-row {
+      display: contents;
+    }
+    body:not(.show-full) #reminderList .task-item .task-meta-row span:first-child {
+      font-size: 13px;
+      opacity: .7;
+    }
+    body:not(.show-full) #reminderList .task-item .task-meta-row span:not(:first-child),
+    body:not(.show-full) #reminderList .task-item .task-actions,
+    body:not(.show-full) #reminderList .task-item input,
+    body:not(.show-full) #reminderList .task-item .task-notes:not(.min-notes) {
+      display: none !important;
+    }
+
+    /* Toggle button (moved from inline to CSS) */
+    #toggleUiBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 40;
+    }
+
+    /* Minimal layout tweaks for the surrounding card */
+    body:not(.show-full) #reminderListSection {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    body:not(.show-full) #remindersWrapper {
+      padding: 0;
+      gap: 12px;
+    }
+  </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
   <style>
     .hidden {
@@ -331,42 +407,6 @@
       padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
   </style>
-  <style id="minimal-tasks-css">
-    /* Hide chrome by default so the page opens with tasks only */
-    .nonEssential { display: none !important; }
-
-    /* Optional: simple, clean list styling */
-    .task-list-min { display: grid; gap: 8px; padding: 12px; }
-    .task-row-min {
-      display: grid; grid-template-columns: 1fr auto; align-items: center;
-      padding: 12px 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    }
-    .task-row-min .title { font-size: 16px; line-height: 1.2; }
-    .task-row-min time { font-size: 13px; opacity: .7; }
-
-    body.show-full .task-list-min { display: block; padding: 0; gap: 0; }
-    body.show-full .task-row-min {
-      display: block; padding: 0; border-radius: 0; box-shadow: none;
-    }
-    body.show-full .task-row-min .title { font-size: inherit; line-height: inherit; }
-    body.show-full .task-row-min time { font-size: inherit; opacity: 1; }
-
-    /* Optional toggle: when body.show-full is set, reveal everything */
-    body.show-full .nonEssential { display: initial !important; }
-
-    /* Minimal layout overrides */
-    body:not(.show-full) #reminderListSection { background: transparent; border: none; box-shadow: none; }
-    body:not(.show-full) #remindersWrapper { padding: 0; gap: 12px; }
-    body:not(.show-full) .task-list-min .task-item { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); background: var(--fallback-b1, #fff); }
-    body:not(.show-full) .task-list-min .task-item .task-title { font-size: 16px; line-height: 1.2; }
-    body:not(.show-full) .task-list-min .task-item .task-meta { justify-self: end; }
-    body:not(.show-full) .task-list-min .task-item .task-meta-row { display: contents; }
-    body:not(.show-full) .task-list-min .task-item .task-meta-row span:first-child { font-size: 13px; opacity: .7; }
-    body:not(.show-full) .task-list-min .task-item .task-meta-row span:not(:first-child),
-    body:not(.show-full) .task-list-min .task-item .task-actions,
-    body:not(.show-full) .task-list-min .task-item input,
-    body:not(.show-full) .task-list-min .task-item .task-notes:not(.min-notes) { display: none !important; }
-  </style>
   <style id="voice-add-css">
     .voice-add-wrap{
       position: fixed; right: 12px; bottom: 12px; z-index: 50;
@@ -456,7 +496,7 @@
       <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
       <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
     </div>
-    <button id="toggleUiBtn" class="btn btn-ghost" style="position:fixed;top:12px;right:12px;z-index:40">Full UI</button>
+    <button id="toggleUiBtn" class="btn btn-ghost">Full UI</button>
     <!-- Focus List: minimal tasks-only home state -->
     <section id="focusList" class="focus-list nonEssential" aria-label="Tasks">
       <!-- populated by JS: renderList() -->
@@ -758,144 +798,6 @@
   <!-- BEGIN GPT CHANGE: include mobile.js -->
   <script type="module" src="./mobile.js"></script>
   <!-- END GPT CHANGE: include mobile.js -->
-  <!--
-  <script>
-    /* Focus Mode controller */
-    const Focus = (() => {
-      const listEl = document.getElementById('focusList');
-      const detailEl = document.getElementById('focusDetail');
-      const detailBody = document.getElementById('focusDetailBody');
-      const backBtn = document.getElementById('focusBackBtn');
-
-      function enable() {
-        document.body.classList.add('focus-mode');
-        renderList();
-      }
-
-      function disable() {
-        document.body.classList.remove('focus-mode');
-        if (listEl) listEl.innerHTML = '';
-        hideDetail();
-      }
-
-      function renderList() {
-        if (!listEl) return;
-        const tasks = (window.getAllReminders ? window.getAllReminders() : [])
-          .sort((a, b) => new Date(a.dueISO || 0) - new Date(b.dueISO || 0));
-
-        if (!tasks.length) {
-          listEl.innerHTML = '<p role="status" class="opacity-70 p-3">No tasks yet.</p>';
-          return;
-        }
-
-        listEl.innerHTML = tasks
-          .map((t) => {
-            const date = t.dueISO ? new Date(t.dueISO) : null;
-            const dateStr = date
-              ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-              : '';
-            const aria = t.notes ? `aria-describedby="note-hint-${t.id}"` : '';
-            const noteHint = t.notes
-              ? `<span id="note-hint-${t.id}" class="sr-only">Has notes</span>`
-              : '';
-            return `
-      <article class="focus-list__item">
-        <button class="focus-list__btn" data-taskid="${t.id}" aria-expanded="false" ${aria}>
-          <div class="focus-list__title">${escapeHTML(t.title || 'Untitled')}</div>
-          ${noteHint}
-        </button>
-        <time class="focus-list__date" datetime="${t.dueISO || ''}">${dateStr}</time>
-      </article>`;
-          })
-          .join('');
-
-        listEl.addEventListener(
-          'click',
-          (e) => {
-            const btn = e.target.closest('button[data-taskid]');
-            if (!btn) return;
-            const id = btn.getAttribute('data-taskid');
-            showDetail(id, btn);
-          },
-          { once: true }
-        );
-      }
-
-      function showDetail(taskId, triggerEl) {
-        const t = window.getReminderById ? window.getReminderById(taskId) : null;
-        if (!t) return;
-
-        if (triggerEl) triggerEl.setAttribute('aria-expanded', 'true');
-
-        detailBody.innerHTML = `
-      <h3 class="text-xl font-semibold">${escapeHTML(t.title || 'Untitled')}</h3>
-      <div class="opacity-70">Due:
-        <time datetime="${t.dueISO || ''}">${
-          t.dueISO ? new Date(t.dueISO).toLocaleString() : '—'
-        }</time>
-      </div>
-
-      <details class="mt-2">
-        <summary class="cursor-pointer">Show notes</summary>
-        <div class="mt-2 whitespace-pre-wrap">${escapeHTML(t.notes || '')}</div>
-      </details>
-
-      <div id="focusControls"></div>
-    `;
-
-        if (window.mountTaskControls) {
-          window.mountTaskControls('focusControls', taskId);
-        }
-
-        detailEl.hidden = false;
-        detailEl.focus();
-        setInertExcept(detailEl);
-
-        backBtn.onclick = () => {
-          hideDetail(triggerEl);
-          renderList();
-        };
-      }
-
-      function hideDetail(triggerEl) {
-        if (!detailEl.hidden) {
-          detailEl.hidden = true;
-          clearInert();
-          if (triggerEl) {
-            triggerEl.setAttribute('aria-expanded', 'false');
-            triggerEl.focus();
-          }
-        }
-      }
-
-      function setInertExcept(el) {
-        const els = Array.from(document.body.children).filter((n) => n !== el && !n.contains(el));
-        els.forEach((n) => n.setAttribute('inert', ''));
-      }
-      function clearInert() {
-        Array.from(document.querySelectorAll('[inert]')).forEach((n) => n.removeAttribute('inert'));
-      }
-      function escapeHTML(str) {
-        return (str + '').replace(/[&<>"']/g, (s) => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;',
-        })[s]);
-      }
-
-      return { enable, disable };
-    })();
-
-    /* Enable Focus Mode on initial load */
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!document.body.classList.contains('focus-mode')) {
-        Focus.enable();
-      }
-    });
-  </script>
-  -->
   <script src="app.js" type="module"></script>
   <script>
     (function () {
