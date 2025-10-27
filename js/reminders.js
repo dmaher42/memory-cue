@@ -1336,9 +1336,13 @@ export async function initReminders(sel = {}) {
     const shouldGroupCategories = variant === 'desktop' || !isMinimalLayout;
 
     const createMobileItem = (r, catName) => {
-      const div = document.createElement('div');
-      div.className = 'task-item' + (r.done ? ' completed' : '');
-      div.dataset.category = catName;
+    const div = document.createElement('div');
+    div.className = 'task-item' + (r.done ? ' completed' : '');
+    div.dataset.category = catName;
+    // Make rows discoverable by other modules (e.g., Today view)
+    div.dataset.reminder = '1';
+    div.dataset.id = r.id;
+    if (r.due) div.dataset.due = r.due; // ISO string
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
       const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';

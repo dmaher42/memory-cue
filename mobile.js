@@ -206,6 +206,7 @@ import { initReminders } from './js/reminders.js';
 /* END GPT CHANGE */
 
 initReminders({
+  variant: 'mobile',
   qSel: '#searchReminders',
   titleSel: '#reminderText',
   dateSel: '#reminderDate',
@@ -216,6 +217,8 @@ initReminders({
   saveBtnSel: '#saveReminder',
   cancelEditBtnSel: '#cancelEditBtn',
   listSel: '#reminderList',
+  listWrapperSel: '#remindersWrapper',
+  emptyStateSel: '#emptyState',
   statusSel: '#statusMessage',
   syncStatusSel: '#syncStatus',
   voiceBtnSel: '#voiceBtn',
@@ -238,13 +241,10 @@ initReminders({
   saveSettingsSel: '#saveSyncSettings',
   testSyncSel: '#testSync',
   openSettingsSel: '#openSettings',
-  emptyStateSel: '#emptyState',
-  listWrapperSel: '#remindersWrapper',
   notesSel: '#notes',
   saveNotesBtnSel: '#saveNotes',
   loadNotesBtnSel: '#loadNotes',
   dateFeedbackSel: '#dateFeedback',
-  variant: 'mobile',
 }).catch((error) => {
   console.error('Failed to initialise reminders:', error);
 });
@@ -253,9 +253,7 @@ initReminders({
 (() => {
   const formEl = document.getElementById('createReminderForm');
   const saveBtn = document.getElementById('saveReminder');
-  if (!(formEl instanceof HTMLFormElement) || !(saveBtn instanceof HTMLButtonElement)) {
-    return;
-  }
+  if (!(formEl instanceof HTMLFormElement) || !(saveBtn instanceof HTMLButtonElement)) return;
 
   formEl.addEventListener('submit', (event) => {
     event.preventDefault();
