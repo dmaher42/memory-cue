@@ -5,6 +5,7 @@ const openCueButton = document.getElementById('openCueModal');
 const closeCueButton = document.getElementById('closeCueModal');
 const modalBackdropButton = cueModal?.querySelector('.modal-backdrop button');
 const titleInput = document.getElementById('title');
+const mobileTitleInput = document.getElementById('reminderText');
 
 const focusTitleInput = () => {
   if (!titleInput) return;
@@ -65,32 +66,86 @@ document.addEventListener('cue:close', () => {
   openCueButton?.focus();
 });
 
-initReminders({
-  titleSel: '#title',
-  dateSel: '#date',
-  timeSel: '#time',
-  detailsSel: '#details',
-  prioritySel: '#priority',
-  categorySel: '#category',
-  saveBtnSel: '#saveBtn',
-  cancelEditBtnSel: '#cancelEditBtn',
-  listSel: '#reminderList',
-  statusSel: '#status',
-  syncStatusSel: '#syncStatus',
-  voiceBtnSel: '#voiceBtn',
-  filterBtnsSel: '[data-filter]',
-  sortSel: '#sort',
-  categoryFilterSel: '#categoryFilter',
-  categoryOptionsSel: '#categorySuggestions',
-  defaultFilter: 'today',
-  countTodaySel: '#inlineTodayCount',
-  countOverdueSel: '#inlineOverdueCount',
-  countTotalSel: '#inlineTotalCount',
-  countCompletedSel: '#inlineCompletedCount',
-  emptyStateSel: '#emptyState',
-  listWrapperSel: '#remindersWrapper',
-  dateFeedbackSel: '#dateFeedback',
-  variant: 'desktop'
+const initialiseReminders = () => {
+  const hasDesktopForm = Boolean(titleInput);
+  const hasMobileForm = Boolean(mobileTitleInput);
+
+  if (!hasDesktopForm && !hasMobileForm) {
+    return Promise.resolve();
+  }
+
+  if (hasMobileForm) {
+    return initReminders({
+      variant: 'mobile',
+      qSel: '#searchReminders',
+      titleSel: '#reminderText',
+      dateSel: '#reminderDate',
+      timeSel: '#reminderTime',
+      detailsSel: '#reminderDetails',
+      prioritySel: '#priority',
+      categorySel: '#category',
+      saveBtnSel: '#saveReminder',
+      cancelEditBtnSel: '#cancelEditBtn',
+      listSel: '#reminderList',
+      listWrapperSel: '#remindersWrapper',
+      emptyStateSel: '#emptyState',
+      statusSel: '#statusMessage',
+      syncStatusSel: '#syncStatus',
+      voiceBtnSel: '#voiceBtn',
+      notifBtnSel: '#notifBtn',
+      addQuickBtnSel: '#quickAdd',
+      filterBtnsSel: '[data-filter]',
+      categoryFilterSel: '#categoryFilter',
+      categoryOptionsSel: '#categorySuggestions',
+      defaultFilter: 'all',
+      countTodaySel: '#todayCount',
+      countOverdueSel: '#overdueCount',
+      countTotalSel: '#totalCountBadge',
+      countCompletedSel: '#completedCount',
+      googleSignInBtnSel: '#googleSignInBtn',
+      googleSignOutBtnSel: '#googleSignOutBtn',
+      googleAvatarSel: '#googleAvatar',
+      googleUserNameSel: '#googleUserName',
+      syncAllBtnSel: '#syncAll',
+      syncUrlInputSel: '#syncUrl',
+      saveSettingsSel: '#saveSyncSettings',
+      testSyncSel: '#testSync',
+      openSettingsSel: '#openSettings',
+      dateFeedbackSel: '#dateFeedback'
+    });
+  }
+
+  return initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#reminderList',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    voiceBtnSel: '#voiceBtn',
+    filterBtnsSel: '[data-filter]',
+    sortSel: '#sort',
+    categoryFilterSel: '#categoryFilter',
+    categoryOptionsSel: '#categorySuggestions',
+    defaultFilter: 'today',
+    countTodaySel: '#inlineTodayCount',
+    countOverdueSel: '#inlineOverdueCount',
+    countTotalSel: '#inlineTotalCount',
+    countCompletedSel: '#inlineCompletedCount',
+    emptyStateSel: '#emptyState',
+    listWrapperSel: '#remindersWrapper',
+    dateFeedbackSel: '#dateFeedback',
+    variant: 'desktop'
+  });
+};
+
+initialiseReminders().catch((error) => {
+  console.error('Failed to initialise reminders', error);
 });
 
 const cuesList = document.getElementById('cues-list');
