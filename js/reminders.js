@@ -208,7 +208,8 @@ export async function initReminders(sel = {}) {
   const variant = sel.variant || 'mobile';
   try {
     if (variant === 'mobile' && typeof document !== 'undefined') {
-      document.body?.classList?.add('show-full');
+      // Minimal Mode is the default; let the UI toggle control add/remove 'show-full'
+      // (no body class added here)
     }
   } catch {
     /* ignore environments without DOM */
