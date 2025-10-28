@@ -1530,6 +1530,10 @@ export async function initReminders(sel = {}) {
       it.due = due;
       if(details){ it.notes = details.value.trim(); }
       it.updatedAt=Date.now();
+      const canSyncNow = firebaseReady && userId && db && typeof doc === 'function' && typeof setDoc === 'function' && typeof serverTimestamp === 'function';
+      if(!canSyncNow){
+        it.pendingSync = true;
+      }
       saveToFirebase(it);
       tryCalendarSync(it);
       render();
