@@ -206,6 +206,94 @@ export async function initReminders(sel = {}) {
   const categoryFilter = $(sel.categoryFilterSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
+
+  // === BEGIN: Save handler (add inside initReminders, after element selections & helper fns exist) ===
+
+  // Prefer priority “chips” if present; fallback to the (hidden) select#priority
+  function getPriorityValue() {
+    const chip = document.querySelector('fieldset#priorityChips input[name="priority"]:checked');
+    if (chip && chip.value) return chip.value;
+    return (priority?.value || 'Medium');
+  }
+
+  // Build ISO from date/time as used elsewhere in this module
+  function toDueIso(dateInput, timeInput) {
+    const d = (dateInput?.value || '').trim();
+    if (!d) return null;
+    const t = (timeInput?.value || '').trim();
+    if (t) {
+      // Leverage existing helper if present; otherwise construct standard ISO
+      try {
+        return typeof localDateTimeToISO === 'function'
+          ? localDateTimeToISO(d, t)
+          : new Date(`${d}T${t}:00`).toISOString();
+      } catch {
+        return new Date(`${d}T${t}:00`).toISOString();
+      }
+    }
+    return new Date(`${d}T00:00:00`).toISOString();
+  }
+
+  async function onSaveClick() {
+    const titleVal = (title?.value || '').trim();
+    if (!titleVal) {
+      // Optional: show non-blocking feedback if a toast/status helper exists
+      try { toast?.('Enter a title'); } catch {}
+      return;
+    }
+
+    const entry = {
+      id: uid(),
+      title: titleVal,
+      priority: getPriorityValue(),
+      category: normalizeCategory(categoryInput?.value || 'General'),
+      notes: (details?.value || '').trim(),
+      done: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      due: toDueIso(date, time),
+      pendingSync: !userId,
+    };
+
+    // Update in-memory list and persist offline
+    items.unshift(entry);
+    persistItems();
+    render();
+    rescheduleAllReminders();
+
+    // Best-effort cloud save if user is signed in (if saveToFirebase exists)
+    try {
+      if (userId && typeof saveToFirebase === 'function') {
+        await saveToFirebase(entry);
+        entry.pendingSync = false;
+        persistItems();
+      }
+    } catch {
+      // keep offline; pendingSync remains true
+    }
+
+    // Notify listeners so mobile sheet/metrics close & refresh
+    document.dispatchEvent(new CustomEvent('reminders:updated', { detail: { items } }));
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+
+    // (Optional) Clear inputs after save
+    try {
+      if (title) title.value = '';
+      if (details) details.value = '';
+      if (date) date.value = '';
+      if (time) time.value = '';
+      if (categoryInput) categoryInput.value = 'General';
+      if (priority) priority.value = 'Medium';
+    } catch {}
+  }
+
+  // Bind the handler once
+  if (saveBtn && !saveBtn.__mcBound) {
+    saveBtn.addEventListener('click', onSaveClick);
+    saveBtn.__mcBound = true;
+  }
+  // === END: Save handler ===
+
   try {
     if (variant === 'mobile' && typeof document !== 'undefined') {
       // Minimal Mode is the default; let the UI toggle control add/remove 'show-full'
