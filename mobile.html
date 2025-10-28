@@ -135,6 +135,13 @@
       display: block !important;
     }
 
+    /* --- FIX: keep Reminders view visible in Minimal Mode ---
+       Without this, the parent container can be display:none due to .nonFocusUI,
+       which hides the list even if #reminderList is forced visible. */
+    body:not(.show-full) [data-view="reminders"] {
+      display: block !important;
+    }
+
     /* Minimal list presentation */
     body:not(.show-full) #reminderList.task-list-min {
       display: grid !important;
@@ -522,7 +529,7 @@
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel nonFocusUI">
+    <section data-view="reminders" id="view-reminders" class="view-panel">
       <!-- BEGIN GPT CHANGE: sticky filters -->
       <div id="stickyFilters" class="nonFocusUI nonEssential" style="position:sticky; top:56px; z-index: 10;">
         <section id="reminderFilters" class="card bg-base-100 border">
