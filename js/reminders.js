@@ -207,92 +207,49 @@ export async function initReminders(sel = {}) {
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
 
-  // === BEGIN: Save handler (add inside initReminders, after element selections & helper fns exist) ===
+  const priorityChipSelector = 'fieldset#priorityChips input[name="priority"]';
 
-  // Prefer priority “chips” if present; fallback to the (hidden) select#priority
-  function getPriorityValue() {
-    const chip = document.querySelector('fieldset#priorityChips input[name="priority"]:checked');
-    if (chip && chip.value) return chip.value;
-    return (priority?.value || 'Medium');
-  }
-
-  // Build ISO from date/time as used elsewhere in this module
-  function toDueIso(dateInput, timeInput) {
-    const d = (dateInput?.value || '').trim();
-    if (!d) return null;
-    const t = (timeInput?.value || '').trim();
-    if (t) {
-      // Leverage existing helper if present; otherwise construct standard ISO
-      try {
-        return typeof localDateTimeToISO === 'function'
-          ? localDateTimeToISO(d, t)
-          : new Date(`${d}T${t}:00`).toISOString();
-      } catch {
-        return new Date(`${d}T${t}:00`).toISOString();
-      }
-    }
-    return new Date(`${d}T00:00:00`).toISOString();
-  }
-
-  async function onSaveClick() {
-    const titleVal = (title?.value || '').trim();
-    if (!titleVal) {
-      // Optional: show non-blocking feedback if a toast/status helper exists
-      try { toast?.('Enter a title'); } catch {}
-      return;
-    }
-
-    const entry = {
-      id: uid(),
-      title: titleVal,
-      priority: getPriorityValue(),
-      category: normalizeCategory(categoryInput?.value || 'General'),
-      notes: (details?.value || '').trim(),
-      done: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      due: toDueIso(date, time),
-      pendingSync: !userId,
-    };
-
-    // Update in-memory list and persist offline
-    items.unshift(entry);
-    persistItems();
-    render();
-    rescheduleAllReminders();
-
-    // Best-effort cloud save if user is signed in (if saveToFirebase exists)
+  function getPriorityInputValue() {
     try {
-      if (userId && typeof saveToFirebase === 'function') {
-        await saveToFirebase(entry);
-        entry.pendingSync = false;
-        persistItems();
+      const chip = document.querySelector(`${priorityChipSelector}:checked`);
+      if (chip && chip.value) {
+        return chip.value;
       }
     } catch {
-      // keep offline; pendingSync remains true
+      // Ignore selector errors in environments without DOM APIs.
     }
+    if (priority && typeof priority.value === 'string' && priority.value) {
+      return priority.value;
+    }
+    return 'Medium';
+  }
 
-    // Notify listeners so mobile sheet/metrics close & refresh
-    document.dispatchEvent(new CustomEvent('reminders:updated', { detail: { items } }));
-    dispatchCueEvent('memoryCue:remindersUpdated', { items });
-
-    // (Optional) Clear inputs after save
+  function setPriorityInputValue(value) {
+    const next = value || 'Medium';
+    if (priority && typeof priority.value !== 'undefined') {
+      priority.value = next;
+    }
     try {
-      if (title) title.value = '';
-      if (details) details.value = '';
-      if (date) date.value = '';
-      if (time) time.value = '';
-      if (categoryInput) categoryInput.value = 'General';
-      if (priority) priority.value = 'Medium';
-    } catch {}
+      const radios = Array.from(document.querySelectorAll(priorityChipSelector));
+      if (!radios.length) {
+        return;
+      }
+      let matched = false;
+      radios.forEach((radio) => {
+        const isMatch = radio.value === next;
+        radio.checked = isMatch;
+        matched = matched || isMatch;
+      });
+      if (!matched) {
+        const fallback = radios.find((radio) => radio.value === 'Medium') || radios[0];
+        if (fallback) {
+          fallback.checked = true;
+        }
+      }
+    } catch {
+      // Ignore DOM update issues so the rest of the flow can continue.
+    }
   }
-
-  // Bind the handler once
-  if (saveBtn && !saveBtn.__mcBound) {
-    saveBtn.addEventListener('click', onSaveClick);
-    saveBtn.__mcBound = true;
-  }
-  // === END: Save handler ===
 
   try {
     if (variant === 'mobile' && typeof document !== 'undefined') {
@@ -313,6 +270,14 @@ export async function initReminders(sel = {}) {
   const dispatchCueEvent = (name, detail = {}) => {
     document.dispatchEvent(new CustomEvent(name, { detail }));
   };
+
+  function emitReminderUpdates() {
+    try {
+      document.dispatchEvent(new CustomEvent('reminders:updated', { detail: { items } }));
+    } catch {
+      // Ignore environments where CustomEvent construction fails.
+    }
+  }
 
   if (categoryInput && !categoryInput.value) {
     categoryInput.value = DEFAULT_CATEGORY;
@@ -1004,8 +969,8 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; if(priority) priority.value='Medium'; if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Cue'; cancelEditBtn?.classList.add('hidden'); }
-  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } if(priority) priority.value=it.priority||'Medium'; if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
+  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; setPriorityInputValue('Medium'); if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Cue'; cancelEditBtn?.classList.add('hidden'); }
+  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } setPriorityInputValue(it?.priority || 'Medium'); if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
 
   function addItem(obj){
     const nowMs = Date.now();
@@ -1029,6 +994,7 @@ export async function initReminders(sel = {}) {
     saveToFirebase(item);
     tryCalendarSync(item);
     scheduleReminder(item);
+    emitReminderUpdates();
     emitActivity({
       action: 'created',
       label: `Reminder added · ${item.title}`,
@@ -1430,7 +1396,10 @@ export async function initReminders(sel = {}) {
       if (!body || typeof body.classList?.contains !== 'function') return false;
       return !body.classList.contains('show-full');
     })();
-    const shouldGroupCategories = variant === 'desktop' || !isMinimalLayout;
+    const shouldGroupCategories =
+      variant === 'desktop' ||
+      !isMinimalLayout ||
+      (!listIsSemantic && variant !== 'desktop');
 
     const createMobileItem = (r, catName) => {
     const div = document.createElement('div');
@@ -1613,7 +1582,9 @@ export async function initReminders(sel = {}) {
       if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
       else { const p=parseQuickWhen(tNew); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
       it.title = tNew;
-      it.priority=priority.value;
+      const nextPriority = getPriorityInputValue();
+      it.priority = nextPriority;
+      setPriorityInputValue(nextPriority);
       if(categoryInput){ it.category = normalizeCategory(categoryInput.value); }
       it.due = due;
       if(details){ it.notes = details.value.trim(); }
@@ -1623,6 +1594,7 @@ export async function initReminders(sel = {}) {
       render();
       scheduleReminder(it);
       persistItems();
+      emitReminderUpdates();
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
       resetForm();
       toast('Reminder updated');
@@ -1634,7 +1606,7 @@ export async function initReminders(sel = {}) {
     let due=null;
     if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
     else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:t, priority:priority.value, category: categoryInput ? categoryInput.value : '', due, notes: noteText });
+    addItem({ title:t, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText });
     title.value=''; time.value=''; if(details) details.value='';
     dispatchCueEvent('cue:close', { reason: 'created' });
   }
