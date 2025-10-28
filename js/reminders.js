@@ -949,10 +949,11 @@ export async function initReminders(sel = {}) {
     const nowMs = Date.now();
     const note = obj.notes == null ? '' : (typeof obj.notes === 'string' ? obj.notes.trim() : String(obj.notes).trim());
     const categoryValue = normalizeCategory(obj.category ?? (categoryInput ? categoryInput.value : ''));
+    const priorityValue = obj.priority || getPriorityInputValue();
     const item = {
       id: uid(),
       title: obj.title.trim(),
-      priority: obj.priority||'Medium',
+      priority: priorityValue || 'Medium',
       category: categoryValue,
       notes: note,
       done:false,
@@ -1600,6 +1601,7 @@ export async function initReminders(sel = {}) {
       render();
       scheduleReminder(it);
       persistItems();
+      notifyRemindersUpdated('updated', { item: it });
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
       notifyRemindersUpdated();
       resetForm();
