@@ -308,6 +308,156 @@ export async function initReminders(sel = {}) {
 
   let firebaseModulesLoaded = false;
   let firebaseReady = false;
+  let app = null;
+  let db = null;
+  let auth = null;
+
+  // State
+  let items = [];
+  let filter = resolvedDefaultFilter || (filterBtns.length ? 'today' : 'all');
+  let categoryFilterValue = categoryFilter?.value || 'all';
+  let sortKey = 'smart';
+  let listening = false;
+  let recog = null;
+  let voiceRestartTimer = null;
+  let userId = null;
+  let unsubscribe = null;
+  let editingId = null;
+  const reminderTimers = {};
+  let scheduledReminders = {};
+
+  function applySignedOutState() {
+    userId = null;
+    syncStatus?.classList.remove('online', 'error');
+    if (syncStatus) {
+      syncStatus.classList.add('offline');
+      syncStatus.textContent = 'Offline';
+    }
+    googleSignInBtn?.classList.remove('hidden');
+    googleSignOutBtn?.classList.add('hidden');
+    if (googleAvatar) {
+      googleAvatar.classList.add('hidden');
+      googleAvatar.src = '';
+    }
+    if (googleUserName) {
+      googleUserName.textContent = '';
+    }
+    unsubscribe?.();
+    unsubscribe = null;
+    hydrateOfflineReminders();
+    render();
+    persistItems();
+    rescheduleAllReminders();
+  }
+
+  function loadOfflineRemindersFromStorage() {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(OFFLINE_REMINDERS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now();
+          const updatedAt = Number.isFinite(entry.updatedAt) ? entry.updatedAt : createdAt;
+          return {
+            id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
+            title: typeof entry.title === 'string' ? entry.title : '',
+            priority: entry.priority || 'Medium',
+            category: normalizeCategory(entry.category),
+            notes: typeof entry.notes === 'string' ? entry.notes : '',
+            done: !!entry.done,
+            createdAt,
+            updatedAt,
+            due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+            pendingSync: !!entry.pendingSync,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.warn('Failed to load offline reminders', error);
+      return [];
+    }
+  }
+
+  function persistOfflineReminders(reminders = []) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      if (!Array.isArray(reminders) || reminders.length === 0) {
+        localStorage.removeItem(OFFLINE_REMINDERS_KEY);
+        return;
+      }
+      const serialisable = reminders
+        .filter((entry) => entry && typeof entry === 'object')
+        .map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          priority: entry.priority || 'Medium',
+          category: normalizeCategory(entry.category),
+          notes: typeof entry.notes === 'string' ? entry.notes : '',
+          done: !!entry.done,
+          createdAt: Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now(),
+          updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
+          due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+          pendingSync: !!entry.pendingSync,
+        }));
+      localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
+    } catch (error) {
+      console.warn('Failed to persist offline reminders', error);
+    }
+  }
+
+  function persistItems() {
+    persistOfflineReminders(items);
+  }
+
+  function hydrateOfflineReminders() {
+    items = loadOfflineRemindersFromStorage();
+  }
+
+  hydrateOfflineReminders();
+
+  async function migrateOfflineRemindersIfNeeded() {
+    if (!userId) {
+      items = loadOfflineRemindersFromStorage();
+      return;
+    }
+    const offline = loadOfflineRemindersFromStorage();
+    if (!offline.length) {
+      items = [];
+      persistItems();
+      return;
+    }
+    const unsynced = offline.filter((entry) => entry?.pendingSync);
+    if (unsynced.length) {
+      for (const entry of unsynced) {
+        try {
+          await saveToFirebase(entry);
+          entry.pendingSync = false;
+        } catch (error) {
+          console.warn('Failed to sync offline reminder', error);
+        }
+      }
+    }
+    items = offline.map((entry) => ({ ...entry, pendingSync: false }));
+    persistItems();
+    render();
+    rescheduleAllReminders();
+  }
+  try {
+    scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
+  } catch {
+    scheduledReminders = {};
+  }
+  if (scheduledReminders && typeof scheduledReminders === 'object') {
+    Object.values(scheduledReminders).forEach((entry) => {
+      if (entry && typeof entry === 'object') {
+        entry.category = normalizeCategory(entry.category);
+      }
+    });
+  }
 
   const recordFirebaseAvailability = (available) => {
     if (!globalScope) return;
@@ -460,6 +610,8 @@ export async function initReminders(sel = {}) {
    }
    initNotebook();
 
+  saveBtn?.addEventListener('click', handleSaveAction);
+
   if (firebaseDeps) {
     ({ initializeApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
     firebaseModulesLoaded = true;
@@ -476,10 +628,6 @@ export async function initReminders(sel = {}) {
       recordFirebaseAvailability(false);
     }
   }
-
-  let app = null;
-  let db = null;
-  let auth = null;
 
   if (firebaseModulesLoaded && typeof initializeApp === 'function' && typeof getFirestore === 'function' && typeof getAuth === 'function') {
     try {
@@ -547,153 +695,6 @@ export async function initReminders(sel = {}) {
 
   if (firebaseReady && typeof getAuth === 'function') {
     auth = getAuth(app);
-  }
-
-  // State
-  let items = [];
-  let filter = resolvedDefaultFilter || (filterBtns.length ? 'today' : 'all');
-  let categoryFilterValue = categoryFilter?.value || 'all';
-  let sortKey = 'smart';
-  let listening = false;
-  let recog = null;
-  let voiceRestartTimer = null;
-  let userId = null;
-  let unsubscribe = null;
-  let editingId = null;
-  const reminderTimers = {};
-  let scheduledReminders = {};
-
-  function applySignedOutState() {
-    userId = null;
-    syncStatus?.classList.remove('online', 'error');
-    if (syncStatus) {
-      syncStatus.classList.add('offline');
-      syncStatus.textContent = 'Offline';
-    }
-    googleSignInBtn?.classList.remove('hidden');
-    googleSignOutBtn?.classList.add('hidden');
-    if (googleAvatar) {
-      googleAvatar.classList.add('hidden');
-      googleAvatar.src = '';
-    }
-    if (googleUserName) {
-      googleUserName.textContent = '';
-    }
-    unsubscribe?.();
-    unsubscribe = null;
-    hydrateOfflineReminders();
-    render();
-    persistItems();
-    rescheduleAllReminders();
-  }
-
-  function loadOfflineRemindersFromStorage() {
-    if (typeof localStorage === 'undefined') return [];
-    try {
-      const raw = localStorage.getItem(OFFLINE_REMINDERS_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .map((entry) => {
-          if (!entry || typeof entry !== 'object') return null;
-          const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now();
-          const updatedAt = Number.isFinite(entry.updatedAt) ? entry.updatedAt : createdAt;
-          return {
-            id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
-            title: typeof entry.title === 'string' ? entry.title : '',
-            priority: entry.priority || 'Medium',
-            category: normalizeCategory(entry.category),
-            notes: typeof entry.notes === 'string' ? entry.notes : '',
-            done: !!entry.done,
-            createdAt,
-            updatedAt,
-            due: typeof entry.due === 'string' && entry.due ? entry.due : null,
-            pendingSync: !!entry.pendingSync,
-          };
-        })
-        .filter(Boolean);
-    } catch (error) {
-      console.warn('Failed to load offline reminders', error);
-      return [];
-    }
-  }
-
-  function persistOfflineReminders(reminders = []) {
-    if (typeof localStorage === 'undefined') return;
-    try {
-      if (!Array.isArray(reminders) || reminders.length === 0) {
-        localStorage.removeItem(OFFLINE_REMINDERS_KEY);
-        return;
-      }
-      const serialisable = reminders
-        .filter((entry) => entry && typeof entry === 'object')
-        .map((entry) => ({
-          id: entry.id,
-          title: entry.title,
-          priority: entry.priority || 'Medium',
-          category: normalizeCategory(entry.category),
-          notes: typeof entry.notes === 'string' ? entry.notes : '',
-          done: !!entry.done,
-          createdAt: Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now(),
-          updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
-          due: typeof entry.due === 'string' && entry.due ? entry.due : null,
-          pendingSync: !!entry.pendingSync,
-        }));
-      localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
-    } catch (error) {
-      console.warn('Failed to persist offline reminders', error);
-    }
-  }
-
-  function persistItems() {
-    persistOfflineReminders(items);
-  }
-
-  function hydrateOfflineReminders() {
-    items = loadOfflineRemindersFromStorage();
-  }
-
-  hydrateOfflineReminders();
-
-  async function migrateOfflineRemindersIfNeeded() {
-    if (!userId) {
-      items = loadOfflineRemindersFromStorage();
-      return;
-    }
-    const offline = loadOfflineRemindersFromStorage();
-    if (!offline.length) {
-      items = [];
-      persistItems();
-      return;
-    }
-    const unsynced = offline.filter((entry) => entry?.pendingSync);
-    if (unsynced.length) {
-      for (const entry of unsynced) {
-        try {
-          await saveToFirebase(entry);
-          entry.pendingSync = false;
-        } catch (error) {
-          console.warn('Failed to sync offline reminder', error);
-        }
-      }
-    }
-    items = offline.map((entry) => ({ ...entry, pendingSync: false }));
-    persistItems();
-    render();
-    rescheduleAllReminders();
-  }
-  try {
-    scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
-  } catch {
-    scheduledReminders = {};
-  }
-  if (scheduledReminders && typeof scheduledReminders === 'object') {
-    Object.values(scheduledReminders).forEach((entry) => {
-      if (entry && typeof entry === 'object') {
-        entry.category = normalizeCategory(entry.category);
-      }
-    });
   }
 
   // Formatting helpers
@@ -1515,7 +1516,7 @@ export async function initReminders(sel = {}) {
   });
   document.addEventListener('DOMContentLoaded', () => { settingsSection?.classList.add('hidden'); });
 
-  saveBtn?.addEventListener('click', () => {
+  function handleSaveAction(){
     if(editingId){
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }
@@ -1548,8 +1549,9 @@ export async function initReminders(sel = {}) {
     addItem({ title:t, priority:priority.value, category: categoryInput ? categoryInput.value : '', due, notes: noteText });
     title.value=''; time.value=''; if(details) details.value='';
     dispatchCueEvent('cue:close', { reason: 'created' });
-  });
-  title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
+  }
+
+  title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleSaveAction(); });
 
   function updateDateFeedback(){ if(!title || !dateFeedback) return; const text = title.value.trim(); if(!text){ dateFeedback.style.display='none'; return; } try{ const parsed=parseQuickWhen(text); const today=todayISO(); if(parsed.date !== today || parsed.time){ let feedback=''; if(parsed.date !== today){ const dateObj = new Date(parsed.date+'T00:00:00'); feedback+=`📅 ${fmtDayDate(parsed.date)}`; } if(parsed.time){ feedback+=`${feedback ? ' ' : ''}🕐 ${parsed.time}`; } if(feedback){ dateFeedback.textContent=`Parsed: ${feedback}`; dateFeedback.style.display='block'; } else { dateFeedback.style.display='none'; } } else { dateFeedback.style.display='none'; } } catch { dateFeedback.style.display='none'; } }
 
@@ -1558,7 +1560,7 @@ export async function initReminders(sel = {}) {
   document.addEventListener('cue:cancelled', () => { resetForm(); });
   document.addEventListener('cue:prepare', () => { resetForm(); });
   window.addEventListener('load', ()=> title?.focus());
-  addQuickBtn?.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } saveBtn.click(); });
+  addQuickBtn?.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } handleSaveAction(); });
   q?.addEventListener('input', debounce(render,150));
   sortSel?.addEventListener('change', ()=>{ sortKey = sortSel.value; render(); });
   categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
