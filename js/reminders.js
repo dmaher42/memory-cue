@@ -207,18 +207,6 @@ export async function initReminders(sel = {}) {
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
 
-  function getPriorityInputValue() {
-    try {
-      const chip = document.querySelector('fieldset#priorityChips input[name="priority"]:checked');
-      if (chip && chip.value) {
-        return chip.value;
-      }
-    } catch {
-      /* ignore lookup issues */
-    }
-    return priority?.value || 'Medium';
-  }
-
   try {
     if (variant === 'mobile' && typeof document !== 'undefined') {
       // Minimal Mode is the default; let the UI toggle control add/remove 'show-full'
@@ -576,17 +564,31 @@ export async function initReminders(sel = {}) {
   const reminderTimers = {};
   let scheduledReminders = {};
 
-  const notifyRemindersUpdated = (reason, extra = {}) => {
-    const detail = { items, reason, ...extra };
-    if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
+  function notifyRemindersUpdated() {
+    const detail = { items };
+    if (typeof document !== 'undefined') {
       try {
         document.dispatchEvent(new CustomEvent('reminders:updated', { detail }));
       } catch {
-        /* ignore dispatch issues */
+        try {
+          if (document.createEvent) {
+            const evt = document.createEvent('CustomEvent');
+            if (evt && typeof evt.initCustomEvent === 'function') {
+              evt.initCustomEvent('reminders:updated', false, false, detail);
+              document.dispatchEvent(evt);
+            }
+          }
+        } catch {
+          // Ignore older browser dispatch issues
+        }
       }
     }
-    dispatchCueEvent('memoryCue:remindersUpdated', detail);
-  };
+    try {
+      dispatchCueEvent('memoryCue:remindersUpdated', detail);
+    } catch {
+      // Ignore dispatch errors so reminders continue to function
+    }
+  }
 
   function applySignedOutState() {
     userId = null;
@@ -963,14 +965,26 @@ export async function initReminders(sel = {}) {
     items = [item, ...items];
     render();
     persistItems();
-    saveToFirebase(item);
+    const syncPromise = saveToFirebase(item);
+    if (syncPromise && typeof syncPromise.then === 'function') {
+      syncPromise
+        .then(() => {
+          if (userId && item.pendingSync) {
+            item.pendingSync = false;
+            persistItems();
+          }
+        })
+        .catch(() => {
+          // keep offline when sync fails; pendingSync remains true
+        });
+    }
     tryCalendarSync(item);
     scheduleReminder(item);
     emitActivity({
       action: 'created',
       label: `Reminder added · ${item.title}`,
     });
-    notifyRemindersUpdated('created', { item });
+    notifyRemindersUpdated();
     return item;
   }
   function addNoteToReminder(id, noteText){
@@ -1542,8 +1556,21 @@ export async function initReminders(sel = {}) {
   });
   document.addEventListener('DOMContentLoaded', () => { settingsSection?.classList.add('hidden'); });
 
+  function getSelectedPriorityValue() {
+    if (typeof document !== 'undefined') {
+      const chip = document.querySelector('fieldset#priorityChips input[name="priority"]:checked');
+      if (chip && typeof chip.value === 'string' && chip.value) {
+        return chip.value;
+      }
+    }
+    if (priority && typeof priority.value === 'string' && priority.value) {
+      return priority.value;
+    }
+    return 'Medium';
+  }
+
   saveBtn?.addEventListener('click', () => {
-    const priorityValue = getPriorityInputValue();
+    const priorityValue = getSelectedPriorityValue();
     if(editingId){
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }
@@ -1552,18 +1579,31 @@ export async function initReminders(sel = {}) {
       if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
       else { const p=parseQuickWhen(tNew); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
       it.title = tNew;
-      it.priority = priorityValue;
+      it.priority=priorityValue;
       if(categoryInput){ it.category = normalizeCategory(categoryInput.value); }
       it.due = due;
       if(details){ it.notes = details.value.trim(); }
       it.updatedAt=Date.now();
-      saveToFirebase(it);
+      const updatePromise = saveToFirebase(it);
+      if (updatePromise && typeof updatePromise.then === 'function') {
+        updatePromise
+          .then(() => {
+            if (userId && it.pendingSync) {
+              it.pendingSync = false;
+              persistItems();
+            }
+          })
+          .catch(() => {
+            // keep offline; pendingSync remains true
+          });
+      }
       tryCalendarSync(it);
       render();
       scheduleReminder(it);
       persistItems();
       notifyRemindersUpdated('updated', { item: it });
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
+      notifyRemindersUpdated();
       resetForm();
       toast('Reminder updated');
       dispatchCueEvent('cue:close', { reason: 'updated' });
@@ -1575,7 +1615,7 @@ export async function initReminders(sel = {}) {
     if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
     else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
     addItem({ title:t, priority:priorityValue, category: categoryInput ? categoryInput.value : '', due, notes: noteText });
-    title.value=''; time.value=''; if(details) details.value='';
+    resetForm();
     dispatchCueEvent('cue:close', { reason: 'created' });
   });
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveBtn.click(); });
