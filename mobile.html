@@ -130,7 +130,6 @@
 
     /* Always show these in Minimal Mode */
     body:not(.show-full) #voiceAddWrap,
-    body:not(.show-full) #toggleUiBtn,
     body:not(.show-full) #reminderList {
       display: block !important;
     }
@@ -181,14 +180,6 @@
     body:not(.show-full) #reminderList .task-item input,
     body:not(.show-full) #reminderList .task-item .task-notes:not(.min-notes) {
       display: none !important;
-    }
-
-    /* Toggle button (moved from inline to CSS) */
-    #toggleUiBtn {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 40;
     }
 
     /* Minimal layout tweaks for the surrounding card */
@@ -503,28 +494,7 @@
       <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
       <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
     </div>
-    <button id="toggleUiBtn" class="btn btn-ghost">Full UI</button>
-    <!-- Focus List: minimal tasks-only home state -->
-    <section id="focusList" class="focus-list nonEssential" aria-label="Tasks">
-      <!-- populated by JS: renderList() -->
-    </section>
-
-    <!-- Per-task detail surface used when a task is selected -->
-    <section
-      id="focusDetail"
-      class="focus-detail nonEssential"
-      hidden
-      aria-labelledby="focusDetailTitle"
-      role="dialog"
-      aria-modal="true"
-      tabindex="-1"
-    >
-      <header class="focus-detail__header">
-        <button id="focusBackBtn" class="btn btn-ghost" aria-label="Back to task list">← Back</button>
-        <h2 id="focusDetailTitle" class="text-lg font-semibold">Task</h2>
-      </header>
-      <div id="focusDetailBody" class="focus-detail__body"></div>
-    </section>
+    <!-- (cleanup) focusList/focusDetail removed; landing is Reminders list -->
 
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
@@ -569,7 +539,7 @@
       <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="hidden space-y-3 task-list-min"></ul>
+          <ul id="reminderList" class="hidden space-y-3 task-list-min" aria-live="polite"></ul>
           <p class="text-xs text-base-content/60 nonEssential">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -634,37 +604,7 @@
     <!-- END GPT CHANGE -->
   </main>
 
-  <nav
-    class="btm-nav btm-nav-xs fixed bottom-0 left-0 right-0 border-t bg-base-100 nonFocusUI nonEssential"
-    role="tablist"
-    aria-label="Primary navigation"
-  >
-    <button
-      type="button"
-      class="active"
-      data-view-target="reminders"
-      aria-controls="view-reminders"
-      aria-current="page"
-    >
-      <span class="btm-nav-label">Reminders</span>
-    </button>
-    <button
-      type="button"
-      data-view-target="today"
-      aria-controls="view-today"
-      aria-current="false"
-    >
-      <span class="btm-nav-label">Today</span>
-    </button>
-    <button
-      type="button"
-      data-view-target="notebook"
-      aria-controls="view-notebook"
-      aria-current="false"
-    >
-      <span class="btm-nav-label">Notebook</span>
-    </button>
-  </nav>
+  <!-- (cleanup) bottom tab navigation removed; single minimalist view -->
 
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
