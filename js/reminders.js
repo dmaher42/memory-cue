@@ -253,8 +253,8 @@ export async function initReminders(sel = {}) {
 
   try {
     if (variant === 'mobile' && typeof document !== 'undefined') {
-      // Minimal Mode is the default; let the UI toggle control add/remove 'show-full'
-      // (no body class added here)
+      // Mobile now defaults to the full UI; minimal mode is only enabled when the class is removed elsewhere.
+      document.body.classList.add('show-full');
     }
   } catch {
     /* ignore environments without DOM */
