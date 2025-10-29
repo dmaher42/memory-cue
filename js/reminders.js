@@ -518,9 +518,26 @@ export async function initReminders(sel = {}) {
     const sheet =
       document.getElementById('createReminderSheet') ||
       document.getElementById('create-sheet');
-    if (sheet && sheet.classList?.contains('open')) {
-      sheet.classList.remove('open');
-      sheet.setAttribute('aria-hidden', 'true');
+    if (!sheet) {
+      return;
+    }
+
+    const wasOpen = sheet.classList?.contains('open') || !sheet.classList?.contains('hidden');
+    if (!wasOpen) {
+      return;
+    }
+
+    sheet.classList?.add('hidden');
+    sheet.setAttribute('hidden', '');
+    sheet.setAttribute('aria-hidden', 'true');
+    sheet.removeAttribute('open');
+    sheet.classList?.remove('open');
+
+    const backdrop = sheet.querySelector('.sheet-backdrop, .backdrop');
+    if (backdrop instanceof HTMLElement) {
+      backdrop.classList.add('hidden');
+      backdrop.setAttribute('hidden', '');
+      backdrop.setAttribute('aria-hidden', 'true');
     }
   }
 
