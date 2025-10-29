@@ -124,6 +124,74 @@ function bindNotificationCleanupHandlers() {
   notificationCleanupBound = true;
 }
 
+let voiceInputInitialized = false;
+
+function initVoiceInput() {
+  if (voiceInputInitialized) {
+    return;
+  }
+  voiceInputInitialized = true;
+
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const mic = document.getElementById('voiceAddBtn');
+  const status = document.getElementById('voiceStatus');
+  const input = document.getElementById('reminderText');
+
+  if (!mic || !input) {
+    return;
+  }
+
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    if (status) {
+      status.textContent = 'Speech not supported';
+      status.hidden = false;
+    }
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recog = new SpeechRecognition();
+  recog.lang = 'en-US';
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
+
+  mic.addEventListener('click', () => {
+    try {
+      if (status) {
+        status.hidden = false;
+        status.textContent = 'Listening…';
+      }
+      recog.start();
+    } catch (err) {
+      console.warn('Speech recognition error:', err);
+    }
+  });
+
+  recog.addEventListener('result', (e) => {
+    const transcript = e.results?.[0]?.[0]?.transcript?.trim() || '';
+    if (!transcript) {
+      if (status) {
+        status.hidden = true;
+      }
+      return;
+    }
+    input.value = transcript;
+    if (status) {
+      status.textContent = 'Added: ' + transcript;
+      status.hidden = true;
+    }
+  });
+
+  recog.addEventListener('end', () => {
+    if (status) {
+      status.hidden = true;
+    }
+  });
+}
+
 function normalizeCategory(value) {
   if (typeof value === 'string') {
     const trimmed = value.replace(/\s+/g, ' ').trim();
@@ -188,7 +256,6 @@ export async function initReminders(sel = {}) {
   const googleUserName = $(sel.googleUserNameSel);
   const dateFeedback = $(sel.dateFeedbackSel);
   const addQuickBtn = $(sel.addQuickBtnSel);
-  const voiceBtn = $(sel.voiceBtnSel);
   const notifBtn = $(sel.notifBtnSel);
   const moreBtn = $(sel.moreBtnSel);
   const moreMenu = $(sel.moreMenuSel);
@@ -271,6 +338,19 @@ export async function initReminders(sel = {}) {
     document.dispatchEvent(new CustomEvent(name, { detail }));
   };
 
+  function closeCreateSheetIfOpen() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const sheet =
+      document.getElementById('createReminderSheet') ||
+      document.getElementById('create-sheet');
+    if (sheet && sheet.classList?.contains('open')) {
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   function emitReminderUpdates() {
     try {
       document.dispatchEvent(new CustomEvent('reminders:updated', { detail: { items } }));
@@ -345,6 +425,7 @@ export async function initReminders(sel = {}) {
   }
 
   bindNotificationCleanupHandlers();
+  initVoiceInput();
 
   // Placeholder for Firebase modules loaded later
   let initializeApp, getFirestore, enableMultiTabIndexedDbPersistence,
@@ -370,9 +451,7 @@ export async function initReminders(sel = {}) {
   let filter = resolvedDefaultFilter || (filterBtns.length ? 'today' : 'all');
   let categoryFilterValue = categoryFilter?.value || 'all';
   let sortKey = 'smart';
-  let listening = false;
-  let recog = null;
-  let voiceRestartTimer = null;
+  let suppressRenderMemoryEvent = false;
   let userId = null;
   let unsubscribe = null;
   let editingId = null;
@@ -989,12 +1068,15 @@ export async function initReminders(sel = {}) {
       pendingSync: !userId,
     };
     items = [item, ...items];
+    suppressRenderMemoryEvent = true;
     render();
     persistItems();
     saveToFirebase(item);
     tryCalendarSync(item);
     scheduleReminder(item);
     emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    closeCreateSheetIfOpen();
     emitActivity({
       action: 'created',
       label: `Reminder added · ${item.title}`,
@@ -1275,7 +1357,9 @@ export async function initReminders(sel = {}) {
       });
     }
 
-    if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
+    if (suppressRenderMemoryEvent) {
+      suppressRenderMemoryEvent = false;
+    } else if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
       const payload = items.map(item => ({ ...item }));
       try {
         if (typeof CustomEvent === 'function') {
@@ -1591,10 +1675,13 @@ export async function initReminders(sel = {}) {
       it.updatedAt=Date.now();
       saveToFirebase(it);
       tryCalendarSync(it);
+      suppressRenderMemoryEvent = true;
       render();
       scheduleReminder(it);
       persistItems();
       emitReminderUpdates();
+      dispatchCueEvent('memoryCue:remindersUpdated', { items });
+      closeCreateSheetIfOpen();
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
       resetForm();
       toast('Reminder updated');
@@ -1672,86 +1759,6 @@ export async function initReminders(sel = {}) {
   saveSettings?.addEventListener('click', () => { if(!syncUrlInput) return; localStorage.setItem('syncUrl', syncUrlInput.value.trim()); toast('Settings saved'); });
   testSync?.addEventListener('click', async () => { if(!syncUrlInput) return; const url = syncUrlInput.value.trim(); if(!url){ toast('Enter URL first'); return; } try{ const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ test:true }) }); toast(res.ok ? 'Test ok' : 'Test failed'); } catch { toast('Test failed'); } });
 
-  function setVoiceButtonActive(isActive) {
-    if (!voiceBtn) return;
-    voiceBtn.textContent = isActive ? '👂' : '🎙️';
-  }
-
-  function startVoiceRecognition(forceRestart = false) {
-    if (!recog) return false;
-    if (listening && !forceRestart) return true;
-    try {
-      recog.start();
-      listening = true;
-      setVoiceButtonActive(true);
-      return true;
-    } catch {
-      listening = false;
-      setVoiceButtonActive(false);
-      return false;
-    }
-  }
-
-  function stopVoiceRecognition() {
-    if (!recog) return;
-    listening = false;
-    clearTimeout(voiceRestartTimer);
-    try {
-      recog.stop();
-    } catch {
-      // ignore stop failures so the UI can recover on the next attempt
-    }
-    setVoiceButtonActive(false);
-  }
-
-  function scheduleVoiceRestart() {
-    clearTimeout(voiceRestartTimer);
-    voiceRestartTimer = setTimeout(() => {
-      voiceRestartTimer = null;
-      if (!listening || !recog) return;
-      if (!startVoiceRecognition(true)) {
-        listening = false;
-        setVoiceButtonActive(false);
-      }
-    }, 400);
-  }
-
-  try {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) {
-      recog = new SR();
-      recog.lang = locale;
-      recog.interimResults = false;
-      if ('continuous' in recog) {
-        try { recog.continuous = true; } catch { /* some browsers disallow setting this */ }
-      }
-      recog.onresult = (e) => {
-        const t = e.results?.[0]?.[0]?.transcript || '';
-        if (title) {
-          title.value = t;
-          toast('Heard: ' + t);
-        }
-      };
-      recog.onend = () => {
-        if (!listening) {
-          setVoiceButtonActive(false);
-          return;
-        }
-        scheduleVoiceRestart();
-      };
-    }
-  } catch {
-    // Speech recognition not available; ignore errors so the rest of the app works normally.
-  }
-
-  voiceBtn?.addEventListener('click', () => {
-    if (!recog) return;
-    if (listening) {
-      stopVoiceRecognition();
-    } else {
-      startVoiceRecognition();
-    }
-  });
   notifBtn?.addEventListener('click', async () => {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
     if(Notification.permission === 'granted'){
