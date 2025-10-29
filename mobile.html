@@ -385,6 +385,30 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
+      <!-- QUICK ADD: always visible at the top of Reminders -->
+      <section id="quickAddBar" class="card bg-base-100 border" aria-label="Quick add reminder">
+        <div class="card-body gap-3 compact">
+          <div class="flex items-center gap-2">
+            <input id="quickAddInput"
+                   type="text"
+                   class="input input-bordered flex-1"
+                   placeholder="What do you need to remember?"
+                   aria-label="Quick add reminder"
+                   autocomplete="off" />
+            <button id="quickAddMic"
+                    class="btn btn-circle btn-ghost"
+                    type="button"
+                    aria-label="Add by voice">🎤</button>
+            <button id="quickAddSubmit"
+                    class="btn btn-primary"
+                    type="button"
+                    aria-label="Add reminder now">Add</button>
+          </div>
+          <p class="text-xs text-base-content/60">
+            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; <kbd>Enter</kbd> to add; <kbd>Alt</kbd>+<kbd>M</kbd> for mic.
+          </p>
+        </div>
+      </section>
       <!-- BEGIN GPT CHANGE: sticky filters -->
       <div id="stickyFilters" style="position:sticky; top:56px; z-index: 10;">
         <section id="reminderFilters" class="card bg-base-100 border">
