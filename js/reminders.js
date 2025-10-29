@@ -1742,11 +1742,22 @@ export async function initReminders(sel = {}) {
     const createMobileItem = (r, catName) => {
     const div = document.createElement('div');
     div.className = 'task-item' + (r.done ? ' completed' : '');
+    const summary = {
+      id: r.id,
+      title: r.title,
+      dueIso: r.due || null,
+      priority: r.priority || 'Medium',
+      category: catName,
+      done: Boolean(r.done),
+    };
     div.dataset.category = catName;
     // Make rows discoverable by other modules (e.g., Today view)
-    div.dataset.reminder = '1';
-    div.dataset.id = r.id;
-    if (r.due) div.dataset.due = r.due; // ISO string
+    div.dataset.reminder = JSON.stringify(summary);
+    div.dataset.id = summary.id;
+    div.dataset.title = summary.title;
+    div.dataset.priority = summary.priority;
+    div.dataset.done = String(summary.done);
+    if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
       const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
@@ -1823,8 +1834,21 @@ export async function initReminders(sel = {}) {
       catRows.forEach(r => {
         if(variant === 'desktop'){
           const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
-          itemEl.dataset.id = r.id;
-          itemEl.dataset.category = catName;
+          const summary = {
+            id: r.id,
+            title: r.title,
+            dueIso: r.due || null,
+            priority: r.priority || 'Medium',
+            category: catName,
+            done: Boolean(r.done),
+          };
+          itemEl.dataset.id = summary.id;
+          itemEl.dataset.category = summary.category;
+          itemEl.dataset.title = summary.title;
+          itemEl.dataset.priority = summary.priority;
+          itemEl.dataset.done = String(summary.done);
+          if (summary.dueIso) itemEl.dataset.due = summary.dueIso;
+          itemEl.dataset.reminder = JSON.stringify(summary);
           itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
           const dueLabel = formatDesktopDue(r);
           const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
