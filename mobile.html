@@ -674,7 +674,9 @@
           }
         });
 
-        const skipLink = document.querySelector('a[href="#main"]');
+        const skipLink =
+          document.querySelector('.skip-link') ||
+          document.querySelector('a[href$="#main"]');
         const main = document.getElementById('main') || document.querySelector('main');
         if (main) {
           main.setAttribute('data-active-view', target);
