@@ -978,7 +978,10 @@
 
             if (dataset.reminder) {
               try {
-                raw = JSON.parse(dataset.reminder);
+                const parsed = JSON.parse(dataset.reminder);
+                if (parsed && typeof parsed === 'object') {
+                  raw = parsed;
+                }
               } catch {
                 raw = null;
               }
