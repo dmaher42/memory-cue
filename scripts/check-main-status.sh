@@ -15,15 +15,15 @@ echo "Fetching latest changes from remote..."
 git fetch origin main --quiet
 
 # Get commit hashes
-MAIN_LOCAL=$(git rev-parse origin/main 2>/dev/null || echo "not found")
+MAIN_TRACKING=$(git rev-parse origin/main 2>/dev/null || echo "not found")
 MAIN_REMOTE_HASH=$(git ls-remote origin refs/heads/main | cut -f1)
 
-echo "Local tracking branch (origin/main): $MAIN_LOCAL"
+echo "Local tracking branch (origin/main): $MAIN_TRACKING"
 echo "Remote main branch hash:             $MAIN_REMOTE_HASH"
 echo ""
 
 # Compare
-if [ "$MAIN_LOCAL" = "$MAIN_REMOTE_HASH" ]; then
+if [ "$MAIN_TRACKING" = "$MAIN_REMOTE_HASH" ]; then
     echo "✅ STATUS: Main branch is UP TO DATE"
     echo ""
     echo "Latest commit on main:"
@@ -31,7 +31,7 @@ if [ "$MAIN_LOCAL" = "$MAIN_REMOTE_HASH" ]; then
 else
     echo "⚠️  STATUS: Main branch has differences"
     echo ""
-    if [ "$MAIN_LOCAL" = "not found" ]; then
+    if [ "$MAIN_TRACKING" = "not found" ]; then
         echo "Local tracking branch not found. Run: git fetch origin main"
     else
         echo "Local and remote commits differ."
