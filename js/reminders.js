@@ -138,7 +138,8 @@ function initVoiceInput() {
 
   const mic = document.getElementById('voiceAddBtn');
   const status = document.getElementById('voiceStatus');
-  const input = document.getElementById('reminderText');
+  const input =
+    document.getElementById('quickAddInput') || document.getElementById('reminderText');
 
   if (!mic || !input) {
     return;
@@ -170,6 +171,10 @@ function initVoiceInput() {
     }
   });
 
+  document.getElementById('quickAddMic')?.addEventListener('click', () => {
+    mic?.click();
+  });
+
   recog.addEventListener('result', (e) => {
     const transcript = e.results?.[0]?.[0]?.transcript?.trim() || '';
     if (!transcript) {
@@ -182,6 +187,13 @@ function initVoiceInput() {
     if (status) {
       status.textContent = 'Added: ' + transcript;
       status.hidden = true;
+    }
+    if (input && input.id === 'quickAddInput') {
+      try {
+        const globalQuickAdd =
+          typeof window !== 'undefined' ? window.memoryCueQuickAddNow : null;
+        globalQuickAdd?.();
+      } catch {}
     }
   });
 
@@ -274,6 +286,34 @@ export async function initReminders(sel = {}) {
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
 
+  const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
+
+  function loadLastDefaults() {
+    if (typeof localStorage === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem(LAST_DEFAULTS_KEY) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveLastDefaults(obj = {}) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(LAST_DEFAULTS_KEY, JSON.stringify(obj));
+    } catch {}
+  }
+
+  function updateDefaultsFrom(entry) {
+    const prev = loadLastDefaults();
+    const next = {
+      category: normalizeCategory(entry?.category || prev.category || DEFAULT_CATEGORY),
+      priority: entry?.priority || prev.priority || 'Medium',
+      // repeat: entry?.repeat || prev.repeat || null,
+    };
+    saveLastDefaults(next);
+  }
+
   const priorityChipSelector = 'fieldset#priorityChips input[name="priority"]';
 
   function getPriorityInputValue() {
@@ -315,6 +355,107 @@ export async function initReminders(sel = {}) {
       }
     } catch {
       // Ignore DOM update issues so the rest of the flow can continue.
+    }
+  }
+
+  function applyStoredDefaultsToInputs() {
+    const d = loadLastDefaults();
+    if (d.category && categoryInput) categoryInput.value = d.category;
+    if (d.priority) setPriorityInputValue(d.priority);
+  }
+
+  applyStoredDefaultsToInputs();
+
+  const quickInput =
+    typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
+  const quickMic =
+    typeof document !== 'undefined' ? document.getElementById('quickAddMic') : null;
+  const quickBtn =
+    typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
+
+  function buildQuickReminder(titleText) {
+    const now = Date.now();
+    const d = loadLastDefaults();
+    const dueIso = null;
+
+    return {
+      id: uid(),
+      title: (titleText || '').trim(),
+      priority: d.priority || getPriorityInputValue(),
+      category: normalizeCategory(d.category || categoryInput?.value || DEFAULT_CATEGORY),
+      notes: '',
+      done: false,
+      createdAt: now,
+      updatedAt: now,
+      due: dueIso,
+      pendingSync: !userId,
+    };
+  }
+
+  async function quickAddNow() {
+    if (!quickInput) return;
+    const t = (quickInput.value || '').trim();
+    if (!t) return;
+
+    const entry = buildQuickReminder(t);
+    items.unshift(entry);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    saveToFirebase(entry);
+    tryCalendarSync(entry);
+    scheduleReminder(entry);
+    rescheduleAllReminders();
+
+    updateDefaultsFrom(entry);
+
+    emitReminderUpdates();
+    try {
+      document.dispatchEvent(
+        new CustomEvent('memoryCue:remindersUpdated', { detail: { items } }),
+      );
+    } catch {}
+
+    emitActivity({ action: 'created', label: `Reminder added · ${entry.title}` });
+
+    quickInput.value = '';
+  }
+
+  if (typeof window !== 'undefined') {
+    window.memoryCueQuickAddNow = quickAddNow;
+  }
+
+  quickBtn?.addEventListener('click', () => {
+    quickAddNow();
+  });
+
+  quickInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      quickAddNow();
+    }
+  });
+
+  if (typeof window !== 'undefined') {
+    if (!window.memoryCueQuickAddShortcutsBound) {
+      window.memoryCueQuickAddShortcutsBound = true;
+      window.addEventListener('keydown', (e) => {
+        if (
+          e.target &&
+          (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+        ) {
+          return;
+        }
+        if (e.key === '/' || e.key === 'q' || e.key === 'Q') {
+          if (quickInput) {
+            e.preventDefault();
+            quickInput.focus();
+          }
+        } else if ((e.key === 'm' || e.key === 'M') && e.altKey) {
+          e.preventDefault();
+          quickMic?.click();
+        }
+      });
     }
   }
 
@@ -1048,7 +1189,18 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; setPriorityInputValue('Medium'); if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Cue'; cancelEditBtn?.classList.add('hidden'); }
+  function resetForm(){
+    if(title) title.value='';
+    if(date) date.value='';
+    if(time) time.value='';
+    if(details) details.value='';
+    setPriorityInputValue('Medium');
+    if(categoryInput) categoryInput.value = DEFAULT_CATEGORY;
+    applyStoredDefaultsToInputs();
+    editingId=null;
+    if(saveBtn) saveBtn.textContent='Save Cue';
+    cancelEditBtn?.classList.add('hidden');
+  }
   function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } setPriorityInputValue(it?.priority || 'Medium'); if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
 
   function addItem(obj){
@@ -1071,6 +1223,7 @@ export async function initReminders(sel = {}) {
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
+    updateDefaultsFrom(item);
     saveToFirebase(item);
     tryCalendarSync(item);
     scheduleReminder(item);
