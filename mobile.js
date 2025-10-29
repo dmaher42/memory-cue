@@ -1,81 +1,5 @@
 import { initReminders } from './js/reminders.js';
 
-/* BEGIN GPT CHANGE: tabbed navigation */
-(function () {
-  const views = {
-    reminders: document.querySelector('[data-view="reminders"]'),
-    today: document.querySelector('[data-view="today"]'),
-    notebook: document.querySelector('[data-view="notebook"]'),
-  };
-  const nav = document.querySelector('.btm-nav');
-  if (!nav || !views.reminders || !views.today || !views.notebook) return;
-  const btns = Array.from(nav.querySelectorAll('button')).slice(0, 3);
-  const order = ['reminders', 'today', 'notebook'];
-
-  const reduceMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)')
-    : null;
-
-  function show(target) {
-    if (!order.includes(target)) return;
-    Object.entries(views).forEach(([key, el]) => {
-      if (!el) return;
-      const isActive = key === target;
-      el.classList.toggle('hidden', !isActive);
-      el.setAttribute('aria-hidden', String(!isActive));
-    });
-    btns.forEach((button, index) => {
-      const isActive = order[index] === target;
-      button.setAttribute('aria-current', isActive ? 'page' : 'false');
-      button.classList.toggle('active', isActive);
-    });
-    const skip = document.querySelector('a[href="#main"]');
-    const main = document.getElementById('main') || document.querySelector('main');
-    if (skip && main) {
-      main.setAttribute('data-active-view', target);
-    }
-    requestAnimationFrame(() => {
-      const behavior = reduceMotion?.matches ? 'auto' : 'smooth';
-      try {
-        window.scrollTo({ top: 0, behavior });
-      } catch {
-        window.scrollTo(0, 0);
-      }
-    });
-  }
-
-  btns.forEach((button, index) => {
-    button.addEventListener('click', () => {
-      show(order[index]);
-    });
-  });
-
-  document.querySelectorAll('[data-jump-view]').forEach((control) => {
-    control.addEventListener('click', () => {
-      const target = control.getAttribute('data-jump-view');
-      if (!target) return;
-      show(target);
-    });
-  });
-
-  document.querySelectorAll('[data-scroll-target]').forEach((control) => {
-    control.addEventListener('click', () => {
-      const targetId = control.getAttribute('data-scroll-target');
-      if (!targetId) return;
-      const el = document.getElementById(targetId);
-      if (!el) return;
-      try {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch {
-        el.scrollIntoView(true);
-      }
-    });
-  });
-
-  show('reminders');
-})();
-/* END GPT CHANGE */
-
 /* BEGIN GPT CHANGE: bottom sheet open/close */
 (function () {
   const fab = document.getElementById('fabCreate');
@@ -149,6 +73,7 @@ import { initReminders } from './js/reminders.js';
     sheet.removeAttribute('hidden');
     sheet.setAttribute('aria-hidden', 'false');
     sheet.setAttribute('open', '');
+    sheet.classList.add('open');
     const firstInput = sheet.querySelector('input,select,textarea,button');
     if (firstInput instanceof HTMLElement) {
       firstInput.focus();
@@ -161,6 +86,7 @@ import { initReminders } from './js/reminders.js';
     sheet.setAttribute('hidden', '');
     sheet.setAttribute('aria-hidden', 'true');
     sheet.removeAttribute('open');
+    sheet.classList.remove('open');
     const focusTarget =
       (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) || fab;
     if (focusTarget && typeof focusTarget.focus === 'function') {
@@ -221,7 +147,6 @@ initReminders({
   emptyStateSel: '#emptyState',
   statusSel: '#statusMessage',
   syncStatusSel: '#syncStatus',
-  voiceBtnSel: '#voiceBtn',
   notifBtnSel: '#notifBtn',
   addQuickBtnSel: '#quickAdd',
   filterBtnsSel: '[data-filter]',
@@ -270,7 +195,7 @@ initReminders({
   }
 
   function closeSheetIfOpen() {
-    if (sheetEl.classList.contains('hidden')) {
+    if (!sheetEl.classList.contains('open') && sheetEl.classList.contains('hidden')) {
       return;
     }
     if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {

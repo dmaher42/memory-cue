@@ -494,7 +494,28 @@
       <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
       <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
     </div>
-    <!-- (cleanup) focusList/focusDetail removed; landing is Reminders list -->
+    <!-- Removed Full UI toggle; minimalist layout is default -->
+    <!-- Focus List: minimal tasks-only home state -->
+    <section id="focusList" class="focus-list nonEssential" aria-label="Tasks">
+      <!-- populated by JS: renderList() -->
+    </section>
+
+    <!-- Per-task detail surface used when a task is selected -->
+    <section
+      id="focusDetail"
+      class="focus-detail nonEssential"
+      hidden
+      aria-labelledby="focusDetailTitle"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+    >
+      <header class="focus-detail__header">
+        <button id="focusBackBtn" class="btn btn-ghost" aria-label="Back to task list">← Back</button>
+        <h2 id="focusDetailTitle" class="text-lg font-semibold">Task</h2>
+      </header>
+      <div id="focusDetailBody" class="focus-detail__body"></div>
+    </section>
 
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
@@ -539,7 +560,7 @@
       <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="hidden space-y-3 task-list-min" aria-live="polite"></ul>
+          <ul id="reminderList" class="space-y-3 task-list-min"></ul>
           <p class="text-xs text-base-content/60 nonEssential">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -602,10 +623,8 @@
       </section>
     </section>
     <!-- END GPT CHANGE -->
-  </main>
-
-  <!-- (cleanup) bottom tab navigation removed; single minimalist view -->
-
+</main>
+  <!-- Removed bottom nav; single reminders view only -->
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -691,7 +710,6 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-3">
-            <button id="voiceBtn" class="btn btn-ghost" type="button" aria-label="Voice input">🎙️</button>
             <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
             <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
           </div>
@@ -739,7 +757,7 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <!-- BEGIN GPT CHANGE: global FAB -->
-  <button id="fabCreate" class="fab nonFocusUI nonEssential" aria-label="Add reminder">＋</button>
+  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
   <!-- END GPT CHANGE: global FAB -->
 
   <script src="app.js" type="module"></script>
@@ -1311,14 +1329,6 @@
   </script>
   <script>
     (function () {
-      var btn = document.getElementById('toggleUiBtn');
-      if (!btn) return;
-      btn.addEventListener('click', function () {
-        document.body.classList.toggle('show-full');
-        btn.textContent = document.body.classList.contains('show-full') ? 'Minimal' : 'Full UI';
-      });
-    })();
-    (function () {
       function applyMinimalLayout() {
         var list = document.getElementById('reminderList');
         if (!list) return;
@@ -1360,123 +1370,7 @@
       document.addEventListener('reminders:updated', applyMinimalLayout);
     })();
   </script>
-  <script id="voice-add-script">
-    (function(){
-      const btn = document.getElementById('voiceAddBtn');
-      const statusEl = document.getElementById('voiceStatus');
-      const wrap = document.getElementById('voiceAddWrap');
-
-      if (!btn) return;
-
-      // Web Speech API (Chrome/Edge/Android via webkit*, some desktop Chrome; graceful fallback elsewhere)
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-      // Helper: best-effort task creator using whatever the app exposes
-      async function createTaskFromText(text){
-        if (!text || !text.trim()) return;
-        // Preferred hooks, if present:
-        if (typeof window.addReminderFromVoice === 'function') return window.addReminderFromVoice(text);
-        if (typeof window.createReminder === 'function') return window.createReminder(text);
-        if (typeof window.createReminderFromInput === 'function') return window.createReminderFromInput(text);
-
-        // Fallbacks: try to populate a known input and submit
-        const input = document.getElementById('reminderText');
-        if (input) {
-          input.value = text;
-          // try submit the nearest form
-          const form = input.form || document.querySelector('form');
-          if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
-        }
-
-        // Emit an app-level event so existing code can listen and handle creation
-        document.dispatchEvent(new CustomEvent('voice:addTask', { detail: { text } }));
-      }
-
-      function setStatus(msg, show=true){
-        if (!statusEl) return;
-        if (show) {
-          statusEl.hidden = false;
-          statusEl.textContent = msg;
-        } else {
-          statusEl.hidden = true;
-        }
-      }
-
-      if (!SpeechRecognition) {
-        // Graceful fallback: clicking mic prompts for manual entry
-        btn.addEventListener('click', async () => {
-          const text = window.prompt('Speak-to-text not supported here. Type your task:','');
-          if (text) await createTaskFromText(text);
-        });
-        setStatus('Voice not supported here', true);
-        return;
-      }
-
-      // Configure recognizer
-      const recog = new SpeechRecognition();
-      recog.lang = 'en-AU';          // Australian English
-      recog.interimResults = true;    // show progress
-      recog.maxAlternatives = 1;
-      recog.continuous = false;       // single utterance per tap
-
-      let collecting = false;
-      let finalTranscript = '';
-
-      function start(){
-        if (collecting) return;
-        finalTranscript = '';
-        collecting = true;
-        btn.setAttribute('aria-pressed', 'true');
-        if (wrap) wrap.classList.add('listening');
-        setStatus('Listening… speak your task');
-        try { recog.start(); } catch(_) {}
-      }
-
-      function stop(){
-        if (!collecting) return;
-        collecting = false;
-        btn.setAttribute('aria-pressed', 'false');
-        if (wrap) wrap.classList.remove('listening');
-        setStatus('Processing…');
-        try { recog.stop(); } catch(_) {}
-      }
-
-      btn.addEventListener('click', () => (collecting ? stop() : start()));
-
-      recog.onresult = async (e) => {
-        let interim = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const transcript = e.results[i][0].transcript;
-          if (e.results[i].isFinal) finalTranscript += transcript;
-          else interim += transcript;
-        }
-        if (interim) setStatus('…' + interim);
-      };
-
-      recog.onerror = (e) => {
-        setStatus('Mic error: ' + (e.error || 'unknown'));
-        collecting = false;
-        btn.setAttribute('aria-pressed','false');
-        if (wrap) wrap.classList.remove('listening');
-      };
-
-      recog.onend = async () => {
-        // Called after stop or timeout
-        const text = (finalTranscript || '').trim();
-        if (text) {
-          setStatus('Adding: ' + text);
-          try { await createTaskFromText(text); }
-          catch (err) { setStatus('Could not add task'); console.warn(err); }
-          setStatus('Tap 🎤 to speak', true);
-        } else {
-          setStatus('Tap 🎤 to speak', true);
-        }
-        collecting = false;
-        btn.setAttribute('aria-pressed','false');
-        if (wrap) wrap.classList.remove('listening');
-      };
-    })();
-  </script>
+  
   <script id="add-task-guard-script">
     (function () {
       const dialog = document.querySelector('[data-add-task-dialog]');
@@ -1503,6 +1397,7 @@
         dialog.hidden = true;
         dialog.removeAttribute('open');
         dialog.setAttribute('aria-hidden', 'true');
+        dialog.classList.remove('open');
       };
 
       const isOpen = () => !dialog.classList.contains('hidden');
@@ -1522,6 +1417,7 @@
         dialog.hidden = false;
         dialog.setAttribute('open', '');
         dialog.setAttribute('aria-hidden', 'false');
+        dialog.classList.add('open');
         focusFirstField();
         document.dispatchEvent(new CustomEvent('reminder:sheet-opened', { detail: { trigger: lastTrigger } }));
       };
