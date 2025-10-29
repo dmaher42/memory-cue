@@ -137,11 +137,13 @@ function initVoiceInput() {
   }
 
   const mic = document.getElementById('voiceAddBtn');
+  const quickMic = document.getElementById('quickAddMic');
   const status = document.getElementById('voiceStatus');
-  const input =
-    document.getElementById('quickAddInput') || document.getElementById('reminderText');
+  const quickInput = document.getElementById('quickAddInput');
+  const formInput = document.getElementById('reminderText');
+  const defaultInput = quickInput || formInput;
 
-  if (!mic || !input) {
+  if (!mic || !defaultInput) {
     return;
   }
 
@@ -159,7 +161,34 @@ function initVoiceInput() {
   recog.interimResults = false;
   recog.maxAlternatives = 1;
 
-  mic.addEventListener('click', () => {
+  let activeInput = defaultInput;
+
+  function resolveInputForButton(btn) {
+    if (!btn) {
+      return defaultInput;
+    }
+    const explicitTargetId = btn.getAttribute?.('data-voice-target');
+    if (explicitTargetId) {
+      const explicitTarget = document.getElementById(explicitTargetId);
+      if (explicitTarget) {
+        return explicitTarget;
+      }
+    }
+    if (btn === quickMic && quickInput) {
+      return quickInput;
+    }
+    if (btn === mic && formInput) {
+      return formInput;
+    }
+    return defaultInput;
+  }
+
+  function beginListeningFor(btn) {
+    const targetInput = resolveInputForButton(btn);
+    if (!targetInput) {
+      return;
+    }
+    activeInput = targetInput;
     try {
       if (status) {
         status.hidden = false;
@@ -169,11 +198,10 @@ function initVoiceInput() {
     } catch (err) {
       console.warn('Speech recognition error:', err);
     }
-  });
+  }
 
-  document.getElementById('quickAddMic')?.addEventListener('click', () => {
-    mic?.click();
-  });
+  mic.addEventListener('click', () => beginListeningFor(mic));
+  quickMic?.addEventListener('click', () => beginListeningFor(quickMic));
 
   recog.addEventListener('result', (e) => {
     const transcript = e.results?.[0]?.[0]?.transcript?.trim() || '';
@@ -183,12 +211,16 @@ function initVoiceInput() {
       }
       return;
     }
-    input.value = transcript;
+    const target = activeInput || defaultInput;
+    if (!target) {
+      return;
+    }
+    target.value = transcript;
     if (status) {
       status.textContent = 'Added: ' + transcript;
       status.hidden = true;
     }
-    if (input && input.id === 'quickAddInput') {
+    if (target && target.id === 'quickAddInput') {
       try {
         const globalQuickAdd =
           typeof window !== 'undefined' ? window.memoryCueQuickAddNow : null;
