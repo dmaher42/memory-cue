@@ -119,6 +119,28 @@
       background-color: rgba(15, 23, 42, 0.88);
     }
   </style>
+  <!-- Skip-link CSS: fully hidden until keyboard focus -->
+  <style id="skip-link-css">
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus-visible {
+      left: 16px;
+      top: 16px;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      z-index: 50;
+      border-radius: 9999px; padding: 8px 12px;
+      background: var(--fallback-p, #2563eb); color: var(--fallback-pc, #fff);
+      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    }
+  </style>
   <style id="minimal-mode-unified">
     /* ============ Minimal Mode: Rules apply when body does NOT have .show-full ============ */
 
@@ -458,7 +480,8 @@
   </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
-  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
+  <!-- Accessibility: skip link (hidden by default; only shows on :focus-visible) -->
+  <a class="skip-link" href="./mobile.html#main">Skip to main content</a>
 
   <header class="navbar bg-base-100 sticky top-0 z-50 border-b nonFocusUI nonEssential">
     <div class="flex-1 items-center gap-2">
