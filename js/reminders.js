@@ -513,9 +513,22 @@ export async function initReminders(sel = {}) {
       const now = Date.now();
       const hasDate = typeof date?.value === 'string' && date.value;
       const hasTime = typeof time?.value === 'string' && time.value;
-      const dueValue = hasDate || hasTime
-        ? localDateTimeToISO(hasDate ? date.value : todayISO(), hasTime ? time.value : '09:00')
-        : null;
+      let dueValue = null;
+      if (hasDate || hasTime) {
+        dueValue = localDateTimeToISO(
+          hasDate ? date.value : todayISO(),
+          hasTime ? time.value : '09:00',
+        );
+      } else {
+        try {
+          const parsed = parseQuickWhen(raw);
+          if (parsed?.time) {
+            dueValue = new Date(`${parsed.date}T${parsed.time}:00`).toISOString();
+          }
+        } catch {
+          // Ignore parse failures and keep the reminder undated.
+        }
+      }
 
       const entry = {
         id: uid(),
