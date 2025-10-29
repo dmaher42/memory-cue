@@ -500,6 +500,62 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  if (addQuickBtn && title) {
+    addQuickBtn.addEventListener('click', () => {
+      const raw = (title.value || '').trim();
+      if (!raw) {
+        try {
+          title.focus();
+        } catch {}
+        return;
+      }
+
+      const now = Date.now();
+      const hasDate = typeof date?.value === 'string' && date.value;
+      const hasTime = typeof time?.value === 'string' && time.value;
+      const dueValue = hasDate || hasTime
+        ? localDateTimeToISO(hasDate ? date.value : todayISO(), hasTime ? time.value : '09:00')
+        : null;
+
+      const entry = {
+        id: uid(),
+        title: raw,
+        notes: typeof details?.value === 'string' ? details.value.trim() : '',
+        priority: getPriorityInputValue(),
+        category: normalizeCategory(categoryInput?.value || DEFAULT_CATEGORY),
+        done: false,
+        createdAt: now,
+        updatedAt: now,
+        due: dueValue,
+        pendingSync: !userId,
+      };
+
+      items.unshift(entry);
+      suppressRenderMemoryEvent = true;
+      render();
+      persistItems();
+      updateDefaultsFrom(entry);
+      saveToFirebase(entry);
+      tryCalendarSync(entry);
+      scheduleReminder(entry);
+      emitReminderUpdates();
+      dispatchCueEvent('memoryCue:remindersUpdated', { items });
+      closeCreateSheetIfOpen();
+      dispatchCueEvent('cue:close', { reason: 'created' });
+
+      title.value = '';
+      if (typeof details?.value !== 'undefined') {
+        details.value = '';
+      }
+      if (typeof date?.value !== 'undefined') {
+        date.value = '';
+      }
+      if (typeof time?.value !== 'undefined') {
+        time.value = '';
+      }
+    });
+  }
+
   if (categoryInput && !categoryInput.value) {
     categoryInput.value = DEFAULT_CATEGORY;
   }
@@ -1860,7 +1916,6 @@ export async function initReminders(sel = {}) {
   document.addEventListener('cue:cancelled', () => { resetForm(); });
   document.addEventListener('cue:prepare', () => { resetForm(); });
   window.addEventListener('load', ()=> title?.focus());
-  addQuickBtn?.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } handleSaveAction(); });
   q?.addEventListener('input', debounce(render,150));
   sortSel?.addEventListener('change', ()=>{ sortKey = sortSel.value; render(); });
   categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
