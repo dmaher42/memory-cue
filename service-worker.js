@@ -15,7 +15,7 @@
 
 const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
 const CACHE_PREFIX = 'mc-static-';
-const CACHE_VERSION = 'v11'; // bump this to force clients to update
+const CACHE_VERSION = 'v12'; // bump this to force clients to update
 const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const SHELL_URLS = [
