@@ -124,6 +124,86 @@ function bindNotificationCleanupHandlers() {
   notificationCleanupBound = true;
 }
 
+let voiceInputInitialized = false;
+
+function initVoiceInput() {
+  if (voiceInputInitialized) {
+    return;
+  }
+  voiceInputInitialized = true;
+
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const mic = document.getElementById('voiceAddBtn');
+  const status = document.getElementById('voiceStatus');
+  const input =
+    document.getElementById('quickAddInput') || document.getElementById('reminderText');
+
+  if (!mic || !input) {
+    return;
+  }
+
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    if (status) {
+      status.textContent = 'Speech not supported';
+      status.hidden = false;
+    }
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recog = new SpeechRecognition();
+  recog.lang = 'en-US';
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
+
+  mic.addEventListener('click', () => {
+    try {
+      if (status) {
+        status.hidden = false;
+        status.textContent = 'Listening…';
+      }
+      recog.start();
+    } catch (err) {
+      console.warn('Speech recognition error:', err);
+    }
+  });
+
+  document.getElementById('quickAddMic')?.addEventListener('click', () => {
+    mic?.click();
+  });
+
+  recog.addEventListener('result', (e) => {
+    const transcript = e.results?.[0]?.[0]?.transcript?.trim() || '';
+    if (!transcript) {
+      if (status) {
+        status.hidden = true;
+      }
+      return;
+    }
+    input.value = transcript;
+    if (status) {
+      status.textContent = 'Added: ' + transcript;
+      status.hidden = true;
+    }
+    if (input && input.id === 'quickAddInput') {
+      try {
+        const globalQuickAdd =
+          typeof window !== 'undefined' ? window.memoryCueQuickAddNow : null;
+        globalQuickAdd?.();
+      } catch {}
+    }
+  });
+
+  recog.addEventListener('end', () => {
+    if (status) {
+      status.hidden = true;
+    }
+  });
+}
+
 function normalizeCategory(value) {
   if (typeof value === 'string') {
     const trimmed = value.replace(/\s+/g, ' ').trim();
@@ -188,7 +268,6 @@ export async function initReminders(sel = {}) {
   const googleUserName = $(sel.googleUserNameSel);
   const dateFeedback = $(sel.dateFeedbackSel);
   const addQuickBtn = $(sel.addQuickBtnSel);
-  const voiceBtn = $(sel.voiceBtnSel);
   const notifBtn = $(sel.notifBtnSel);
   const moreBtn = $(sel.moreBtnSel);
   const moreMenu = $(sel.moreMenuSel);
@@ -206,6 +285,34 @@ export async function initReminders(sel = {}) {
   const categoryFilter = $(sel.categoryFilterSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
+
+  const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
+
+  function loadLastDefaults() {
+    if (typeof localStorage === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem(LAST_DEFAULTS_KEY) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveLastDefaults(obj = {}) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(LAST_DEFAULTS_KEY, JSON.stringify(obj));
+    } catch {}
+  }
+
+  function updateDefaultsFrom(entry) {
+    const prev = loadLastDefaults();
+    const next = {
+      category: normalizeCategory(entry?.category || prev.category || DEFAULT_CATEGORY),
+      priority: entry?.priority || prev.priority || 'Medium',
+      // repeat: entry?.repeat || prev.repeat || null,
+    };
+    saveLastDefaults(next);
+  }
 
   const priorityChipSelector = 'fieldset#priorityChips input[name="priority"]';
 
@@ -251,6 +358,107 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  function applyStoredDefaultsToInputs() {
+    const d = loadLastDefaults();
+    if (d.category && categoryInput) categoryInput.value = d.category;
+    if (d.priority) setPriorityInputValue(d.priority);
+  }
+
+  applyStoredDefaultsToInputs();
+
+  const quickInput =
+    typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
+  const quickMic =
+    typeof document !== 'undefined' ? document.getElementById('quickAddMic') : null;
+  const quickBtn =
+    typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
+
+  function buildQuickReminder(titleText) {
+    const now = Date.now();
+    const d = loadLastDefaults();
+    const dueIso = null;
+
+    return {
+      id: uid(),
+      title: (titleText || '').trim(),
+      priority: d.priority || getPriorityInputValue(),
+      category: normalizeCategory(d.category || categoryInput?.value || DEFAULT_CATEGORY),
+      notes: '',
+      done: false,
+      createdAt: now,
+      updatedAt: now,
+      due: dueIso,
+      pendingSync: !userId,
+    };
+  }
+
+  async function quickAddNow() {
+    if (!quickInput) return;
+    const t = (quickInput.value || '').trim();
+    if (!t) return;
+
+    const entry = buildQuickReminder(t);
+    items.unshift(entry);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    saveToFirebase(entry);
+    tryCalendarSync(entry);
+    scheduleReminder(entry);
+    rescheduleAllReminders();
+
+    updateDefaultsFrom(entry);
+
+    emitReminderUpdates();
+    try {
+      document.dispatchEvent(
+        new CustomEvent('memoryCue:remindersUpdated', { detail: { items } }),
+      );
+    } catch {}
+
+    emitActivity({ action: 'created', label: `Reminder added · ${entry.title}` });
+
+    quickInput.value = '';
+  }
+
+  if (typeof window !== 'undefined') {
+    window.memoryCueQuickAddNow = quickAddNow;
+  }
+
+  quickBtn?.addEventListener('click', () => {
+    quickAddNow();
+  });
+
+  quickInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      quickAddNow();
+    }
+  });
+
+  if (typeof window !== 'undefined') {
+    if (!window.memoryCueQuickAddShortcutsBound) {
+      window.memoryCueQuickAddShortcutsBound = true;
+      window.addEventListener('keydown', (e) => {
+        if (
+          e.target &&
+          (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+        ) {
+          return;
+        }
+        if (e.key === '/' || e.key === 'q' || e.key === 'Q') {
+          if (quickInput) {
+            e.preventDefault();
+            quickInput.focus();
+          }
+        } else if ((e.key === 'm' || e.key === 'M') && e.altKey) {
+          e.preventDefault();
+          quickMic?.click();
+        }
+      });
+    }
+  }
+
   try {
     if (variant === 'mobile' && typeof document !== 'undefined') {
       // Mobile now defaults to the full UI; minimal mode is only enabled when the class is removed elsewhere.
@@ -271,12 +479,81 @@ export async function initReminders(sel = {}) {
     document.dispatchEvent(new CustomEvent(name, { detail }));
   };
 
+  function closeCreateSheetIfOpen() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const sheet =
+      document.getElementById('createReminderSheet') ||
+      document.getElementById('create-sheet');
+    if (sheet && sheet.classList?.contains('open')) {
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   function emitReminderUpdates() {
     try {
       document.dispatchEvent(new CustomEvent('reminders:updated', { detail: { items } }));
     } catch {
       // Ignore environments where CustomEvent construction fails.
     }
+  }
+
+  if (addQuickBtn && title) {
+    addQuickBtn.addEventListener('click', () => {
+      const raw = (title.value || '').trim();
+      if (!raw) {
+        try {
+          title.focus();
+        } catch {}
+        return;
+      }
+
+      const now = Date.now();
+      const hasDate = typeof date?.value === 'string' && date.value;
+      const hasTime = typeof time?.value === 'string' && time.value;
+      const dueValue = hasDate || hasTime
+        ? localDateTimeToISO(hasDate ? date.value : todayISO(), hasTime ? time.value : '09:00')
+        : null;
+
+      const entry = {
+        id: uid(),
+        title: raw,
+        notes: typeof details?.value === 'string' ? details.value.trim() : '',
+        priority: getPriorityInputValue(),
+        category: normalizeCategory(categoryInput?.value || DEFAULT_CATEGORY),
+        done: false,
+        createdAt: now,
+        updatedAt: now,
+        due: dueValue,
+        pendingSync: !userId,
+      };
+
+      items.unshift(entry);
+      suppressRenderMemoryEvent = true;
+      render();
+      persistItems();
+      updateDefaultsFrom(entry);
+      saveToFirebase(entry);
+      tryCalendarSync(entry);
+      scheduleReminder(entry);
+      emitReminderUpdates();
+      dispatchCueEvent('memoryCue:remindersUpdated', { items });
+      closeCreateSheetIfOpen();
+      dispatchCueEvent('cue:close', { reason: 'created' });
+
+      title.value = '';
+      if (typeof details?.value !== 'undefined') {
+        details.value = '';
+      }
+      if (typeof date?.value !== 'undefined') {
+        date.value = '';
+      }
+      if (typeof time?.value !== 'undefined') {
+        time.value = '';
+      }
+    });
   }
 
   if (categoryInput && !categoryInput.value) {
@@ -345,6 +622,7 @@ export async function initReminders(sel = {}) {
   }
 
   bindNotificationCleanupHandlers();
+  initVoiceInput();
 
   // Placeholder for Firebase modules loaded later
   let initializeApp, getFirestore, enableMultiTabIndexedDbPersistence,
@@ -370,9 +648,7 @@ export async function initReminders(sel = {}) {
   let filter = resolvedDefaultFilter || (filterBtns.length ? 'today' : 'all');
   let categoryFilterValue = categoryFilter?.value || 'all';
   let sortKey = 'smart';
-  let listening = false;
-  let recog = null;
-  let voiceRestartTimer = null;
+  let suppressRenderMemoryEvent = false;
   let userId = null;
   let unsubscribe = null;
   let editingId = null;
@@ -969,7 +1245,18 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){ if(title) title.value=''; if(date) date.value=''; if(time) time.value=''; if(details) details.value=''; setPriorityInputValue('Medium'); if(categoryInput) categoryInput.value = DEFAULT_CATEGORY; editingId=null; if(saveBtn) saveBtn.textContent='Save Cue'; cancelEditBtn?.classList.add('hidden'); }
+  function resetForm(){
+    if(title) title.value='';
+    if(date) date.value='';
+    if(time) time.value='';
+    if(details) details.value='';
+    setPriorityInputValue('Medium');
+    if(categoryInput) categoryInput.value = DEFAULT_CATEGORY;
+    applyStoredDefaultsToInputs();
+    editingId=null;
+    if(saveBtn) saveBtn.textContent='Save Cue';
+    cancelEditBtn?.classList.add('hidden');
+  }
   function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } setPriorityInputValue(it?.priority || 'Medium'); if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
 
   function addItem(obj){
@@ -989,12 +1276,16 @@ export async function initReminders(sel = {}) {
       pendingSync: !userId,
     };
     items = [item, ...items];
+    suppressRenderMemoryEvent = true;
     render();
     persistItems();
+    updateDefaultsFrom(item);
     saveToFirebase(item);
     tryCalendarSync(item);
     scheduleReminder(item);
     emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    closeCreateSheetIfOpen();
     emitActivity({
       action: 'created',
       label: `Reminder added · ${item.title}`,
@@ -1275,7 +1566,9 @@ export async function initReminders(sel = {}) {
       });
     }
 
-    if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
+    if (suppressRenderMemoryEvent) {
+      suppressRenderMemoryEvent = false;
+    } else if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
       const payload = items.map(item => ({ ...item }));
       try {
         if (typeof CustomEvent === 'function') {
@@ -1591,10 +1884,13 @@ export async function initReminders(sel = {}) {
       it.updatedAt=Date.now();
       saveToFirebase(it);
       tryCalendarSync(it);
+      suppressRenderMemoryEvent = true;
       render();
       scheduleReminder(it);
       persistItems();
       emitReminderUpdates();
+      dispatchCueEvent('memoryCue:remindersUpdated', { items });
+      closeCreateSheetIfOpen();
       emitActivity({ action: 'updated', label: `Reminder updated · ${it.title}` });
       resetForm();
       toast('Reminder updated');
@@ -1620,7 +1916,6 @@ export async function initReminders(sel = {}) {
   document.addEventListener('cue:cancelled', () => { resetForm(); });
   document.addEventListener('cue:prepare', () => { resetForm(); });
   window.addEventListener('load', ()=> title?.focus());
-  addQuickBtn?.addEventListener('click', () => { if (!title.value.trim()) { title.focus(); toast('Type something like "email parents at 4pm"'); return; } handleSaveAction(); });
   q?.addEventListener('input', debounce(render,150));
   sortSel?.addEventListener('change', ()=>{ sortKey = sortSel.value; render(); });
   categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
@@ -1672,86 +1967,6 @@ export async function initReminders(sel = {}) {
   saveSettings?.addEventListener('click', () => { if(!syncUrlInput) return; localStorage.setItem('syncUrl', syncUrlInput.value.trim()); toast('Settings saved'); });
   testSync?.addEventListener('click', async () => { if(!syncUrlInput) return; const url = syncUrlInput.value.trim(); if(!url){ toast('Enter URL first'); return; } try{ const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ test:true }) }); toast(res.ok ? 'Test ok' : 'Test failed'); } catch { toast('Test failed'); } });
 
-  function setVoiceButtonActive(isActive) {
-    if (!voiceBtn) return;
-    voiceBtn.textContent = isActive ? '👂' : '🎙️';
-  }
-
-  function startVoiceRecognition(forceRestart = false) {
-    if (!recog) return false;
-    if (listening && !forceRestart) return true;
-    try {
-      recog.start();
-      listening = true;
-      setVoiceButtonActive(true);
-      return true;
-    } catch {
-      listening = false;
-      setVoiceButtonActive(false);
-      return false;
-    }
-  }
-
-  function stopVoiceRecognition() {
-    if (!recog) return;
-    listening = false;
-    clearTimeout(voiceRestartTimer);
-    try {
-      recog.stop();
-    } catch {
-      // ignore stop failures so the UI can recover on the next attempt
-    }
-    setVoiceButtonActive(false);
-  }
-
-  function scheduleVoiceRestart() {
-    clearTimeout(voiceRestartTimer);
-    voiceRestartTimer = setTimeout(() => {
-      voiceRestartTimer = null;
-      if (!listening || !recog) return;
-      if (!startVoiceRecognition(true)) {
-        listening = false;
-        setVoiceButtonActive(false);
-      }
-    }, 400);
-  }
-
-  try {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) {
-      recog = new SR();
-      recog.lang = locale;
-      recog.interimResults = false;
-      if ('continuous' in recog) {
-        try { recog.continuous = true; } catch { /* some browsers disallow setting this */ }
-      }
-      recog.onresult = (e) => {
-        const t = e.results?.[0]?.[0]?.transcript || '';
-        if (title) {
-          title.value = t;
-          toast('Heard: ' + t);
-        }
-      };
-      recog.onend = () => {
-        if (!listening) {
-          setVoiceButtonActive(false);
-          return;
-        }
-        scheduleVoiceRestart();
-      };
-    }
-  } catch {
-    // Speech recognition not available; ignore errors so the rest of the app works normally.
-  }
-
-  voiceBtn?.addEventListener('click', () => {
-    if (!recog) return;
-    if (listening) {
-      stopVoiceRecognition();
-    } else {
-      startVoiceRecognition();
-    }
-  });
   notifBtn?.addEventListener('click', async () => {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
     if(Notification.permission === 'granted'){
