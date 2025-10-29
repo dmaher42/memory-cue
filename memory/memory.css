@@ -1,0 +1,243 @@
+.item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 12px 30px -24px rgba(15, 23, 42, 0.45);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px -24px rgba(15, 23, 42, 0.4);
+}
+
+.item-card__content,
+.reminder-card__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.item-card__details {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.item-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.item-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.16);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0f4c81;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.item-tag:hover {
+  background: rgba(148, 163, 184, 0.22);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.item-tag:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.45);
+  outline-offset: 2px;
+}
+
+.reminder-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: start;
+  padding: 1.25rem 1.5rem 1.25rem 1.75rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(145deg, rgba(241, 245, 249, 0.95), rgba(226, 232, 240, 0.88));
+  overflow: hidden;
+}
+
+.reminder-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 0 20px 20px 0;
+  background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.reminder-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.reminder-card[data-reminder-status='overdue']::before {
+  background: linear-gradient(180deg, #334155, #1f2937);
+}
+
+.reminder-card[data-reminder-status='due-soon']::before {
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+}
+
+.reminder-card[data-reminder-status='scheduled']::before {
+  background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+}
+
+.reminder-card__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  min-width: 180px;
+  text-align: right;
+}
+
+.reminder-card__due {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.reminder-card__countdown {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.reminder-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #1f2937;
+}
+
+.reminder-status--overdue {
+  background: rgba(31, 41, 55, 0.18);
+  border-color: rgba(31, 41, 55, 0.32);
+  color: #111827;
+}
+
+.reminder-status--due-soon {
+  background: rgba(217, 119, 6, 0.18);
+  border-color: rgba(217, 119, 6, 0.32);
+  color: #92400e;
+}
+
+.reminder-status--scheduled {
+  background: rgba(14, 116, 144, 0.18);
+  border-color: rgba(14, 116, 144, 0.32);
+  color: #0f4c81;
+}
+
+@media (max-width: 640px) {
+  .reminder-card {
+    grid-template-columns: 1fr;
+    padding: 1.25rem 1.25rem 1.25rem 1.6rem;
+  }
+
+  .reminder-card__meta {
+    align-items: flex-start;
+    text-align: left;
+    min-width: 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .item-card {
+    background: rgba(15, 23, 42, 0.82);
+    border-color: rgba(148, 163, 184, 0.28);
+    box-shadow: 0 12px 32px -26px rgba(15, 23, 42, 0.9);
+  }
+
+  .item-card__title {
+    color: #f8fafc;
+  }
+
+  .item-card__details {
+    color: #94a3b8;
+  }
+
+  .item-tag {
+    color: #bae6fd;
+    border-color: rgba(148, 163, 184, 0.32);
+    background: rgba(14, 116, 144, 0.22);
+  }
+
+  .item-tag:hover {
+    background: rgba(14, 116, 144, 0.3);
+    border-color: rgba(14, 116, 144, 0.38);
+  }
+
+  .reminder-card {
+    background: rgba(15, 23, 42, 0.85);
+    border-color: rgba(148, 163, 184, 0.32);
+  }
+
+  .reminder-card__due {
+    color: #e2e8f0;
+  }
+
+  .reminder-card__countdown {
+    color: #cbd5f5;
+  }
+
+  .reminder-status {
+    background: rgba(148, 163, 184, 0.24);
+    border-color: rgba(148, 163, 184, 0.36);
+    color: #e2e8f0;
+  }
+
+  .reminder-status--overdue {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(15, 23, 42, 0.7);
+    color: #f8fafc;
+  }
+
+  .reminder-status--due-soon {
+    background: rgba(217, 119, 6, 0.38);
+    border-color: rgba(217, 119, 6, 0.48);
+    color: #fcd34d;
+  }
+
+  .reminder-status--scheduled {
+    background: rgba(14, 116, 144, 0.4);
+    border-color: rgba(14, 116, 144, 0.52);
+    color: #bae6fd;
+  }
+}

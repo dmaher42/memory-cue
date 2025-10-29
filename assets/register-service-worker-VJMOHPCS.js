@@ -1,0 +1,1 @@
+(()=>{var t=(r,e)=>()=>(e||r((e={exports:{}}).exports,e),e.exports);var o=t(()=>{(function(){if(!("serviceWorker"in navigator))return;let e=()=>{navigator.serviceWorker.register("./service-worker.js").catch(i=>console.warn("SW registration failed",i))};document.readyState==="complete"?e():window.addEventListener("load",e,{once:!0})})()});o();})();

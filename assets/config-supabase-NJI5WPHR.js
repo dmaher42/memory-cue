@@ -1,0 +1,1 @@
+import"./chunk-RCZ4YZVR.js";var _={SUPABASE_URL:window?.__ENV?.SUPABASE_URL??"",SUPABASE_ANON_KEY:window?.__ENV?.SUPABASE_ANON_KEY??""};import{createClient as A}from"https://esm.sh/@supabase/supabase-js@2";window.__SUPABASE_ENV__=typeof import.meta<"u"&&import.meta?import.meta.env:void 0;window.supabase=A(_.SUPABASE_URL,_.SUPABASE_ANON_KEY);

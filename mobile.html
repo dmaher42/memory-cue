@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <base href="./" />
+  <script src="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
+  <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/a11y.css" />
+  <link rel="stylesheet" href="./assets/styles-5e0f77b6.css" />
+  <style>
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(148, 163, 184, 0.1);
+      color: rgb(15 23 42);
+      transition: all 0.2s ease;
+    }
+    .dark .sync-status {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(148, 163, 184, 0.15);
+      color: rgb(226 232 240);
+    }
+    .sync-status.online {
+      background: rgba(22, 163, 74, 0.12);
+      color: rgb(22 163 74);
+      border-color: rgba(22, 163, 74, 0.3);
+    }
+    .dark .sync-status.online {
+      background: rgba(34, 197, 94, 0.16);
+      color: rgb(187 247 208);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+    .sync-status.error {
+      background: rgba(248, 113, 113, 0.16);
+      color: rgb(220 38 38);
+      border-color: rgba(248, 113, 113, 0.32);
+    }
+    .dark .sync-status.error {
+      background: rgba(248, 113, 113, 0.22);
+      color: rgb(254 205 211);
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+    .notes-editor {
+      min-height: 10rem;
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      padding: 0.75rem 1rem;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: inherit;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dark .notes-editor {
+      border-color: rgba(148, 163, 184, 0.35);
+      background-color: rgba(15, 23, 42, 0.65);
+    }
+    .notes-editor:focus-visible {
+      border-color: rgb(37 99 235);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    .notes-editor:empty::before {
+      content: attr(data-placeholder);
+      color: rgba(100, 116, 139, 0.7);
+    }
+    .dark .notes-editor:empty::before {
+      color: rgba(148, 163, 184, 0.7);
+    }
+    .notes-editor ul,
+    .notes-editor ol {
+      margin: 0.25rem 0 0.25rem 1.25rem;
+      padding-left: 0.75rem;
+    }
+    .notes-editor ul li,
+    .notes-editor ol li {
+      margin-bottom: 0.25rem;
+    }
+    .notes-editor--columns {
+      column-width: 16rem;
+      column-gap: 1.5rem;
+    }
+    .view-panel {
+      display: grid;
+      gap: 1.5rem;
+    }
+    .section-jump {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+    }
+    .section-jump::-webkit-scrollbar {
+      display: none;
+    }
+    .section-jump .btn {
+      scroll-snap-align: start;
+    }
+    .glass-panel {
+      background-color: rgba(248, 250, 252, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .dark .glass-panel {
+      background-color: rgba(15, 23, 42, 0.88);
+    }
+  </style>
+  <!-- Skip-link CSS: fully hidden until keyboard focus -->
+  <style id="skip-link-css">
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus-visible {
+      left: 16px;
+      top: 16px;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      z-index: 50;
+      border-radius: 9999px; padding: 8px 12px;
+      background: var(--fallback-p, #2563eb); color: var(--fallback-pc, #fff);
+      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    }
+  </style>
+  <!-- BEGIN GPT CHANGE: bottom sheet styles -->
+  <style>
+    .hidden {
+      display: none !important;
+    }
+    .fab {
+      position: fixed;
+      right: 16px;
+      bottom: 88px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--fallback-p, #2563eb);
+      color: var(--fallback-pc, #fff);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+      border: none;
+      cursor: pointer;
+      z-index: 60;
+    }
+    .fab:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+    .sheet {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      z-index: 70;
+    }
+    .sheet-panel {
+      position: relative;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 85vh;
+      overflow: auto;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      background: var(--fallback-b1, #ffffff);
+      color: inherit;
+      box-shadow: 0 -16px 32px rgba(15, 23, 42, 0.25);
+      padding: 16px;
+    }
+    .dark .sheet-panel {
+      background: rgba(30, 41, 59, 0.97);
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+    }
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+    }
+    #settingsModal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 80;
+    }
+    .modal-panel {
+      position: relative;
+      max-width: 420px;
+      width: calc(100% - 32px);
+      background: var(--fallback-b1, #ffffff);
+      color: inherit;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3);
+      overflow: hidden;
+    }
+    .dark .modal-panel {
+      background: rgba(30, 41, 59, 0.97);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+    }
+  </style>
+  <style id="add-task-stability-css">
+    /* Make sure modal/sheet stays interactive and above other layers */
+    [data-add-task-dialog] {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+    }
+    [data-add-task-dialog] [data-dialog-content] {
+      position: relative;
+      z-index: 61;
+      pointer-events: auto;
+    }
+    /* Backdrop element (if you have one) should sit under content but accept clicks */
+    [data-add-task-dialog] .backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 59;
+    }
+  </style>
+  <!-- END GPT CHANGE: bottom sheet styles -->
+  <!-- BEGIN GPT CHANGE: rhythm -->
+  <style>
+    .card-body.compact {
+      gap: 0.5rem;
+    }
+    .inputs-compact input,
+    .inputs-compact select,
+    .inputs-compact textarea,
+    .inputs-compact button {
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    main {
+      padding-bottom: 96px;
+    }
+    .chip-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .chip-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .chip-row input[type='radio'] {
+      accent-color: currentColor;
+    }
+  </style>
+  <!-- END GPT CHANGE: rhythm -->
+  <style id="voice-add-css">
+    .voice-add-wrap{
+      position: fixed; right: 12px; bottom: 12px; z-index: 50;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 9999px; background: var(--fallback-b1,#fff);
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+
+    /* Hide the status text by default */
+    .voice-status { display: none; }
+
+    /* Only show status while actively listening */
+    .voice-add-wrap.listening .voice-status { display: inline; font-size: 12px; opacity: .75; }
+
+  </style>
+  <style id="min-expand-css">
+    /* Expand/collapse behavior */
+    .task-row-min {
+      cursor: pointer;
+      outline: none;
+    }
+    .task-row-min:focus {
+      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+    }
+    .task-row-min .min-notes {
+      display: none;
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.35;
+      opacity: .95;
+      white-space: pre-wrap;
+    }
+    .task-row-min.expanded .min-notes {
+      display: block;
+    }
+    /* Slightly larger title when expanded */
+    .task-row-min.expanded .title {
+      font-weight: 600;
+    }
+    /* Optional small chevron indicator */
+    .task-row-min::after {
+      content: "▾";
+      justify-self: end;
+      opacity: .5;
+      font-size: 12px;
+    }
+    .task-row-min.expanded::after { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="min-h-screen bg-base-200 text-base-content show-full">
+  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
+
+  <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
+    <div class="flex-1 items-center gap-2">
+      <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
+      <span
+        id="syncStatus"
+        class="sync-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >Offline</span>
+    </div>
+    <div class="flex-none flex flex-col gap-1 text-right">
+      <div class="flex justify-end items-center gap-2">
+        <img
+          id="googleAvatar"
+          src=""
+          alt=""
+          class="hidden h-8 w-8 rounded-full border border-base-300"
+        />
+        <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
+        <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
+        <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
+        <button id="googleSignOutBtn" class="btn btn-ghost hidden" type="button">Sign out</button>
+      </div>
+      <p id="googleUserName" class="text-xs text-base-content/70"></p>
+    </div>
+  </header>
+
+  <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+    <!-- Voice Add Task UI -->
+    <div id="voiceAddWrap" class="voice-add-wrap" aria-live="polite" aria-atomic="true">
+      <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
+      <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
+    </div>
+    <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
+    <!-- END GPT CHANGE -->
+    <!-- BEGIN GPT CHANGE: reminders view -->
+    <section data-view="reminders" id="view-reminders" class="view-panel">
+      <!-- QUICK ADD: always visible at the top of Reminders -->
+      <section id="quickAddBar" class="card bg-base-100 border" aria-label="Quick add reminder">
+        <div class="card-body gap-3 compact">
+          <div class="flex items-center gap-2">
+            <input id="quickAddInput"
+                   type="text"
+                   class="input input-bordered flex-1"
+                   placeholder="What do you need to remember?"
+                   aria-label="Quick add reminder"
+                   autocomplete="off" />
+            <button id="quickAddMic"
+                    class="btn btn-circle btn-ghost"
+                    type="button"
+                    aria-label="Add by voice">🎤</button>
+            <button id="quickAddSubmit"
+                    class="btn btn-primary"
+                    type="button"
+                    aria-label="Add reminder now">Add</button>
+          </div>
+          <p class="text-xs text-base-content/60">
+            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; <kbd>Enter</kbd> to add; <kbd>Alt</kbd>+<kbd>M</kbd> for mic.
+          </p>
+        </div>
+      </section>
+      <!-- BEGIN GPT CHANGE: sticky filters -->
+      <div id="stickyFilters" style="position:sticky; top:56px; z-index: 10;">
+        <section id="reminderFilters" class="card bg-base-100 border">
+          <div class="card-body gap-4 compact">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
+                <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="false">Today · <span id="todayCount">0</span></button>
+                <button class="btn btn-xs" type="button" data-filter="overdue" aria-pressed="false">Overdue · <span id="overdueCount">0</span></button>
+                <button class="btn btn-xs" type="button" data-filter="all" aria-pressed="true">All · <span id="totalCountBadge">0</span></button>
+                <button class="btn btn-xs" type="button" data-filter="done" aria-pressed="false">Done · <span id="completedCount">0</span></button>
+              </div>
+              <label class="form-control w-full sm:w-auto">
+                <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+                <select id="categoryFilter" class="select select-bordered select-sm">
+                  <option value="all" selected>All categories</option>
+                  <option value="General">General</option>
+                  <option value="General Appointments">General Appointments</option>
+                  <option value="Home &amp; Personal">Home &amp; Personal</option>
+                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                  <option value="School – To-Do">School – To-Do</option>
+                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="form-control">
+              <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" aria-label="Search" />
+            </label>
+          </div>
+        </section>
+      </div>
+      <!-- END GPT CHANGE -->
+      <section id="reminderListSection" class="card bg-base-100 border">
+        <div class="card-body gap-4 compact" id="remindersWrapper">
+          <div id="emptyState" class="hidden text-center text-base-content/60"></div>
+          <ul id="reminderList" class="space-y-3 task-list-min"></ul>
+          <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
+        </div>
+      </section>
+    </section>
+    <!-- END GPT CHANGE -->
+    <!-- BEGIN GPT CHANGE: today view -->
+    <section data-view="today" id="view-today" class="view-panel hidden"></section>
+    <!-- END GPT CHANGE -->
+    <!-- BEGIN GPT CHANGE: notebook view -->
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden">
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-3 compact">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="card-title text-base">Scratch Notes</h2>
+            <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
+          </div>
+          <div
+            id="notesToolbar"
+            class="flex flex-wrap gap-2"
+            role="toolbar"
+            aria-label="Scratch notes formatting options"
+            aria-controls="notes"
+          >
+            <button type="button" class="btn btn-xs" data-action="bullets">• Bullets</button>
+            <button type="button" class="btn btn-xs" data-action="numbers">1. Numbers</button>
+            <button
+              type="button"
+              class="btn btn-xs"
+              data-action="columns"
+              aria-pressed="false"
+            >
+              Columns
+            </button>
+          </div>
+          <div
+            id="notes"
+            class="notes-editor"
+            contenteditable="true"
+            role="textbox"
+            aria-multiline="true"
+            spellcheck="true"
+            data-placeholder="Quick personal notes"
+          ></div>
+          <div class="flex gap-2">
+            <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
+            <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card bg-base-100 border">
+        <div class="card-body gap-3 compact">
+          <h2 class="card-title text-base">Stay organised</h2>
+          <p class="text-sm text-base-content/70">Use columns to create side-by-side checklists, or switch back to a single column for longer thoughts. Notes are saved locally so you can revisit them anytime.</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline btn-sm" data-scroll-target="notes">Jump to editor</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-jump-view="reminders">Create a reminder instead</button>
+          </div>
+        </div>
+      </section>
+    </section>
+    <!-- END GPT CHANGE -->
+</main>
+  <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
+    <button type="button" aria-current="page" class="active">
+      <span class="btm-nav-label">Reminders</span>
+    </button>
+    <button type="button">
+      <span class="btm-nav-label">Today</span>
+    </button>
+    <button type="button">
+      <span class="btm-nav-label">Notebook</span>
+    </button>
+  </nav>
+  <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
+  <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
+  <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
+    <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
+      <header class="sheet-header">
+        <h2 id="createSheetTitle">Create Reminder</h2>
+        <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+      </header>
+      <form id="createReminderForm" class="inputs-compact">
+        <div class="card-body gap-4 compact">
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text">Reminder</span></div>
+            <input
+              id="reminderText"
+              type="text"
+              placeholder="e.g., Call Alex at 3pm"
+              class="input input-bordered w-full"
+              autocomplete="off"
+            />
+          </label>
+
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text">Notes</span></div>
+            <textarea
+              id="reminderDetails"
+              class="textarea textarea-bordered"
+              rows="3"
+              placeholder="Optional context for the reminder"
+            ></textarea>
+          </label>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="form-control">
+              <div class="label"><span class="label-text">Date</span></div>
+              <input id="reminderDate" type="date" class="input input-bordered" />
+            </label>
+            <label class="form-control">
+              <div class="label"><span class="label-text">Time</span></div>
+              <input id="reminderTime" type="time" class="input input-bordered" />
+            </label>
+          </div>
+
+          <div id="dateFeedback" class="text-xs text-info"></div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-control">
+              <div class="label"><span class="label-text">Priority</span></div>
+              <select id="priority" class="select select-bordered hidden" aria-hidden="true" tabindex="-1">
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+              </select>
+              <!-- BEGIN GPT CHANGE: priority chips -->
+              <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
+                <label><input type="radio" name="priority" value="High"> High</label>
+                <label><input type="radio" name="priority" value="Medium" checked> Medium</label>
+                <label><input type="radio" name="priority" value="Low"> Low</label>
+              </fieldset>
+              <!-- END GPT CHANGE: priority chips -->
+            </div>
+            <label class="form-control">
+              <div class="label"><span class="label-text">Category</span></div>
+              <input
+                id="category"
+                class="input input-bordered"
+                list="categorySuggestions"
+                placeholder="General"
+                value="General"
+              />
+              <datalist id="categorySuggestions">
+                <option value="General"></option>
+                <option value="General Appointments"></option>
+                <option value="Home &amp; Personal"></option>
+                <option value="School – Appointments/Meetings"></option>
+                <option value="School – Communication &amp; Families"></option>
+                <option value="School – Excursions &amp; Events"></option>
+                <option value="School – Grading &amp; Assessment"></option>
+                <option value="School – Prep &amp; Resources"></option>
+                <option value="School – To-Do"></option>
+                <option value="Wellbeing &amp; Support"></option>
+              </datalist>
+            </label>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
+            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
+          </div>
+
+          <div class="card-actions justify-stretch">
+            <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
+            <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
+          </div>
+          <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+    <div class="sheet-backdrop backdrop" data-close></div>
+  </div>
+  <!-- END GPT CHANGE: bottom sheet for Create Reminder -->
+
+  <!-- BEGIN GPT CHANGE: settings modal -->
+  <div id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" class="hidden">
+    <div class="modal-panel">
+      <header class="modal-header">
+        <h2 id="settingsTitle">Settings</h2>
+        <button type="button" id="closeSettings" aria-label="Close">✕</button>
+      </header>
+      <div class="card bg-base-100 border-0">
+        <div class="card-body gap-4 compact">
+          <h2 class="card-title text-base">Sync Settings</h2>
+          <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
+          <label class="form-control">
+            <div class="label"><span class="label-text">Apps Script URL</span></div>
+            <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
+          </label>
+          <div class="card-actions flex-col gap-2">
+            <div class="flex gap-2 w-full">
+              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
+              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
+            </div>
+            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
+          </div>
+          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop" data-close></div>
+  </div>
+  <!-- END GPT CHANGE: settings modal -->
+
+  <!-- BEGIN GPT CHANGE: global FAB -->
+  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
+  <!-- END GPT CHANGE: global FAB -->
+
+  <script id="mobile-enhancements">
+    (function () {
+      const views = {
+        reminders: document.querySelector('[data-view="reminders"]'),
+        today: document.querySelector('[data-view="today"]'),
+        notebook: document.querySelector('[data-view="notebook"]'),
+      };
+      const nav = document.querySelector('.btm-nav');
+      if (!nav) return;
+
+      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 3);
+      const order = ['reminders', 'today', 'notebook'];
+
+      if (!buttons.length || order.some((key) => !views[key])) {
+        return;
+      }
+
+      const reduceMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
+
+      const setActiveView = (target) => {
+        if (!order.includes(target)) return;
+
+        order.forEach((key, index) => {
+          const view = views[key];
+          const button = buttons[index];
+          const isActive = key === target;
+
+          if (view) {
+            view.classList.toggle('hidden', !isActive);
+            view.setAttribute('aria-hidden', String(!isActive));
+          }
+
+          if (button) {
+            button.setAttribute('aria-current', isActive ? 'page' : 'false');
+            button.classList.toggle('active', Boolean(isActive));
+          }
+        });
+
+        const skipLink =
+          document.querySelector('.skip-link') ||
+          document.querySelector('a[href$="#main"]');
+        const main = document.getElementById('main') || document.querySelector('main');
+        if (main) {
+          main.setAttribute('data-active-view', target);
+        }
+        if (skipLink && main) {
+          const behaviour = reduceMotion?.matches ? 'auto' : 'smooth';
+          try {
+            window.scrollTo({ top: 0, behavior: behaviour });
+          } catch {
+            window.scrollTo(0, 0);
+          }
+        }
+      };
+
+      buttons.forEach((button, index) => {
+        button.addEventListener('click', () => {
+          setActiveView(order[index]);
+        });
+      });
+
+      document.querySelectorAll('[data-jump-view]').forEach((control) => {
+        control.addEventListener('click', () => {
+          const target = control.getAttribute('data-jump-view');
+          if (target) {
+            setActiveView(target);
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-scroll-target]').forEach((control) => {
+        control.addEventListener('click', () => {
+          const targetId = control.getAttribute('data-scroll-target');
+          if (!targetId) return;
+          const el = document.getElementById(targetId);
+          if (!el) return;
+          try {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch {
+            el.scrollIntoView(true);
+          }
+        });
+      });
+
+      setActiveView('reminders');
+    })();
+
+    (function () {
+      const todayView = document.querySelector('[data-view="today"]');
+      const list = document.getElementById('reminderList');
+      if (!todayView || !list) return;
+
+      const isToday = (dateStr) => {
+        const d = new Date(dateStr);
+        if (Number.isNaN(d.getTime())) return false;
+        const now = new Date();
+        return d.getFullYear() === now.getFullYear() &&
+          d.getMonth() === now.getMonth() &&
+          d.getDate() === now.getDate();
+      };
+
+      const renderToday = () => {
+        const items = Array.from(list.querySelectorAll('[data-reminder]'));
+        const todaysItems = items.filter((item) => {
+          const direct = item.getAttribute('data-due');
+          const nested = item.querySelector('[data-due]');
+          const when = direct || (nested ? nested.textContent : '') || '';
+          return isToday(when.trim());
+        });
+
+        todayView.innerHTML = '';
+        const heading = document.createElement('h2');
+        heading.textContent = 'Today';
+        todayView.appendChild(heading);
+
+        if (!todaysItems.length) {
+          const empty = document.createElement('p');
+          empty.textContent = 'No reminders due today.';
+          todayView.appendChild(empty);
+          return;
+        }
+
+        todaysItems.forEach((item) => {
+          todayView.appendChild(item.cloneNode(true));
+        });
+      };
+
+      document.addEventListener('DOMContentLoaded', renderToday);
+      document.addEventListener('reminders:updated', renderToday);
+      document.addEventListener('memoryCue:remindersUpdated', renderToday);
+    })();
+
+    (function () {
+      const list = document.getElementById('reminderList');
+      if (!list) return;
+
+      const allChildren = Array.from(list.children);
+      if (allChildren.length <= 30) return;
+
+      const PAGE_SIZE = 20;
+      list.innerHTML = '';
+      let index = 0;
+
+      const appendPage = () => {
+        const slice = allChildren.slice(index, index + PAGE_SIZE);
+        slice.forEach((node) => list.appendChild(node));
+        index += slice.length;
+      };
+
+      appendPage();
+
+      const sentinel = document.createElement('div');
+      sentinel.id = 'listSentinel';
+      list.appendChild(sentinel);
+
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && index < allChildren.length) {
+          appendPage();
+          if (index >= allChildren.length) {
+            observer.disconnect();
+          }
+        }
+      });
+
+      observer.observe(sentinel);
+    })();
+
+    (function () {
+      const openBtn = document.querySelector('[data-open="settings"]') || document.getElementById('openSettings');
+      const modal = document.getElementById('settingsModal');
+      const closeBtn = document.getElementById('closeSettings');
+      if (!openBtn || !modal || !closeBtn) return;
+
+      const open = () => {
+        modal.classList.remove('hidden');
+      };
+
+      const close = () => {
+        modal.classList.add('hidden');
+      };
+
+      openBtn.addEventListener('click', open);
+      closeBtn.addEventListener('click', close);
+      modal.addEventListener('click', (event) => {
+        if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
+          close();
+        }
+      });
+      modal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          close();
+        }
+      });
+    })();
+
+    (function () {
+      const syncStatusEl = document.getElementById('syncStatus');
+      if (!syncStatusEl) return;
+
+      const syncUrlInput = document.getElementById('syncUrl');
+      const saveSettingsBtn = document.getElementById('saveSyncSettings');
+      const testSyncBtn = document.getElementById('testSync');
+      const syncAllBtn = document.getElementById('syncAll');
+      const STORAGE_KEY = 'syncUrl';
+      const ACTIVE_CLASSES = ['online', 'error'];
+
+      let currentState = null;
+
+      const setStatus = (state, message) => {
+        currentState = state;
+        ACTIVE_CLASSES.forEach((cls) => syncStatusEl.classList.remove(cls));
+
+        if (state === 'online') {
+          syncStatusEl.classList.add('online');
+        } else if (state === 'error') {
+          syncStatusEl.classList.add('error');
+        }
+
+        const defaults = {
+          checking: 'Checking connection…',
+          syncing: 'Syncing your latest changes…',
+          online: 'Connected. Changes sync automatically.',
+          offline: "You're offline. Changes are saved on this device until you reconnect.",
+          error: "We couldn't sync right now. We'll retry soon.",
+          info: '',
+        };
+
+        const text = typeof message === 'string' && message.trim() ? message : (defaults[state] || '');
+        if (text) {
+          syncStatusEl.textContent = text;
+        }
+        syncStatusEl.dataset.state = state;
+      };
+
+      const updateOnlineState = () => {
+        if (currentState === 'syncing') return;
+        if (navigator.onLine) {
+          if (currentState !== 'online') setStatus('online');
+        } else {
+          setStatus('offline');
+        }
+      };
+
+      const persistUrl = (value) => {
+        if (typeof localStorage === 'undefined') return;
+        if (value) {
+          localStorage.setItem(STORAGE_KEY, value);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      };
+
+      const getStoredUrl = () => {
+        if (typeof localStorage === 'undefined') return '';
+        try {
+          return localStorage.getItem(STORAGE_KEY) || '';
+        } catch {
+          return '';
+        }
+      };
+
+      const normaliseReminder = (raw) => {
+        if (!raw || typeof raw !== 'object') return null;
+        const id = raw.id || raw.uid || raw.key || raw.slug || raw.uuid;
+        let title = typeof raw.title === 'string' ? raw.title.trim() : '';
+        if (!title && typeof raw.name === 'string') {
+          title = raw.name.trim();
+        }
+        if (!title) return null;
+
+        const dueIso = typeof raw.dueIso === 'string' && raw.dueIso
+          ? raw.dueIso
+          : (typeof raw.due === 'string' ? raw.due : null);
+
+        const priority = typeof raw.priority === 'string' && raw.priority.trim()
+          ? raw.priority.trim()
+          : (raw.level || raw.importance || 'Medium');
+
+        const category = typeof raw.category === 'string' && raw.category.trim()
+          ? raw.category.trim()
+          : (raw.group || raw.bucket || 'General');
+
+        const done = typeof raw.done === 'boolean'
+          ? raw.done
+          : Boolean(raw.completed || raw.isDone || raw.status === 'done');
+
+        const ensuredId = id || (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`);
+
+        return {
+          id: ensuredId,
+          title,
+          dueIso: dueIso && dueIso.trim() ? dueIso.trim() : null,
+          priority,
+          category,
+          done,
+        };
+      };
+
+      const collectFromDom = () => {
+        const elements = Array.from(document.querySelectorAll('[data-reminder]'));
+        if (!elements.length) return [];
+
+        return elements
+          .map((el) => {
+            const dataset = el.dataset || {};
+            let raw = null;
+
+            if (dataset.reminder) {
+              try {
+                raw = JSON.parse(dataset.reminder);
+              } catch {
+                raw = null;
+              }
+            }
+
+            const candidate = raw || {
+              id: dataset.id || dataset.reminderId || el.getAttribute('data-id') || null,
+              title: dataset.title || dataset.reminderTitle || '',
+              dueIso: dataset.due || dataset.reminderDue || el.getAttribute('data-due') || null,
+              priority: dataset.priority || dataset.reminderPriority || el.getAttribute('data-priority') || '',
+              category: dataset.category || dataset.reminderCategory || el.getAttribute('data-category') || '',
+              done: dataset.done === 'true' || dataset.reminderDone === 'true' || el.getAttribute('data-done') === 'true',
+            };
+
+            if (!candidate.title) {
+              const titleEl = el.querySelector('[data-reminder-title], [data-title], h3, h4, strong');
+              if (titleEl) {
+                candidate.title = titleEl.textContent.trim();
+              }
+            }
+
+            if (!candidate.dueIso) {
+              const dueEl = el.querySelector('[data-due], time');
+              if (dueEl) {
+                const attr = dueEl.getAttribute('datetime') || dueEl.getAttribute('data-due');
+                candidate.dueIso = attr || dueEl.textContent.trim();
+              }
+            }
+
+            return normaliseReminder(candidate);
+          })
+          .filter(Boolean);
+      };
+
+      const collectFromStorage = () => {
+        if (typeof localStorage === 'undefined') return [];
+        const reminders = [];
+        const triedKeys = new Set();
+        const preferredKeys = [
+          'memoryCue.reminders.v1',
+          'memoryCue.reminders',
+          'memoryCueMobile.reminders',
+          'memoryCue.reminders.cache',
+          'reminders',
+        ];
+
+        preferredKeys.forEach((key) => {
+          if (triedKeys.has(key)) return;
+          triedKeys.add(key);
+          try {
+            const value = localStorage.getItem(key);
+            if (!value) return;
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((item) => reminders.push(item));
+            } else if (parsed && typeof parsed === 'object') {
+              if (Array.isArray(parsed.items)) parsed.items.forEach((item) => reminders.push(item));
+              if (Array.isArray(parsed.reminders)) parsed.reminders.forEach((item) => reminders.push(item));
+            }
+          } catch {
+            // ignore invalid storage entries
+          }
+        });
+
+        if (!reminders.length) {
+          for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index);
+            if (!key || triedKeys.has(key) || !/remind/i.test(key)) continue;
+            triedKeys.add(key);
+            try {
+              const value = localStorage.getItem(key);
+              if (!value) continue;
+              const parsed = JSON.parse(value);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((item) => reminders.push(item));
+              } else if (parsed && typeof parsed === 'object') {
+                if (Array.isArray(parsed.items)) parsed.items.forEach((item) => reminders.push(item));
+                if (Array.isArray(parsed.reminders)) parsed.reminders.forEach((item) => reminders.push(item));
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        return reminders.map(normaliseReminder).filter(Boolean);
+      };
+
+      const collectReminders = () => {
+        const fromDom = collectFromDom();
+        if (fromDom.length) return fromDom;
+        return collectFromStorage();
+      };
+
+      const toggleBusy = (isBusy) => {
+        if (isBusy) {
+          syncAllBtn?.setAttribute('aria-busy', 'true');
+          syncAllBtn?.setAttribute('disabled', 'disabled');
+          testSyncBtn?.setAttribute('aria-busy', 'true');
+          testSyncBtn?.setAttribute('disabled', 'disabled');
+        } else {
+          syncAllBtn?.removeAttribute('aria-busy');
+          testSyncBtn?.removeAttribute('aria-busy');
+          updateButtonState();
+        }
+      };
+
+      const updateButtonState = () => {
+        const hasUrl = Boolean((syncUrlInput?.value || '').trim() || getStoredUrl());
+        if (hasUrl) {
+          syncAllBtn?.removeAttribute('disabled');
+          testSyncBtn?.removeAttribute('disabled');
+        } else {
+          syncAllBtn?.setAttribute('disabled', 'disabled');
+          testSyncBtn?.setAttribute('disabled', 'disabled');
+        }
+      };
+
+      const storedUrl = getStoredUrl();
+      if (syncUrlInput && storedUrl) {
+        syncUrlInput.value = storedUrl;
+      }
+
+      updateButtonState();
+      setStatus(navigator.onLine ? 'online' : 'offline');
+
+      window.addEventListener('online', updateOnlineState);
+      window.addEventListener('offline', updateOnlineState);
+
+      syncUrlInput?.addEventListener('input', updateButtonState);
+
+      saveSettingsBtn?.addEventListener('click', () => {
+        const value = (syncUrlInput?.value || '').trim();
+        if (!value) {
+          persistUrl('');
+          setStatus('info', 'Sync URL cleared. Add a new one to enable syncing.');
+          updateButtonState();
+          return;
+        }
+
+        try {
+          const parsed = new URL(value);
+          if (!/^https?:/.test(parsed.protocol)) {
+            throw new Error('Invalid protocol');
+          }
+        } catch {
+          setStatus('error', 'Enter a valid Apps Script URL before saving.');
+          return;
+        }
+
+        persistUrl(value);
+        setStatus('online', 'Sync settings saved.');
+        updateButtonState();
+      });
+
+      testSyncBtn?.addEventListener('click', async () => {
+        const url = (syncUrlInput?.value || getStoredUrl()).trim();
+        if (!url) {
+          setStatus('error', 'Add your Apps Script URL in Settings first.');
+          return;
+        }
+
+        toggleBusy(true);
+        setStatus('syncing', 'Testing connection…');
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ test: true }),
+          });
+          if (response.ok) {
+            setStatus('online', 'Connection looks good.');
+          } else {
+            setStatus('error', 'Test failed. Please check your Apps Script deployment.');
+          }
+        } catch (error) {
+          console.error('Test sync failed', error);
+          setStatus('error', 'Test failed. Please check your Apps Script deployment.');
+        } finally {
+          toggleBusy(false);
+        }
+      });
+
+      syncAllBtn?.addEventListener('click', async () => {
+        const url = (syncUrlInput?.value || getStoredUrl()).trim();
+        if (!url) {
+          setStatus('error', 'Add your Apps Script URL in Settings first.');
+          return;
+        }
+
+        const reminders = collectReminders();
+        if (!reminders.length) {
+          setStatus('info', 'No reminders to sync right now.');
+          return;
+        }
+
+        toggleBusy(true);
+        setStatus('syncing', `Syncing ${reminders.length} reminder${reminders.length === 1 ? '' : 's'}…`);
+
+        const chunkSize = 20;
+        let okCount = 0;
+        let failCount = 0;
+
+        const makePayload = (reminder) => ({
+          id: reminder.id,
+          title: reminder.title,
+          dueIso: reminder.dueIso || null,
+          priority: reminder.priority || 'Medium',
+          category: reminder.category || 'General',
+          done: Boolean(reminder.done),
+          source: 'memory-cue-mobile',
+        });
+
+        try {
+          for (let index = 0; index < reminders.length; index += chunkSize) {
+            const slice = reminders.slice(index, index + chunkSize);
+            const results = await Promise.allSettled(slice.map((reminder) => (
+              fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(makePayload(reminder)),
+              })
+            )));
+
+            results.forEach((result) => {
+              if (result.status === 'fulfilled' && result.value?.ok) {
+                okCount += 1;
+              } else if (result.status === 'fulfilled') {
+                failCount += 1;
+              } else {
+                failCount += 1;
+              }
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+
+          if (!failCount) {
+            setStatus('online', `Sync complete. ${okCount} reminder${okCount === 1 ? '' : 's'} updated.`);
+          } else if (!okCount) {
+            setStatus('error', 'Sync failed. Please check your Apps Script URL and try again.');
+          } else {
+            setStatus('error', `Partial sync: ${okCount} success, ${failCount} failed.`);
+          }
+        } catch (error) {
+          console.error('Sync failed', error);
+          setStatus('error', 'Sync failed. Please try again in a moment.');
+        } finally {
+          toggleBusy(false);
+        }
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      function applyMinimalLayout() {
+        var list = document.getElementById('reminderList');
+        if (!list) return;
+        list.querySelectorAll('.task-item').forEach(function (item) {
+          item.classList.add('task-row-min');
+          var title = item.querySelector('.task-title');
+          if (title) {
+            title.classList.add('title');
+          }
+          var due = item.querySelector('.task-meta-row span');
+          if (due && !due.querySelector('time')) {
+            var text = due.textContent.trim();
+            var timeEl = document.createElement('time');
+            var iso = item.getAttribute('data-due') || (item.dataset ? item.dataset.due : '');
+            if (iso) {
+              timeEl.setAttribute('datetime', iso);
+            }
+            timeEl.textContent = text;
+            due.textContent = '';
+            due.appendChild(timeEl);
+          }
+          var notes = item.querySelector('.task-notes');
+          if (notes) {
+            if (!notes.classList.contains('min-notes')) {
+              notes.classList.add('min-notes');
+            }
+          } else {
+            var content = item.querySelector('.task-content') || item;
+            if (content && !content.querySelector('.min-notes')) {
+              var notesDiv = document.createElement('div');
+              notesDiv.className = 'min-notes';
+              notesDiv.setAttribute('data-source', 'auto');
+              content.appendChild(notesDiv);
+            }
+          }
+        });
+      }
+      document.addEventListener('DOMContentLoaded', applyMinimalLayout);
+      document.addEventListener('reminders:updated', applyMinimalLayout);
+    })();
+  </script>
+  
+  <script id="add-task-guard-script">
+    (function () {
+      const dialog = document.querySelector('[data-add-task-dialog]');
+      if (!(dialog instanceof HTMLElement)) {
+        return;
+      }
+
+      const content = dialog.querySelector('[data-dialog-content]') || dialog.querySelector('.sheet-panel') || dialog;
+      const backdrop = dialog.querySelector('.sheet-backdrop') || dialog.querySelector('.backdrop');
+      const closeBtn = document.getElementById('closeCreateSheet');
+      const fab = document.getElementById('fabCreate');
+      const form = document.getElementById('createReminderForm');
+      const saveBtn = document.getElementById('saveReminder');
+      const prioritySelect = document.getElementById('priority');
+      const priorityChips = document.getElementById('priorityChips');
+      const totalBadge = document.getElementById('totalCountBadge');
+      const totalCount = document.getElementById('totalCount');
+
+      let lastTrigger = null;
+      let pendingSave = false;
+
+      const ensureHidden = () => {
+        dialog.classList.add('hidden');
+        dialog.hidden = true;
+        dialog.removeAttribute('open');
+        dialog.setAttribute('aria-hidden', 'true');
+        dialog.classList.remove('open');
+      };
+
+      const isOpen = () => !dialog.classList.contains('hidden');
+
+      const focusFirstField = () => {
+        const target = dialog.querySelector('input, textarea, select, button, [contenteditable="true"]');
+        if (target && typeof target.focus === 'function') {
+          setTimeout(() => {
+            try { target.focus(); } catch { /* ignore focus failures */ }
+          }, 0);
+        }
+      };
+
+      const openSheet = (trigger) => {
+        lastTrigger = trigger instanceof HTMLElement ? trigger : null;
+        dialog.classList.remove('hidden');
+        dialog.hidden = false;
+        dialog.setAttribute('open', '');
+        dialog.setAttribute('aria-hidden', 'false');
+        dialog.classList.add('open');
+        focusFirstField();
+        document.dispatchEvent(new CustomEvent('reminder:sheet-opened', { detail: { trigger: lastTrigger } }));
+      };
+
+      const closeSheet = (reason = 'dismissed') => {
+        if (!isOpen()) {
+          ensureHidden();
+          lastTrigger = null;
+          return;
+        }
+
+        ensureHidden();
+
+        const focusTarget = (lastTrigger && document.body.contains(lastTrigger)) ? lastTrigger : fab;
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+          try { focusTarget.focus(); } catch { /* ignore focus issues */ }
+        }
+        lastTrigger = null;
+
+        document.dispatchEvent(new CustomEvent('reminder:sheet-closed', { detail: { reason } }));
+      };
+
+      ensureHidden();
+
+      if (content && content !== dialog) {
+        content.addEventListener('click', (event) => event.stopPropagation(), true);
+      }
+
+      if (backdrop instanceof HTMLElement) {
+        backdrop.addEventListener('click', (event) => {
+          if (event.target !== backdrop) return;
+          closeSheet('backdrop');
+        });
+      }
+
+      closeBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        closeSheet('close-button');
+      });
+
+      dialog.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          closeSheet('escape');
+        }
+      });
+
+      const openerSelectors = [
+        '[data-open-add-task]',
+        '#addReminderFab',
+        '#fabCreate',
+        '[aria-controls="createReminderModal"]'
+      ];
+      const openerElements = new Set();
+      openerSelectors.forEach((selector) => {
+        document.querySelectorAll(selector).forEach((el) => openerElements.add(el));
+      });
+
+      openerElements.forEach((trigger) => {
+        if (!(trigger instanceof HTMLElement)) return;
+        trigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          openSheet(trigger);
+        });
+      });
+
+      window.closeAddTask = closeSheet;
+
+      if (form instanceof HTMLFormElement && saveBtn instanceof HTMLElement) {
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (!saveBtn.matches(':disabled')) {
+            saveBtn.click();
+          }
+        });
+      }
+
+      if (saveBtn instanceof HTMLElement) {
+        saveBtn.addEventListener('click', () => {
+          pendingSave = true;
+          document.dispatchEvent(
+            new CustomEvent('reminder:save', {
+              detail: { form: form instanceof HTMLFormElement ? form : null, trigger: saveBtn }
+            })
+          );
+        }, { capture: true });
+      }
+
+      const updateTotalCounts = (items) => {
+        const total = Array.isArray(items) ? items.length : (typeof items === 'number' ? items : 0);
+        const value = String(total);
+        if (totalBadge) totalBadge.textContent = value;
+        if (totalCount) totalCount.textContent = value;
+      };
+
+      const handleRemindersUpdated = (event) => {
+        updateTotalCounts(event?.detail?.items);
+      };
+
+      document.addEventListener('memoryCue:remindersUpdated', handleRemindersUpdated);
+      document.addEventListener('reminders:updated', handleRemindersUpdated);
+
+      const priorityRadios = priorityChips
+        ? Array.from(priorityChips.querySelectorAll('input[name="priority"]'))
+        : [];
+
+      const syncRadiosFromSelect = () => {
+        const value = prioritySelect?.value || 'Medium';
+        priorityRadios.forEach((radio) => {
+          const isChecked = radio.value === value;
+          radio.checked = isChecked;
+          radio.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+        });
+      };
+
+      const setPriorityValue = (value) => {
+        if (!prioritySelect) return;
+        if (prioritySelect.value !== value) {
+          prioritySelect.value = value;
+          prioritySelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        syncRadiosFromSelect();
+      };
+
+      priorityRadios.forEach((radio) => {
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            setPriorityValue(radio.value);
+          }
+        });
+      });
+
+      prioritySelect?.addEventListener('change', syncRadiosFromSelect);
+
+      document.addEventListener('cue:prepare', () => {
+        pendingSave = false;
+        syncRadiosFromSelect();
+      });
+
+      document.addEventListener('cue:open', () => {
+        pendingSave = false;
+        syncRadiosFromSelect();
+        openSheet();
+      });
+
+      document.addEventListener('cue:close', (event) => {
+        const reason = event?.detail?.reason || 'cue-close';
+        if (reason === 'created' || reason === 'updated') {
+          document.dispatchEvent(new CustomEvent('reminder:saved', { detail: { reason } }));
+        }
+        pendingSave = false;
+        syncRadiosFromSelect();
+        closeSheet(reason);
+      });
+
+      document.addEventListener('cue:cancelled', () => {
+        pendingSave = false;
+        closeSheet('cue-cancelled');
+      });
+
+      syncRadiosFromSelect();
+    })();
+  </script>
+  <script id="min-expand-script">
+(function(){
+  // Find the list container for minimal tasks
+  // Prefer an element with class 'task-list-min'; fallback to common ids.
+  var list = document.querySelector('.task-list-min')
+         || document.getElementById('remindersList')
+         || document.getElementById('tasks')
+         || document.querySelector('[data-list="reminders"]');
+  if (!list) return;
+
+  // Utility: find or create a .min-notes element in a row
+  function ensureNotesEl(row){
+    var el = row.querySelector('.min-notes');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'min-notes';
+      el.setAttribute('data-source','auto');
+      row.appendChild(el);
+    }
+    return el;
+  }
+
+  // Utility: get task id/title/notes from dataset or known child selectors
+  function getTaskData(row){
+    // Prefer data attributes if your renderer sets them
+    var id    = row.getAttribute('data-taskid') || row.dataset.taskid;
+    var title = row.querySelector('.title')?.textContent?.trim() || row.getAttribute('data-title') || '';
+    // Try to read an existing notes element if already rendered but hidden
+    var existing = row.querySelector('.notes, .note, [data-notes]');
+    var notes = existing ? (existing.textContent || existing.getAttribute('data-notes') || '').trim() : '';
+
+    // If no notes in DOM, try app hooks (non-breaking)
+    if (!notes && window.getReminderById && id) {
+      try { notes = (window.getReminderById(id)?.notes || '').trim(); } catch(_) {}
+    }
+    return { id, title, notes };
+  }
+
+  // Make rows focusable and togglable
+  function prepareRow(row){
+    if (!row.classList.contains('task-row-min')) return;
+    // ARIA / keyboard
+    row.setAttribute('role','button');
+    row.setAttribute('tabindex','0');
+    row.setAttribute('aria-expanded','false');
+
+    function toggle(){
+      var expanded = row.classList.toggle('expanded');
+      row.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+
+      // Fill notes on first expand if needed
+      if (expanded) {
+        var data = getTaskData(row);
+        var notesEl = ensureNotesEl(row);
+        if (notesEl && !notesEl.textContent.trim()) {
+          // prefer existing notes text if already present
+          if (data.notes) {
+            notesEl.textContent = data.notes;
+          } else {
+            notesEl.textContent = 'No notes';
+            notesEl.style.opacity = '.6';
+          }
+        }
+        // Optionally ensure full title is visible (if row truncates)
+        var titleEl = row.querySelector('.title');
+        if (titleEl) titleEl.title = data.title || titleEl.textContent;
+      }
+    }
+
+    row.addEventListener('click', function(e){
+      // Avoid toggling when clicking links/buttons inside the row
+      if (e.target.closest('a,button,input,textarea,select')) return;
+      toggle();
+    });
+
+    row.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); toggle();
+      }
+    });
+  }
+
+  // Prepare existing rows
+  Array.from(list.querySelectorAll('.task-row-min')).forEach(prepareRow);
+
+  // If your list re-renders dynamically, observe and apply to new rows
+  var mo = new MutationObserver(function(muts){
+    for (var m of muts) {
+      m.addedNodes && m.addedNodes.forEach(function(n){
+        if (!(n instanceof Element)) return;
+        if (n.classList && n.classList.contains('task-row-min')) prepareRow(n);
+        // Also catch rows generated within a fragment
+        n.querySelectorAll && n.querySelectorAll('.task-row-min').forEach(prepareRow);
+      });
+    }
+  });
+  mo.observe(list, { childList: true, subtree: true });
+})();
+  </script>
+  <script type="module" src="./assets/mobile-7SMKQL4L.js"></script>
+</body>
+</html>
