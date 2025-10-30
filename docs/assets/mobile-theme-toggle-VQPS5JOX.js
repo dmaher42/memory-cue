@@ -1,0 +1,1 @@
+import{b as a}from"./chunk-RCZ4YZVR.js";var n=a(()=>{(function(){let t=document.documentElement,e=localStorage.getItem("theme");e&&t.setAttribute("data-theme",e),document.getElementById("themeToggle")?.addEventListener("click",()=>{let m=t.getAttribute("data-theme")==="dark"?"light":"dark";t.setAttribute("data-theme",m),localStorage.setItem("theme",m)})})()});export default n();
