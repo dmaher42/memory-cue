@@ -522,22 +522,25 @@ export async function initReminders(sel = {}) {
       return;
     }
 
-    const wasOpen = sheet.classList?.contains('open') || !sheet.classList?.contains('hidden');
-    if (!wasOpen) {
-      return;
-    }
-
+    sheet.classList?.remove('open');
     sheet.classList?.add('hidden');
     sheet.setAttribute('hidden', '');
     sheet.setAttribute('aria-hidden', 'true');
     sheet.removeAttribute('open');
-    sheet.classList?.remove('open');
 
     const backdrop = sheet.querySelector('.sheet-backdrop, .backdrop');
     if (backdrop instanceof HTMLElement) {
       backdrop.classList.add('hidden');
       backdrop.setAttribute('hidden', '');
       backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    try {
+      document.dispatchEvent(
+        new CustomEvent('cue:close', { detail: { reason: 'save' } }),
+      );
+    } catch {
+      /* ignore CustomEvent issues */
     }
   }
 
