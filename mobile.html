@@ -2,7 +2,8 @@
 <html lang="en" data-theme="light">
 <head>
   <base href="./" />
-  <script src="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.js"></script>
+  <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
+  <link rel="stylesheet" href="./assets/styles-5e0f77b6.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
@@ -11,7 +12,6 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-5e0f77b6.css" />
   <style>
     .sync-status {
       display: inline-flex;
@@ -522,6 +522,11 @@
       <span class="btm-nav-label">Notebook</span>
     </button>
   </nav>
+  <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
+  <!-- When deployed, this should appear in View Source with today’s date. -->
+
+  <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
+  <script type="module" src="./assets/mobile-CX6F7USX.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -970,7 +975,10 @@
 
             if (dataset.reminder) {
               try {
-                raw = JSON.parse(dataset.reminder);
+                const parsed = JSON.parse(dataset.reminder);
+                if (parsed && typeof parsed === 'object') {
+                  raw = parsed;
+                }
               } catch {
                 raw = null;
               }
@@ -1578,6 +1586,5 @@
   mo.observe(list, { childList: true, subtree: true });
 })();
   </script>
-  <script type="module" src="./assets/mobile-D7CLP2NM.js"></script>
 </body>
 </html>
