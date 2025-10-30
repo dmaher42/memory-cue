@@ -1956,6 +1956,9 @@ export async function initReminders(sel = {}) {
   document.addEventListener('DOMContentLoaded', () => { settingsSection?.classList.add('hidden'); });
 
   function handleSaveAction(){
+    // Debug: log when save handler invoked to help trace click issues
+    try { console.log('handleSaveAction invoked', { editingId, title: title?.value }); } catch (e) {}
+
     if(editingId){
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }

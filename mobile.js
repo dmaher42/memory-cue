@@ -214,6 +214,33 @@ document.addEventListener('memoryCue:remindersUpdated', (event) => {
   totalCountEl.textContent = String(total);
 });
 
+// DEBUG: global listener to detect clicks on the Save Reminder button
+document.addEventListener('click', (ev) => {
+  try {
+    const target = ev.target;
+    if (!target) return;
+    // If the actual element clicked is the save button or inside it
+    if ((target instanceof HTMLElement && target.id === 'saveReminder') || (target instanceof Element && target.closest && target.closest('#saveReminder'))) {
+      // Log and add a temporary visual indicator
+      console.log('Global click detected on #saveReminder', { target });
+      try {
+        const flash = document.createElement('div');
+        flash.textContent = 'Save clicked';
+        flash.style.position = 'fixed';
+        flash.style.right = '16px';
+        flash.style.bottom = '16px';
+        flash.style.background = 'rgba(34,197,94,0.95)';
+        flash.style.color = '#fff';
+        flash.style.padding = '8px 12px';
+        flash.style.borderRadius = '8px';
+        flash.style.zIndex = '99999';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 900);
+      } catch (e) {}
+    }
+  } catch (e) {}
+});
+
 /* BEGIN GPT CHANGE: today view population */
 (function () {
   const todayEl = document.querySelector('[data-view="today"]');

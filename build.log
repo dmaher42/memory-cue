@@ -1,0 +1,37 @@
+
+> memory-cue@1.0.0 build
+> node scripts/build.mjs
+
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+Rebuilding...
+
+🌼   daisyUI 4.12.24
+├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
+╰─ ★ Star daisyUI on GitHub	https://github.com/saadeghi/daisyui
+
+
+warn - Your `content` configuration includes a pattern which looks like it's accidentally matching all of `node_modules` and can cause serious performance issues.
+warn - Pattern: `./**/*.html`
+warn - See our documentation for recommendations:
+warn - https://tailwindcss.com/docs/content-configuration#pattern-recommendations
+
+Done in 2078ms.
+
+  dist/assets/chunk-BF2RMRYD.js                42.7kb
+  dist/assets/app-GKI2EGNX.js                  17.8kb
+  dist/assets/mobile-D7CLP2NM.js               12.4kb
+  dist/assets/main-NYXLDB75.js                  2.8kb
+  dist/assets/mobile-theme-toggle-VQPS5JOX.js   382b 
+  dist/assets/config-supabase-NJI5WPHR.js       344b 
+  dist/assets/chunk-RCZ4YZVR.js                 120b 
+
+⚡ Done in 42ms
+
+  dist/assets/register-service-worker-VJMOHPCS.js  350b 
+  dist/assets/update-footer-year-EFMYO4DK.js       175b 
+  dist/assets/runtime-env-shim-TYQCA2C5.js         123b 
+
+⚡ Done in 9ms
