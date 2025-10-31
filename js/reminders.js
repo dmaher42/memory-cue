@@ -136,14 +136,17 @@ function initVoiceInput() {
     return;
   }
 
-  const mic = document.getElementById('voiceAddBtn');
+  const sheetMic = document.getElementById('sheetVoiceBtn');
   const quickMic = document.getElementById('quickAddMic');
-  const status = document.getElementById('voiceStatus');
+  const status = document.getElementById('sheetVoiceStatus');
   const quickInput = document.getElementById('quickAddInput');
   const formInput = document.getElementById('reminderText');
-  const defaultInput = quickInput || formInput;
+  const defaultInput = formInput || quickInput;
+  const isElement = (el) =>
+    Boolean(el) && typeof el === 'object' && typeof el.addEventListener === 'function';
+  const micButtons = [sheetMic, quickMic].filter(isElement);
 
-  if (!mic || !defaultInput) {
+  if (!micButtons.length || !defaultInput) {
     return;
   }
 
@@ -162,6 +165,7 @@ function initVoiceInput() {
   recog.maxAlternatives = 1;
 
   let activeInput = defaultInput;
+  let listeningButton = null;
 
   function resolveInputForButton(btn) {
     if (!btn) {
@@ -177,7 +181,7 @@ function initVoiceInput() {
     if (btn === quickMic && quickInput) {
       return quickInput;
     }
-    if (btn === mic && formInput) {
+    if (btn === sheetMic && formInput) {
       return formInput;
     }
     return defaultInput;
@@ -189,6 +193,10 @@ function initVoiceInput() {
       return;
     }
     activeInput = targetInput;
+    listeningButton = isElement(btn) ? btn : null;
+    if (listeningButton) {
+      listeningButton.setAttribute('aria-pressed', 'true');
+    }
     try {
       if (status) {
         status.hidden = false;
@@ -200,8 +208,9 @@ function initVoiceInput() {
     }
   }
 
-  mic.addEventListener('click', () => beginListeningFor(mic));
-  quickMic?.addEventListener('click', () => beginListeningFor(quickMic));
+  micButtons.forEach((btn) => {
+    btn.addEventListener('click', () => beginListeningFor(btn));
+  });
 
   recog.addEventListener('result', (e) => {
     const transcript = e.results?.[0]?.[0]?.transcript?.trim() || '';
@@ -230,6 +239,10 @@ function initVoiceInput() {
   });
 
   recog.addEventListener('end', () => {
+    if (listeningButton) {
+      listeningButton.setAttribute('aria-pressed', 'false');
+      listeningButton = null;
+    }
     if (status) {
       status.hidden = true;
     }
@@ -1801,17 +1814,7 @@ export async function initReminders(sel = {}) {
     const frag = document.createDocumentFragment();
     const listIsSemantic = list.tagName === 'UL' || list.tagName === 'OL';
 
-    const isMinimalLayout = (() => {
-      if (typeof document === 'undefined') return false;
-      const body = document.body;
-      if (!body || typeof body.classList?.contains !== 'function') return false;
-      return !body.classList.contains('show-full');
-    })();
-    const shouldGroupCategories =
-      variant === 'desktop' ||
-      !isMinimalLayout ||
-      (!listIsSemantic && variant !== 'desktop');
-    const highlightToday = sortKey === 'due';
+    const shouldGroupCategories = true;
 
     const createMobileItem = (r, catName) => {
       const div = document.createElement('div');
