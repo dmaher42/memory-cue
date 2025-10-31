@@ -302,6 +302,50 @@ if (document.readyState === 'loading') {
 }
 
 (() => {
+  const toggleBtn = document.getElementById('toggleReminderFilters');
+  const filterPanel = document.getElementById('reminderFilters');
+
+  if (!(toggleBtn instanceof HTMLElement) || !(filterPanel instanceof HTMLElement)) {
+    return;
+  }
+
+  const focusSelectors = ['input', 'select', 'button', 'textarea', '[tabindex]:not([tabindex="-1"])'];
+
+  const syncState = () => {
+    const isOpen = filterPanel.hasAttribute('open');
+    toggleBtn.setAttribute('aria-expanded', String(isOpen));
+    toggleBtn.classList.toggle('btn-active', isOpen);
+  };
+
+  const focusFirstControl = () => {
+    for (const selector of focusSelectors) {
+      const control = filterPanel.querySelector(selector);
+      if (control instanceof HTMLElement && !control.hasAttribute('disabled')) {
+        try {
+          control.focus({ preventScroll: true });
+        } catch {
+          control.focus();
+        }
+        return;
+      }
+    }
+  };
+
+  toggleBtn.addEventListener('click', () => {
+    const isOpen = filterPanel.hasAttribute('open');
+    filterPanel.open = !isOpen;
+    if (!isOpen) {
+      focusFirstControl();
+    }
+    syncState();
+  });
+
+  filterPanel.addEventListener('toggle', syncState);
+
+  syncState();
+})();
+
+(() => {
   const sheetEl = document.getElementById('create-sheet');
 
   if (!(sheetEl instanceof HTMLElement)) {
