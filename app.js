@@ -1,4 +1,15 @@
 import { initReminders } from './js/reminders.js';
+import {
+  CUE_FIELD_DEFINITIONS,
+  DEFAULT_CUE_MODAL_TITLE,
+  EDIT_CUE_MODAL_TITLE,
+  getFieldElements,
+  getCueFieldValueFromData,
+  populateCueFormFields,
+  clearCueFormFields,
+  gatherCueFormData,
+  escapeCueText
+} from './js/modules/field-helpers.js';
 
 const cueModal = document.getElementById('cue-modal') ?? document.getElementById('cue_modal');
 const openCueButton = document.getElementById('openCueModal');
@@ -151,8 +162,8 @@ const cuesList = document.getElementById('cues-list');
 const cueForm = document.getElementById('cue-form');
 const cueIdInput = cueForm?.querySelector('#cue-id-input');
 const cueModalTitle = document.getElementById('modal-title');
-const defaultCueModalTitle = cueModalTitle?.textContent?.trim() || '';
-const editCueModalTitle = 'Edit Cue';
+const defaultCueModalTitle = cueModalTitle?.textContent?.trim() || DEFAULT_CUE_MODAL_TITLE;
+const editCueModalTitle = EDIT_CUE_MODAL_TITLE;
 
 const cuesTab = document.getElementById('tab-cues');
 const dailyTab = document.getElementById('tab-daily');
@@ -166,35 +177,7 @@ const dailyTasksContainer = document.getElementById('daily-tasks-container');
 const clearCompletedButton = document.getElementById('clear-completed-btn');
 const dailyListPermissionNotice = document.getElementById('daily-list-permission-notice');
 
-const cueFieldDefinitions = [
-  { key: 'title', ids: ['cue-title', 'title'] },
-  { key: 'details', ids: ['cue-details', 'details', 'cue-description'] },
-  { key: 'date', ids: ['cue-date', 'date'] },
-  { key: 'time', ids: ['cue-time', 'time'] },
-  { key: 'priority', ids: ['cue-priority', 'priority'] },
-  { key: 'category', ids: ['cue-category', 'category'] }
-];
-
-const cueFieldAliases = {
-  title: ['title', 'name'],
-  details: ['details', 'description', 'notes', 'body'],
-  date: ['date', 'dueDate', 'due_date'],
-  time: ['time', 'dueTime', 'due_time'],
-  priority: ['priority', 'level'],
-  category: ['category', 'tag']
-};
-
-const cueFieldElements = cueFieldDefinitions
-  .map(({ key, ids }) => {
-    for (const id of ids) {
-      const el = id ? document.getElementById(id) : null;
-      if (el) {
-        return { key, element: el };
-      }
-    }
-    return null;
-  })
-  .filter((entry) => entry && entry.element);
+const cueFieldElements = getFieldElements(CUE_FIELD_DEFINITIONS);
 
 const firebaseCueConfig = {
   apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
@@ -207,114 +190,6 @@ const firebaseCueConfig = {
 };
 
 let firestoreCueContextPromise = null;
-
-function getCueFieldValueFromData(data, key) {
-  if (!data || typeof data !== 'object') {
-    return '';
-  }
-  const possibleKeys = cueFieldAliases[key] || [key];
-  for (const field of possibleKeys) {
-    if (Object.prototype.hasOwnProperty.call(data, field)) {
-      const value = data[field];
-      if (value === null || value === undefined) {
-        return '';
-      }
-      return typeof value === 'string' ? value : String(value);
-    }
-  }
-  return '';
-}
-
-function setCueFieldValue(element, value) {
-  const normalised = value === undefined || value === null ? '' : value;
-  if (element instanceof HTMLInputElement) {
-    if (element.type === 'checkbox') {
-      element.checked = Boolean(normalised);
-    } else {
-      element.value = typeof normalised === 'string' ? normalised : String(normalised);
-    }
-    return;
-  }
-  if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
-    element.value = typeof normalised === 'string' ? normalised : String(normalised);
-  }
-}
-
-function readCueFieldValue(element) {
-  if (element instanceof HTMLInputElement) {
-    if (element.type === 'checkbox') {
-      return element.checked;
-    }
-    return element.value;
-  }
-  if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
-    return element.value;
-  }
-  return '';
-}
-
-function populateCueFormFields(cue) {
-  cueFieldElements.forEach(({ key, element }) => {
-    const value = cue && typeof cue === 'object' ? getCueFieldValueFromData(cue, key) : '';
-    setCueFieldValue(element, value);
-  });
-}
-
-function clearCueFormFields() {
-  cueFieldElements.forEach(({ element }) => {
-    if (element instanceof HTMLInputElement) {
-      if (['checkbox', 'radio'].includes(element.type)) {
-        element.checked = false;
-      } else {
-        element.value = '';
-      }
-    } else if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
-      element.value = '';
-    }
-  });
-  if (cueIdInput) {
-    cueIdInput.value = '';
-  }
-  if (cueModalTitle) {
-    cueModalTitle.textContent = defaultCueModalTitle;
-  }
-}
-
-function gatherCueFormData() {
-  const result = {};
-  cueFieldElements.forEach(({ key, element }) => {
-    const raw = readCueFieldValue(element);
-    if (typeof raw === 'boolean') {
-      result[key] = raw;
-      return;
-    }
-    const trimmed = typeof raw === 'string' ? raw.trim() : raw;
-    result[key] = trimmed === undefined || trimmed === null ? '' : trimmed;
-  });
-  return result;
-}
-
-function escapeCueText(value) {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  return String(value).replace(/[&<>'"]/g, (char) => {
-    switch (char) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      case "'":
-        return '&#39;';
-      default:
-        return char;
-    }
-  });
-}
 
 function renderCueList(cues) {
   if (!cuesList) {
@@ -475,7 +350,7 @@ function enterCueEditMode(cue) {
   if (!cueForm || !cueIdInput) {
     return;
   }
-  populateCueFormFields(cue);
+  populateCueFormFields(cue, cueFieldElements);
   cueIdInput.value = cue?.id || '';
   if (cueModalTitle) {
     cueModalTitle.textContent = editCueModalTitle;
@@ -510,7 +385,7 @@ async function handleCueFormSubmit(event) {
     return;
   }
   const cueId = cueIdInput.value.trim();
-  const data = gatherCueFormData();
+  const data = gatherCueFormData(cueFieldElements);
   try {
     const firestore = await ensureCueFirestore();
     const { db, doc, addDoc, updateDoc, cuesCollection, serverTimestamp } = firestore;
@@ -531,7 +406,7 @@ async function handleCueFormSubmit(event) {
       await addDoc(cuesCollection, payload);
     }
     await refreshCueList();
-    clearCueFormFields();
+    clearCueFormFields(cueFieldElements, cueIdInput, cueModalTitle, defaultCueModalTitle);
     hideCueModal();
   } catch (error) {
     console.error('Failed to save cue', error);
