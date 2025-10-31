@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
+  <!-- Temporary redirect to built site in /docs while Pages source is being updated -->
+  <meta http-equiv="refresh" content="0; url=./docs/mobile.html" />
+  <script>try{ if(location.pathname.endsWith('/mobile.html')||location.pathname==='/memory-cue/'||location.pathname==='/' ){ location.replace('./docs/mobile.html'); } }catch(e){};</script>
   <base href="./" />
-  <script src="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.js"></script>
+  <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
+  <link rel="stylesheet" href="./assets/styles-eed63890.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
@@ -11,7 +15,6 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-5e0f77b6.css" />
   <style>
     .sync-status {
       display: inline-flex;
@@ -118,6 +121,16 @@
     .dark .glass-panel {
       background-color: rgba(15, 23, 42, 0.88);
     }
+    .task-item.is-today {
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.08);
+      background: rgba(191, 219, 254, 0.22);
+    }
+    .dark .task-item.is-today {
+      border-color: rgba(96, 165, 250, 0.45);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.28);
+      background: rgba(30, 64, 175, 0.28);
+    }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
   <style id="skip-link-css">
@@ -148,8 +161,8 @@
     }
     .fab {
       position: fixed;
-      right: 16px;
-      bottom: 88px;
+      right: calc(16px + env(safe-area-inset-right));
+      bottom: calc(88px + env(safe-area-inset-bottom));
       width: 56px;
       height: 56px;
       border-radius: 50%;
@@ -162,11 +175,16 @@
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
       border: none;
       cursor: pointer;
-      z-index: 60;
+      z-index: 80;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .fab:focus-visible {
       outline: 2px solid currentColor;
       outline-offset: 2px;
+    }
+    .fab:active {
+      transform: scale(0.96);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
     }
     .sheet {
       position: fixed;
@@ -174,7 +192,7 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      z-index: 70;
+      z-index: 90;
     }
     .sheet-panel {
       position: relative;
@@ -198,6 +216,16 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 12px;
+      gap: 12px;
+    }
+    .sheet-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-header-actions .btn.is-listening {
+      background: var(--fallback-p, #2563eb);
+      color: var(--fallback-pc, #fff);
     }
     .sheet-backdrop {
       position: absolute;
@@ -293,7 +321,40 @@
     }
   </style>
   <!-- END GPT CHANGE: rhythm -->
-  
+  <style id="min-expand-css">
+    /* Expand/collapse behavior */
+    .task-row-min {
+      cursor: pointer;
+      outline: none;
+    }
+    .task-row-min:focus {
+      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+    }
+    .task-row-min .min-notes {
+      display: none;
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.35;
+      opacity: .95;
+      white-space: pre-wrap;
+    }
+    .task-row-min.expanded .min-notes {
+      display: block;
+    }
+    /* Slightly larger title when expanded */
+    .task-row-min.expanded .title {
+      font-weight: 600;
+    }
+    /* Optional small chevron indicator */
+    .task-row-min::after {
+      content: "▾";
+      justify-self: end;
+      opacity: .5;
+      font-size: 12px;
+    }
+    .task-row-min.expanded::after { transform: rotate(180deg); }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
@@ -341,13 +402,22 @@
                    placeholder="What do you need to remember?"
                    aria-label="Quick add reminder"
                    autocomplete="off" />
+            <button id="quickAddVoiceBtn"
+                    type="button"
+                    class="btn btn-ghost"
+                    title="Dictate quick reminder"
+                    aria-label="Dictate quick reminder"
+                    aria-pressed="false">
+              <span aria-hidden="true">🎙️</span>
+              <span class="sr-only">Start voice input for quick add</span>
+            </button>
             <button id="quickAddSubmit"
                     class="btn btn-primary"
                     type="button"
                     aria-label="Add reminder now">Add</button>
           </div>
           <p class="text-xs text-base-content/60">
-            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus and <kbd>Enter</kbd> to add.
+            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; press <kbd>Enter</kbd> to add instantly.
           </p>
         </div>
       </section>
@@ -357,27 +427,37 @@
           <div class="card-body gap-4 compact">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
-                <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="false">Today · <span id="todayCount">0</span></button>
                 <button class="btn btn-xs" type="button" data-filter="overdue" aria-pressed="false">Overdue · <span id="overdueCount">0</span></button>
                 <button class="btn btn-xs" type="button" data-filter="all" aria-pressed="true">All · <span id="totalCountBadge">0</span></button>
                 <button class="btn btn-xs" type="button" data-filter="done" aria-pressed="false">Done · <span id="completedCount">0</span></button>
               </div>
-              <label class="form-control w-full sm:w-auto">
-                <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
-                <select id="categoryFilter" class="select select-bordered select-sm">
-                  <option value="all" selected>All categories</option>
-                  <option value="General">General</option>
-                  <option value="General Appointments">General Appointments</option>
-                  <option value="Home &amp; Personal">Home &amp; Personal</option>
-                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                  <option value="School – To-Do">School – To-Do</option>
-                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                </select>
-              </label>
+              <div class="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+                <label class="form-control w-full sm:w-auto">
+                  <div class="label hidden sm:flex"><span class="label-text">Sort reminders</span></div>
+                  <select id="sortReminders" class="select select-bordered select-sm">
+                    <option value="due" selected>Due Date (Today first)</option>
+                    <option value="priority">Priority</option>
+                    <option value="category">Category (A–Z)</option>
+                    <option value="recent">Recently Added</option>
+                  </select>
+                </label>
+                <label class="form-control w-full sm:w-auto">
+                  <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+                  <select id="categoryFilter" class="select select-bordered select-sm">
+                    <option value="all" selected>All categories</option>
+                    <option value="General">General</option>
+                    <option value="General Appointments">General Appointments</option>
+                    <option value="Home &amp; Personal">Home &amp; Personal</option>
+                    <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                    <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                    <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                    <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                    <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                    <option value="School – To-Do">School – To-Do</option>
+                    <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <label class="form-control">
@@ -395,9 +475,6 @@
         </div>
       </section>
     </section>
-    <!-- END GPT CHANGE -->
-    <!-- BEGIN GPT CHANGE: today view -->
-    <section data-view="today" id="view-today" class="view-panel hidden"></section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden">
@@ -449,19 +526,34 @@
       <span class="btm-nav-label">Reminders</span>
     </button>
     <button type="button">
-      <span class="btm-nav-label">Today</span>
-    </button>
-    <button type="button">
       <span class="btm-nav-label">Notebook</span>
     </button>
   </nav>
+  <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
+  <!-- When deployed, this should appear in View Source with today’s date. -->
+
+  <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
+  <script type="module" src="./assets/mobile-X67VZDXH.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
     <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
       <header class="sheet-header">
         <h2 id="createSheetTitle">Create Reminder</h2>
-        <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+        <div class="sheet-header-actions">
+          <button
+            id="voiceBtn"
+            type="button"
+            class="btn btn-circle btn-ghost"
+            aria-label="Start voice input"
+            aria-pressed="false"
+            title="Fill reminder using your voice"
+          >
+            <span aria-hidden="true">🎙️</span>
+            <span class="sr-only">Start voice input</span>
+          </button>
+          <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+        </div>
       </header>
       <form id="createReminderForm" class="inputs-compact">
         <div class="card-body gap-4 compact">
@@ -541,7 +633,6 @@
 
           <div class="flex flex-wrap items-center gap-3">
             <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
-            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
           </div>
 
           <div class="flex flex-col gap-2">
@@ -608,21 +699,30 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <!-- BEGIN GPT CHANGE: global FAB -->
-  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
+  <button
+    id="fabCreate"
+    class="fab"
+    type="button"
+    aria-label="Add reminder"
+    aria-haspopup="dialog"
+    aria-controls="create-sheet"
+    aria-expanded="false"
+  >
+    ＋
+  </button>
   <!-- END GPT CHANGE: global FAB -->
 
   <script id="mobile-enhancements">
     (function () {
       const views = {
         reminders: document.querySelector('[data-view="reminders"]'),
-        today: document.querySelector('[data-view="today"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
       };
       const nav = document.querySelector('.btm-nav');
       if (!nav) return;
 
-      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 3);
-      const order = ['reminders', 'today', 'notebook'];
+      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 2);
+      const order = ['reminders', 'notebook'];
 
       if (!buttons.length || order.some((key) => !views[key])) {
         return;
@@ -698,51 +798,6 @@
       });
 
       setActiveView('reminders');
-    })();
-
-    (function () {
-      const todayView = document.querySelector('[data-view="today"]');
-      const list = document.getElementById('reminderList');
-      if (!todayView || !list) return;
-
-      const isToday = (dateStr) => {
-        const d = new Date(dateStr);
-        if (Number.isNaN(d.getTime())) return false;
-        const now = new Date();
-        return d.getFullYear() === now.getFullYear() &&
-          d.getMonth() === now.getMonth() &&
-          d.getDate() === now.getDate();
-      };
-
-      const renderToday = () => {
-        const items = Array.from(list.querySelectorAll('[data-reminder]'));
-        const todaysItems = items.filter((item) => {
-          const direct = item.getAttribute('data-due');
-          const nested = item.querySelector('[data-due]');
-          const when = direct || (nested ? nested.textContent : '') || '';
-          return isToday(when.trim());
-        });
-
-        todayView.innerHTML = '';
-        const heading = document.createElement('h2');
-        heading.textContent = 'Today';
-        todayView.appendChild(heading);
-
-        if (!todaysItems.length) {
-          const empty = document.createElement('p');
-          empty.textContent = 'No reminders due today.';
-          todayView.appendChild(empty);
-          return;
-        }
-
-        todaysItems.forEach((item) => {
-          todayView.appendChild(item.cloneNode(true));
-        });
-      };
-
-      document.addEventListener('DOMContentLoaded', renderToday);
-      document.addEventListener('reminders:updated', renderToday);
-      document.addEventListener('memoryCue:remindersUpdated', renderToday);
     })();
 
     (function () {
@@ -924,7 +979,10 @@
 
             if (dataset.reminder) {
               try {
-                raw = JSON.parse(dataset.reminder);
+                const parsed = JSON.parse(dataset.reminder);
+                if (parsed && typeof parsed === 'object') {
+                  raw = parsed;
+                }
               } catch {
                 raw = null;
               }
@@ -1389,7 +1447,299 @@
       syncRadiosFromSelect();
     })();
   </script>
+  <script id="sheet-save-bridge-script">
+    (function () {
+      const dialog = document.querySelector('[data-add-task-dialog]');
+      if (!(dialog instanceof HTMLElement)) {
+        return;
+      }
+
+      const form = document.getElementById('createReminderForm');
+      const saveBtn = document.getElementById('saveReminder');
+      if (!(form instanceof HTMLFormElement) || !(saveBtn instanceof HTMLElement)) {
+        return;
+      }
+
+      const quickAddBtn = document.getElementById('quickAdd');
+      const titleInput = document.getElementById('reminderText');
+      const dateInput = document.getElementById('reminderDate');
+      const timeInput = document.getElementById('reminderTime');
+      const detailsInput = document.getElementById('reminderDetails');
+      const priorityInput = document.getElementById('priority');
+      const categoryInput = document.getElementById('category');
+      const statusEl = document.getElementById('statusMessage');
+
+      let isProcessing = false;
+      let attemptToken = 0;
+
+      const setBusy = (state) => {
+        if (state) {
+          saveBtn.setAttribute('disabled', 'disabled');
+          saveBtn.setAttribute('aria-busy', 'true');
+        } else {
+          saveBtn.removeAttribute('disabled');
+          saveBtn.removeAttribute('aria-busy');
+        }
+      };
+
+      const setStatus = (message, tone = 'info') => {
+        if (!statusEl) {
+          return;
+        }
+        if (!message) {
+          statusEl.textContent = '';
+          statusEl.hidden = true;
+          statusEl.removeAttribute('data-state');
+          return;
+        }
+        statusEl.hidden = false;
+        statusEl.textContent = message;
+        statusEl.dataset.state = tone;
+      };
+
+      const closeSheet = (reason = 'created') => {
+        try {
+          if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
+            window.closeAddTask(reason);
+            return;
+          }
+        } catch (error) {
+          console.error('closeAddTask failed', error);
+        }
+
+        try {
+          document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason } }));
+        } catch (error) {
+          console.error('cue:close dispatch failed', error);
+        }
+      };
+
+      const todayISO = () => {
+        const now = new Date();
+        const tz = now.getTimezoneOffset();
+        const adjusted = new Date(now.getTime() - tz * 60 * 1000);
+        return adjusted.toISOString().slice(0, 10);
+      };
+
+      const buildPayload = () => {
+        const title = (titleInput?.value || '').trim();
+        const date = (dateInput?.value || '').trim();
+        const time = (timeInput?.value || '').trim();
+        const details = (detailsInput?.value || '').trim();
+        const priority = (priorityInput?.value || 'Medium').trim() || 'Medium';
+        const category = (categoryInput?.value || 'General').trim() || 'General';
+
+        let dueIso = null;
+        if (date || time) {
+          const isoDate = date || todayISO();
+          const isoTime = time || '09:00';
+          try {
+            const parsed = new Date(`${isoDate}T${isoTime}`);
+            if (!Number.isNaN(parsed.getTime())) {
+              dueIso = parsed.toISOString();
+            }
+          } catch (error) {
+            console.error('Failed to build due date', error);
+            dueIso = null;
+          }
+        }
+
+        return {
+          title,
+          date,
+          time,
+          details,
+          priority,
+          category,
+          dueIso,
+        };
+      };
+
+      const awaitCueClose = () => new Promise((resolve) => {
+        let settled = false;
+        const complete = (value) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timer);
+          document.removeEventListener('cue:close', handleClose, true);
+          resolve(value);
+        };
+
+        const handleClose = (event) => {
+          const reason = event?.detail?.reason;
+          if (reason === 'created' || reason === 'updated') {
+            complete(true);
+          }
+        };
+
+        const timer = setTimeout(() => complete(false), 700);
+
+        document.addEventListener('cue:close', handleClose, { once: true, capture: true });
+      });
+
+      const attemptViaQuickAdd = async () => {
+        if (!(quickAddBtn instanceof HTMLElement) || quickAddBtn.matches(':disabled')) {
+          return false;
+        }
+
+        try {
+          const waitForClose = awaitCueClose();
+          quickAddBtn.click();
+          return await waitForClose;
+        } catch (error) {
+          console.error('Quick add bridge failed', error);
+          return false;
+        }
+      };
+
+      const callCandidate = async (fn, label, payload) => {
+        if (typeof fn !== 'function') {
+          return false;
+        }
+        try {
+          const result = fn(payload);
+          if (result && typeof result.then === 'function') {
+            await result;
+          }
+          return true;
+        } catch (error) {
+          console.error(`Reminder save via ${label} failed`, error);
+          return false;
+        }
+      };
+
+      const attemptQuickInputFallback = async (payload) => {
+        const quickInput = document.getElementById('quickAddInput');
+        if (!(quickInput instanceof HTMLInputElement)) {
+          return false;
+        }
+        if (typeof window === 'undefined' || typeof window.memoryCueQuickAddNow !== 'function') {
+          return false;
+        }
+
+        const originalValue = quickInput.value;
+        const parts = [payload.title];
+        if (payload.date && payload.time) {
+          parts.push(`on ${payload.date} at ${payload.time}`);
+        } else if (payload.date) {
+          parts.push(`on ${payload.date}`);
+        } else if (payload.time) {
+          parts.push(`at ${payload.time}`);
+        }
+        if (payload.details) {
+          parts.push(`- ${payload.details}`);
+        }
+        if (payload.category && payload.category !== 'General') {
+          parts.push(`[${payload.category}]`);
+        }
+        if (payload.priority && payload.priority !== 'Medium') {
+          parts.push(`(${payload.priority} priority)`);
+        }
+
+        quickInput.value = parts.filter(Boolean).join(' ').trim();
+
+        try {
+          const result = window.memoryCueQuickAddNow();
+          if (result && typeof result.then === 'function') {
+            await result;
+          }
+          return true;
+        } catch (error) {
+          console.error('Quick add input fallback failed', error);
+          return false;
+        } finally {
+          setTimeout(() => {
+            try { quickInput.value = originalValue; } catch { quickInput.value = ''; }
+          }, 0);
+        }
+      };
+
+      const attemptCreation = async (payload) => {
+        if (await attemptViaQuickAdd()) {
+          return true;
+        }
+
+        if (await callCandidate(window.addReminderFromVoice, 'addReminderFromVoice', payload)) {
+          return true;
+        }
+
+        if (await callCandidate(window.createReminder, 'createReminder', payload)) {
+          return true;
+        }
+
+        if (await attemptQuickInputFallback(payload)) {
+          return true;
+        }
+
+        try {
+          const event = new CustomEvent('memoryCue:createReminder', {
+            detail: { data: payload, source: 'sheet-save' },
+            cancelable: true,
+          });
+          const dispatched = document.dispatchEvent(event);
+          return event.defaultPrevented || dispatched === false;
+        } catch (error) {
+          console.error('memoryCue:createReminder dispatch failed', error);
+          return false;
+        }
+      };
+
+      const handleSave = () => {
+        if (isProcessing) {
+          return;
+        }
+
+        const payload = buildPayload();
+        if (!payload.title) {
+          setStatus('Add a reminder title before saving.', 'error');
+          try { titleInput?.focus(); } catch { /* ignore focus errors */ }
+          return;
+        }
+
+        isProcessing = true;
+        attemptToken += 1;
+        const currentToken = attemptToken;
+
+        setStatus('Saving reminder…', 'pending');
+        setBusy(true);
+
+        Promise.resolve()
+          .then(() => attemptCreation(payload))
+          .then((success) => {
+            if (currentToken !== attemptToken) {
+              return;
+            }
+            if (success) {
+              setStatus('Reminder saved!', 'success');
+              closeSheet('created');
+            } else {
+              setStatus('Unable to save reminder. Please try again.', 'error');
+            }
+          })
+          .catch((error) => {
+            console.error('Reminder save failed', error);
+            if (currentToken === attemptToken) {
+              setStatus('Unable to save reminder. Please try again.', 'error');
+            }
+          })
+          .finally(() => {
+            if (currentToken === attemptToken) {
+              isProcessing = false;
+              setBusy(false);
+            }
+          });
+      };
+
+      document.addEventListener('reminder:save', (event) => {
+        if (event?.detail?.trigger && event.detail.trigger !== saveBtn) {
+          return;
+        }
+        handleSave();
+      });
+    })();
+  </script>
   
-  <script type="module" src="./assets/mobile-D7CLP2NM.js"></script>
 </body>
 </html>

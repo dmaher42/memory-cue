@@ -290,6 +290,9 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
   const quickBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
+  const quickVoiceBtn =
+    typeof document !== 'undefined' ? document.getElementById('quickAddVoiceBtn') : null;
+  let stopQuickAddVoiceListening = null;
 
   function buildQuickReminder(titleText) {
     const now = Date.now();
@@ -312,6 +315,11 @@ export async function initReminders(sel = {}) {
 
   async function quickAddNow() {
     if (!quickInput) return;
+    if (typeof stopQuickAddVoiceListening === 'function') {
+      try {
+        stopQuickAddVoiceListening();
+      } catch {}
+    }
     const t = (quickInput.value || '').trim();
     if (!t) return;
 
@@ -353,6 +361,133 @@ export async function initReminders(sel = {}) {
       quickAddNow();
     }
   });
+
+  function setupQuickAddVoiceSupport() {
+    if (
+      typeof HTMLElement === 'undefined' ||
+      !(quickVoiceBtn instanceof HTMLElement) ||
+      !(quickInput instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+
+    if (quickVoiceBtn.dataset.voiceBound === 'true') {
+      return;
+    }
+    quickVoiceBtn.dataset.voiceBound = 'true';
+
+    if (typeof window === 'undefined') {
+      quickVoiceBtn.setAttribute('disabled', 'true');
+      quickVoiceBtn.setAttribute('aria-disabled', 'true');
+      return;
+    }
+
+    const SpeechRecognitionCtor =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (typeof SpeechRecognitionCtor !== 'function') {
+      quickVoiceBtn.setAttribute('disabled', 'true');
+      quickVoiceBtn.setAttribute('aria-disabled', 'true');
+      if (!quickVoiceBtn.getAttribute('title')) {
+        quickVoiceBtn.title = 'Voice input is not supported in this browser.';
+      }
+      return;
+    }
+
+    let recognition = null;
+    let listening = false;
+
+    const updateListening = (state) => {
+      listening = state;
+      quickVoiceBtn.setAttribute('aria-pressed', state ? 'true' : 'false');
+      quickVoiceBtn.dataset.listening = state ? 'true' : 'false';
+      quickVoiceBtn.classList.toggle('is-listening', state);
+    };
+
+    const ensureRecognition = () => {
+      if (recognition) {
+        return recognition;
+      }
+
+      recognition = new SpeechRecognitionCtor();
+      const lang =
+        (typeof document !== 'undefined' &&
+          document.documentElement &&
+          document.documentElement.lang) ||
+        (typeof navigator !== 'undefined' && navigator.language) ||
+        'en-US';
+      recognition.lang = lang;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.addEventListener('result', (event) => {
+        const transcript = event?.results?.[0]?.[0]?.transcript?.trim() || '';
+        if (!transcript) {
+          return;
+        }
+        quickInput.value = transcript;
+        try {
+          quickInput.focus({ preventScroll: true });
+        } catch {
+          quickInput.focus();
+        }
+        try {
+          const length = quickInput.value.length;
+          if (typeof quickInput.setSelectionRange === 'function') {
+            quickInput.setSelectionRange(length, length);
+          }
+        } catch {}
+      });
+
+      const reset = () => {
+        updateListening(false);
+      };
+
+      recognition.addEventListener('end', reset);
+      recognition.addEventListener('error', reset);
+
+      return recognition;
+    };
+
+    const stopListening = () => {
+      if (!listening || !recognition) {
+        return;
+      }
+      try {
+        recognition.stop();
+      } catch {}
+      updateListening(false);
+    };
+
+    stopQuickAddVoiceListening = stopListening;
+
+    quickVoiceBtn.addEventListener('click', () => {
+      const recog = ensureRecognition();
+      if (!recog) {
+        return;
+      }
+
+      if (listening) {
+        stopListening();
+        return;
+      }
+
+      try {
+        recog.start();
+        updateListening(true);
+      } catch (error) {
+        console.warn('Quick add voice error:', error);
+        updateListening(false);
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', stopListening);
+    }
+
+    updateListening(false);
+  }
+
+  setupQuickAddVoiceSupport();
 
   if (typeof window !== 'undefined') {
     if (!window.memoryCueQuickAddShortcutsBound) {
