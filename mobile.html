@@ -118,21 +118,15 @@
     .dark .glass-panel {
       background-color: rgba(15, 23, 42, 0.88);
     }
-    .task-item[data-today="true"],
     .task-item.is-today {
-      position: relative;
       border: 1px solid rgba(59, 130, 246, 0.35);
-      border-left-width: 4px;
-      border-left-color: rgba(37, 99, 235, 0.7);
-      background: linear-gradient(135deg, rgba(191, 219, 254, 0.28), rgba(191, 219, 254, 0.08));
-      box-shadow: 0 12px 26px -16px rgba(30, 64, 175, 0.55);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.08);
+      background: rgba(191, 219, 254, 0.22);
     }
-    .dark .task-item[data-today="true"],
     .dark .task-item.is-today {
-      border-color: rgba(96, 165, 250, 0.55);
-      border-left-color: rgba(191, 219, 254, 0.85);
-      background: linear-gradient(135deg, rgba(30, 64, 175, 0.5), rgba(30, 58, 138, 0.25));
-      box-shadow: 0 12px 26px -16px rgba(30, 64, 175, 0.7);
+      border-color: rgba(96, 165, 250, 0.45);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.28);
+      background: rgba(30, 64, 175, 0.28);
     }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
@@ -405,15 +399,6 @@
                    placeholder="What do you need to remember?"
                    aria-label="Quick add reminder"
                    autocomplete="off" />
-            <button id="quickAddVoiceBtn"
-                    type="button"
-                    class="btn btn-ghost"
-                    title="Dictate quick reminder"
-                    aria-label="Dictate quick reminder"
-                    aria-pressed="false">
-              <span aria-hidden="true">🎙️</span>
-              <span class="sr-only">Start voice input for quick add</span>
-            </button>
             <button id="quickAddSubmit"
                     class="btn btn-primary"
                     type="button"
@@ -438,7 +423,7 @@
                 <label class="form-control w-full sm:w-auto">
                   <div class="label hidden sm:flex"><span class="label-text">Sort reminders</span></div>
                   <select id="sortReminders" class="select select-bordered select-sm">
-                    <option value="dueDate" selected>Due Date (Today first)</option>
+                    <option value="due" selected>Due Date (Today first)</option>
                     <option value="priority">Priority</option>
                     <option value="category">Category (A–Z)</option>
                     <option value="recent">Recently Added</option>
@@ -473,7 +458,7 @@
       <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="space-y-3"></ul>
+          <ul id="reminderList" class="space-y-3 task-list-min"></ul>
           <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -636,27 +621,6 @@
 
           <div class="flex flex-wrap items-center gap-3">
             <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <button
-              id="sheetVoiceBtn"
-              class="btn btn-outline justify-center"
-              type="button"
-              aria-pressed="false"
-              aria-label="Dictate reminder"
-            >
-              🎤 Voice input
-            </button>
-            <p
-              id="sheetVoiceStatus"
-              class="text-xs text-base-content/60"
-              role="status"
-              aria-live="polite"
-              hidden
-            >
-              Tap the microphone to start speaking.
-            </p>
           </div>
 
           <div class="card-actions justify-stretch">
@@ -1240,6 +1204,50 @@
       });
     })();
   </script>
+  <script>
+    (function () {
+      function applyMinimalLayout() {
+        var list = document.getElementById('reminderList');
+        if (!list) return;
+        list.querySelectorAll('.task-item').forEach(function (item) {
+          item.classList.add('task-row-min');
+          var title = item.querySelector('.task-title');
+          if (title) {
+            title.classList.add('title');
+          }
+          var due = item.querySelector('.task-meta-row span');
+          if (due && !due.querySelector('time')) {
+            var text = due.textContent.trim();
+            var timeEl = document.createElement('time');
+            var iso = item.getAttribute('data-due') || (item.dataset ? item.dataset.due : '');
+            if (iso) {
+              timeEl.setAttribute('datetime', iso);
+            }
+            timeEl.textContent = text;
+            due.textContent = '';
+            due.appendChild(timeEl);
+          }
+          var notes = item.querySelector('.task-notes');
+          if (notes) {
+            if (!notes.classList.contains('min-notes')) {
+              notes.classList.add('min-notes');
+            }
+          } else {
+            var content = item.querySelector('.task-content') || item;
+            if (content && !content.querySelector('.min-notes')) {
+              var notesDiv = document.createElement('div');
+              notesDiv.className = 'min-notes';
+              notesDiv.setAttribute('data-source', 'auto');
+              content.appendChild(notesDiv);
+            }
+          }
+        });
+      }
+      document.addEventListener('DOMContentLoaded', applyMinimalLayout);
+      document.addEventListener('reminders:updated', applyMinimalLayout);
+    })();
+  </script>
+  
   <script id="add-task-guard-script">
     (function () {
       const dialog = document.querySelector('[data-add-task-dialog]');
@@ -1743,6 +1751,104 @@
       });
     })();
   </script>
-  
+  <script id="min-expand-script">
+(function(){
+  // Find the list container for minimal tasks
+  // Prefer an element with class 'task-list-min'; fallback to common ids.
+  var list = document.querySelector('.task-list-min')
+         || document.getElementById('remindersList')
+         || document.getElementById('tasks')
+         || document.querySelector('[data-list="reminders"]');
+  if (!list) return;
+
+  // Utility: find or create a .min-notes element in a row
+  function ensureNotesEl(row){
+    var el = row.querySelector('.min-notes');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'min-notes';
+      el.setAttribute('data-source','auto');
+      row.appendChild(el);
+    }
+    return el;
+  }
+
+  // Utility: get task id/title/notes from dataset or known child selectors
+  function getTaskData(row){
+    // Prefer data attributes if your renderer sets them
+    var id    = row.getAttribute('data-taskid') || row.dataset.taskid;
+    var title = row.querySelector('.title')?.textContent?.trim() || row.getAttribute('data-title') || '';
+    // Try to read an existing notes element if already rendered but hidden
+    var existing = row.querySelector('.notes, .note, [data-notes]');
+    var notes = existing ? (existing.textContent || existing.getAttribute('data-notes') || '').trim() : '';
+
+    // If no notes in DOM, try app hooks (non-breaking)
+    if (!notes && window.getReminderById && id) {
+      try { notes = (window.getReminderById(id)?.notes || '').trim(); } catch(_) {}
+    }
+    return { id, title, notes };
+  }
+
+  // Make rows focusable and togglable
+  function prepareRow(row){
+    if (!row.classList.contains('task-row-min')) return;
+    // ARIA / keyboard
+    row.setAttribute('role','button');
+    row.setAttribute('tabindex','0');
+    row.setAttribute('aria-expanded','false');
+
+    function toggle(){
+      var expanded = row.classList.toggle('expanded');
+      row.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+
+      // Fill notes on first expand if needed
+      if (expanded) {
+        var data = getTaskData(row);
+        var notesEl = ensureNotesEl(row);
+        if (notesEl && !notesEl.textContent.trim()) {
+          // prefer existing notes text if already present
+          if (data.notes) {
+            notesEl.textContent = data.notes;
+          } else {
+            notesEl.textContent = 'No notes';
+            notesEl.style.opacity = '.6';
+          }
+        }
+        // Optionally ensure full title is visible (if row truncates)
+        var titleEl = row.querySelector('.title');
+        if (titleEl) titleEl.title = data.title || titleEl.textContent;
+      }
+    }
+
+    row.addEventListener('click', function(e){
+      // Avoid toggling when clicking links/buttons inside the row
+      if (e.target.closest('a,button,input,textarea,select')) return;
+      toggle();
+    });
+
+    row.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); toggle();
+      }
+    });
+  }
+
+  // Prepare existing rows
+  Array.from(list.querySelectorAll('.task-row-min')).forEach(prepareRow);
+
+  // If your list re-renders dynamically, observe and apply to new rows
+  var mo = new MutationObserver(function(muts){
+    for (var m of muts) {
+      m.addedNodes && m.addedNodes.forEach(function(n){
+        if (!(n instanceof Element)) return;
+        if (n.classList && n.classList.contains('task-row-min')) prepareRow(n);
+        // Also catch rows generated within a fragment
+        n.querySelectorAll && n.querySelectorAll('.task-row-min').forEach(prepareRow);
+      });
+    }
+  });
+  mo.observe(list, { childList: true, subtree: true });
+})();
+  </script>
 </body>
 </html>
