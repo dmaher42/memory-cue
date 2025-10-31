@@ -379,6 +379,40 @@
       transform: rotate(180deg);
     }
   </style>
+  <style id="empty-state-compact-css">
+    #emptyState {
+      text-align: left;
+    }
+    #emptyState .empty-state-compact {
+      display: grid;
+      gap: 0.75rem;
+      justify-items: start;
+      text-align: left;
+      width: 100%;
+    }
+    #emptyState .empty-state-compact h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    #emptyState .empty-state-compact p {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: rgba(71, 85, 105, 0.85);
+    }
+    .dark #emptyState .empty-state-compact p {
+      color: rgba(226, 232, 240, 0.8);
+    }
+    #emptyState .empty-state-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    #emptyState .empty-state-actions > * {
+      flex: 1 1 auto;
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
@@ -581,6 +615,40 @@
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
+  <script>
+    window.memoryCueEmptyStateCtaClasses = 'btn btn-primary btn-sm w-full sm:w-auto';
+    window.memoryCueMountEmptyState = function mountCompactEmptyState(target, config) {
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const { title, description, action } = config || {};
+      const wrapper = document.createElement('div');
+      wrapper.className = 'empty-state-compact';
+      wrapper.setAttribute('role', 'presentation');
+
+      if (title) {
+        const heading = document.createElement('h3');
+        heading.textContent = title;
+        wrapper.appendChild(heading);
+      }
+
+      if (description) {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = description;
+        wrapper.appendChild(paragraph);
+      }
+
+      if (action) {
+        const actions = document.createElement('div');
+        actions.className = 'empty-state-actions';
+        actions.innerHTML = action;
+        wrapper.appendChild(actions);
+      }
+
+      target.replaceChildren(wrapper);
+    };
+  </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script type="module" src="./assets/mobile-LRFTMQ7L.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
