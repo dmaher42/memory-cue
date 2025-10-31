@@ -74,6 +74,12 @@ import { initReminders } from './js/reminders.js';
     sheet.setAttribute('aria-hidden', 'false');
     sheet.setAttribute('open', '');
     sheet.classList.add('open');
+    if (fab) {
+      fab.setAttribute('aria-expanded', 'true');
+    }
+    if (trigger instanceof HTMLElement && trigger !== fab) {
+      trigger.setAttribute('aria-expanded', 'true');
+    }
     const firstInput = sheet.querySelector('input,select,textarea,button');
     if (firstInput instanceof HTMLElement) {
       firstInput.focus();
@@ -87,6 +93,12 @@ import { initReminders } from './js/reminders.js';
     sheet.setAttribute('aria-hidden', 'true');
     sheet.removeAttribute('open');
     sheet.classList.remove('open');
+    if (fab) {
+      fab.setAttribute('aria-expanded', 'false');
+    }
+    if (lastTrigger instanceof HTMLElement && lastTrigger !== fab) {
+      lastTrigger.setAttribute('aria-expanded', 'false');
+    }
     const focusTarget =
       (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) || fab;
     if (focusTarget && typeof focusTarget.focus === 'function') {
@@ -148,7 +160,6 @@ initReminders({
   statusSel: '#statusMessage',
   syncStatusSel: '#syncStatus',
   notifBtnSel: '#notifBtn',
-  addQuickBtnSel: '#quickAdd',
   filterBtnsSel: '[data-filter]',
   sortSel: '#sortReminders',
   categoryFilterSel: '#categoryFilter',

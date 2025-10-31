@@ -161,8 +161,8 @@
     }
     .fab {
       position: fixed;
-      right: 16px;
-      bottom: 88px;
+      right: calc(16px + env(safe-area-inset-right));
+      bottom: calc(88px + env(safe-area-inset-bottom));
       width: 56px;
       height: 56px;
       border-radius: 50%;
@@ -175,11 +175,16 @@
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
       border: none;
       cursor: pointer;
-      z-index: 60;
+      z-index: 80;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .fab:focus-visible {
       outline: 2px solid currentColor;
       outline-offset: 2px;
+    }
+    .fab:active {
+      transform: scale(0.96);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
     }
     .sheet {
       position: fixed;
@@ -187,7 +192,7 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      z-index: 70;
+      z-index: 90;
     }
     .sheet-panel {
       position: relative;
@@ -211,6 +216,16 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 12px;
+      gap: 12px;
+    }
+    .sheet-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-header-actions .btn.is-listening {
+      background: var(--fallback-p, #2563eb);
+      color: var(--fallback-pc, #fff);
     }
     .sheet-backdrop {
       position: absolute;
@@ -306,21 +321,6 @@
     }
   </style>
   <!-- END GPT CHANGE: rhythm -->
-  <style id="voice-add-css">
-    .voice-add-wrap{
-      position: fixed; right: 12px; bottom: 12px; z-index: 50;
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 8px; border-radius: 9999px; background: var(--fallback-b1,#fff);
-      box-shadow: 0 2px 8px rgba(0,0,0,.15);
-    }
-
-    /* Hide the status text by default */
-    .voice-status { display: none; }
-
-    /* Only show status while actively listening */
-    .voice-add-wrap.listening .voice-status { display: inline; font-size: 12px; opacity: .75; }
-
-  </style>
   <style id="min-expand-css">
     /* Expand/collapse behavior */
     .task-row-min {
@@ -388,11 +388,6 @@
   </header>
 
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
-    <!-- Voice Add Task UI -->
-    <div id="voiceAddWrap" class="voice-add-wrap" aria-live="polite" aria-atomic="true">
-      <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
-      <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
-    </div>
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -407,17 +402,13 @@
                    placeholder="What do you need to remember?"
                    aria-label="Quick add reminder"
                    autocomplete="off" />
-            <button id="quickAddMic"
-                    class="btn btn-circle btn-ghost"
-                    type="button"
-                    aria-label="Add by voice">🎤</button>
             <button id="quickAddSubmit"
                     class="btn btn-primary"
                     type="button"
                     aria-label="Add reminder now">Add</button>
           </div>
           <p class="text-xs text-base-content/60">
-            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; <kbd>Enter</kbd> to add; <kbd>Alt</kbd>+<kbd>M</kbd> for mic.
+            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; press <kbd>Enter</kbd> to add instantly.
           </p>
         </div>
       </section>
@@ -540,7 +531,20 @@
     <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
       <header class="sheet-header">
         <h2 id="createSheetTitle">Create Reminder</h2>
-        <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+        <div class="sheet-header-actions">
+          <button
+            id="voiceBtn"
+            type="button"
+            class="btn btn-circle btn-ghost"
+            aria-label="Start voice input"
+            aria-pressed="false"
+            title="Fill reminder using your voice"
+          >
+            <span aria-hidden="true">🎙️</span>
+            <span class="sr-only">Start voice input</span>
+          </button>
+          <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+        </div>
       </header>
       <form id="createReminderForm" class="inputs-compact">
         <div class="card-body gap-4 compact">
@@ -620,7 +624,6 @@
 
           <div class="flex flex-wrap items-center gap-3">
             <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
-            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
           </div>
 
           <div class="card-actions justify-stretch">
@@ -666,7 +669,17 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <!-- BEGIN GPT CHANGE: global FAB -->
-  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
+  <button
+    id="fabCreate"
+    class="fab"
+    type="button"
+    aria-label="Add reminder"
+    aria-haspopup="dialog"
+    aria-controls="create-sheet"
+    aria-expanded="false"
+  >
+    ＋
+  </button>
   <!-- END GPT CHANGE: global FAB -->
 
   <script id="mobile-enhancements">
