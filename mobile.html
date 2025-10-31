@@ -6,7 +6,7 @@
   <script>try{ if(location.pathname.endsWith('/mobile.html')||location.pathname==='/memory-cue/'||location.pathname==='/' ){ location.replace('./docs/mobile.html'); } }catch(e){};</script>
   <base href="./" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
-  <link rel="stylesheet" href="./assets/styles-8649b42f.css" />
+  <link rel="stylesheet" href="./assets/styles-ee384275.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
@@ -120,6 +120,16 @@
     }
     .dark .glass-panel {
       background-color: rgba(15, 23, 42, 0.88);
+    }
+    .task-item.is-today {
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.08);
+      background: rgba(191, 219, 254, 0.22);
+    }
+    .dark .task-item.is-today {
+      border-color: rgba(96, 165, 250, 0.45);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.28);
+      background: rgba(30, 64, 175, 0.28);
     }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
@@ -417,27 +427,37 @@
           <div class="card-body gap-4 compact">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
-                <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="false">Today · <span id="todayCount">0</span></button>
                 <button class="btn btn-xs" type="button" data-filter="overdue" aria-pressed="false">Overdue · <span id="overdueCount">0</span></button>
                 <button class="btn btn-xs" type="button" data-filter="all" aria-pressed="true">All · <span id="totalCountBadge">0</span></button>
                 <button class="btn btn-xs" type="button" data-filter="done" aria-pressed="false">Done · <span id="completedCount">0</span></button>
               </div>
-              <label class="form-control w-full sm:w-auto">
-                <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
-                <select id="categoryFilter" class="select select-bordered select-sm">
-                  <option value="all" selected>All categories</option>
-                  <option value="General">General</option>
-                  <option value="General Appointments">General Appointments</option>
-                  <option value="Home &amp; Personal">Home &amp; Personal</option>
-                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                  <option value="School – To-Do">School – To-Do</option>
-                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                </select>
-              </label>
+              <div class="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+                <label class="form-control w-full sm:w-auto">
+                  <div class="label hidden sm:flex"><span class="label-text">Sort reminders</span></div>
+                  <select id="sortReminders" class="select select-bordered select-sm">
+                    <option value="due" selected>Due Date (Today first)</option>
+                    <option value="priority">Priority</option>
+                    <option value="category">Category (A–Z)</option>
+                    <option value="recent">Recently Added</option>
+                  </select>
+                </label>
+                <label class="form-control w-full sm:w-auto">
+                  <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+                  <select id="categoryFilter" class="select select-bordered select-sm">
+                    <option value="all" selected>All categories</option>
+                    <option value="General">General</option>
+                    <option value="General Appointments">General Appointments</option>
+                    <option value="Home &amp; Personal">Home &amp; Personal</option>
+                    <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                    <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                    <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                    <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                    <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                    <option value="School – To-Do">School – To-Do</option>
+                    <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <label class="form-control">
@@ -455,9 +475,6 @@
         </div>
       </section>
     </section>
-    <!-- END GPT CHANGE -->
-    <!-- BEGIN GPT CHANGE: today view -->
-    <section data-view="today" id="view-today" class="view-panel hidden"></section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden">
@@ -509,9 +526,6 @@
       <span class="btm-nav-label">Reminders</span>
     </button>
     <button type="button">
-      <span class="btm-nav-label">Today</span>
-    </button>
-    <button type="button">
       <span class="btm-nav-label">Notebook</span>
     </button>
   </nav>
@@ -519,7 +533,7 @@
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-CX6F7USX.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-OSRWDKNS.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -659,14 +673,13 @@
     (function () {
       const views = {
         reminders: document.querySelector('[data-view="reminders"]'),
-        today: document.querySelector('[data-view="today"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
       };
       const nav = document.querySelector('.btm-nav');
       if (!nav) return;
 
-      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 3);
-      const order = ['reminders', 'today', 'notebook'];
+      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 2);
+      const order = ['reminders', 'notebook'];
 
       if (!buttons.length || order.some((key) => !views[key])) {
         return;
@@ -742,51 +755,6 @@
       });
 
       setActiveView('reminders');
-    })();
-
-    (function () {
-      const todayView = document.querySelector('[data-view="today"]');
-      const list = document.getElementById('reminderList');
-      if (!todayView || !list) return;
-
-      const isToday = (dateStr) => {
-        const d = new Date(dateStr);
-        if (Number.isNaN(d.getTime())) return false;
-        const now = new Date();
-        return d.getFullYear() === now.getFullYear() &&
-          d.getMonth() === now.getMonth() &&
-          d.getDate() === now.getDate();
-      };
-
-      const renderToday = () => {
-        const items = Array.from(list.querySelectorAll('[data-reminder]'));
-        const todaysItems = items.filter((item) => {
-          const direct = item.getAttribute('data-due');
-          const nested = item.querySelector('[data-due]');
-          const when = direct || (nested ? nested.textContent : '') || '';
-          return isToday(when.trim());
-        });
-
-        todayView.innerHTML = '';
-        const heading = document.createElement('h2');
-        heading.textContent = 'Today';
-        todayView.appendChild(heading);
-
-        if (!todaysItems.length) {
-          const empty = document.createElement('p');
-          empty.textContent = 'No reminders due today.';
-          todayView.appendChild(empty);
-          return;
-        }
-
-        todaysItems.forEach((item) => {
-          todayView.appendChild(item.cloneNode(true));
-        });
-      };
-
-      document.addEventListener('DOMContentLoaded', renderToday);
-      document.addEventListener('reminders:updated', renderToday);
-      document.addEventListener('memoryCue:remindersUpdated', renderToday);
     })();
 
     (function () {
