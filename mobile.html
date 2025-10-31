@@ -6,7 +6,7 @@
   <script>try{ if(location.pathname.endsWith('/mobile.html')||location.pathname==='/memory-cue/'||location.pathname==='/' ){ location.replace('./docs/mobile.html'); } }catch(e){};</script>
   <base href="./" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
-  <link rel="stylesheet" href="./assets/styles-eed63890.css" />
+  <link rel="stylesheet" href="./assets/styles-fcb9b4fc.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
@@ -402,6 +402,15 @@
                    placeholder="What do you need to remember?"
                    aria-label="Quick add reminder"
                    autocomplete="off" />
+            <button id="quickAddVoiceBtn"
+                    type="button"
+                    class="btn btn-ghost"
+                    title="Dictate quick reminder"
+                    aria-label="Dictate quick reminder"
+                    aria-pressed="false">
+              <span aria-hidden="true">🎙️</span>
+              <span class="sr-only">Start voice input for quick add</span>
+            </button>
             <button id="quickAddSubmit"
                     class="btn btn-primary"
                     type="button"
@@ -524,7 +533,7 @@
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-YB5J6LKJ.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-X67VZDXH.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
