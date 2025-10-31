@@ -1749,17 +1749,7 @@ export async function initReminders(sel = {}) {
     const frag = document.createDocumentFragment();
     const listIsSemantic = list.tagName === 'UL' || list.tagName === 'OL';
 
-    const isMinimalLayout = (() => {
-      if (typeof document === 'undefined') return false;
-      const body = document.body;
-      if (!body || typeof body.classList?.contains !== 'function') return false;
-      return !body.classList.contains('show-full');
-    })();
-    const shouldGroupCategories =
-      variant === 'desktop' ||
-      !isMinimalLayout ||
-      (!listIsSemantic && variant !== 'desktop');
-    const highlightToday = sortKey === 'due';
+    const shouldGroupCategories = true;
 
     const createMobileItem = (r, catName) => {
       const div = document.createElement('div');
