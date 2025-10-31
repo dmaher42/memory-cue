@@ -161,8 +161,8 @@
     }
     .fab {
       position: fixed;
-      right: 16px;
-      bottom: 88px;
+      right: calc(16px + env(safe-area-inset-right));
+      bottom: calc(88px + env(safe-area-inset-bottom));
       width: 56px;
       height: 56px;
       border-radius: 50%;
@@ -175,11 +175,16 @@
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
       border: none;
       cursor: pointer;
-      z-index: 60;
+      z-index: 80;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .fab:focus-visible {
       outline: 2px solid currentColor;
       outline-offset: 2px;
+    }
+    .fab:active {
+      transform: scale(0.96);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
     }
     .sheet {
       position: fixed;
@@ -187,7 +192,7 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      z-index: 70;
+      z-index: 90;
     }
     .sheet-panel {
       position: relative;
@@ -211,6 +216,16 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 12px;
+      gap: 12px;
+    }
+    .sheet-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-header-actions .btn.is-listening {
+      background: var(--fallback-p, #2563eb);
+      color: var(--fallback-pc, #fff);
     }
     .sheet-backdrop {
       position: absolute;
@@ -306,7 +321,40 @@
     }
   </style>
   <!-- END GPT CHANGE: rhythm -->
-  
+  <style id="min-expand-css">
+    /* Expand/collapse behavior */
+    .task-row-min {
+      cursor: pointer;
+      outline: none;
+    }
+    .task-row-min:focus {
+      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+    }
+    .task-row-min .min-notes {
+      display: none;
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.35;
+      opacity: .95;
+      white-space: pre-wrap;
+    }
+    .task-row-min.expanded .min-notes {
+      display: block;
+    }
+    /* Slightly larger title when expanded */
+    .task-row-min.expanded .title {
+      font-weight: 600;
+    }
+    /* Optional small chevron indicator */
+    .task-row-min::after {
+      content: "▾";
+      justify-self: end;
+      opacity: .5;
+      font-size: 12px;
+    }
+    .task-row-min.expanded::after { transform: rotate(180deg); }
+  </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
@@ -360,7 +408,7 @@
                     aria-label="Add reminder now">Add</button>
           </div>
           <p class="text-xs text-base-content/60">
-            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus and <kbd>Enter</kbd> to add.
+            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; press <kbd>Enter</kbd> to add instantly.
           </p>
         </div>
       </section>
@@ -483,7 +531,20 @@
     <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
       <header class="sheet-header">
         <h2 id="createSheetTitle">Create Reminder</h2>
-        <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+        <div class="sheet-header-actions">
+          <button
+            id="voiceBtn"
+            type="button"
+            class="btn btn-circle btn-ghost"
+            aria-label="Start voice input"
+            aria-pressed="false"
+            title="Fill reminder using your voice"
+          >
+            <span aria-hidden="true">🎙️</span>
+            <span class="sr-only">Start voice input</span>
+          </button>
+          <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
+        </div>
       </header>
       <form id="createReminderForm" class="inputs-compact">
         <div class="card-body gap-4 compact">
@@ -563,7 +624,6 @@
 
           <div class="flex flex-wrap items-center gap-3">
             <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
-            <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
           </div>
 
           <div class="flex flex-col gap-2">
@@ -630,7 +690,17 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <!-- BEGIN GPT CHANGE: global FAB -->
-  <button id="fabCreate" class="fab" aria-label="Add reminder">＋</button>
+  <button
+    id="fabCreate"
+    class="fab"
+    type="button"
+    aria-label="Add reminder"
+    aria-haspopup="dialog"
+    aria-controls="create-sheet"
+    aria-expanded="false"
+  >
+    ＋
+  </button>
   <!-- END GPT CHANGE: global FAB -->
 
   <script id="mobile-enhancements">

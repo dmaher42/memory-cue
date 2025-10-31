@@ -124,131 +124,6 @@ function bindNotificationCleanupHandlers() {
   notificationCleanupBound = true;
 }
 
-let voiceInputInitialized = false;
-
-function initVoiceInput() {
-  if (voiceInputInitialized) {
-    return;
-  }
-  voiceInputInitialized = true;
-
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  const sheetMic = document.getElementById('sheetVoiceBtn');
-  const quickMic = document.getElementById('quickAddMic');
-  const status = document.getElementById('sheetVoiceStatus');
-  const quickInput = document.getElementById('quickAddInput');
-  const formInput = document.getElementById('reminderText');
-  const defaultInput = formInput || quickInput;
-  const isElement = (el) =>
-    Boolean(el) && typeof el === 'object' && typeof el.addEventListener === 'function';
-  const micButtons = [sheetMic, quickMic].filter(isElement);
-
-  if (!micButtons.length || !defaultInput) {
-    return;
-  }
-
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    if (status) {
-      status.textContent = 'Speech not supported';
-      status.hidden = false;
-    }
-    return;
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recog = new SpeechRecognition();
-  recog.lang = 'en-US';
-  recog.interimResults = false;
-  recog.maxAlternatives = 1;
-
-  let activeInput = defaultInput;
-  let listeningButton = null;
-
-  function resolveInputForButton(btn) {
-    if (!btn) {
-      return defaultInput;
-    }
-    const explicitTargetId = btn.getAttribute?.('data-voice-target');
-    if (explicitTargetId) {
-      const explicitTarget = document.getElementById(explicitTargetId);
-      if (explicitTarget) {
-        return explicitTarget;
-      }
-    }
-    if (btn === quickMic && quickInput) {
-      return quickInput;
-    }
-    if (btn === sheetMic && formInput) {
-      return formInput;
-    }
-    return defaultInput;
-  }
-
-  function beginListeningFor(btn) {
-    const targetInput = resolveInputForButton(btn);
-    if (!targetInput) {
-      return;
-    }
-    activeInput = targetInput;
-    listeningButton = isElement(btn) ? btn : null;
-    if (listeningButton) {
-      listeningButton.setAttribute('aria-pressed', 'true');
-    }
-    try {
-      if (status) {
-        status.hidden = false;
-        status.textContent = 'Listening…';
-      }
-      recog.start();
-    } catch (err) {
-      console.warn('Speech recognition error:', err);
-    }
-  }
-
-  micButtons.forEach((btn) => {
-    btn.addEventListener('click', () => beginListeningFor(btn));
-  });
-
-  recog.addEventListener('result', (e) => {
-    const transcript = e.results?.[0]?.[0]?.transcript?.trim() || '';
-    if (!transcript) {
-      if (status) {
-        status.hidden = true;
-      }
-      return;
-    }
-    const target = activeInput || defaultInput;
-    if (!target) {
-      return;
-    }
-    target.value = transcript;
-    if (status) {
-      status.textContent = 'Added: ' + transcript;
-      status.hidden = true;
-    }
-    if (target && target.id === 'quickAddInput') {
-      try {
-        const globalQuickAdd =
-          typeof window !== 'undefined' ? window.memoryCueQuickAddNow : null;
-        globalQuickAdd?.();
-      } catch {}
-    }
-  });
-
-  recog.addEventListener('end', () => {
-    if (listeningButton) {
-      listeningButton.setAttribute('aria-pressed', 'false');
-      listeningButton = null;
-    }
-    if (status) {
-      status.hidden = true;
-    }
-  });
-}
-
 function normalizeCategory(value) {
   if (typeof value === 'string') {
     const trimmed = value.replace(/\s+/g, ' ').trim();
@@ -312,7 +187,7 @@ export async function initReminders(sel = {}) {
   const googleAvatar = $(sel.googleAvatarSel);
   const googleUserName = $(sel.googleUserNameSel);
   const dateFeedback = $(sel.dateFeedbackSel);
-  const addQuickBtn = $(sel.addQuickBtnSel);
+  const voiceBtn = $(sel.voiceBtnSel);
   const notifBtn = $(sel.notifBtnSel);
   const moreBtn = $(sel.moreBtnSel);
   const moreMenu = $(sel.moreMenuSel);
@@ -413,8 +288,6 @@ export async function initReminders(sel = {}) {
 
   const quickInput =
     typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
-  const quickMic =
-    typeof document !== 'undefined' ? document.getElementById('quickAddMic') : null;
   const quickBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
 
@@ -496,9 +369,6 @@ export async function initReminders(sel = {}) {
             e.preventDefault();
             quickInput.focus();
           }
-        } else if ((e.key === 'm' || e.key === 'M') && e.altKey) {
-          e.preventDefault();
-          quickMic?.click();
         }
       });
     }
@@ -563,75 +433,6 @@ export async function initReminders(sel = {}) {
     } catch {
       // Ignore environments where CustomEvent construction fails.
     }
-  }
-
-  if (addQuickBtn && title) {
-    addQuickBtn.addEventListener('click', () => {
-      const raw = (title.value || '').trim();
-      if (!raw) {
-        try {
-          title.focus();
-        } catch {}
-        return;
-      }
-
-      const now = Date.now();
-      const hasDate = typeof date?.value === 'string' && date.value;
-      const hasTime = typeof time?.value === 'string' && time.value;
-      let dueValue = null;
-      if (hasDate || hasTime) {
-        dueValue = localDateTimeToISO(
-          hasDate ? date.value : todayISO(),
-          hasTime ? time.value : '09:00',
-        );
-      } else {
-        try {
-          const parsed = parseQuickWhen(raw);
-          if (parsed?.time) {
-            dueValue = new Date(`${parsed.date}T${parsed.time}:00`).toISOString();
-          }
-        } catch {
-          // Ignore parse failures and keep the reminder undated.
-        }
-      }
-
-      const entry = {
-        id: uid(),
-        title: raw,
-        notes: typeof details?.value === 'string' ? details.value.trim() : '',
-        priority: getPriorityInputValue(),
-        category: normalizeCategory(categoryInput?.value || DEFAULT_CATEGORY),
-        done: false,
-        createdAt: now,
-        updatedAt: now,
-        due: dueValue,
-        pendingSync: !userId,
-      };
-
-      items.unshift(entry);
-      suppressRenderMemoryEvent = true;
-      render();
-      persistItems();
-      updateDefaultsFrom(entry);
-      saveToFirebase(entry);
-      tryCalendarSync(entry);
-      scheduleReminder(entry);
-      emitReminderUpdates();
-      dispatchCueEvent('memoryCue:remindersUpdated', { items });
-      closeCreateSheetIfOpen();
-      dispatchCueEvent('cue:close', { reason: 'created' });
-
-      title.value = '';
-      if (typeof details?.value !== 'undefined') {
-        details.value = '';
-      }
-      if (typeof date?.value !== 'undefined') {
-        date.value = '';
-      }
-      if (typeof time?.value !== 'undefined') {
-        time.value = '';
-      }
-    });
   }
 
   if (categoryInput && !categoryInput.value) {
@@ -699,8 +500,142 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  function setupVoiceEnhancement() {
+    if (
+      typeof HTMLElement === 'undefined' ||
+      !(voiceBtn instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    const isInputElement =
+      typeof HTMLInputElement !== 'undefined' &&
+      title instanceof HTMLInputElement;
+    const isTextareaElement =
+      typeof HTMLTextAreaElement !== 'undefined' &&
+      title instanceof HTMLTextAreaElement;
+
+    if (!isInputElement && !isTextareaElement) {
+      return;
+    }
+
+    if (voiceBtn.dataset.voiceBound === 'true') {
+      return;
+    }
+    voiceBtn.dataset.voiceBound = 'true';
+
+    if (typeof window === 'undefined') {
+      voiceBtn.setAttribute('disabled', 'true');
+      voiceBtn.setAttribute('aria-disabled', 'true');
+      return;
+    }
+
+    const SpeechRecognitionCtor =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (typeof SpeechRecognitionCtor !== 'function') {
+      voiceBtn.setAttribute('disabled', 'true');
+      voiceBtn.setAttribute('aria-disabled', 'true');
+      if (!voiceBtn.getAttribute('title')) {
+        voiceBtn.title = 'Voice input is not supported in this browser.';
+      }
+      return;
+    }
+
+    let recognition = null;
+    let listening = false;
+
+    const updateListening = (state) => {
+      listening = state;
+      voiceBtn.setAttribute('aria-pressed', state ? 'true' : 'false');
+      voiceBtn.dataset.listening = state ? 'true' : 'false';
+      voiceBtn.classList.toggle('is-listening', state);
+    };
+
+    const ensureRecognition = () => {
+      if (recognition) {
+        return recognition;
+      }
+      recognition = new SpeechRecognitionCtor();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.addEventListener('result', (event) => {
+        const transcript = event.results?.[0]?.[0]?.transcript?.trim() || '';
+        if (!transcript) {
+          return;
+        }
+        title.value = transcript;
+        try {
+          title.focus({ preventScroll: true });
+        } catch {
+          try {
+            title.focus();
+          } catch {}
+        }
+        try {
+          const length = title.value.length;
+          if (typeof title.setSelectionRange === 'function') {
+            title.setSelectionRange(length, length);
+          }
+        } catch {}
+        emitActivity({ action: 'dictated', label: `Voice input captured · ${transcript}` });
+      });
+
+      const resetState = () => {
+        updateListening(false);
+      };
+
+      recognition.addEventListener('end', resetState);
+      recognition.addEventListener('error', resetState);
+
+      return recognition;
+    };
+
+    const stopListening = () => {
+      if (!listening || !recognition) {
+        return;
+      }
+      try {
+        recognition.stop();
+      } catch {}
+      updateListening(false);
+    };
+
+    voiceBtn.addEventListener('click', () => {
+      const recog = ensureRecognition();
+      if (!recog) {
+        return;
+      }
+
+      if (listening) {
+        stopListening();
+        return;
+      }
+
+      try {
+        recog.start();
+        updateListening(true);
+      } catch (error) {
+        console.warn('Speech recognition error:', error);
+        updateListening(false);
+      }
+    });
+
+    const handleClose = () => {
+      stopListening();
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('cue:close', handleClose);
+      document.addEventListener('reminders:updated', handleClose);
+    }
+
+    updateListening(false);
+  }
+
   bindNotificationCleanupHandlers();
-  initVoiceInput();
+  setupVoiceEnhancement();
 
   // Placeholder for Firebase modules loaded later
   let initializeApp, getFirestore, enableMultiTabIndexedDbPersistence,

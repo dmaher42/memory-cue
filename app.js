@@ -93,7 +93,6 @@ const initialiseReminders = () => {
       syncStatusSel: '#syncStatus',
       voiceBtnSel: '#voiceBtn',
       notifBtnSel: '#notifBtn',
-      addQuickBtnSel: '#quickAdd',
       filterBtnsSel: '[data-filter]',
       categoryFilterSel: '#categoryFilter',
       categoryOptionsSel: '#categorySuggestions',
