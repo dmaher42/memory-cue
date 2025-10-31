@@ -184,7 +184,6 @@ export async function initReminders(sel = {}) {
   const countOverdueEl = $(sel.countOverdueSel);
   const countTotalEl = $(sel.countTotalSel);
   const countCompletedEl = $(sel.countCompletedSel);
-  const googleAvatar = $(sel.googleAvatarSel);
   const googleUserName = $(sel.googleUserNameSel);
   const dateFeedback = $(sel.dateFeedbackSel);
   const voiceBtn = $(sel.voiceBtnSel);
@@ -837,10 +836,6 @@ export async function initReminders(sel = {}) {
     }
     googleSignInBtn?.classList.remove('hidden');
     googleSignOutBtn?.classList.add('hidden');
-    if (googleAvatar) {
-      googleAvatar.classList.add('hidden');
-      googleAvatar.src = '';
-    }
     if (googleUserName) {
       googleUserName.textContent = '';
     }
@@ -1358,7 +1353,6 @@ export async function initReminders(sel = {}) {
         if(syncStatus) syncStatus.textContent = 'Online';
         googleSignInBtn?.classList.add('hidden');
         googleSignOutBtn?.classList.remove('hidden');
-        if(googleAvatar){ if(user.photoURL){ googleAvatar.classList.remove('hidden'); googleAvatar.src=user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src=''; } }
         if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
         setupFirestoreSync();
         await migrateOfflineRemindersIfNeeded();
