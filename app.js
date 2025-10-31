@@ -10,72 +10,26 @@ import {
   gatherCueFormData,
   escapeCueText
 } from './js/modules/field-helpers.js';
+import { createModalController } from './js/modules/modal-controller.js';
 
-const cueModal = document.getElementById('cue-modal') ?? document.getElementById('cue_modal');
-const openCueButton = document.getElementById('openCueModal');
-const closeCueButton = document.getElementById('closeCueModal');
-const modalBackdropButton = cueModal?.querySelector('.modal-backdrop button');
 const titleInput = document.getElementById('title');
 const mobileTitleInput = document.getElementById('reminderText');
 
-const focusTitleInput = () => {
-  if (!titleInput) return;
-  window.setTimeout(() => {
-    try {
-      titleInput.focus({ preventScroll: true });
-    } catch {
-      titleInput.focus();
-    }
-  }, 50);
-};
+const modalController = (() => {
+  const modalElement = document.getElementById('cue-modal') ?? document.getElementById('cue_modal');
+  return createModalController({
+    modalElement,
+    openButton: document.getElementById('openCueModal'),
+    closeButton: document.getElementById('closeCueModal'),
+    backdropButton: modalElement?.querySelector('.modal-backdrop button') ?? null,
+    titleInput,
+    modalTitle: document.getElementById('modal-title'),
+    defaultTitle: DEFAULT_CUE_MODAL_TITLE,
+    editTitle: EDIT_CUE_MODAL_TITLE
+  });
+})();
 
-const showCueModal = () => {
-  if (!cueModal || typeof cueModal.showModal !== 'function') return;
-  if (!cueModal.open) {
-    cueModal.showModal();
-  }
-  focusTitleInput();
-};
-
-const hideCueModal = () => {
-  if (!cueModal) return;
-  if (cueModal.open) {
-    cueModal.close();
-  }
-};
-
-openCueButton?.addEventListener('click', () => {
-  document.dispatchEvent(new CustomEvent('cue:prepare', { detail: { mode: 'create' } }));
-  showCueModal();
-});
-
-closeCueButton?.addEventListener('click', () => {
-  const detail = { reason: 'user-dismissed' };
-  document.dispatchEvent(new CustomEvent('cue:cancelled', { detail }));
-  document.dispatchEvent(new CustomEvent('cue:close', { detail }));
-});
-
-modalBackdropButton?.addEventListener('click', () => {
-  const detail = { reason: 'backdrop' };
-  document.dispatchEvent(new CustomEvent('cue:cancelled', { detail }));
-  document.dispatchEvent(new CustomEvent('cue:close', { detail }));
-});
-
-cueModal?.addEventListener('cancel', (event) => {
-  event.preventDefault();
-  const detail = { reason: 'keyboard' };
-  document.dispatchEvent(new CustomEvent('cue:cancelled', { detail }));
-  document.dispatchEvent(new CustomEvent('cue:close', { detail }));
-});
-
-document.addEventListener('cue:open', () => {
-  showCueModal();
-});
-
-document.addEventListener('cue:close', () => {
-  hideCueModal();
-  openCueButton?.focus();
-});
+modalController?.setEditMode(false);
 
 const initialiseReminders = () => {
   const hasDesktopForm = Boolean(titleInput);
@@ -161,9 +115,11 @@ initialiseReminders().catch((error) => {
 const cuesList = document.getElementById('cues-list');
 const cueForm = document.getElementById('cue-form');
 const cueIdInput = cueForm?.querySelector('#cue-id-input');
-const cueModalTitle = document.getElementById('modal-title');
-const defaultCueModalTitle = cueModalTitle?.textContent?.trim() || DEFAULT_CUE_MODAL_TITLE;
-const editCueModalTitle = EDIT_CUE_MODAL_TITLE;
+const defaultCueModalTitle =
+  modalController?.defaultTitle ||
+  modalController?.modalTitle?.textContent?.trim() ||
+  DEFAULT_CUE_MODAL_TITLE;
+const editCueModalTitle = modalController?.editTitle || EDIT_CUE_MODAL_TITLE;
 
 const cuesTab = document.getElementById('tab-cues');
 const dailyTab = document.getElementById('tab-daily');
@@ -352,10 +308,8 @@ function enterCueEditMode(cue) {
   }
   populateCueFormFields(cue, cueFieldElements);
   cueIdInput.value = cue?.id || '';
-  if (cueModalTitle) {
-    cueModalTitle.textContent = editCueModalTitle;
-  }
-  showCueModal();
+  modalController?.setEditMode(true);
+  modalController?.show({ mode: 'edit' });
 }
 
 async function handleCueEditClick(event) {
@@ -406,8 +360,13 @@ async function handleCueFormSubmit(event) {
       await addDoc(cuesCollection, payload);
     }
     await refreshCueList();
-    clearCueFormFields(cueFieldElements, cueIdInput, cueModalTitle, defaultCueModalTitle);
-    hideCueModal();
+    clearCueFormFields(
+      cueFieldElements,
+      cueIdInput,
+      modalController?.modalTitle ?? null,
+      defaultCueModalTitle
+    );
+    await modalController?.hide({ reason: 'form-submit' });
   } catch (error) {
     console.error('Failed to save cue', error);
   }
@@ -424,20 +383,12 @@ async function initialiseCueEditing() {
 
 if (cueForm && cueIdInput) {
   document.addEventListener('cue:prepare', () => {
-    if (cueIdInput) {
-      cueIdInput.value = '';
-    }
-    if (cueModalTitle) {
-      cueModalTitle.textContent = defaultCueModalTitle;
-    }
+    cueIdInput.value = '';
+    modalController?.setEditMode(false);
   });
   document.addEventListener('cue:close', () => {
-    if (cueIdInput) {
-      cueIdInput.value = '';
-    }
-    if (cueModalTitle) {
-      cueModalTitle.textContent = defaultCueModalTitle;
-    }
+    cueIdInput.value = '';
+    modalController?.setEditMode(false);
   });
 }
 
