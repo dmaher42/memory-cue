@@ -1490,6 +1490,299 @@
       syncRadiosFromSelect();
     })();
   </script>
+  <script id="sheet-save-bridge-script">
+    (function () {
+      const dialog = document.querySelector('[data-add-task-dialog]');
+      if (!(dialog instanceof HTMLElement)) {
+        return;
+      }
+
+      const form = document.getElementById('createReminderForm');
+      const saveBtn = document.getElementById('saveReminder');
+      if (!(form instanceof HTMLFormElement) || !(saveBtn instanceof HTMLElement)) {
+        return;
+      }
+
+      const quickAddBtn = document.getElementById('quickAdd');
+      const titleInput = document.getElementById('reminderText');
+      const dateInput = document.getElementById('reminderDate');
+      const timeInput = document.getElementById('reminderTime');
+      const detailsInput = document.getElementById('reminderDetails');
+      const priorityInput = document.getElementById('priority');
+      const categoryInput = document.getElementById('category');
+      const statusEl = document.getElementById('statusMessage');
+
+      let isProcessing = false;
+      let attemptToken = 0;
+
+      const setBusy = (state) => {
+        if (state) {
+          saveBtn.setAttribute('disabled', 'disabled');
+          saveBtn.setAttribute('aria-busy', 'true');
+        } else {
+          saveBtn.removeAttribute('disabled');
+          saveBtn.removeAttribute('aria-busy');
+        }
+      };
+
+      const setStatus = (message, tone = 'info') => {
+        if (!statusEl) {
+          return;
+        }
+        if (!message) {
+          statusEl.textContent = '';
+          statusEl.hidden = true;
+          statusEl.removeAttribute('data-state');
+          return;
+        }
+        statusEl.hidden = false;
+        statusEl.textContent = message;
+        statusEl.dataset.state = tone;
+      };
+
+      const closeSheet = (reason = 'created') => {
+        try {
+          if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
+            window.closeAddTask(reason);
+            return;
+          }
+        } catch (error) {
+          console.error('closeAddTask failed', error);
+        }
+
+        try {
+          document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason } }));
+        } catch (error) {
+          console.error('cue:close dispatch failed', error);
+        }
+      };
+
+      const todayISO = () => {
+        const now = new Date();
+        const tz = now.getTimezoneOffset();
+        const adjusted = new Date(now.getTime() - tz * 60 * 1000);
+        return adjusted.toISOString().slice(0, 10);
+      };
+
+      const buildPayload = () => {
+        const title = (titleInput?.value || '').trim();
+        const date = (dateInput?.value || '').trim();
+        const time = (timeInput?.value || '').trim();
+        const details = (detailsInput?.value || '').trim();
+        const priority = (priorityInput?.value || 'Medium').trim() || 'Medium';
+        const category = (categoryInput?.value || 'General').trim() || 'General';
+
+        let dueIso = null;
+        if (date || time) {
+          const isoDate = date || todayISO();
+          const isoTime = time || '09:00';
+          try {
+            const parsed = new Date(`${isoDate}T${isoTime}`);
+            if (!Number.isNaN(parsed.getTime())) {
+              dueIso = parsed.toISOString();
+            }
+          } catch (error) {
+            console.error('Failed to build due date', error);
+            dueIso = null;
+          }
+        }
+
+        return {
+          title,
+          date,
+          time,
+          details,
+          priority,
+          category,
+          dueIso,
+        };
+      };
+
+      const awaitCueClose = () => new Promise((resolve) => {
+        let settled = false;
+        const complete = (value) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timer);
+          document.removeEventListener('cue:close', handleClose, true);
+          resolve(value);
+        };
+
+        const handleClose = (event) => {
+          const reason = event?.detail?.reason;
+          if (reason === 'created' || reason === 'updated') {
+            complete(true);
+          }
+        };
+
+        const timer = setTimeout(() => complete(false), 700);
+
+        document.addEventListener('cue:close', handleClose, { once: true, capture: true });
+      });
+
+      const attemptViaQuickAdd = async () => {
+        if (!(quickAddBtn instanceof HTMLElement) || quickAddBtn.matches(':disabled')) {
+          return false;
+        }
+
+        try {
+          const waitForClose = awaitCueClose();
+          quickAddBtn.click();
+          return await waitForClose;
+        } catch (error) {
+          console.error('Quick add bridge failed', error);
+          return false;
+        }
+      };
+
+      const callCandidate = async (fn, label, payload) => {
+        if (typeof fn !== 'function') {
+          return false;
+        }
+        try {
+          const result = fn(payload);
+          if (result && typeof result.then === 'function') {
+            await result;
+          }
+          return true;
+        } catch (error) {
+          console.error(`Reminder save via ${label} failed`, error);
+          return false;
+        }
+      };
+
+      const attemptQuickInputFallback = async (payload) => {
+        const quickInput = document.getElementById('quickAddInput');
+        if (!(quickInput instanceof HTMLInputElement)) {
+          return false;
+        }
+        if (typeof window === 'undefined' || typeof window.memoryCueQuickAddNow !== 'function') {
+          return false;
+        }
+
+        const originalValue = quickInput.value;
+        const parts = [payload.title];
+        if (payload.date && payload.time) {
+          parts.push(`on ${payload.date} at ${payload.time}`);
+        } else if (payload.date) {
+          parts.push(`on ${payload.date}`);
+        } else if (payload.time) {
+          parts.push(`at ${payload.time}`);
+        }
+        if (payload.details) {
+          parts.push(`- ${payload.details}`);
+        }
+        if (payload.category && payload.category !== 'General') {
+          parts.push(`[${payload.category}]`);
+        }
+        if (payload.priority && payload.priority !== 'Medium') {
+          parts.push(`(${payload.priority} priority)`);
+        }
+
+        quickInput.value = parts.filter(Boolean).join(' ').trim();
+
+        try {
+          const result = window.memoryCueQuickAddNow();
+          if (result && typeof result.then === 'function') {
+            await result;
+          }
+          return true;
+        } catch (error) {
+          console.error('Quick add input fallback failed', error);
+          return false;
+        } finally {
+          setTimeout(() => {
+            try { quickInput.value = originalValue; } catch { quickInput.value = ''; }
+          }, 0);
+        }
+      };
+
+      const attemptCreation = async (payload) => {
+        if (await attemptViaQuickAdd()) {
+          return true;
+        }
+
+        if (await callCandidate(window.addReminderFromVoice, 'addReminderFromVoice', payload)) {
+          return true;
+        }
+
+        if (await callCandidate(window.createReminder, 'createReminder', payload)) {
+          return true;
+        }
+
+        if (await attemptQuickInputFallback(payload)) {
+          return true;
+        }
+
+        try {
+          const event = new CustomEvent('memoryCue:createReminder', {
+            detail: { data: payload, source: 'sheet-save' },
+            cancelable: true,
+          });
+          const dispatched = document.dispatchEvent(event);
+          return event.defaultPrevented || dispatched === false;
+        } catch (error) {
+          console.error('memoryCue:createReminder dispatch failed', error);
+          return false;
+        }
+      };
+
+      const handleSave = () => {
+        if (isProcessing) {
+          return;
+        }
+
+        const payload = buildPayload();
+        if (!payload.title) {
+          setStatus('Add a reminder title before saving.', 'error');
+          try { titleInput?.focus(); } catch { /* ignore focus errors */ }
+          return;
+        }
+
+        isProcessing = true;
+        attemptToken += 1;
+        const currentToken = attemptToken;
+
+        setStatus('Saving reminder…', 'pending');
+        setBusy(true);
+
+        Promise.resolve()
+          .then(() => attemptCreation(payload))
+          .then((success) => {
+            if (currentToken !== attemptToken) {
+              return;
+            }
+            if (success) {
+              setStatus('Reminder saved!', 'success');
+              closeSheet('created');
+            } else {
+              setStatus('Unable to save reminder. Please try again.', 'error');
+            }
+          })
+          .catch((error) => {
+            console.error('Reminder save failed', error);
+            if (currentToken === attemptToken) {
+              setStatus('Unable to save reminder. Please try again.', 'error');
+            }
+          })
+          .finally(() => {
+            if (currentToken === attemptToken) {
+              isProcessing = false;
+              setBusy(false);
+            }
+          });
+      };
+
+      document.addEventListener('reminder:save', (event) => {
+        if (event?.detail?.trigger && event.detail.trigger !== saveBtn) {
+          return;
+        }
+        handleSave();
+      });
+    })();
+  </script>
   <script id="min-expand-script">
 (function(){
   // Find the list container for minimal tasks
