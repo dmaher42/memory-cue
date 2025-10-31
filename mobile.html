@@ -372,10 +372,10 @@
     details.sort-filter summary::-webkit-details-marker {
       display: none;
     }
-    details.sort-filter .sort-filter-icon {
+    #toggleReminderFilters .sort-filter-icon {
       transition: transform 0.2s ease;
     }
-    details.sort-filter[open] .sort-filter-icon {
+    #toggleReminderFilters[aria-expanded="true"] .sort-filter-icon {
       transform: rotate(180deg);
     }
   </style>
@@ -432,6 +432,28 @@
       <div class="flex justify-end items-center gap-2">
         <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
         <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
+        <button
+          id="toggleReminderFilters"
+          class="btn btn-ghost"
+          type="button"
+          aria-controls="reminderFilters"
+          aria-expanded="false"
+        >
+          Sort &amp; filter
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="size-4 opacity-70 sort-filter-icon"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
         <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
         <button id="googleSignOutBtn" class="btn btn-ghost hidden" type="button">Sign out</button>
       </div>
@@ -450,22 +472,7 @@
         class="card bg-base-100 border sort-filter mb-4"
         aria-label="Sort and filter reminders"
       >
-        <summary class="flex cursor-pointer items-center justify-between gap-2 px-5 py-3 text-sm font-medium text-base-content">
-          <span>Sort &amp; filter reminders</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            class="size-4 opacity-70 sort-filter-icon"
-            aria-hidden="true"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </summary>
+        <summary class="sr-only">Sort &amp; filter reminders</summary>
         <div class="card-body gap-4 border-t border-base-300/60 compact">
           <div class="flex flex-wrap items-center gap-3">
             <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
@@ -650,7 +657,7 @@
     };
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-LRFTMQ7L.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-LO3OHA3A.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
