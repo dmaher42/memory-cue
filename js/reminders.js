@@ -796,8 +796,11 @@ export async function initReminders(sel = {}) {
   let filter = resolvedDefaultFilter || 'all';
   let categoryFilterValue = categoryFilter?.value || 'all';
   const SORT_STORAGE_KEY = 'memoryCue:sortPreference';
-  const SORT_OPTIONS = new Set(['due', 'priority', 'category', 'recent']);
-  let sortKey = 'due';
+  const SORT_OPTIONS = new Set(['dueDate', 'priority', 'category', 'recent']);
+  const SORT_ALIASES = new Map([
+    ['due', 'dueDate'],
+  ]);
+  let sortKey = 'dueDate';
   let suppressRenderMemoryEvent = false;
   let userId = null;
   let unsubscribe = null;
@@ -808,8 +811,9 @@ export async function initReminders(sel = {}) {
   if (typeof localStorage !== 'undefined') {
     try {
       const storedSort = localStorage.getItem(SORT_STORAGE_KEY);
-      if (storedSort && SORT_OPTIONS.has(storedSort)) {
-        sortKey = storedSort;
+      const normalisedSort = SORT_ALIASES.get(storedSort) || storedSort;
+      if (normalisedSort && SORT_OPTIONS.has(normalisedSort)) {
+        sortKey = normalisedSort;
       }
     } catch {
       // Ignore localStorage access issues (private browsing, etc.).
@@ -818,7 +822,7 @@ export async function initReminders(sel = {}) {
 
   if (sortSel && sortKey) {
     try {
-      sortSel.value = SORT_OPTIONS.has(sortKey) ? sortKey : 'due';
+      sortSel.value = SORT_OPTIONS.has(sortKey) ? sortKey : 'dueDate';
     } catch {
       // Ignore value sync issues if option missing.
     }
@@ -1798,8 +1802,10 @@ export async function initReminders(sel = {}) {
       return (b.updatedAt || 0) - (a.updatedAt || 0);
     };
 
+    const highlightToday = sortKey === 'dueDate';
+
     const compareMap = {
-      due: compareDueDate,
+      dueDate: compareDueDate,
       priority: comparePriority,
       category: compareCategory,
       recent: compareRecent,
@@ -1909,6 +1915,7 @@ export async function initReminders(sel = {}) {
       const dueIsToday = highlightToday && dueDate && dueDate >= t0 && dueDate <= t1;
       if (dueIsToday) {
         div.classList.add('is-today');
+        div.dataset.today = 'true';
       }
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
       const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
@@ -2142,9 +2149,10 @@ export async function initReminders(sel = {}) {
   window.addEventListener('load', ()=> title?.focus());
   q?.addEventListener('input', debounce(render,150));
   sortSel?.addEventListener('change', () => {
-    sortKey = sortSel.value || 'due';
+    const selected = sortSel.value;
+    sortKey = SORT_ALIASES.get(selected) || selected || 'dueDate';
     if (!SORT_OPTIONS.has(sortKey)) {
-      sortKey = 'due';
+      sortKey = 'dueDate';
     }
     if (typeof localStorage !== 'undefined') {
       try {
