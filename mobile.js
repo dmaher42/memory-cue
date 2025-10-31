@@ -150,9 +150,9 @@ initReminders({
   notifBtnSel: '#notifBtn',
   addQuickBtnSel: '#quickAdd',
   filterBtnsSel: '[data-filter]',
+  sortSel: '#sortReminders',
   categoryFilterSel: '#categoryFilter',
   categoryOptionsSel: '#categorySuggestions',
-  countTodaySel: '#todayCount',
   countOverdueSel: '#overdueCount',
   countTotalSel: '#totalCountBadge, #totalCount',
   countCompletedSel: '#completedCount',
@@ -240,51 +240,6 @@ document.addEventListener('click', (ev) => {
     }
   } catch (e) {}
 });
-
-/* BEGIN GPT CHANGE: today view population */
-(function () {
-  const todayEl = document.querySelector('[data-view="today"]');
-  const listEl = document.getElementById('reminderList');
-  if (!todayEl || !listEl) return;
-
-  function isToday(dateStr) {
-    const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) return false;
-    const now = new Date();
-    return d.getFullYear() === now.getFullYear() &&
-      d.getMonth() === now.getMonth() &&
-      d.getDate() === now.getDate();
-  }
-
-  function renderToday() {
-    const items = Array.from(listEl.querySelectorAll('[data-reminder]'));
-    const todayItems = items.filter((item) => {
-      const direct = item.getAttribute('data-due');
-      const nested = item.querySelector('[data-due]');
-      const when = direct || (nested ? nested.textContent : '') || '';
-      return isToday(when.trim());
-    });
-
-    todayEl.innerHTML = '';
-    const header = document.createElement('h2');
-    header.textContent = 'Today';
-    todayEl.appendChild(header);
-
-    todayItems.forEach((item) => {
-      todayEl.appendChild(item.cloneNode(true));
-    });
-
-    if (!todayItems.length) {
-      const p = document.createElement('p');
-      p.textContent = 'No reminders due today.';
-      todayEl.appendChild(p);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', renderToday);
-  document.addEventListener('reminders:updated', renderToday);
-})();
-/* END GPT CHANGE */
 
 /* BEGIN GPT CHANGE: progressive list loading */
 (function () {
