@@ -710,15 +710,36 @@ export async function initReminders(sel = {}) {
 
   // State
   let items = [];
-  let filter = resolvedDefaultFilter || (filterBtns.length ? 'today' : 'all');
+  let filter = resolvedDefaultFilter || 'all';
   let categoryFilterValue = categoryFilter?.value || 'all';
-  let sortKey = 'smart';
+  const SORT_STORAGE_KEY = 'memoryCue:sortPreference';
+  const SORT_OPTIONS = new Set(['due', 'priority', 'category', 'recent']);
+  let sortKey = 'due';
   let suppressRenderMemoryEvent = false;
   let userId = null;
   let unsubscribe = null;
   let editingId = null;
   const reminderTimers = {};
   let scheduledReminders = {};
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const storedSort = localStorage.getItem(SORT_STORAGE_KEY);
+      if (storedSort && SORT_OPTIONS.has(storedSort)) {
+        sortKey = storedSort;
+      }
+    } catch {
+      // Ignore localStorage access issues (private browsing, etc.).
+    }
+  }
+
+  if (sortSel && sortKey) {
+    try {
+      sortSel.value = SORT_OPTIONS.has(sortKey) ? sortKey : 'due';
+    } catch {
+      // Ignore value sync issues if option missing.
+    }
+  }
 
   function applySignedOutState() {
     userId = null;
@@ -1659,18 +1680,50 @@ export async function initReminders(sel = {}) {
     rows = rows.filter(r => {
       if(filter==='done') return r.done;
       if(filter==='overdue') return !r.done && r.due && new Date(r.due) < localNow;
-      if(filter==='today'){
-        if(!r.due) return true;
-        const dueLocal = new Date(r.due);
-        return dueLocal >= t0 && dueLocal <= t1;
-      }
       return true;
     });
-    rows.sort((a,b)=>{
-      if(sortKey==='time') return (+new Date(a.due||0))-(+new Date(b.due||0));
-      if(sortKey==='priority') return priorityWeight(b.priority)-priorityWeight(a.priority);
-      return smartCompare(a,b);
-    });
+
+    const compareDueDate = (a, b) => {
+      const aDone = a.done ? 1 : 0;
+      const bDone = b.done ? 1 : 0;
+      if (aDone !== bDone) return aDone - bDone;
+      const aDue = a.due ? new Date(a.due).getTime() : Infinity;
+      const bDue = b.due ? new Date(b.due).getTime() : Infinity;
+      if (aDue !== bDue) return aDue - bDue;
+      const priorityDiff = priorityWeight(b.priority) - priorityWeight(a.priority);
+      if (priorityDiff) return priorityDiff;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    };
+
+    const comparePriority = (a, b) => {
+      const diff = priorityWeight(b.priority) - priorityWeight(a.priority);
+      if (diff) return diff;
+      return compareDueDate(a, b);
+    };
+
+    const compareCategory = (a, b) => {
+      const catA = normalizeCategory(a.category || '');
+      const catB = normalizeCategory(b.category || '');
+      const catDiff = catA.localeCompare(catB, undefined, { sensitivity: 'base' });
+      if (catDiff) return catDiff;
+      return compareDueDate(a, b);
+    };
+
+    const compareRecent = (a, b) => {
+      const createdDiff = (b.createdAt || 0) - (a.createdAt || 0);
+      if (createdDiff) return createdDiff;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    };
+
+    const compareMap = {
+      due: compareDueDate,
+      priority: comparePriority,
+      category: compareCategory,
+      recent: compareRecent,
+    };
+
+    const activeComparator = compareMap[sortKey] || compareDueDate;
+    rows.sort(activeComparator);
 
     filterBtns.forEach(btn => {
       const isActive = btn.getAttribute('data-filter')===filter;
@@ -1758,26 +1811,32 @@ export async function initReminders(sel = {}) {
       variant === 'desktop' ||
       !isMinimalLayout ||
       (!listIsSemantic && variant !== 'desktop');
+    const highlightToday = sortKey === 'due';
 
     const createMobileItem = (r, catName) => {
-    const div = document.createElement('div');
-    div.className = 'task-item' + (r.done ? ' completed' : '');
-    const summary = {
-      id: r.id,
-      title: r.title,
-      dueIso: r.due || null,
-      priority: r.priority || 'Medium',
-      category: catName,
-      done: Boolean(r.done),
-    };
-    div.dataset.category = catName;
-    // Make rows discoverable by other modules (e.g., Today view)
-    div.dataset.reminder = JSON.stringify(summary);
-    div.dataset.id = summary.id;
-    div.dataset.title = summary.title;
-    div.dataset.priority = summary.priority;
-    div.dataset.done = String(summary.done);
-    if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
+      const div = document.createElement('div');
+      div.className = 'task-item' + (r.done ? ' completed' : '');
+      const summary = {
+        id: r.id,
+        title: r.title,
+        dueIso: r.due || null,
+        priority: r.priority || 'Medium',
+        category: catName,
+        done: Boolean(r.done),
+      };
+      div.dataset.category = catName;
+      // Make rows discoverable by other modules (e.g., syncing, exports)
+      div.dataset.reminder = JSON.stringify(summary);
+      div.dataset.id = summary.id;
+      div.dataset.title = summary.title;
+      div.dataset.priority = summary.priority;
+      div.dataset.done = String(summary.done);
+      if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
+      const dueDate = summary.dueIso ? new Date(summary.dueIso) : null;
+      const dueIsToday = highlightToday && dueDate && dueDate >= t0 && dueDate <= t1;
+      if (dueIsToday) {
+        div.classList.add('is-today');
+      }
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
       const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
@@ -2009,7 +2068,20 @@ export async function initReminders(sel = {}) {
   document.addEventListener('cue:prepare', () => { resetForm(); });
   window.addEventListener('load', ()=> title?.focus());
   q?.addEventListener('input', debounce(render,150));
-  sortSel?.addEventListener('change', ()=>{ sortKey = sortSel.value; render(); });
+  sortSel?.addEventListener('change', () => {
+    sortKey = sortSel.value || 'due';
+    if (!SORT_OPTIONS.has(sortKey)) {
+      sortKey = 'due';
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(SORT_STORAGE_KEY, sortKey);
+      } catch {
+        // Ignore storage persistence errors (quota, private mode, etc.).
+      }
+    }
+    render();
+  });
   categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
   filterBtns.forEach(b => b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
 
