@@ -2,201 +2,304 @@ import { initReminders } from './js/reminders.js';
 
 /* BEGIN GPT CHANGE: bottom sheet open/close */
 (function () {
-  const fab = document.getElementById('fabCreate');
-  const sheet = document.getElementById('create-sheet');
-  const closeBtn = document.getElementById('closeCreateSheet');
-  if (!sheet || !closeBtn) return;
+  const setupSheet = () => {
+    const sheet = document.getElementById('create-sheet');
+    const closeBtn = document.getElementById('closeCreateSheet');
+    if (!(sheet instanceof HTMLElement) || !(closeBtn instanceof HTMLElement)) {
+      const attempts = typeof setupSheet._retryCount === 'number'
+        ? setupSheet._retryCount
+        : 0;
+      if (attempts < 10) {
+        setupSheet._retryCount = attempts + 1;
+        setTimeout(setupSheet, 50);
+      }
+      return;
+    }
 
-  sheet.classList.add('hidden');
-  sheet.setAttribute('hidden', '');
-  sheet.setAttribute('aria-hidden', 'true');
-  sheet.removeAttribute('open');
+    if (setupSheet._initialised) {
+      return;
+    }
+    setupSheet._initialised = true;
 
-  const openerSet = new Set();
-  if (fab) openerSet.add(fab);
-  document
-    .querySelectorAll('[data-open-add-task]')
-    .forEach((button) => openerSet.add(button));
+    const sheetContent = sheet.querySelector('[data-dialog-content]');
+    const backdrop = sheet.querySelector('.sheet-backdrop');
+    const fab = document.getElementById('fabCreate');
+    const form = document.getElementById('createReminderForm');
+    const saveBtn = document.getElementById('saveReminder');
+    const prioritySelect = document.getElementById('priority');
+    const chips = document.getElementById('priorityChips');
+    const priorityRadios = chips
+      ? Array.from(chips.querySelectorAll('input[name="priority"]'))
+      : [];
 
-  const openers = Array.from(openerSet).filter((button) =>
-    button instanceof HTMLElement
-  );
+    const openerSet = new Set([
+      ...(fab ? [fab] : []),
+      ...Array.from(document.querySelectorAll('[data-open-add-task]')),
+      ...Array.from(document.querySelectorAll('[aria-controls="createReminderModal"]')),
+      ...Array.from(document.querySelectorAll('#addReminderFab')),
+    ]);
 
-  let lastTrigger = null;
+    const openers = Array.from(openerSet).filter((button) =>
+      button instanceof HTMLElement
+    );
 
-  const prioritySelect = document.getElementById('priority');
-  const chips = document.getElementById('priorityChips');
-  if (prioritySelect && chips) {
-    const radios = Array.from(chips.querySelectorAll('input[name="priority"]'));
-    let lastPriority = prioritySelect.value || 'Medium';
+    const ensureHidden = () => {
+      sheet.classList.add('hidden');
+      sheet.setAttribute('hidden', '');
+      sheet.setAttribute('aria-hidden', 'true');
+      sheet.removeAttribute('open');
+      sheet.classList.remove('open');
+    };
 
-    const syncRadios = (value) => {
-      radios.forEach((radio) => {
-        radio.checked = radio.value === value;
+    ensureHidden();
+
+    let lastTrigger = null;
+
+    const dispatchSheetEvent = (type, detail) => {
+      try {
+        document.dispatchEvent(new CustomEvent(type, { detail }));
+      } catch (error) {
+        console.warn(`${type} dispatch failed`, error);
+      }
+    };
+
+    const syncRadiosFromSelect = () => {
+      const value = prioritySelect?.value || 'Medium';
+      priorityRadios.forEach((radio) => {
+        const isChecked = radio.value === value;
+        radio.checked = isChecked;
+        radio.setAttribute('aria-checked', isChecked ? 'true' : 'false');
       });
     };
 
-    const syncFromSelect = () => {
-      const value = prioritySelect.value || 'Medium';
-      lastPriority = value;
-      syncRadios(value);
+    const setPriorityValue = (value) => {
+      if (!prioritySelect) return;
+      if (prioritySelect.value !== value) {
+        prioritySelect.value = value;
+        prioritySelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      syncRadiosFromSelect();
     };
 
-    radios.forEach((radio) => {
+    priorityRadios.forEach((radio) => {
       radio.addEventListener('change', () => {
-        if (!radio.checked) return;
-        if (prioritySelect.value !== radio.value) {
-          prioritySelect.value = radio.value;
-          lastPriority = radio.value;
-          prioritySelect.dispatchEvent(new Event('change', { bubbles: true }));
+        if (radio.checked) {
+          setPriorityValue(radio.value);
         }
       });
     });
 
-    prioritySelect.addEventListener('change', syncFromSelect);
-    syncFromSelect();
+    prioritySelect?.addEventListener('change', syncRadiosFromSelect);
+    syncRadiosFromSelect();
 
-    const watcher = setInterval(() => {
-      if (!document.body.contains(prioritySelect)) {
-        clearInterval(watcher);
+    const focusFirstField = () => {
+      const focusTarget = sheet.querySelector(
+        'input, textarea, select, button, [contenteditable="true"]'
+      );
+      if (focusTarget instanceof HTMLElement) {
+        setTimeout(() => {
+          try {
+            focusTarget.focus();
+          } catch {
+            /* ignore focus errors */
+          }
+        }, 0);
+      }
+    };
+
+    const openSheet = (trigger) => {
+      lastTrigger = trigger instanceof HTMLElement ? trigger : null;
+      sheet.classList.remove('hidden');
+      sheet.removeAttribute('hidden');
+      sheet.setAttribute('aria-hidden', 'false');
+      sheet.setAttribute('open', '');
+      sheet.classList.add('open');
+
+      if (fab) {
+        fab.setAttribute('aria-expanded', 'true');
+      }
+      if (lastTrigger && lastTrigger !== fab) {
+        lastTrigger.setAttribute('aria-expanded', 'true');
+      }
+
+      syncRadiosFromSelect();
+      focusFirstField();
+
+      dispatchSheetEvent('reminder:sheet-opened', { trigger: lastTrigger });
+    };
+
+    const closeSheet = (reason = 'dismissed') => {
+      const wasOpen = !sheet.classList.contains('hidden');
+      ensureHidden();
+
+      if (fab) {
+        fab.setAttribute('aria-expanded', 'false');
+      }
+      if (lastTrigger && lastTrigger !== fab) {
+        lastTrigger.setAttribute('aria-expanded', 'false');
+      }
+
+      const focusTarget =
+        (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) || fab;
+      if (focusTarget && typeof focusTarget.focus === 'function') {
+        try {
+          focusTarget.focus();
+        } catch {
+          /* ignore focus restoration failures */
+        }
+      }
+
+      if (wasOpen) {
+        dispatchSheetEvent('reminder:sheet-closed', {
+          reason,
+          trigger: lastTrigger,
+        });
+      }
+
+      lastTrigger = null;
+    };
+
+    openers.forEach((trigger) => {
+      trigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        openSheet(trigger);
+      });
+    });
+
+    closeBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeSheet('close-button');
+    });
+
+    backdrop?.addEventListener('click', (event) => {
+      if (event.target === backdrop) {
+        closeSheet('backdrop');
+      }
+    });
+
+    sheet.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        closeSheet('escape');
+      }
+    });
+
+    sheetContent?.addEventListener('click', (event) => {
+      event.stopPropagation();
+    }, true);
+
+    sheet.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLElement && event.target.hasAttribute('data-close')) {
+        closeSheet('backdrop');
+      }
+    });
+
+    document.addEventListener('cue:open', (event) => {
+      syncRadiosFromSelect();
+      openSheet(event?.detail?.trigger || null);
+    });
+
+    document.addEventListener('cue:close', (event) => {
+      closeSheet(event?.detail?.reason || 'cue-close');
+    });
+
+    document.addEventListener('cue:prepare', () => {
+      syncRadiosFromSelect();
+    });
+
+    document.addEventListener('cue:cancelled', () => {
+      closeSheet('cue-cancelled');
+    });
+
+    if (typeof window !== 'undefined') {
+      window.closeAddTask = closeSheet;
+    }
+
+    document.addEventListener('reminder:save', (event) => {
+      if (!(saveBtn instanceof HTMLElement)) return;
+      const trigger = event?.detail?.trigger;
+      if (trigger && trigger !== saveBtn) {
         return;
       }
-      if (prioritySelect.value !== lastPriority) {
-        syncFromSelect();
+      if (saveBtn.matches(':disabled')) {
+        return;
       }
-    }, 250);
-  }
-
-  function openSheet(trigger) {
-    lastTrigger = trigger ?? null;
-    sheet.classList.remove('hidden');
-    sheet.removeAttribute('hidden');
-    sheet.setAttribute('aria-hidden', 'false');
-    sheet.setAttribute('open', '');
-    sheet.classList.add('open');
-    if (fab) {
-      fab.setAttribute('aria-expanded', 'true');
-    }
-    if (trigger instanceof HTMLElement && trigger !== fab) {
-      trigger.setAttribute('aria-expanded', 'true');
-    }
-    const firstInput = sheet.querySelector('input,select,textarea,button');
-    if (firstInput instanceof HTMLElement) {
-      firstInput.focus();
-    } else if (sheet instanceof HTMLElement) {
-      sheet.focus();
-    }
-  }
-  function closeSheet() {
-    sheet.classList.add('hidden');
-    sheet.setAttribute('hidden', '');
-    sheet.setAttribute('aria-hidden', 'true');
-    sheet.removeAttribute('open');
-    sheet.classList.remove('open');
-    if (fab) {
-      fab.setAttribute('aria-expanded', 'false');
-    }
-    if (lastTrigger instanceof HTMLElement && lastTrigger !== fab) {
-      lastTrigger.setAttribute('aria-expanded', 'false');
-    }
-    const focusTarget =
-      (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) || fab;
-    if (focusTarget && typeof focusTarget.focus === 'function') {
-      focusTarget.focus();
-    }
-    lastTrigger = null;
-  }
-
-  openers.forEach((trigger) => {
-    trigger.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openSheet(trigger);
+      saveBtn.click();
     });
-  });
 
-  closeBtn.addEventListener('click', (event) => {
-    event.preventDefault();
-    closeSheet();
-  });
-  sheet.addEventListener('click', (event) => {
-    if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
-      closeSheet();
+    if (form instanceof HTMLFormElement && saveBtn instanceof HTMLElement) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (saveBtn.matches(':disabled')) {
+          return;
+        }
+        saveBtn.click();
+      });
     }
-  });
-  sheet.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      closeSheet();
-    }
-  });
+  };
 
-  document.addEventListener('cue:open', () => {
-    openSheet();
-  });
-  document.addEventListener('cue:close', () => {
-    closeSheet();
-  });
-
-  if (typeof window !== 'undefined') {
-    window.closeAddTask = closeSheet;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupSheet, { once: true });
+  } else {
+    setupSheet();
   }
 })();
 /* END GPT CHANGE */
 
-initReminders({
-  variant: 'mobile',
-  qSel: '#searchReminders',
-  titleSel: '#reminderText',
-  dateSel: '#reminderDate',
-  timeSel: '#reminderTime',
-  detailsSel: '#reminderDetails',
-  prioritySel: '#priority',
-  categorySel: '#category',
-  saveBtnSel: '#saveReminder',
-  cancelEditBtnSel: '#cancelEditBtn',
-  listSel: '#reminderList',
-  listWrapperSel: '#remindersWrapper',
-  emptyStateSel: '#emptyState',
-  statusSel: '#statusMessage',
-  syncStatusSel: '#syncStatus',
-  notifBtnSel: '#notifBtn',
-  filterBtnsSel: '[data-filter]',
-  sortSel: '#sortReminders',
-  categoryFilterSel: '#categoryFilter',
-  categoryOptionsSel: '#categorySuggestions',
-  countOverdueSel: '#overdueCount',
-  countTotalSel: '#totalCountBadge, #totalCount',
-  countCompletedSel: '#completedCount',
-  defaultFilter: 'all',
-  googleSignInBtnSel: '#googleSignInBtn',
-  googleSignOutBtnSel: '#googleSignOutBtn',
-  googleAvatarSel: '#googleAvatar',
-  googleUserNameSel: '#googleUserName',
-  syncAllBtnSel: '#syncAll',
-  syncUrlInputSel: '#syncUrl',
-  saveSettingsSel: '#saveSyncSettings',
-  testSyncSel: '#testSync',
-  openSettingsSel: '#openSettings',
-  notesSel: '#notes',
-  saveNotesBtnSel: '#saveNotes',
-  loadNotesBtnSel: '#loadNotes',
-  dateFeedbackSel: '#dateFeedback',
-}).catch((error) => {
-  console.error('Failed to initialise reminders:', error);
-});
+const bootstrapReminders = () => {
+  if (bootstrapReminders._initialised) {
+    return;
+  }
+  bootstrapReminders._initialised = true;
 
-// Ensure Enter/Go on mobile submits the same save path
-(() => {
-  const formEl = document.getElementById('createReminderForm');
-  const saveBtn = document.getElementById('saveReminder');
-  if (!(formEl instanceof HTMLFormElement) || !(saveBtn instanceof HTMLButtonElement)) return;
-
-  formEl.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (saveBtn.matches(':disabled')) return;
-    saveBtn.click();
+  initReminders({
+    variant: 'mobile',
+    qSel: '#searchReminders',
+    titleSel: '#reminderText',
+    dateSel: '#reminderDate',
+    timeSel: '#reminderTime',
+    detailsSel: '#reminderDetails',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveReminder',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#reminderList',
+    listWrapperSel: '#remindersWrapper',
+    emptyStateSel: '#emptyState',
+    statusSel: '#statusMessage',
+    syncStatusSel: '#syncStatus',
+    notifBtnSel: '#notifBtn',
+    filterBtnsSel: '[data-filter]',
+    sortSel: '#sortReminders',
+    categoryFilterSel: '#categoryFilter',
+    categoryOptionsSel: '#categorySuggestions',
+    countOverdueSel: '#overdueCount',
+    countTotalSel: '#totalCountBadge, #totalCount',
+    countCompletedSel: '#completedCount',
+    defaultFilter: 'all',
+    googleSignInBtnSel: '#googleSignInBtn',
+    googleSignOutBtnSel: '#googleSignOutBtn',
+    googleAvatarSel: '#googleAvatar',
+    googleUserNameSel: '#googleUserName',
+    syncAllBtnSel: '#syncAll',
+    syncUrlInputSel: '#syncUrl',
+    saveSettingsSel: '#saveSyncSettings',
+    testSyncSel: '#testSync',
+    openSettingsSel: '#openSettings',
+    notesSel: '#notes',
+    saveNotesBtnSel: '#saveNotes',
+    loadNotesBtnSel: '#loadNotes',
+    dateFeedbackSel: '#dateFeedback',
+  }).catch((error) => {
+    console.error('Failed to initialise reminders:', error);
   });
-})();
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapReminders, { once: true });
+} else {
+  bootstrapReminders();
+}
 
 (() => {
   const sheetEl = document.getElementById('create-sheet');
