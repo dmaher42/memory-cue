@@ -6,7 +6,7 @@
   <script>try{ if(location.pathname.endsWith('/mobile.html')||location.pathname==='/memory-cue/'||location.pathname==='/' ){ location.replace('./docs/mobile.html'); } }catch(e){};</script>
   <base href="./" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
-  <link rel="stylesheet" href="./assets/styles-ee384275.css" />
+  <link rel="stylesheet" href="./assets/styles-6251af62.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
@@ -306,55 +306,7 @@
     }
   </style>
   <!-- END GPT CHANGE: rhythm -->
-  <style id="voice-add-css">
-    .voice-add-wrap{
-      position: fixed; right: 12px; bottom: 12px; z-index: 50;
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 8px; border-radius: 9999px; background: var(--fallback-b1,#fff);
-      box-shadow: 0 2px 8px rgba(0,0,0,.15);
-    }
-
-    /* Hide the status text by default */
-    .voice-status { display: none; }
-
-    /* Only show status while actively listening */
-    .voice-add-wrap.listening .voice-status { display: inline; font-size: 12px; opacity: .75; }
-
-  </style>
-  <style id="min-expand-css">
-    /* Expand/collapse behavior */
-    .task-row-min {
-      cursor: pointer;
-      outline: none;
-    }
-    .task-row-min:focus {
-      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
-    }
-    .task-row-min .min-notes {
-      display: none;
-      grid-column: 1 / -1;
-      margin-top: 8px;
-      font-size: 14px;
-      line-height: 1.35;
-      opacity: .95;
-      white-space: pre-wrap;
-    }
-    .task-row-min.expanded .min-notes {
-      display: block;
-    }
-    /* Slightly larger title when expanded */
-    .task-row-min.expanded .title {
-      font-weight: 600;
-    }
-    /* Optional small chevron indicator */
-    .task-row-min::after {
-      content: "▾";
-      justify-self: end;
-      opacity: .5;
-      font-size: 12px;
-    }
-    .task-row-min.expanded::after { transform: rotate(180deg); }
-  </style>
+  
 </head>
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
@@ -388,11 +340,6 @@
   </header>
 
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
-    <!-- Voice Add Task UI -->
-    <div id="voiceAddWrap" class="voice-add-wrap" aria-live="polite" aria-atomic="true">
-      <button id="voiceAddBtn" class="btn btn-circle btn-ghost" aria-pressed="false" aria-label="Add task by voice">🎤</button>
-      <span id="voiceStatus" class="voice-status" hidden>Tap 🎤 to speak</span>
-    </div>
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -407,17 +354,13 @@
                    placeholder="What do you need to remember?"
                    aria-label="Quick add reminder"
                    autocomplete="off" />
-            <button id="quickAddMic"
-                    class="btn btn-circle btn-ghost"
-                    type="button"
-                    aria-label="Add by voice">🎤</button>
             <button id="quickAddSubmit"
                     class="btn btn-primary"
                     type="button"
                     aria-label="Add reminder now">Add</button>
           </div>
           <p class="text-xs text-base-content/60">
-            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; <kbd>Enter</kbd> to add; <kbd>Alt</kbd>+<kbd>M</kbd> for mic.
+            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus and <kbd>Enter</kbd> to add.
           </p>
         </div>
       </section>
@@ -470,7 +413,7 @@
       <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="space-y-3 task-list-min"></ul>
+          <ul id="reminderList" class="space-y-3"></ul>
           <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -533,7 +476,7 @@
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-OSRWDKNS.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-HKIV724W.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -621,6 +564,27 @@
           <div class="flex flex-wrap items-center gap-3">
             <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
             <button id="quickAdd" class="btn btn-outline" type="button">Quick add</button>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <button
+              id="sheetVoiceBtn"
+              class="btn btn-outline justify-center"
+              type="button"
+              aria-pressed="false"
+              aria-label="Dictate reminder"
+            >
+              🎤 Voice input
+            </button>
+            <p
+              id="sheetVoiceStatus"
+              class="text-xs text-base-content/60"
+              role="status"
+              aria-live="polite"
+              hidden
+            >
+              Tap the microphone to start speaking.
+            </p>
           </div>
 
           <div class="card-actions justify-stretch">
@@ -1194,50 +1158,6 @@
       });
     })();
   </script>
-  <script>
-    (function () {
-      function applyMinimalLayout() {
-        var list = document.getElementById('reminderList');
-        if (!list) return;
-        list.querySelectorAll('.task-item').forEach(function (item) {
-          item.classList.add('task-row-min');
-          var title = item.querySelector('.task-title');
-          if (title) {
-            title.classList.add('title');
-          }
-          var due = item.querySelector('.task-meta-row span');
-          if (due && !due.querySelector('time')) {
-            var text = due.textContent.trim();
-            var timeEl = document.createElement('time');
-            var iso = item.getAttribute('data-due') || (item.dataset ? item.dataset.due : '');
-            if (iso) {
-              timeEl.setAttribute('datetime', iso);
-            }
-            timeEl.textContent = text;
-            due.textContent = '';
-            due.appendChild(timeEl);
-          }
-          var notes = item.querySelector('.task-notes');
-          if (notes) {
-            if (!notes.classList.contains('min-notes')) {
-              notes.classList.add('min-notes');
-            }
-          } else {
-            var content = item.querySelector('.task-content') || item;
-            if (content && !content.querySelector('.min-notes')) {
-              var notesDiv = document.createElement('div');
-              notesDiv.className = 'min-notes';
-              notesDiv.setAttribute('data-source', 'auto');
-              content.appendChild(notesDiv);
-            }
-          }
-        });
-      }
-      document.addEventListener('DOMContentLoaded', applyMinimalLayout);
-      document.addEventListener('reminders:updated', applyMinimalLayout);
-    })();
-  </script>
-  
   <script id="add-task-guard-script">
     (function () {
       const dialog = document.querySelector('[data-add-task-dialog]');
@@ -1741,104 +1661,6 @@
       });
     })();
   </script>
-  <script id="min-expand-script">
-(function(){
-  // Find the list container for minimal tasks
-  // Prefer an element with class 'task-list-min'; fallback to common ids.
-  var list = document.querySelector('.task-list-min')
-         || document.getElementById('remindersList')
-         || document.getElementById('tasks')
-         || document.querySelector('[data-list="reminders"]');
-  if (!list) return;
-
-  // Utility: find or create a .min-notes element in a row
-  function ensureNotesEl(row){
-    var el = row.querySelector('.min-notes');
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'min-notes';
-      el.setAttribute('data-source','auto');
-      row.appendChild(el);
-    }
-    return el;
-  }
-
-  // Utility: get task id/title/notes from dataset or known child selectors
-  function getTaskData(row){
-    // Prefer data attributes if your renderer sets them
-    var id    = row.getAttribute('data-taskid') || row.dataset.taskid;
-    var title = row.querySelector('.title')?.textContent?.trim() || row.getAttribute('data-title') || '';
-    // Try to read an existing notes element if already rendered but hidden
-    var existing = row.querySelector('.notes, .note, [data-notes]');
-    var notes = existing ? (existing.textContent || existing.getAttribute('data-notes') || '').trim() : '';
-
-    // If no notes in DOM, try app hooks (non-breaking)
-    if (!notes && window.getReminderById && id) {
-      try { notes = (window.getReminderById(id)?.notes || '').trim(); } catch(_) {}
-    }
-    return { id, title, notes };
-  }
-
-  // Make rows focusable and togglable
-  function prepareRow(row){
-    if (!row.classList.contains('task-row-min')) return;
-    // ARIA / keyboard
-    row.setAttribute('role','button');
-    row.setAttribute('tabindex','0');
-    row.setAttribute('aria-expanded','false');
-
-    function toggle(){
-      var expanded = row.classList.toggle('expanded');
-      row.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-
-      // Fill notes on first expand if needed
-      if (expanded) {
-        var data = getTaskData(row);
-        var notesEl = ensureNotesEl(row);
-        if (notesEl && !notesEl.textContent.trim()) {
-          // prefer existing notes text if already present
-          if (data.notes) {
-            notesEl.textContent = data.notes;
-          } else {
-            notesEl.textContent = 'No notes';
-            notesEl.style.opacity = '.6';
-          }
-        }
-        // Optionally ensure full title is visible (if row truncates)
-        var titleEl = row.querySelector('.title');
-        if (titleEl) titleEl.title = data.title || titleEl.textContent;
-      }
-    }
-
-    row.addEventListener('click', function(e){
-      // Avoid toggling when clicking links/buttons inside the row
-      if (e.target.closest('a,button,input,textarea,select')) return;
-      toggle();
-    });
-
-    row.addEventListener('keydown', function(e){
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); toggle();
-      }
-    });
-  }
-
-  // Prepare existing rows
-  Array.from(list.querySelectorAll('.task-row-min')).forEach(prepareRow);
-
-  // If your list re-renders dynamically, observe and apply to new rows
-  var mo = new MutationObserver(function(muts){
-    for (var m of muts) {
-      m.addedNodes && m.addedNodes.forEach(function(n){
-        if (!(n instanceof Element)) return;
-        if (n.classList && n.classList.contains('task-row-min')) prepareRow(n);
-        // Also catch rows generated within a fragment
-        n.querySelectorAll && n.querySelectorAll('.task-row-min').forEach(prepareRow);
-      });
-    }
-  });
-  mo.observe(list, { childList: true, subtree: true });
-})();
-  </script>
+  
 </body>
 </html>
