@@ -186,7 +186,7 @@ import { initReminders } from './js/reminders.js';
 
     sheetContent?.addEventListener('click', (event) => {
       event.stopPropagation();
-    }, true);
+    });
 
     sheet.addEventListener('click', (event) => {
       if (event.target instanceof HTMLElement && event.target.hasAttribute('data-close')) {
