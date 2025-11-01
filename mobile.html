@@ -34,7 +34,7 @@
     }
     /* Status dot colors */
     .sync-dot {
-      font-size: 14px;
+      font-size: 20px;
       line-height: 1;
       transition: color 0.2s ease;
     }
@@ -413,11 +413,11 @@
                    <span class="sm:hidden inline">MC</span>
         </span>
       </a>
-      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
-      <span id="mcStatusText" class="sr-only">Offline</span>
     </div>
 
     <div class="flex items-center gap-3">
+      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
+      <span id="mcStatusText" class="sr-only">Offline</span>
       <button
         id="addReminderBtn"
         type="button"
