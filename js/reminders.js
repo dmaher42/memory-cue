@@ -293,10 +293,10 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined' ? document.getElementById('quickAddVoiceBtn') : null;
   let stopQuickAddVoiceListening = null;
 
-  function buildQuickReminder(titleText) {
+  function buildQuickReminder(titleText, dueOverride) {
     const now = Date.now();
     const d = loadLastDefaults();
-    const dueIso = null;
+    const dueIso = typeof dueOverride === 'string' && dueOverride ? dueOverride : null;
 
     return {
       id: uid(),
@@ -322,7 +322,18 @@ export async function initReminders(sel = {}) {
     const t = (quickInput.value || '').trim();
     if (!t) return;
 
-    const entry = buildQuickReminder(t);
+    let quickDue = null;
+    try {
+      const parsedWhen = parseQuickWhen(t);
+      if (parsedWhen && parsedWhen.time) {
+        const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
+        quickDue = isoCandidate;
+      }
+    } catch {
+      quickDue = null;
+    }
+
+    const entry = buildQuickReminder(t, quickDue);
     items.unshift(entry);
     suppressRenderMemoryEvent = true;
     render();
