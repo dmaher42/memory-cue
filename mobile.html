@@ -450,8 +450,45 @@
         aria-atomic="true"
       >Offline</span>
     </div>
-    <div class="flex-none flex flex-col gap-1 text-right">
-      <div class="flex justify-end items-center gap-2">
+    <div class="flex-none flex flex-col items-end gap-1 text-right">
+      <div class="flex flex-wrap justify-end items-center gap-2">
+        <button
+          id="toggleReminderFilters"
+          class="btn btn-ghost btn-sm gap-1"
+          type="button"
+          aria-controls="reminderFilters"
+          aria-expanded="false"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="size-4"
+            aria-hidden="true"
+          >
+            <path d="M4 5h16" />
+            <path d="M6 11h12" />
+            <path d="M9 17h6" />
+          </svg>
+          <span class="text-sm">Sort &amp; filter</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="size-4 opacity-70 sort-filter-icon"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
         <div class="relative">
           <button
             id="headerActionsToggle"
@@ -470,39 +507,16 @@
             >
               <path
                 fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75 0 01.02-1.06z"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
                 clip-rule="evenodd"
               />
             </svg>
           </button>
           <div
             id="headerActionsMenu"
-            class="absolute right-0 mt-3 hidden w-56 rounded-box bg-base-100 p-2 shadow focus:outline-none flex flex-col gap-2 z-50"
+            class="absolute right-0 mt-3 hidden w-48 rounded-box bg-base-100 p-2 shadow focus:outline-none flex flex-col gap-2 z-50"
             role="menu"
           >
-            <button
-              id="toggleReminderFilters"
-              class="btn btn-ghost btn-sm justify-between w-full"
-              type="button"
-              aria-controls="reminderFilters"
-              aria-expanded="false"
-              role="menuitem"
-            >
-              <span>Sort &amp; filter</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="size-4 opacity-70 sort-filter-icon"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75 0 01.02-1.06z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
             <button id="openSettings" class="btn btn-ghost btn-sm justify-start w-full" type="button" role="menuitem">
               Settings
             </button>
