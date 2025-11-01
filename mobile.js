@@ -26,7 +26,6 @@ initViewportHeight();
 
     const sheetContent = sheet.querySelector('[data-dialog-content]');
     const backdrop = sheet.querySelector('.sheet-backdrop');
-    const fab = document.getElementById('fabCreate');
     const form = document.getElementById('createReminderForm');
     const saveBtn = document.getElementById('saveReminder');
     const prioritySelect = document.getElementById('priority');
@@ -36,7 +35,6 @@ initViewportHeight();
       : [];
 
     const openerSet = new Set([
-      ...(fab ? [fab] : []),
       ...Array.from(document.querySelectorAll('[data-open-add-task]')),
       ...Array.from(document.querySelectorAll('[aria-controls="createReminderModal"]')),
       ...Array.from(document.querySelectorAll('#addReminderFab')),
@@ -45,6 +43,7 @@ initViewportHeight();
     const openers = Array.from(openerSet).filter((button) =>
       button instanceof HTMLElement
     );
+    const defaultOpener = openers[0] || null;
 
     const ensureHidden = () => {
       sheet.classList.add('hidden');
@@ -118,10 +117,7 @@ initViewportHeight();
       sheet.setAttribute('open', '');
       sheet.classList.add('open');
 
-      if (fab) {
-        fab.setAttribute('aria-expanded', 'true');
-      }
-      if (lastTrigger && lastTrigger !== fab) {
+      if (lastTrigger) {
         lastTrigger.setAttribute('aria-expanded', 'true');
       }
 
@@ -135,15 +131,13 @@ initViewportHeight();
       const wasOpen = !sheet.classList.contains('hidden');
       ensureHidden();
 
-      if (fab) {
-        fab.setAttribute('aria-expanded', 'false');
-      }
-      if (lastTrigger && lastTrigger !== fab) {
+      if (lastTrigger) {
         lastTrigger.setAttribute('aria-expanded', 'false');
       }
 
       const focusTarget =
-        (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) || fab;
+        (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) ||
+        defaultOpener;
       if (focusTarget && typeof focusTarget.focus === 'function') {
         try {
           focusTarget.focus();
