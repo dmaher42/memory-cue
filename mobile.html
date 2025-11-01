@@ -442,30 +442,65 @@
     </div>
     <div class="flex-none flex flex-col gap-1 text-right">
       <div class="flex justify-end items-center gap-2">
-        <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
-        <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
-        <button
-          id="toggleReminderFilters"
-          class="btn btn-ghost"
-          type="button"
-          aria-controls="reminderFilters"
-          aria-expanded="false"
-        >
-          Sort &amp; filter
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            class="size-4 opacity-70 sort-filter-icon"
-            aria-hidden="true"
+        <div class="relative">
+          <button
+            id="headerActionsToggle"
+            class="btn btn-ghost"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded="false"
           >
-            <path
-              fill-rule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </button>
+            Quick actions
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              class="size-4 opacity-70"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75 0 01.02-1.06z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <div
+            id="headerActionsMenu"
+            class="absolute right-0 mt-3 hidden w-56 rounded-box bg-base-100 p-2 shadow focus:outline-none flex flex-col gap-2 z-50"
+            role="menu"
+          >
+            <button
+              id="toggleReminderFilters"
+              class="btn btn-ghost btn-sm justify-between w-full"
+              type="button"
+              aria-controls="reminderFilters"
+              aria-expanded="false"
+              role="menuitem"
+            >
+              <span>Sort &amp; filter</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                class="size-4 opacity-70 sort-filter-icon"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75 0 01.02-1.06z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+            <button id="openSettings" class="btn btn-ghost btn-sm justify-start w-full" type="button" role="menuitem">
+              Settings
+            </button>
+            <button id="themeToggle" class="btn btn-ghost btn-sm justify-start w-full" type="button" role="menuitem">
+              Theme
+            </button>
+          </div>
+        </div>
         <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
         <button id="googleSignOutBtn" class="btn btn-ghost hidden" type="button">Sign out</button>
       </div>
