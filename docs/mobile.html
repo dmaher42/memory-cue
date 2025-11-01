@@ -331,6 +331,41 @@
     }
   </style>
   <!-- END GPT CHANGE: rhythm -->
+  <style id="sort-filter-css">
+    details.sort-filter {
+      position: relative;
+      width: 100%;
+      margin: 0;
+    }
+
+    details.sort-filter summary {
+      list-style: none;
+    }
+
+    details.sort-filter summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.sort-filter .sort-filter-card {
+      margin-top: 0.75rem;
+    }
+
+    details.sort-filter:not([open]) .sort-filter-card {
+      display: none;
+    }
+
+    details.sort-filter[open] {
+      margin-bottom: 1.25rem;
+    }
+
+    #toggleReminderFilters .sort-filter-icon {
+      transition: transform 0.2s ease;
+    }
+
+    #toggleReminderFilters[aria-expanded="true"] .sort-filter-icon {
+      transform: rotate(180deg);
+    }
+  </style>
   <style id="min-expand-css">
     /* Expand/collapse behavior */
     .task-row-min {
@@ -382,6 +417,45 @@
     </div>
     <div class="flex-none flex flex-col gap-1 text-right">
       <div class="flex justify-end items-center gap-2">
+        <div class="relative">
+          <button
+            id="toggleReminderFilters"
+            class="btn btn-ghost btn-sm gap-1"
+            type="button"
+            aria-controls="reminderFilters"
+            aria-expanded="false"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-4"
+              aria-hidden="true"
+            >
+              <path d="M4 5h16" />
+              <path d="M6 11h12" />
+              <path d="M9 17h6" />
+            </svg>
+            <span class="text-sm font-semibold">Sort &amp; filter</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              class="size-4 opacity-70 sort-filter-icon"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
         <img
           id="googleAvatar"
           src=""
@@ -431,24 +505,64 @@
           </p>
         </div>
       </section>
-      <!-- Compact Filters -->
-      <div class="flex flex-col gap-2 mb-2 nonFocusUI nonEssential">
-        <!-- Quick filter tabs -->
-        <div class="tabs tabs-boxed bg-base-200">
-          <button class="tab tab-xs" data-filter="all" aria-pressed="true">
-            All <span class="badge badge-xs ml-1" id="totalCountBadge">0</span>
-          </button>
-          <button class="tab tab-xs" data-filter="today" aria-pressed="false">
-            Today <span class="badge badge-xs ml-1" id="todayCount">0</span>
-          </button>
-          <button class="tab tab-xs" data-filter="overdue" aria-pressed="false">
-            Late <span class="badge badge-xs ml-1" id="overdueCount">0</span>
-          </button>
+      <details
+        id="reminderFilters"
+        class="sort-filter nonFocusUI nonEssential"
+        aria-label="Sort and filter reminders"
+      >
+        <summary class="sr-only">Sort and filter reminders</summary>
+        <div class="sort-filter-card card bg-base-100 border shadow-sm">
+          <div class="card-body gap-4 compact">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
+                <button class="btn btn-xs" type="button" data-filter="today" aria-pressed="false">
+                  Today · <span id="todayCount">0</span>
+                </button>
+                <button class="btn btn-xs" type="button" data-filter="overdue" aria-pressed="false">
+                  Overdue · <span id="overdueCount">0</span>
+                </button>
+                <button class="btn btn-xs" type="button" data-filter="all" aria-pressed="true">
+                  All · <span id="totalCountBadge">0</span>
+                </button>
+                <button class="btn btn-xs" type="button" data-filter="done" aria-pressed="false">
+                  Done · <span id="completedCount">0</span>
+                </button>
+              </div>
+              <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+                <label class="form-control w-full sm:w-auto">
+                  <div class="label hidden sm:flex"><span class="label-text">Sort reminders</span></div>
+                  <select id="sortReminders" class="select select-bordered select-sm w-full">
+                    <option value="dueDate" selected>Due Date (Today first)</option>
+                    <option value="priority">Priority</option>
+                    <option value="category">Category (A–Z)</option>
+                    <option value="recent">Recently Added</option>
+                  </select>
+                </label>
+                <label class="form-control w-full sm:w-auto">
+                  <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
+                  <select id="categoryFilter" class="select select-bordered select-sm w-full">
+                    <option value="all" selected>All categories</option>
+                    <option value="General">General</option>
+                    <option value="General Appointments">General Appointments</option>
+                    <option value="Home &amp; Personal">Home &amp; Personal</option>
+                    <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+                    <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+                    <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+                    <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+                    <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+                    <option value="School – To-Do">School – To-Do</option>
+                    <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <label class="form-control">
+              <span class="label sr-only">Search reminders</span>
+              <input id="searchReminders" type="search" class="input input-bordered" placeholder="Search reminders" aria-label="Search reminders" />
+            </label>
+          </div>
         </div>
-
-        <!-- Search input -->
-        <input id="searchReminders" type="search" class="input input-bordered input-sm" placeholder="Search reminders" aria-label="Search" />
-      </div>
+      </details>
       <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
