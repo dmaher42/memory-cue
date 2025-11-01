@@ -3,7 +3,7 @@
 <head>
   <base href="/memory-cue/">
   <!-- BEGIN GPT CHANGE: external styles -->
-  <link rel="stylesheet" href="./assets/styles-fdebab9a.css">
+  <link rel="stylesheet" href="./assets/styles-f36e4be3.css">
   <!-- END GPT CHANGE -->
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
@@ -1446,10 +1446,10 @@
               <textarea class="textarea textarea-bordered h-32" placeholder="Outline the flow, prompts, or equipment needed"></textarea>
             </label>
             <div class="flex flex-wrap items-center gap-3">
-              <label class="label cursor-pointer gap-2">
-                <input type="checkbox" class="checkbox checkbox-primary" id="template-share" />
-                <span class="label-text">Share with my team workspace</span>
-              </label>
+              <div class="flex items-center gap-2 text-sm text-base-content/80">
+                <span class="font-medium text-base-content">Share with my team workspace</span>
+                <span class="badge badge-outline">Optional</span>
+              </div>
               <button type="submit" class="btn btn-primary btn-sm md:btn-md">Save template</button>
               <button type="reset" class="btn btn-outline btn-sm md:btn-md">Reset</button>
             </div>
@@ -1467,23 +1467,23 @@
                 <h3 class="text-lg font-semibold text-base-content">Notifications</h3>
                 <span class="badge badge-outline">Syncs with Supabase</span>
               </div>
-              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-3">
-                <label class="label cursor-pointer justify-between gap-4">
-                  <span class="label-text">Daily briefing email</span>
-                  <input type="checkbox" class="toggle toggle-primary" id="setting-briefing" checked />
-                </label>
+              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-3 text-sm text-base-content/80">
+                <div class="flex items-center justify-between gap-4">
+                  <span class="font-medium text-base-content">Daily briefing email</span>
+                  <span class="badge badge-primary">On</span>
+                </div>
                 <div class="flex flex-wrap items-center gap-3 ps-1">
                   <label for="setting-briefing-time" class="label-text text-sm">Send at</label>
                   <input id="setting-briefing-time" type="time" value="07:00" class="input input-sm input-bordered w-28" />
                 </div>
-                <label class="label cursor-pointer justify-between gap-4">
-                  <span class="label-text">Lesson reminders</span>
-                  <input type="checkbox" class="toggle toggle-primary" id="setting-lesson-reminders" checked />
-                </label>
-                <label class="label cursor-pointer justify-between gap-4">
-                  <span class="label-text">Quiet hours</span>
-                  <input type="checkbox" class="toggle toggle-primary" id="setting-quiet-hours" />
-                </label>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="font-medium text-base-content">Lesson reminders</span>
+                  <span class="badge badge-primary">On</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="font-medium text-base-content">Quiet hours</span>
+                  <span class="badge badge-outline">Off</span>
+                </div>
                 <div class="grid gap-2 sm:grid-cols-2" aria-hidden="true">
                   <div class="stat bg-base-200/60 shadow-inner">
                     <div class="stat-title">Notifications today</div>
