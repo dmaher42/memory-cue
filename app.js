@@ -1,3 +1,4 @@
+import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
 import {
   CUE_FIELD_DEFINITIONS,
@@ -11,6 +12,8 @@ import {
   escapeCueText
 } from './js/modules/field-helpers.js';
 import { createModalController } from './js/modules/modal-controller.js';
+
+initViewportHeight();
 
 const titleInput = document.getElementById('title');
 const mobileTitleInput = document.getElementById('reminderText');
