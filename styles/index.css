@@ -63,6 +63,18 @@ html {
   transition: all 0.2s ease;
 }
 
+.navbar .flex-1 {
+  min-width: 0;
+}
+
+.navbar .sync-status {
+  max-width: min(60vw, 14rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
 .sync-status.online {
   background: rgba(22, 163, 74, 0.12);
   color: rgb(22 163 74);
