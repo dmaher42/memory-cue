@@ -33,6 +33,16 @@
       color: rgb(15 23 42);
       transition: all 0.2s ease;
     }
+    .navbar .flex-1 {
+      min-width: 0;
+    }
+    .navbar .sync-status {
+      max-width: min(60vw, 14rem);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
     .dark .sync-status {
       border-color: rgba(148, 163, 184, 0.35);
       background: rgba(148, 163, 184, 0.15);
@@ -1047,6 +1057,24 @@
 
       let currentState = null;
 
+      const DEFAULT_MESSAGES = {
+        checking: 'Checking connection…',
+        syncing: 'Syncing your latest changes…',
+        online: 'Connected. Changes sync automatically.',
+        offline: "You're offline. Changes are saved on this device until you reconnect.",
+        error: "We couldn't sync right now. We'll retry soon.",
+        info: '',
+      };
+
+      const DISPLAY_MESSAGES = {
+        checking: 'Checking…',
+        syncing: 'Syncing…',
+        online: 'Synced. Auto-save on.',
+        offline: 'Offline. Saving locally.',
+        error: 'Sync issue. Retrying.',
+        info: '',
+      };
+
       const setStatus = (state, message) => {
         currentState = state;
         ACTIVE_CLASSES.forEach((cls) => syncStatusEl.classList.remove(cls));
@@ -1057,20 +1085,30 @@
           syncStatusEl.classList.add('error');
         }
 
-        const defaults = {
-          checking: 'Checking connection…',
-          syncing: 'Syncing your latest changes…',
-          online: 'Connected. Changes sync automatically.',
-          offline: "You're offline. Changes are saved on this device until you reconnect.",
-          error: "We couldn't sync right now. We'll retry soon.",
-          info: '',
-        };
+        const fullText =
+          typeof message === 'string' && message.trim()
+            ? message.trim()
+            : DEFAULT_MESSAGES[state] || '';
 
-        const text = typeof message === 'string' && message.trim() ? message : (defaults[state] || '');
-        if (text) {
-          syncStatusEl.textContent = text;
-        }
+        const displayText =
+          typeof message === 'string' && message.trim()
+            ? message.trim()
+            : DISPLAY_MESSAGES[state] || fullText;
+
+        syncStatusEl.textContent = displayText;
         syncStatusEl.dataset.state = state;
+
+        if (fullText) {
+          syncStatusEl.setAttribute('title', fullText);
+          if (displayText !== fullText) {
+            syncStatusEl.setAttribute('aria-label', fullText);
+          } else {
+            syncStatusEl.removeAttribute('aria-label');
+          }
+        } else {
+          syncStatusEl.removeAttribute('title');
+          syncStatusEl.removeAttribute('aria-label');
+        }
       };
 
       const updateOnlineState = () => {
@@ -1289,7 +1327,7 @@
         const value = (syncUrlInput?.value || '').trim();
         if (!value) {
           persistUrl('');
-          setStatus('info', 'Sync URL cleared. Add a new one to enable syncing.');
+          setStatus('info', 'Sync URL cleared. Add one to enable sync.');
           updateButtonState();
           return;
         }
@@ -1300,7 +1338,7 @@
             throw new Error('Invalid protocol');
           }
         } catch {
-          setStatus('error', 'Enter a valid Apps Script URL before saving.');
+          setStatus('error', 'Enter a valid sync URL before saving.');
           return;
         }
 
@@ -1312,7 +1350,7 @@
       testSyncBtn?.addEventListener('click', async () => {
         const url = (syncUrlInput?.value || getStoredUrl()).trim();
         if (!url) {
-          setStatus('error', 'Add your Apps Script URL in Settings first.');
+          setStatus('error', 'Add your sync URL in Settings first.');
           return;
         }
 
@@ -1328,11 +1366,11 @@
           if (response.ok) {
             setStatus('online', 'Connection looks good.');
           } else {
-            setStatus('error', 'Test failed. Please check your Apps Script deployment.');
+            setStatus('error', 'Test failed. Check your Apps Script deployment.');
           }
         } catch (error) {
           console.error('Test sync failed', error);
-          setStatus('error', 'Test failed. Please check your Apps Script deployment.');
+          setStatus('error', 'Test failed. Check your Apps Script deployment.');
         } finally {
           toggleBusy(false);
         }
@@ -1341,13 +1379,13 @@
       syncAllBtn?.addEventListener('click', async () => {
         const url = (syncUrlInput?.value || getStoredUrl()).trim();
         if (!url) {
-          setStatus('error', 'Add your Apps Script URL in Settings first.');
+          setStatus('error', 'Add your sync URL in Settings first.');
           return;
         }
 
         const reminders = collectReminders();
         if (!reminders.length) {
-          setStatus('info', 'No reminders to sync right now.');
+          setStatus('info', 'Nothing to sync right now.');
           return;
         }
 
@@ -1393,15 +1431,15 @@
           }
 
           if (!failCount) {
-            setStatus('online', `Sync complete. ${okCount} reminder${okCount === 1 ? '' : 's'} updated.`);
+            setStatus('online', `Sync complete. ${okCount} updated.`);
           } else if (!okCount) {
-            setStatus('error', 'Sync failed. Please check your Apps Script URL and try again.');
+            setStatus('error', 'Sync failed. Check your sync URL and retry.');
           } else {
             setStatus('error', `Partial sync: ${okCount} success, ${failCount} failed.`);
           }
         } catch (error) {
           console.error('Sync failed', error);
-          setStatus('error', 'Sync failed. Please try again in a moment.');
+          setStatus('error', 'Sync failed. Try again soon.');
         } finally {
           toggleBusy(false);
         }
