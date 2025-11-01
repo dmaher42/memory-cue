@@ -69,6 +69,15 @@
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
   <style>
+    :root {
+      --vh: 1vh;
+    }
+
+    body,
+    .min-h-screen {
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+
     .dashboard-widget [aria-hidden="true"].animate-pulse {
       opacity: .85;
     }
@@ -696,7 +705,7 @@
     window.addEventListener('hashchange', renderRoute);
     window.addEventListener('DOMContentLoaded', renderRoute);
   </script>
-  <script type="module" src="./assets/app-CK6LIYZT.js" defer></script>
+  <script type="module" src="./assets/app-3JRVFXJJ.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script src="./assets/register-service-worker-VJMOHPCS.js" defer></script>
 </body>
