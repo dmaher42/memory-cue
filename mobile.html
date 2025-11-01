@@ -369,6 +369,16 @@
     .chip-row input[type='radio'] {
       accent-color: currentColor;
     }
+    .voice-add-wrap {
+      display: none !important;
+    }
+    .focus-list,
+    .focus-detail {
+      display: none !important;
+    }
+    #toggleUiBtn {
+      display: none !important;
+    }
   </style>
   <!-- END GPT CHANGE: rhythm -->
   <style id="min-expand-css">
@@ -619,14 +629,14 @@
   </header>
   <p id="googleUserName" class="px-3 text-xs text-base-content/70"></p>
 
-  <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+  <main id="main" class="max-w-md mx-auto px-4 pt-4 pb-4" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <!-- Sorting dropdown placed at top to save space -->
       <!-- Compact Filters -->
-      <div class="flex flex-col gap-2 mb-4 nonFocusUI nonEssential">
+      <div class="flex flex-col gap-2 mb-2 nonFocusUI nonEssential">
         <!-- Quick filter tabs -->
         <div class="tabs tabs-boxed bg-base-200">
           <button class="tab tab-xs" data-filter="all" aria-pressed="true">
