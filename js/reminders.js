@@ -160,6 +160,47 @@ export async function initReminders(sel = {}) {
   const googleSignOutBtn = $(sel.googleSignOutBtnSel);
   const statusEl = $(sel.statusSel);
   const syncStatus = $(sel.syncStatusSel);
+  const SYNC_STATUS_LABELS = {
+    online: 'Connected. Changes sync automatically.',
+    offline: "Offline. Changes are saved on this device until you reconnect.",
+  };
+
+  function renderSyncIndicator(state, message) {
+    if (!syncStatus) return;
+
+    const indicatorStates = ['online', 'offline', 'error'];
+    indicatorStates.forEach((cls) => syncStatus.classList.remove(cls));
+    if (indicatorStates.includes(state)) {
+      syncStatus.classList.add(state);
+    }
+
+    syncStatus.dataset.state = state;
+
+    const label = typeof message === 'string' ? message : SYNC_STATUS_LABELS[state] || '';
+    const isDotState = state === 'online' || state === 'offline';
+
+    if (isDotState) {
+      syncStatus.textContent = '';
+      syncStatus.dataset.compact = 'true';
+      if (label) {
+        syncStatus.setAttribute('aria-label', label);
+        syncStatus.setAttribute('title', label);
+      } else {
+        syncStatus.removeAttribute('aria-label');
+        syncStatus.removeAttribute('title');
+      }
+    } else {
+      syncStatus.textContent = label;
+      syncStatus.removeAttribute('data-compact');
+      if (label) {
+        syncStatus.setAttribute('aria-label', label);
+        syncStatus.setAttribute('title', label);
+      } else {
+        syncStatus.removeAttribute('aria-label');
+        syncStatus.removeAttribute('title');
+      }
+    }
+  }
   const notesEl = $(sel.notesSel);
   const saveNotesBtn = $(sel.saveNotesBtnSel);
   const loadNotesBtn = $(sel.loadNotesBtnSel);
@@ -840,11 +881,7 @@ export async function initReminders(sel = {}) {
 
   function applySignedOutState() {
     userId = null;
-    syncStatus?.classList.remove('online', 'error');
-    if (syncStatus) {
-      syncStatus.classList.add('offline');
-      syncStatus.textContent = 'Offline';
-    }
+    renderSyncIndicator('offline');
     googleSignInBtn?.classList.remove('hidden');
     googleSignOutBtn?.classList.add('hidden');
     if (googleUserName) {
@@ -1359,9 +1396,7 @@ export async function initReminders(sel = {}) {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         userId = user.uid;
-        syncStatus?.classList.remove('offline','error');
-        syncStatus?.classList.add('online');
-        if(syncStatus) syncStatus.textContent = 'Online';
+        renderSyncIndicator('online');
         googleSignInBtn?.classList.add('hidden');
         googleSignOutBtn?.classList.remove('hidden');
         if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
@@ -1402,7 +1437,9 @@ export async function initReminders(sel = {}) {
       rescheduleAllReminders();
     }, (error)=>{
       console.error('Firestore sync error:', error);
-      if(syncStatus){ syncStatus.textContent='Sync Error'; syncStatus.className='sync-status error'; }
+      if(syncStatus){
+        renderSyncIndicator('error', 'Sync Error');
+      }
     });
   }
 
