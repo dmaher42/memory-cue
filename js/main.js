@@ -1,4 +1,8 @@
 
+import { initViewportHeight } from './modules/viewport-height.js';
+
+initViewportHeight();
+
 (function () {
   if (typeof document === 'undefined') {
     return;

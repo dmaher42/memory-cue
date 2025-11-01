@@ -70,6 +70,15 @@
   <!-- END GPT CHANGE -->
   <!-- BEGIN GPT FIX: compact-skeleton-style -->
   <style>
+    :root {
+      --vh: 1vh;
+    }
+
+    body,
+    .min-h-screen {
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+
     .dashboard-widget [aria-hidden="true"].animate-pulse { opacity: .85; }
   </style>
   <!-- END GPT FIX: compact-skeleton-style -->

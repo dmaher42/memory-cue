@@ -69,6 +69,15 @@
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
   <style>
+    :root {
+      --vh: 1vh;
+    }
+
+    body,
+    .min-h-screen {
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+
     .dashboard-widget [aria-hidden="true"].animate-pulse {
       opacity: .85;
     }

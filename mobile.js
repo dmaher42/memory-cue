@@ -1,4 +1,7 @@
+import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
+
+initViewportHeight();
 
 /* BEGIN GPT CHANGE: bottom sheet open/close */
 (function () {
