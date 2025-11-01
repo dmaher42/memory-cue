@@ -388,19 +388,6 @@
     }
     .task-row-min.expanded::after { transform: rotate(180deg); }
 
-    /* Sorting dropdown tweaks */
-    details.sort-filter summary {
-      list-style: none;
-    }
-    details.sort-filter summary::-webkit-details-marker {
-      display: none;
-    }
-    #toggleReminderFilters .sort-filter-icon {
-      transition: transform 0.2s ease;
-    }
-    #toggleReminderFilters[aria-expanded="true"] .sort-filter-icon {
-      transform: rotate(180deg);
-    }
   </style>
   <style id="empty-state-compact-css">
     #emptyState {
@@ -462,43 +449,6 @@
       </div>
     </div>
     <div class="flex-none flex items-center gap-2">
-      <button
-        id="toggleReminderFilters"
-        class="btn btn-ghost btn-sm gap-1"
-        type="button"
-        aria-controls="reminderFilters"
-        aria-expanded="false"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="size-4"
-          aria-hidden="true"
-        >
-          <path d="M4 5h16" />
-          <path d="M6 11h12" />
-          <path d="M9 17h6" />
-        </svg>
-        <span class="text-sm">Sort &amp; filter</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          class="size-4 opacity-70 sort-filter-icon"
-          aria-hidden="true"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-            clip-rule="evenodd"
-          />
-        </svg>
-      </button>
       <button
         id="inlineQuickAddBtn"
         class="btn btn-primary btn-sm gap-1"
