@@ -208,33 +208,6 @@
     .hidden {
       display: none !important;
     }
-    .fab {
-      position: fixed;
-      right: calc(16px + env(safe-area-inset-right));
-      bottom: calc(88px + env(safe-area-inset-bottom) + (var(--vh, 1vh) * 2));
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      font-size: 28px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--fallback-p, #2563eb);
-      color: var(--fallback-pc, #fff);
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
-      border: none;
-      cursor: pointer;
-      z-index: 80;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .fab:focus-visible {
-      outline: 2px solid currentColor;
-      outline-offset: 2px;
-    }
-    .fab:active {
-      transform: scale(0.96);
-      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
-    }
     .sheet {
       position: fixed;
       inset: 0;
@@ -928,7 +901,7 @@
     };
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-PQ7OJLMF.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-3XFDILDT.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -1092,20 +1065,6 @@
     <div class="modal-backdrop" data-close></div>
   </div>
   <!-- END GPT CHANGE: settings modal -->
-
-  <!-- BEGIN GPT CHANGE: global FAB -->
-  <button
-    id="fabCreate"
-    class="fab"
-    type="button"
-    aria-label="Add reminder"
-    aria-haspopup="dialog"
-    aria-controls="create-sheet"
-    aria-expanded="false"
-  >
-    ＋
-  </button>
-  <!-- END GPT CHANGE: global FAB -->
 
   <script id="mobile-enhancements">
     (function () {
