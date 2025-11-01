@@ -1636,12 +1636,6 @@ export async function initReminders(sel = {}) {
   }
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
 
-  const desktopPriorityClasses = {
-    High: 'bg-rose-400/80 dark:bg-rose-300/80',
-    Medium: 'bg-amber-400/80 dark:bg-amber-300/80',
-    Low: 'bg-emerald-400/80 dark:bg-emerald-300/80'
-  };
-
   function formatDesktopDue(item){
     if(!item?.due) return 'No due date';
     try {
@@ -1809,7 +1803,6 @@ export async function initReminders(sel = {}) {
         div.dataset.today = 'true';
       }
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-      const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
       div.innerHTML = `
         <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
@@ -1818,7 +1811,6 @@ export async function initReminders(sel = {}) {
           <div class="task-meta">
             <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
               <span>${dueTxt}</span>
-              <span class="priority-badge ${priorityClass}">${r.priority}</span>
               <span class="priority-badge" style="background:rgba(56,189,248,.14);color:#0284c7;border-color:rgba(56,189,248,.26);">${escapeHtml(catName)}</span>
             </div>
           </div>
@@ -1903,14 +1895,8 @@ export async function initReminders(sel = {}) {
           itemEl.dataset.reminder = JSON.stringify(summary);
           itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
           const dueLabel = formatDesktopDue(r);
-          const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
           const titleClasses = r.done ? 'line-through text-base-content/50' : 'text-base-content';
           const statusLabel = r.done ? 'Completed' : 'Active';
-          const priorityBadgeClass = r.priority === 'High'
-            ? 'badge badge-outline border-error text-error'
-            : r.priority === 'Medium'
-              ? 'badge badge-outline border-warning text-warning'
-              : 'badge badge-outline border-success text-success';
           const statusBadgeClass = r.done
             ? 'badge badge-outline border-success text-success'
             : 'badge badge-outline border-neutral text-neutral';
@@ -1931,10 +1917,6 @@ export async function initReminders(sel = {}) {
             <span class="badge badge-outline border-primary text-primary gap-2 text-[0.7rem] sm:text-xs">
               <span class="h-2 w-2 rounded-full bg-sky-400"></span>
               ${escapeHtml(catName)}
-            </span>
-            <span class="${priorityBadgeClass} gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full ${priorityIndicatorClass}"></span>
-              ${escapeHtml(r.priority)} priority
             </span>
             <span class="${statusBadgeClass} text-[0.7rem] sm:text-xs">${statusLabel}</span>
           </div>
