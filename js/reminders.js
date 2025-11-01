@@ -1917,7 +1917,7 @@ export async function initReminders(sel = {}) {
       div.innerHTML = `
         <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
         <div class="task-content">
-          <div class="task-title">${escapeHtml(r.title)}</div>
+          <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
           <div class="task-meta">
             <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
               <span>${dueTxt}</span>
