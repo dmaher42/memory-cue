@@ -41,6 +41,85 @@ html {
   backdrop-filter: blur(10px);
 }
 
+.navbar-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(248, 250, 252, 0.65));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+[data-theme="dark"] .navbar-glass {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.7));
+  border-bottom-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 22px 45px rgba(2, 6, 23, 0.55);
+}
+
+.nav-pill-glass {
+  position: relative;
+  border-radius: 9999px;
+  padding: 0.35rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.3));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+[data-theme="dark"] .nav-pill-glass {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.82), rgba(15, 23, 42, 0.6));
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 22px 38px rgba(2, 6, 23, 0.55);
+}
+
+.nav-pill-glass .btn {
+  border-radius: 9999px;
+  color: rgba(30, 41, 59, 0.88);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="dark"] .nav-pill-glass .btn {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.nav-pill-glass .btn:hover,
+.nav-pill-glass .btn:focus-visible {
+  background-color: rgba(255, 255, 255, 0.24);
+  color: rgba(15, 23, 42, 0.95);
+}
+
+[data-theme="dark"] .nav-pill-glass .btn:hover,
+[data-theme="dark"] .nav-pill-glass .btn:focus-visible {
+  background-color: rgba(148, 163, 184, 0.18);
+  color: rgba(226, 232, 240, 1);
+}
+
+.nav-pill-glass .btn.btn-active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(56, 189, 248, 0.22));
+  color: rgb(15 118 110);
+  box-shadow: 0 12px 24px rgba(45, 212, 191, 0.3);
+}
+
+[data-theme="dark"] .nav-pill-glass .btn.btn-active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(56, 189, 248, 0.28));
+  color: rgb(187 247 208);
+  box-shadow: 0 16px 30px rgba(45, 212, 191, 0.32);
+}
+
+.mobile-nav-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.7));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 28px 45px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+[data-theme="dark"] .mobile-nav-glass {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(30, 41, 59, 0.72));
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 26px 48px rgba(2, 6, 23, 0.6);
+}
+
 .glass-effect {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
