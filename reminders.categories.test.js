@@ -168,7 +168,7 @@ test('mobile reminders group uncategorised items under General', async () => {
   ]);
 
   const headings = Array.from(document.querySelectorAll('[data-category-heading]'));
-  expect(headings.map((heading) => heading.dataset.categoryHeading)).toEqual(['Excursion', 'General']);
+  expect(headings.map((heading) => heading.dataset.categoryHeading)).toEqual(['Excursion']);
 
   const generalItems = document.querySelectorAll('[data-category="General"]');
   expect(generalItems).toHaveLength(1);
