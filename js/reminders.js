@@ -244,6 +244,10 @@ export async function initReminders(sel = {}) {
   const listWrapper = $(sel.listWrapperSel);
   const categoryFilter = $(sel.categoryFilterSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
+  const categoryFilterModal =
+    typeof document !== 'undefined'
+      ? document.getElementById('categoryFilterModal')
+      : null;
   const variant = sel.variant || 'mobile';
 
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
@@ -846,10 +850,24 @@ export async function initReminders(sel = {}) {
   let items = [];
   let filter = resolvedDefaultFilter || 'all';
   let categoryFilterValue = categoryFilter?.value || 'all';
+  let priorityFilterValues = [];
+  let statusFilterValues = [];
   const SORT_STORAGE_KEY = 'memoryCue:sortPreference';
-  const SORT_OPTIONS = new Set(['dueDate', 'priority', 'category', 'recent']);
+  const SORT_OPTIONS = new Set([
+    'dueDate',
+    'priority',
+    'category',
+    'recent',
+    'date-desc',
+    'title-asc',
+    'title-desc',
+  ]);
   const SORT_ALIASES = new Map([
     ['due', 'dueDate'],
+    ['date-asc', 'dueDate'],
+    ['date-desc', 'date-desc'],
+    ['title-asc', 'title-asc'],
+    ['title-desc', 'title-desc'],
   ]);
   let sortKey = 'dueDate';
   let suppressRenderMemoryEvent = false;
@@ -1765,6 +1783,22 @@ export async function initReminders(sel = {}) {
       categoryFilter.value = categoryFilterValue;
     }
 
+    if (categoryFilterModal) {
+      const previous = categoryFilterModal.value;
+      categoryFilterModal.replaceChildren();
+      const addOption = (value, label) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        categoryFilterModal.appendChild(option);
+      };
+      addOption('all', 'All Categories');
+      allCategories.forEach((cat) => addOption(cat, cat));
+      const shouldReset = previous !== 'all' && !allCategories.includes(previous);
+      const nextValue = shouldReset ? 'all' : categoryFilterValue;
+      categoryFilterModal.value = nextValue;
+    }
+
     if (categoryDatalist) {
       const existing = new Set();
       Array.from(categoryDatalist.querySelectorAll('option')).forEach(opt => {
@@ -1806,9 +1840,37 @@ export async function initReminders(sel = {}) {
     if(categoryFilterValue && categoryFilterValue !== 'all'){
       rows = rows.filter(r => normalizeCategory(r.category) === categoryFilterValue);
     }
+
+    if (priorityFilterValues.length) {
+      const prioritySet = new Set(
+        priorityFilterValues.map((value) => value.toLowerCase())
+      );
+      rows = rows.filter((r) => {
+        const priorityValue = typeof r.priority === 'string' ? r.priority.toLowerCase() : '';
+        return prioritySet.has(priorityValue);
+      });
+    }
+
+    if (statusFilterValues.length) {
+      const statusSet = new Set(statusFilterValues.map((value) => value.toLowerCase()));
+      const includePending = statusSet.has('pending');
+      const includeDone = statusSet.has('done') || statusSet.has('completed');
+      rows = rows.filter((r) => {
+        if (includePending && includeDone) return true;
+        if (includeDone) return r.done;
+        if (includePending) return !r.done;
+        return false;
+      });
+    }
+
     rows = rows.filter(r => {
       if(filter==='done') return r.done;
       if(filter==='overdue') return !r.done && r.due && new Date(r.due) < localNow;
+      if(filter==='today'){
+        if(r.done || !r.due) return false;
+        const due = new Date(r.due);
+        return due >= t0 && due <= t1;
+      }
       return true;
     });
 
@@ -1844,6 +1906,31 @@ export async function initReminders(sel = {}) {
       return (b.updatedAt || 0) - (a.updatedAt || 0);
     };
 
+    const compareDateDesc = (a, b) => {
+      const aDone = a.done ? 1 : 0;
+      const bDone = b.done ? 1 : 0;
+      if (aDone !== bDone) return aDone - bDone;
+      const aDue = a.due ? new Date(a.due).getTime() : -Infinity;
+      const bDue = b.due ? new Date(b.due).getTime() : -Infinity;
+      if (aDue !== bDue) return bDue - aDue;
+      const priorityDiff = priorityWeight(b.priority) - priorityWeight(a.priority);
+      if (priorityDiff) return priorityDiff;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    };
+
+    const compareTitleAsc = (a, b) => {
+      const aDone = a.done ? 1 : 0;
+      const bDone = b.done ? 1 : 0;
+      if (aDone !== bDone) return aDone - bDone;
+      const titleA = (a.title || '').trim();
+      const titleB = (b.title || '').trim();
+      const titleDiff = titleA.localeCompare(titleB, undefined, { sensitivity: 'base' });
+      if (titleDiff) return titleDiff;
+      return compareDueDate(a, b);
+    };
+
+    const compareTitleDesc = (a, b) => compareTitleAsc(b, a);
+
     const highlightToday = sortKey === 'dueDate';
 
     const compareMap = {
@@ -1851,6 +1938,9 @@ export async function initReminders(sel = {}) {
       priority: comparePriority,
       category: compareCategory,
       recent: compareRecent,
+      'date-desc': compareDateDesc,
+      'title-asc': compareTitleAsc,
+      'title-desc': compareTitleDesc,
     };
 
     const activeComparator = compareMap[sortKey] || compareDueDate;
@@ -1860,7 +1950,10 @@ export async function initReminders(sel = {}) {
       const isActive = btn.getAttribute('data-filter')===filter;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
-      if (!btn.classList.contains('btn-ghost')) {
+      if (btn.classList.contains('tab')) {
+        btn.classList.toggle('tab-active', isActive);
+        btn.setAttribute('aria-selected', String(isActive));
+      } else if (!btn.classList.contains('btn-ghost')) {
         btn.classList.toggle('bg-gray-900', isActive);
         btn.classList.toggle('text-white', isActive);
         btn.classList.toggle('border-gray-900', isActive);
@@ -2205,7 +2298,89 @@ export async function initReminders(sel = {}) {
     }
     render();
   });
-  categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
+
+  document.addEventListener('reminders:sort', (event) => {
+    const requested = event?.detail?.type;
+    if (!requested) return;
+    let nextKey = SORT_ALIASES.get(requested) || requested;
+    if (!SORT_OPTIONS.has(nextKey)) {
+      nextKey = 'dueDate';
+    }
+    if (sortKey === nextKey) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur?.();
+      }
+      return;
+    }
+    sortKey = nextKey;
+    if (sortSel) {
+      try {
+        const option = sortSel.querySelector(`option[value="${sortKey}"]`);
+        sortSel.value = option ? sortKey : 'dueDate';
+      } catch {}
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(SORT_STORAGE_KEY, sortKey);
+      } catch {}
+    }
+    render();
+  });
+
+  document.addEventListener('reminders:filter', (event) => {
+    const detail = event?.detail || {};
+    const categoryDetail = typeof detail.category === 'string' ? detail.category.trim() : '';
+    if (categoryDetail) {
+      categoryFilterValue = categoryDetail.toLowerCase() === 'all'
+        ? 'all'
+        : normalizeCategory(categoryDetail);
+    } else {
+      categoryFilterValue = 'all';
+    }
+
+    priorityFilterValues = Array.isArray(detail.priorities)
+      ? Array.from(
+          new Set(
+            detail.priorities
+              .map((value) => (typeof value === 'string' ? value.trim() : ''))
+              .filter(Boolean)
+              .map((value) => value.toLowerCase())
+          )
+        )
+      : [];
+
+    statusFilterValues = Array.isArray(detail.statuses)
+      ? Array.from(
+          new Set(
+            detail.statuses
+              .map((value) => (typeof value === 'string' ? value.trim().toLowerCase() : ''))
+              .filter(Boolean)
+          )
+        )
+      : [];
+
+    if (categoryFilter) {
+      try {
+        categoryFilter.value = categoryFilterValue;
+      } catch {}
+    }
+    if (categoryFilterModal) {
+      try {
+        categoryFilterModal.value = categoryFilterValue;
+      } catch {}
+    }
+
+    render();
+  });
+  categoryFilter?.addEventListener('change', () => {
+    categoryFilterValue = categoryFilter.value || 'all';
+    if (categoryFilterModal) {
+      try {
+        categoryFilterModal.value = categoryFilterValue;
+      } catch {}
+    }
+    render();
+  });
   filterBtns.forEach(b => b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
 
   copyMtlBtn?.addEventListener('click', () => {
