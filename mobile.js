@@ -264,7 +264,7 @@ const bootstrapReminders = () => {
     listWrapperSel: '#remindersWrapper',
     emptyStateSel: '#emptyState',
     statusSel: '#statusMessage',
-    syncStatusSel: '#syncStatus',
+    syncStatusSel: '#mcStatusText',
     notifBtnSel: '#notifBtn',
     categoryOptionsSel: '#categorySuggestions',
     countTotalSel: '#totalCount',
@@ -294,84 +294,46 @@ if (document.readyState === 'loading') {
 }
 
 (() => {
-  try {
-    const toggle = document.getElementById('headerMenuBtn');
-    const menu = document.getElementById('headerMenu');
+  const menuBtn = document.getElementById('overflowMenuBtn');
+  const menu = document.getElementById('overflowMenu');
 
-    if (!(toggle instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
-      return;
-    }
-
-    const focusSelectors = ['button', '[href]', '[tabindex]:not([tabindex="-1"])'];
-
-    const focusFirstItem = () => {
-      for (const selector of focusSelectors) {
-        const candidate = menu.querySelector(selector);
-        if (candidate instanceof HTMLElement && !candidate.hasAttribute('disabled')) {
-          try {
-            candidate.focus({ preventScroll: true });
-          } catch {
-            candidate.focus();
-          }
-          return;
-        }
-      }
-    };
-
-    const openMenu = () => {
-      menu.classList.remove('hidden');
-      toggle.setAttribute('aria-expanded', 'true');
-      focusFirstItem();
-    };
-
-    const closeMenu = () => {
-      if (menu.classList.contains('hidden')) {
-        return;
-      }
-      menu.classList.add('hidden');
-      toggle.setAttribute('aria-expanded', 'false');
-    };
-
-    toggle.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (menu.classList.contains('hidden')) {
-        openMenu();
-      } else {
-        closeMenu();
-      }
-    });
-
-    toggle.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        closeMenu();
-        toggle.focus({ preventScroll: true });
-      } else if ((event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') && menu.classList.contains('hidden')) {
-        event.preventDefault();
-        openMenu();
-      }
-    });
-
-    menu.addEventListener('click', (event) => {
-      if (event.target instanceof HTMLElement && event.target.closest('button')) {
-        closeMenu();
-      }
-    });
-
-    document.addEventListener('click', (event) => {
-      if (event.target instanceof Node && (menu.contains(event.target) || event.target === toggle)) {
-        return;
-      }
-      closeMenu();
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        closeMenu();
-      }
-    });
-  } catch (error) {
-    console.error('[headerActions] init failed', error);
+  if (!(menuBtn instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
+    return;
   }
+
+  const closeMenu = () => {
+    if (!menu.classList.contains('hidden')) {
+      menu.classList.add('hidden');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+  };
+
+  menuBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (menu.classList.contains('hidden')) {
+      menu.classList.remove('hidden');
+      menuBtn.setAttribute('aria-expanded', 'true');
+    } else {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener('click', () => {
+    closeMenu();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeMenu();
+    }
+  });
+
+  menu.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (event.target instanceof HTMLElement && event.target.closest('button')) {
+      closeMenu();
+    }
+  });
 })();
 
 (() => {
@@ -675,16 +637,18 @@ document.addEventListener('click', (ev) => {
 
 /* BEGIN GPT CHANGE: sync controls */
 (function () {
-  const syncStatusEl = document.getElementById('syncStatus');
+  const statusDotEl = document.getElementById('mcStatus');
+  const statusTextEl = document.getElementById('mcStatusText');
   const syncUrlInput = document.getElementById('syncUrl');
   const saveSettingsBtn = document.getElementById('saveSyncSettings');
   const testSyncBtn = document.getElementById('testSync');
   const syncAllBtn = document.getElementById('syncAll');
   const STORAGE_KEY = 'syncUrl';
 
-  if (!syncStatusEl) return;
+  if (!statusTextEl) return;
 
-  const ACTIVE_CLASSES = ['online', 'error'];
+  const ACTIVE_CLASSES = ['online', 'offline', 'error'];
+  const DOT_CLASSES = ['online', 'offline'];
   const DEFAULT_MESSAGES = {
     checking: 'Checking connection…',
     syncing: 'Syncing your latest changes…',
@@ -706,14 +670,24 @@ document.addEventListener('click', (ev) => {
 
   let currentState = null;
 
+  function applyDotState(state) {
+    if (!statusDotEl) return;
+    DOT_CLASSES.forEach((cls) => statusDotEl.classList.remove(cls));
+    const isOnline = state !== 'offline' && state !== 'error';
+    statusDotEl.classList.add(isOnline ? 'online' : 'offline');
+    statusDotEl.setAttribute('aria-label', isOnline ? 'Online' : 'Offline');
+  }
+
   function setStatus(state, message) {
     currentState = state;
-    ACTIVE_CLASSES.forEach((cls) => syncStatusEl.classList.remove(cls));
+    ACTIVE_CLASSES.forEach((cls) => statusTextEl.classList.remove(cls));
 
     if (state === 'online') {
-      syncStatusEl.classList.add('online');
+      statusTextEl.classList.add('online');
     } else if (state === 'error') {
-      syncStatusEl.classList.add('error');
+      statusTextEl.classList.add('error');
+    } else {
+      statusTextEl.classList.add('offline');
     }
 
     const fullText =
@@ -726,32 +700,25 @@ document.addEventListener('click', (ev) => {
         ? message.trim()
         : DISPLAY_MESSAGES[state] || fullText;
 
-    syncStatusEl.textContent = displayText;
+    const srText = fullText || displayText || '';
+    statusTextEl.textContent = srText;
 
-    if (fullText) {
-      syncStatusEl.setAttribute('title', fullText);
-      if (displayText !== fullText) {
-        syncStatusEl.setAttribute('aria-label', fullText);
-      } else {
-        syncStatusEl.removeAttribute('aria-label');
-      }
+    if (srText) {
+      statusTextEl.setAttribute('title', srText);
+      statusTextEl.setAttribute('aria-label', srText);
     } else {
-      syncStatusEl.removeAttribute('title');
-      syncStatusEl.removeAttribute('aria-label');
+      statusTextEl.removeAttribute('title');
+      statusTextEl.removeAttribute('aria-label');
     }
 
-    syncStatusEl.dataset.state = state;
+    applyDotState(state);
+
+    statusTextEl.dataset.state = state;
   }
 
   function updateOnlineState() {
     if (currentState === 'syncing') return;
-    if (navigator.onLine) {
-      if (currentState !== 'online') {
-        setStatus('online');
-      }
-    } else {
-      setStatus('offline');
-    }
+    setStatus(navigator.onLine ? 'online' : 'offline');
   }
 
   function persistUrl(value) {

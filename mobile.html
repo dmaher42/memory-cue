@@ -20,73 +20,52 @@
   />
   <link rel="stylesheet" href="./styles/daisy-themes.css" />
   <style>
-    .sync-status {
-      --indicator-color: rgba(100, 116, 139, 0.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.125rem 0.25rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: rgb(71 85 105);
+    /* Accessibility helper */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    /* Status dot colors */
+    .sync-dot {
+      font-size: 14px;
+      line-height: 1;
       transition: color 0.2s ease;
     }
-    .sync-status::before {
-      content: '';
-      width: 0.6rem;
-      height: 0.6rem;
+    .sync-dot.online {
+      color: #16a34a;
+    }
+    .sync-dot.offline {
+      color: #dc2626;
+    }
+    /* Menu panel and items */
+    .menu-card {
+      background: var(--color-bg, #fff);
+    }
+    .menu-item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .menu-item:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    /* Icon circle fallback */
+    .btn-circle {
+      width: 44px;
+      height: 44px;
       border-radius: 9999px;
-      background-color: var(--indicator-color);
-      box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
-      flex-shrink: 0;
-    }
-    .sync-status[data-compact='true'] {
-      padding: 0;
-      gap: 0;
-      min-width: 0.6rem;
-      min-height: 0.6rem;
-    }
-    .sync-status[data-compact='true']::before {
-      box-shadow: none;
-    }
-    .navbar .flex-1 {
-      min-width: 0;
-    }
-    .navbar .sync-status {
-      max-width: min(60vw, 14rem);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex-shrink: 1;
-    }
-    .dark .sync-status {
-      color: rgb(148 163 184);
-      --indicator-color: rgba(148, 163, 184, 0.9);
-    }
-    .sync-status.online {
-      color: rgb(22 163 74);
-      --indicator-color: rgb(34, 197, 94);
-    }
-    .dark .sync-status.online {
-      color: rgb(134 239 172);
-      --indicator-color: rgb(74, 222, 128);
-    }
-    .sync-status.error {
-      color: rgb(220 38 38);
-      --indicator-color: rgb(248, 113, 113);
-    }
-    .dark .sync-status.error {
-      color: rgb(248 113 113);
-      --indicator-color: rgb(252, 165, 165);
-    }
-    .sync-status.offline {
-      color: rgb(220 38 38);
-      --indicator-color: rgb(248, 113, 113);
-    }
-    .dark .sync-status.offline {
-      color: rgb(248 113 113);
-      --indicator-color: rgb(252, 165, 165);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .notes-editor {
       min-height: 10rem;
@@ -427,129 +406,67 @@
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar navbar-glass sticky top-0 z-50 px-3">
-    <div class="flex-1 items-center gap-3" style="column-gap: 1rem;">
-      <span
-        class="inline-flex size-9 items-center justify-center rounded-full bg-primary text-primary-content text-sm font-semibold tracking-tight shadow-sm"
-        aria-hidden="true"
-      >
-        MC
-          </span>
-      <div class="flex flex-col leading-tight">
-        <span class="text-base font-semibold"></span>
-        <span
-          id="syncStatus"
-          class="sync-status text-xs"
-          style="margin-right: 1.5rem;"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-    
-        >
-          Offline
+  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-base-100/90 backdrop-blur">
+    <div class="flex items-center gap-2 min-w-0">
+      <a href="#" class="flex items-center min-w-0">
+        <img src="./icons/icon-192.png" alt="Memory Cue" class="h-6 w-6 mr-2" />
+        <span class="font-semibold truncate">
+          <span class="sm:inline hidden">Memory Cue</span>
+          <span class="sm:hidden inline">MC</span>
         </span>
-      </div>
+      </a>
+      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
+      <span id="mcStatusText" class="sr-only">Offline</span>
     </div>
-    <div class="flex-none flex items-center gap-2" style="margin-left: 1.5rem; column-gap: 1.25rem;">
+
+    <div class="flex items-center gap-3">
       <button
-        id="inlineQuickAddBtn"
-        class="btn btn-circle btn-primary btn-sm"
+        id="addReminderBtn"
         type="button"
-        data-open-add-task
+        class="btn btn-ghost btn-circle text-2xl"
         aria-label="Add reminder"
-        title="Add reminder"
+        data-open-add-task
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="size-4"
-          aria-hidden="true"
-        >
-          <path d="M12 5v14" />
-          <path d="M5 12h14" />
-        </svg>
-        <span class="sr-only">Quick add</span>
+        +
       </button>
       <div class="relative">
         <button
-          id="headerMenuBtn"
-          class="btn btn-ghost btn-sm btn-circle"
+          id="overflowMenuBtn"
           type="button"
+          class="btn btn-ghost btn-circle text-xl"
+          aria-label="More options"
           aria-haspopup="menu"
+          aria-controls="overflowMenu"
           aria-expanded="false"
-          aria-controls="headerMenu"
         >
-          <span class="sr-only">Open menu</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="size-5"
-            aria-hidden="true"
-          >
-            <circle cx="5" cy="12" r="1.5" />
-            <circle cx="12" cy="12" r="1.5" />
-            <circle cx="19" cy="12" r="1.5" />
-          </svg>
+          ⋮
         </button>
         <div
-          id="headerMenu"
-          class="absolute right-0 mt-3 hidden w-56 rounded-box bg-base-100 p-2 shadow focus:outline-none flex flex-col gap-2 z-50"
-          role="menu"
-          aria-labelledby="headerMenuBtn"
+          id="overflowMenu"
+          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
         >
-          <button
-            id="voiceAddBtn"
-            class="btn btn-ghost btn-sm justify-start gap-2"
-            type="button"
-            role="menuitem"
-          >
-            <span aria-hidden="true">🎙️</span>
-            <span>Dictate reminder</span>
-          </button>
-          <div class="h-px bg-base-300" role="presentation"></div>
-          <button
-            id="openSettings"
-            class="btn btn-ghost btn-sm justify-start gap-2"
-            type="button"
-            role="menuitem"
-          >
-            Settings
-          </button>
-          <button
-            id="themeToggle"
-            class="btn btn-ghost btn-sm justify-start gap-2"
-            type="button"
-            role="menuitem"
-          >
-            Theme
-          </button>
-          <div class="h-px bg-base-300" role="presentation"></div>
-          <button
-            id="googleSignInBtn"
-            class="btn btn-primary btn-sm justify-start gap-2"
-            type="button"
-            role="menuitem"
-          >
-            Sign in
-          </button>
-          <button
-            id="googleSignOutBtn"
-            class="btn btn-ghost btn-sm justify-start gap-2 hidden"
-            type="button"
-            role="menuitem"
-          >
-            Sign out
-          </button>
+          <ul class="py-2 text-sm">
+            <li>
+              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
+                <span aria-hidden="true">🎙️</span>
+                <span>Dictate reminder</span>
+              </button>
+            </li>
+            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li>
+              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
+            </li>
+            <li>
+              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+            </li>
+            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li>
+              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+            </li>
+            <li>
+              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -1016,8 +933,9 @@
     })();
 
     (function () {
-      const syncStatusEl = document.getElementById('syncStatus');
-      if (!syncStatusEl) return;
+      const statusDotEl = document.getElementById('mcStatus');
+      const statusTextEl = document.getElementById('mcStatusText');
+      if (!statusTextEl) return;
 
       const syncUrlInput = document.getElementById('syncUrl');
       const saveSettingsBtn = document.getElementById('saveSyncSettings');
@@ -1025,6 +943,7 @@
       const syncAllBtn = document.getElementById('syncAll');
       const STORAGE_KEY = 'syncUrl';
       const ACTIVE_CLASSES = ['online', 'offline', 'error'];
+      const DOT_CLASSES = ['online', 'offline'];
 
       let currentState = null;
 
@@ -1046,14 +965,24 @@
         info: '',
       };
 
+      const applyDotState = (state) => {
+        if (!statusDotEl) return;
+        DOT_CLASSES.forEach((cls) => statusDotEl.classList.remove(cls));
+        const isOnline = state !== 'offline' && state !== 'error';
+        statusDotEl.classList.add(isOnline ? 'online' : 'offline');
+        statusDotEl.setAttribute('aria-label', isOnline ? 'Online' : 'Offline');
+      };
+
       const setStatus = (state, message) => {
         currentState = state;
-        ACTIVE_CLASSES.forEach((cls) => syncStatusEl.classList.remove(cls));
+        ACTIVE_CLASSES.forEach((cls) => statusTextEl.classList.remove(cls));
 
-        if (state === 'online' || state === 'offline') {
-          syncStatusEl.classList.add(state);
+        if (state === 'online') {
+          statusTextEl.classList.add('online');
         } else if (state === 'error') {
-          syncStatusEl.classList.add('error');
+          statusTextEl.classList.add('error');
+        } else {
+          statusTextEl.classList.add('offline');
         }
 
         const fullText =
@@ -1066,34 +995,19 @@
             ? message.trim()
             : DISPLAY_MESSAGES[state] || fullText;
 
-        syncStatusEl.dataset.state = state;
+        const srText = fullText || displayText || '';
+        statusTextEl.dataset.state = state;
+        statusTextEl.textContent = srText;
 
-        const isDotState = state === 'online' || state === 'offline';
-        if (isDotState) {
-          syncStatusEl.textContent = '';
-          syncStatusEl.setAttribute('data-compact', 'true');
-          if (fullText) {
-            syncStatusEl.setAttribute('title', fullText);
-            syncStatusEl.setAttribute('aria-label', fullText);
-          } else {
-            syncStatusEl.removeAttribute('title');
-            syncStatusEl.removeAttribute('aria-label');
-          }
+        if (srText) {
+          statusTextEl.setAttribute('title', srText);
+          statusTextEl.setAttribute('aria-label', srText);
         } else {
-          syncStatusEl.textContent = displayText;
-          syncStatusEl.removeAttribute('data-compact');
-          if (fullText) {
-            syncStatusEl.setAttribute('title', fullText);
-            if (displayText !== fullText) {
-              syncStatusEl.setAttribute('aria-label', fullText);
-            } else {
-              syncStatusEl.removeAttribute('aria-label');
-            }
-          } else {
-            syncStatusEl.removeAttribute('title');
-            syncStatusEl.removeAttribute('aria-label');
-          }
+          statusTextEl.removeAttribute('title');
+          statusTextEl.removeAttribute('aria-label');
         }
+
+        applyDotState(state);
       };
 
       const updateOnlineState = () => {
