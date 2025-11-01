@@ -1053,61 +1053,10 @@
           </aside>
           <section class="view-panel view-panel--main">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
-              <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div class="flex gap-2 flex-wrap">
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="today" type="button">Today</button>
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="overdue" type="button">Overdue</button>
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="all" type="button">All</button>
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="done" type="button">Done</button>
-                </div>
-                <div class="flex items-center gap-3">
-                  <div>
-                    <label for="categoryFilter" class="sr-only">Filter by category</label>
-                    <select
-                      id="categoryFilter"
-                      class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
-                    >
-                      <option value="all" selected>All categories</option>
-                      <option value="General">General</option>
-                      <option value="General Appointments">General Appointments</option>
-                      <option value="Home &amp; Personal">Home &amp; Personal</option>
-                      <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                      <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                      <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                      <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                      <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                      <option value="School – To-Do">School – To-Do</option>
-                      <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="sort" class="sr-only">Sort reminders</label>
-                    <select id="sort" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors">
-                      <option value="smart">Smart sort</option>
-                      <option value="time">Time</option>
-                      <option value="priority">Priority</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-6 mb-6 text-gray-600 dark:text-gray-400">
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Today: <span id="inlineTodayCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
-                  <span>Overdue: <span id="inlineOverdueCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <span>Total: <span id="inlineTotalCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                  <span>Completed: <span id="inlineCompletedCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
+              <div class="mb-6">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  You're viewing all reminders. Add new tasks or update existing ones using the form above.
+                </p>
               </div>
 
               <div id="remindersWrapper" class="space-y-4">

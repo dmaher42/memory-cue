@@ -104,7 +104,6 @@ test('desktop reminders render grouped category headings', async () => {
     syncStatusSel: '#syncStatus',
     emptyStateSel: '#emptyState',
     listWrapperSel: '#remindersWrapper',
-    categoryFilterSel: '#categoryFilter',
     categoryOptionsSel: '#categorySuggestions',
     variant: 'desktop',
     firebaseDeps: createFirebaseStubs(),
@@ -157,7 +156,6 @@ test('mobile reminders group uncategorised items under General', async () => {
     statusSel: '#status',
     syncStatusSel: '#syncStatus',
     listWrapperSel: '#wrapper',
-    categoryFilterSel: '#categoryFilter',
     categoryOptionsSel: '#categorySuggestions',
     variant: 'mobile',
     firebaseDeps: createFirebaseStubs(),
@@ -206,7 +204,6 @@ test('category selectors include school and general presets', async () => {
     cancelEditBtnSel: '#cancelEditBtn',
     statusSel: '#status',
     syncStatusSel: '#syncStatus',
-    categoryFilterSel: '#categoryFilter',
     categoryOptionsSel: '#categorySuggestions',
     firebaseDeps: createFirebaseStubs(),
   });
@@ -225,31 +222,4 @@ test('category selectors include school and general presets', async () => {
     'Wellbeing & Support',
   ]);
 
-  const filterOptions = Array.from(document.querySelectorAll('#categoryFilter option'));
-  expect(filterOptions.map((opt) => opt.value)).toEqual([
-    'all',
-    'General',
-    'General Appointments',
-    'Home & Personal',
-    'School – Appointments/Meetings',
-    'School – Communication & Families',
-    'School – Excursions & Events',
-    'School – Grading & Assessment',
-    'School – Prep & Resources',
-    'School – To-Do',
-    'Wellbeing & Support',
-  ]);
-  expect(filterOptions.map((opt) => opt.textContent)).toEqual([
-    'All categories',
-    'General',
-    'General Appointments',
-    'Home & Personal',
-    'School – Appointments/Meetings',
-    'School – Communication & Families',
-    'School – Excursions & Events',
-    'School – Grading & Assessment',
-    'School – Prep & Resources',
-    'School – To-Do',
-    'Wellbeing & Support',
-  ]);
 });
