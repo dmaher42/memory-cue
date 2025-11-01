@@ -457,26 +457,97 @@
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar bg-base-100 sticky top-0 z-50 border-b">
-    <div class="flex-1 items-center gap-2">
-      <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
+  <header class="navbar bg-base-100 sticky top-0 z-50 border-b px-3">
+    <div class="flex-1 items-center gap-3">
       <span
-        id="syncStatus"
-        class="sync-status"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >Offline</span>
-    </div>
-    <div class="flex-none flex flex-col items-end gap-1 text-right">
-      <div class="flex flex-wrap justify-end items-center gap-2">
-        <button
-          id="toggleReminderFilters"
-          class="btn btn-ghost btn-sm gap-1"
-          type="button"
-          aria-controls="reminderFilters"
-          aria-expanded="false"
+        class="inline-flex size-9 items-center justify-center rounded-full bg-primary text-primary-content text-sm font-semibold tracking-tight shadow-sm"
+        aria-hidden="true"
+      >
+        MC
+      </span>
+      <div class="flex flex-col leading-tight">
+        <span class="text-base font-semibold">Memory Cue</span>
+        <span
+          id="syncStatus"
+          class="sync-status text-xs"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
         >
+          Offline
+        </span>
+      </div>
+    </div>
+    <div class="flex-none flex items-center gap-2">
+      <button
+        id="toggleReminderFilters"
+        class="btn btn-ghost btn-sm gap-1"
+        type="button"
+        aria-controls="reminderFilters"
+        aria-expanded="false"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-4"
+          aria-hidden="true"
+        >
+          <path d="M4 5h16" />
+          <path d="M6 11h12" />
+          <path d="M9 17h6" />
+        </svg>
+        <span class="text-sm">Sort &amp; filter</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="size-4 opacity-70 sort-filter-icon"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+      <button
+        id="inlineQuickAddBtn"
+        class="btn btn-primary btn-sm gap-1"
+        type="button"
+        data-open-add-task
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-4"
+          aria-hidden="true"
+        >
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+        <span class="text-sm font-semibold">Quick add</span>
+      </button>
+      <div class="relative">
+        <button
+          id="headerMenuBtn"
+          class="btn btn-ghost btn-sm btn-circle"
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="headerMenu"
+        >
+          <span class="sr-only">Open menu</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -485,70 +556,68 @@
             stroke-width="1.8"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="size-4"
+            class="size-5"
             aria-hidden="true"
           >
-            <path d="M4 5h16" />
-            <path d="M6 11h12" />
-            <path d="M9 17h6" />
-          </svg>
-          <span class="text-sm">Sort &amp; filter</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            class="size-4 opacity-70 sort-filter-icon"
-            aria-hidden="true"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-              clip-rule="evenodd"
-            />
+            <circle cx="5" cy="12" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="19" cy="12" r="1.5" />
           </svg>
         </button>
-        <div class="relative">
+        <div
+          id="headerMenu"
+          class="absolute right-0 mt-3 hidden w-56 rounded-box bg-base-100 p-2 shadow focus:outline-none flex flex-col gap-2 z-50"
+          role="menu"
+          aria-labelledby="headerMenuBtn"
+        >
           <button
-            id="headerActionsToggle"
-            class="btn btn-ghost"
+            id="voiceAddBtn"
+            class="btn btn-ghost btn-sm justify-start gap-2"
             type="button"
-            aria-haspopup="menu"
-            aria-expanded="false"
+            role="menuitem"
           >
-            Quick actions
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              class="size-4 opacity-70"
-              aria-hidden="true"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                clip-rule="evenodd"
-              />
-            </svg>
+            <span aria-hidden="true">🎙️</span>
+            <span>Dictate reminder</span>
           </button>
-          <div
-            id="headerActionsMenu"
-            class="absolute right-0 mt-3 hidden w-48 rounded-box bg-base-100 p-2 shadow focus:outline-none flex flex-col gap-2 z-50"
-            role="menu"
+          <div class="h-px bg-base-300" role="presentation"></div>
+          <button
+            id="openSettings"
+            class="btn btn-ghost btn-sm justify-start gap-2"
+            type="button"
+            role="menuitem"
           >
-            <button id="openSettings" class="btn btn-ghost btn-sm justify-start w-full" type="button" role="menuitem">
-              Settings
-            </button>
-            <button id="themeToggle" class="btn btn-ghost btn-sm justify-start w-full" type="button" role="menuitem">
-              Theme
-            </button>
-          </div>
+            Settings
+          </button>
+          <button
+            id="themeToggle"
+            class="btn btn-ghost btn-sm justify-start gap-2"
+            type="button"
+            role="menuitem"
+          >
+            Theme
+          </button>
+          <div class="h-px bg-base-300" role="presentation"></div>
+          <button
+            id="googleSignInBtn"
+            class="btn btn-primary btn-sm justify-start gap-2"
+            type="button"
+            role="menuitem"
+          >
+            Sign in
+          </button>
+          <button
+            id="googleSignOutBtn"
+            class="btn btn-ghost btn-sm justify-start gap-2 hidden"
+            type="button"
+            role="menuitem"
+          >
+            Sign out
+          </button>
         </div>
-        <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
-        <button id="googleSignOutBtn" class="btn btn-ghost hidden" type="button">Sign out</button>
       </div>
-      <p id="googleUserName" class="text-xs text-base-content/70"></p>
     </div>
   </header>
+  <p id="googleUserName" class="px-3 text-xs text-base-content/70"></p>
 
   <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->

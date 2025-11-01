@@ -293,6 +293,7 @@ const bootstrapReminders = () => {
     saveNotesBtnSel: '#saveNotes',
     loadNotesBtnSel: '#loadNotes',
     dateFeedbackSel: '#dateFeedback',
+    voiceBtnSel: '#voiceBtn',
   }).catch((error) => {
     console.error('Failed to initialise reminders:', error);
   });
@@ -306,8 +307,8 @@ if (document.readyState === 'loading') {
 
 (() => {
   try {
-    const toggle = document.getElementById('headerActionsToggle');
-    const menu = document.getElementById('headerActionsMenu');
+    const toggle = document.getElementById('headerMenuBtn');
+    const menu = document.getElementById('headerMenu');
 
     if (!(toggle instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
       return;
@@ -383,6 +384,145 @@ if (document.readyState === 'loading') {
   } catch (error) {
     console.error('[headerActions] init failed', error);
   }
+})();
+
+(() => {
+  const voiceAddBtn = document.getElementById('voiceAddBtn');
+
+  if (!(voiceAddBtn instanceof HTMLElement)) {
+    return;
+  }
+
+  const getVoiceBtn = () => {
+    const el = document.getElementById('voiceBtn');
+    return el instanceof HTMLElement ? el : null;
+  };
+
+  const syncVoiceAvailability = () => {
+    const voiceBtn = getVoiceBtn();
+    if (!voiceBtn) {
+      return;
+    }
+
+    const applyState = () => {
+      const isDisabled =
+        voiceBtn.hasAttribute('disabled') ||
+        voiceBtn.getAttribute('aria-disabled') === 'true';
+      if (isDisabled) {
+        voiceAddBtn.setAttribute('disabled', 'true');
+        voiceAddBtn.setAttribute('aria-disabled', 'true');
+      } else {
+        voiceAddBtn.removeAttribute('disabled');
+        voiceAddBtn.removeAttribute('aria-disabled');
+      }
+
+      const title = voiceBtn.getAttribute('title');
+      if (title) {
+        voiceAddBtn.setAttribute('title', title);
+      }
+    };
+
+    applyState();
+
+    if (typeof MutationObserver === 'function') {
+      const observer = new MutationObserver(applyState);
+      observer.observe(voiceBtn, {
+        attributes: true,
+        attributeFilter: ['disabled', 'aria-disabled', 'title'],
+      });
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncVoiceAvailability, { once: true });
+  } else {
+    syncVoiceAvailability();
+  }
+
+  const startDictation = () => {
+    const voiceBtn = getVoiceBtn();
+    if (!voiceBtn) {
+      return;
+    }
+
+    if (voiceBtn.hasAttribute('disabled') || voiceBtn.getAttribute('aria-disabled') === 'true') {
+      return;
+    }
+
+    try {
+      voiceBtn.focus({ preventScroll: true });
+    } catch {
+      try {
+        voiceBtn.focus();
+      } catch {
+        /* ignore focus errors */
+      }
+    }
+
+    try {
+      voiceBtn.click();
+    } catch (error) {
+      console.warn('Voice add trigger failed', error);
+    }
+  };
+
+  voiceAddBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    let didTrigger = false;
+    let fallbackTimer = null;
+
+    const startIfNeeded = () => {
+      if (didTrigger) {
+        return;
+      }
+      didTrigger = true;
+      document.removeEventListener('reminder:sheet-opened', handleOpened);
+      startDictation();
+    };
+
+    const handleOpened = (evt) => {
+      if (evt?.detail?.trigger !== voiceAddBtn) {
+        return;
+      }
+      if (typeof window !== 'undefined' && typeof window.clearTimeout === 'function' && fallbackTimer) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+      const delayFn =
+        typeof window !== 'undefined' && typeof window.setTimeout === 'function'
+          ? window.setTimeout
+          : setTimeout;
+      delayFn(startIfNeeded, 150);
+    };
+
+    document.addEventListener('reminder:sheet-opened', handleOpened);
+
+    try {
+      document.dispatchEvent(
+        new CustomEvent('cue:open', {
+          detail: { trigger: voiceAddBtn },
+        }),
+      );
+    } catch (error) {
+      document.removeEventListener('reminder:sheet-opened', handleOpened);
+      if (typeof window !== 'undefined' && typeof window.clearTimeout === 'function' && fallbackTimer) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+      console.warn('Voice add open failed', error);
+      return;
+    }
+
+    const sheet = document.getElementById('create-sheet');
+    if (sheet instanceof HTMLElement && sheet.classList.contains('open')) {
+      const delayFn =
+        typeof window !== 'undefined' && typeof window.setTimeout === 'function'
+          ? window.setTimeout
+          : setTimeout;
+      fallbackTimer = delayFn(startIfNeeded, 120);
+    }
+  });
 })();
 
 
