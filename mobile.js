@@ -305,6 +305,88 @@ if (document.readyState === 'loading') {
 }
 
 (() => {
+  try {
+    const toggle = document.getElementById('headerActionsToggle');
+    const menu = document.getElementById('headerActionsMenu');
+
+    if (!(toggle instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
+      return;
+    }
+
+    const focusSelectors = ['button', '[href]', '[tabindex]:not([tabindex="-1"])'];
+
+    const focusFirstItem = () => {
+      for (const selector of focusSelectors) {
+        const candidate = menu.querySelector(selector);
+        if (candidate instanceof HTMLElement && !candidate.hasAttribute('disabled')) {
+          try {
+            candidate.focus({ preventScroll: true });
+          } catch {
+            candidate.focus();
+          }
+          return;
+        }
+      }
+    };
+
+    const openMenu = () => {
+      menu.classList.remove('hidden');
+      toggle.setAttribute('aria-expanded', 'true');
+      focusFirstItem();
+    };
+
+    const closeMenu = () => {
+      if (menu.classList.contains('hidden')) {
+        return;
+      }
+      menu.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (menu.classList.contains('hidden')) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    });
+
+    toggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+        toggle.focus({ preventScroll: true });
+      } else if ((event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') && menu.classList.contains('hidden')) {
+        event.preventDefault();
+        openMenu();
+      }
+    });
+
+    menu.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLElement && event.target.closest('button')) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && (menu.contains(event.target) || event.target === toggle)) {
+        return;
+      }
+      closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    });
+  } catch (error) {
+    console.error('[headerActions] init failed', error);
+  }
+})();
+
+
+(() => {
   const toggleBtn = document.getElementById('toggleReminderFilters');
   const filterPanel = document.getElementById('reminderFilters');
 
