@@ -1,4 +1,7 @@
+import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
+
+initViewportHeight();
 
 /* BEGIN GPT CHANGE: bottom sheet open/close */
 (function () {
@@ -302,6 +305,88 @@ if (document.readyState === 'loading') {
 }
 
 (() => {
+  try {
+    const toggle = document.getElementById('headerActionsToggle');
+    const menu = document.getElementById('headerActionsMenu');
+
+    if (!(toggle instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
+      return;
+    }
+
+    const focusSelectors = ['button', '[href]', '[tabindex]:not([tabindex="-1"])'];
+
+    const focusFirstItem = () => {
+      for (const selector of focusSelectors) {
+        const candidate = menu.querySelector(selector);
+        if (candidate instanceof HTMLElement && !candidate.hasAttribute('disabled')) {
+          try {
+            candidate.focus({ preventScroll: true });
+          } catch {
+            candidate.focus();
+          }
+          return;
+        }
+      }
+    };
+
+    const openMenu = () => {
+      menu.classList.remove('hidden');
+      toggle.setAttribute('aria-expanded', 'true');
+      focusFirstItem();
+    };
+
+    const closeMenu = () => {
+      if (menu.classList.contains('hidden')) {
+        return;
+      }
+      menu.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (menu.classList.contains('hidden')) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    });
+
+    toggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+        toggle.focus({ preventScroll: true });
+      } else if ((event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') && menu.classList.contains('hidden')) {
+        event.preventDefault();
+        openMenu();
+      }
+    });
+
+    menu.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLElement && event.target.closest('button')) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && (menu.contains(event.target) || event.target === toggle)) {
+        return;
+      }
+      closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    });
+  } catch (error) {
+    console.error('[headerActions] init failed', error);
+  }
+})();
+
+
+(() => {
   const toggleBtn = document.getElementById('toggleReminderFilters');
   const filterPanel = document.getElementById('reminderFilters');
 
@@ -472,6 +557,25 @@ document.addEventListener('click', (ev) => {
   if (!syncStatusEl) return;
 
   const ACTIVE_CLASSES = ['online', 'error'];
+  const DEFAULT_MESSAGES = {
+    checking: 'Checking connection…',
+    syncing: 'Syncing your latest changes…',
+    online: 'Connected. Changes sync automatically.',
+    offline:
+      "You're offline. Changes are saved on this device until you reconnect.",
+    error: "We couldn't sync right now. We'll retry soon.",
+    info: '',
+  };
+
+  const DISPLAY_MESSAGES = {
+    checking: 'Checking…',
+    syncing: 'Syncing…',
+    online: 'Synced. Auto-save on.',
+    offline: 'Offline. Saving locally.',
+    error: 'Sync issue. Retrying.',
+    info: '',
+  };
+
   let currentState = null;
 
   function setStatus(state, message) {
@@ -484,19 +588,30 @@ document.addEventListener('click', (ev) => {
       syncStatusEl.classList.add('error');
     }
 
-    const defaultMessage = {
-      checking: 'Checking connection…',
-      syncing: 'Syncing your latest changes…',
-      online: 'Connected. Changes sync automatically.',
-      offline: "You're offline. Changes are saved on this device until you reconnect.",
-      error: "We couldn't sync right now. We'll retry soon.",
-      info: '',
-    };
+    const fullText =
+      typeof message === 'string' && message.trim()
+        ? message.trim()
+        : DEFAULT_MESSAGES[state] || '';
 
-    const text = typeof message === 'string' && message.trim() ? message : (defaultMessage[state] || '');
-    if (text) {
-      syncStatusEl.textContent = text;
+    const displayText =
+      typeof message === 'string' && message.trim()
+        ? message.trim()
+        : DISPLAY_MESSAGES[state] || fullText;
+
+    syncStatusEl.textContent = displayText;
+
+    if (fullText) {
+      syncStatusEl.setAttribute('title', fullText);
+      if (displayText !== fullText) {
+        syncStatusEl.setAttribute('aria-label', fullText);
+      } else {
+        syncStatusEl.removeAttribute('aria-label');
+      }
+    } else {
+      syncStatusEl.removeAttribute('title');
+      syncStatusEl.removeAttribute('aria-label');
     }
+
     syncStatusEl.dataset.state = state;
   }
 
@@ -710,7 +825,7 @@ document.addEventListener('click', (ev) => {
     const value = (syncUrlInput?.value || '').trim();
     if (!value) {
       persistUrl('');
-      setStatus('info', 'Sync URL cleared. Add a new one to enable syncing.');
+      setStatus('info', 'Sync URL cleared. Add one to enable sync.');
       updateButtonState();
       return;
     }
@@ -721,7 +836,7 @@ document.addEventListener('click', (ev) => {
         throw new Error('Invalid protocol');
       }
     } catch {
-      setStatus('error', 'Enter a valid Apps Script URL before saving.');
+      setStatus('error', 'Enter a valid sync URL before saving.');
       return;
     }
 
@@ -733,7 +848,7 @@ document.addEventListener('click', (ev) => {
   testSyncBtn?.addEventListener('click', async () => {
     const url = (syncUrlInput?.value || getStoredUrl()).trim();
     if (!url) {
-      setStatus('error', 'Add your Apps Script URL in Settings first.');
+      setStatus('error', 'Add your sync URL in Settings first.');
       return;
     }
 
@@ -749,11 +864,11 @@ document.addEventListener('click', (ev) => {
       if (response.ok) {
         setStatus('online', 'Connection looks good.');
       } else {
-        setStatus('error', 'Test failed. Please check your Apps Script deployment.');
+        setStatus('error', 'Test failed. Check your Apps Script deployment.');
       }
     } catch (error) {
       console.error('Test sync failed', error);
-      setStatus('error', 'Test failed. Please check your Apps Script deployment.');
+      setStatus('error', 'Test failed. Check your Apps Script deployment.');
     } finally {
       toggleBusy(false);
     }
@@ -762,13 +877,13 @@ document.addEventListener('click', (ev) => {
   syncAllBtn?.addEventListener('click', async () => {
     const url = (syncUrlInput?.value || getStoredUrl()).trim();
     if (!url) {
-      setStatus('error', 'Add your Apps Script URL in Settings first.');
+      setStatus('error', 'Add your sync URL in Settings first.');
       return;
     }
 
     const reminders = collectReminders();
     if (!reminders.length) {
-      setStatus('info', 'No reminders to sync right now.');
+      setStatus('info', 'Nothing to sync right now.');
       return;
     }
 
@@ -814,15 +929,15 @@ document.addEventListener('click', (ev) => {
       }
 
       if (!failCount) {
-        setStatus('online', `Sync complete. ${okCount} reminder${okCount === 1 ? '' : 's'} updated.`);
+        setStatus('online', `Sync complete. ${okCount} updated.`);
       } else if (!okCount) {
-        setStatus('error', 'Sync failed. Please check your Apps Script URL and try again.');
+        setStatus('error', 'Sync failed. Check your sync URL and retry.');
       } else {
         setStatus('error', `Partial sync: ${okCount} success, ${failCount} failed.`);
       }
     } catch (error) {
       console.error('Sync failed', error);
-      setStatus('error', 'Sync failed. Please try again in a moment.');
+      setStatus('error', 'Sync failed. Try again soon.');
     } finally {
       toggleBusy(false);
     }
