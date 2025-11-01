@@ -1779,7 +1779,7 @@ export async function initReminders(sel = {}) {
 
     const createMobileItem = (r, catName) => {
       const div = document.createElement('div');
-      div.className = 'task-item' + (r.done ? ' completed' : '');
+      div.className = 'task-item';
       const summary = {
         id: r.id,
         title: r.title,
@@ -1805,7 +1805,6 @@ export async function initReminders(sel = {}) {
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
       div.innerHTML = `
-        <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
         <div class="task-content">
           <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
           <div class="task-meta">
@@ -1820,7 +1819,6 @@ export async function initReminders(sel = {}) {
           <button class="btn-ghost" data-edit type="button">Edit</button>
           <button class="btn-ghost" data-del type="button">Del</button>
         </div>`;
-      div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
       div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
       div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
       return div;
