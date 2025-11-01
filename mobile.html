@@ -556,65 +556,56 @@
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <!-- Sorting dropdown placed at top to save space -->
-      <details
-        id="reminderFilters"
-        class="card bg-base-100 border sort-filter mb-4"
-        aria-label="Sort and filter reminders"
-      >
-        <summary class="sr-only">Sort &amp; filter reminders</summary>
-        <div class="card-body gap-4 border-t border-base-300/60 compact">
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Reminder filters">
-              <button class="btn btn-xs" type="button" data-filter="overdue" aria-pressed="false">
-                Overdue · <span id="overdueCount">0</span>
-              </button>
-              <button class="btn btn-xs" type="button" data-filter="all" aria-pressed="true">
-                All · <span id="totalCountBadge">0</span>
-              </button>
-              <button class="btn btn-xs" type="button" data-filter="done" aria-pressed="false">
-                Done · <span id="completedCount">0</span>
-              </button>
-            </div>
-            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-              <label class="form-control w-full sm:w-auto">
-                <div class="label hidden sm:flex"><span class="label-text">Sort reminders</span></div>
-                <select id="sortReminders" class="select select-bordered select-sm w-full">
-                  <option value="dueDate" selected>Due Date (Today first)</option>
-                  <option value="priority">Priority</option>
-                  <option value="category">Category (A–Z)</option>
-                  <option value="recent">Recently Added</option>
-                </select>
-              </label>
-              <label class="form-control w-full sm:w-auto">
-                <div class="label hidden sm:flex"><span class="label-text">Category filter</span></div>
-                <select id="categoryFilter" class="select select-bordered select-sm w-full">
-                  <option value="all" selected>All categories</option>
-                  <option value="General">General</option>
-                  <option value="General Appointments">General Appointments</option>
-                  <option value="Home &amp; Personal">Home &amp; Personal</option>
-                  <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                  <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                  <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                  <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                  <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                  <option value="School – To-Do">School – To-Do</option>
-                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <label class="form-control">
-            <input
-              id="searchReminders"
-              type="search"
-              class="input input-bordered"
-              placeholder="Search reminders"
-              aria-label="Search"
-            />
-          </label>
+      <!-- Compact Filters -->
+      <div class="flex flex-col gap-2 mb-4 nonFocusUI nonEssential">
+        <!-- Quick filter tabs -->
+        <div class="tabs tabs-boxed bg-base-200">
+          <button class="tab tab-xs" data-filter="all" aria-pressed="true">
+            All <span class="badge badge-xs ml-1" id="totalCountBadge">0</span>
+          </button>
+          <button class="tab tab-xs" data-filter="today" aria-pressed="false">
+            Today <span class="badge badge-xs ml-1" id="todayCount">0</span>
+          </button>
+          <button class="tab tab-xs" data-filter="overdue" aria-pressed="false">
+            Late <span class="badge badge-xs ml-1" id="overdueCount">0</span>
+          </button>
         </div>
-      </details>
+
+        <!-- Actions row -->
+        <div class="flex gap-2">
+          <button class="btn btn-outline btn-xs flex-1" id="sortBtn">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+              ></path>
+            </svg>
+            Sort
+          </button>
+          <button class="btn btn-outline btn-xs flex-1" id="filterBtn">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              ></path>
+            </svg>
+            Filter
+          </button>
+        </div>
+
+        <!-- Keep search input -->
+        <input
+          id="searchReminders"
+          type="search"
+          class="input input-bordered input-sm"
+          placeholder="Search reminders"
+          aria-label="Search"
+        />
+      </div>
 
       <!-- Quick add form -->
       <section id="quickAddBar" class="card bg-base-100 border" aria-label="Quick add reminder">
@@ -700,6 +691,118 @@
     </section>
     <!-- END GPT CHANGE -->
 </main>
+
+<!-- Sort Modal -->
+<div id="sortModal" class="sheet hidden">
+  <div class="sheet-panel">
+    <div class="sheet-header">
+      <h3 class="font-semibold">Sort Tasks</h3>
+      <button class="btn btn-ghost btn-sm" data-close>✕</button>
+    </div>
+    <div class="flex flex-col gap-2">
+      <button class="btn btn-outline btn-sm btn-block text-left" data-sort="date-asc">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          ></path>
+        </svg>
+        Date (Newest First)
+      </button>
+      <button class="btn btn-outline btn-sm btn-block text-left" data-sort="date-desc">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 4v12m0 0l-4-4m4 4l4-4m6 0v12m0 0l4 4m-4-4l-4 4"
+          ></path>
+        </svg>
+        Date (Oldest First)
+      </button>
+      <button class="btn btn-outline btn-sm btn-block text-left" data-sort="title-asc">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+          ></path>
+        </svg>
+        Title (A-Z)
+      </button>
+      <button class="btn btn-outline btn-sm btn-block text-left" data-sort="title-desc">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+          ></path>
+        </svg>
+        Title (Z-A)
+      </button>
+      <button class="btn btn-outline btn-sm btn-block text-left" data-sort="priority">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+          ></path>
+        </svg>
+        Priority
+      </button>
+    </div>
+  </div>
+  <div class="sheet-backdrop backdrop" data-close></div>
+</div>
+
+<!-- Filter Modal -->
+<div id="filterModal" class="sheet hidden">
+  <div class="sheet-panel">
+    <div class="sheet-header">
+      <h3 class="font-semibold">Filter Tasks</h3>
+      <button class="btn btn-ghost btn-sm" data-close>✕</button>
+    </div>
+    <div class="flex flex-col gap-3">
+      <div>
+        <label class="text-xs font-medium mb-1 block">Category</label>
+        <select id="categoryFilterModal" class="select select-bordered select-sm w-full">
+          <option value="all">All Categories</option>
+          <option value="General">General</option>
+          <option value="General Appointments">General Appointments</option>
+          <option value="Home &amp; Personal">Home &amp; Personal</option>
+          <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
+          <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
+          <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
+          <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
+          <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
+          <option value="School – To-Do">School – To-Do</option>
+          <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1 block">Priority</label>
+        <div class="flex gap-1">
+          <button class="badge badge-outline badge-sm" data-priority="High">High</button>
+          <button class="badge badge-sm" data-priority="Medium">Medium</button>
+          <button class="badge badge-outline badge-sm" data-priority="Low">Low</button>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1 block">Status</label>
+        <div class="flex gap-1">
+          <button class="badge badge-sm" data-status="pending">Pending</button>
+          <button class="badge badge-outline badge-sm" data-status="done">Completed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-backdrop backdrop" data-close></div>
+</div>
   <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
     <button type="button" aria-current="page" class="active">
       <span class="btm-nav-label">Reminders</span>
@@ -746,7 +849,7 @@
     };
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-D5Z5RDYT.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-LDGQ5FDG.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -1012,6 +1115,81 @@
 
       setActiveView('reminders');
     })();
+
+    // Modal controls
+    document.getElementById('sortBtn')?.addEventListener('click', () => {
+      document.getElementById('sortModal')?.classList.remove('hidden');
+    });
+
+    document.getElementById('filterBtn')?.addEventListener('click', () => {
+      document.getElementById('filterModal')?.classList.remove('hidden');
+    });
+
+    const closeSheet = (trigger) => {
+      const modal = trigger?.closest?.('.sheet');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    };
+
+    const applyFilterSelection = () => {
+      const category = document.getElementById('categoryFilterModal')?.value || 'all';
+      const priorities = Array.from(
+        document.querySelectorAll('[data-priority].badge-primary')
+      ).map((b) => b.dataset.priority);
+      const statuses = Array.from(
+        document.querySelectorAll('[data-status].badge-primary')
+      ).map((b) => b.dataset.status);
+
+      document.dispatchEvent(
+        new CustomEvent('reminders:filter', {
+          detail: { category, priorities, statuses },
+        })
+      );
+    };
+
+    // Modal close buttons
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', (event) => {
+        closeSheet(event.target);
+        const isFilterModal = Boolean(btn.closest('#filterModal'));
+        const isBackdrop = btn.classList.contains('sheet-backdrop');
+        if (isFilterModal && !isBackdrop) {
+          applyFilterSelection();
+        }
+      });
+    });
+
+    // Sort options
+    document.querySelectorAll('[data-sort]').forEach((btn) => {
+      btn.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-sort]');
+        if (!target) return;
+        const sortType = target.dataset.sort;
+        if (!sortType) return;
+        document.dispatchEvent(
+          new CustomEvent('reminders:sort', { detail: { type: sortType } })
+        );
+        closeSheet(target);
+      });
+    });
+
+    // Filter options
+    document.querySelectorAll('[data-priority], [data-status]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const willActivate = !btn.classList.contains('badge-primary');
+        btn.classList.toggle('badge-primary', willActivate);
+        btn.classList.toggle('badge-outline', !willActivate);
+        btn.setAttribute('aria-pressed', String(willActivate));
+      });
+    });
+
+    // Apply filter when modal closes via backdrop
+    document.getElementById('filterModal')?.addEventListener('click', (event) => {
+      if (event.target.classList.contains('sheet-backdrop')) {
+        applyFilterSelection();
+      }
+    });
 
     (function () {
       const list = document.getElementById('reminderList');
