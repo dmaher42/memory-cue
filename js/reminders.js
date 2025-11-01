@@ -1854,32 +1854,34 @@ export async function initReminders(sel = {}) {
     const sortedGroups = Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }));
     let firstGroup = true;
     sortedGroups.forEach(([catName, catRows]) => {
-      const headingWrapper = document.createElement(listIsSemantic ? 'li' : 'div');
-      headingWrapper.dataset.categoryHeading = catName;
-      if (listIsSemantic) {
-        headingWrapper.setAttribute('role', 'presentation');
-        headingWrapper.style.listStyle = 'none';
+      if (catName !== DEFAULT_CATEGORY) {
+        const headingWrapper = document.createElement(listIsSemantic ? 'li' : 'div');
+        headingWrapper.dataset.categoryHeading = catName;
+        if (listIsSemantic) {
+          headingWrapper.setAttribute('role', 'presentation');
+          headingWrapper.style.listStyle = 'none';
+        }
+        headingWrapper.className = variant === 'desktop'
+          ? 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500'
+          : 'text-xs font-semibold uppercase text-gray-500 dark:text-gray-500';
+        if (!firstGroup) {
+          headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
+        }
+        const headingInner = document.createElement('div');
+        headingInner.setAttribute('role', 'heading');
+        headingInner.setAttribute('aria-level', '3');
+        headingInner.className = variant === 'desktop'
+          ? 'flex items-center justify-between gap-2 px-1 text-gray-500 dark:text-gray-500'
+          : 'flex items-center justify-between gap-2 text-gray-500 dark:text-gray-500';
+        const headingLabel = document.createElement('span');
+        headingLabel.textContent = catName;
+        const headingCount = document.createElement('span');
+        headingCount.className = 'text-[0.7rem] font-medium text-gray-500 dark:text-gray-500';
+        headingCount.textContent = `${catRows.length} ${catRows.length === 1 ? 'item' : 'items'}`;
+        headingInner.append(headingLabel, headingCount);
+        headingWrapper.appendChild(headingInner);
+        frag.appendChild(headingWrapper);
       }
-      headingWrapper.className = variant === 'desktop'
-        ? 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500'
-        : 'text-xs font-semibold uppercase text-gray-500 dark:text-gray-500';
-      if (!firstGroup) {
-        headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
-      }
-      const headingInner = document.createElement('div');
-      headingInner.setAttribute('role', 'heading');
-      headingInner.setAttribute('aria-level', '3');
-      headingInner.className = variant === 'desktop'
-        ? 'flex items-center justify-between gap-2 px-1 text-gray-500 dark:text-gray-500'
-        : 'flex items-center justify-between gap-2 text-gray-500 dark:text-gray-500';
-      const headingLabel = document.createElement('span');
-      headingLabel.textContent = catName;
-      const headingCount = document.createElement('span');
-      headingCount.className = 'text-[0.7rem] font-medium text-gray-500 dark:text-gray-500';
-      headingCount.textContent = `${catRows.length} ${catRows.length === 1 ? 'item' : 'items'}`;
-      headingInner.append(headingLabel, headingCount);
-      headingWrapper.appendChild(headingInner);
-      frag.appendChild(headingWrapper);
 
       catRows.forEach(r => {
         if(variant === 'desktop'){
