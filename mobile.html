@@ -1660,6 +1660,8 @@
         ? window.matchMedia('(prefers-reduced-motion: reduce)')
         : null;
 
+      let activeView = order[0];
+
       const setActiveView = (target) => {
         if (!order.includes(target)) return;
 
@@ -1678,6 +1680,8 @@
             button.classList.toggle('active', Boolean(isActive));
           }
         });
+
+        activeView = target;
 
         const skipLink =
           document.querySelector('.skip-link') ||
@@ -1724,6 +1728,103 @@
           }
         });
       });
+
+      const main = document.getElementById('main') || document.querySelector('main');
+      if (main) {
+        const SWIPE_MIN_DISTANCE = 60;
+        const SWIPE_MAX_OFF_AXIS = 80;
+        const SWIPE_MAX_DURATION = 600;
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        let tracking = false;
+
+        const resetSwipeTracking = () => {
+          tracking = false;
+          startX = 0;
+          startY = 0;
+          startTime = 0;
+        };
+
+        const isInteractiveTarget = (target) => {
+          if (!(target instanceof Element)) return false;
+          return Boolean(
+            target.closest(
+              '[data-no-swipe], input, textarea, select, button, [role="button"], [role="textbox"], [contenteditable="true"], [contenteditable=""]'
+            )
+          );
+        };
+
+        main.addEventListener(
+          'touchstart',
+          (event) => {
+            if (event.touches.length !== 1) {
+              resetSwipeTracking();
+              return;
+            }
+
+            const target = event.target;
+            if (target instanceof Element && isInteractiveTarget(target)) {
+              resetSwipeTracking();
+              return;
+            }
+
+            const touch = event.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startTime = event.timeStamp || Date.now();
+            tracking = true;
+          },
+          { passive: true }
+        );
+
+        main.addEventListener(
+          'touchmove',
+          (event) => {
+            if (!tracking) return;
+            if (event.touches.length !== 1) {
+              resetSwipeTracking();
+            }
+          },
+          { passive: true }
+        );
+
+        main.addEventListener(
+          'touchend',
+          (event) => {
+            if (!tracking) return;
+            tracking = false;
+
+            if (!event.changedTouches || !event.changedTouches.length) {
+              resetSwipeTracking();
+              return;
+            }
+
+            const touch = event.changedTouches[0];
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            const duration = (event.timeStamp || Date.now()) - startTime;
+            resetSwipeTracking();
+
+            if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE) return;
+            if (Math.abs(deltaY) > SWIPE_MAX_OFF_AXIS) return;
+            if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+            if (duration > SWIPE_MAX_DURATION) return;
+
+            const currentIndex = order.indexOf(activeView);
+            if (currentIndex === -1) return;
+
+            if (deltaX < 0 && currentIndex < order.length - 1) {
+              setActiveView(order[currentIndex + 1]);
+            } else if (deltaX > 0 && currentIndex > 0) {
+              setActiveView(order[currentIndex - 1]);
+            }
+          },
+          { passive: true }
+        );
+
+        main.addEventListener('touchcancel', resetSwipeTracking, { passive: true });
+      }
 
       setActiveView('reminders');
     })();
