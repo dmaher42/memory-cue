@@ -1803,13 +1803,20 @@ export async function initReminders(sel = {}) {
         div.dataset.today = 'true';
       }
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
+      const catLabel = catName ? escapeHtml(catName) : '';
+      const priorityLabel = escapeHtml(summary.priority);
+      const chipMarkup = [
+        `<span class="task-chip" data-chip="due">${escapeHtml(dueTxt)}</span>`,
+        catLabel ? `<span class="task-chip" data-chip="category">${catLabel}</span>` : '',
+        `<span class="task-chip" data-chip="priority">${priorityLabel}</span>`
+      ].filter(Boolean).join('');
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
       div.innerHTML = `
         <div class="task-content">
           <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
           <div class="task-meta">
-            <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
-              <span>${dueTxt}</span>
+            <div class="task-meta-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              ${chipMarkup}
             </div>
           </div>
           ${notesHtml}
