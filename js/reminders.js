@@ -1810,7 +1810,6 @@ export async function initReminders(sel = {}) {
           <div class="task-meta">
             <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
               <span>${dueTxt}</span>
-              <span class="priority-badge" style="background:rgba(56,189,248,.14);color:#0284c7;border-color:rgba(56,189,248,.26);">${escapeHtml(catName)}</span>
             </div>
           </div>
           ${notesHtml}
