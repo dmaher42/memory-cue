@@ -637,6 +637,7 @@ document.addEventListener('click', (ev) => {
 
 /* BEGIN GPT CHANGE: sync controls */
 (function () {
+  const statusContainer = document.getElementById('syncStatus');
   const statusDotEl = document.getElementById('mcStatus');
   const statusTextEl = document.getElementById('mcStatusText');
   const syncUrlInput = document.getElementById('syncUrl');
@@ -681,13 +682,19 @@ document.addEventListener('click', (ev) => {
   function setStatus(state, message) {
     currentState = state;
     ACTIVE_CLASSES.forEach((cls) => statusTextEl.classList.remove(cls));
+    if (statusContainer) {
+      ACTIVE_CLASSES.forEach((cls) => statusContainer.classList.remove(cls));
+    }
 
     if (state === 'online') {
       statusTextEl.classList.add('online');
+      if (statusContainer) statusContainer.classList.add('online');
     } else if (state === 'error') {
       statusTextEl.classList.add('error');
+      if (statusContainer) statusContainer.classList.add('error');
     } else {
       statusTextEl.classList.add('offline');
+      if (statusContainer) statusContainer.classList.add('offline');
     }
 
     const fullText =
