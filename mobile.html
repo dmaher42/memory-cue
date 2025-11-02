@@ -67,6 +67,144 @@
       align-items: center;
       justify-content: center;
     }
+    /* Enhanced add button system */
+    .add-button-container {
+      position: relative;
+    }
+    .add-primary-button {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      color: white;
+      font-size: 28px;
+      font-weight: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .add-primary-button:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
+    }
+    .add-primary-button:active {
+      transform: translateY(0) scale(0.98);
+    }
+    .add-options-fab {
+      position: absolute;
+      bottom: 56px;
+      right: 0;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .add-options-fab.active {
+      display: flex;
+      animation: fabOpen 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes fabOpen {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .add-option-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .dark .add-option-item {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .add-option-item:hover {
+      transform: translateX(-4px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    .add-option-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .add-option-icon.reminder {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+    .add-option-icon.voice {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+    }
+    .add-option-icon.note {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+    .add-option-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(15, 23, 42, 0.9);
+    }
+    .dark .add-option-text {
+      color: rgba(241, 245, 249, 0.9);
+    }
+    .add-option-shortcut {
+      font-size: 12px;
+      color: rgba(100, 116, 139, 0.7);
+      font-family: monospace;
+    }
+    /* Quick add bar enhancement */
+    #quickAddBar {
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .dark #quickAddBar {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    #quickAddInput {
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: rgba(255, 255, 255, 0.8);
+      transition: all 0.2s ease;
+    }
+    .dark #quickAddInput {
+      background: rgba(15, 23, 42, 0.6);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    #quickAddInput:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      background: white;
+    }
+    .dark #quickAddInput:focus {
+      background: rgba(15, 23, 42, 0.9);
+    }
     .notes-editor {
       min-height: 10rem;
       width: 100%;
@@ -587,20 +725,50 @@
     </div>
 
     <div class="flex items-center gap-3">
-      <button
-        id="addReminderBtn"
-        type="button"
-        class="btn btn-ghost btn-circle text-2xl"
-        aria-label="Add reminder"
-        data-open-add-task
-      >
-        +
-      </button>
+      <div class="add-button-container">
+        <button
+          id="addReminderBtn"
+          type="button"
+          class="add-primary-button"
+          aria-label="Add item"
+          aria-expanded="false"
+          data-open-add-task
+        >
+          +
+        </button>
+
+        <div id="addOptionsFab" class="add-options-fab" role="menu">
+          <button class="add-option-item" data-add-type="reminder" role="menuitem">
+            <div class="add-option-icon reminder">📝</div>
+            <div>
+              <div class="add-option-text">Reminder</div>
+              <div class="add-option-shortcut">R</div>
+            </div>
+          </button>
+
+          <button class="add-option-item" data-add-type="voice" role="menuitem" id="voiceAddBtn">
+            <div class="add-option-icon voice">🎙️</div>
+            <div>
+              <div class="add-option-text">Voice Note</div>
+              <div class="add-option-shortcut">V</div>
+            </div>
+          </button>
+
+          <button class="add-option-item" data-add-type="note" role="menuitem">
+            <div class="add-option-icon note">📄</div>
+            <div>
+              <div class="add-option-text">Quick Note</div>
+              <div class="add-option-shortcut">N</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <div class="relative">
         <button
           id="overflowMenuBtn"
           type="button"
-          class="btn btn-ghost btn-circle text-xl"
+          class="btn-secondary-action"
           aria-label="More options"
           aria-haspopup="menu"
           aria-controls="overflowMenu"
@@ -613,13 +781,6 @@
           class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
         >
           <ul class="py-2 text-sm">
-            <li>
-              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
-                <span aria-hidden="true">🎙️</span>
-                <span>Dictate reminder</span>
-              </button>
-            </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
             <li>
               <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
             </li>
@@ -948,6 +1109,79 @@
         }
       });
     });
+
+    // Enhanced add button functionality
+    (function () {
+      const addBtn = document.getElementById('addReminderBtn');
+      const addOptionsFab = document.getElementById('addOptionsFab');
+      if (!addBtn || !addOptionsFab) return;
+
+      let suppressVoiceTrigger = false;
+
+      addBtn.addEventListener('click', function () {
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', String(!isExpanded));
+        addOptionsFab.classList.toggle('active');
+
+        if (!isExpanded) {
+          this.style.transform = 'rotate(45deg)';
+        } else {
+          this.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.add-button-container')) {
+          addOptionsFab.classList.remove('active');
+          addBtn.setAttribute('aria-expanded', 'false');
+          addBtn.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      document.querySelectorAll('.add-option-item').forEach((item) => {
+        item.addEventListener('click', function () {
+          const addType = this.dataset.addType;
+
+          addOptionsFab.classList.remove('active');
+          addBtn.setAttribute('aria-expanded', 'false');
+          addBtn.style.transform = 'rotate(0deg)';
+
+          switch (addType) {
+            case 'reminder': {
+              const quickAddInput = document.getElementById('quickAddInput');
+              quickAddInput?.focus();
+              break;
+            }
+            case 'voice': {
+              if (suppressVoiceTrigger) {
+                suppressVoiceTrigger = false;
+                break;
+              }
+              const voiceOption = document.getElementById('voiceAddBtn');
+              if (voiceOption) {
+                suppressVoiceTrigger = true;
+                voiceOption.click();
+                const resetTrigger = () => {
+                  suppressVoiceTrigger = false;
+                };
+                if (typeof queueMicrotask === 'function') {
+                  queueMicrotask(resetTrigger);
+                } else {
+                  setTimeout(resetTrigger, 0);
+                }
+              }
+              break;
+            }
+            case 'note': {
+              // Add note creation logic here
+              break;
+            }
+            default:
+              break;
+          }
+        });
+      });
+    })();
 
     (function () {
       const views = {
