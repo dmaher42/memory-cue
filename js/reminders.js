@@ -163,6 +163,53 @@ export async function initReminders(sel = {}) {
     online: 'Connected. Changes sync automatically.',
     offline: "Offline. Changes are saved on this device until you reconnect.",
   };
+  const UNDO_DELETE_TIMEOUT_MS = 6000;
+  let deleteUndoState = null;
+
+  function clearUndoDeleteState(tokenId, { clearMessage = true } = {}) {
+    if (!deleteUndoState) {
+      return;
+    }
+    if (tokenId && deleteUndoState.tokenId !== tokenId) {
+      return;
+    }
+    if (deleteUndoState.timeoutId) {
+      clearTimeout(deleteUndoState.timeoutId);
+    }
+    if (clearMessage && statusEl && statusEl.dataset.undoToken === deleteUndoState.tokenId) {
+      if (typeof statusEl.replaceChildren === 'function') {
+        statusEl.replaceChildren();
+      } else {
+        statusEl.textContent = '';
+      }
+      delete statusEl.dataset.undoToken;
+      delete statusEl.dataset.statusKind;
+    }
+    deleteUndoState = null;
+  }
+
+  function showDeleteUndoMessage(state) {
+    if (!statusEl) {
+      return;
+    }
+    const message = document.createElement('span');
+    message.textContent = 'Reminder deleted.';
+    const spacer = document.createTextNode(' ');
+    const undoButton = document.createElement('button');
+    undoButton.type = 'button';
+    undoButton.textContent = 'Undo';
+    undoButton.className = 'status-undo';
+    undoButton.addEventListener('click', () => undoDelete(state.tokenId));
+    state.button = undoButton;
+    if (typeof statusEl.replaceChildren === 'function') {
+      statusEl.replaceChildren(message, spacer, undoButton);
+    } else {
+      statusEl.textContent = '';
+      statusEl.append(message, spacer, undoButton);
+    }
+    statusEl.dataset.statusKind = 'undo';
+    statusEl.dataset.undoToken = state.tokenId;
+  }
 
   function renderSyncIndicator(state, message) {
     if (!syncStatus) return;
@@ -1277,7 +1324,19 @@ export async function initReminders(sel = {}) {
     const safe = escapeHtml(note).replace(/\r\n/g,'\n');
     return safe.replace(/\n/g,'<br>');
   }
-  function toast(msg){ if(!statusEl) return; statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='',2500); }
+  function toast(msg){
+    if(!statusEl) return;
+    clearUndoDeleteState();
+    statusEl.dataset.statusKind = 'toast';
+    statusEl.textContent = msg;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{
+      if(statusEl && statusEl.dataset.statusKind === 'toast'){
+        statusEl.textContent='';
+        delete statusEl.dataset.statusKind;
+      }
+    },2500);
+  }
   function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
   // Quick when parser (subset from mobile)
@@ -1500,20 +1559,56 @@ export async function initReminders(sel = {}) {
       });
     }
   }
+  function undoDelete(tokenId){
+    if(!deleteUndoState || deleteUndoState.tokenId !== tokenId) return;
+    const { item, index } = deleteUndoState;
+    if(!item) {
+      clearUndoDeleteState(tokenId);
+      return;
+    }
+    clearUndoDeleteState(tokenId);
+    const insertAt = Number.isInteger(index) ? Math.min(Math.max(index, 0), items.length) : items.length;
+    item.pendingSync = !userId;
+    item.updatedAt = Date.now();
+    items.splice(insertAt, 0, item);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    scheduleReminder(item);
+    saveToFirebase(item);
+    tryCalendarSync(item);
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    emitActivity({
+      action: 'restored',
+      label: `Reminder restored · ${item.title}`,
+    });
+    toast('Reminder restored');
+  }
   function removeItem(id){
-    const removed = items.find(x=>x.id===id);
-    items = items.filter(x=>x.id!==id);
+    const index = items.findIndex(x=>x.id===id);
+    const removed = index >= 0 ? items.splice(index,1)[0] : null;
     render();
     persistItems();
     deleteFromFirebase(id);
     cancelReminder(id);
-    if(removed){
-      emitActivity({
-        action: 'deleted',
-        label: `Reminder removed · ${removed.title}`,
-      });
-    } else {
-      emitActivity({ action: 'deleted', label: 'Reminder removed' });
+    const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
+    emitActivity({ action: 'deleted', label: activityLabel });
+    if(removed && statusEl){
+      clearUndoDeleteState();
+      const tokenId = `undo-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      deleteUndoState = {
+        tokenId,
+        item: removed,
+        index,
+        timeoutId: null,
+      };
+      showDeleteUndoMessage(deleteUndoState);
+      deleteUndoState.timeoutId = setTimeout(()=>{
+        clearUndoDeleteState(tokenId);
+      }, UNDO_DELETE_TIMEOUT_MS);
+    } else if(removed) {
+      clearUndoDeleteState();
     }
   }
 
