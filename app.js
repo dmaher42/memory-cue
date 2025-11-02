@@ -126,6 +126,28 @@ function initReminderModalUI() {
 
 initReminderModalUI();
 
+const settingsSaveButton = document.getElementById('settings-save-button');
+const settingsSaveConfirmation = document.getElementById('settings-save-confirmation');
+const liveStatusRegion = document.getElementById('live-status');
+let hideSettingsSaveConfirmationTimeoutId = null;
+
+if (settingsSaveButton && settingsSaveConfirmation) {
+  settingsSaveButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    settingsSaveConfirmation.classList.remove('hidden');
+    settingsSaveConfirmation.textContent = 'Settings saved!';
+    if (liveStatusRegion) {
+      liveStatusRegion.textContent = 'Settings saved!';
+    }
+    if (hideSettingsSaveConfirmationTimeoutId) {
+      window.clearTimeout(hideSettingsSaveConfirmationTimeoutId);
+    }
+    hideSettingsSaveConfirmationTimeoutId = window.setTimeout(() => {
+      settingsSaveConfirmation.classList.add('hidden');
+    }, 3000);
+  });
+}
+
 const titleInput = document.getElementById('title');
 const mobileTitleInput = document.getElementById('reminderText');
 
