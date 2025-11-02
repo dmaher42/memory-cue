@@ -1,69 +1,71 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <!-- Temporary redirect to built site in /docs while Pages source is being updated -->
-  <meta http-equiv="refresh" content="0; url=./docs/mobile.html" />
-  <script>try{ if(location.pathname.endsWith('/mobile.html')||location.pathname==='/memory-cue/'||location.pathname==='/' ){ location.replace('./docs/mobile.html'); } }catch(e){};</script>
-  <base href="./" />
+  <base href="/memory-cue/" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
-  <link rel="stylesheet" href="./assets/styles-eed63890.css" />
+  <link rel="stylesheet" href="./styles/index.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Memory Cue (Mobile) — Inline + Edit + Sync All</title>
+  <title>Memory Cue (Mobile)</title>
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./styles/index.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+    integrity="sha384-yxrQVVFFRZdq4Z/YbeTDzSYbn1W6VnVonm2vAgnxtxUMehcccE4k2NufOz2tJnOe"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="./styles/daisy-themes.css" />
   <style>
-    .sync-status {
+    /* Accessibility helper */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    /* Status dot colors */
+    .sync-dot {
+      font-size: 20px;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+    .sync-dot.online {
+      color: #16a34a;
+    }
+    .sync-dot.offline {
+      color: #dc2626;
+    }
+    /* Menu panel and items */
+    .menu-card {
+      background: var(--color-bg, #fff);
+    }
+    .menu-item {
       display: inline-flex;
       align-items: center;
-      gap: 0.375rem;
-      padding: 0.25rem 0.75rem;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .menu-item:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    /* Icon circle fallback */
+    .btn-circle {
+      width: 44px;
+      height: 44px;
       border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(148, 163, 184, 0.1);
-      color: rgb(15 23 42);
-      transition: all 0.2s ease;
-    }
-    .navbar .flex-1 {
-      min-width: 0;
-    }
-    .navbar .sync-status {
-      max-width: min(60vw, 14rem);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex-shrink: 1;
-    }
-    .dark .sync-status {
-      border-color: rgba(148, 163, 184, 0.35);
-      background: rgba(148, 163, 184, 0.15);
-      color: rgb(226 232 240);
-    }
-    .sync-status.online {
-      background: rgba(22, 163, 74, 0.12);
-      color: rgb(22 163 74);
-      border-color: rgba(22, 163, 74, 0.3);
-    }
-    .dark .sync-status.online {
-      background: rgba(34, 197, 94, 0.16);
-      color: rgb(187 247 208);
-      border-color: rgba(34, 197, 94, 0.4);
-    }
-    .sync-status.error {
-      background: rgba(248, 113, 113, 0.16);
-      color: rgb(220 38 38);
-      border-color: rgba(248, 113, 113, 0.32);
-    }
-    .dark .sync-status.error {
-      background: rgba(248, 113, 113, 0.22);
-      color: rgb(254 205 211);
-      border-color: rgba(248, 113, 113, 0.45);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .notes-editor {
       min-height: 10rem;
@@ -132,15 +134,21 @@
     .dark .glass-panel {
       background-color: rgba(15, 23, 42, 0.88);
     }
+    .task-item[data-today="true"],
     .task-item.is-today {
+      position: relative;
       border: 1px solid rgba(59, 130, 246, 0.35);
-      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.08);
-      background: rgba(191, 219, 254, 0.22);
+      border-left-width: 4px;
+      border-left-color: rgba(37, 99, 235, 0.7);
+      background: linear-gradient(135deg, rgba(191, 219, 254, 0.28), rgba(191, 219, 254, 0.08));
+      box-shadow: 0 12px 26px -16px rgba(30, 64, 175, 0.55);
     }
+    .dark .task-item[data-today="true"],
     .dark .task-item.is-today {
-      border-color: rgba(96, 165, 250, 0.45);
-      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.28);
-      background: rgba(30, 64, 175, 0.28);
+      border-color: rgba(96, 165, 250, 0.55);
+      border-left-color: rgba(191, 219, 254, 0.85);
+      background: linear-gradient(135deg, rgba(30, 64, 175, 0.5), rgba(30, 58, 138, 0.25));
+      box-shadow: 0 12px 26px -16px rgba(30, 64, 175, 0.7);
     }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
@@ -167,39 +175,22 @@
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
   <style>
+    :root {
+      --vh: 1vh;
+    }
+
+    body,
+    .min-h-screen {
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+
     .hidden {
       display: none !important;
-    }
-    .fab {
-      position: fixed;
-      right: calc(16px + env(safe-area-inset-right));
-      bottom: calc(88px + env(safe-area-inset-bottom));
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      font-size: 28px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--fallback-p, #2563eb);
-      color: var(--fallback-pc, #fff);
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
-      border: none;
-      cursor: pointer;
-      z-index: 80;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .fab:focus-visible {
-      outline: 2px solid currentColor;
-      outline-offset: 2px;
-    }
-    .fab:active {
-      transform: scale(0.96);
-      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
     }
     .sheet {
       position: fixed;
       inset: 0;
+      min-height: calc(var(--vh, 1vh) * 100);
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
@@ -210,7 +201,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      max-height: 85vh;
+      max-height: calc(var(--vh, 1vh) * 85);
       overflow: auto;
       border-top-left-radius: 16px;
       border-top-right-radius: 16px;
@@ -330,9 +321,19 @@
     .chip-row input[type='radio'] {
       accent-color: currentColor;
     }
+    .voice-add-wrap {
+      display: none !important;
+    }
+    .focus-list,
+    .focus-detail {
+      display: none !important;
+    }
+    #toggleUiBtn {
+      display: none !important;
+    }
   </style>
   <!-- END GPT CHANGE: rhythm -->
-    <style id="min-expand-css">
+  <style id="min-expand-css">
     /* Expand/collapse behavior */
     .task-row-min {
       cursor: pointer;
@@ -365,45 +366,117 @@
       font-size: 12px;
     }
     .task-row-min.expanded::after { transform: rotate(180deg); }
+
+  </style>
+  <style id="empty-state-compact-css">
+    #emptyState {
+      text-align: left;
+    }
+    #emptyState .empty-state-compact {
+      display: grid;
+      gap: 0.75rem;
+      justify-items: start;
+      text-align: left;
+      width: 100%;
+    }
+    #emptyState .empty-state-compact h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    #emptyState .empty-state-compact p {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: rgba(71, 85, 105, 0.85);
+    }
+    .dark #emptyState .empty-state-compact p {
+      color: rgba(226, 232, 240, 0.8);
+    }
+    #emptyState .empty-state-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    #emptyState .empty-state-actions > * {
+      flex: 1 1 auto;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar navbar-glass sticky top-0 z-50">
-    <div class="flex-1 items-center gap-2">
-      <a class="btn btn-ghost text-lg font-semibold" href="#">Memory Cue</a>
-      <span
-        id="syncStatus"
-        class="sync-status"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >Offline</span>
+  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-base-100/90 backdrop-blur">
+    <div class="flex items-center gap-2 min-w-0">
+      <a href="#" class="flex items-center min-w-0">
+        <span class="font-semibold truncate">
+                   <span class="sm:hidden inline">MC</span>
+        </span>
+      </a>
     </div>
-    <div class="flex-none flex flex-col gap-1 text-right">
-      <div class="flex justify-end items-center gap-2">
-        <img
-          id="googleAvatar"
-          src=""
-          alt=""
-          class="hidden h-8 w-8 rounded-full border border-base-300"
-        />
-        <button id="themeToggle" class="btn btn-ghost" type="button">Theme</button>
-        <button id="openSettings" class="btn btn-ghost" type="button">Settings</button>
-        <button id="googleSignInBtn" class="btn btn-primary" type="button">Sign in</button>
-        <button id="googleSignOutBtn" class="btn btn-ghost hidden" type="button">Sign out</button>
+
+    <div class="flex items-center gap-3">
+      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
+      <span id="mcStatusText" class="sr-only">Offline</span>
+      <button
+        id="addReminderBtn"
+        type="button"
+        class="btn btn-ghost btn-circle text-2xl"
+        aria-label="Add reminder"
+        data-open-add-task
+      >
+        +
+      </button>
+      <div class="relative">
+        <button
+          id="overflowMenuBtn"
+          type="button"
+          class="btn btn-ghost btn-circle text-xl"
+          aria-label="More options"
+          aria-haspopup="menu"
+          aria-controls="overflowMenu"
+          aria-expanded="false"
+        >
+          ⋮
+        </button>
+        <div
+          id="overflowMenu"
+          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
+        >
+          <ul class="py-2 text-sm">
+            <li>
+              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
+                <span aria-hidden="true">🎙️</span>
+                <span>Dictate reminder</span>
+              </button>
+            </li>
+            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li>
+              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
+            </li>
+            <li>
+              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+            </li>
+            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li>
+              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+            </li>
+            <li>
+              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+            </li>
+          </ul>
+        </div>
       </div>
-      <p id="googleUserName" class="text-xs text-base-content/70"></p>
     </div>
   </header>
+  
 
-  <main id="main" class="max-w-md mx-auto px-4 pb-28 pt-4" tabindex="-1" data-active-view="reminders">
+  <main id="main" class="max-w-md mx-auto px-4 pt-4 pb-4" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <!-- QUICK ADD: always visible at the top of Reminders -->
+      <!-- Quick add form -->
       <section id="quickAddBar" class="card bg-base-100 border" aria-label="Quick add reminder">
         <div class="card-body gap-3 compact">
           <div class="flex items-center gap-2">
@@ -426,13 +499,11 @@
                     class="btn btn-primary"
                     type="button"
                     aria-label="Add reminder now">Add</button>
-          </div>
-          <p class="text-xs text-base-content/60">
-            Tip: Press <kbd>/</kbd> or <kbd>q</kbd> to focus; press <kbd>Enter</kbd> to add instantly.
-          </p>
+       
         </div>
       </section>
-            <section id="reminderListSection" class="card bg-base-100 border">
+      
+      <section id="reminderListSection" class="card bg-base-100 border">
         <div class="card-body gap-4 compact" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60"></div>
           <ul id="reminderList" class="space-y-3"></ul>
@@ -486,6 +557,7 @@
     </section>
     <!-- END GPT CHANGE -->
 </main>
+
   <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
     <button type="button" aria-current="page" class="active">
       <span class="btm-nav-label">Reminders</span>
@@ -497,8 +569,42 @@
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
+  <script>
+    window.memoryCueEmptyStateCtaClasses = 'btn btn-primary btn-sm w-full sm:w-auto';
+    window.memoryCueMountEmptyState = function mountCompactEmptyState(target, config) {
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const { title, description, action } = config || {};
+      const wrapper = document.createElement('div');
+      wrapper.className = 'empty-state-compact';
+      wrapper.setAttribute('role', 'presentation');
+
+      if (title) {
+        const heading = document.createElement('h3');
+        heading.textContent = title;
+        wrapper.appendChild(heading);
+      }
+
+      if (description) {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = description;
+        wrapper.appendChild(paragraph);
+      }
+
+      if (action) {
+        const actions = document.createElement('div');
+        actions.className = 'empty-state-actions';
+        actions.innerHTML = action;
+        wrapper.appendChild(actions);
+      }
+
+      target.replaceChildren(wrapper);
+    };
+  </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-X67VZDXH.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-UYWFFJR2.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -527,7 +633,7 @@
             <input
               id="reminderText"
               type="text"
-              placeholder="e.g., Call Alex at 3pm"
+              placeholder=""
               class="input input-bordered w-full"
               autocomplete="off"
             />
@@ -662,20 +768,6 @@
     <div class="modal-backdrop" data-close></div>
   </div>
   <!-- END GPT CHANGE: settings modal -->
-
-  <!-- BEGIN GPT CHANGE: global FAB -->
-  <button
-    id="fabCreate"
-    class="fab"
-    type="button"
-    aria-label="Add reminder"
-    aria-haspopup="dialog"
-    aria-controls="create-sheet"
-    aria-expanded="false"
-  >
-    ＋
-  </button>
-  <!-- END GPT CHANGE: global FAB -->
 
   <script id="mobile-enhancements">
     document.querySelectorAll('[data-close]').forEach((btn) => {
@@ -839,15 +931,17 @@
     })();
 
     (function () {
-      const syncStatusEl = document.getElementById('syncStatus');
-      if (!syncStatusEl) return;
+      const statusDotEl = document.getElementById('mcStatus');
+      const statusTextEl = document.getElementById('mcStatusText');
+      if (!statusTextEl) return;
 
       const syncUrlInput = document.getElementById('syncUrl');
       const saveSettingsBtn = document.getElementById('saveSyncSettings');
       const testSyncBtn = document.getElementById('testSync');
       const syncAllBtn = document.getElementById('syncAll');
       const STORAGE_KEY = 'syncUrl';
-      const ACTIVE_CLASSES = ['online', 'error'];
+      const ACTIVE_CLASSES = ['online', 'offline', 'error'];
+      const DOT_CLASSES = ['online', 'offline'];
 
       let currentState = null;
 
@@ -869,14 +963,24 @@
         info: '',
       };
 
+      const applyDotState = (state) => {
+        if (!statusDotEl) return;
+        DOT_CLASSES.forEach((cls) => statusDotEl.classList.remove(cls));
+        const isOnline = state !== 'offline' && state !== 'error';
+        statusDotEl.classList.add(isOnline ? 'online' : 'offline');
+        statusDotEl.setAttribute('aria-label', isOnline ? 'Online' : 'Offline');
+      };
+
       const setStatus = (state, message) => {
         currentState = state;
-        ACTIVE_CLASSES.forEach((cls) => syncStatusEl.classList.remove(cls));
+        ACTIVE_CLASSES.forEach((cls) => statusTextEl.classList.remove(cls));
 
         if (state === 'online') {
-          syncStatusEl.classList.add('online');
+          statusTextEl.classList.add('online');
         } else if (state === 'error') {
-          syncStatusEl.classList.add('error');
+          statusTextEl.classList.add('error');
+        } else {
+          statusTextEl.classList.add('offline');
         }
 
         const fullText =
@@ -889,20 +993,19 @@
             ? message.trim()
             : DISPLAY_MESSAGES[state] || fullText;
 
-        syncStatusEl.textContent = displayText;
-        syncStatusEl.dataset.state = state;
+        const srText = fullText || displayText || '';
+        statusTextEl.dataset.state = state;
+        statusTextEl.textContent = srText;
 
-        if (fullText) {
-          syncStatusEl.setAttribute('title', fullText);
-          if (displayText !== fullText) {
-            syncStatusEl.setAttribute('aria-label', fullText);
-          } else {
-            syncStatusEl.removeAttribute('aria-label');
-          }
+        if (srText) {
+          statusTextEl.setAttribute('title', srText);
+          statusTextEl.setAttribute('aria-label', srText);
         } else {
-          syncStatusEl.removeAttribute('title');
-          syncStatusEl.removeAttribute('aria-label');
+          statusTextEl.removeAttribute('title');
+          statusTextEl.removeAttribute('aria-label');
         }
+
+        applyDotState(state);
       };
 
       const updateOnlineState = () => {
@@ -1237,507 +1340,6 @@
         } finally {
           toggleBusy(false);
         }
-      });
-    })();
-  </script>
-  <script id="add-task-guard-script">
-    (function () {
-      const dialog = document.querySelector('[data-add-task-dialog]');
-      if (!(dialog instanceof HTMLElement)) {
-        return;
-      }
-
-      const content = dialog.querySelector('[data-dialog-content]') || dialog.querySelector('.sheet-panel') || dialog;
-      const backdrop = dialog.querySelector('.sheet-backdrop') || dialog.querySelector('.backdrop');
-      const closeBtn = document.getElementById('closeCreateSheet');
-      const fab = document.getElementById('fabCreate');
-      const form = document.getElementById('createReminderForm');
-      const saveBtn = document.getElementById('saveReminder');
-      const prioritySelect = document.getElementById('priority');
-      const priorityChips = document.getElementById('priorityChips');
-      const totalCount = document.getElementById('totalCount');
-
-      let lastTrigger = null;
-      let pendingSave = false;
-
-      const ensureHidden = () => {
-        dialog.classList.add('hidden');
-        dialog.hidden = true;
-        dialog.removeAttribute('open');
-        dialog.setAttribute('aria-hidden', 'true');
-        dialog.classList.remove('open');
-      };
-
-      const isOpen = () => !dialog.classList.contains('hidden');
-
-      const focusFirstField = () => {
-        const target = dialog.querySelector('input, textarea, select, button, [contenteditable="true"]');
-        if (target && typeof target.focus === 'function') {
-          setTimeout(() => {
-            try { target.focus(); } catch { /* ignore focus failures */ }
-          }, 0);
-        }
-      };
-
-      const openSheet = (trigger) => {
-        lastTrigger = trigger instanceof HTMLElement ? trigger : null;
-        dialog.classList.remove('hidden');
-        dialog.hidden = false;
-        dialog.setAttribute('open', '');
-        dialog.setAttribute('aria-hidden', 'false');
-        dialog.classList.add('open');
-        focusFirstField();
-        document.dispatchEvent(new CustomEvent('reminder:sheet-opened', { detail: { trigger: lastTrigger } }));
-      };
-
-      const closeSheet = (reason = 'dismissed') => {
-        if (!isOpen()) {
-          ensureHidden();
-          lastTrigger = null;
-          return;
-        }
-
-        ensureHidden();
-
-        const focusTarget = (lastTrigger && document.body.contains(lastTrigger)) ? lastTrigger : fab;
-        if (focusTarget && typeof focusTarget.focus === 'function') {
-          try { focusTarget.focus(); } catch { /* ignore focus issues */ }
-        }
-        lastTrigger = null;
-
-        document.dispatchEvent(new CustomEvent('reminder:sheet-closed', { detail: { reason } }));
-      };
-
-      ensureHidden();
-
-      if (content && content !== dialog) {
-        content.addEventListener('click', (event) => event.stopPropagation(), true);
-      }
-
-      if (backdrop instanceof HTMLElement) {
-        backdrop.addEventListener('click', (event) => {
-          if (event.target !== backdrop) return;
-          closeSheet('backdrop');
-        });
-      }
-
-      closeBtn?.addEventListener('click', (event) => {
-        event.preventDefault();
-        closeSheet('close-button');
-      });
-
-      dialog.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          event.stopPropagation();
-          closeSheet('escape');
-        }
-      });
-
-      const openerSelectors = [
-        '[data-open-add-task]',
-        '#addReminderFab',
-        '#fabCreate',
-        '[aria-controls="createReminderModal"]'
-      ];
-      const openerElements = new Set();
-      openerSelectors.forEach((selector) => {
-        document.querySelectorAll(selector).forEach((el) => openerElements.add(el));
-      });
-
-      openerElements.forEach((trigger) => {
-        if (!(trigger instanceof HTMLElement)) return;
-        trigger.addEventListener('click', (event) => {
-          event.preventDefault();
-          openSheet(trigger);
-        });
-      });
-
-      window.closeAddTask = closeSheet;
-
-      if (form instanceof HTMLFormElement && saveBtn instanceof HTMLElement) {
-        form.addEventListener('submit', (event) => {
-          event.preventDefault();
-          if (!saveBtn.matches(':disabled')) {
-            saveBtn.click();
-          }
-        });
-      }
-
-      if (saveBtn instanceof HTMLElement) {
-        saveBtn.addEventListener('click', () => {
-          pendingSave = true;
-          document.dispatchEvent(
-            new CustomEvent('reminder:save', {
-              detail: { form: form instanceof HTMLFormElement ? form : null, trigger: saveBtn }
-            })
-          );
-        }, { capture: true });
-      }
-
-      const updateTotalCounts = (items) => {
-        const total = Array.isArray(items) ? items.length : (typeof items === 'number' ? items : 0);
-        const value = String(total);
-        if (totalCount) totalCount.textContent = value;
-      };
-
-      const handleRemindersUpdated = (event) => {
-        updateTotalCounts(event?.detail?.items);
-      };
-
-      document.addEventListener('memoryCue:remindersUpdated', handleRemindersUpdated);
-      document.addEventListener('reminders:updated', handleRemindersUpdated);
-
-      const priorityRadios = priorityChips
-        ? Array.from(priorityChips.querySelectorAll('input[name="priority"]'))
-        : [];
-
-      const syncRadiosFromSelect = () => {
-        const value = prioritySelect?.value || 'Medium';
-        priorityRadios.forEach((radio) => {
-          const isChecked = radio.value === value;
-          radio.checked = isChecked;
-          radio.setAttribute('aria-checked', isChecked ? 'true' : 'false');
-        });
-      };
-
-      const setPriorityValue = (value) => {
-        if (!prioritySelect) return;
-        if (prioritySelect.value !== value) {
-          prioritySelect.value = value;
-          prioritySelect.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        syncRadiosFromSelect();
-      };
-
-      priorityRadios.forEach((radio) => {
-        radio.addEventListener('change', () => {
-          if (radio.checked) {
-            setPriorityValue(radio.value);
-          }
-        });
-      });
-
-      prioritySelect?.addEventListener('change', syncRadiosFromSelect);
-
-      document.addEventListener('cue:prepare', () => {
-        pendingSave = false;
-        syncRadiosFromSelect();
-      });
-
-      document.addEventListener('cue:open', () => {
-        pendingSave = false;
-        syncRadiosFromSelect();
-        openSheet();
-      });
-
-      document.addEventListener('cue:close', (event) => {
-        const reason = event?.detail?.reason || 'cue-close';
-        if (reason === 'created' || reason === 'updated') {
-          document.dispatchEvent(new CustomEvent('reminder:saved', { detail: { reason } }));
-        }
-        pendingSave = false;
-        syncRadiosFromSelect();
-        closeSheet(reason);
-      });
-
-      document.addEventListener('cue:cancelled', () => {
-        pendingSave = false;
-        closeSheet('cue-cancelled');
-      });
-
-      syncRadiosFromSelect();
-    })();
-  </script>
-  <script id="sheet-save-bridge-script">
-    (function () {
-      const dialog = document.querySelector('[data-add-task-dialog]');
-      if (!(dialog instanceof HTMLElement)) {
-        return;
-      }
-
-      const form = document.getElementById('createReminderForm');
-      const saveBtn = document.getElementById('saveReminder');
-      if (!(form instanceof HTMLFormElement) || !(saveBtn instanceof HTMLElement)) {
-        return;
-      }
-
-      const quickAddBtn = document.getElementById('quickAdd');
-      const titleInput = document.getElementById('reminderText');
-      const dateInput = document.getElementById('reminderDate');
-      const timeInput = document.getElementById('reminderTime');
-      const detailsInput = document.getElementById('reminderDetails');
-      const priorityInput = document.getElementById('priority');
-      const categoryInput = document.getElementById('category');
-      const statusEl = document.getElementById('statusMessage');
-
-      let isProcessing = false;
-      let attemptToken = 0;
-
-      const setBusy = (state) => {
-        if (state) {
-          saveBtn.setAttribute('disabled', 'disabled');
-          saveBtn.setAttribute('aria-busy', 'true');
-        } else {
-          saveBtn.removeAttribute('disabled');
-          saveBtn.removeAttribute('aria-busy');
-        }
-      };
-
-      const setStatus = (message, tone = 'info') => {
-        if (!statusEl) {
-          return;
-        }
-        if (!message) {
-          statusEl.textContent = '';
-          statusEl.hidden = true;
-          statusEl.removeAttribute('data-state');
-          return;
-        }
-        statusEl.hidden = false;
-        statusEl.textContent = message;
-        statusEl.dataset.state = tone;
-      };
-
-      const closeSheet = (reason = 'created') => {
-        try {
-          if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
-            window.closeAddTask(reason);
-            return;
-          }
-        } catch (error) {
-          console.error('closeAddTask failed', error);
-        }
-
-        try {
-          document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason } }));
-        } catch (error) {
-          console.error('cue:close dispatch failed', error);
-        }
-      };
-
-      const todayISO = () => {
-        const now = new Date();
-        const tz = now.getTimezoneOffset();
-        const adjusted = new Date(now.getTime() - tz * 60 * 1000);
-        return adjusted.toISOString().slice(0, 10);
-      };
-
-      const buildPayload = () => {
-        const title = (titleInput?.value || '').trim();
-        const date = (dateInput?.value || '').trim();
-        const time = (timeInput?.value || '').trim();
-        const details = (detailsInput?.value || '').trim();
-        const priority = (priorityInput?.value || 'Medium').trim() || 'Medium';
-        const category = (categoryInput?.value || 'General').trim() || 'General';
-
-        let dueIso = null;
-        if (date || time) {
-          const isoDate = date || todayISO();
-          const isoTime = time || '09:00';
-          try {
-            const parsed = new Date(`${isoDate}T${isoTime}`);
-            if (!Number.isNaN(parsed.getTime())) {
-              dueIso = parsed.toISOString();
-            }
-          } catch (error) {
-            console.error('Failed to build due date', error);
-            dueIso = null;
-          }
-        }
-
-        return {
-          title,
-          date,
-          time,
-          details,
-          priority,
-          category,
-          dueIso,
-        };
-      };
-
-      const awaitCueClose = () => new Promise((resolve) => {
-        let settled = false;
-        const complete = (value) => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          clearTimeout(timer);
-          document.removeEventListener('cue:close', handleClose, true);
-          resolve(value);
-        };
-
-        const handleClose = (event) => {
-          const reason = event?.detail?.reason;
-          if (reason === 'created' || reason === 'updated') {
-            complete(true);
-          }
-        };
-
-        const timer = setTimeout(() => complete(false), 700);
-
-        document.addEventListener('cue:close', handleClose, { once: true, capture: true });
-      });
-
-      const attemptViaQuickAdd = async () => {
-        if (!(quickAddBtn instanceof HTMLElement) || quickAddBtn.matches(':disabled')) {
-          return false;
-        }
-
-        try {
-          const waitForClose = awaitCueClose();
-          quickAddBtn.click();
-          return await waitForClose;
-        } catch (error) {
-          console.error('Quick add bridge failed', error);
-          return false;
-        }
-      };
-
-      const callCandidate = async (fn, label, payload) => {
-        if (typeof fn !== 'function') {
-          return false;
-        }
-        try {
-          const result = fn(payload);
-          if (result && typeof result.then === 'function') {
-            await result;
-          }
-          return true;
-        } catch (error) {
-          console.error(`Reminder save via ${label} failed`, error);
-          return false;
-        }
-      };
-
-      const attemptQuickInputFallback = async (payload) => {
-        const quickInput = document.getElementById('quickAddInput');
-        if (!(quickInput instanceof HTMLInputElement)) {
-          return false;
-        }
-        if (typeof window === 'undefined' || typeof window.memoryCueQuickAddNow !== 'function') {
-          return false;
-        }
-
-        const originalValue = quickInput.value;
-        const parts = [payload.title];
-        if (payload.date && payload.time) {
-          parts.push(`on ${payload.date} at ${payload.time}`);
-        } else if (payload.date) {
-          parts.push(`on ${payload.date}`);
-        } else if (payload.time) {
-          parts.push(`at ${payload.time}`);
-        }
-        if (payload.details) {
-          parts.push(`- ${payload.details}`);
-        }
-        if (payload.category && payload.category !== 'General') {
-          parts.push(`[${payload.category}]`);
-        }
-        if (payload.priority && payload.priority !== 'Medium') {
-          parts.push(`(${payload.priority} priority)`);
-        }
-
-        quickInput.value = parts.filter(Boolean).join(' ').trim();
-
-        try {
-          const result = window.memoryCueQuickAddNow();
-          if (result && typeof result.then === 'function') {
-            await result;
-          }
-          return true;
-        } catch (error) {
-          console.error('Quick add input fallback failed', error);
-          return false;
-        } finally {
-          setTimeout(() => {
-            try { quickInput.value = originalValue; } catch { quickInput.value = ''; }
-          }, 0);
-        }
-      };
-
-      const attemptCreation = async (payload) => {
-        if (await attemptViaQuickAdd()) {
-          return true;
-        }
-
-        if (await callCandidate(window.addReminderFromVoice, 'addReminderFromVoice', payload)) {
-          return true;
-        }
-
-        if (await callCandidate(window.createReminder, 'createReminder', payload)) {
-          return true;
-        }
-
-        if (await attemptQuickInputFallback(payload)) {
-          return true;
-        }
-
-        try {
-          const event = new CustomEvent('memoryCue:createReminder', {
-            detail: { data: payload, source: 'sheet-save' },
-            cancelable: true,
-          });
-          const dispatched = document.dispatchEvent(event);
-          return event.defaultPrevented || dispatched === false;
-        } catch (error) {
-          console.error('memoryCue:createReminder dispatch failed', error);
-          return false;
-        }
-      };
-
-      const handleSave = () => {
-        if (isProcessing) {
-          return;
-        }
-
-        const payload = buildPayload();
-        if (!payload.title) {
-          setStatus('Add a reminder title before saving.', 'error');
-          try { titleInput?.focus(); } catch { /* ignore focus errors */ }
-          return;
-        }
-
-        isProcessing = true;
-        attemptToken += 1;
-        const currentToken = attemptToken;
-
-        setStatus('Saving reminder…', 'pending');
-        setBusy(true);
-
-        Promise.resolve()
-          .then(() => attemptCreation(payload))
-          .then((success) => {
-            if (currentToken !== attemptToken) {
-              return;
-            }
-            if (success) {
-              setStatus('Reminder saved!', 'success');
-              closeSheet('created');
-            } else {
-              setStatus('Unable to save reminder. Please try again.', 'error');
-            }
-          })
-          .catch((error) => {
-            console.error('Reminder save failed', error);
-            if (currentToken === attemptToken) {
-              setStatus('Unable to save reminder. Please try again.', 'error');
-            }
-          })
-          .finally(() => {
-            if (currentToken === attemptToken) {
-              isProcessing = false;
-              setBusy(false);
-            }
-          });
-      };
-
-      document.addEventListener('reminder:save', (event) => {
-        if (event?.detail?.trigger && event.detail.trigger !== saveBtn) {
-          return;
-        }
-        handleSave();
       });
     })();
   </script>

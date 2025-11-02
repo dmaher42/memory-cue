@@ -139,31 +139,75 @@ html {
 }
 
 .sync-status {
-  transition: all 0.2s ease;
+  --indicator-color: rgba(100, 116, 139, 0.9);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.125rem 0.25rem;
+  color: rgb(100 116 139);
+  font-size: 0.875rem;
+  line-height: 1.25;
+  transition: color 0.2s ease;
+}
+
+.sync-status::before {
+  content: '';
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 9999px;
+  background-color: var(--indicator-color);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+  flex-shrink: 0;
+}
+
+.sync-status[data-compact='true'] {
+  padding: 0;
+  gap: 0;
+  min-width: 0.65rem;
+  min-height: 0.65rem;
+}
+
+.sync-status[data-compact='true']::before {
+  box-shadow: none;
+}
+
+.dark .sync-status {
+  color: rgb(148 163 184);
+  --indicator-color: rgba(148, 163, 184, 0.9);
+}
+
+.navbar .flex-1 {
+  min-width: 0;
+}
+
+.navbar .sync-status {
+  max-width: min(60vw, 14rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
 }
 
 .sync-status.online {
-  background: rgba(22, 163, 74, 0.12);
   color: rgb(22 163 74);
-  border-color: rgba(22, 163, 74, 0.3);
+  --indicator-color: rgb(34, 197, 94);
 }
 
 .dark .sync-status.online {
-  background: rgba(34, 197, 94, 0.16);
-  color: rgb(187 247 208);
-  border-color: rgba(34, 197, 94, 0.4);
+  color: rgb(134 239 172);
+  --indicator-color: rgb(74, 222, 128);
 }
 
+.sync-status.offline,
 .sync-status.error {
-  background: rgba(248, 113, 113, 0.16);
   color: rgb(220 38 38);
-  border-color: rgba(248, 113, 113, 0.32);
+  --indicator-color: rgb(248, 113, 113);
 }
 
+.dark .sync-status.offline,
 .dark .sync-status.error {
-  background: rgba(248, 113, 113, 0.22);
-  color: rgb(254 205 211);
-  border-color: rgba(248, 113, 113, 0.45);
+  color: rgb(248 113 113);
+  --indicator-color: rgb(252, 165, 165);
 }
 
 .app-shell {
