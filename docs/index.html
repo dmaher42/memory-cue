@@ -842,8 +842,9 @@
                 Notify me when resources are shared with my class
               </p>
             </div>
-            <div class="flex justify-end">
-              <button class="btn btn-primary" type="button">Save changes</button>
+            <div class="flex flex-col items-end gap-2">
+              <button id="settings-save-button" class="btn btn-primary" type="button">Save changes</button>
+              <p id="settings-save-confirmation" class="text-sm text-success hidden">Settings saved!</p>
             </div>
           </div>
           <aside class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4 text-sm text-base-content/80">
@@ -1035,7 +1036,29 @@
       });
     }
     window.addEventListener('hashchange', renderRoute);
-    window.addEventListener('DOMContentLoaded', renderRoute);
+    window.addEventListener('DOMContentLoaded', () => {
+      renderRoute();
+      const settingsSaveButton = document.getElementById('settings-save-button');
+      const settingsSaveConfirmation = document.getElementById('settings-save-confirmation');
+      const liveStatusRegion = document.getElementById('live-status');
+      if (settingsSaveButton && settingsSaveConfirmation) {
+        let hideSettingsSaveTimeoutId = null;
+        settingsSaveButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          settingsSaveConfirmation.classList.remove('hidden');
+          settingsSaveConfirmation.textContent = 'Settings saved!';
+          if (liveStatusRegion) {
+            liveStatusRegion.textContent = 'Settings saved!';
+          }
+          if (hideSettingsSaveTimeoutId) {
+            window.clearTimeout(hideSettingsSaveTimeoutId);
+          }
+          hideSettingsSaveTimeoutId = window.setTimeout(() => {
+            settingsSaveConfirmation.classList.add('hidden');
+          }, 3000);
+        });
+      }
+    });
   </script>
   <script type="module" src="./assets/app-KGXXFHHO.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
