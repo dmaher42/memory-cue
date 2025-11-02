@@ -270,36 +270,133 @@
       color: rgba(100, 116, 139, 0.7);
       font-family: monospace;
     }
-    /* Quick add bar enhancement */
+    /* Compact quick add optimizations */
     #quickAddBar {
-      border-radius: 16px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
-      backdrop-filter: blur(12px);
+      margin-bottom: 12px;
+    }
+
+    #quickAddBar > div {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.85));
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
     }
-    .dark #quickAddBar {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+
+    #quickAddBar > div::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(255, 255, 255, 0.6), transparent 55%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.7;
+    }
+
+    #quickAddBar > div::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      pointer-events: none;
+    }
+
+    .dark #quickAddBar > div {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.85));
       border-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.35);
     }
+
+    .dark #quickAddBar > div::before {
+      background: radial-gradient(circle at top, rgba(148, 163, 184, 0.35), transparent 60%);
+      mix-blend-mode: screen;
+    }
+
+    .dark #quickAddBar > div::after {
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
     #quickAddInput {
-      border-radius: 12px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      background: rgba(255, 255, 255, 0.8);
-      transition: all 0.2s ease;
+      font-size: 15px;
+      line-height: 1.4;
+      color: inherit;
+      min-height: 36px;
     }
-    .dark #quickAddInput {
-      background: rgba(15, 23, 42, 0.6);
-      border-color: rgba(255, 255, 255, 0.1);
+
+    #quickAddInput::placeholder {
+      color: rgba(100, 116, 139, 0.5);
     }
+
+    .dark #quickAddInput::placeholder {
+      color: rgba(203, 213, 225, 0.5);
+    }
+
     #quickAddInput:focus {
-      border-color: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-      background: white;
+      outline: none;
+      box-shadow: none;
     }
-    .dark #quickAddInput:focus {
-      background: rgba(15, 23, 42, 0.9);
+
+    /* Compact voice button */
+    #quickAddVoiceBtn {
+      min-width: 32px;
+      min-height: 32px;
+      border-radius: 8px;
+    }
+
+    #quickAddVoiceBtn:active {
+      transform: scale(0.95);
+    }
+
+    #quickAddVoiceBtn.listening {
+      background: rgba(239, 68, 68, 0.1);
+      color: rgba(239, 68, 68, 0.9);
+    }
+
+    /* Compact submit button */
+    #quickAddSubmit {
+      min-height: 32px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    }
+
+    #quickAddSubmit:hover {
+      box-shadow: 0 3px 6px rgba(16, 185, 129, 0.3);
+    }
+
+    #quickAddSubmit:active {
+      box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 380px) {
+      #quickAddBar > div {
+        padding: 8px 12px;
+      }
+
+      #quickAddInput {
+        font-size: 14px;
+      }
+
+      #quickAddSubmit {
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+    }
+
+    /* Focus states for accessibility */
+    #quickAddVoiceBtn:focus-visible {
+      outline: 2px solid rgba(59, 130, 246, 0.5);
+      outline-offset: 1px;
+    }
+
+    #quickAddSubmit:focus-visible {
+      outline: 2px solid rgba(59, 130, 246, 0.5);
+      outline-offset: 1px;
     }
     .notes-editor {
       min-height: 10rem;
@@ -595,48 +692,6 @@
       padding-bottom: calc(32px + var(--mobile-safe-area-bottom));
       min-height: calc(100vh - var(--mobile-header-height));
       scroll-padding-top: calc(var(--mobile-header-height) + 16px);
-    }
-
-    /* Mobile-optimized quick add */
-    #quickAddBar {
-      margin-bottom: 20px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-
-    .dark #quickAddBar {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
-      border-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    #quickAddInput {
-      height: 48px;
-      border-radius: 12px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      background: rgba(255, 255, 255, 0.9);
-      font-size: 16px;
-      padding: 12px 16px;
-      transition: all 0.2s ease;
-    }
-
-    .dark #quickAddInput {
-      background: rgba(15, 23, 42, 0.7);
-      border-color: rgba(255, 255, 255, 0.1);
-      color: rgba(241, 245, 249, 0.95);
-    }
-
-    #quickAddInput:focus {
-      border-color: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-      background: white;
-    }
-
-    .dark #quickAddInput:focus {
-      background: rgba(15, 23, 42, 0.95);
     }
 
     /* Mobile task items */
@@ -1023,37 +1078,37 @@
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <!-- Quick add form -->
-      <section id="quickAddBar" class="card bg-base-100 border" aria-label="Quick add reminder">
-        <div class="card-body gap-3 compact">
-          <div class="flex items-center gap-2">
-            <input id="quickAddInput"
-                   type="text"
-                   class="input input-bordered flex-1"
-                   placeholder="What do you need to remember?"
-                   aria-label="Quick add reminder"
-                   autocomplete="off" />
-            <button id="quickAddVoiceBtn"
-                    type="button"
-                    class="btn btn-ghost"
-                    title="Dictate quick reminder"
-                    aria-label="Dictate quick reminder"
-                    aria-pressed="false">
-              <span aria-hidden="true">🎙️</span>
-              <span class="sr-only">Start voice input for quick add</span>
-            </button>
-            <button id="quickAddSubmit"
-                    class="btn btn-primary"
-                    type="button"
-                    aria-label="Add reminder now">Add</button>
-       
+      <!-- Compact Quick Add -->
+      <section id="quickAddBar" class="mb-4" aria-label="Quick add reminder">
+        <div class="flex items-center gap-2 p-3 bg-base-100/80 backdrop-blur-sm rounded-xl border border-base-200/50">
+          <input id="quickAddInput"
+                 type="text"
+                 class="flex-1 px-3 py-2 text-sm bg-transparent border-0 outline-none placeholder:text-base-content/50"
+                 placeholder="Add reminder..."
+                 aria-label="Quick add reminder"
+                 autocomplete="off" />
+
+          <button id="quickAddVoiceBtn"
+                  type="button"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg text-base-content/60 hover:text-base-content hover:bg-base-200/50 transition-colors"
+                  title="Dictate reminder"
+                  aria-label="Dictate reminder"
+                  aria-pressed="false">
+            <span class="text-base">🎙️</span>
+          </button>
+
+          <button id="quickAddSubmit"
+                  class="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 active:scale-95 transition-all"
+                  type="button"
+                  aria-label="Add reminder">Add</button>
         </div>
       </section>
-      
-      <section id="reminderListSection" class="card bg-base-100 border">
-        <div class="card-body gap-4 compact" id="remindersWrapper">
-          <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="space-y-3"></ul>
-          <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
+
+      <section id="reminderListSection" class="bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30">
+        <div class="p-4" id="remindersWrapper">
+          <div id="emptyState" class="hidden text-center text-base-content/60 py-8"></div>
+          <ul id="reminderList" class="space-y-2"></ul>
+          <p class="text-xs text-base-content/50 mt-4 pt-3 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
     </section>
