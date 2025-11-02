@@ -295,6 +295,18 @@
       font-weight: 600;
       border-radius: 0.5rem;
       transition: all 0.15s ease;
+      color: rgba(30, 41, 59, 0.88);
+    }
+    .task-actions button:hover,
+    .task-actions button:focus-visible {
+      color: rgba(30, 41, 59, 1);
+    }
+    .dark .task-actions button {
+      color: rgba(226, 232, 240, 0.92);
+    }
+    .dark .task-actions button:hover,
+    .dark .task-actions button:focus-visible {
+      color: rgba(248, 250, 252, 1);
     }
     /* Today-specific task styling - more prominent */
     .task-item[data-today="true"],
