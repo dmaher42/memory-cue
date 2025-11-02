@@ -15,6 +15,117 @@ import { createModalController } from './js/modules/modal-controller.js';
 
 initViewportHeight();
 
+function initReminderModalUI() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const modal = document.getElementById('reminder-modal');
+  const form = document.getElementById('reminder-form');
+  const titleField = document.getElementById('reminder-title');
+
+  if (!modal || !form || !titleField) {
+    return;
+  }
+
+  const openButtons = document.querySelectorAll('[data-open-reminder-modal]');
+
+  if (!openButtons.length) {
+    return;
+  }
+
+  const backdrop = modal.querySelector('[data-reminder-modal-backdrop]');
+  const closeButtons = modal.querySelectorAll('[data-close-modal]');
+  const mainContent = document.getElementById('mainContent');
+  const primaryNav = document.querySelector('nav[aria-label="Primary"]');
+  const backgroundTargets = [mainContent, primaryNav];
+  let lastActiveElement = null;
+
+  const setBackgroundInert = (shouldInert) => {
+    backgroundTargets.forEach((node) => {
+      if (!node) {
+        return;
+      }
+      if (shouldInert) {
+        node.setAttribute('inert', '');
+      } else {
+        node.removeAttribute('inert');
+      }
+    });
+  };
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    setBackgroundInert(false);
+    document.removeEventListener('keydown', handleEscape, true);
+    if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+      lastActiveElement.focus();
+    }
+  };
+
+  const handleEscape = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModal();
+    }
+  };
+
+  const openModal = () => {
+    lastActiveElement = document.activeElement;
+    modal.classList.remove('hidden');
+    modal.removeAttribute('aria-hidden');
+    modal.removeAttribute('inert');
+    setBackgroundInert(true);
+    document.addEventListener('keydown', handleEscape, true);
+    window.requestAnimationFrame(() => {
+      titleField.focus();
+    });
+  };
+
+  openButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      openModal();
+    });
+  });
+
+  closeButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeModal();
+    });
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  backdrop?.addEventListener('click', (event) => {
+    if (event.target === backdrop) {
+      closeModal();
+    }
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const reminder = {
+      title: titleField.value.trim(),
+      date: document.getElementById('reminder-date')?.value || '',
+      priority: document.getElementById('reminder-priority')?.value || '',
+      notes: document.getElementById('reminder-notes')?.value || ''
+    };
+    console.log('New Reminder:', reminder);
+    form.reset();
+    closeModal();
+  });
+}
+
+initReminderModalUI();
+
 const titleInput = document.getElementById('title');
 const mobileTitleInput = document.getElementById('reminderText');
 
