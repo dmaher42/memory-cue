@@ -728,6 +728,125 @@
       border-radius: 12px;
       font-weight: 600;
     }
+
+    /* Responsive reminder grid */
+    #reminderList {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    /* 2-column layout on wider phones */
+    @media (min-width: 380px) {
+      #reminderList {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+    }
+
+    /* Adjust task items for grid layout */
+    .task-item {
+      margin-bottom: 0 !important;
+      padding: 12px;
+      padding-left: 14px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Truncate long content for grid layout */
+    .task-title {
+      font-size: 14px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .task-notes {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    /* Compact task meta for grid */
+    .task-meta {
+      font-size: 11px;
+      gap: 4px;
+      margin-top: auto;
+    }
+
+    .task-chip {
+      padding: 2px 6px;
+      font-size: 10px;
+    }
+
+    /* Adjust task actions for grid */
+    .task-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      flex-direction: row;
+      gap: 4px;
+    }
+
+    .task-actions button {
+      width: 28px;
+      height: 28px;
+      font-size: 12px;
+      padding: 0;
+    }
+
+    /* Compact priority indicators */
+    .task-item {
+      border-left-width: 3px;
+      border-radius: 12px;
+    }
+
+    /* Hide some elements in grid mode for space */
+    .task-item[data-compact="true"] .task-notes {
+      display: none;
+    }
+
+    .task-item[data-compact="true"] .task-meta {
+      display: flex;
+      gap: 4px;
+    }
+
+    .task-item[data-compact="true"] .task-chip:not([data-chip="priority"]) {
+      display: none;
+    }
+
+    /* Single column on narrow phones */
+    @media (max-width: 379px) {
+      #reminderList {
+        grid-template-columns: 1fr;
+      }
+
+      .task-item {
+        padding: 16px;
+        padding-left: 18px;
+        border-left-width: 4px;
+      }
+
+      .task-title {
+        font-size: 15px;
+        -webkit-line-clamp: 3;
+      }
+    }
+
+    /* Optional: Add view toggle button */
+    .view-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 10;
+    }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
   <style id="skip-link-css">
@@ -1104,10 +1223,14 @@
         </div>
       </section>
 
-      <section id="reminderListSection" class="bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30">
+      <section id="reminderListSection" class="bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30 relative">
+        <button id="viewToggle" class="view-toggle btn btn-ghost btn-xs" type="button">
+          <span class="grid-icon">⊞</span>
+          <span class="list-icon hidden">☰</span>
+        </button>
         <div class="p-4" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60 py-8"></div>
-          <ul id="reminderList" class="space-y-2"></ul>
+          <ul id="reminderList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></ul>
           <p class="text-xs text-base-content/50 mt-4 pt-3 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -1203,6 +1326,64 @@
 
       target.replaceChildren(wrapper);
     };
+
+    const viewToggle = document.getElementById('viewToggle');
+    const reminderList = document.getElementById('reminderList');
+
+    if (viewToggle && reminderList) {
+      const setCompactMode = (compact) => {
+        document.querySelectorAll('.task-item').forEach((item) => {
+          if (compact) {
+            item.setAttribute('data-compact', 'true');
+          } else {
+            item.removeAttribute('data-compact');
+          }
+        });
+      };
+
+      const updateToggleIcons = (isGridView) => {
+        const gridIcon = viewToggle.querySelector('.grid-icon');
+        const listIcon = viewToggle.querySelector('.list-icon');
+        if (!gridIcon || !listIcon) return;
+        if (isGridView) {
+          gridIcon.classList.add('hidden');
+          listIcon.classList.remove('hidden');
+        } else {
+          gridIcon.classList.remove('hidden');
+          listIcon.classList.add('hidden');
+        }
+      };
+
+      const ensureInitialState = () => {
+        let isGridView = reminderList.classList.contains('grid-cols-2');
+
+        if (!isGridView && !reminderList.classList.contains('space-y-3')) {
+          reminderList.classList.add('grid-cols-2');
+          isGridView = true;
+        }
+
+        updateToggleIcons(isGridView);
+        setCompactMode(isGridView);
+      };
+
+      viewToggle.addEventListener('click', function () {
+        const isGridView = reminderList.classList.contains('grid-cols-2');
+
+        if (isGridView) {
+          reminderList.classList.remove('grid-cols-2');
+          reminderList.classList.add('space-y-3');
+          updateToggleIcons(false);
+          setCompactMode(false);
+        } else {
+          reminderList.classList.add('grid-cols-2');
+          reminderList.classList.remove('space-y-3');
+          updateToggleIcons(true);
+          setCompactMode(true);
+        }
+      });
+
+      ensureInitialState();
+    }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script type="module" src="./assets/mobile-V2JQM22Y.js?v=2025-10-29-1"></script>
