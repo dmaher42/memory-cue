@@ -858,8 +858,9 @@
                 Notify me when resources are shared with my class
               </p>
             </div>
-            <div class="flex justify-end">
-              <button class="btn btn-primary" type="button">Save changes</button>
+            <div class="flex flex-col items-end gap-2">
+              <button id="settings-save-button" class="btn btn-primary" type="button">Save changes</button>
+              <p id="settings-save-confirmation" class="text-sm text-success hidden">Settings saved!</p>
             </div>
           </div>
           <aside class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4 text-sm text-base-content/80">
@@ -1107,7 +1108,7 @@
     window.addEventListener('hashchange', renderRoute);
     window.addEventListener('DOMContentLoaded', renderRoute);
   </script>
-  <script type="module" src="./assets/app-FEW3MU7S.js" defer></script>
+  <script type="module" src="./assets/app-VE7LRGEN.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script src="./assets/register-service-worker-VJMOHPCS.js" defer></script>
 </body>
