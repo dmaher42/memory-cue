@@ -60,19 +60,26 @@
     }
     /* Enhanced header container */
     header.navbar {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+      position: sticky;
+      display: flex;
+      justify-content: center;
+      background: var(--color-base-100);
+      color: var(--color-base-content);
+      border-bottom: 1px solid var(--color-base-300);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
       padding-top: env(safe-area-inset-top, 16px);
       padding-bottom: 16px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
-    .dark header.navbar {
-      background: rgba(15, 23, 42, 0.95);
-      border-bottom-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    .navbar-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(100%, 28rem);
+      padding-inline: 1rem;
+      gap: 0.75rem;
     }
 
     /* Polished title */
@@ -80,11 +87,7 @@
       font-size: 20px;
       font-weight: 700;
       letter-spacing: -0.02em;
-      color: rgba(15, 23, 42, 0.95);
-    }
-
-    .dark .header-title {
-      color: rgba(241, 245, 249, 0.95);
+      color: var(--color-base-content);
     }
 
     /* Refined sync status */
@@ -807,86 +810,88 @@
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4">
-    <div class="flex items-center gap-3">
-      <h1 class="header-title">MC</h1>
-      <div id="syncStatus" class="sync-status-indicator" role="status" aria-live="polite">
-        <span id="mcStatus" class="sync-dot offline" aria-hidden="true">●</span>
-        <span id="mcStatusText" class="sync-text">Offline</span>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <div class="add-button-container">
-        <button
-          id="addReminderBtn"
-          type="button"
-          class="add-primary-button"
-          aria-label="Add item"
-          aria-expanded="false"
-          data-open-add-task
-        >
-          +
-        </button>
-
-        <div id="addOptionsFab" class="add-options-fab" role="menu">
-          <button class="add-option-item" data-add-type="reminder" role="menuitem">
-            <div class="add-option-icon reminder">📝</div>
-            <div>
-              <div class="add-option-text">Reminder</div>
-              <div class="add-option-shortcut">R</div>
-            </div>
-          </button>
-
-          <button class="add-option-item" data-add-type="voice" role="menuitem" id="voiceAddBtn">
-            <div class="add-option-icon voice">🎙️</div>
-            <div>
-              <div class="add-option-text">Voice Note</div>
-              <div class="add-option-shortcut">V</div>
-            </div>
-          </button>
-
-          <button class="add-option-item" data-add-type="note" role="menuitem">
-            <div class="add-option-icon note">📄</div>
-            <div>
-              <div class="add-option-text">Quick Note</div>
-              <div class="add-option-shortcut">N</div>
-            </div>
-          </button>
+  <header class="navbar sticky top-0 z-50">
+    <div class="navbar-content">
+      <div class="flex items-center gap-3">
+        <h1 class="header-title">MC</h1>
+        <div id="syncStatus" class="sync-status-indicator" role="status" aria-live="polite">
+          <span id="mcStatus" class="sync-dot offline" aria-hidden="true">●</span>
+          <span id="mcStatusText" class="sync-text">Offline</span>
         </div>
       </div>
 
-      <div class="relative">
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="btn-secondary-action"
-          aria-label="More options"
-          aria-haspopup="menu"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
-          ⋮
-        </button>
-        <div
-          id="overflowMenu"
-          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
-        >
-          <ul class="py-2 text-sm">
-            <li>
-              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
-            </li>
-            <li>
-              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
-            </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
-            <li>
-              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
-            </li>
-            <li>
-              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
-            </li>
-          </ul>
+      <div class="flex items-center gap-3">
+        <div class="add-button-container">
+          <button
+            id="addReminderBtn"
+            type="button"
+            class="add-primary-button"
+            aria-label="Add item"
+            aria-expanded="false"
+            data-open-add-task
+          >
+            +
+          </button>
+
+          <div id="addOptionsFab" class="add-options-fab" role="menu">
+            <button class="add-option-item" data-add-type="reminder" role="menuitem">
+              <div class="add-option-icon reminder">📝</div>
+              <div>
+                <div class="add-option-text">Reminder</div>
+                <div class="add-option-shortcut">R</div>
+              </div>
+            </button>
+
+            <button class="add-option-item" data-add-type="voice" role="menuitem" id="voiceAddBtn">
+              <div class="add-option-icon voice">🎙️</div>
+              <div>
+                <div class="add-option-text">Voice Note</div>
+                <div class="add-option-shortcut">V</div>
+              </div>
+            </button>
+
+            <button class="add-option-item" data-add-type="note" role="menuitem">
+              <div class="add-option-icon note">📄</div>
+              <div>
+                <div class="add-option-text">Quick Note</div>
+                <div class="add-option-shortcut">N</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="relative">
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="btn-secondary-action"
+            aria-label="More options"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            ⋮
+          </button>
+          <div
+            id="overflowMenu"
+            class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
+          >
+            <ul class="py-2 text-sm">
+              <li>
+                <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
+              </li>
+              <li>
+                <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+              </li>
+              <li><div class="h-px bg-base-300 my-1"></div></li>
+              <li>
+                <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+              </li>
+              <li>
+                <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
