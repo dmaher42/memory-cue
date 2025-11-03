@@ -1125,31 +1125,10 @@
         id="openSettings"
         type="button"
         class="mc-quick-link"
+        data-open="settings"
       >
         <span>Settings</span>
         <span class="mc-quick-link__hint" aria-hidden="true">⌘,</span>
-      </button>
-      <button
-        id="themeToggle"
-        type="button"
-        class="mc-quick-link"
-      >
-        <span>Theme</span>
-        <span class="mc-quick-link__hint" aria-hidden="true">⌘T</span>
-      </button>
-      <button
-        id="googleSignInBtn"
-        type="button"
-        class="mc-quick-link"
-      >
-        <span>Sign in</span>
-      </button>
-      <button
-        id="googleSignOutBtn"
-        type="button"
-        class="mc-quick-link hidden"
-      >
-        <span>Sign out</span>
       </button>
     </nav>
 
@@ -1167,11 +1146,6 @@
         <span id="mcStatusText" class="sr-only">Offline</span>
 
         <div class="mc-actions" id="headerQuickActions" role="group" aria-label="Header actions">
-          <!-- Add / Quick create -->
-          <button id="addReminderBtn" type="button" class="mc-btn btn btn-ghost icon-only" aria-label="Add reminder" data-open-add-task>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-
           <!-- Overflow / more -->
           <div style="position:relative;">
             <button id="overflowMenuBtn" type="button" class="mc-btn btn btn-ghost icon-only" aria-label="More options" aria-haspopup="true" aria-controls="overflowMenu" aria-expanded="false">
@@ -1180,13 +1154,16 @@
 
             <div id="overflowMenu" class="menu-card hidden absolute right-0 mt-2 w-44 rounded-xl shadow-lg bg-base-100 border" role="menu" aria-hidden="true">
               <ul class="py-2 text-sm" role="none">
-                <li role="none"><button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2" role="menuitem">🎙️ Dictate reminder</button></li>
-                <li><div class="h-px bg-base-300 my-1"></div></li>
-                <li role="none"><button id="openSettings" type="button" class="menu-item text-left px-4 py-2" role="menuitem">Settings</button></li>
-                <li role="none"><button id="themeToggle" type="button" class="menu-item text-left px-4 py-2" role="menuitem">Theme</button></li>
-                <li><div class="h-px bg-base-300 my-1"></div></li>
-                <li role="none"><button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2" role="menuitem">Sign in</button></li>
-                <li role="none"><button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden" role="menuitem">Sign out</button></li>
+                <li role="none">
+                  <button
+                    type="button"
+                    class="menu-item text-left px-4 py-2"
+                    role="menuitem"
+                    data-open="settings"
+                  >
+                    Settings
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -2101,10 +2078,15 @@
     })();
 
     (function () {
-      const openBtn = document.querySelector('[data-open="settings"]') || document.getElementById('openSettings');
+      const openBtns = Array.from(
+        new Set([
+          ...Array.from(document.querySelectorAll('[data-open="settings"]')),
+          ...Array.from(document.querySelectorAll('#openSettings')),
+        ]),
+      ).filter((btn) => btn instanceof HTMLElement);
       const modal = document.getElementById('settingsModal');
       const closeBtn = document.getElementById('closeSettings');
-      if (!openBtn || !modal || !closeBtn) return;
+      if (!openBtns.length || !modal || !closeBtn) return;
 
       const open = () => {
         modal.classList.remove('hidden');
@@ -2114,7 +2096,7 @@
         modal.classList.add('hidden');
       };
 
-      openBtn.addEventListener('click', open);
+      openBtns.forEach((btn) => btn.addEventListener('click', open));
       closeBtn.addEventListener('click', close);
       modal.addEventListener('click', (event) => {
         if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
