@@ -608,10 +608,15 @@ document.addEventListener('click', (ev) => {
 
 /* BEGIN GPT CHANGE: settings modal wiring */
 (function () {
-  const openBtn = document.querySelector('[data-open="settings"]') || document.getElementById('openSettings');
+  const openButtons = Array.from(
+    new Set([
+      ...Array.from(document.querySelectorAll('[data-open="settings"]')),
+      ...Array.from(document.querySelectorAll('#openSettings')),
+    ])
+  ).filter((btn) => btn instanceof HTMLElement);
   const modal = document.getElementById('settingsModal');
   const closeBtn = document.getElementById('closeSettings');
-  if (!openBtn || !modal || !closeBtn) return;
+  if (!openButtons.length || !modal || !closeBtn) return;
 
   function open() {
     modal.classList.remove('hidden');
@@ -620,7 +625,9 @@ document.addEventListener('click', (ev) => {
     modal.classList.add('hidden');
   }
 
-  openBtn.addEventListener('click', open);
+  openButtons.forEach((btn) => {
+    btn.addEventListener('click', open);
+  });
   closeBtn.addEventListener('click', close);
   modal.addEventListener('click', (event) => {
     if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
