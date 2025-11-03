@@ -47,245 +47,48 @@
     .sync-dot.offline {
       color: #dc2626;
     }
-    /* Menu panel and items */
-    .menu-card {
-      background: var(--color-bg, #fff);
-    }
-    .menu-item {
+    .sync-status-indicator {
       display: inline-flex;
       align-items: center;
-      justify-content: flex-start;
-      gap: 0.5rem;
-      width: 100%;
-    }
-    .menu-item:hover {
-      background: rgba(0, 0, 0, 0.04);
-    }
-    /* Enhanced header container */
-    header.navbar {
-      position: sticky;
-      display: flex;
-      justify-content: center;
-      background: var(--color-base-100);
-      color: var(--color-base-content);
-      border-bottom: 1px solid var(--color-base-300);
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-      padding-top: env(safe-area-inset-top, 16px);
-      padding-bottom: 16px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-    }
-
-    .navbar-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: min(100%, 28rem);
-      padding-inline: 1rem;
-      gap: 0.75rem;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.6rem;
-      flex-wrap: nowrap;
-    }
-
-    .header-actions > * {
-      flex-shrink: 0;
-    }
-
-    .header-actions #syncStatus {
-      flex-shrink: 1;
-      min-width: 0;
-    }
-
-    /* Polished title */
-    .header-title {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--color-base-content);
-    }
-
-    /* Refined sync status */
-    .sync-status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 12px;
-      background: rgba(100, 116, 139, 0.1);
-      font-size: 12px;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
       font-weight: 600;
-      color: rgba(100, 116, 139, 0.9);
-      transition: all 0.2s ease;
+      line-height: 1;
+      background: rgba(15, 23, 42, 0.06);
+      color: rgba(71, 85, 105, 0.9);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .dark .sync-status-indicator {
+      background: rgba(148, 163, 184, 0.18);
+      color: rgba(226, 232, 240, 0.9);
     }
 
     .sync-status-indicator.online {
       background: rgba(34, 197, 94, 0.15);
-      color: rgba(22, 163, 74, 0.9);
+      color: rgba(22, 163, 74, 0.92);
     }
 
-    /* Polished primary action button */
-    .btn-primary-action {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      border: none;
-      color: white;
-      font-size: 24px;
-      font-weight: 300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-      transition: all 0.2s ease;
+    .sync-status-indicator.offline,
+    .sync-status-indicator.error {
+      background: rgba(248, 113, 113, 0.16);
+      color: rgba(220, 38, 38, 0.92);
     }
 
-    .btn-primary-action:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-    }
-
-    .btn-primary-action:active {
-      transform: translateY(0);
-    }
-
-    /* Refined secondary button */
-    .btn-secondary-action {
-      width: calc(44px * 0.68);
-      height: calc(44px * 0.68);
-      border-radius: 12px;
-      background: rgba(100, 116, 139, 0.1);
-      border: 1px solid rgba(100, 116, 139, 0.2);
-      color: rgba(100, 116, 139, 0.9);
-      font-size: calc(20px * 0.68);
-      transition: all 0.2s ease;
-    }
-
-    .btn-secondary-action:hover {
-      background: rgba(100, 116, 139, 0.15);
-      border-color: rgba(100, 116, 139, 0.3);
-    }
-    /* Icon circle fallback */
-    .btn-circle {
-      width: 44px;
-      height: 44px;
+    .sync-dot {
+      display: inline-block;
+      width: 0.55rem;
+      height: 0.55rem;
       border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      background: rgba(220, 38, 38, 0.9);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
-    /* Enhanced add button system */
-    .add-button-container {
-      position: relative;
-    }
-    .add-primary-button {
-      width: calc(48px * 0.68);
-      height: calc(48px * 0.68);
-      border-radius: 16px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      border: none;
-      color: white;
-      font-size: calc(28px * 0.68);
-      font-weight: 300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-    .add-primary-button:hover {
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
-    }
-    .add-primary-button:active {
-      transform: translateY(0) scale(0.98);
-    }
-    .add-options-fab {
-      position: absolute;
-      bottom: calc(100% + 8px);
-      right: 0;
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-      align-items: flex-end;
-    }
-    .add-options-fab.active {
-      display: flex;
-      animation: fabOpen 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    @keyframes fabOpen {
-      from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.8);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-    .add-option-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      white-space: nowrap;
-      transition: all 0.2s ease;
-    }
-    .dark .add-option-item {
-      background: rgba(30, 41, 59, 0.95);
-      border-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    .add-option-item:hover {
-      transform: translateX(-4px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-    }
-    .add-option-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .add-option-icon.reminder {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-    }
-    .add-option-icon.voice {
-      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-      color: white;
-    }
-    .add-option-icon.note {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: white;
-    }
-    .add-option-text {
-      font-size: 14px;
-      font-weight: 600;
-      color: rgba(15, 23, 42, 0.9);
-    }
-    .dark .add-option-text {
-      color: rgba(241, 245, 249, 0.9);
-    }
-    .add-option-shortcut {
-      font-size: 12px;
-      color: rgba(100, 116, 139, 0.7);
-      font-family: monospace;
+
+    .sync-dot.online {
+      background: rgba(22, 163, 74, 0.9);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
     }
     /* Compact quick add optimizations */
     #quickAddBar {
@@ -694,22 +497,6 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       touch-action: manipulation;
-    }
-
-    /* Mobile-optimized header */
-    header.navbar {
-      height: calc(var(--mobile-header-height) + var(--mobile-safe-area-top));
-      padding-top: calc(16px + var(--mobile-safe-area-top));
-      padding-bottom: 16px;
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    }
-
-    .dark header.navbar {
-      background: rgba(15, 23, 42, 0.98);
-      border-bottom-color: rgba(255, 255, 255, 0.08);
     }
 
     /* Mobile main container */
@@ -1129,93 +916,381 @@
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar sticky top-0 z-50">
-    <div class="navbar-content">
-      <div class="flex items-center gap-3">
-        <h1 class="header-title">MC</h1>
+  <!-- Clean Mobile Header -->
+  <header
+    class="sticky top-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-900/70 border-b border-neutral-200 dark:border-neutral-800"
+    style="padding-top: env(safe-area-inset-top, 0px)"
+  >
+    <div class="mx-auto flex min-h-12 max-w-screen-sm items-center gap-2 px-3 py-1">
+      <!-- Left: Menu -->
+      <button
+        id="btn-open-drawer"
+        class="-ml-1 rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
+        aria-label="Open menu"
+        aria-controls="mobile-drawer"
+        aria-expanded="false"
+      >
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <!-- Center: App title (tap to scroll to top) -->
+      <button id="btn-scroll-top" class="mx-1 min-w-0 shrink text-left font-semibold tracking-tight truncate" type="button">
+        Memory Cue
+      </button>
+
+      <div
+        id="syncStatus"
+        class="sync-status-indicator offline ml-1 inline-flex min-w-0 max-w-[11rem] items-center truncate"
+        role="status"
+        aria-live="polite"
+      >
+        <span id="mcStatus" class="sync-dot offline" aria-hidden="true"></span>
+        <span id="mcStatusText" class="truncate">Offline</span>
       </div>
 
-      <div class="header-actions">
-        <div id="syncStatus" class="sync-status-indicator" role="status" aria-live="polite">
-          <span id="mcStatus" class="sync-dot offline" aria-hidden="true">●</span>
-          <span id="mcStatusText" class="sync-text">Offline</span>
-        </div>
-        <div class="add-button-container">
-          <button
-            id="addReminderBtn"
-            type="button"
-            class="add-primary-button"
-            aria-label="Add item"
-            aria-expanded="false"
-            data-open-add-task
+      <!-- Right: Quick actions -->
+      <div class="ml-auto flex items-center gap-1">
+        <button
+          id="btn-quick-add"
+          class="rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
+          type="button"
+          aria-label="Quick add"
+        >
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+
+        <button
+          id="btn-search"
+          class="rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
+          type="button"
+          aria-label="Search"
+        >
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m21 21-4.35-4.35" />
+            <circle cx="10.5" cy="10.5" r="6.5" />
+          </svg>
+        </button>
+
+        <button
+          id="btn-theme"
+          class="rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
+          type="button"
+          aria-label="Toggle theme"
+        >
+          <svg
+            id="icon-sun"
+            viewBox="0 0 24 24"
+            class="size-5 block dark:hidden"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
           >
-            +
-          </button>
-
-          <div id="addOptionsFab" class="add-options-fab" role="menu">
-            <button class="add-option-item" data-add-type="reminder" role="menuitem">
-              <div class="add-option-icon reminder">📝</div>
-              <div>
-                <div class="add-option-text">Reminder</div>
-                <div class="add-option-shortcut">R</div>
-              </div>
-            </button>
-
-            <button class="add-option-item" data-add-type="voice" role="menuitem" id="voiceAddBtn">
-              <div class="add-option-icon voice">🎙️</div>
-              <div>
-                <div class="add-option-text">Voice Note</div>
-                <div class="add-option-shortcut">V</div>
-              </div>
-            </button>
-
-            <button class="add-option-item" data-add-type="note" role="menuitem">
-              <div class="add-option-icon note">📄</div>
-              <div>
-                <div class="add-option-text">Quick Note</div>
-                <div class="add-option-shortcut">N</div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div class="relative">
-          <button
-            id="overflowMenuBtn"
-            type="button"
-            class="btn-secondary-action"
-            aria-label="More options"
-            aria-haspopup="menu"
-            aria-controls="overflowMenu"
-            aria-expanded="false"
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2m0 16v2M4.93 4.93 6.34 6.34m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07 6.34 17.66m11.32-11.32 1.41-1.41"
+            />
+          </svg>
+          <svg
+            id="icon-moon"
+            viewBox="0 0 24 24"
+            class="size-5 hidden dark:block"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
           >
-            ⋮
-          </button>
-          <div
-            id="overflowMenu"
-            class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
-          >
-            <ul class="py-2 text-sm">
-              <li>
-                <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
-              </li>
-              <li>
-                <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
-              </li>
-              <li><div class="h-px bg-base-300 my-1"></div></li>
-              <li>
-                <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
-              </li>
-              <li>
-                <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
-              </li>
-            </ul>
-          </div>
-        </div>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+          </svg>
+        </button>
       </div>
     </div>
   </header>
-  
+
+  <div
+    id="mobile-drawer-scrim"
+    class="fixed inset-0 z-30 bg-neutral-900/40 opacity-0 transition-opacity duration-200 pointer-events-none"
+  ></div>
+  <aside
+    id="mobile-drawer"
+    class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-full -translate-x-full transform flex-col border-r border-neutral-200 bg-white/90 px-4 pb-6 pt-6 font-medium text-neutral-900 shadow-xl transition-transform duration-200 ease-out backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/85 dark:text-neutral-100"
+    aria-hidden="true"
+    tabindex="-1"
+    style="padding-top: calc(env(safe-area-inset-top, 0px) + 1rem)"
+  >
+    <div class="mb-6 flex items-center justify-between">
+      <p class="text-sm font-semibold tracking-tight text-neutral-500 dark:text-neutral-400">Quick links</p>
+      <button
+        type="button"
+        class="rounded-xl p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+        aria-label="Close menu"
+        data-close-drawer
+      >
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 6l12 12M6 18 18 6" />
+        </svg>
+      </button>
+    </div>
+    <nav class="flex flex-col gap-2 text-sm" aria-label="App links">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between rounded-xl bg-primary/90 px-4 py-3 text-left font-semibold text-white shadow-sm transition hover:bg-primary"
+        data-open-add-task
+        data-close-drawer
+      >
+        <span>New reminder</span>
+        <span aria-hidden="true">＋</span>
+      </button>
+      <button
+        id="openSettings"
+        type="button"
+        class="flex w-full items-center justify-between rounded-xl bg-white/70 px-4 py-3 text-left shadow-sm ring-1 ring-neutral-200/70 transition hover:bg-white dark:bg-neutral-900/60 dark:ring-neutral-700/80 dark:hover:bg-neutral-800"
+        data-close-drawer
+      >
+        <span>Settings</span>
+        <span aria-hidden="true">⌘,</span>
+      </button>
+      <button
+        id="themeToggle"
+        type="button"
+        class="flex w-full items-center justify-between rounded-xl bg-white/70 px-4 py-3 text-left shadow-sm ring-1 ring-neutral-200/70 transition hover:bg-white dark:bg-neutral-900/60 dark:ring-neutral-700/80 dark:hover:bg-neutral-800"
+        data-close-drawer
+      >
+        <span>Theme</span>
+        <span aria-hidden="true">⌘T</span>
+      </button>
+      <div class="h-px bg-neutral-200 dark:bg-neutral-800"></div>
+      <button
+        id="googleSignInBtn"
+        type="button"
+        class="flex w-full items-center justify-between rounded-xl bg-white/70 px-4 py-3 text-left shadow-sm ring-1 ring-neutral-200/70 transition hover:bg-white dark:bg-neutral-900/60 dark:ring-neutral-700/80 dark:hover:bg-neutral-800"
+        data-close-drawer
+      >
+        <span>Sign in</span>
+      </button>
+      <button
+        id="googleSignOutBtn"
+        type="button"
+        class="hidden w-full items-center justify-between rounded-xl bg-white/70 px-4 py-3 text-left shadow-sm ring-1 ring-neutral-200/70 transition hover:bg-white dark:bg-neutral-900/60 dark:ring-neutral-700/80 dark:hover:bg-neutral-800"
+        data-close-drawer
+      >
+        <span>Sign out</span>
+      </button>
+    </nav>
+    <div class="mt-auto space-y-3 text-xs text-neutral-500 dark:text-neutral-400">
+      <p class="font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">Status</p>
+      <div class="flex items-center gap-2">
+        <span class="sync-dot inline-block offline" aria-hidden="true"></span>
+        <span id="drawerSyncStatus" class="truncate" data-sync-proxy>Offline</span>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    (function () {
+      const drawerBtn = document.getElementById('btn-open-drawer');
+      const drawer = document.getElementById('mobile-drawer');
+      const scrim = document.getElementById('mobile-drawer-scrim');
+      const scrollTopBtn = document.getElementById('btn-scroll-top');
+      const quickAddBtn = document.getElementById('btn-quick-add');
+      const searchBtn = document.getElementById('btn-search');
+      const themeBtn = document.getElementById('btn-theme');
+      const drawerSyncStatus = document.getElementById('drawerSyncStatus');
+      const headerSyncStatus = document.getElementById('mcStatusText');
+      const headerSyncDot = document.getElementById('mcStatus');
+      const drawerSyncDot = drawer?.querySelector('.sync-dot');
+
+      const toggleClass = (el, className, force) => {
+        if (!el) return;
+        if (typeof force === 'boolean') {
+          el.classList.toggle(className, force);
+        } else {
+          el.classList.toggle(className);
+        }
+      };
+
+      const setDrawerState = (open) => {
+        if (!drawer) return;
+        const isOpen = drawer.classList.contains('translate-x-0');
+        const nextState = typeof open === 'boolean' ? open : !isOpen;
+        if (nextState === isOpen) return;
+
+        if (nextState) {
+          drawer.classList.add('translate-x-0');
+          drawer.setAttribute('aria-hidden', 'false');
+          drawerBtn?.setAttribute('aria-expanded', 'true');
+          if (scrim) {
+            scrim.classList.remove('pointer-events-none');
+            scrim.classList.remove('opacity-0');
+            scrim.classList.add('opacity-100');
+          }
+          document.body.classList.add('overflow-hidden');
+          if (!drawer.hasAttribute('data-focus-bound')) {
+            drawer.setAttribute('data-focus-bound', 'true');
+            drawer.focus({ preventScroll: true });
+          } else {
+            try {
+              drawer.focus({ preventScroll: true });
+            } catch {
+              drawer.focus();
+            }
+          }
+        } else {
+          drawer.classList.remove('translate-x-0');
+          drawer.setAttribute('aria-hidden', 'true');
+          drawerBtn?.setAttribute('aria-expanded', 'false');
+          if (scrim) {
+            scrim.classList.add('opacity-0');
+            scrim.classList.add('pointer-events-none');
+            scrim.classList.remove('opacity-100');
+          }
+          document.body.classList.remove('overflow-hidden');
+          drawer.removeAttribute('data-focus-bound');
+        }
+      };
+
+      drawerBtn?.addEventListener('click', () => setDrawerState());
+      scrim?.addEventListener('click', () => setDrawerState(false));
+      drawer?.addEventListener('click', (event) => {
+        if (event.target instanceof Element && event.target.closest('[data-close-drawer]')) {
+          setDrawerState(false);
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setDrawerState(false);
+        }
+      });
+
+      scrollTopBtn?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      quickAddBtn?.addEventListener('click', () => {
+        const tryCall = (fn) => {
+          try {
+            return typeof fn === 'function' ? fn() : undefined;
+          } catch (error) {
+            console.warn('Quick add hook failed', error);
+            return undefined;
+          }
+        };
+        const result =
+          tryCall(window.quickAdd) ??
+          tryCall(window.openAddModal) ??
+          (function () {
+            const fallback = document.querySelector('[data-open-add-task]') || document.getElementById('addReminderBtn');
+            if (fallback instanceof HTMLElement) {
+              fallback.click();
+              return true;
+            }
+            return document.getElementById('quickAddInput')?.focus();
+          })();
+        return result;
+      });
+
+      searchBtn?.addEventListener('click', () => {
+        const el = document.getElementById('search') || document.querySelector('input[type="search"]');
+        if (el instanceof HTMLElement) {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          try {
+            el.focus({ preventScroll: true });
+          } catch {
+            el.focus();
+          }
+        }
+      });
+
+      const THEME_STORAGE_KEY = 'theme';
+      const root = document.documentElement;
+
+      const applyTheme = (nextTheme) => {
+        const next = nextTheme === 'dark' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        root.classList.toggle('dark', next === 'dark');
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, next);
+        } catch {
+          /* storage might be unavailable */
+        }
+        toggleClass(document.getElementById('icon-sun'), 'hidden', next === 'dark');
+        toggleClass(document.getElementById('icon-moon'), 'hidden', next !== 'dark');
+      };
+
+      const toggleTheme = () => {
+        const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+      };
+
+      themeBtn?.addEventListener('click', toggleTheme);
+
+      window.__mcApplyTheme = applyTheme;
+      window.__mcToggleTheme = toggleTheme;
+
+      (function initTheme() {
+        let saved = null;
+        try {
+          saved = localStorage.getItem(THEME_STORAGE_KEY);
+        } catch {
+          saved = null;
+        }
+        if (!saved) {
+          saved = root.getAttribute('data-theme');
+        }
+        if (saved) {
+          applyTheme(saved);
+        }
+      })();
+
+      document.addEventListener('cue:sync-status', (event) => {
+        const detail = event?.detail;
+        if (!detail) return;
+        if (typeof detail.message === 'string' && drawerSyncStatus) {
+          drawerSyncStatus.textContent = detail.message;
+        }
+        if (typeof detail.state === 'string' && drawerSyncDot) {
+          const isOnline = detail.state !== 'offline' && detail.state !== 'error';
+          drawerSyncDot.classList.toggle('online', isOnline);
+          drawerSyncDot.classList.toggle('offline', !isOnline);
+        }
+      });
+
+      if (typeof MutationObserver === 'function') {
+        const syncStatusObserver = new MutationObserver(() => {
+          if (headerSyncStatus && drawerSyncStatus) {
+            drawerSyncStatus.textContent = headerSyncStatus.textContent || '';
+          }
+        });
+
+        if (headerSyncStatus) {
+          syncStatusObserver.observe(headerSyncStatus, { childList: true });
+        }
+
+        const syncDotObserver = new MutationObserver(() => {
+          if (headerSyncDot && drawerSyncDot) {
+            const isOnline = headerSyncDot.classList.contains('online');
+            drawerSyncDot.classList.toggle('online', isOnline);
+            drawerSyncDot.classList.toggle('offline', !isOnline);
+          }
+        });
+
+        if (headerSyncDot) {
+          syncDotObserver.observe(headerSyncDot, { attributes: true, attributeFilter: ['class'] });
+        }
+      }
+
+      if (headerSyncStatus && drawerSyncStatus) {
+        drawerSyncStatus.textContent = headerSyncStatus.textContent || drawerSyncStatus.textContent || '';
+      }
+      if (headerSyncDot && drawerSyncDot) {
+        const isOnline = headerSyncDot.classList.contains('online');
+        drawerSyncDot.classList.toggle('online', isOnline);
+        drawerSyncDot.classList.toggle('offline', !isOnline);
+      }
+    })();
+  </script>
 
   <main id="main" class="max-w-md mx-auto px-4 pt-4 pb-4" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
@@ -1413,7 +1488,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script type="module" src="./assets/mobile-NE65WSFU.js?v=2025-10-29-1"></script>
-  <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
+  <script type="module" src="./assets/mobile-theme-toggle-LV7NMX2N.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
     <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
