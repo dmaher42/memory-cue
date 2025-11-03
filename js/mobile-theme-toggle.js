@@ -32,11 +32,16 @@
     applyTheme(current === 'dark' ? 'light' : 'dark');
   };
 
-  const themeToggleBtn = document.getElementById('themeToggle');
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', (event) => {
+  const themeToggleBtns = Array.from(document.querySelectorAll('#themeToggle')).filter(
+    (btn) => btn instanceof HTMLElement
+  );
+  if (themeToggleBtns.length) {
+    const handleToggle = (event) => {
       event.preventDefault();
       toggleTheme();
+    };
+    themeToggleBtns.forEach((btn) => {
+      btn.addEventListener('click', handleToggle);
     });
   }
 })();

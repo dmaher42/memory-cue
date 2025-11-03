@@ -155,8 +155,8 @@ export async function initReminders(sel = {}) {
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
-  const googleSignInBtn = $(sel.googleSignInBtnSel);
-  const googleSignOutBtn = $(sel.googleSignOutBtnSel);
+  const googleSignInBtns = $$(sel.googleSignInBtnSel);
+  const googleSignOutBtns = $$(sel.googleSignOutBtnSel);
   const statusEl = $(sel.statusSel);
   const syncStatus = $(sel.syncStatusSel);
   const SYNC_STATUS_LABELS = {
@@ -264,7 +264,7 @@ export async function initReminders(sel = {}) {
   const syncUrlInput = $(sel.syncUrlInputSel);
   const saveSettings = $(sel.saveSettingsSel);
   const testSync = $(sel.testSyncSel);
-  const openSettings = $(sel.openSettingsSel);
+  const openSettingsBtns = $$(sel.openSettingsSel);
   const settingsSection = $(sel.settingsSectionSel);
   const emptyStateEl = $(sel.emptyStateSel);
   const listWrapper = $(sel.listWrapperSel);
@@ -879,8 +879,8 @@ export async function initReminders(sel = {}) {
   function applySignedOutState() {
     userId = null;
     renderSyncIndicator('offline');
-    googleSignInBtn?.classList.remove('hidden');
-    googleSignOutBtn?.classList.add('hidden');
+    googleSignInBtns.forEach((btn) => btn.classList.remove('hidden'));
+    googleSignOutBtns.forEach((btn) => btn.classList.add('hidden'));
     if (googleUserName) {
       googleUserName.textContent = '';
     }
@@ -1380,34 +1380,57 @@ export async function initReminders(sel = {}) {
   // Auth
   const authReady = firebaseReady && auth && typeof GoogleAuthProvider === 'function';
 
-  googleSignInBtn?.addEventListener('click', async () => {
-    if (!authReady || typeof signInWithPopup !== 'function' || typeof signInWithRedirect !== 'function') {
-      toast('Sign-in unavailable offline');
-      return;
-    }
-    const provider = new GoogleAuthProvider();
-    try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch { toast('Google sign-in failed'); } }
-  });
+  if (googleSignInBtns.length) {
+    const handleGoogleSignIn = async () => {
+      if (!authReady || typeof signInWithPopup !== 'function' || typeof signInWithRedirect !== 'function') {
+        toast('Sign-in unavailable offline');
+        return;
+      }
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        try {
+          await signInWithRedirect(auth, provider);
+        } catch {
+          toast('Google sign-in failed');
+        }
+      }
+    };
+    googleSignInBtns.forEach((btn) => {
+      btn.addEventListener('click', handleGoogleSignIn);
+    });
+  }
 
   if (authReady && typeof getRedirectResult === 'function') {
     getRedirectResult(auth).catch(()=>{});
   }
 
-  googleSignOutBtn?.addEventListener('click', async () => {
-    if (!authReady || typeof signOut !== 'function') {
-      toast('Sign-out unavailable offline');
-      return;
-    }
-    try { await signOut(auth); toast('Signed out'); } catch { toast('Sign-out failed'); }
-  });
+  if (googleSignOutBtns.length) {
+    const handleGoogleSignOut = async () => {
+      if (!authReady || typeof signOut !== 'function') {
+        toast('Sign-out unavailable offline');
+        return;
+      }
+      try {
+        await signOut(auth);
+        toast('Signed out');
+      } catch {
+        toast('Sign-out failed');
+      }
+    };
+    googleSignOutBtns.forEach((btn) => {
+      btn.addEventListener('click', handleGoogleSignOut);
+    });
+  }
 
   if (authReady && typeof onAuthStateChanged === 'function') {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         userId = user.uid;
         renderSyncIndicator('online');
-        googleSignInBtn?.classList.add('hidden');
-        googleSignOutBtn?.classList.remove('hidden');
+        googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
+        googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
         if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
         setupFirestoreSync();
         await migrateOfflineRemindersIfNeeded();
@@ -2060,11 +2083,13 @@ export async function initReminders(sel = {}) {
   });
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
-  openSettings?.addEventListener('click', () => {
-    const willShow = settingsSection?.classList.contains('hidden');
-    settingsSection?.classList.toggle('hidden');
-    if(willShow) settingsSection?.scrollIntoView({ behavior:'smooth', block:'start' });
-    closeMenu();
+  openSettingsBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const willShow = settingsSection?.classList.contains('hidden');
+      settingsSection?.classList.toggle('hidden');
+      if (willShow) settingsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      closeMenu();
+    });
   });
   document.addEventListener('DOMContentLoaded', () => { settingsSection?.classList.add('hidden'); });
 
