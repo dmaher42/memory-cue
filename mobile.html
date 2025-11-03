@@ -917,172 +917,140 @@
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
-  <style id="header-compact-css">
-    @media (max-width: 360px) {
-      #syncStatus {
-        position: relative;
-        padding: 0.2rem 0.4rem;
-        gap: 0.2rem;
-        min-width: auto;
-        max-width: none;
-      }
+  <style id="mobile-header-compact" aria-hidden="true">
+  :root {
+    --mobile-header-height: 44px;
+  }
 
-      #syncStatus .sync-dot {
-        width: 0.45rem;
-        height: 0.45rem;
-        box-shadow: none;
-      }
+  /* Make header visually compact while preserving touch targets and accessibility */
+  .mc-header {
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 8px;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
 
-      #mcStatusText {
-        position: absolute !important;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        clip-path: inset(50%);
-        white-space: nowrap;
-        border: 0;
-      }
+  /* Branding: very small */
+  .mc-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .mc-brand .logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .mc-brand .title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-left: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: none; /* hide textual title on narrow screens; keeps brands minimal */
+  }
 
-      #syncStatus::after {
-        content: '';
-        display: inline-block;
-        margin-left: 0.15rem;
-        font-size: 0.625rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
+  /* Status indicator is tiny and condensed */
+  #mcStatus {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: none;
+  }
+  #mcStatus.sync-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 0 6px;
+    border-radius: 9999px;
+    background: rgba(15,23,42,0.04);
+  }
+  /* keep the verbose status text accessible but visually hidden */
+  #mcStatusText { position: absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-      #syncStatus[data-state='online']::after {
-        content: 'On';
-      }
+  /* Smaller circular buttons */
+  .mc-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 1.05rem;
+  }
+  .mc-btn.icon-only { padding: 0.125rem; }
 
-      #syncStatus[data-state='offline']::after {
-        content: 'Off';
-      }
+  /* Overflow menu anchor spacing */
+  .mc-actions { display: flex; gap: 6px; align-items: center; }
 
-      #syncStatus[data-state='checking']::after {
-        content: 'Chk';
-      }
+  /* Reduce hit area bloat visually but keep target size via padding if needed for a11y */
+  .mc-header .btn { padding: 0; }
 
-      #syncStatus[data-state='syncing']::after {
-        content: 'Sync';
-      }
-
-      #syncStatus[data-state='error']::after {
-        content: 'Err';
-      }
-
-      #syncStatus[data-state='info']::after {
-        content: 'Info';
-      }
-
-      #headerQuickActions {
-        gap: 0.35rem;
-      }
-
-      #headerQuickActions button {
-        padding: 0.35rem;
-      }
-
-      #headerQuickActions svg {
-        width: 1.1rem;
-        height: 1.1rem;
-      }
-    }
+  /* On slightly larger phones show small text label next to logo (optional) */
+  @media (min-width: 420px) {
+    .mc-brand .title { display: inline; font-size: 0.95rem; }
+  }
   </style>
-  <header
-    class="sticky top-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-900/70 border-b border-neutral-200 dark:border-neutral-800"
-    style="padding-top: env(safe-area-inset-top, 0px)"
-  >
-    <div class="mx-auto flex min-h-10 max-w-screen-sm items-center gap-2 px-3 py-0.5">
-      <!-- Left: Menu -->
-      <button
-        id="btn-open-drawer"
-        class="-ml-1 rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
-        aria-label="Open menu"
-        aria-controls="mobile-drawer"
-        aria-expanded="false"
-      >
-        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
 
-      <!-- Center: App title (tap to scroll to top) -->
-      <button id="btn-scroll-top" class="mx-1 min-w-0 shrink text-left font-semibold tracking-tight truncate" type="button">
-        Memory Cue
-      </button>
+  <header class="mc-header" role="banner" aria-label="Primary header">
+    <div class="mc-brand" aria-hidden="false">
+      <a href="#" class="logo" title="Memory Cue">MC</a>
+      <span class="title">Memory Cue</span>
+    </div>
 
-      <div
-        id="syncStatus"
-        class="sync-status-indicator offline ml-1 inline-flex min-w-0 max-w-[11rem] items-center truncate"
-        role="status"
-        aria-live="polite"
-        data-state="offline"
-      >
-        <span id="mcStatus" class="sync-dot offline" aria-hidden="true"></span>
-        <span id="mcStatusText" class="truncate">Offline</span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <!-- status (visual tiny dot + accessible text) -->
+      <div id="syncStatus" class="sync-inline" aria-hidden="false" data-state="offline" title="Sync status">
+        <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
       </div>
+      <span id="mcStatusText" class="sr-only">Offline</span>
 
-      <!-- Right: Quick actions -->
-      <div id="headerQuickActions" class="ml-auto flex items-center gap-1">
-        <button
-          id="btn-quick-add"
-          class="rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
-          type="button"
-          aria-label="Quick add"
-        >
-          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+      <div class="mc-actions" id="headerQuickActions" role="group" aria-label="Header actions">
+        <!-- Add / Quick create -->
+        <button id="addReminderBtn" type="button" class="mc-btn btn btn-ghost icon-only" aria-label="Add reminder" data-open-add-task>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
 
-        <button
-          id="btn-search"
-          class="rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
-          type="button"
-          aria-label="Search"
-        >
-          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m21 21-4.35-4.35" />
-            <circle cx="10.5" cy="10.5" r="6.5" />
-          </svg>
-        </button>
+        <!-- Overflow / more -->
+        <div style="position:relative;">
+          <button id="overflowMenuBtn" type="button" class="mc-btn btn btn-ghost icon-only" aria-label="More options" aria-haspopup="true" aria-controls="overflowMenu" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
+          </button>
 
-        <button
-          id="btn-theme"
-          class="rounded-xl p-2 hover:bg-neutral-100 active:scale-95 dark:hover:bg-neutral-800"
-          type="button"
-          aria-label="Toggle theme"
-        >
-          <svg
-            id="icon-sun"
-            viewBox="0 0 24 24"
-            class="size-5 block dark:hidden"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="4" />
-            <path
-              d="M12 2v2m0 16v2M4.93 4.93 6.34 6.34m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07 6.34 17.66m11.32-11.32 1.41-1.41"
-            />
-          </svg>
-          <svg
-            id="icon-moon"
-            viewBox="0 0 24 24"
-            class="size-5 hidden dark:block"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
-          </svg>
-        </button>
+          <div id="overflowMenu" class="menu-card hidden absolute right-0 mt-2 w-44 rounded-xl shadow-lg bg-base-100 border" role="menu" aria-hidden="true">
+            <ul class="py-2 text-sm" role="none">
+              <li role="none"><button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2" role="menuitem">🎙️ Dictate reminder</button></li>
+              <li><div class="h-px bg-base-300 my-1"></div></li>
+              <li role="none"><button id="openSettings" type="button" class="menu-item text-left px-4 py-2" role="menuitem">Settings</button></li>
+              <li role="none"><button id="themeToggle" type="button" class="menu-item text-left px-4 py-2" role="menuitem">Theme</button></li>
+              <li><div class="h-px bg-base-300 my-1"></div></li>
+              <li role="none"><button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2" role="menuitem">Sign in</button></li>
+              <li role="none"><button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden" role="menuitem">Sign out</button></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -1172,7 +1140,7 @@
       const drawer = document.getElementById('mobile-drawer');
       const scrim = document.getElementById('mobile-drawer-scrim');
       const scrollTopBtn = document.getElementById('btn-scroll-top');
-      const quickAddBtn = document.getElementById('btn-quick-add');
+      const quickAddBtn = document.getElementById('addReminderBtn');
       const searchBtn = document.getElementById('btn-search');
       const themeBtn = document.getElementById('btn-theme');
       const drawerSyncStatus = document.getElementById('drawerSyncStatus');
