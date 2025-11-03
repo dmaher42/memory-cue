@@ -203,7 +203,7 @@ const initialiseReminders = () => {
       syncUrlInputSel: '#syncUrl',
       saveSettingsSel: '#saveSyncSettings',
       testSyncSel: '#testSync',
-      openSettingsSel: '#openSettings',
+      openSettingsSel: '[data-open="settings"]',
       dateFeedbackSel: '#dateFeedback'
     });
   }

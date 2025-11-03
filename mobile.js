@@ -276,7 +276,7 @@ const bootstrapReminders = () => {
     syncUrlInputSel: '#syncUrl',
     saveSettingsSel: '#saveSyncSettings',
     testSyncSel: '#testSync',
-    openSettingsSel: '#openSettings',
+    openSettingsSel: '[data-open="settings"]',
     notesSel: '#notes',
     saveNotesBtnSel: '#saveNotes',
     loadNotesBtnSel: '#loadNotes',
