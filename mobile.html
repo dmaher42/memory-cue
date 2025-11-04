@@ -1032,51 +1032,89 @@
   .mc-add-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 0.55rem 0.85rem;
-    border-radius: 12px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.1;
-    background: rgba(255, 255, 255, 0.88);
-    color: rgba(15, 23, 42, 0.92);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.625rem 1rem;
+    border-radius: 14px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.01em;
   }
 
-  .mc-add-btn:hover,
-  .mc-add-btn:focus-visible {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-    transform: translateY(-1px);
+  .mc-add-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .mc-add-btn:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45), 0 4px 10px rgba(37, 99, 235, 0.25);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .mc-add-btn:hover::before {
+    opacity: 1;
+  }
+
+  .mc-add-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3), 0 1px 4px rgba(37, 99, 235, 0.2);
   }
 
   .mc-add-btn:focus-visible {
-    outline: 2px solid rgba(59, 130, 246, 0.4);
+    outline: 3px solid rgba(59, 130, 246, 0.5);
     outline-offset: 2px;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45), 0 4px 10px rgba(37, 99, 235, 0.25), 0 0 0 4px rgba(59, 130, 246, 0.2);
   }
 
   .mc-add-btn__hint {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    font-weight: 500;
+    font-size: 1.125rem;
+    opacity: 0.95;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .mc-add-btn:hover .mc-add-btn__hint {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
   }
 
   .dark .mc-add-btn {
-    background: rgba(15, 23, 42, 0.7);
-    color: rgba(226, 232, 240, 0.9);
-    border-color: rgba(71, 85, 105, 0.45);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 2px 6px rgba(59, 130, 246, 0.25);
   }
 
-  .dark .mc-add-btn:hover,
-  .dark .mc-add-btn:focus-visible {
-    background: rgba(30, 41, 59, 0.8);
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.45);
+  .dark .mc-add-btn:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5), 0 4px 10px rgba(59, 130, 246, 0.3);
+  }
+
+  .dark .mc-add-btn:active {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35), 0 1px 4px rgba(59, 130, 246, 0.2);
   }
 
   /* On slightly larger phones show small text label next to logo (optional) */
