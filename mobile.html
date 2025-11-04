@@ -1102,6 +1102,28 @@
     transform: rotate(90deg);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .mc-add-btn {
+      transition: background-color 0.1s ease, box-shadow 0.1s ease;
+    }
+    
+    .mc-add-btn:hover {
+      transform: none;
+    }
+    
+    .mc-add-btn:active {
+      transform: none;
+    }
+    
+    .mc-add-btn__hint {
+      transition: background-color 0.1s ease;
+    }
+    
+    .mc-add-btn:hover .mc-add-btn__hint {
+      transform: none;
+    }
+  }
+
   .dark .mc-add-btn {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: #ffffff;
