@@ -441,32 +441,52 @@
       border-top-color: rgba(71, 85, 105, 0.3);
       color: rgba(203, 213, 225, 0.8);
     }
-    .task-actions {
+    .task-header {
       display: flex;
-      gap: 0.5rem;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .task-toolbar {
+      display: inline-flex;
+      gap: 0.375rem;
       align-items: center;
-      justify-content: flex-end;
-      margin-top: auto;
-      padding-top: 0.75rem;
+      flex-shrink: 0;
     }
-    .task-actions button {
-      padding: 0.375rem 0.75rem;
-      font-size: 0.8125rem;
+    .task-toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      border-radius: 0.5rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(30, 41, 59, 0.82);
       transition: all 0.15s ease;
-      color: rgba(30, 41, 59, 0.88);
+      line-height: 1.2;
     }
-    .task-actions button:hover,
-    .task-actions button:focus-visible {
+    .task-toolbar-btn:hover,
+    .task-toolbar-btn:focus-visible {
       color: rgba(30, 41, 59, 1);
+      border-color: rgba(59, 130, 246, 0.35);
+      background: rgba(59, 130, 246, 0.12);
     }
-    .dark .task-actions button {
+    .task-toolbar-btn .task-toolbar-label {
+      display: inline-block;
+    }
+    .dark .task-toolbar-btn {
       color: rgba(226, 232, 240, 0.92);
+      border-color: transparent;
     }
-    .dark .task-actions button:hover,
-    .dark .task-actions button:focus-visible {
+    .dark .task-toolbar-btn:hover,
+    .dark .task-toolbar-btn:focus-visible {
       color: rgba(248, 250, 252, 1);
+      border-color: rgba(96, 165, 250, 0.35);
+      background: rgba(59, 130, 246, 0.2);
     }
     /* Today-specific task styling - more prominent */
     .task-item[data-today="true"],
@@ -601,18 +621,23 @@
       font-size: 10px;
     }
 
-    /* Adjust task actions for grid */
-    #reminderList.grid-cols-2 .task-actions {
-      gap: 4px;
-      padding-top: 0.5rem;
-      justify-content: flex-end;
+    /* Adjust task header for grid */
+    #reminderList.grid-cols-2 .task-header {
+      gap: 0.5rem;
+      align-items: center;
     }
 
-    #reminderList.grid-cols-2 .task-actions button {
-      width: 28px;
-      height: 28px;
-      font-size: 12px;
-      padding: 0;
+    #reminderList.grid-cols-2 .task-toolbar {
+      gap: 0.25rem;
+    }
+
+    #reminderList.grid-cols-2 .task-toolbar-btn {
+      padding: 0.25rem 0.45rem;
+      font-size: 0.7rem;
+    }
+
+    #reminderList.grid-cols-2 .task-toolbar-btn .task-toolbar-label {
+      display: none;
     }
 
     /* Compact priority indicators */
@@ -1611,7 +1636,7 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-5UVXCT36.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-576NASVQ.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-KTZLCBCC.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
