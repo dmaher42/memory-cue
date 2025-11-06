@@ -1931,17 +1931,25 @@ export async function initReminders(sel = {}) {
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
       div.innerHTML = `
         <div class="task-content">
-          <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
+          <div class="task-header">
+            <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
+            <div class="task-toolbar" role="toolbar" aria-label="Reminder actions">
+              <button class="task-toolbar-btn" data-edit type="button" aria-label="Edit reminder">
+                <span aria-hidden="true">✏️</span>
+                <span class="task-toolbar-label">Edit</span>
+              </button>
+              <button class="task-toolbar-btn" data-del type="button" aria-label="Delete reminder">
+                <span aria-hidden="true">🗑️</span>
+                <span class="task-toolbar-label">Delete</span>
+              </button>
+            </div>
+          </div>
           <div class="task-meta">
             <div class="task-meta-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
               ${chipMarkup}
             </div>
           </div>
           ${notesHtml}
-        </div>
-        <div class="task-actions">
-          <button class="btn-ghost" data-edit type="button">Edit</button>
-          <button class="btn-ghost" data-del type="button">Del</button>
         </div>`;
       div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
       div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
