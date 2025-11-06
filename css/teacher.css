@@ -1413,15 +1413,58 @@ input::placeholder, textarea::placeholder {
   color: var(--task-priority-chip-color, var(--task-chip-color));
 }
 
-.task-actions {
+.task-header {
   display: flex;
-  gap: var(--space-2);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
 }
 
-.task-actions button {
-  padding: var(--space-2);
+.task-toolbar {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.task-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
   font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
   min-width: auto;
+  line-height: 1.2;
+}
+
+.task-toolbar-btn:hover,
+.task-toolbar-btn:focus-visible {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--task-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--task-accent) 10%, transparent);
+}
+
+.task-toolbar-btn .task-toolbar-label {
+  display: inline-block;
+}
+
+.dark .task-toolbar-btn {
+  color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+  border-color: transparent;
+}
+
+.dark .task-toolbar-btn:hover,
+.dark .task-toolbar-btn:focus-visible {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--task-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--task-accent) 25%, transparent);
 }
 
 /* Checkbox styling */
