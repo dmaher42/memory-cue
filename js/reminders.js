@@ -2447,6 +2447,14 @@ export async function initReminders(sel = {}) {
     const hasAny = items.length > 0;
     const hasRows = rows.length > 0;
 
+    const pendingNotificationIds = (() => {
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+        return new Set();
+      }
+      const entries = Object.values(scheduledReminders || {}).filter((entry) => entry && typeof entry === 'object' && entry.id);
+      return new Set(entries.map((entry) => entry.id));
+    })();
+
     if(emptyStateEl){
       if(!hasRows){
         const description = hasAny ? 'No reminders to show right now.' : emptyInitialText;
@@ -2517,6 +2525,11 @@ export async function initReminders(sel = {}) {
       div.setAttribute('draggable', 'true');
       div.classList.add('reminder-draggable');
       if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
+      if(pendingNotificationIds.has(summary.id)){
+        div.dataset.notificationActive = 'true';
+      } else {
+        div.removeAttribute('data-notification-active');
+      }
       const dueDate = summary.dueIso ? new Date(summary.dueIso) : null;
       const dueIsToday = highlightToday && dueDate && dueDate >= t0 && dueDate <= t1;
       if (dueIsToday) {
@@ -2630,7 +2643,11 @@ export async function initReminders(sel = {}) {
           itemEl.dataset.reminderItem = 'true';
           itemEl.setAttribute('draggable', 'true');
           itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
-          itemEl.classList.add('reminder-draggable');
+          if(pendingNotificationIds.has(summary.id)){
+            itemEl.dataset.notificationActive = 'true';
+          } else {
+            itemEl.removeAttribute('data-notification-active');
+          }
           const dueLabel = formatDesktopDue(r);
           const titleClasses = r.done ? 'line-through text-base-content/50' : 'text-base-content';
           const statusLabel = r.done ? 'Completed' : 'Active';
@@ -2837,6 +2854,7 @@ export async function initReminders(sel = {}) {
         adviseInstallForBackground();
       }
       rescheduleAllReminders();
+      render();
       return;
     }
     try {
@@ -2850,6 +2868,7 @@ export async function initReminders(sel = {}) {
           adviseInstallForBackground();
         }
         rescheduleAllReminders();
+        render();
       } else {
         toast('Notifications blocked');
       }
