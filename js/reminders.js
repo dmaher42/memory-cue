@@ -5,7 +5,14 @@ const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
 let notificationCleanupBound = false;
 const SERVICE_WORKER_SCRIPT = 'service-worker.js';
+const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
+const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
+  updateScheduledReminders: 'memoryCue:updateScheduledReminders',
+  checkScheduledReminders: 'memoryCue:checkScheduledReminders',
+});
 let serviceWorkerReadyPromise = null;
+let backgroundSyncRegistrationPromise = null;
+let backgroundSyncRegistrationSucceeded = false;
 const DEFAULT_CATEGORY = 'General';
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
@@ -74,6 +81,141 @@ async function ensureServiceWorkerRegistration() {
     }
   })();
   return serviceWorkerReadyPromise;
+}
+
+async function postMessageToServiceWorker(message) {
+  if (!message || typeof message !== 'object') {
+    return false;
+  }
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return false;
+  }
+  try {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration) {
+      return false;
+    }
+    const targets = new Set();
+    if (navigator.serviceWorker.controller) {
+      targets.add(navigator.serviceWorker.controller);
+    }
+    ['active', 'waiting', 'installing'].forEach((state) => {
+      const worker = registration[state];
+      if (worker) {
+        targets.add(worker);
+      }
+    });
+    let delivered = false;
+    targets.forEach((worker) => {
+      try {
+        worker.postMessage(message);
+        delivered = true;
+      } catch (error) {
+        console.warn('Failed posting message to service worker', error);
+      }
+    });
+    return delivered;
+  } catch (error) {
+    console.warn('Unable to reach service worker', error);
+    return false;
+  }
+}
+
+async function setupBackgroundReminderSync() {
+  if (supportsNotificationTriggers()) {
+    return false;
+  }
+  if (backgroundSyncRegistrationSucceeded) {
+    return true;
+  }
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return false;
+  }
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return false;
+  }
+  if (backgroundSyncRegistrationPromise) {
+    try {
+      return await backgroundSyncRegistrationPromise;
+    } catch {
+      // Ignore errors from previous attempt and allow retry below.
+    }
+  }
+  backgroundSyncRegistrationPromise = (async () => {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration) {
+      return false;
+    }
+    let registered = false;
+    if ('periodicSync' in registration) {
+      try {
+        const tags = await registration.periodicSync.getTags();
+        if (!Array.isArray(tags) || !tags.includes(REMINDER_PERIODIC_SYNC_TAG)) {
+          await registration.periodicSync.register(REMINDER_PERIODIC_SYNC_TAG, {
+            minInterval: 15 * 60 * 1000,
+          });
+        }
+        registered = true;
+      } catch (error) {
+        console.warn('Periodic background sync unavailable', error);
+      }
+    }
+    if (!registered && 'sync' in registration) {
+      try {
+        await registration.sync.register(REMINDER_PERIODIC_SYNC_TAG);
+        registered = true;
+      } catch (error) {
+        console.warn('Background sync unavailable', error);
+      }
+    }
+    return registered;
+  })();
+  try {
+    const result = await backgroundSyncRegistrationPromise;
+    if (result) {
+      backgroundSyncRegistrationSucceeded = true;
+    }
+    return result;
+  } catch (error) {
+    console.warn('Background reminder sync setup failed', error);
+    backgroundSyncRegistrationSucceeded = false;
+    return false;
+  } finally {
+    backgroundSyncRegistrationPromise = null;
+  }
+}
+
+async function syncScheduledRemindersWithServiceWorker(remindersPayload = [], { requestCheck = false } = {}) {
+  if (supportsNotificationTriggers()) {
+    return;
+  }
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return;
+  }
+  try {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration) {
+      return;
+    }
+    const delivered = await postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.updateScheduledReminders,
+      reminders: Array.isArray(remindersPayload) ? remindersPayload : [],
+    });
+    if (requestCheck) {
+      await postMessageToServiceWorker({
+        type: SERVICE_WORKER_MESSAGE_TYPES.checkScheduledReminders,
+      });
+    }
+    if (!delivered && typeof registration.update === 'function') {
+      try {
+        await registration.update();
+      } catch {
+        // Ignore update failures.
+      }
+    }
+  } catch (error) {
+    console.warn('Failed syncing reminders with service worker', error);
+  }
 }
 
 async function cancelTriggerNotification(id, registrationOverride) {
@@ -997,8 +1139,35 @@ export async function initReminders(sel = {}) {
     Object.values(scheduledReminders).forEach((entry) => {
       if (entry && typeof entry === 'object') {
         entry.category = normalizeCategory(entry.category);
+        entry.priority = entry.priority || 'Medium';
+        entry.notes = typeof entry.notes === 'string' ? entry.notes : '';
+        entry.body = typeof entry.body === 'string' && entry.body
+          ? entry.body
+          : buildReminderNotificationBody(entry);
+        entry.urlPath = entry.urlPath || reminderLandingPath;
+        if (!Number.isFinite(entry.updatedAt)) {
+          entry.updatedAt = Date.now();
+        }
+        if (!Number.isFinite(entry.notifiedAt)) {
+          entry.notifiedAt = null;
+        }
       }
     });
+  }
+
+  if (!supportsNotificationTriggers()) {
+    const initialPayload = buildScheduledReminderPayload();
+    if (
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'granted'
+    ) {
+      setupBackgroundReminderSync();
+      if (initialPayload.length) {
+        syncScheduledRemindersWithServiceWorker(initialPayload, { requestCheck: true });
+      }
+    } else if (initialPayload.length) {
+      syncScheduledRemindersWithServiceWorker(initialPayload);
+    }
   }
 
   const recordFirebaseAvailability = (available) => {
@@ -1635,7 +1804,95 @@ export async function initReminders(sel = {}) {
     }
   }
 
-  function saveScheduled(){ localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders)); }
+  function buildReminderNotificationBody(entry) {
+    if (!entry) return 'Due now';
+    const notesText = typeof entry.notes === 'string' ? entry.notes : '';
+    const firstNote = notesText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean);
+    if (firstNote) {
+      if (entry.due) {
+        try {
+          const dueDate = new Date(entry.due);
+          if (!Number.isNaN(dueDate.getTime())) {
+            const timeLabel = fmtTime(dueDate);
+            if (timeLabel) {
+              return `${firstNote} • ${timeLabel}`;
+            }
+          }
+        } catch {
+          // ignore formatting issues
+        }
+      }
+      return firstNote;
+    }
+    if (entry.due) {
+      try {
+        const dueDate = new Date(entry.due);
+        if (!Number.isNaN(dueDate.getTime())) {
+          const timeLabel = fmtTime(dueDate);
+          if (timeLabel) {
+            return `Due ${timeLabel}`;
+          }
+        }
+      } catch {
+        // ignore formatting issues
+      }
+    }
+    return 'Due now';
+  }
+
+  function adviseInstallForBackground() {
+    try {
+      const inStandaloneMode =
+        (typeof window !== 'undefined' &&
+          window.matchMedia &&
+          window.matchMedia('(display-mode: standalone)').matches) ||
+        (typeof navigator !== 'undefined' && navigator.standalone);
+      if (inStandaloneMode) {
+        return;
+      }
+    } catch {
+      // Ignore detection errors
+    }
+    toast('Tip: Add Memory Cue to your home screen so reminders can run in the background.');
+  }
+
+  function buildScheduledReminderPayload() {
+    return Object.values(scheduledReminders || {})
+      .filter((entry) => entry && typeof entry === 'object' && entry.id)
+      .map((entry) => ({
+        id: entry.id,
+        title: typeof entry.title === 'string' ? entry.title : '',
+        due: typeof entry.due === 'string' ? entry.due : null,
+        priority: entry.priority || 'Medium',
+        category: entry.category || DEFAULT_CATEGORY,
+        notes: typeof entry.notes === 'string' ? entry.notes : '',
+        body: buildReminderNotificationBody(entry),
+        urlPath: entry.urlPath || reminderLandingPath,
+        updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
+        notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
+      }));
+  }
+
+  function saveScheduled(){
+    try {
+      localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders));
+    } catch (error) {
+      console.warn('Failed to persist scheduled reminders', error);
+    }
+    const payload = buildScheduledReminderPayload();
+    const notificationsGranted =
+      typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    if (notificationsGranted) {
+      setupBackgroundReminderSync();
+    }
+    syncScheduledRemindersWithServiceWorker(
+      payload,
+      { requestCheck: notificationsGranted }
+    );
+  }
   function clearReminderState(id, { closeNotification = true } = {}){
     if(closeNotification){
       const active = activeNotifications.get(id);
@@ -1656,7 +1913,10 @@ export async function initReminders(sel = {}) {
       if(existing && typeof existing.close === 'function'){
         try { existing.close(); } catch {}
       }
-      const notification = new Notification(item.title,{ body:'Due now', tag:item.id });
+      const notification = new Notification(item.title,{
+        body: buildReminderNotificationBody(item),
+        tag:item.id
+      });
       activeNotifications.set(item.id, notification);
       const remove = () => {
         if(activeNotifications.get(item.id) === notification){
@@ -1686,21 +1946,10 @@ export async function initReminders(sel = {}) {
       due: item.due,
       priority: item.priority || 'Medium',
       category: item.category || DEFAULT_CATEGORY,
+      body,
       urlPath: reminderLandingPath,
     };
-    const primaryNote = typeof item.notes === 'string'
-      ? item.notes.split(/\r?\n/).find(line => line.trim()) || ''
-      : '';
-    let body = primaryNote || 'Due now';
-    try {
-      const dueDate = new Date(item.due);
-      if(!Number.isNaN(dueDate.getTime())){
-        const timeLabel = fmtTime(dueDate);
-        if(timeLabel){
-          body = primaryNote ? `${primaryNote} • ${timeLabel}` : `Due ${timeLabel}`;
-        }
-      }
-    } catch {}
+    const body = buildReminderNotificationBody(item);
     const options = { body, tag: item.id, data, renotify: true };
     if(dueTime > Date.now()){
       options.showTrigger = new Trigger(dueTime);
@@ -1717,7 +1966,24 @@ export async function initReminders(sel = {}) {
     if(!item||!item.id) return;
     item.category = normalizeCategory(item.category);
     if(!item.due || item.done){ cancelReminder(item.id); return; }
-    const stored = { id:item.id, title:item.title, due:item.due, category: item.category || DEFAULT_CATEGORY };
+    const previous = scheduledReminders[item.id] || {};
+    const stored = {
+      id:item.id,
+      title:item.title,
+      due:item.due,
+      category: item.category || DEFAULT_CATEGORY,
+      priority: item.priority || 'Medium',
+      notes: typeof item.notes === 'string' ? item.notes : '',
+      body: buildReminderNotificationBody(item),
+      urlPath: reminderLandingPath,
+      updatedAt: Date.now(),
+      viaTrigger: !!previous.viaTrigger,
+      notifiedAt: (() => {
+        const prevDue = typeof previous.due === 'string' ? previous.due : null;
+        const prevNotified = Number.isFinite(previous.notifiedAt) ? previous.notifiedAt : null;
+        return prevDue === item.due ? prevNotified : null;
+      })(),
+    };
     scheduledReminders[item.id]=stored;
     saveScheduled();
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
@@ -2204,7 +2470,12 @@ export async function initReminders(sel = {}) {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
     if(Notification.permission === 'granted'){
       toast('Notifications enabled');
-      if(supportsNotificationTriggers()) ensureServiceWorkerRegistration();
+      if(supportsNotificationTriggers()) {
+        ensureServiceWorkerRegistration();
+      } else {
+        setupBackgroundReminderSync();
+        adviseInstallForBackground();
+      }
       rescheduleAllReminders();
       return;
     }
@@ -2212,7 +2483,12 @@ export async function initReminders(sel = {}) {
       const perm = await Notification.requestPermission();
       if(perm==='granted'){
         toast('Notifications enabled');
-        if(supportsNotificationTriggers()) ensureServiceWorkerRegistration();
+        if(supportsNotificationTriggers()) {
+          ensureServiceWorkerRegistration();
+        } else {
+          setupBackgroundReminderSync();
+          adviseInstallForBackground();
+        }
         rescheduleAllReminders();
       } else {
         toast('Notifications blocked');
