@@ -27,6 +27,7 @@ const SEEDED_CATEGORIES = Object.freeze([
   'Wellbeing & Support',
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
+const ORDER_INDEX_GAP = 1024;
 
 function getGlobalScope() {
   if (typeof globalThis !== 'undefined') return globalThis;
@@ -542,11 +543,18 @@ export async function initReminders(sel = {}) {
     }
 
     const entry = buildQuickReminder(t, quickDue);
+    assignOrderIndexForNewItem(entry, { position: 'start' });
     items.unshift(entry);
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
-    saveToFirebase(entry);
+    if (rebalanced) {
+      items.forEach((item) => saveToFirebase(item));
+    } else {
+      saveToFirebase(entry);
+    }
     tryCalendarSync(entry);
     scheduleReminder(entry);
     rescheduleAllReminders();
@@ -1018,6 +1026,308 @@ export async function initReminders(sel = {}) {
   const reminderTimers = {};
   let scheduledReminders = {};
 
+  function sortItemsByOrder(target = items) {
+    if (!Array.isArray(target)) {
+      return;
+    }
+    target.sort((a, b) => {
+      const aVal = Number.isFinite(a?.orderIndex) ? a.orderIndex : -Infinity;
+      const bVal = Number.isFinite(b?.orderIndex) ? b.orderIndex : -Infinity;
+      if (aVal === bVal) {
+        return compareRemindersForDisplay(a || {}, b || {});
+      }
+      return bVal - aVal;
+    });
+  }
+
+  function getOrderBounds(target = items) {
+    if (!Array.isArray(target) || target.length === 0) {
+      return { min: 0, max: 0 };
+    }
+    let min = Infinity;
+    let max = -Infinity;
+    target.forEach((entry) => {
+      const value = Number.isFinite(entry?.orderIndex) ? entry.orderIndex : null;
+      if (value == null) {
+        return;
+      }
+      if (value < min) {
+        min = value;
+      }
+      if (value > max) {
+        max = value;
+      }
+    });
+    if (min === Infinity) min = 0;
+    if (max === -Infinity) max = 0;
+    return { min, max };
+  }
+
+  function ensureOrderIndicesInitialized(target = items) {
+    if (!Array.isArray(target) || target.length === 0) {
+      return Array.isArray(target) ? target : [];
+    }
+    const allHaveOrder = target.every((entry) => Number.isFinite(entry?.orderIndex));
+    let sorted;
+    if (allHaveOrder) {
+      sorted = target.slice();
+      sortItemsByOrder(sorted);
+    } else {
+      sorted = target.slice().sort(compareRemindersForDisplay);
+      const total = sorted.length;
+      sorted.forEach((entry, index) => {
+        entry.orderIndex = (total - index) * ORDER_INDEX_GAP;
+      });
+    }
+    if (target === items) {
+      items = sorted;
+    }
+    return sorted;
+  }
+
+  function assignOrderIndexForNewItem(item, { position = 'start' } = {}) {
+    if (!item || typeof item !== 'object') {
+      return;
+    }
+    const { min, max } = getOrderBounds();
+    if (position === 'end') {
+      const base = Number.isFinite(min) ? min : 0;
+      item.orderIndex = base - ORDER_INDEX_GAP || ORDER_INDEX_GAP;
+    } else {
+      const base = Number.isFinite(max) ? max : 0;
+      item.orderIndex = base + ORDER_INDEX_GAP || ORDER_INDEX_GAP;
+    }
+  }
+
+  function maybeRebalanceOrderSpacing(target = items) {
+    if (!Array.isArray(target) || target.length < 2) {
+      return false;
+    }
+    sortItemsByOrder(target);
+    let needsRebalance = false;
+    for (let i = 1; i < target.length; i += 1) {
+      const prev = target[i - 1];
+      const curr = target[i];
+      const prevVal = Number.isFinite(prev?.orderIndex) ? prev.orderIndex : null;
+      const currVal = Number.isFinite(curr?.orderIndex) ? curr.orderIndex : null;
+      if (prevVal == null || currVal == null || prevVal <= currVal || prevVal - currVal < 1) {
+        needsRebalance = true;
+        break;
+      }
+    }
+    if (!needsRebalance) {
+      return false;
+    }
+    for (let i = 0; i < target.length; i += 1) {
+      target[i].orderIndex = (target.length - i) * ORDER_INDEX_GAP;
+    }
+    if (target === items) {
+      sortItemsByOrder(items);
+    }
+    return true;
+  }
+
+  const dragState = {
+    draggingId: null,
+    dropTargetId: null,
+    dropBefore: true,
+  };
+  let dragSetupComplete = false;
+
+  function findDraggableItem(node) {
+    if (!node || typeof node.closest !== 'function') {
+      return null;
+    }
+    return node.closest('[data-reminder-item]');
+  }
+
+  function clearDragHighlights() {
+    if (!list) return;
+    list.querySelectorAll('.drag-over-before, .drag-over-after').forEach((node) => {
+      node.classList.remove('drag-over-before', 'drag-over-after');
+    });
+    list.classList.remove('drag-over-list');
+  }
+
+  function resetDragState() {
+    if (!list) return;
+    const draggingEl = list.querySelector('.is-dragging');
+    if (draggingEl) {
+      draggingEl.classList.remove('is-dragging');
+    }
+    clearDragHighlights();
+    dragState.draggingId = null;
+    dragState.dropTargetId = null;
+    dragState.dropBefore = true;
+  }
+
+  function performReorder(sourceId, targetId, before) {
+    if (!sourceId || sourceId === targetId) {
+      return;
+    }
+    const sourceIndex = items.findIndex((entry) => entry?.id === sourceId);
+    if (sourceIndex < 0) {
+      return;
+    }
+    const [moved] = items.splice(sourceIndex, 1);
+    let insertIndex;
+    if (!targetId) {
+      insertIndex = items.length;
+    } else {
+      const targetIndex = items.findIndex((entry) => entry?.id === targetId);
+      if (targetIndex < 0) {
+        items.splice(sourceIndex, 0, moved);
+        return;
+      }
+      insertIndex = before ? targetIndex : targetIndex + 1;
+    }
+    items.splice(insertIndex, 0, moved);
+
+    const prev = items[insertIndex - 1];
+    const next = items[insertIndex + 1];
+    const prevVal = Number.isFinite(prev?.orderIndex) ? prev.orderIndex : null;
+    const nextVal = Number.isFinite(next?.orderIndex) ? next.orderIndex : null;
+    let newOrder;
+    if (prevVal != null && nextVal != null) {
+      newOrder = (prevVal + nextVal) / 2;
+    } else if (prevVal != null) {
+      newOrder = prevVal - ORDER_INDEX_GAP;
+    } else if (nextVal != null) {
+      newOrder = nextVal + ORDER_INDEX_GAP;
+    } else {
+      newOrder = ORDER_INDEX_GAP;
+    }
+    if (!Number.isFinite(newOrder)) {
+      newOrder = ORDER_INDEX_GAP * (items.length + 1);
+    }
+    moved.orderIndex = newOrder;
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    if (rebalanced) {
+      items.forEach((entry) => saveToFirebase(entry));
+    } else {
+      saveToFirebase(moved);
+    }
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    emitActivity({ action: 'reordered', label: 'Reminders reordered' });
+  }
+
+  function handleDragStart(event) {
+    const item = findDraggableItem(event.target);
+    if (!item) {
+      return;
+    }
+    const interactive = event.target?.closest('button, a, input, textarea, label');
+    if (interactive && interactive !== item) {
+      event.preventDefault();
+      return;
+    }
+    const id = item.dataset.id;
+    if (!id) {
+      return;
+    }
+    dragState.draggingId = id;
+    dragState.dropTargetId = null;
+    dragState.dropBefore = true;
+    item.classList.add('is-dragging');
+    if (event.dataTransfer) {
+      try {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', id);
+      } catch {}
+    }
+  }
+
+  function handleDragOver(event) {
+    if (!dragState.draggingId) {
+      return;
+    }
+    const item = findDraggableItem(event.target);
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    if (!item) {
+      event.preventDefault();
+      dragState.dropTargetId = null;
+      dragState.dropBefore = false;
+      clearDragHighlights();
+      list?.classList.add('drag-over-list');
+      return;
+    }
+    if (item.dataset.id === dragState.draggingId) {
+      event.preventDefault();
+      clearDragHighlights();
+      return;
+    }
+    event.preventDefault();
+    const rect = item.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const before = event.clientY < midpoint;
+    if (dragState.dropTargetId !== item.dataset.id || dragState.dropBefore !== before) {
+      clearDragHighlights();
+      item.classList.add(before ? 'drag-over-before' : 'drag-over-after');
+      dragState.dropTargetId = item.dataset.id;
+      dragState.dropBefore = before;
+    }
+  }
+
+  function handleDragLeave(event) {
+    const item = findDraggableItem(event.target);
+    if (!item) {
+      if (!list?.contains(event.relatedTarget)) {
+        clearDragHighlights();
+      }
+      return;
+    }
+    if (event.relatedTarget && item.contains(event.relatedTarget)) {
+      return;
+    }
+    item.classList.remove('drag-over-before', 'drag-over-after');
+    if (!list?.contains(event.relatedTarget)) {
+      list?.classList.remove('drag-over-list');
+    }
+  }
+
+  function handleDrop(event) {
+    if (!dragState.draggingId) {
+      return;
+    }
+    event.preventDefault();
+    const item = findDraggableItem(event.target);
+    let targetId = item?.dataset.id || null;
+    let before = dragState.dropBefore;
+    if (item) {
+      const rect = item.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      before = event.clientY < midpoint;
+    } else {
+      targetId = null;
+      before = false;
+    }
+    performReorder(dragState.draggingId, targetId, before);
+    resetDragState();
+  }
+
+  function handleDragEnd() {
+    resetDragState();
+  }
+
+  function setupDragAndDrop() {
+    if (!list || dragSetupComplete) {
+      return;
+    }
+    dragSetupComplete = true;
+    list.addEventListener('dragstart', handleDragStart);
+    list.addEventListener('dragover', handleDragOver);
+    list.addEventListener('drop', handleDrop);
+    list.addEventListener('dragend', handleDragEnd);
+    list.addEventListener('dragleave', handleDragLeave);
+  }
+
   function applySignedOutState() {
     userId = null;
     renderSyncIndicator('offline');
@@ -1046,6 +1356,7 @@ export async function initReminders(sel = {}) {
           if (!entry || typeof entry !== 'object') return null;
           const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now();
           const updatedAt = Number.isFinite(entry.updatedAt) ? entry.updatedAt : createdAt;
+          const rawOrder = Number(entry.orderIndex);
           return {
             id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
             title: typeof entry.title === 'string' ? entry.title : '',
@@ -1057,6 +1368,7 @@ export async function initReminders(sel = {}) {
             updatedAt,
             due: typeof entry.due === 'string' && entry.due ? entry.due : null,
             pendingSync: !!entry.pendingSync,
+            orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
           };
         })
         .filter(Boolean);
@@ -1086,6 +1398,7 @@ export async function initReminders(sel = {}) {
           updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
           due: typeof entry.due === 'string' && entry.due ? entry.due : null,
           pendingSync: !!entry.pendingSync,
+          orderIndex: Number.isFinite(entry.orderIndex) ? entry.orderIndex : null,
         }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
@@ -1094,11 +1407,12 @@ export async function initReminders(sel = {}) {
   }
 
   function persistItems() {
+    sortItemsByOrder(items);
     persistOfflineReminders(items);
   }
 
   function hydrateOfflineReminders() {
-    items = loadOfflineRemindersFromStorage();
+    items = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
   }
 
   hydrateOfflineReminders();
@@ -1108,7 +1422,7 @@ export async function initReminders(sel = {}) {
       items = loadOfflineRemindersFromStorage();
       return;
     }
-    const offline = loadOfflineRemindersFromStorage();
+    let offline = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
     if (!offline.length) {
       items = [];
       persistItems();
@@ -1125,7 +1439,9 @@ export async function initReminders(sel = {}) {
         }
       }
     }
-    items = offline.map((entry) => ({ ...entry, pendingSync: false }));
+    items = ensureOrderIndicesInitialized(
+      offline.map((entry) => ({ ...entry, pendingSync: false }))
+    );
     persistItems();
     render();
     rescheduleAllReminders();
@@ -1484,6 +1800,17 @@ export async function initReminders(sel = {}) {
   function startOfWeek(d) { const n = new Date(d); const day = (n.getDay() + 6) % 7; n.setDate(n.getDate() - day); n.setHours(0,0,0,0); return n; }
   function endOfWeek(d) { const s = startOfWeek(d); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
   function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
+  function compareRemindersForDisplay(a, b) {
+    const aDone = a?.done ? 1 : 0;
+    const bDone = b?.done ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    const aDue = a?.due ? new Date(a.due).getTime() : Infinity;
+    const bDue = b?.due ? new Date(b.due).getTime() : Infinity;
+    if (aDue !== bDue) return aDue - bDue;
+    const priorityDiff = priorityWeight(b?.priority) - priorityWeight(a?.priority);
+    if (priorityDiff) return priorityDiff;
+    return (b?.updatedAt || 0) - (a?.updatedAt || 0);
+  }
   function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
   function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
   function fmtTime(d){ return timeFmt.format(d); }
@@ -1630,9 +1957,10 @@ export async function initReminders(sel = {}) {
       const remoteItems = [];
       snapshot.forEach((d)=>{
         const data = d.data();
-        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0, pendingSync: false });
+        const orderValue = Number(data.orderIndex);
+        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0, pendingSync: false, orderIndex: Number.isFinite(orderValue) ? orderValue : null });
       });
-      items = remoteItems;
+      items = ensureOrderIndicesInitialized(remoteItems);
       render();
       persistItems();
       rescheduleAllReminders();
@@ -1650,6 +1978,7 @@ export async function initReminders(sel = {}) {
       await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
         title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
         category: item.category || DEFAULT_CATEGORY,
+        orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
         createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -1691,12 +2020,19 @@ export async function initReminders(sel = {}) {
       due: obj.due || null,
       pendingSync: !userId,
     };
+    assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
     updateDefaultsFrom(item);
-    saveToFirebase(item);
+    if (rebalanced) {
+      items.forEach((entry) => saveToFirebase(entry));
+    } else {
+      saveToFirebase(item);
+    }
     tryCalendarSync(item);
     scheduleReminder(item);
     emitReminderUpdates();
@@ -1763,11 +2099,17 @@ export async function initReminders(sel = {}) {
     item.pendingSync = !userId;
     item.updatedAt = Date.now();
     items.splice(insertAt, 0, item);
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
     scheduleReminder(item);
-    saveToFirebase(item);
+    if (rebalanced) {
+      items.forEach((entry) => saveToFirebase(entry));
+    } else {
+      saveToFirebase(item);
+    }
     tryCalendarSync(item);
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
@@ -2039,6 +2381,9 @@ export async function initReminders(sel = {}) {
     const t0 = new Date(localNow); t0.setHours(0,0,0,0);
     const t1 = new Date(localNow); t1.setHours(23,59,59,999);
 
+    clearDragHighlights();
+    sortItemsByOrder(items);
+
     if (countTotalEl) {
       try {
         countTotalEl.textContent = String(items.length);
@@ -2095,21 +2440,9 @@ export async function initReminders(sel = {}) {
 
     let rows = items.slice();
 
-    const compareDueDate = (a, b) => {
-      const aDone = a.done ? 1 : 0;
-      const bDone = b.done ? 1 : 0;
-      if (aDone !== bDone) return aDone - bDone;
-      const aDue = a.due ? new Date(a.due).getTime() : Infinity;
-      const bDue = b.due ? new Date(b.due).getTime() : Infinity;
-      if (aDue !== bDue) return aDue - bDue;
-      const priorityDiff = priorityWeight(b.priority) - priorityWeight(a.priority);
-      if (priorityDiff) return priorityDiff;
-      return (b.updatedAt || 0) - (a.updatedAt || 0);
-    };
+    sortItemsByOrder(rows);
 
     const highlightToday = true;
-
-    rows.sort(compareDueDate);
 
     const hasAny = items.length > 0;
     const hasRows = rows.length > 0;
@@ -2187,6 +2520,10 @@ export async function initReminders(sel = {}) {
       div.dataset.title = summary.title;
       div.dataset.priority = summary.priority;
       div.dataset.done = String(summary.done);
+      div.dataset.orderIndex = Number.isFinite(r.orderIndex) ? String(r.orderIndex) : '';
+      div.dataset.reminderItem = 'true';
+      div.setAttribute('draggable', 'true');
+      div.classList.add('reminder-draggable');
       if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
       if(pendingNotificationIds.has(summary.id)){
         div.dataset.notificationActive = 'true';
@@ -2302,6 +2639,9 @@ export async function initReminders(sel = {}) {
           itemEl.dataset.done = String(summary.done);
           if (summary.dueIso) itemEl.dataset.due = summary.dueIso;
           itemEl.dataset.reminder = JSON.stringify(summary);
+          itemEl.dataset.orderIndex = Number.isFinite(r.orderIndex) ? String(r.orderIndex) : '';
+          itemEl.dataset.reminderItem = 'true';
+          itemEl.setAttribute('draggable', 'true');
           itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
           if(pendingNotificationIds.has(summary.id)){
             itemEl.dataset.notificationActive = 'true';
@@ -2451,9 +2791,28 @@ export async function initReminders(sel = {}) {
     rd.onload = () => {
       try {
         const importedItems = JSON.parse(String(rd.result) || '[]').slice(0,500);
-        importedItems.forEach(item => { item.id = uid(); item.category = normalizeCategory(item.category); item.pendingSync = !userId; items=[item,...items]; saveToFirebase(item); });
+        const newlyAdded = [];
+        importedItems.forEach(item => {
+          const entry = {
+            ...item,
+            id: uid(),
+            category: normalizeCategory(item.category),
+            pendingSync: !userId,
+            orderIndex: null,
+          };
+          assignOrderIndexForNewItem(entry, { position: 'start' });
+          items = [entry, ...items];
+          newlyAdded.push(entry);
+        });
+        sortItemsByOrder(items);
+        const rebalanced = maybeRebalanceOrderSpacing(items);
         render();
         persistItems();
+        if (rebalanced) {
+          items.forEach((entry) => saveToFirebase(entry));
+        } else {
+          newlyAdded.forEach((entry) => saveToFirebase(entry));
+        }
         toast('Import successful');
       } catch { toast('Invalid JSON'); }
     };
@@ -2518,6 +2877,7 @@ export async function initReminders(sel = {}) {
     }
   });
 
+  setupDragAndDrop();
   rescheduleAllReminders();
   render();
   persistItems();
@@ -2532,6 +2892,8 @@ export async function initReminders(sel = {}) {
         items = Array.isArray(listItems)
           ? listItems.map(item => ({ ...item, category: normalizeCategory(item?.category) }))
           : [];
+        items = ensureOrderIndicesInitialized(items);
+        sortItemsByOrder(items);
         render();
       },
       render,
