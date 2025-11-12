@@ -569,28 +569,38 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
+      align-content: start;
+    }
+
+    #reminderList.space-y-3 {
+      display: block;
+    }
+
+    #reminderList.space-y-3 .task-item {
+      margin-bottom: 0;
     }
 
     /* 2-column layout on wider phones */
     @media (min-width: 380px) {
       #reminderList.grid-cols-2 {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
     }
 
-    /* Adjust task items for grid layout */
-    #reminderList.grid-cols-2 .task-item {
+    /* Compact reminder card styling */
+    .task-item[data-compact="true"] {
       margin-bottom: 0 !important;
       padding: 12px;
       padding-left: 14px;
       min-height: 80px;
       display: flex;
       flex-direction: column;
+      border-left-width: 3px;
+      border-radius: 12px;
     }
 
-    /* Truncate long content for grid layout */
-    #reminderList.grid-cols-2 .task-title {
+    .task-item[data-compact="true"] .task-title {
       font-size: 14px;
       line-height: 1.3;
       display: -webkit-box;
@@ -600,63 +610,47 @@
       margin-bottom: 8px;
     }
 
-    #reminderList.grid-cols-2 .task-notes {
+    .task-item[data-compact="true"] .task-notes {
       display: -webkit-box;
       -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
       font-size: 12px;
       line-height: 1.3;
+      margin-top: 0.25rem;
+      padding-top: 0.25rem;
     }
 
-    /* Compact task meta for grid */
-    #reminderList.grid-cols-2 .task-meta {
+    .task-item[data-compact="true"] .task-meta {
       font-size: 11px;
       gap: 4px;
       margin-top: auto;
     }
 
-    #reminderList.grid-cols-2 .task-chip {
+    .task-item[data-compact="true"] .task-chip {
       padding: 2px 6px;
       font-size: 10px;
     }
 
-    /* Adjust task header for grid */
-    #reminderList.grid-cols-2 .task-header {
+    .task-item[data-compact="true"] .task-chip:not([data-chip="priority"]) {
+      display: none;
+    }
+
+    .task-item[data-compact="true"] .task-header {
       gap: 0.5rem;
       align-items: center;
     }
 
-    #reminderList.grid-cols-2 .task-toolbar {
+    .task-item[data-compact="true"] .task-toolbar {
       gap: 0.25rem;
     }
 
-    #reminderList.grid-cols-2 .task-toolbar-btn {
+    .task-item[data-compact="true"] .task-toolbar-btn {
       padding: 0.25rem 0.45rem;
       font-size: 0.7rem;
     }
 
-    #reminderList.grid-cols-2 .task-toolbar-btn .task-toolbar-label {
-      display: none;
-    }
-
-    /* Compact priority indicators */
-    #reminderList.grid-cols-2 .task-item {
-      border-left-width: 3px;
-      border-radius: 12px;
-    }
-
-    /* Hide some elements in grid mode for space */
-    .task-item[data-compact="true"] .task-notes {
-      display: none;
-    }
-
-    .task-item[data-compact="true"] .task-meta {
-      display: flex;
-      gap: 4px;
-    }
-
-    .task-item[data-compact="true"] .task-chip:not([data-chip="priority"]) {
+    .task-item[data-compact="true"] .task-toolbar-btn .task-toolbar-label {
       display: none;
     }
 
@@ -666,13 +660,13 @@
         grid-template-columns: 1fr;
       }
 
-      #reminderList.grid-cols-2 .task-item {
+      .task-item[data-compact="true"] {
         padding: 16px;
         padding-left: 18px;
         border-left-width: 4px;
       }
 
-      #reminderList.grid-cols-2 .task-title {
+      .task-item[data-compact="true"] .task-title {
         font-size: 15px;
         -webkit-line-clamp: 3;
       }
@@ -1480,7 +1474,7 @@
         </button>
         <div class="p-4" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60 py-8"></div>
-          <ul id="reminderList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></ul>
+          <ul id="reminderList" class="grid gap-3"></ul>
           <p class="text-xs text-base-content/50 mt-4 pt-3 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -1582,7 +1576,7 @@
 
     if (viewToggle && reminderList) {
       const setCompactMode = (compact) => {
-        document.querySelectorAll('.task-item').forEach((item) => {
+        reminderList.querySelectorAll('.task-item').forEach((item) => {
           if (compact) {
             item.setAttribute('data-compact', 'true');
           } else {
@@ -1616,6 +1610,11 @@
         setCompactMode(isGridView);
       };
 
+      const observer = new MutationObserver(() => {
+        const isGridView = reminderList.classList.contains('grid-cols-2');
+        setCompactMode(isGridView);
+      });
+
       viewToggle.addEventListener('click', function () {
         const isGridView = reminderList.classList.contains('grid-cols-2');
 
@@ -1633,6 +1632,7 @@
       });
 
       ensureInitialState();
+      observer.observe(reminderList, { childList: true });
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
