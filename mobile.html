@@ -1308,41 +1308,18 @@
         <span class="mc-add-btn-label">Add reminder</span>
       </button>
 
-      <!-- Right: Settings button -->
-      <button
-        type="button"
-        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-        aria-label="Open settings"
-      >
-        <span class="text-xl leading-none">⚙️</span>
-      </button>
-    </div>
-  </header>
-
-  <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
-    <div class="mc-quick-add-inner">
-      <div class="mc-quick-status">
-        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
-          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
-        </div>
-        <span id="mcStatusText" class="mc-status-text">Offline</span>
-      </div>
-
-      <div class="mc-quick-more">
+      <!-- Right: Settings button with quick menu -->
+      <div class="relative">
         <button
           id="overflowMenuBtn"
           type="button"
-          class="mc-btn mc-quick-menu-btn"
-          aria-label="More options"
+          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+          aria-label="Open settings menu"
           aria-haspopup="true"
           aria-controls="overflowMenu"
           aria-expanded="false"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
-            <circle cx="12" cy="5" r="1.5" />
-            <circle cx="12" cy="12" r="1.5" />
-            <circle cx="12" cy="19" r="1.5" />
-          </svg>
+          <span class="text-xl leading-none">⚙️</span>
         </button>
 
         <div
@@ -1374,6 +1351,17 @@
             </li>
           </ul>
         </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
+    <div class="mc-quick-add-inner">
+      <div class="mc-quick-status">
+        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
+          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
+        </div>
+        <span id="mcStatusText" class="mc-status-text">Offline</span>
       </div>
     </div>
   </section>
