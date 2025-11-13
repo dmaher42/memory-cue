@@ -34,6 +34,10 @@
       --shadow-sm: 0 1px 3px var(--shadow-color);
       --shadow-md: 0 4px 12px var(--shadow-color);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --reminder-card-padding-y: 0.75rem;
+      --reminder-card-padding-x: 0.5rem;
+      --reminder-card-gap: 0.75rem;
+      --reminder-card-font-size: 0.9rem;
     }
 
   .container {
@@ -73,12 +77,12 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      gap: 0.75rem;
-      padding: 20px;
-      margin: 0 0 16px 0;
+      gap: var(--reminder-card-gap);
+      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      margin: 0 0 var(--reminder-card-gap) 0;
       border: 1px solid var(--card-border);
-      font-size: 0.95rem;
-      line-height: 1.5;
+      font-size: var(--reminder-card-font-size);
+      line-height: 1.4;
       background: var(--card-bg);
       border-radius: 12px;
       box-shadow: 0 1px 3px var(--shadow-color);
@@ -116,8 +120,8 @@
       margin: 0;
       color: var(--text-primary);
       font-weight: 600;
-      font-size: 18px;
-      margin-bottom: 12px;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
       grid-column: 1;
       min-width: 0; /* allow text to truncate */
       overflow: hidden;
@@ -132,12 +136,12 @@
     #reminderList > * time,
     #reminderList > * .reminder-meta {
       color: var(--text-secondary);
-      font-size: 14px;
+      font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 0.75rem;
-      margin-top: 16px;
+      gap: var(--reminder-card-gap);
+      margin-top: 0.75rem;
       grid-column: 1 / -1;
     }
 
@@ -487,7 +491,7 @@
       align-items: start;
       padding: 1rem;
       padding-left: 1.25rem;
-      margin-bottom: 0.75rem;
+      margin-bottom: var(--reminder-card-gap);
       background: color-mix(in srgb, var(--card-bg) 95%, transparent);
       border: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
       border-left-width: 4px;
@@ -683,9 +687,9 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: var(--reminder-card-gap);
       flex-wrap: wrap;
-      margin-bottom: 0.75rem;
+      margin-bottom: var(--reminder-card-gap);
     }
     .task-toolbar {
       display: inline-flex;
@@ -1028,14 +1032,16 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      gap: 0.75rem;
-      padding: 20px;
-      margin-bottom: 16px;
+      gap: var(--reminder-card-gap);
+      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      margin-bottom: var(--reminder-card-gap);
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 12px;
       box-shadow: 0 1px 3px var(--shadow-color);
       transition: all 0.2s ease;
+      font-size: var(--reminder-card-font-size);
+      line-height: 1.4;
     }
 
     .cue-item:last-child,
@@ -1067,21 +1073,21 @@
     #reminderList [data-reminder][data-priority="High"] {
       border-left: 3px solid var(--priority-high-border);
       background: var(--priority-high-bg);
-      padding-left: calc(20px - 1.5px);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
     }
 
     .cue-item[data-priority="Medium"],
     #reminderList [data-reminder][data-priority="Medium"] {
       border-left: 3px solid var(--priority-medium-border);
       background: var(--priority-medium-bg);
-      padding-left: calc(20px - 1.5px);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
     }
 
     .cue-item[data-priority="Low"],
     #reminderList [data-reminder][data-priority="Low"] {
       border-left: 3px solid var(--priority-low-border);
       background: var(--priority-low-bg);
-      padding-left: calc(20px - 1.5px);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
     }
 
     .dark .cue-item[data-priority="High"],
@@ -1110,8 +1116,8 @@
       margin: 0;
       color: var(--text-primary);
       font-weight: 600;
-      font-size: 18px;
-      margin-bottom: 12px;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
       grid-column: 1;
       min-width: 0;
       overflow: hidden;
@@ -1126,12 +1132,12 @@
     #reminderList [data-reminder] time,
     #reminderList [data-reminder] .reminder-meta {
       color: var(--text-secondary);
-      font-size: 14px;
+      font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 0.75rem;
-      margin-top: 16px;
+      gap: var(--reminder-card-gap);
+      margin-top: 0.75rem;
       grid-column: 1 / -1;
     }
 
