@@ -20,8 +20,8 @@ function initReminderModalUI() {
     return;
   }
 
-  const modal = document.getElementById('reminder-modal');
-  const form = document.getElementById('reminder-form');
+  const modal = document.getElementById('add-reminder-modal') ?? document.getElementById('reminder-modal');
+  const form = document.getElementById('add-reminder-form') ?? document.getElementById('reminder-form');
   const titleField = document.getElementById('reminder-title');
 
   if (!modal || !form || !titleField) {
@@ -110,15 +110,136 @@ function initReminderModalUI() {
     }
   });
 
+  const remindersList = document.getElementById('reminders-list');
+  const dateField = document.getElementById('reminder-date');
+  const priorityField = document.getElementById('reminder-priority');
+  const notesField = document.getElementById('reminder-notes');
+
+  const formatDueDate = (value) => {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const createReminderItem = ({ title, dueDate, priority, notes }) => {
+    if (typeof document === 'undefined') {
+      return null;
+    }
+
+    const item = document.createElement('li');
+    item.className = 'reminder-item';
+
+    const main = document.createElement('div');
+    main.className = 'reminder-main space-y-2';
+    const titleEl = document.createElement('p');
+    titleEl.className = 'font-semibold text-base-content';
+    titleEl.textContent = title;
+    main.appendChild(titleEl);
+
+    const detailParts = [];
+    const formattedDate = formatDueDate(dueDate);
+    if (formattedDate) {
+      detailParts.push(`Due ${formattedDate}`);
+    }
+
+    const priorityKey = priority ? priority.trim().toLowerCase() : '';
+    const priorityConfig = {
+      high: { badgeClass: 'badge badge-outline text-error', badgeLabel: 'High priority', detailLabel: 'High priority' },
+      medium: { badgeClass: 'badge badge-outline text-warning', badgeLabel: 'Due soon', detailLabel: 'Medium priority' },
+      low: { badgeClass: 'badge badge-outline text-secondary', badgeLabel: 'Scheduled', detailLabel: 'Low priority' }
+    };
+
+    const priorityData = priorityConfig[priorityKey] ?? {
+      badgeClass: 'badge badge-outline text-secondary',
+      badgeLabel: 'Scheduled',
+      detailLabel: priority || ''
+    };
+
+    if (priorityData.detailLabel) {
+      detailParts.push(priorityData.detailLabel);
+    }
+
+    if (detailParts.length) {
+      const detailsEl = document.createElement('p');
+      detailsEl.className = 'text-sm text-base-content/70';
+      detailsEl.textContent = detailParts.join(' · ');
+      main.appendChild(detailsEl);
+    }
+
+    if (notes) {
+      const notesEl = document.createElement('p');
+      notesEl.className = 'text-sm text-base-content/60';
+      notesEl.textContent = notes;
+      main.appendChild(notesEl);
+    }
+
+    item.appendChild(main);
+
+    const meta = document.createElement('div');
+    meta.className = 'reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3';
+
+    const badge = document.createElement('span');
+    badge.className = priorityData.badgeClass;
+    badge.textContent = priorityData.badgeLabel;
+    meta.appendChild(badge);
+
+    const actions = document.createElement('div');
+    actions.className = 'reminder-actions flex flex-wrap items-center justify-end gap-2';
+
+    const completeBtn = document.createElement('button');
+    completeBtn.className = 'btn btn-sm btn-success';
+    completeBtn.type = 'button';
+    completeBtn.textContent = 'Complete';
+    completeBtn.disabled = true;
+    completeBtn.title = 'Coming soon';
+
+    const snoozeBtn = document.createElement('button');
+    snoozeBtn.className = 'btn btn-sm btn-outline';
+    snoozeBtn.type = 'button';
+    snoozeBtn.textContent = 'Snooze';
+    snoozeBtn.disabled = true;
+    snoozeBtn.title = 'Coming soon';
+
+    actions.append(completeBtn, snoozeBtn);
+    meta.appendChild(actions);
+    item.appendChild(meta);
+
+    return item;
+  };
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    const reminder = {
-      title: titleField.value.trim(),
-      date: document.getElementById('reminder-date')?.value || '',
-      priority: document.getElementById('reminder-priority')?.value || '',
-      notes: document.getElementById('reminder-notes')?.value || ''
+
+    const title = titleField.value.trim();
+    if (!title) {
+      titleField.focus();
+      return;
+    }
+
+    const notesValue = notesField?.value ?? '';
+    const reminderData = {
+      title,
+      dueDate: dateField?.value || '',
+      priority: priorityField?.value || '',
+      notes: notesValue.trim()
     };
-    console.log('New Reminder:', reminder);
+
+    const reminderItem = remindersList ? createReminderItem(reminderData) : null;
+    if (reminderItem && remindersList) {
+      remindersList.prepend(reminderItem);
+    }
+
     form.reset();
     closeModal();
   });
