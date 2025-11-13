@@ -29,15 +29,10 @@ const SEEDED_CATEGORIES = Object.freeze([
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
 
-const FALLBACK_FIREBASE_CONFIG = Object.freeze({
-  apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-  authDomain: 'memory-cue-app.firebaseapp.com',
-  projectId: 'memory-cue-app',
-  storageBucket: 'memory-cue-app.firebasestorage.app',
-  messagingSenderId: '751284466633',
-  appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-  measurementId: 'G-R0V4M7VCE6'
-});
+// Provide a safe fallback that does not embed production credentials in the
+// repository. Hosting environments are expected to inject their own Firebase
+// configuration via the memoryCueFirebase API or a local module export.
+const FALLBACK_FIREBASE_CONFIG = Object.freeze({});
 
 let cachedFirebaseConfig = null;
 
