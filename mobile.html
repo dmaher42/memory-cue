@@ -5,71 +5,71 @@
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
-    /* Reminders wrapper spacing on mobile */
-    #remindersWrapper {
-      margin-top: 0.75rem;
-    }
+  /* Reminders wrapper spacing on mobile */
+  #remindersWrapper {
+    margin-top: 0.75rem;
+  }
 
-    /* Main reminders list container */
-    #reminderList {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
+  /* Main reminders list container */
+  #reminderList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
 
-    /* Each reminder item: flatten card styles */
-    #reminderList > * {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.5rem 0.25rem;
-      margin: 0; /* remove card gaps */
-      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-      font-size: 0.875rem;
-      line-height: 1.4;
+  /* Each reminder item: flatten card styles */
+  #reminderList > * {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.25rem;
+    margin: 0; /* remove card gaps */
+    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+    font-size: 0.875rem;
+    line-height: 1.4;
 
-      /* strip “card” look */
-      background: transparent !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-    }
+    /* strip “card” look */
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
 
-    /* If there are inner card containers, flatten them too */
-    #reminderList > * .card {
-      background: transparent !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-    }
+  /* If there are inner card containers, flatten them too */
+  #reminderList > * .card {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
 
-    /* Remove divider on last item */
-    #reminderList > *:last-child {
-      border-bottom: none;
-    }
+  /* Remove divider on last item */
+  #reminderList > *:last-child {
+    border-bottom: none;
+  }
 
-    /* Reminder title (left side) */
-    #reminderList > * h3,
-    #reminderList > * strong,
-    #reminderList > * [data-reminder-title] {
-      margin: 0;
-      font-weight: 500;
-    }
+  /* Reminder title (left side) */
+  #reminderList > * h3,
+  #reminderList > * strong,
+  #reminderList > * [data-reminder-title] {
+    margin: 0;
+    font-weight: 500;
+  }
 
-    /* Meta info (right side: date/time/status) */
-    #reminderList > * time,
-    #reminderList > * .reminder-meta {
-      font-size: 0.75rem;
-      opacity: 0.75;
-      white-space: nowrap;
-    }
+  /* Meta info (right side: date/time/status) */
+  #reminderList > * time,
+  #reminderList > * .reminder-meta {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    white-space: nowrap;
+  }
 
-    /* Slight hover feedback on devices with hover */
-    @media (hover: hover) {
-      #reminderList > *:hover {
-        background-color: rgba(15, 23, 42, 0.03);
-      }
+  /* Slight hover feedback on devices with hover */
+  @media (hover: hover) {
+    #reminderList > *:hover {
+      background-color: rgba(15, 23, 42, 0.03);
     }
+  }
   </style>
   <meta charset="UTF-8" />
   <meta
