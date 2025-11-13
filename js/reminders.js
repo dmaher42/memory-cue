@@ -2525,10 +2525,10 @@ export async function initReminders(sel = {}) {
       div.setAttribute('draggable', 'true');
       div.classList.add('reminder-draggable');
       if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
-      if(pendingNotificationIds.has(summary.id)){
+      if (pendingNotificationIds.has(summary.id)) {
         div.dataset.notificationActive = 'true';
       } else {
-        div.removeAttribute('data-notification-active');
+        delete div.dataset.notificationActive;
       }
       const dueDate = summary.dueIso ? new Date(summary.dueIso) : null;
       const dueIsToday = highlightToday && dueDate && dueDate >= t0 && dueDate <= t1;
@@ -2643,10 +2643,10 @@ export async function initReminders(sel = {}) {
           itemEl.dataset.reminderItem = 'true';
           itemEl.setAttribute('draggable', 'true');
           itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
-          if(pendingNotificationIds.has(summary.id)){
+          if (pendingNotificationIds.has(summary.id)) {
             itemEl.dataset.notificationActive = 'true';
           } else {
-            itemEl.removeAttribute('data-notification-active');
+            delete itemEl.dataset.notificationActive;
           }
           const dueLabel = formatDesktopDue(r);
           const titleClasses = r.done ? 'line-through text-base-content/50' : 'text-base-content';
