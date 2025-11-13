@@ -1604,6 +1604,38 @@
     const reminderList = document.getElementById('reminderList');
 
     if (viewToggle && reminderList) {
+      const getPendingNotificationIds = () => {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+          return new Set();
+        }
+
+        if (typeof localStorage === 'undefined') {
+          return new Set();
+        }
+
+        try {
+          const stored = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
+          const entries = Object.values(stored || {}).filter((entry) => entry && typeof entry === 'object' && entry.id);
+          return new Set(entries.map((entry) => entry.id));
+        } catch (error) {
+          console.warn('Unable to read scheduled reminders', error);
+          return new Set();
+        }
+      };
+
+      const applyNotificationHighlights = () => {
+        const ids = getPendingNotificationIds();
+        reminderList.querySelectorAll('[data-reminder]').forEach((el) => {
+          if (!(el instanceof HTMLElement)) return;
+          const reminderId = el.dataset.id || el.getAttribute('data-id');
+          if (reminderId && ids.has(reminderId)) {
+            el.setAttribute('data-notification-active', 'true');
+          } else {
+            el.removeAttribute('data-notification-active');
+          }
+        });
+      };
+
       const setCompactMode = (compact) => {
         reminderList.querySelectorAll('.task-item').forEach((item) => {
           if (compact) {
@@ -1637,11 +1669,13 @@
 
         updateToggleIcons(isGridView);
         setCompactMode(isGridView);
+        applyNotificationHighlights();
       };
 
       const observer = new MutationObserver(() => {
         const isGridView = reminderList.classList.contains('grid-cols-2');
         setCompactMode(isGridView);
+        applyNotificationHighlights();
       });
 
       viewToggle.addEventListener('click', function () {
@@ -1658,14 +1692,23 @@
           updateToggleIcons(true);
           setCompactMode(true);
         }
+
+        applyNotificationHighlights();
       });
 
       ensureInitialState();
       observer.observe(reminderList, { childList: true });
+
+      document.addEventListener('memoryCue:remindersUpdated', applyNotificationHighlights);
+      window.addEventListener('storage', (event) => {
+        if (event && event.key === 'scheduledReminders') {
+          applyNotificationHighlights();
+        }
+      });
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-46EZGZPH.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-E7JAESGN.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-KTZLCBCC.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
