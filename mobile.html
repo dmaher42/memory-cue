@@ -176,134 +176,6 @@
       background: rgba(22, 163, 74, 0.9);
       box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
     }
-    /* Compact quick add optimizations */
-    #quickAddBar {
-      margin-bottom: 12px;
-    }
-
-    #quickAddBar > div {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.85));
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-      border-radius: 16px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #quickAddBar > div::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top, rgba(255, 255, 255, 0.6), transparent 55%);
-      pointer-events: none;
-      mix-blend-mode: screen;
-      opacity: 0.7;
-    }
-
-    #quickAddBar > div::after {
-      content: "";
-      position: absolute;
-      inset: 1px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.55);
-      pointer-events: none;
-    }
-
-    .dark #quickAddBar > div {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.85));
-      border-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.35);
-    }
-
-    .dark #quickAddBar > div::before {
-      background: radial-gradient(circle at top, rgba(148, 163, 184, 0.35), transparent 60%);
-      mix-blend-mode: screen;
-    }
-
-    .dark #quickAddBar > div::after {
-      border-color: rgba(148, 163, 184, 0.2);
-    }
-
-    #quickAddInput {
-      font-size: 15px;
-      line-height: 1.4;
-      color: inherit;
-      min-height: 36px;
-    }
-
-    #quickAddInput::placeholder {
-      color: rgba(100, 116, 139, 0.5);
-    }
-
-    .dark #quickAddInput::placeholder {
-      color: rgba(203, 213, 225, 0.5);
-    }
-
-    #quickAddInput:focus {
-      outline: none;
-      box-shadow: none;
-    }
-
-    /* Compact voice button */
-    #quickAddVoiceBtn {
-      min-width: 32px;
-      min-height: 32px;
-      border-radius: 8px;
-    }
-
-    #quickAddVoiceBtn:active {
-      transform: scale(0.95);
-    }
-
-    #quickAddVoiceBtn.listening {
-      background: rgba(239, 68, 68, 0.1);
-      color: rgba(239, 68, 68, 0.9);
-    }
-
-    /* Compact submit button */
-    #quickAddSubmit {
-      min-height: 32px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-    }
-
-    #quickAddSubmit:hover {
-      box-shadow: 0 3px 6px rgba(16, 185, 129, 0.3);
-    }
-
-    #quickAddSubmit:active {
-      box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 380px) {
-      #quickAddBar > div {
-        padding: 8px 12px;
-      }
-
-      #quickAddInput {
-        font-size: 14px;
-      }
-
-      #quickAddSubmit {
-        padding: 6px 10px;
-        font-size: 13px;
-      }
-    }
-
-    /* Focus states for accessibility */
-    #quickAddVoiceBtn:focus-visible {
-      outline: 2px solid rgba(59, 130, 246, 0.5);
-      outline-offset: 1px;
-    }
-
-    #quickAddSubmit:focus-visible {
-      outline: 2px solid rgba(59, 130, 246, 0.5);
-      outline-offset: 1px;
-    }
     .notes-editor {
       min-height: 10rem;
       width: 100%;
@@ -1119,11 +991,11 @@
 
   /* Status indicator is tiny and condensed */
   #mcStatus {
-    width: 10px;
-    height: 10px;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 9999px;
     display: inline-block;
-    margin-right: 6px;
+    margin: 0;
     vertical-align: middle;
     box-shadow: none;
   }
@@ -1140,7 +1012,17 @@
     background: rgba(148,163,184,0.18);
   }
   /* keep the verbose status text accessible but visually hidden */
-  #mcStatusText { position: absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  #mcStatusText {
+    position: static !important;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: nowrap;
+    border: 0;
+  }
 
   /* Smaller circular buttons */
   .mc-btn {
@@ -1337,6 +1219,71 @@
       transform: scale(0.95);
       background-color: rgba(30, 64, 175, 0.9);
     }
+
+    .mc-quick-add-bar {
+      position: sticky;
+      top: 3.25rem;
+      z-index: 19;
+      background: rgba(15, 23, 42, 0.97);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .mc-quick-add-inner {
+      max-width: 28rem;
+      margin: 0 auto;
+      padding: 0.5rem 0.75rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .mc-quick-status {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: rgba(226, 232, 240, 0.85);
+    }
+
+    .mc-status-text {
+      white-space: nowrap;
+    }
+
+    .mc-quick-status .sync-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+    }
+
+    .mc-add-btn.mc-add-btn-wide {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      width: 100%;
+      min-height: 2.5rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding-inline: 0.75rem;
+    }
+
+    .mc-quick-more {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    .mc-quick-menu-btn {
+      border-radius: 999px;
+      padding: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 
   <header class="sticky top-0 z-20 bg-slate-900 text-slate-50 shadow-md">
@@ -1365,6 +1312,75 @@
       </button>
     </div>
   </header>
+
+  <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
+    <div class="mc-quick-add-inner">
+      <div class="mc-quick-status">
+        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
+          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
+        </div>
+        <span id="mcStatusText" class="mc-status-text">Offline</span>
+      </div>
+
+      <button
+        id="addReminderBtn"
+        type="button"
+        class="mc-add-btn mc-add-btn-wide"
+        data-open-add-task
+      >
+        <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+        <span class="mc-add-btn-label">Add reminder</span>
+      </button>
+
+      <div class="mc-quick-more">
+        <button
+          id="overflowMenuBtn"
+          type="button"
+          class="mc-btn mc-quick-menu-btn"
+          aria-label="More options"
+          aria-haspopup="true"
+          aria-controls="overflowMenu"
+          aria-expanded="false"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="5" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="12" cy="19" r="1.5" />
+          </svg>
+        </button>
+
+        <div
+          id="overflowMenu"
+          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border border-base-200/40 dark:bg-slate-800"
+          role="menu"
+          aria-hidden="true"
+        >
+          <ul class="py-2 text-sm">
+            <li>
+              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
+                <span aria-hidden="true">🎙️</span>
+                <span>Dictate reminder</span>
+              </button>
+            </li>
+            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li>
+              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2" data-open="settings">Settings</button>
+            </li>
+            <li>
+              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+            </li>
+            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li>
+              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+            </li>
+            <li>
+              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <div
     id="mobile-drawer-scrim"
@@ -1610,33 +1626,6 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <!-- Quick add form -->
-      <!-- Compact Quick Add -->
-      <section id="quickAddBar" class="mb-4" aria-label="Quick add reminder">
-        <div class="flex items-center gap-2 p-3 bg-base-100/80 backdrop-blur-sm rounded-xl border border-base-200/50">
-          <input id="quickAddInput"
-                 type="text"
-                 class="flex-1 px-3 py-2 text-sm bg-transparent border-0 outline-none placeholder:text-base-content/50"
-                 placeholder="Add reminder..."
-                 aria-label="Quick add reminder"
-                 autocomplete="off" />
-
-          <button id="quickAddVoiceBtn"
-                  type="button"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg text-base-content/60 hover:text-base-content hover:bg-base-200/50 transition-colors"
-                  title="Dictate reminder"
-                  aria-label="Dictate reminder"
-                  aria-pressed="false">
-            <span class="text-base">🎙️</span>
-          </button>
-
-          <button id="quickAddSubmit"
-                  class="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 active:scale-95 transition-all"
-                  type="button"
-                  aria-label="Add reminder">Add</button>
-        </div>
-      </section>
-
       <section id="reminderListSection" class="bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30 relative">
         <button id="viewToggle" class="view-toggle btn btn-ghost btn-xs" type="button">
           <span class="grid-icon">⊞</span>
