@@ -2887,6 +2887,9 @@ export async function initReminders(sel = {}) {
       div.dataset.reminderItem = 'true';
       div.setAttribute('draggable', 'true');
       div.classList.add('reminder-draggable');
+      div.setAttribute('role', 'button');
+      div.tabIndex = 0;
+      div.setAttribute('aria-label', `Edit reminder: ${r.title}`);
       if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
       if (pendingNotificationIds.has(summary.id)) {
         div.dataset.notificationActive = 'true';
@@ -2913,10 +2916,6 @@ export async function initReminders(sel = {}) {
           <div class="task-header">
             <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
             <div class="task-toolbar" role="toolbar" aria-label="Reminder actions">
-              <button class="task-toolbar-btn" data-edit type="button" aria-label="Edit reminder">
-                <span aria-hidden="true">✏️</span>
-                <span class="task-toolbar-label">Edit</span>
-              </button>
               <button class="task-toolbar-btn" data-del type="button" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
                 <span class="task-toolbar-label">Delete</span>
@@ -2930,8 +2929,29 @@ export async function initReminders(sel = {}) {
           </div>
           ${notesHtml}
         </div>`;
-      div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
-      div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
+      const deleteBtn = div.querySelector('[data-del]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          removeItem(r.id);
+        });
+      }
+      const openReminder = () => loadForEdit(r.id);
+      div.addEventListener('click', (event) => {
+        if (event.defaultPrevented) return;
+        if (event.target instanceof HTMLElement && event.target.closest('[data-del]')) {
+          return;
+        }
+        openReminder();
+      });
+      div.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        if (event.target !== div) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openReminder();
+        }
+      });
       return div;
     };
 
