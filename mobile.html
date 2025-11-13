@@ -7,21 +7,21 @@
   <style>
     :root {
       --card-bg: #FFFFFF;
-      --card-border: #E2E8F0;
-      --text-primary: #1E293B;
-      --text-secondary: #64748B;
-      --accent-color: #0EA5E9;
-      --success-color: #10B981;
-      --background-color: #F8FAFC;
-      --hover-bg: #F1F5F9;
-      --shadow-color: rgba(0, 0, 0, 0.05);
-      --delete-color: #EF4444;
+      --card-border: #CBE6D5;
+      --text-primary: #1F2A24;
+      --text-secondary: #4C6457;
+      --accent-color: #B5A9FF;
+      --success-color: #63C69B;
+      --background-color: #E9F6EE;
+      --hover-bg: #DCEFE2;
+      --shadow-color: rgba(31, 42, 36, 0.08);
+      --delete-color: #EF6A6A;
 
-      /* Legacy tokens mapped to Ocean Blue Professional palette */
+      /* Legacy tokens mapped to Calming Tones palette */
       --primary-color: var(--accent-color);
-      --primary-dark: #0369A1;
-      --secondary-color: #0EA5E9;
-      --warning-color: #F59E0B;
+      --primary-dark: #7A6AE0;
+      --secondary-color: #B5A9FF;
+      --warning-color: #F7C56C;
       --info-color: var(--accent-color);
       --bg-color: var(--background-color);
       --border-color: var(--card-border);
@@ -72,7 +72,7 @@
     padding: 0;
   }
 
-    /* Each reminder item uses the Ocean Blue card styling */
+    /* Each reminder item uses the Calming Tones card styling */
     #reminderList > * {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -162,7 +162,7 @@
     content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
   />
   <title>Memory Cue (Mobile)</title>
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#A8D5B5" />
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
@@ -427,7 +427,7 @@
     #searchPanel input:focus,
     #searchPanel select:focus {
       border-color: var(--accent-color);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 25%, transparent);
       outline: none;
     }
 
