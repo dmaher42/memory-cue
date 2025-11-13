@@ -1133,6 +1133,33 @@ export async function initReminders(sel = {}) {
     dropBefore: true,
   };
   let dragSetupComplete = false;
+  const touchDragState = {
+    active: false,
+    ready: false,
+    pointerId: null,
+    item: null,
+    placeholder: null,
+    originalStyles: '',
+    offsetY: 0,
+    fixedX: 0,
+    longPressTimer: null,
+    startX: 0,
+    startY: 0,
+    lastClientX: 0,
+    lastClientY: 0,
+    moved: false,
+    initialTouchAction: '',
+    startTime: 0,
+  };
+
+  function findInteractiveControl(node) {
+    if (!node || typeof node.closest !== 'function') {
+      return null;
+    }
+    return node.closest(
+      'button, a, input, textarea, select, label, [role="button"], [role="menuitem"], [role="option"], [role="switch"], [contenteditable="true"]'
+    );
+  }
 
   function findDraggableItem(node) {
     if (!node || typeof node.closest !== 'function') {
@@ -1326,6 +1353,342 @@ export async function initReminders(sel = {}) {
     list.addEventListener('drop', handleDrop);
     list.addEventListener('dragend', handleDragEnd);
     list.addEventListener('dragleave', handleDragLeave);
+    setupTouchDrag();
+  }
+
+  function setupTouchDrag() {
+    if (!list) {
+      return;
+    }
+
+    if (setupTouchDrag._bound) {
+      return;
+    }
+
+    const supportsTouch = (() => {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      if (navigator && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 0) {
+        return true;
+      }
+      try {
+        return window.matchMedia('(pointer: coarse)').matches;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (!supportsTouch) {
+      setupTouchDrag._bound = true;
+      return;
+    }
+
+    const TOUCH_MOVE_THRESHOLD = 6;
+    const LONG_PRESS_DELAY = 160;
+
+    function clearTouchTimer() {
+      if (touchDragState.longPressTimer) {
+        clearTimeout(touchDragState.longPressTimer);
+        touchDragState.longPressTimer = null;
+      }
+    }
+
+    function restoreListTouchAction() {
+      if (!list) {
+        return;
+      }
+      if (touchDragState.initialTouchAction != null) {
+        list.style.touchAction = touchDragState.initialTouchAction;
+      } else {
+        list.style.removeProperty('touch-action');
+      }
+    }
+
+    function resetTouchDragState({ keepHighlights = false } = {}) {
+      clearTouchTimer();
+      if (touchDragState.item && touchDragState.pointerId != null) {
+        try {
+          if (touchDragState.item.hasPointerCapture?.(touchDragState.pointerId)) {
+            touchDragState.item.releasePointerCapture(touchDragState.pointerId);
+          }
+        } catch {
+          /* noop */
+        }
+      }
+      if (touchDragState.placeholder?.parentNode) {
+        try {
+          touchDragState.placeholder.parentNode.removeChild(touchDragState.placeholder);
+        } catch {
+          /* noop */
+        }
+      }
+      if (touchDragState.item) {
+        touchDragState.item.classList.remove('is-dragging');
+        if (touchDragState.originalStyles) {
+          touchDragState.item.setAttribute('style', touchDragState.originalStyles);
+        } else {
+          touchDragState.item.removeAttribute('style');
+        }
+      }
+      restoreListTouchAction();
+      if (!keepHighlights) {
+        clearDragHighlights();
+      }
+      Object.assign(touchDragState, {
+        active: false,
+        ready: false,
+        pointerId: null,
+        item: null,
+        placeholder: null,
+        originalStyles: '',
+        offsetY: 0,
+        fixedX: 0,
+        longPressTimer: null,
+        startX: 0,
+        startY: 0,
+        lastClientX: 0,
+        lastClientY: 0,
+        moved: false,
+        initialTouchAction: '',
+        startTime: 0,
+      });
+    }
+
+    function getDropTargets(exclude) {
+      if (!list) {
+        return [];
+      }
+      return Array.from(list.querySelectorAll('[data-reminder-item]')).filter((node) => node !== exclude);
+    }
+
+    function startTouchDrag(point) {
+      const item = touchDragState.item;
+      if (!item || touchDragState.ready) {
+        return;
+      }
+
+      const rect = item.getBoundingClientRect();
+      const computed = window.getComputedStyle(item);
+
+      touchDragState.ready = true;
+      dragState.draggingId = item.dataset.id || null;
+      touchDragState.offsetY = point.clientY - rect.top;
+      touchDragState.fixedX = rect.left;
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'touch-drag-placeholder';
+      placeholder.setAttribute('aria-hidden', 'true');
+      placeholder.style.height = `${rect.height}px`;
+      placeholder.style.boxSizing = 'border-box';
+      placeholder.style.marginTop = computed.marginTop;
+      placeholder.style.marginBottom = computed.marginBottom;
+      placeholder.style.marginLeft = computed.marginLeft;
+      placeholder.style.marginRight = computed.marginRight;
+      placeholder.style.borderRadius = computed.borderRadius;
+      placeholder.style.border = '2px dashed color-mix(in srgb, var(--primary-color, #5e72e4) 55%, transparent)';
+      placeholder.style.background = 'color-mix(in srgb, var(--primary-color, #5e72e4) 12%, transparent)';
+      placeholder.style.pointerEvents = 'none';
+      placeholder.style.display = 'block';
+      placeholder.style.width = '100%';
+      item.parentNode?.insertBefore(placeholder, item);
+
+      touchDragState.placeholder = placeholder;
+
+      touchDragState.longPressTimer = null;
+      touchDragState.originalStyles = item.getAttribute('style') || '';
+      item.classList.add('is-dragging');
+      item.style.position = 'fixed';
+      item.style.left = `${rect.left}px`;
+      item.style.top = `${rect.top}px`;
+      item.style.width = `${rect.width}px`;
+      item.style.zIndex = '999';
+      item.style.pointerEvents = 'none';
+      item.style.touchAction = 'none';
+
+      touchDragState.initialTouchAction = list.style.touchAction || '';
+      list.style.touchAction = 'none';
+    }
+
+    function updateTouchPosition(clientY) {
+      const item = touchDragState.item;
+      if (!item || !touchDragState.ready) {
+        return;
+      }
+      const nextTop = clientY - touchDragState.offsetY;
+      item.style.top = `${nextTop}px`;
+      item.style.left = `${touchDragState.fixedX}px`;
+    }
+
+    function updateTouchDropTarget(clientY) {
+      if (!touchDragState.ready || !list) {
+        return;
+      }
+
+      const item = touchDragState.item;
+      const targets = getDropTargets(item);
+
+      clearDragHighlights();
+
+      if (!targets.length) {
+        dragState.dropTargetId = null;
+        dragState.dropBefore = false;
+        return;
+      }
+
+      let chosen = null;
+      let before = false;
+
+      for (const candidate of targets) {
+        const rect = candidate.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        if (clientY < midpoint) {
+          chosen = candidate;
+          before = true;
+          break;
+        }
+      }
+
+      if (!chosen) {
+        chosen = targets[targets.length - 1];
+        const rect = chosen.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        before = clientY < midpoint;
+        if (!before) {
+          before = false;
+        }
+      }
+
+      if (!chosen) {
+        dragState.dropTargetId = null;
+        dragState.dropBefore = false;
+        return;
+      }
+
+      const rect = chosen.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const dropBefore = clientY < midpoint;
+
+      chosen.classList.add(dropBefore ? 'drag-over-before' : 'drag-over-after');
+      dragState.dropTargetId = chosen.dataset.id || null;
+      dragState.dropBefore = dropBefore;
+    }
+
+    function finishTouchDrag(cancelled) {
+      const draggedId = dragState.draggingId;
+      const moved = touchDragState.moved;
+
+      if (!touchDragState.ready) {
+        resetTouchDragState();
+        return;
+      }
+
+      resetTouchDragState();
+
+      if (!cancelled && moved && draggedId) {
+        performReorder(draggedId, dragState.dropTargetId, dragState.dropBefore);
+      }
+      resetDragState();
+    }
+
+    function handlePointerDown(event) {
+      const pointerKind = event.pointerType || '';
+      if (pointerKind && pointerKind !== 'touch' && pointerKind !== 'pen') {
+        return;
+      }
+      if (touchDragState.active) {
+        return;
+      }
+      const item = findDraggableItem(event.target);
+      if (!item) {
+        return;
+      }
+      const interactive = findInteractiveControl(event.target);
+      if (interactive && interactive !== item) {
+        return;
+      }
+
+      touchDragState.active = true;
+      touchDragState.pointerId = event.pointerId;
+      touchDragState.item = item;
+      touchDragState.startX = event.clientX;
+      touchDragState.startY = event.clientY;
+      touchDragState.lastClientX = event.clientX;
+      touchDragState.lastClientY = event.clientY;
+      touchDragState.moved = false;
+      touchDragState.ready = false;
+      touchDragState.originalStyles = item.getAttribute('style') || '';
+      touchDragState.startTime = event.timeStamp || Date.now();
+      dragState.dropTargetId = null;
+      dragState.dropBefore = true;
+      dragState.draggingId = null;
+
+      clearTouchTimer();
+      touchDragState.longPressTimer = setTimeout(() => {
+        startTouchDrag({ clientY: touchDragState.lastClientY });
+      }, LONG_PRESS_DELAY);
+
+      try {
+        item.setPointerCapture(event.pointerId);
+      } catch {
+        /* noop */
+      }
+    }
+
+    function handlePointerMove(event) {
+      if (!touchDragState.active || event.pointerId !== touchDragState.pointerId) {
+        return;
+      }
+      const pointerKind = event.pointerType || '';
+      if (pointerKind && pointerKind !== 'touch' && pointerKind !== 'pen') {
+        return;
+      }
+
+      touchDragState.lastClientX = event.clientX;
+      touchDragState.lastClientY = event.clientY;
+
+      if (!touchDragState.ready) {
+        const deltaX = Math.abs(event.clientX - touchDragState.startX);
+        const deltaY = Math.abs(event.clientY - touchDragState.startY);
+        if (deltaX > TOUCH_MOVE_THRESHOLD || deltaY > TOUCH_MOVE_THRESHOLD) {
+          const now = typeof event.timeStamp === 'number' ? event.timeStamp : Date.now();
+          const elapsed = Math.abs(now - touchDragState.startTime);
+          if (elapsed >= LONG_PRESS_DELAY) {
+            clearTouchTimer();
+            startTouchDrag({ clientY: touchDragState.lastClientY });
+          } else {
+            resetTouchDragState();
+          }
+        }
+        return;
+      }
+
+      event.preventDefault();
+      touchDragState.moved = true;
+      updateTouchPosition(event.clientY);
+      updateTouchDropTarget(event.clientY);
+    }
+
+    function handlePointerUp(event) {
+      if (!touchDragState.active || event.pointerId !== touchDragState.pointerId) {
+        return;
+      }
+      finishTouchDrag(false);
+    }
+
+    function handlePointerCancel(event) {
+      if (!touchDragState.active || event.pointerId !== touchDragState.pointerId) {
+        return;
+      }
+      finishTouchDrag(true);
+    }
+
+    list.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerCancel);
+
+    setupTouchDrag._bound = true;
   }
 
   function applySignedOutState() {
