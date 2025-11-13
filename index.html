@@ -160,6 +160,56 @@
     #quick-action-toolbar .quick-action-btn {
       box-shadow: 0 3px 8px rgba(15, 23, 42, 0.35);
     }
+
+    /* Dashboard overall spacing */
+    section[data-route="dashboard"] {
+      max-width: 56rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Dashboard: emphasise Today's focus card */
+    .dashboard-today-focus {
+      border-radius: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: linear-gradient(to right, rgba(59, 130, 246, 0.04), rgba(15, 23, 42, 0.02));
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .dashboard-today-focus h2,
+    .dashboard-today-focus h3 {
+      font-weight: 600;
+    }
+
+    /* Dashboard: soften KPI tiles */
+    .dashboard-kpis {
+      gap: 0.75rem;
+    }
+
+    .dashboard-kpis .card {
+      border-radius: 0.75rem;
+      box-shadow: none;
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+      background-color: rgba(15, 23, 42, 0.01);
+    }
+
+    .dashboard-kpis .card h3,
+    .dashboard-kpis .card h4 {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    /* Dashboard: lighter action shortcuts card */
+    .dashboard-shortcuts {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background-color: rgba(15, 23, 42, 0.015);
+      box-shadow: none;
+    }
+
+    .dashboard-shortcuts .btn {
+      border-radius: 999px;
+    }
   </style>
   <script src="./js/runtime-env-shim.js" defer></script>
 </head>
@@ -245,7 +295,7 @@
   </nav>
     <main id="mainContent" class="pt-24 min-h-screen" tabindex="-1">
     <div class="mx-auto max-w-6xl px-4 py-6 space-y-8">
-      <section data-route="dashboard" class="space-y-12">
+      <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div
           class="relative overflow-hidden rounded-3xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70 p-8 shadow-sm"
         >
@@ -322,7 +372,7 @@
           </div>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 dashboard-kpis">
           <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
             <div class="card-body gap-3 p-5">
               <div class="flex items-center justify-between text-base-content/80">
@@ -366,7 +416,7 @@
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.1fr)]">
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-today-focus">
             <div class="card-body gap-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="space-y-3">
@@ -525,7 +575,7 @@
             </div>
           </section>
 
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-shortcuts">
             <div class="card-body gap-5">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="text-lg font-semibold text-base-content">Action shortcuts</h2>
