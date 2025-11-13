@@ -67,6 +67,7 @@ async function buildScripts() {
 
   const legacyEntries = {
     './js/runtime-env-shim.js': 'runtime-env-shim',
+    './js/runtime-env.js': 'runtime-env',
     './js/update-footer-year.js': 'update-footer-year',
     './js/register-service-worker.js': 'register-service-worker',
   };

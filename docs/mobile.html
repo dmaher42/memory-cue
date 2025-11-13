@@ -4,8 +4,139 @@
   <base href="/memory-cue/" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
+  <style>
+    :root {
+      --primary-color: #5e72e4;
+      --primary-dark: #4c63d2;
+      --secondary-color: #f5365c;
+      --success-color: #2dce89;
+      --warning-color: #fb6340;
+      --info-color: #11cdef;
+      --text-primary: #32325d;
+      --text-secondary: #8898aa;
+      --bg-color: #f4f5f7;
+      --card-bg: #ffffff;
+      --border-color: #e9ecef;
+      --shadow-sm: 0 0 0.5rem rgba(0, 0, 0, 0.075);
+      --shadow-md: 0 0 2rem rgba(136, 152, 170, 0.15);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    padding: 24px;
+    margin-bottom: 20px;
+    transition: var(--transition);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* Reminders wrapper spacing on mobile */
+  #remindersWrapper {
+    margin-top: 0.75rem;
+  }
+
+  /* Main reminders list container */
+  #reminderList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+    /* Each reminder item: flatten all card styling */
+    #reminderList > * {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 0.75rem;
+      padding: 0.75rem 0.5rem;
+      margin: 0; /* remove gaps between items */
+      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+      font-size: 0.875rem;
+      line-height: 1.4;
+
+      /* strip “card” look */
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    /* If reminders are wrapped in DaisyUI cards, flatten them too */
+    #reminderList > * .card,
+    #reminderList > * .card-body {
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+    }
+
+  /* Remove divider on last item */
+  #reminderList > *:last-child {
+    border-bottom: none;
+  }
+
+    /* Title on the left */
+    #reminderList > * h3,
+    #reminderList > * h4,
+    #reminderList > * strong,
+    #reminderList > * [data-reminder-title] {
+      margin: 0;
+      font-weight: 500;
+      grid-column: 1;
+      min-width: 0; /* allow text to truncate */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+    }
+
+    /* Meta info (right side: date/time/status) */
+    #reminderList > * time,
+    #reminderList > * .reminder-meta {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      margin-left: 0.5rem;
+      grid-column: 2;
+      justify-self: end;
+      text-align: right;
+      align-self: start;
+    }
+
+    /* Hide extra description/details to keep list minimal */
+    #reminderList > * p,
+    #reminderList > * .description,
+    #reminderList > * .details,
+    #reminderList > * .card-actions {
+      display: none !important;
+    }
+
+  /* Slight hover feedback on devices with hover */
+  @media (hover: hover) {
+    #reminderList > *:hover {
+      background-color: color-mix(in srgb, var(--text-primary) 3%, transparent);
+    }
+  }
+  </style>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  />
   <title>Memory Cue (Mobile)</title>
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
@@ -34,67 +165,87 @@
     }
     /* Status dot colors */
     .sync-dot {
-      font-size: 20px;
+      font-size: 14px;
       line-height: 1;
       transition: color 0.2s ease;
     }
     .sync-dot.online {
-      color: #16a34a;
+      color: var(--success-color);
     }
     .sync-dot.offline {
-      color: #dc2626;
+      color: var(--secondary-color);
     }
-    /* Menu panel and items */
-    .menu-card {
-      background: var(--color-bg, #fff);
-    }
-    .menu-item {
+    .sync-status-indicator {
       display: inline-flex;
       align-items: center;
-      justify-content: flex-start;
-      gap: 0.5rem;
-      width: 100%;
-    }
-    .menu-item:hover {
-      background: rgba(0, 0, 0, 0.04);
-    }
-    /* Icon circle fallback */
-    .btn-circle {
-      width: 44px;
-      height: 44px;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
       border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1;
+      background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .dark .sync-status-indicator {
+      background: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 90%, var(--text-primary) 10%);
+    }
+
+    .sync-status-indicator.online {
+      background: color-mix(in srgb, var(--success-color) 15%, transparent);
+      color: color-mix(in srgb, var(--success-color) 92%, var(--text-primary) 8%);
+    }
+
+    .sync-status-indicator.offline,
+    .sync-status-indicator.error {
+      background: color-mix(in srgb, var(--secondary-color) 16%, transparent);
+      color: color-mix(in srgb, var(--secondary-color) 92%, var(--text-primary) 8%);
+    }
+
+    .sync-dot {
+      display: inline-block;
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 9999px;
+      background: color-mix(in srgb, var(--secondary-color) 90%, transparent);
+      transition: var(--transition);
+    }
+
+    .sync-dot.online {
+      background: color-mix(in srgb, var(--success-color) 90%, transparent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-color) 18%, transparent);
     }
     .notes-editor {
       min-height: 10rem;
       width: 100%;
       border-radius: 0.75rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
+      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
       padding: 0.75rem 1rem;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: color-mix(in srgb, var(--card-bg) 90%, transparent);
       color: inherit;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       line-height: 1.5;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: var(--transition);
     }
     .dark .notes-editor {
-      border-color: rgba(148, 163, 184, 0.35);
-      background-color: rgba(15, 23, 42, 0.65);
+      border-color: color-mix(in srgb, var(--border-color) 35%, transparent);
+      background-color: color-mix(in srgb, var(--text-primary) 65%, transparent);
     }
     .notes-editor:focus-visible {
-      border-color: rgb(37 99 235);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
     }
     .notes-editor:empty::before {
       content: attr(data-placeholder);
-      color: rgba(100, 116, 139, 0.7);
+      color: color-mix(in srgb, var(--text-secondary) 70%, transparent);
     }
     .dark .notes-editor:empty::before {
-      color: rgba(148, 163, 184, 0.7);
+      color: color-mix(in srgb, var(--text-secondary) 70%, var(--card-bg) 30%);
     }
     .notes-editor ul,
     .notes-editor ol {
@@ -108,6 +259,147 @@
     .notes-editor--columns {
       column-width: 16rem;
       column-gap: 1.5rem;
+    }
+    
+    /* Enhanced notes editor styles */
+    .notes-editor.enhanced {
+      min-height: 12rem;
+      max-height: 60vh;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    
+    .notes-editor strong {
+      font-weight: 700;
+    }
+    
+    .notes-editor em {
+      font-style: italic;
+    }
+    
+    .notes-editor s {
+      text-decoration: line-through;
+    }
+    
+    .notes-editor h1, .notes-editor h2, .notes-editor h3 {
+      font-weight: 600;
+      margin: 0.75rem 0 0.5rem 0;
+      line-height: 1.3;
+    }
+    
+    .notes-editor h1 {
+      font-size: 1.25rem;
+      border-bottom: 2px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+      padding-bottom: 0.25rem;
+    }
+    
+    .notes-editor h2 {
+      font-size: 1.125rem;
+    }
+    
+    .notes-editor h3 {
+      font-size: 1rem;
+    }
+    
+    .notes-editor a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+    
+    .notes-editor hr {
+      margin: 1rem 0;
+      border: none;
+      border-top: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+    }
+    
+    .notes-editor .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin: 0.25rem 0;
+    }
+    
+    .notes-editor .checklist-checkbox {
+      cursor: pointer;
+      margin-top: 0.125rem;
+    }
+    
+    .notes-editor .highlight {
+      background: color-mix(in srgb, var(--warning-color) 25%, transparent);
+      padding: 0 0.25rem;
+      border-radius: 0.25rem;
+    }
+    
+    /* Mobile-optimized toolbar */
+    @media (max-width: 640px) {
+      #notesToolbar {
+        gap: 1px;
+        padding: 0.5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      
+      #notesToolbar::-webkit-scrollbar {
+        display: none;
+      }
+      
+      #notesToolbar .btn {
+        min-width: 2.5rem;
+        padding: 0.375rem 0.25rem;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+      }
+      
+      #notesToolbar > div {
+        border-right: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+        padding-right: 0.5rem;
+        margin-right: 0.5rem;
+        display: flex;
+        gap: 1px;
+        flex-shrink: 0;
+      }
+      
+      #notesToolbar > div:last-child {
+        border-right: none;
+        padding-right: 0;
+        margin-right: 0;
+      }
+      
+      /* Improve search panel on mobile */
+      #searchPanel {
+        margin: 0 -0.5rem;
+      }
+      
+      #searchPanel .flex {
+        flex-wrap: nowrap;
+      }
+      
+      #searchInput {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+    }
+    
+    /* Auto-save status indicator */
+    .sync-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    
+    .sync-dot.saving {
+      background: color-mix(in srgb, var(--warning-color) 80%, transparent);
+      animation: pulse 1.5s infinite;
+    }
+    
+    .sync-dot.saved {
+      background: color-mix(in srgb, var(--success-color) 80%, transparent);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
     .view-panel {
       display: grid;
@@ -128,27 +420,516 @@
       scroll-snap-align: start;
     }
     .glass-panel {
-      background-color: rgba(248, 250, 252, 0.85);
+      background-color: color-mix(in srgb, var(--bg-color) 85%, var(--card-bg) 15%);
       backdrop-filter: blur(12px);
     }
     .dark .glass-panel {
-      background-color: rgba(15, 23, 42, 0.88);
+      background-color: color-mix(in srgb, var(--text-primary) 88%, transparent);
     }
+    /* Enhanced reminder visibility styles */
+    .task-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: start;
+      padding: 1rem;
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+      background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
+      border-left-width: 4px;
+      border-left-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
+      border-radius: 0.75rem;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .task-item:hover {
+      border-left-color: color-mix(in srgb, var(--primary-color) 90%, transparent);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+    .dark .task-item {
+      background: color-mix(in srgb, var(--text-primary) 85%, transparent);
+      border-color: color-mix(in srgb, var(--border-color) 25%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary-color) 70%, var(--card-bg) 30%);
+      box-shadow: var(--shadow-sm);
+    }
+    .dark .task-item:hover {
+      border-left-color: color-mix(in srgb, var(--primary-color) 100%, var(--card-bg) 20%);
+      box-shadow: var(--shadow-md);
+    }
+    .task-item[data-notification-active="true"] {
+      border-color: color-mix(in srgb, var(--success-color) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 8px 18px color-mix(in srgb, var(--success-color) 25%, transparent);
+    }
+    .task-item[data-notification-active="true"]:hover {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 45%, transparent),
+        0 10px 22px color-mix(in srgb, var(--success-color) 35%, transparent);
+      transform: translateY(-1px);
+    }
+    .dark .task-item[data-notification-active="true"] {
+      border-color: color-mix(in srgb, var(--success-color) 85%, var(--card-bg) 15%);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, var(--card-bg) 5%);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 10px 24px color-mix(in srgb, var(--success-color) 35%, transparent);
+    }
+    .dark .task-item[data-notification-active="true"]:hover {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 50%, transparent),
+        0 12px 26px color-mix(in srgb, var(--success-color) 45%, transparent);
+    }
+    .task-item[data-priority="High"] {
+      border-left-color: color-mix(in srgb, var(--secondary-color) 70%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--secondary-color) 40%, var(--card-bg) 60%),
+        color-mix(in srgb, var(--card-bg) 95%, transparent)
+      );
+    }
+    .dark .task-item[data-priority="High"] {
+      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--secondary-color) 30%, var(--text-primary) 70%),
+        color-mix(in srgb, var(--text-primary) 85%, transparent)
+      );
+    }
+    .task-item[data-priority="Medium"] {
+      border-left-color: color-mix(in srgb, var(--warning-color) 70%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--warning-color) 35%, var(--card-bg) 65%),
+        color-mix(in srgb, var(--card-bg) 95%, transparent)
+      );
+    }
+    .dark .task-item[data-priority="Medium"] {
+      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--warning-color) 25%, var(--text-primary) 75%),
+        color-mix(in srgb, var(--text-primary) 85%, transparent)
+      );
+    }
+    .task-item[data-priority="Low"] {
+      border-left-color: color-mix(in srgb, var(--success-color) 70%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--success-color) 35%, var(--card-bg) 65%),
+        color-mix(in srgb, var(--card-bg) 95%, transparent)
+      );
+    }
+    .dark .task-item[data-priority="Low"] {
+      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--success-color) 25%, var(--text-primary) 75%),
+        color-mix(in srgb, var(--text-primary) 85%, transparent)
+      );
+    }
+    .task-content {
+      min-width: 0;
+      text-align: left;
+      flex: 1 1 auto;
+    }
+    .task-title,
+    .task-meta,
+    .task-notes {
+      text-align: left;
+    }
+    .task-title {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: color-mix(in srgb, var(--text-primary) 95%, transparent);
+      margin-bottom: 0.5rem;
+    }
+    .dark .task-title {
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+    }
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.8125rem;
+    }
+    .task-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      background: color-mix(in srgb, var(--border-color) 15%, transparent);
+      color: color-mix(in srgb, var(--text-secondary) 90%, var(--text-primary) 10%);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.3;
+      border: 1px solid color-mix(in srgb, var(--border-color) 20%, transparent);
+    }
+    .dark .task-chip {
+      background: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 90%, transparent);
+      border-color: color-mix(in srgb, var(--text-secondary) 40%, transparent);
+    }
+    .task-chip[data-chip="priority"] {
+      font-weight: 700;
+      background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+      color: color-mix(in srgb, var(--primary-dark) 95%, transparent);
+      border-color: color-mix(in srgb, var(--primary-color) 25%, transparent);
+    }
+    .dark .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
+    }
+    .task-item[data-priority="High"] .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--secondary-color) 15%, transparent);
+      color: color-mix(in srgb, var(--secondary-color) 95%, var(--text-primary) 5%);
+      border-color: color-mix(in srgb, var(--secondary-color) 30%, transparent);
+    }
+    .dark .task-item[data-priority="High"] .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--secondary-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--secondary-color) 35%, transparent);
+    }
+    .task-item[data-priority="Medium"] .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--warning-color) 15%, transparent);
+      color: color-mix(in srgb, var(--warning-color) 95%, var(--text-primary) 5%);
+      border-color: color-mix(in srgb, var(--warning-color) 30%, transparent);
+    }
+    .dark .task-item[data-priority="Medium"] .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--warning-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--warning-color) 35%, transparent);
+    }
+    .task-item[data-priority="Low"] .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--success-color) 15%, transparent);
+      color: color-mix(in srgb, var(--success-color) 95%, var(--text-primary) 5%);
+      border-color: color-mix(in srgb, var(--success-color) 30%, transparent);
+    }
+    .dark .task-item[data-priority="Low"] .task-chip[data-chip="priority"] {
+      background: color-mix(in srgb, var(--success-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--success-color) 35%, transparent);
+    }
+    .task-notes {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid color-mix(in srgb, var(--border-color) 15%, transparent);
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+    }
+    .dark .task-notes {
+      border-top-color: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
+    }
+    .task-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .task-toolbar {
+      display: inline-flex;
+      gap: 0.375rem;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .task-toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: color-mix(in srgb, var(--text-primary) 82%, transparent);
+      transition: var(--transition);
+      line-height: 1.2;
+    }
+    .task-toolbar-btn:hover,
+    .task-toolbar-btn:focus-visible {
+      color: var(--text-primary);
+      border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+      background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    }
+    .task-toolbar-btn .task-toolbar-label {
+      display: inline-block;
+    }
+    .dark .task-toolbar-btn {
+      color: color-mix(in srgb, var(--card-bg) 92%, transparent);
+      border-color: transparent;
+    }
+    .dark .task-toolbar-btn:hover,
+    .dark .task-toolbar-btn:focus-visible {
+      color: color-mix(in srgb, var(--card-bg) 100%, transparent);
+      border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+      background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+    }
+    /* Today-specific task styling - more prominent */
     .task-item[data-today="true"],
     .task-item.is-today {
-      position: relative;
-      border: 1px solid rgba(59, 130, 246, 0.35);
-      border-left-width: 4px;
-      border-left-color: rgba(37, 99, 235, 0.7);
-      background: linear-gradient(135deg, rgba(191, 219, 254, 0.28), rgba(191, 219, 254, 0.08));
-      box-shadow: 0 12px 26px -16px rgba(30, 64, 175, 0.55);
+      border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary-dark) 85%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--primary-color) 35%, var(--card-bg) 65%),
+        color-mix(in srgb, var(--primary-color) 12%, var(--card-bg) 88%)
+      );
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-dark) 25%, transparent),
+        0 2px 6px color-mix(in srgb, var(--primary-dark) 15%, transparent);
     }
     .dark .task-item[data-today="true"],
     .dark .task-item.is-today {
-      border-color: rgba(96, 165, 250, 0.55);
-      border-left-color: rgba(191, 219, 254, 0.85);
-      background: linear-gradient(135deg, rgba(30, 64, 175, 0.5), rgba(30, 58, 138, 0.25));
-      box-shadow: 0 12px 26px -16px rgba(30, 64, 175, 0.7);
+      border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary-color) 90%, var(--card-bg) 10%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--primary-dark) 45%, var(--text-primary) 55%),
+        color-mix(in srgb, var(--primary-dark) 30%, var(--text-primary) 70%)
+      );
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-dark) 40%, transparent),
+        0 2px 6px color-mix(in srgb, var(--primary-dark) 25%, transparent);
+    }
+
+    /* Mobile-first optimizations */
+    :root {
+      --mobile-header-height: 120px;
+      --mobile-safe-area-top: env(safe-area-inset-top, 0px);
+      --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Enhanced mobile body */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior: contain;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: manipulation;
+    }
+
+    /* Mobile main container */
+    main {
+      padding-top: 0;
+      padding-bottom: calc(32px + var(--mobile-safe-area-bottom));
+      min-height: calc(100vh - var(--mobile-header-height));
+      scroll-padding-top: calc(var(--mobile-header-height) + 16px);
+    }
+
+    /* Mobile task items */
+    .task-item {
+      margin-bottom: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      border-left-width: 4px;
+      min-height: 80px;
+      transition: var(--transition);
+      transform: translateZ(0);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .task-item:active {
+      transform: scale(0.98);
+    }
+
+    /* Mobile cards */
+    .card {
+      border-radius: 16px;
+      border: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--card-bg) 98%, transparent),
+        color-mix(in srgb, var(--bg-color) 98%, transparent)
+      );
+      backdrop-filter: blur(8px);
+    }
+
+    .dark .card {
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--text-primary) 98%, transparent),
+        color-mix(in srgb, var(--primary-dark) 40%, var(--text-primary) 60%)
+      );
+      border-color: color-mix(in srgb, var(--card-bg) 8%, transparent);
+    }
+
+    /* Mobile buttons */
+    .btn {
+      min-height: 44px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    /* Responsive reminder grid - default grid layout */
+    #reminderList {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      align-content: start;
+      width: 100%;
+    }
+
+    /* List view override */
+    #reminderList.space-y-3 {
+      display: block;
+      gap: 0;
+    }
+
+    #reminderList.space-y-3 .task-item {
+      margin-bottom: 0;
+    }
+
+    /* 2-column grid layout on wider screens */
+    @media (min-width: 380px) {
+      #reminderList.grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+    }
+    
+    /* Ensure task items use full available width in grid */
+    #reminderList .task-item {
+      width: 100%;
+      box-sizing: border-box;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    
+    /* Remove any inherited margins/padding that might constrain width */
+    #reminderList > * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Compact reminder card styling */
+    .task-item[data-compact="true"] {
+      margin-bottom: 0 !important;
+      padding: 12px;
+      padding-left: 14px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      border-left-width: 3px;
+      border-radius: 12px;
+    }
+
+    .task-item[data-compact="true"] .task-title {
+      font-size: 14px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .task-item[data-compact="true"] .task-notes {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 12px;
+      line-height: 1.3;
+      margin-top: 0.25rem;
+      padding-top: 0.25rem;
+    }
+
+    .task-item[data-compact="true"] .task-meta {
+      font-size: 11px;
+      gap: 4px;
+      margin-top: auto;
+    }
+
+    .task-item[data-compact="true"] .task-chip {
+      padding: 2px 6px;
+      font-size: 10px;
+    }
+
+    .task-item[data-compact="true"] .task-chip:not([data-chip="priority"]) {
+      display: none;
+    }
+
+    .task-item[data-compact="true"] .task-header {
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .task-item[data-compact="true"] .task-toolbar {
+      gap: 0.25rem;
+    }
+
+    .task-item[data-compact="true"] .task-toolbar-btn {
+      padding: 0.25rem 0.45rem;
+      font-size: 0.7rem;
+    }
+
+    .task-item[data-compact="true"] .task-toolbar-btn .task-toolbar-label {
+      display: none;
+    }
+
+    .task-item[data-compact="true"][data-notification-active="true"] {
+      border-color: color-mix(in srgb, var(--success-color) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 8px 18px color-mix(in srgb, var(--success-color) 25%, transparent);
+    }
+
+    .dark .task-item[data-compact="true"][data-notification-active="true"] {
+      border-color: color-mix(in srgb, var(--success-color) 85%, var(--card-bg) 15%);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, var(--card-bg) 5%);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 10px 24px color-mix(in srgb, var(--success-color) 35%, transparent);
+    }
+
+    /* Single column on narrow phones */
+    @media (max-width: 379px) {
+      #reminderList.grid-cols-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .task-item[data-compact="true"] {
+        padding: 16px;
+        padding-left: 18px;
+        border-left-width: 4px;
+      }
+
+      .task-item[data-compact="true"] .task-title {
+        font-size: 15px;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+      }
+    }
+
+    /* View toggle button - positioned over the reminders */
+    .view-toggle {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark .view-toggle {
+      background: rgba(0, 0, 0, 0.7);
+      border-color: rgba(255, 255, 255, 0.1);
     }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
@@ -168,9 +949,122 @@
       height: auto;
       overflow: visible;
       z-index: 50;
-      border-radius: 9999px; padding: 8px 12px;
-      background: var(--fallback-p, #2563eb); color: var(--fallback-pc, #fff);
-      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+      border-radius: 9999px;
+      padding: 8px 12px;
+      background: var(--fallback-p, var(--primary-color));
+      color: var(--fallback-pc, var(--card-bg));
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* --- Reminder list: force flat list layout, neutralize old card styles --- */
+
+    /* Neutralize any card/grid wrapper for reminders */
+    #reminderList .task-item,
+    #reminderList .task-card,
+    #reminderList .card,
+    #reminderList .card-body,
+    #reminderList .task-grid {
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+    }
+
+    /* Ensure each reminder behaves like a flat row */
+    #reminderList [data-reminder] {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      align-items: start !important;
+      gap: 0.75rem !important;
+      padding: 0.5rem 0.5rem !important;
+      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 35%, transparent) !important;
+      font-size: 0.875rem !important;
+      line-height: 1.4 !important;
+      background: transparent !important;
+    }
+
+    #reminderList [data-reminder][data-priority="High"] {
+      border-left: 3px solid color-mix(in srgb, var(--secondary-color) 70%, transparent) !important;
+      padding-left: calc(0.5rem - 1.5px) !important;
+      background-color: color-mix(in srgb, var(--secondary-color) 6%, var(--card-bg) 94%) !important;
+    }
+
+    .dark #reminderList [data-reminder][data-priority="High"] {
+      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%) !important;
+      background-color: color-mix(in srgb, var(--secondary-color) 8%, var(--text-primary) 92%) !important;
+    }
+
+    #reminderList [data-reminder][data-priority="Medium"] {
+      border-left: 3px solid color-mix(in srgb, var(--warning-color) 70%, transparent) !important;
+      padding-left: calc(0.5rem - 1.5px) !important;
+      background-color: color-mix(in srgb, var(--warning-color) 6%, var(--card-bg) 94%) !important;
+    }
+
+    .dark #reminderList [data-reminder][data-priority="Medium"] {
+      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%) !important;
+      background-color: color-mix(in srgb, var(--warning-color) 8%, var(--text-primary) 92%) !important;
+    }
+
+    #reminderList [data-reminder][data-priority="Low"] {
+      border-left: 3px solid color-mix(in srgb, var(--success-color) 70%, transparent) !important;
+      padding-left: calc(0.5rem - 1.5px) !important;
+      background-color: color-mix(in srgb, var(--success-color) 6%, var(--card-bg) 94%) !important;
+    }
+
+    .dark #reminderList [data-reminder][data-priority="Low"] {
+      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%) !important;
+      background-color: color-mix(in srgb, var(--success-color) 8%, var(--text-primary) 92%) !important;
+    }
+
+    /* Remove divider on the last reminder */
+    #reminderList [data-reminder]:last-child {
+      border-bottom: none !important;
+    }
+
+    /* Title/label on the left */
+    #reminderList [data-reminder] h3,
+    #reminderList [data-reminder] h4,
+    #reminderList [data-reminder] strong,
+    #reminderList [data-reminder] [data-reminder-title] {
+      margin: 0 !important;
+      font-weight: 500 !important;
+      grid-column: 1 !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+    }
+
+    /* Meta info (date/time/status) on the right */
+    #reminderList [data-reminder] time,
+    #reminderList [data-reminder] .reminder-meta {
+      font-size: 0.75rem !important;
+      opacity: 0.75 !important;
+      margin-left: 0.5rem !important;
+      grid-column: 2 !important;
+      justify-self: end !important;
+      text-align: right !important;
+      align-self: start !important;
+    }
+
+    /* Hide extra verbose details to keep list minimal */
+    #reminderList [data-reminder] p,
+    #reminderList [data-reminder] .description,
+    #reminderList [data-reminder] .details,
+    #reminderList [data-reminder] .card-actions {
+      display: none !important;
+    }
+
+    /* Subtle hover feedback for pointer devices */
+    @media (hover: hover) {
+      #reminderList [data-reminder]:hover {
+        background-color: color-mix(in srgb, var(--text-primary) 3%, transparent) !important;
+      }
     }
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
@@ -205,13 +1099,13 @@
       overflow: auto;
       border-top-left-radius: 16px;
       border-top-right-radius: 16px;
-      background: var(--fallback-b1, #ffffff);
+      background: var(--fallback-b1, var(--card-bg));
       color: inherit;
-      box-shadow: 0 -16px 32px rgba(15, 23, 42, 0.25);
+      box-shadow: 0 -16px 32px color-mix(in srgb, var(--text-primary) 25%, transparent);
       padding: 16px;
     }
     .dark .sheet-panel {
-      background: rgba(30, 41, 59, 0.97);
+      background: color-mix(in srgb, var(--text-primary) 97%, transparent);
     }
     .sheet-header {
       display: flex;
@@ -226,13 +1120,13 @@
       gap: 8px;
     }
     .sheet-header-actions .btn.is-listening {
-      background: var(--fallback-p, #2563eb);
-      color: var(--fallback-pc, #fff);
+      background: var(--fallback-p, var(--primary-color));
+      color: var(--fallback-pc, var(--card-bg));
     }
     .sheet-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.45);
+      background: color-mix(in srgb, var(--text-primary) 45%, transparent);
     }
     #settingsModal {
       position: fixed;
@@ -246,26 +1140,26 @@
       position: relative;
       max-width: 420px;
       width: calc(100% - 32px);
-      background: var(--fallback-b1, #ffffff);
+      background: var(--fallback-b1, var(--card-bg));
       color: inherit;
       border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3);
+      box-shadow: 0 20px 40px color-mix(in srgb, var(--text-primary) 30%, transparent);
       overflow: hidden;
     }
     .dark .modal-panel {
-      background: rgba(30, 41, 59, 0.97);
+      background: color-mix(in srgb, var(--text-primary) 97%, transparent);
     }
     .modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 16px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
     }
     .modal-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.55);
+      background: color-mix(in srgb, var(--text-primary) 55%, transparent);
     }
   </style>
   <style id="add-task-stability-css">
@@ -314,7 +1208,7 @@
       gap: 0.25rem;
       padding: 6px 12px;
       border-radius: 9999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
+      border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
       cursor: pointer;
       font-size: 0.875rem;
     }
@@ -340,7 +1234,7 @@
       outline: none;
     }
     .task-row-min:focus {
-      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text-primary) 15%, transparent);
     }
     .task-row-min .min-notes {
       display: none;
@@ -387,10 +1281,10 @@
     #emptyState .empty-state-compact p {
       font-size: 0.875rem;
       line-height: 1.5;
-      color: rgba(71, 85, 105, 0.85);
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
     .dark #emptyState .empty-state-compact p {
-      color: rgba(226, 232, 240, 0.8);
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
     }
     #emptyState .empty-state-actions {
       display: flex;
@@ -406,42 +1300,519 @@
 <body class="min-h-screen bg-base-200 text-base-content show-full">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
-  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-base-100/90 backdrop-blur">
-    <div class="flex items-center gap-2 min-w-0">
-      <a href="#" class="flex items-center min-w-0">
-        <span class="font-semibold truncate">
-                   <span class="sm:hidden inline">MC</span>
-        </span>
-      </a>
-    </div>
+  <!-- Clean Mobile Header -->
+  <style id="mobile-header-compact" aria-hidden="true">
+  :root {
+    --mobile-header-height: 120px;
+  }
 
-    <div class="flex items-center gap-3">
-      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
-      <span id="mcStatusText" class="sr-only">Offline</span>
+  /* Make header visually compact while preserving touch targets and accessibility */
+  .mc-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 85%, transparent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .dark .mc-header {
+    border-bottom-color: color-mix(in srgb, var(--card-bg) 8%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 85%, transparent);
+  }
+
+  .mc-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    order: 0;
+  }
+
+  .mc-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Branding: very small */
+  .mc-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .mc-brand .logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .mc-brand .title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-left: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: none; /* hide textual title on narrow screens; keeps brands minimal */
+  }
+
+  /* Status indicator is tiny and condensed */
+  #mcStatus {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    display: inline-block;
+    margin: 0;
+    vertical-align: middle;
+    box-shadow: none;
+  }
+  #mcStatus.sync-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 0 6px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  }
+  .dark #mcStatus.sync-inline {
+    background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
+  }
+  /* keep the verbose status text accessible but visually hidden */
+  #mcStatusText {
+    position: static !important;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Smaller circular buttons */
+  .mc-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 1.05rem;
+  }
+  .mc-btn.icon-only { padding: 0.125rem; }
+
+  /* Overflow menu anchor spacing */
+  .mc-actions { display: flex; gap: 6px; align-items: center; }
+
+  /* Reduce hit area bloat visually but keep target size via padding if needed for a11y */
+  .mc-header .mc-btn { padding: 0; }
+
+  .mc-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.625rem 1rem;
+    border-radius: 14px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--card-bg);
+    border: none;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-dark) 35%, transparent),
+      0 2px 6px color-mix(in srgb, var(--primary-dark) 20%, transparent);
+    transition: var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.01em;
+  }
+
+  .mc-add-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--card-bg) 20%, transparent) 0%,
+        transparent 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .mc-add-btn:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 45%, transparent),
+      0 4px 10px color-mix(in srgb, var(--primary-dark) 25%, transparent);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .mc-add-btn:hover::before {
+    opacity: 1;
+  }
+
+  .mc-add-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-dark) 30%, transparent),
+      0 1px 4px color-mix(in srgb, var(--primary-dark) 20%, transparent);
+  }
+
+  .mc-add-btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary-color) 50%, transparent);
+    outline-offset: 2px;
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 45%, transparent),
+      0 4px 10px color-mix(in srgb, var(--primary-dark) 25%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--primary-color) 20%, transparent);
+  }
+
+  .mc-add-btn__hint {
+    font-size: 1.125rem;
+    opacity: 0.95;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: color-mix(in srgb, var(--card-bg) 20%, transparent);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .mc-add-btn:hover .mc-add-btn__hint {
+    background: color-mix(in srgb, var(--card-bg) 30%, transparent);
+    transform: rotate(90deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mc-add-btn {
+      transition: background-color 0.1s ease, box-shadow 0.1s ease;
+    }
+    
+    .mc-add-btn:hover {
+      transform: none;
+    }
+    
+    .mc-add-btn:active {
+      transform: none;
+    }
+    
+    .mc-add-btn__hint {
+      transition: background-color 0.1s ease;
+    }
+    
+    .mc-add-btn:hover .mc-add-btn__hint {
+      transform: none;
+    }
+  }
+
+  .dark .mc-add-btn {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--card-bg);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-dark) 40%, transparent),
+      0 2px 6px color-mix(in srgb, var(--primary-dark) 25%, transparent);
+  }
+
+  .dark .mc-add-btn:hover {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 80%, var(--card-bg) 20%) 0%,
+        var(--primary-dark) 100%);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 50%, transparent),
+      0 4px 10px color-mix(in srgb, var(--primary-dark) 30%, transparent);
+  }
+
+  .dark .mc-add-btn:active {
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-dark) 35%, transparent),
+      0 1px 4px color-mix(in srgb, var(--primary-dark) 20%, transparent);
+  }
+
+  /* Improve Add Reminder button visibility */
+  .mc-add-btn {
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 999px !important;
+  }
+
+  /* Prevent circle constraint on generic add button */
+  .mc-add-btn {
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .mc-add-btn-wide {
+    padding: 0.35rem 0.85rem !important;
+    border-radius: 999px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+  }
+
+  /* Ensure Add Reminder button can expand horizontally */
+  .mc-add-btn-wide {
+    width: auto !important;
+    height: auto !important;
+    padding: 0.35rem 0.9rem !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+
+  /* On slightly larger phones show small text label next to logo (optional) */
+  @media (min-width: 420px) {
+    .mc-brand .title { display: inline; font-size: 0.95rem; }
+  }
+  </style>
+
+  <!-- Header layout fix -->
+  <style>
+    /* Make the header a proper top bar */
+    header.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background-color: color-mix(in srgb, var(--text-primary) 90%, transparent); /* dark background */
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);            /* light text */
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--text-primary) 70%, transparent);
+    }
+
+    /* Inner container: single row, spaced out */
+    header.sticky .mx-auto {
+      max-width: 28rem;          /* similar to max-w-md */
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0.75rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    /* Centre title */
+    header.sticky h1 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-align: center;
+      flex: 1;
+    }
+
+    /* Round icon buttons */
+    header.sticky button {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 999px;
+      border: none;
+      background-color: color-mix(in srgb, var(--text-primary) 80%, transparent);
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    header.sticky .header-action-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    header.sticky button span {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    header.sticky button:active {
+      transform: scale(0.95);
+      background-color: color-mix(in srgb, var(--primary-dark) 90%, transparent);
+    }
+
+    .mc-quick-add-bar {
+      /* No longer sticky – just part of the normal flow under the header */
+      position: static;
+      background: transparent;
+      border-bottom: none;
+      backdrop-filter: none;
+      margin: 0.25rem 0 0.25rem;
+    }
+
+    .mc-quick-add-inner {
+      max-width: 28rem;
+      margin: 0 auto;
+      padding: 0.25rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .mc-quick-status {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
+    }
+
+    .mc-status-text {
+      white-space: nowrap;
+    }
+
+    .mc-quick-status .sync-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+    }
+
+    .mc-quick-more {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    .mc-quick-menu-btn {
+      border-radius: 999px;
+      padding: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mc-quick-add-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mc-quick-input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.4rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+      background-color: color-mix(in srgb, var(--text-primary) 35%, transparent);
+      color: inherit;
+      font-size: 0.8rem;
+    }
+
+    .mc-quick-input::placeholder {
+      color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    }
+
+    .mc-quick-submit,
+    .mc-quick-voice {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.1rem;
+      min-height: 2.1rem;
+      border-radius: 999px;
+      border: none;
+      background: color-mix(in srgb, var(--primary-color) 85%, transparent);
+      color: var(--card-bg);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0 0.75rem;
+      cursor: pointer;
+    }
+
+    .mc-quick-submit {
+      padding-inline: 0.9rem;
+    }
+
+    .mc-quick-voice {
+      background: color-mix(in srgb, var(--text-secondary) 35%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      padding-inline: 0.6rem;
+      font-size: 1rem;
+    }
+
+    .mc-quick-voice.is-listening {
+      background: color-mix(in srgb, var(--primary-color) 95%, transparent);
+      color: var(--card-bg);
+    }
+
+    @media (max-width: 420px) {
+      .mc-quick-add-inner {
+        gap: 0.5rem;
+      }
+
+      .mc-quick-add-row {
+        gap: 0.4rem;
+      }
+
+      .mc-quick-submit {
+        padding-inline: 0.7rem;
+      }
+    }
+  </style>
+
+  <header class="sticky top-0 z-20 bg-slate-900 text-slate-50 shadow-md">
+    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-2">
+      <!-- Left: Home button -->
+      <button
+        type="button"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+        aria-label="Go to home"
+      >
+        <span class="text-xl leading-none">🏠</span>
+      </button>
+
+      <!-- Centre: Title -->
       <button
         id="addReminderBtn"
         type="button"
-        class="btn btn-ghost btn-circle text-2xl"
-        aria-label="Add reminder"
+        class="mc-add-btn mc-add-btn-wide"
         data-open-add-task
       >
-        +
+        <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+        <span class="mc-add-btn-label">Add reminder</span>
       </button>
+
+      <!-- Right: Settings button with quick menu -->
       <div class="relative">
         <button
           id="overflowMenuBtn"
           type="button"
-          class="btn btn-ghost btn-circle text-xl"
-          aria-label="Open settings menu"
+          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+          aria-label="Open menu"
           aria-haspopup="true"
           aria-controls="overflowMenu"
           aria-expanded="false"
         >
-          ⚙️
+          <span class="text-xl leading-none">⚙️</span>
         </button>
+
         <div
           id="overflowMenu"
-          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border"
+          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border border-base-200/40 dark:bg-slate-800"
+          role="menu"
+          aria-hidden="true"
         >
           <ul class="py-2 text-sm">
             <li>
@@ -452,7 +1823,7 @@
             </li>
             <li><div class="h-px bg-base-300 my-1"></div></li>
             <li>
-              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2">Settings</button>
+              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2" data-open="settings">Settings</button>
             </li>
             <li>
               <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
@@ -469,45 +1840,310 @@
       </div>
     </div>
   </header>
-  
 
-  <main id="main" class="max-w-md mx-auto px-4 pt-4 pb-4" tabindex="-1" data-active-view="reminders">
+  <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
+    <div class="mc-quick-add-inner">
+      <!-- Left: Sync status -->
+      <div class="mc-quick-status">
+        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
+          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
+        </div>
+        <span id="mcStatusText" class="mc-status-text">Offline</span>
+      </div>
+
+      <!-- Right: Quick add row -->
+      <div class="mc-quick-add-row">
+        <input
+          id="quickAddInput"
+          class="mc-quick-input"
+          type="text"
+          autocomplete="off"
+          placeholder="Quick reminder…"
+        />
+        <button
+          id="quickAddSubmit"
+          type="button"
+          class="mc-quick-submit"
+          aria-label="Add reminder"
+        >
+          Add
+        </button>
+        <button
+          id="quickAddVoice"
+          type="button"
+          class="mc-quick-voice"
+          aria-label="Use voice to add reminder"
+        >
+          🎤
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div
+    id="mobile-drawer-scrim"
+    class="fixed inset-0 z-30 bg-neutral-900/40 opacity-0 transition-opacity duration-200 pointer-events-none"
+  ></div>
+  <!-- Mobile navigation drawer - positioned fixed to avoid taking layout space -->
+  <aside
+    id="mobile-drawer"
+    class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-full -translate-x-full transform flex-col border-r border-neutral-200 bg-white/90 px-4 pb-6 pt-6 font-medium text-neutral-900 shadow-xl transition-transform duration-200 ease-out backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/85 dark:text-neutral-100"
+    inert
+    tabindex="-1"
+    style="position: fixed; padding-top: calc(env(safe-area-inset-top, 0px) + 1rem)"
+  >
+    <div class="mb-6 flex items-center justify-between">
+           <button
+        type="button"
+        class="rounded-xl p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+        aria-label="Close menu"
+        data-close-drawer
+      >
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 6l12 12M6 18 18 6" />
+        </svg>
+      </button>
+    </div>
+    
+    </div>
+  </aside>
+
+  <script>
+    (function () {
+      const drawerBtn = document.getElementById('btn-open-drawer');
+      const drawer = document.getElementById('mobile-drawer');
+      const scrim = document.getElementById('mobile-drawer-scrim');
+      const scrollTopBtn = document.getElementById('btn-scroll-top');
+      const quickAddBtn = document.getElementById('addReminderBtn');
+      const searchBtn = document.getElementById('btn-search');
+      const themeBtn = document.getElementById('btn-theme');
+      const drawerSyncStatus = document.getElementById('drawerSyncStatus');
+      const headerSyncStatus = document.getElementById('mcStatusText');
+      const headerSyncDot = document.getElementById('mcStatus');
+      const drawerSyncDot = drawer?.querySelector('.sync-dot');
+
+      const toggleClass = (el, className, force) => {
+        if (!el) return;
+        if (typeof force === 'boolean') {
+          el.classList.toggle(className, force);
+        } else {
+          el.classList.toggle(className);
+        }
+      };
+
+      const setDrawerState = (open) => {
+        if (!drawer) return;
+        const isOpen = drawer.classList.contains('translate-x-0');
+        const nextState = typeof open === 'boolean' ? open : !isOpen;
+        if (nextState === isOpen) return;
+
+        if (nextState) {
+          drawer.inert = false;
+          drawer.classList.add('translate-x-0');
+          drawerBtn?.setAttribute('aria-expanded', 'true');
+          if (scrim) {
+            scrim.classList.remove('pointer-events-none');
+            scrim.classList.remove('opacity-0');
+            scrim.classList.add('opacity-100');
+          }
+          document.body.classList.add('overflow-hidden');
+          if (!drawer.hasAttribute('data-focus-bound')) {
+            drawer.setAttribute('data-focus-bound', 'true');
+            drawer.focus({ preventScroll: true });
+          } else {
+            try {
+              drawer.focus({ preventScroll: true });
+            } catch {
+              drawer.focus();
+            }
+          }
+        } else {
+          drawer.classList.remove('translate-x-0');
+          drawerBtn?.setAttribute('aria-expanded', 'false');
+          if (scrim) {
+            scrim.classList.add('opacity-0');
+            scrim.classList.add('pointer-events-none');
+            scrim.classList.remove('opacity-100');
+          }
+          document.body.classList.remove('overflow-hidden');
+          drawer.removeAttribute('data-focus-bound');
+          if (drawerBtn instanceof HTMLElement) {
+            try {
+              drawerBtn.focus({ preventScroll: true });
+            } catch {
+              drawerBtn.focus();
+            }
+          }
+          drawer.inert = true;
+        }
+      };
+
+      drawerBtn?.addEventListener('click', () => setDrawerState());
+      scrim?.addEventListener('click', () => setDrawerState(false));
+      drawer?.addEventListener('click', (event) => {
+        if (event.target instanceof Element && event.target.closest('[data-close-drawer]')) {
+          setDrawerState(false);
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setDrawerState(false);
+        }
+      });
+
+      scrollTopBtn?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      quickAddBtn?.addEventListener('click', () => {
+        const tryCall = (fn) => {
+          try {
+            return typeof fn === 'function' ? fn() : undefined;
+          } catch (error) {
+            console.warn('Quick add hook failed', error);
+            return undefined;
+          }
+        };
+        const result =
+          tryCall(window.quickAdd) ??
+          tryCall(window.openAddModal) ??
+          (function () {
+            const fallback = document.querySelector('[data-open-add-task]') || document.getElementById('addReminderBtn');
+            if (fallback instanceof HTMLElement) {
+              fallback.click();
+              return true;
+            }
+            return document.getElementById('quickAddInput')?.focus();
+          })();
+        return result;
+      });
+
+      searchBtn?.addEventListener('click', () => {
+        const el = document.getElementById('search') || document.querySelector('input[type="search"]');
+        if (el instanceof HTMLElement) {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          try {
+            el.focus({ preventScroll: true });
+          } catch {
+            el.focus();
+          }
+        }
+      });
+
+      const THEME_STORAGE_KEY = 'theme';
+      const root = document.documentElement;
+
+      const applyTheme = (nextTheme) => {
+        const next = nextTheme === 'dark' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        root.classList.toggle('dark', next === 'dark');
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, next);
+        } catch {
+          /* storage might be unavailable */
+        }
+        toggleClass(document.getElementById('icon-sun'), 'hidden', next === 'dark');
+        toggleClass(document.getElementById('icon-moon'), 'hidden', next !== 'dark');
+      };
+
+      const toggleTheme = () => {
+        const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+      };
+
+      themeBtn?.addEventListener('click', toggleTheme);
+
+      window.__mcApplyTheme = applyTheme;
+      window.__mcToggleTheme = toggleTheme;
+
+      (function initTheme() {
+        let saved = null;
+        try {
+          saved = localStorage.getItem(THEME_STORAGE_KEY);
+        } catch {
+          saved = null;
+        }
+        if (!saved) {
+          saved = root.getAttribute('data-theme');
+        }
+        if (saved) {
+          applyTheme(saved);
+        }
+      })();
+
+      document.addEventListener('cue:sync-status', (event) => {
+        const detail = event?.detail;
+        if (!detail) return;
+        if (typeof detail.message === 'string' && drawerSyncStatus) {
+          drawerSyncStatus.textContent = detail.message;
+        }
+        if (typeof detail.state === 'string' && drawerSyncDot) {
+          const isOnline = detail.state !== 'offline' && detail.state !== 'error';
+          drawerSyncDot.classList.toggle('online', isOnline);
+          drawerSyncDot.classList.toggle('offline', !isOnline);
+        }
+      });
+
+      if (typeof MutationObserver === 'function') {
+        const syncStatusObserver = new MutationObserver(() => {
+          if (headerSyncStatus && drawerSyncStatus) {
+            drawerSyncStatus.textContent = headerSyncStatus.textContent || '';
+          }
+        });
+
+        if (headerSyncStatus) {
+          syncStatusObserver.observe(headerSyncStatus, { childList: true });
+        }
+
+        const syncDotObserver = new MutationObserver(() => {
+          if (headerSyncDot && drawerSyncDot) {
+            const isOnline = headerSyncDot.classList.contains('online');
+            drawerSyncDot.classList.toggle('online', isOnline);
+            drawerSyncDot.classList.toggle('offline', !isOnline);
+          }
+        });
+
+        if (headerSyncDot) {
+          syncDotObserver.observe(headerSyncDot, { attributes: true, attributeFilter: ['class'] });
+        }
+      }
+
+      if (headerSyncStatus && drawerSyncStatus) {
+        drawerSyncStatus.textContent = headerSyncStatus.textContent || drawerSyncStatus.textContent || '';
+      }
+      if (headerSyncDot && drawerSyncDot) {
+        const isOnline = headerSyncDot.classList.contains('online');
+        drawerSyncDot.classList.toggle('online', isOnline);
+        drawerSyncDot.classList.toggle('offline', !isOnline);
+      }
+    })();
+  </script>
+
+  <div class="container">
+    <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <!-- Quick add form -->
-      <section id="quickAddBar" class="card bg-base-100 border" aria-label="Quick add reminder">
-        <div class="card-body gap-3 compact">
-          <div class="flex items-center gap-2">
-            <input id="quickAddInput"
-                   type="text"
-                   class="input input-bordered flex-1"
-                   placeholder="What do you need to remember?"
-                   aria-label="Quick add reminder"
-                   autocomplete="off" />
-            <button id="quickAddVoiceBtn"
-                    type="button"
-                    class="btn btn-ghost"
-                    title="Dictate quick reminder"
-                    aria-label="Dictate quick reminder"
-                    aria-pressed="false">
-              <span aria-hidden="true">🎙️</span>
-              <span class="sr-only">Start voice input for quick add</span>
-            </button>
-            <button id="quickAddSubmit"
-                    class="btn btn-primary"
-                    type="button"
-                    aria-label="Add reminder now">Add</button>
-       
-        </div>
-      </section>
-      
-      <section id="reminderListSection" class="card bg-base-100 border">
-        <div class="card-body gap-4 compact" id="remindersWrapper">
-          <div id="emptyState" class="hidden text-center text-base-content/60"></div>
-          <ul id="reminderList" class="space-y-3"></ul>
-          <p class="text-xs text-base-content/60">Total reminders: <span id="totalCount">0</span></p>
+      <section
+        id="reminderListSection"
+        class="w-full relative"
+      >
+        <button id="viewToggle" class="view-toggle btn btn-ghost btn-xs absolute top-2 right-2 z-10" type="button">
+          <span class="grid-icon">⊞</span>
+          <span class="list-icon hidden">☰</span>
+        </button>
+        <div class="w-full" id="remindersWrapper">
+          <div id="emptyState" class="hidden text-center text-base-content/60 py-8 px-4"></div>
+          <div class="flex items-center gap-2 px-4 pb-3 text-xs text-base-content/70">
+            <span aria-hidden="true" class="text-base">↕️</span>
+            <span>Press, hold, and drag a card to reorder your reminders.</span>
+          </div>
+          <p id="reminderReorderHint" class="sr-only">
+            Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
+          </p>
+          <ul id="reminderList" class="grid gap-3 w-full" aria-describedby="reminderReorderHint"></ul>
+          <p class="text-xs text-base-content/50 mt-4 pt-3 px-4 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
     </section>
@@ -520,43 +2156,108 @@
             <h2 class="card-title text-base">Scratch Notes</h2>
             <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
           </div>
+          <!-- Enhanced formatting toolbar -->
           <div
             id="notesToolbar"
-            class="flex flex-wrap gap-2"
+            class="flex flex-wrap gap-1.5 p-2 bg-base-200/30 rounded-lg"
             role="toolbar"
-            aria-label="Scratch notes formatting options"
+            aria-label="Note formatting options"
             aria-controls="notes"
           >
-            <button type="button" class="btn btn-xs" data-action="bullets">• Bullets</button>
-            <button type="button" class="btn btn-xs" data-action="numbers">1. Numbers</button>
-            <button
-              type="button"
-              class="btn btn-xs"
-              data-action="columns"
-              aria-pressed="false"
-            >
-              Columns
-            </button>
+            <!-- Text formatting -->
+            <div class="flex gap-1 border-r border-base-300 pr-2">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="bold" title="Bold (Ctrl+B)" aria-label="Make text bold">
+                <strong>B</strong>
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="italic" title="Italic (Ctrl+I)" aria-label="Make text italic">
+                <em>I</em>
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="strikethrough" title="Strikethrough" aria-label="Strike through text">
+                <s>S</s>
+              </button>
+            </div>
+            
+            <!-- Lists -->
+            <div class="flex gap-1 border-r border-base-300 pr-2">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="bullets" title="Bullet list">•</button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="numbers" title="Numbered list">1.</button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="checklist" title="Checklist">☐</button>
+            </div>
+            
+            <!-- Structure -->
+            <div class="flex gap-1 border-r border-base-300 pr-2">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="heading" title="Heading">
+                H
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="divider" title="Add divider">
+                ─
+              </button>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-1">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="link" title="Add link">
+                🔗
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="clear" title="Clear formatting">
+                ✕
+              </button>
+            </div>
           </div>
           <div
             id="notes"
-            class="notes-editor"
+            class="notes-editor enhanced"
             contenteditable="true"
             role="textbox"
             aria-multiline="true"
             spellcheck="true"
-            data-placeholder="Quick personal notes"
+            data-placeholder="Start typing your notes... (auto-saves)"
+            data-auto-save="true"
           ></div>
-          <div class="flex gap-2">
-            <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
-            <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
+          
+          <!-- Auto-save status -->
+          <div class="flex items-center justify-between text-xs text-base-content/60">
+            <div id="notesStatus" class="flex items-center gap-1">
+              <span class="sync-dot offline" id="notesSyncStatus"></span>
+              <span id="notesStatusText">Ready</span>
+            </div>
+            <div id="notesWordCount">0 words</div>
+          </div>
+          <!-- Enhanced action buttons -->
+          <div class="flex flex-wrap gap-2">
+            <button id="searchNotes" class="btn btn-outline btn-sm flex-1" type="button">
+              🔍 Search
+            </button>
+            <button id="exportNotes" class="btn btn-outline btn-sm flex-1" type="button">
+              📤 Export
+            </button>
+            <button id="voiceNotes" class="btn btn-outline btn-sm flex-1" type="button">
+              🎤 Voice
+            </button>
+          </div>
+          
+          <!-- Search panel (hidden by default) -->
+          <div id="searchPanel" class="hidden bg-base-200/50 p-3 rounded-lg border">
+            <div class="flex gap-2 mb-2">
+              <input 
+                id="searchInput" 
+                type="text" 
+                placeholder="Search in notes..." 
+                class="input input-sm flex-1"
+              />
+              <button id="searchPrev" class="btn btn-sm btn-ghost" title="Previous">↑</button>
+              <button id="searchNext" class="btn btn-sm btn-ghost" title="Next">↓</button>
+              <button id="closeSearch" class="btn btn-sm btn-ghost" title="Close">✕</button>
+            </div>
+            <div id="searchResults" class="text-xs text-base-content/70"></div>
           </div>
         </div>
       </section>
 
     </section>
     <!-- END GPT CHANGE -->
-</main>
+    </main>
+  </div>
 
   <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
     <button type="button" aria-current="page" class="active">
@@ -602,10 +2303,117 @@
 
       target.replaceChildren(wrapper);
     };
+
+    const viewToggle = document.getElementById('viewToggle');
+    const reminderList = document.getElementById('reminderList');
+
+    if (viewToggle && reminderList) {
+      const getPendingNotificationIds = () => {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+          return new Set();
+        }
+
+        if (typeof localStorage === 'undefined') {
+          return new Set();
+        }
+
+        try {
+          const stored = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
+          const entries = Object.values(stored || {}).filter((entry) => entry && typeof entry === 'object' && entry.id);
+          return new Set(entries.map((entry) => entry.id));
+        } catch (error) {
+          console.warn('Unable to read scheduled reminders', error);
+          return new Set();
+        }
+      };
+
+      const applyNotificationHighlights = () => {
+        const ids = getPendingNotificationIds();
+        reminderList.querySelectorAll('[data-reminder]').forEach((el) => {
+          if (!(el instanceof HTMLElement)) return;
+          const reminderId = el.dataset.id || el.getAttribute('data-id');
+          if (reminderId && ids.has(reminderId)) {
+            el.setAttribute('data-notification-active', 'true');
+          } else {
+            el.removeAttribute('data-notification-active');
+          }
+        });
+      };
+
+      const setCompactMode = (compact) => {
+        reminderList.querySelectorAll('.task-item').forEach((item) => {
+          if (compact) {
+            item.setAttribute('data-compact', 'true');
+          } else {
+            item.removeAttribute('data-compact');
+          }
+        });
+      };
+
+      const updateToggleIcons = (isGridView) => {
+        const gridIcon = viewToggle.querySelector('.grid-icon');
+        const listIcon = viewToggle.querySelector('.list-icon');
+        if (!gridIcon || !listIcon) return;
+        if (isGridView) {
+          gridIcon.classList.add('hidden');
+          listIcon.classList.remove('hidden');
+        } else {
+          gridIcon.classList.remove('hidden');
+          listIcon.classList.add('hidden');
+        }
+      };
+
+      const ensureInitialState = () => {
+        let isGridView = reminderList.classList.contains('grid-cols-2');
+
+        if (!isGridView && !reminderList.classList.contains('space-y-3')) {
+          reminderList.classList.add('grid-cols-2');
+          isGridView = true;
+        }
+
+        updateToggleIcons(isGridView);
+        setCompactMode(isGridView);
+        applyNotificationHighlights();
+      };
+
+      const observer = new MutationObserver(() => {
+        const isGridView = reminderList.classList.contains('grid-cols-2');
+        setCompactMode(isGridView);
+        applyNotificationHighlights();
+      });
+
+      viewToggle.addEventListener('click', function () {
+        const isGridView = reminderList.classList.contains('grid-cols-2');
+
+        if (isGridView) {
+          reminderList.classList.remove('grid-cols-2');
+          reminderList.classList.add('space-y-3');
+          updateToggleIcons(false);
+          setCompactMode(false);
+        } else {
+          reminderList.classList.add('grid-cols-2');
+          reminderList.classList.remove('space-y-3');
+          updateToggleIcons(true);
+          setCompactMode(true);
+        }
+
+        applyNotificationHighlights();
+      });
+
+      ensureInitialState();
+      observer.observe(reminderList, { childList: true });
+
+      document.addEventListener('memoryCue:remindersUpdated', applyNotificationHighlights);
+      window.addEventListener('storage', (event) => {
+        if (event && event.key === 'scheduledReminders') {
+          applyNotificationHighlights();
+        }
+      });
+    }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-UYWFFJR2.js?v=2025-10-29-1"></script>
-  <script type="module" src="./assets/mobile-theme-toggle-VQPS5JOX.js"></script>
+  <script type="module" src="./assets/mobile-S7M6534W.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-theme-toggle-KTZLCBCC.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
     <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
@@ -780,6 +2588,79 @@
       });
     });
 
+    // Enhanced add button functionality
+    (function () {
+      const addBtn = document.getElementById('addReminderBtn');
+      const addOptionsFab = document.getElementById('addOptionsFab');
+      if (!addBtn || !addOptionsFab) return;
+
+      let suppressVoiceTrigger = false;
+
+      addBtn.addEventListener('click', function () {
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', String(!isExpanded));
+        addOptionsFab.classList.toggle('active');
+
+        if (!isExpanded) {
+          this.style.transform = 'rotate(45deg)';
+        } else {
+          this.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.add-button-container')) {
+          addOptionsFab.classList.remove('active');
+          addBtn.setAttribute('aria-expanded', 'false');
+          addBtn.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      document.querySelectorAll('.add-option-item').forEach((item) => {
+        item.addEventListener('click', function () {
+          const addType = this.dataset.addType;
+
+          addOptionsFab.classList.remove('active');
+          addBtn.setAttribute('aria-expanded', 'false');
+          addBtn.style.transform = 'rotate(0deg)';
+
+          switch (addType) {
+            case 'reminder': {
+              const quickAddInput = document.getElementById('quickAddInput');
+              quickAddInput?.focus();
+              break;
+            }
+            case 'voice': {
+              if (suppressVoiceTrigger) {
+                suppressVoiceTrigger = false;
+                break;
+              }
+              const voiceOption = document.getElementById('voiceAddBtn');
+              if (voiceOption) {
+                suppressVoiceTrigger = true;
+                voiceOption.click();
+                const resetTrigger = () => {
+                  suppressVoiceTrigger = false;
+                };
+                if (typeof queueMicrotask === 'function') {
+                  queueMicrotask(resetTrigger);
+                } else {
+                  setTimeout(resetTrigger, 0);
+                }
+              }
+              break;
+            }
+            case 'note': {
+              // Add note creation logic here
+              break;
+            }
+            default:
+              break;
+          }
+        });
+      });
+    })();
+
     (function () {
       const views = {
         reminders: document.querySelector('[data-view="reminders"]'),
@@ -799,6 +2680,8 @@
         ? window.matchMedia('(prefers-reduced-motion: reduce)')
         : null;
 
+      let activeView = order[0];
+
       const setActiveView = (target) => {
         if (!order.includes(target)) return;
 
@@ -817,6 +2700,8 @@
             button.classList.toggle('active', Boolean(isActive));
           }
         });
+
+        activeView = target;
 
         const skipLink =
           document.querySelector('.skip-link') ||
@@ -864,6 +2749,103 @@
         });
       });
 
+      const main = document.getElementById('main') || document.querySelector('main');
+      if (main) {
+        const SWIPE_MIN_DISTANCE = 60;
+        const SWIPE_MAX_OFF_AXIS = 80;
+        const SWIPE_MAX_DURATION = 600;
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        let tracking = false;
+
+        const resetSwipeTracking = () => {
+          tracking = false;
+          startX = 0;
+          startY = 0;
+          startTime = 0;
+        };
+
+        const isInteractiveTarget = (target) => {
+          if (!(target instanceof Element)) return false;
+          return Boolean(
+            target.closest(
+              '[data-no-swipe], input, textarea, select, button, [role="button"], [role="textbox"], [contenteditable="true"], [contenteditable=""]'
+            )
+          );
+        };
+
+        main.addEventListener(
+          'touchstart',
+          (event) => {
+            if (event.touches.length !== 1) {
+              resetSwipeTracking();
+              return;
+            }
+
+            const target = event.target;
+            if (target instanceof Element && isInteractiveTarget(target)) {
+              resetSwipeTracking();
+              return;
+            }
+
+            const touch = event.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startTime = event.timeStamp || Date.now();
+            tracking = true;
+          },
+          { passive: true }
+        );
+
+        main.addEventListener(
+          'touchmove',
+          (event) => {
+            if (!tracking) return;
+            if (event.touches.length !== 1) {
+              resetSwipeTracking();
+            }
+          },
+          { passive: true }
+        );
+
+        main.addEventListener(
+          'touchend',
+          (event) => {
+            if (!tracking) return;
+            tracking = false;
+
+            if (!event.changedTouches || !event.changedTouches.length) {
+              resetSwipeTracking();
+              return;
+            }
+
+            const touch = event.changedTouches[0];
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            const duration = (event.timeStamp || Date.now()) - startTime;
+            resetSwipeTracking();
+
+            if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE) return;
+            if (Math.abs(deltaY) > SWIPE_MAX_OFF_AXIS) return;
+            if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+            if (duration > SWIPE_MAX_DURATION) return;
+
+            const currentIndex = order.indexOf(activeView);
+            if (currentIndex === -1) return;
+
+            if (deltaX < 0 && currentIndex < order.length - 1) {
+              setActiveView(order[currentIndex + 1]);
+            } else if (deltaX > 0 && currentIndex > 0) {
+              setActiveView(order[currentIndex - 1]);
+            }
+          },
+          { passive: true }
+        );
+
+        main.addEventListener('touchcancel', resetSwipeTracking, { passive: true });
+      }
+
       setActiveView('reminders');
     })();
 
@@ -903,10 +2885,12 @@
     })();
 
     (function () {
-      const openBtn = document.querySelector('[data-open="settings"]') || document.getElementById('openSettings');
+      const openBtns = Array.from(
+        document.querySelectorAll('[data-open="settings"]'),
+      ).filter((btn) => btn instanceof HTMLElement);
       const modal = document.getElementById('settingsModal');
       const closeBtn = document.getElementById('closeSettings');
-      if (!openBtn || !modal || !closeBtn) return;
+      if (!openBtns.length || !modal || !closeBtn) return;
 
       const open = () => {
         modal.classList.remove('hidden');
@@ -916,7 +2900,7 @@
         modal.classList.add('hidden');
       };
 
-      openBtn.addEventListener('click', open);
+      openBtns.forEach((btn) => btn.addEventListener('click', open));
       closeBtn.addEventListener('click', close);
       modal.addEventListener('click', (event) => {
         if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
@@ -931,6 +2915,7 @@
     })();
 
     (function () {
+      const statusContainer = document.getElementById('syncStatus');
       const statusDotEl = document.getElementById('mcStatus');
       const statusTextEl = document.getElementById('mcStatusText');
       if (!statusTextEl) return;
@@ -974,13 +2959,23 @@
       const setStatus = (state, message) => {
         currentState = state;
         ACTIVE_CLASSES.forEach((cls) => statusTextEl.classList.remove(cls));
+        if (statusContainer) {
+          ACTIVE_CLASSES.forEach((cls) => statusContainer.classList.remove(cls));
+        }
+
+        if (statusContainer) {
+          statusContainer.setAttribute('data-state', state);
+        }
 
         if (state === 'online') {
           statusTextEl.classList.add('online');
+          if (statusContainer) statusContainer.classList.add('online');
         } else if (state === 'error') {
           statusTextEl.classList.add('error');
+          if (statusContainer) statusContainer.classList.add('error');
         } else {
           statusTextEl.classList.add('offline');
+          if (statusContainer) statusContainer.classList.add('offline');
         }
 
         const fullText =
@@ -1343,6 +3338,394 @@
       });
     })();
   </script>
-  
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const homeBtn = document.querySelector('header.sticky [aria-label="Go to home"]');
+
+      // Locate reminders section or fall back to the document body
+      const remindersSection =
+        document.getElementById('remindersWrapper') ||
+        document.querySelector('[data-section="reminders"]') ||
+        document.getElementById('reminders') ||
+        document.body;
+
+      if (homeBtn && remindersSection) {
+        homeBtn.addEventListener('click', () => {
+          remindersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+    });
+  </script>
+
+  <!-- Enhanced Notes Functionality -->
+  <script>
+    (function() {
+      // Enhanced Notes Editor
+      const notesEditor = document.getElementById('notes');
+      const notesToolbar = document.getElementById('notesToolbar');
+      const notesStatus = document.getElementById('notesStatusText');
+      const notesSyncStatus = document.getElementById('notesSyncStatus');
+      const notesWordCount = document.getElementById('notesWordCount');
+      const searchPanel = document.getElementById('searchPanel');
+      const searchInput = document.getElementById('searchInput');
+      const searchResults = document.getElementById('searchResults');
+
+      if (!notesEditor) return;
+
+      let autoSaveTimeout;
+      let currentSearchIndex = 0;
+      let searchMatches = [];
+
+      // Auto-save functionality
+      const autoSave = () => {
+        if (!notesEditor) return;
+        
+        clearTimeout(autoSaveTimeout);
+        setStatus('saving', 'Saving...');
+        
+        autoSaveTimeout = setTimeout(() => {
+          try {
+            const content = notesEditor.innerHTML;
+            if (content !== localStorage.getItem('memory-cue-notes')) {
+              localStorage.setItem('memory-cue-notes', content);
+              setStatus('saved', 'Saved');
+              setTimeout(() => setStatus('ready', 'Ready'), 1500);
+            } else {
+              setStatus('ready', 'Ready');
+            }
+          } catch (error) {
+            console.error('Failed to save notes:', error);
+            setStatus('error', 'Save failed');
+            // Retry after a delay
+            setTimeout(autoSave, 3000);
+          }
+        }, 800);
+      };
+
+      // Status management
+      const setStatus = (state, message) => {
+        if (notesStatus) notesStatus.textContent = message;
+        if (notesSyncStatus) {
+          notesSyncStatus.className = `sync-dot ${state}`;
+        }
+      };
+
+      // Word count
+      const updateWordCount = () => {
+        if (!notesWordCount || !notesEditor) return;
+        const text = notesEditor.textContent || '';
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        notesWordCount.textContent = `${words.length} words`;
+      };
+
+      // Load saved notes
+      const loadNotes = () => {
+        try {
+          const saved = localStorage.getItem('memory-cue-notes');
+          if (saved && notesEditor) {
+            notesEditor.innerHTML = saved;
+            updateWordCount();
+            setStatus('ready', 'Notes loaded');
+          }
+        } catch (error) {
+          console.error('Failed to load notes:', error);
+        }
+      };
+
+      // Formatting functions
+      const formatText = (command, value = null) => {
+        document.execCommand(command, false, value);
+        notesEditor.focus();
+        autoSave();
+      };
+
+      const insertAtCursor = (html) => {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          const fragment = range.createContextualFragment(html);
+          range.insertNode(fragment);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        autoSave();
+      };
+
+      // Toolbar event handlers
+      if (notesToolbar) {
+        notesToolbar.addEventListener('click', (e) => {
+          const button = e.target.closest('button');
+          if (!button) return;
+
+          const action = button.dataset.action;
+          e.preventDefault();
+
+          switch(action) {
+            case 'bold':
+              formatText('bold');
+              break;
+            case 'italic':
+              formatText('italic');
+              break;
+            case 'strikethrough':
+              formatText('strikeThrough');
+              break;
+            case 'bullets':
+              formatText('insertUnorderedList');
+              break;
+            case 'numbers':
+              formatText('insertOrderedList');
+              break;
+            case 'checklist':
+              insertAtCursor('<div class="checklist-item"><span class="checklist-checkbox" role="button" tabindex="0" onclick="toggleCheckbox(this)" onkeypress="if(event.key===\'Enter\')toggleCheckbox(this)">☐</span><span contenteditable="true">New item</span></div>');
+              break;
+            case 'heading':
+              formatText('formatBlock', 'h2');
+              break;
+            case 'divider':
+              insertAtCursor('<hr>');
+              break;
+            case 'link':
+              const url = prompt('Enter URL:');
+              if (url) formatText('createLink', url);
+              break;
+            case 'clear':
+              formatText('removeFormat');
+              break;
+          }
+        });
+      }
+
+      // Search functionality
+      const performSearch = (query) => {
+        if (!query.trim()) {
+          clearHighlights();
+          updateSearchResults(0);
+          return;
+        }
+
+        clearHighlights();
+        searchMatches = [];
+        
+        try {
+          const content = notesEditor.innerHTML;
+          const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escapedQuery})`, 'gi');
+          
+          const highlightedContent = content.replace(regex, '<span class="highlight">$1</span>');
+          notesEditor.innerHTML = highlightedContent;
+          
+          searchMatches = Array.from(notesEditor.querySelectorAll('.highlight'));
+          updateSearchResults(searchMatches.length);
+          
+          if (searchMatches.length > 0) {
+            currentSearchIndex = 0;
+            highlightCurrentMatch();
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          updateSearchResults(0);
+        }
+      };
+
+      const clearHighlights = () => {
+        const highlights = notesEditor.querySelectorAll('.highlight');
+        highlights.forEach(highlight => {
+          const parent = highlight.parentNode;
+          parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+          parent.normalize();
+        });
+      };
+
+      const highlightCurrentMatch = () => {
+        searchMatches.forEach((match, index) => {
+          match.style.backgroundColor = index === currentSearchIndex 
+            ? 'color-mix(in srgb, var(--primary-color) 40%, transparent)' 
+            : 'color-mix(in srgb, var(--warning-color) 25%, transparent)';
+        });
+        
+        if (searchMatches[currentSearchIndex]) {
+          searchMatches[currentSearchIndex].scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      };
+
+      const updateSearchResults = (count) => {
+        if (searchResults) {
+          searchResults.textContent = count > 0 
+            ? `${count} matches found` 
+            : 'No matches found';
+        }
+      };
+
+      // Search controls
+      document.getElementById('searchNotes')?.addEventListener('click', () => {
+        searchPanel?.classList.toggle('hidden');
+        if (!searchPanel?.classList.contains('hidden')) {
+          searchInput?.focus();
+        } else {
+          clearHighlights();
+        }
+      });
+
+      document.getElementById('closeSearch')?.addEventListener('click', () => {
+        searchPanel?.classList.add('hidden');
+        clearHighlights();
+      });
+
+      searchInput?.addEventListener('input', (e) => {
+        performSearch(e.target.value);
+      });
+
+      document.getElementById('searchNext')?.addEventListener('click', () => {
+        if (searchMatches.length > 0) {
+          currentSearchIndex = (currentSearchIndex + 1) % searchMatches.length;
+          highlightCurrentMatch();
+        }
+      });
+
+      document.getElementById('searchPrev')?.addEventListener('click', () => {
+        if (searchMatches.length > 0) {
+          currentSearchIndex = currentSearchIndex === 0 
+            ? searchMatches.length - 1 
+            : currentSearchIndex - 1;
+          highlightCurrentMatch();
+        }
+      });
+
+      // Export functionality
+      document.getElementById('exportNotes')?.addEventListener('click', () => {
+        if (!notesEditor) return;
+        
+        try {
+          const content = notesEditor.textContent || '';
+          if (!content.trim()) {
+            alert('No content to export');
+            return;
+          }
+          
+          // For mobile devices, use share API if available
+          if (navigator.share) {
+            navigator.share({
+              title: 'My Notes',
+              text: content,
+            }).catch(error => {
+              console.log('Error sharing:', error);
+              fallbackExport(content);
+            });
+          } else {
+            fallbackExport(content);
+          }
+        } catch (error) {
+          console.error('Export failed:', error);
+          alert('Export failed. Please try again.');
+        }
+      });
+      
+      const fallbackExport = (content) => {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `memory-cue-notes-${new Date().toISOString().split('T')[0]}.txt`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      // Voice notes (integrate with existing voice functionality)
+      document.getElementById('voiceNotes')?.addEventListener('click', () => {
+        // Trigger existing voice functionality if available
+        const voiceBtn = document.getElementById('voiceBtn') || document.getElementById('quickAddVoice');
+        if (voiceBtn) {
+          voiceBtn.click();
+        } else {
+          alert('Voice functionality not available');
+        }
+      });
+
+      // Event listeners
+      notesEditor.addEventListener('input', () => {
+        updateWordCount();
+        autoSave();
+      });
+
+      notesEditor.addEventListener('paste', (e) => {
+        // Clean pasted content
+        setTimeout(() => {
+          updateWordCount();
+          autoSave();
+        }, 100);
+      });
+
+      // Keyboard shortcuts
+      notesEditor.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch(e.key.toLowerCase()) {
+            case 'b':
+              e.preventDefault();
+              formatText('bold');
+              break;
+            case 'i':
+              e.preventDefault();
+              formatText('italic');
+              break;
+            case 'f':
+              e.preventDefault();
+              document.getElementById('searchNotes')?.click();
+              break;
+          }
+        }
+      });
+
+      // Helper function for checkbox toggling
+      window.toggleCheckbox = function(element) {
+        if (element && element.textContent) {
+          element.textContent = element.textContent === '☐' ? '☑' : '☐';
+          autoSave();
+        }
+      };
+      
+      // Improve mobile keyboard handling
+      notesEditor.addEventListener('focus', () => {
+        // Prevent zoom on iOS
+        if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
+          const viewport = document.querySelector('meta[name="viewport"]');
+          if (viewport) {
+            viewport.setAttribute('content', viewport.getAttribute('content') + ', user-scalable=no');
+          }
+        }
+      });
+      
+      notesEditor.addEventListener('blur', () => {
+        // Re-enable zoom
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+          const content = viewport.getAttribute('content').replace(', user-scalable=no', '');
+          viewport.setAttribute('content', content);
+        }
+      });
+
+      // Initialize
+      loadNotes();
+      updateWordCount();
+      setStatus('ready', 'Ready');
+      
+      // Add mobile-friendly touch handling for toolbar
+      if (notesToolbar) {
+        notesToolbar.addEventListener('touchstart', (e) => {
+          e.preventDefault(); // Prevent double-tap zoom
+        }, { passive: false });
+      }
+    })();
+  </script>
+
 </body>
 </html>

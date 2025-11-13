@@ -1,0 +1,1 @@
+(()=>{var _=(s,n)=>()=>(n||s((n={exports:{}}).exports,n),n.exports);var i=_(()=>{(()=>{var e,c,A;let s=document.currentScript,n=(e=s==null?void 0:s.dataset)!=null?e:{},a=(c=n.supabaseUrl)==null?void 0:c.trim(),t=(A=n.supabaseAnonKey)==null?void 0:A.trim(),o=window.__ENV=window.__ENV||{};a&&(o.SUPABASE_URL=a),t&&(o.SUPABASE_ANON_KEY=t)})()});i();})();
