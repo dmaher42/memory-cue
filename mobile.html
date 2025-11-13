@@ -17,17 +17,17 @@
     padding: 0;
   }
 
-  /* Each reminder item: flatten card styles */
-  #reminderList > * {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.5rem 0.25rem;
-    margin: 0; /* remove card gaps */
-    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-    font-size: 0.875rem;
-    line-height: 1.4;
+    /* Each reminder item: flatten all card styling */
+    #reminderList > * {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.5rem 0.25rem;
+      margin: 0; /* remove gaps between items */
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.875rem;
+      line-height: 1.4;
 
     /* strip “card” look */
     background: transparent !important;
@@ -35,34 +35,53 @@
     box-shadow: none !important;
   }
 
-  /* If there are inner card containers, flatten them too */
-  #reminderList > * .card {
-    background: transparent !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-  }
+    /* If reminders are wrapped in DaisyUI cards, flatten them too */
+    #reminderList > * .card,
+    #reminderList > * .card-body {
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+    }
 
   /* Remove divider on last item */
   #reminderList > *:last-child {
     border-bottom: none;
   }
 
-  /* Reminder title (left side) */
-  #reminderList > * h3,
-  #reminderList > * strong,
-  #reminderList > * [data-reminder-title] {
-    margin: 0;
-    font-weight: 500;
-  }
+    /* Title on the left */
+    #reminderList > * h3,
+    #reminderList > * h4,
+    #reminderList > * strong,
+    #reminderList > * [data-reminder-title] {
+      margin: 0;
+      font-weight: 500;
+      flex: 1;
+      min-width: 0; /* allow text to truncate */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-  /* Meta info (right side: date/time/status) */
-  #reminderList > * time,
-  #reminderList > * .reminder-meta {
-    font-size: 0.75rem;
-    opacity: 0.75;
-    white-space: nowrap;
-  }
+    /* Meta info (right side: date/time/status) */
+    #reminderList > * time,
+    #reminderList > * .reminder-meta {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      white-space: nowrap;
+      margin-left: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* Hide extra description/details to keep list minimal */
+    #reminderList > * p,
+    #reminderList > * .description,
+    #reminderList > * .details,
+    #reminderList > * .card-actions {
+      display: none !important;
+    }
 
   /* Slight hover feedback on devices with hover */
   @media (hover: hover) {
