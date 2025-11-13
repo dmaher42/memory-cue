@@ -9,11 +9,13 @@
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase env bootstrap -->
-<script
-  src="./js/runtime-env.js"
-  data-supabase-url="https://YOUR-PROJECT.supabase.co"
-  data-supabase-anon-key="YOUR_SUPABASE_ANON_KEY"
-></script>
+<script>
+  window.__ENV = window.__ENV || {};
+  window.__ENV.SUPABASE_URL =
+    window.__ENV.SUPABASE_URL || 'https://xyzcompany.supabase.co';
+  window.__ENV.SUPABASE_ANON_KEY =
+    window.__ENV.SUPABASE_ANON_KEY || 'public-anon-key';
+</script>
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
 <script type="module" src="./js/config-supabase.js" defer></script>
@@ -38,7 +40,7 @@
     http-equiv="Content-Security-Policy"
     content="default-src 'self';
              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
-             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
+             script-src 'self' 'sha256-kMYc78URdr+aJUHWA/38o1X+RSC6JA2C6q6/FuuMHxs=' 'sha256-TJ0CUW9xqAVyWqDifQ0y55Q5DjTIO9oJDxnWme8x0s4=' 'sha256-KG8CGrF3wtkuXLG8uh8X8AZybyhNMJXtaKgai1NIG8s=' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
              style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
              img-src 'self' data:;
              font-src 'self' data:;
