@@ -318,6 +318,23 @@
       border-left-color: rgba(129, 140, 248, 1);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
     }
+    .task-item[data-notification-active="true"] {
+      border-color: rgba(34, 197, 94, 0.75);
+      border-left-color: rgba(22, 163, 74, 0.95);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35), 0 8px 18px rgba(34, 197, 94, 0.25);
+    }
+    .task-item[data-notification-active="true"]:hover {
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.45), 0 10px 22px rgba(34, 197, 94, 0.35);
+      transform: translateY(-1px);
+    }
+    .dark .task-item[data-notification-active="true"] {
+      border-color: rgba(74, 222, 128, 0.85);
+      border-left-color: rgba(134, 239, 172, 0.95);
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35), 0 10px 24px rgba(22, 163, 74, 0.35);
+    }
+    .dark .task-item[data-notification-active="true"]:hover {
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5), 0 12px 26px rgba(22, 163, 74, 0.45);
+    }
     .task-item[data-priority="High"] {
       border-left-color: rgba(239, 68, 68, 0.7);
       background: linear-gradient(135deg, rgba(254, 226, 226, 0.4), rgba(255, 255, 255, 0.95));
@@ -652,6 +669,18 @@
 
     .task-item[data-compact="true"] .task-toolbar-btn .task-toolbar-label {
       display: none;
+    }
+
+    .task-item[data-compact="true"][data-notification-active="true"] {
+      border-color: rgba(34, 197, 94, 0.75);
+      border-left-color: rgba(22, 163, 74, 0.95);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35), 0 8px 18px rgba(34, 197, 94, 0.25);
+    }
+
+    .dark .task-item[data-compact="true"][data-notification-active="true"] {
+      border-color: rgba(74, 222, 128, 0.85);
+      border-left-color: rgba(134, 239, 172, 0.95);
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35), 0 10px 24px rgba(22, 163, 74, 0.35);
     }
 
     /* Single column on narrow phones */
@@ -1575,6 +1604,38 @@
     const reminderList = document.getElementById('reminderList');
 
     if (viewToggle && reminderList) {
+      const getPendingNotificationIds = () => {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+          return new Set();
+        }
+
+        if (typeof localStorage === 'undefined') {
+          return new Set();
+        }
+
+        try {
+          const stored = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
+          const entries = Object.values(stored || {}).filter((entry) => entry && typeof entry === 'object' && entry.id);
+          return new Set(entries.map((entry) => entry.id));
+        } catch (error) {
+          console.warn('Unable to read scheduled reminders', error);
+          return new Set();
+        }
+      };
+
+      const applyNotificationHighlights = () => {
+        const ids = getPendingNotificationIds();
+        reminderList.querySelectorAll('[data-reminder]').forEach((el) => {
+          if (!(el instanceof HTMLElement)) return;
+          const reminderId = el.dataset.id || el.getAttribute('data-id');
+          if (reminderId && ids.has(reminderId)) {
+            el.setAttribute('data-notification-active', 'true');
+          } else {
+            el.removeAttribute('data-notification-active');
+          }
+        });
+      };
+
       const setCompactMode = (compact) => {
         reminderList.querySelectorAll('.task-item').forEach((item) => {
           if (compact) {
@@ -1608,11 +1669,13 @@
 
         updateToggleIcons(isGridView);
         setCompactMode(isGridView);
+        applyNotificationHighlights();
       };
 
       const observer = new MutationObserver(() => {
         const isGridView = reminderList.classList.contains('grid-cols-2');
         setCompactMode(isGridView);
+        applyNotificationHighlights();
       });
 
       viewToggle.addEventListener('click', function () {
@@ -1629,10 +1692,19 @@
           updateToggleIcons(true);
           setCompactMode(true);
         }
+
+        applyNotificationHighlights();
       });
 
       ensureInitialState();
       observer.observe(reminderList, { childList: true });
+
+      document.addEventListener('memoryCue:remindersUpdated', applyNotificationHighlights);
+      window.addEventListener('storage', (event) => {
+        if (event && event.key === 'scheduledReminders') {
+          applyNotificationHighlights();
+        }
+      });
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
