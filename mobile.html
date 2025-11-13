@@ -60,7 +60,7 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 0.75rem;
-      padding: 0.5rem 0.25rem;
+      padding: 0.75rem 0.5rem;
       margin: 0; /* remove gaps between items */
       border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
       font-size: 0.875rem;
@@ -1941,7 +1941,7 @@
   </script>
 
   <div class="container">
-    <main id="main" class="max-w-md mx-auto px-4 pt-0 pb-4" tabindex="-1" data-active-view="reminders">
+    <main id="main" class="mx-auto pt-0 pb-4 max-w-none sm:max-w-md" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -1954,7 +1954,7 @@
           <span class="grid-icon">⊞</span>
           <span class="list-icon hidden">☰</span>
         </button>
-        <div class="p-4" id="remindersWrapper">
+        <div class="px-3 py-2" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60 py-8"></div>
           <ul id="reminderList" class="grid gap-3"></ul>
           <p class="text-xs text-base-content/50 mt-4 pt-3 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
