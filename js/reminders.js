@@ -29,6 +29,54 @@ const SEEDED_CATEGORIES = Object.freeze([
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
 
+const FALLBACK_FIREBASE_CONFIG = Object.freeze({
+  apiKey: 'AIzaSyB8n0PCndJgHnU_i5y4PiFv8zn2eA1New0',
+  authDomain: 'memory-cue-pro.firebaseapp.com',
+  projectId: 'memory-cue-pro',
+  storageBucket: 'memory-cue-pro.firebasestorage.app',
+  messagingSenderId: '494760962301',
+  appId: '1:494760962301:web:52c0fe3567f0c8f8b9e5e6',
+  measurementId: 'G-1H4CPRO123'
+});
+
+let cachedFirebaseConfig = null;
+
+function resolveFirebaseConfig() {
+  if (cachedFirebaseConfig) {
+    return { ...cachedFirebaseConfig };
+  }
+  const scope = getGlobalScope();
+  const memoryCueApi = scope?.memoryCueFirebase;
+  if (memoryCueApi && typeof memoryCueApi.getFirebaseConfig === 'function') {
+    cachedFirebaseConfig = memoryCueApi.getFirebaseConfig();
+    return { ...cachedFirebaseConfig };
+  }
+  if (typeof require === 'function') {
+    try {
+      const moduleValue = require('./firebase-config.js');
+      if (moduleValue) {
+        const getter = typeof moduleValue.getFirebaseConfig === 'function'
+          ? moduleValue.getFirebaseConfig
+          : typeof moduleValue.default?.getFirebaseConfig === 'function'
+            ? moduleValue.default.getFirebaseConfig
+            : null;
+        if (getter) {
+          cachedFirebaseConfig = getter();
+          return { ...cachedFirebaseConfig };
+        }
+      }
+    } catch {
+      // ignore – likely running in the browser without require
+    }
+  }
+  if (memoryCueApi && memoryCueApi.DEFAULT_FIREBASE_CONFIG) {
+    cachedFirebaseConfig = { ...memoryCueApi.DEFAULT_FIREBASE_CONFIG };
+    return { ...cachedFirebaseConfig };
+  }
+  cachedFirebaseConfig = { ...FALLBACK_FIREBASE_CONFIG };
+  return { ...cachedFirebaseConfig };
+}
+
 function getGlobalScope() {
   if (typeof globalThis !== 'undefined') return globalThis;
   if (typeof self !== 'undefined') return self;
@@ -2021,18 +2069,18 @@ export async function initReminders(sel = {}) {
 
   if (firebaseModulesLoaded && typeof initializeApp === 'function' && typeof getFirestore === 'function' && typeof getAuth === 'function') {
     try {
-      const firebaseConfig = {
-        apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-        authDomain: 'memory-cue-app.firebaseapp.com',
-        projectId: 'memory-cue-app',
-        storageBucket: 'memory-cue-app.firebasestorage.app',
-        messagingSenderId: '751284466633',
-        appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-        measurementId: 'G-R0V4M7VCE6'
-      };
+      const firebaseConfig = resolveFirebaseConfig();
+      if (!firebaseConfig || typeof firebaseConfig !== 'object') {
+        throw new Error('Firebase config unavailable');
+      }
+      if (!firebaseConfig.projectId) {
+        throw new Error('Firebase projectId missing from configuration');
+      }
+      console.info('[Firebase] Initialising Memory Cue', firebaseConfig.projectId);
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
       firebaseReady = true;
+      console.info('[Firebase] Firestore initialised', firebaseConfig.projectId);
       recordFirebaseAvailability(true);
     } catch (err) {
       firebaseReady = false;
