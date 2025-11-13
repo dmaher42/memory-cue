@@ -5,6 +5,23 @@
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
+    :root {
+      --primary-color: #5e72e4;
+      --primary-dark: #4c63d2;
+      --secondary-color: #f5365c;
+      --success-color: #2dce89;
+      --warning-color: #fb6340;
+      --info-color: #11cdef;
+      --text-primary: #32325d;
+      --text-secondary: #8898aa;
+      --bg-color: #f4f5f7;
+      --card-bg: #ffffff;
+      --border-color: #e9ecef;
+      --shadow-sm: 0 0 0.5rem rgba(0, 0, 0, 0.075);
+      --shadow-md: 0 0 2rem rgba(136, 152, 170, 0.15);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
     margin-top: 0.75rem;
@@ -25,7 +42,7 @@
       gap: 0.75rem;
       padding: 0.5rem 0.25rem;
       margin: 0; /* remove gaps between items */
-      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
       font-size: 0.875rem;
       line-height: 1.4;
 
@@ -86,7 +103,7 @@
   /* Slight hover feedback on devices with hover */
   @media (hover: hover) {
     #reminderList > *:hover {
-      background-color: rgba(15, 23, 42, 0.03);
+      background-color: color-mix(in srgb, var(--text-primary) 3%, transparent);
     }
   }
   </style>
@@ -128,10 +145,10 @@
       transition: color 0.2s ease;
     }
     .sync-dot.online {
-      color: #16a34a;
+      color: var(--success-color);
     }
     .sync-dot.offline {
-      color: #dc2626;
+      color: var(--secondary-color);
     }
     .sync-status-indicator {
       display: inline-flex;
@@ -142,25 +159,25 @@
       font-size: 0.75rem;
       font-weight: 600;
       line-height: 1;
-      background: rgba(15, 23, 42, 0.06);
-      color: rgba(71, 85, 105, 0.9);
-      transition: background-color 0.2s ease, color 0.2s ease;
+      background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+      color: var(--text-secondary);
+      transition: var(--transition);
     }
 
     .dark .sync-status-indicator {
-      background: rgba(148, 163, 184, 0.18);
-      color: rgba(226, 232, 240, 0.9);
+      background: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 90%, var(--text-primary) 10%);
     }
 
     .sync-status-indicator.online {
-      background: rgba(34, 197, 94, 0.15);
-      color: rgba(22, 163, 74, 0.92);
+      background: color-mix(in srgb, var(--success-color) 15%, transparent);
+      color: color-mix(in srgb, var(--success-color) 92%, var(--text-primary) 8%);
     }
 
     .sync-status-indicator.offline,
     .sync-status-indicator.error {
-      background: rgba(248, 113, 113, 0.16);
-      color: rgba(220, 38, 38, 0.92);
+      background: color-mix(in srgb, var(--secondary-color) 16%, transparent);
+      color: color-mix(in srgb, var(--secondary-color) 92%, var(--text-primary) 8%);
     }
 
     .sync-dot {
@@ -168,42 +185,42 @@
       width: 0.55rem;
       height: 0.55rem;
       border-radius: 9999px;
-      background: rgba(220, 38, 38, 0.9);
-      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      background: color-mix(in srgb, var(--secondary-color) 90%, transparent);
+      transition: var(--transition);
     }
 
     .sync-dot.online {
-      background: rgba(22, 163, 74, 0.9);
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+      background: color-mix(in srgb, var(--success-color) 90%, transparent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-color) 18%, transparent);
     }
     .notes-editor {
       min-height: 10rem;
       width: 100%;
       border-radius: 0.75rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
+      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
       padding: 0.75rem 1rem;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: color-mix(in srgb, var(--card-bg) 90%, transparent);
       color: inherit;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       line-height: 1.5;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: var(--transition);
     }
     .dark .notes-editor {
-      border-color: rgba(148, 163, 184, 0.35);
-      background-color: rgba(15, 23, 42, 0.65);
+      border-color: color-mix(in srgb, var(--border-color) 35%, transparent);
+      background-color: color-mix(in srgb, var(--text-primary) 65%, transparent);
     }
     .notes-editor:focus-visible {
-      border-color: rgb(37 99 235);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
     }
     .notes-editor:empty::before {
       content: attr(data-placeholder);
-      color: rgba(100, 116, 139, 0.7);
+      color: color-mix(in srgb, var(--text-secondary) 70%, transparent);
     }
     .dark .notes-editor:empty::before {
-      color: rgba(148, 163, 184, 0.7);
+      color: color-mix(in srgb, var(--text-secondary) 70%, var(--card-bg) 30%);
     }
     .notes-editor ul,
     .notes-editor ol {
@@ -237,11 +254,11 @@
       scroll-snap-align: start;
     }
     .glass-panel {
-      background-color: rgba(248, 250, 252, 0.85);
+      background-color: color-mix(in srgb, var(--bg-color) 85%, var(--card-bg) 15%);
       backdrop-filter: blur(12px);
     }
     .dark .glass-panel {
-      background-color: rgba(15, 23, 42, 0.88);
+      background-color: color-mix(in srgb, var(--text-primary) 88%, transparent);
     }
     /* Enhanced reminder visibility styles */
     .task-item {
@@ -253,69 +270,97 @@
       padding: 1rem;
       padding-left: 1.25rem;
       margin-bottom: 0.75rem;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
       border-left-width: 4px;
-      border-left-color: rgba(99, 102, 241, 0.6);
+      border-left-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
       border-radius: 0.75rem;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.06);
-      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
     }
     .task-item:hover {
-      border-left-color: rgba(99, 102, 241, 0.9);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
+      border-left-color: color-mix(in srgb, var(--primary-color) 90%, transparent);
+      box-shadow: var(--shadow-md);
       transform: translateY(-1px);
     }
     .dark .task-item {
-      background: rgba(30, 41, 59, 0.85);
-      border-color: rgba(148, 163, 184, 0.25);
-      border-left-color: rgba(129, 140, 248, 0.7);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.15);
+      background: color-mix(in srgb, var(--text-primary) 85%, transparent);
+      border-color: color-mix(in srgb, var(--border-color) 25%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary-color) 70%, var(--card-bg) 30%);
+      box-shadow: var(--shadow-sm);
     }
     .dark .task-item:hover {
-      border-left-color: rgba(129, 140, 248, 1);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+      border-left-color: color-mix(in srgb, var(--primary-color) 100%, var(--card-bg) 20%);
+      box-shadow: var(--shadow-md);
     }
     .task-item[data-notification-active="true"] {
-      border-color: rgba(34, 197, 94, 0.75);
-      border-left-color: rgba(22, 163, 74, 0.95);
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35), 0 8px 18px rgba(34, 197, 94, 0.25);
+      border-color: color-mix(in srgb, var(--success-color) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 8px 18px color-mix(in srgb, var(--success-color) 25%, transparent);
     }
     .task-item[data-notification-active="true"]:hover {
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.45), 0 10px 22px rgba(34, 197, 94, 0.35);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 45%, transparent),
+        0 10px 22px color-mix(in srgb, var(--success-color) 35%, transparent);
       transform: translateY(-1px);
     }
     .dark .task-item[data-notification-active="true"] {
-      border-color: rgba(74, 222, 128, 0.85);
-      border-left-color: rgba(134, 239, 172, 0.95);
-      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35), 0 10px 24px rgba(22, 163, 74, 0.35);
+      border-color: color-mix(in srgb, var(--success-color) 85%, var(--card-bg) 15%);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, var(--card-bg) 5%);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 10px 24px color-mix(in srgb, var(--success-color) 35%, transparent);
     }
     .dark .task-item[data-notification-active="true"]:hover {
-      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5), 0 12px 26px rgba(22, 163, 74, 0.45);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 50%, transparent),
+        0 12px 26px color-mix(in srgb, var(--success-color) 45%, transparent);
     }
     .task-item[data-priority="High"] {
-      border-left-color: rgba(239, 68, 68, 0.7);
-      background: linear-gradient(135deg, rgba(254, 226, 226, 0.4), rgba(255, 255, 255, 0.95));
+      border-left-color: color-mix(in srgb, var(--secondary-color) 70%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--secondary-color) 40%, var(--card-bg) 60%),
+        color-mix(in srgb, var(--card-bg) 95%, transparent)
+      );
     }
     .dark .task-item[data-priority="High"] {
-      border-left-color: rgba(248, 113, 113, 0.8);
-      background: linear-gradient(135deg, rgba(127, 29, 29, 0.3), rgba(30, 41, 59, 0.85));
+      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--secondary-color) 30%, var(--text-primary) 70%),
+        color-mix(in srgb, var(--text-primary) 85%, transparent)
+      );
     }
     .task-item[data-priority="Medium"] {
-      border-left-color: rgba(245, 158, 11, 0.7);
-      background: linear-gradient(135deg, rgba(254, 243, 199, 0.35), rgba(255, 255, 255, 0.95));
+      border-left-color: color-mix(in srgb, var(--warning-color) 70%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--warning-color) 35%, var(--card-bg) 65%),
+        color-mix(in srgb, var(--card-bg) 95%, transparent)
+      );
     }
     .dark .task-item[data-priority="Medium"] {
-      border-left-color: rgba(251, 191, 36, 0.8);
-      background: linear-gradient(135deg, rgba(120, 53, 15, 0.25), rgba(30, 41, 59, 0.85));
+      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--warning-color) 25%, var(--text-primary) 75%),
+        color-mix(in srgb, var(--text-primary) 85%, transparent)
+      );
     }
     .task-item[data-priority="Low"] {
-      border-left-color: rgba(34, 197, 94, 0.7);
-      background: linear-gradient(135deg, rgba(220, 252, 231, 0.35), rgba(255, 255, 255, 0.95));
+      border-left-color: color-mix(in srgb, var(--success-color) 70%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--success-color) 35%, var(--card-bg) 65%),
+        color-mix(in srgb, var(--card-bg) 95%, transparent)
+      );
     }
     .dark .task-item[data-priority="Low"] {
-      border-left-color: rgba(74, 222, 128, 0.8);
-      background: linear-gradient(135deg, rgba(20, 83, 45, 0.25), rgba(30, 41, 59, 0.85));
+      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--success-color) 25%, var(--text-primary) 75%),
+        color-mix(in srgb, var(--text-primary) 85%, transparent)
+      );
     }
     .task-content {
       min-width: 0;
@@ -331,11 +376,11 @@
       font-size: 1.0625rem;
       font-weight: 600;
       line-height: 1.4;
-      color: rgba(15, 23, 42, 0.95);
+      color: color-mix(in srgb, var(--text-primary) 95%, transparent);
       margin-bottom: 0.5rem;
     }
     .dark .task-title {
-      color: rgba(241, 245, 249, 0.95);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
     }
     .task-meta {
       display: flex;
@@ -350,71 +395,71 @@
       gap: 0.25rem;
       padding: 0.25rem 0.625rem;
       border-radius: 9999px;
-      background: rgba(148, 163, 184, 0.15);
-      color: rgba(71, 85, 105, 0.9);
+      background: color-mix(in srgb, var(--border-color) 15%, transparent);
+      color: color-mix(in srgb, var(--text-secondary) 90%, var(--text-primary) 10%);
       font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.01em;
       line-height: 1.3;
-      border: 1px solid rgba(148, 163, 184, 0.2);
+      border: 1px solid color-mix(in srgb, var(--border-color) 20%, transparent);
     }
     .dark .task-chip {
-      background: rgba(71, 85, 105, 0.3);
-      color: rgba(203, 213, 225, 0.9);
-      border-color: rgba(71, 85, 105, 0.4);
+      background: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 90%, transparent);
+      border-color: color-mix(in srgb, var(--text-secondary) 40%, transparent);
     }
     .task-chip[data-chip="priority"] {
       font-weight: 700;
-      background: rgba(99, 102, 241, 0.12);
-      color: rgba(67, 56, 202, 0.95);
-      border-color: rgba(99, 102, 241, 0.25);
+      background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+      color: color-mix(in srgb, var(--primary-dark) 95%, transparent);
+      border-color: color-mix(in srgb, var(--primary-color) 25%, transparent);
     }
     .dark .task-chip[data-chip="priority"] {
-      background: rgba(129, 140, 248, 0.2);
-      color: rgba(165, 180, 252, 0.95);
-      border-color: rgba(129, 140, 248, 0.3);
+      background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
     }
     .task-item[data-priority="High"] .task-chip[data-chip="priority"] {
-      background: rgba(239, 68, 68, 0.15);
-      color: rgba(185, 28, 28, 0.95);
-      border-color: rgba(239, 68, 68, 0.3);
+      background: color-mix(in srgb, var(--secondary-color) 15%, transparent);
+      color: color-mix(in srgb, var(--secondary-color) 95%, var(--text-primary) 5%);
+      border-color: color-mix(in srgb, var(--secondary-color) 30%, transparent);
     }
     .dark .task-item[data-priority="High"] .task-chip[data-chip="priority"] {
-      background: rgba(248, 113, 113, 0.2);
-      color: rgba(252, 165, 165, 0.95);
-      border-color: rgba(248, 113, 113, 0.35);
+      background: color-mix(in srgb, var(--secondary-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--secondary-color) 35%, transparent);
     }
     .task-item[data-priority="Medium"] .task-chip[data-chip="priority"] {
-      background: rgba(245, 158, 11, 0.15);
-      color: rgba(161, 98, 7, 0.95);
-      border-color: rgba(245, 158, 11, 0.3);
+      background: color-mix(in srgb, var(--warning-color) 15%, transparent);
+      color: color-mix(in srgb, var(--warning-color) 95%, var(--text-primary) 5%);
+      border-color: color-mix(in srgb, var(--warning-color) 30%, transparent);
     }
     .dark .task-item[data-priority="Medium"] .task-chip[data-chip="priority"] {
-      background: rgba(251, 191, 36, 0.2);
-      color: rgba(253, 224, 71, 0.95);
-      border-color: rgba(251, 191, 36, 0.35);
+      background: color-mix(in srgb, var(--warning-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--warning-color) 35%, transparent);
     }
     .task-item[data-priority="Low"] .task-chip[data-chip="priority"] {
-      background: rgba(34, 197, 94, 0.15);
-      color: rgba(21, 128, 61, 0.95);
-      border-color: rgba(34, 197, 94, 0.3);
+      background: color-mix(in srgb, var(--success-color) 15%, transparent);
+      color: color-mix(in srgb, var(--success-color) 95%, var(--text-primary) 5%);
+      border-color: color-mix(in srgb, var(--success-color) 30%, transparent);
     }
     .dark .task-item[data-priority="Low"] .task-chip[data-chip="priority"] {
-      background: rgba(74, 222, 128, 0.2);
-      color: rgba(134, 239, 172, 0.95);
-      border-color: rgba(74, 222, 128, 0.35);
+      background: color-mix(in srgb, var(--success-color) 20%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      border-color: color-mix(in srgb, var(--success-color) 35%, transparent);
     }
     .task-notes {
       margin-top: 0.5rem;
       padding-top: 0.5rem;
-      border-top: 1px solid rgba(148, 163, 184, 0.15);
+      border-top: 1px solid color-mix(in srgb, var(--border-color) 15%, transparent);
       font-size: 0.875rem;
       line-height: 1.5;
-      color: rgba(71, 85, 105, 0.85);
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
     .dark .task-notes {
-      border-top-color: rgba(71, 85, 105, 0.3);
-      color: rgba(203, 213, 225, 0.8);
+      border-top-color: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
     }
     .task-header {
       display: flex;
@@ -440,43 +485,53 @@
       border-radius: 999px;
       border: 1px solid transparent;
       background: transparent;
-      color: rgba(30, 41, 59, 0.82);
-      transition: all 0.15s ease;
+      color: color-mix(in srgb, var(--text-primary) 82%, transparent);
+      transition: var(--transition);
       line-height: 1.2;
     }
     .task-toolbar-btn:hover,
     .task-toolbar-btn:focus-visible {
-      color: rgba(30, 41, 59, 1);
-      border-color: rgba(59, 130, 246, 0.35);
-      background: rgba(59, 130, 246, 0.12);
+      color: var(--text-primary);
+      border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+      background: color-mix(in srgb, var(--primary-color) 12%, transparent);
     }
     .task-toolbar-btn .task-toolbar-label {
       display: inline-block;
     }
     .dark .task-toolbar-btn {
-      color: rgba(226, 232, 240, 0.92);
+      color: color-mix(in srgb, var(--card-bg) 92%, transparent);
       border-color: transparent;
     }
     .dark .task-toolbar-btn:hover,
     .dark .task-toolbar-btn:focus-visible {
-      color: rgba(248, 250, 252, 1);
-      border-color: rgba(96, 165, 250, 0.35);
-      background: rgba(59, 130, 246, 0.2);
+      color: color-mix(in srgb, var(--card-bg) 100%, transparent);
+      border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+      background: color-mix(in srgb, var(--primary-color) 20%, transparent);
     }
     /* Today-specific task styling - more prominent */
     .task-item[data-today="true"],
     .task-item.is-today {
-      border-color: rgba(59, 130, 246, 0.45);
-      border-left-color: rgba(37, 99, 235, 0.85);
-      background: linear-gradient(135deg, rgba(191, 219, 254, 0.35), rgba(191, 219, 254, 0.12));
-      box-shadow: 0 4px 14px rgba(30, 64, 175, 0.25), 0 2px 6px rgba(30, 64, 175, 0.15);
+      border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary-dark) 85%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--primary-color) 35%, var(--card-bg) 65%),
+        color-mix(in srgb, var(--primary-color) 12%, var(--card-bg) 88%)
+      );
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-dark) 25%, transparent),
+        0 2px 6px color-mix(in srgb, var(--primary-dark) 15%, transparent);
     }
     .dark .task-item[data-today="true"],
     .dark .task-item.is-today {
-      border-color: rgba(96, 165, 250, 0.55);
-      border-left-color: rgba(191, 219, 254, 0.9);
-      background: linear-gradient(135deg, rgba(30, 64, 175, 0.45), rgba(30, 58, 138, 0.3));
-      box-shadow: 0 4px 14px rgba(30, 64, 175, 0.4), 0 2px 6px rgba(30, 64, 175, 0.25);
+      border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary-color) 90%, var(--card-bg) 10%);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--primary-dark) 45%, var(--text-primary) 55%),
+        color-mix(in srgb, var(--primary-dark) 30%, var(--text-primary) 70%)
+      );
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-dark) 40%, transparent),
+        0 2px 6px color-mix(in srgb, var(--primary-dark) 25%, transparent);
     }
 
     /* Mobile-first optimizations */
@@ -488,6 +543,12 @@
 
     /* Enhanced mobile body */
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
       overscroll-behavior: contain;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -509,7 +570,7 @@
       border-radius: 16px;
       border-left-width: 4px;
       min-height: 80px;
-      transition: all 0.2s ease;
+      transition: var(--transition);
       transform: translateZ(0);
       display: flex;
       flex-direction: column;
@@ -522,14 +583,22 @@
     /* Mobile cards */
     .card {
       border-radius: 16px;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+      border: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--card-bg) 98%, transparent),
+        color-mix(in srgb, var(--bg-color) 98%, transparent)
+      );
       backdrop-filter: blur(8px);
     }
 
     .dark .card {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
-      border-color: rgba(255, 255, 255, 0.08);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--text-primary) 98%, transparent),
+        color-mix(in srgb, var(--primary-dark) 40%, var(--text-primary) 60%)
+      );
+      border-color: color-mix(in srgb, var(--card-bg) 8%, transparent);
     }
 
     /* Mobile buttons */
@@ -630,15 +699,17 @@
     }
 
     .task-item[data-compact="true"][data-notification-active="true"] {
-      border-color: rgba(34, 197, 94, 0.75);
-      border-left-color: rgba(22, 163, 74, 0.95);
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35), 0 8px 18px rgba(34, 197, 94, 0.25);
+      border-color: color-mix(in srgb, var(--success-color) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 8px 18px color-mix(in srgb, var(--success-color) 25%, transparent);
     }
 
     .dark .task-item[data-compact="true"][data-notification-active="true"] {
-      border-color: rgba(74, 222, 128, 0.85);
-      border-left-color: rgba(134, 239, 172, 0.95);
-      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35), 0 10px 24px rgba(22, 163, 74, 0.35);
+      border-color: color-mix(in srgb, var(--success-color) 85%, var(--card-bg) 15%);
+      border-left-color: color-mix(in srgb, var(--success-color) 95%, var(--card-bg) 5%);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
+        0 10px 24px color-mix(in srgb, var(--success-color) 35%, transparent);
     }
 
     /* Single column on narrow phones */
@@ -684,9 +755,11 @@
       height: auto;
       overflow: visible;
       z-index: 50;
-      border-radius: 9999px; padding: 8px 12px;
-      background: var(--fallback-p, #2563eb); color: var(--fallback-pc, #fff);
-      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+      border-radius: 9999px;
+      padding: 8px 12px;
+      background: var(--fallback-p, var(--primary-color));
+      color: var(--fallback-pc, var(--card-bg));
+      box-shadow: var(--shadow-sm);
     }
 
     /* --- Reminder list: force flat list layout, neutralize old card styles --- */
@@ -712,43 +785,43 @@
       justify-content: space-between !important;
       gap: 0.75rem !important;
       padding: 0.5rem 0.5rem !important;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.35) !important;
+      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 35%, transparent) !important;
       font-size: 0.875rem !important;
       line-height: 1.4 !important;
       background: transparent !important;
     }
 
     #reminderList [data-reminder][data-priority="High"] {
-      border-left: 3px solid rgba(239, 68, 68, 0.7) !important;
+      border-left: 3px solid color-mix(in srgb, var(--secondary-color) 70%, transparent) !important;
       padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: rgba(239, 68, 68, 0.06) !important;
+      background-color: color-mix(in srgb, var(--secondary-color) 6%, var(--card-bg) 94%) !important;
     }
 
     .dark #reminderList [data-reminder][data-priority="High"] {
-      border-left-color: rgba(248, 113, 113, 0.8) !important;
-      background-color: rgba(248, 113, 113, 0.08) !important;
+      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%) !important;
+      background-color: color-mix(in srgb, var(--secondary-color) 8%, var(--text-primary) 92%) !important;
     }
 
     #reminderList [data-reminder][data-priority="Medium"] {
-      border-left: 3px solid rgba(245, 158, 11, 0.7) !important;
+      border-left: 3px solid color-mix(in srgb, var(--warning-color) 70%, transparent) !important;
       padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: rgba(245, 158, 11, 0.06) !important;
+      background-color: color-mix(in srgb, var(--warning-color) 6%, var(--card-bg) 94%) !important;
     }
 
     .dark #reminderList [data-reminder][data-priority="Medium"] {
-      border-left-color: rgba(251, 191, 36, 0.8) !important;
-      background-color: rgba(251, 191, 36, 0.08) !important;
+      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%) !important;
+      background-color: color-mix(in srgb, var(--warning-color) 8%, var(--text-primary) 92%) !important;
     }
 
     #reminderList [data-reminder][data-priority="Low"] {
-      border-left: 3px solid rgba(34, 197, 94, 0.7) !important;
+      border-left: 3px solid color-mix(in srgb, var(--success-color) 70%, transparent) !important;
       padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: rgba(34, 197, 94, 0.06) !important;
+      background-color: color-mix(in srgb, var(--success-color) 6%, var(--card-bg) 94%) !important;
     }
 
     .dark #reminderList [data-reminder][data-priority="Low"] {
-      border-left-color: rgba(74, 222, 128, 0.8) !important;
-      background-color: rgba(74, 222, 128, 0.08) !important;
+      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%) !important;
+      background-color: color-mix(in srgb, var(--success-color) 8%, var(--text-primary) 92%) !important;
     }
 
     /* Remove divider on the last reminder */
@@ -791,7 +864,7 @@
     /* Subtle hover feedback for pointer devices */
     @media (hover: hover) {
       #reminderList [data-reminder]:hover {
-        background-color: rgba(15, 23, 42, 0.03) !important;
+        background-color: color-mix(in srgb, var(--text-primary) 3%, transparent) !important;
       }
     }
   </style>
@@ -827,13 +900,13 @@
       overflow: auto;
       border-top-left-radius: 16px;
       border-top-right-radius: 16px;
-      background: var(--fallback-b1, #ffffff);
+      background: var(--fallback-b1, var(--card-bg));
       color: inherit;
-      box-shadow: 0 -16px 32px rgba(15, 23, 42, 0.25);
+      box-shadow: 0 -16px 32px color-mix(in srgb, var(--text-primary) 25%, transparent);
       padding: 16px;
     }
     .dark .sheet-panel {
-      background: rgba(30, 41, 59, 0.97);
+      background: color-mix(in srgb, var(--text-primary) 97%, transparent);
     }
     .sheet-header {
       display: flex;
@@ -848,13 +921,13 @@
       gap: 8px;
     }
     .sheet-header-actions .btn.is-listening {
-      background: var(--fallback-p, #2563eb);
-      color: var(--fallback-pc, #fff);
+      background: var(--fallback-p, var(--primary-color));
+      color: var(--fallback-pc, var(--card-bg));
     }
     .sheet-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.45);
+      background: color-mix(in srgb, var(--text-primary) 45%, transparent);
     }
     #settingsModal {
       position: fixed;
@@ -868,26 +941,26 @@
       position: relative;
       max-width: 420px;
       width: calc(100% - 32px);
-      background: var(--fallback-b1, #ffffff);
+      background: var(--fallback-b1, var(--card-bg));
       color: inherit;
       border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3);
+      box-shadow: 0 20px 40px color-mix(in srgb, var(--text-primary) 30%, transparent);
       overflow: hidden;
     }
     .dark .modal-panel {
-      background: rgba(30, 41, 59, 0.97);
+      background: color-mix(in srgb, var(--text-primary) 97%, transparent);
     }
     .modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 16px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
     }
     .modal-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.55);
+      background: color-mix(in srgb, var(--text-primary) 55%, transparent);
     }
   </style>
   <style id="add-task-stability-css">
@@ -936,7 +1009,7 @@
       gap: 0.25rem;
       padding: 6px 12px;
       border-radius: 9999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
+      border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
       cursor: pointer;
       font-size: 0.875rem;
     }
@@ -962,7 +1035,7 @@
       outline: none;
     }
     .task-row-min:focus {
-      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text-primary) 15%, transparent);
     }
     .task-row-min .min-notes {
       display: none;
@@ -1009,10 +1082,10 @@
     #emptyState .empty-state-compact p {
       font-size: 0.875rem;
       line-height: 1.5;
-      color: rgba(71, 85, 105, 0.85);
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
     .dark #emptyState .empty-state-compact p {
-      color: rgba(226, 232, 240, 0.8);
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
     }
     #emptyState .empty-state-actions {
       display: flex;
@@ -1043,15 +1116,15 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    background: rgba(255,255,255,0.85);
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 85%, transparent);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
 
   .dark .mc-header {
-    border-bottom-color: rgba(255,255,255,0.08);
-    background: rgba(15,23,42,0.85);
+    border-bottom-color: color-mix(in srgb, var(--card-bg) 8%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 85%, transparent);
   }
 
   .mc-header-top {
@@ -1112,10 +1185,10 @@
     font-size: 0.75rem;
     padding: 0 6px;
     border-radius: 9999px;
-    background: rgba(15,23,42,0.04);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
   }
   .dark #mcStatus.sync-inline {
-    background: rgba(148,163,184,0.18);
+    background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
   }
   /* keep the verbose status text accessible but visually hidden */
   #mcStatusText {
@@ -1161,11 +1234,12 @@
     font-size: 0.875rem;
     font-weight: 700;
     line-height: 1.2;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--card-bg);
     border: none;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(37, 99, 235, 0.2);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-dark) 35%, transparent),
+      0 2px 6px color-mix(in srgb, var(--primary-dark) 20%, transparent);
+    transition: var(--transition);
     white-space: nowrap;
     flex-shrink: 0;
     position: relative;
@@ -1177,15 +1251,17 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--card-bg) 20%, transparent) 0%,
+        transparent 100%);
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: none;
   }
 
   .mc-add-btn:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45), 0 4px 10px rgba(37, 99, 235, 0.25);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 45%, transparent),
+      0 4px 10px color-mix(in srgb, var(--primary-dark) 25%, transparent);
     transform: translateY(-2px) scale(1.02);
   }
 
@@ -1195,13 +1271,16 @@
 
   .mc-add-btn:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3), 0 1px 4px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-dark) 30%, transparent),
+      0 1px 4px color-mix(in srgb, var(--primary-dark) 20%, transparent);
   }
 
   .mc-add-btn:focus-visible {
-    outline: 3px solid rgba(59, 130, 246, 0.5);
+    outline: 3px solid color-mix(in srgb, var(--primary-color) 50%, transparent);
     outline-offset: 2px;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45), 0 4px 10px rgba(37, 99, 235, 0.25), 0 0 0 4px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 45%, transparent),
+      0 4px 10px color-mix(in srgb, var(--primary-dark) 25%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--primary-color) 20%, transparent);
   }
 
   .mc-add-btn__hint {
@@ -1214,13 +1293,13 @@
     justify-content: center;
     width: 20px;
     height: 20px;
-    background: rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--card-bg) 20%, transparent);
     border-radius: 6px;
     transition: all 0.2s ease;
   }
 
   .mc-add-btn:hover .mc-add-btn__hint {
-    background: rgba(255, 255, 255, 0.3);
+    background: color-mix(in srgb, var(--card-bg) 30%, transparent);
     transform: rotate(90deg);
   }
 
@@ -1247,18 +1326,22 @@
   }
 
   .dark .mc-add-btn {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 2px 6px rgba(59, 130, 246, 0.25);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--card-bg);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-dark) 40%, transparent),
+      0 2px 6px color-mix(in srgb, var(--primary-dark) 25%, transparent);
   }
 
   .dark .mc-add-btn:hover {
-    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5), 0 4px 10px rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 80%, var(--card-bg) 20%) 0%,
+        var(--primary-dark) 100%);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 50%, transparent),
+      0 4px 10px color-mix(in srgb, var(--primary-dark) 30%, transparent);
   }
 
   .dark .mc-add-btn:active {
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35), 0 1px 4px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-dark) 35%, transparent),
+      0 1px 4px color-mix(in srgb, var(--primary-dark) 20%, transparent);
   }
 
   /* Improve Add Reminder button visibility */
@@ -1310,9 +1393,9 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background-color: #020617; /* dark background */
-      color: #f9fafb;            /* light text */
-      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.7);
+      background-color: color-mix(in srgb, var(--text-primary) 90%, transparent); /* dark background */
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);            /* light text */
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--text-primary) 70%, transparent);
     }
 
     /* Inner container: single row, spaced out */
@@ -1343,7 +1426,7 @@
       height: 2.25rem;
       border-radius: 999px;
       border: none;
-      background-color: rgba(15, 23, 42, 0.8);
+      background-color: color-mix(in srgb, var(--text-primary) 80%, transparent);
       color: inherit;
       display: inline-flex;
       align-items: center;
@@ -1365,7 +1448,7 @@
 
     header.sticky button:active {
       transform: scale(0.95);
-      background-color: rgba(30, 64, 175, 0.9);
+      background-color: color-mix(in srgb, var(--primary-dark) 90%, transparent);
     }
 
     .mc-quick-add-bar {
@@ -1392,7 +1475,7 @@
       align-items: center;
       gap: 0.25rem;
       font-size: 0.7rem;
-      color: rgba(226, 232, 240, 0.8);
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
     }
 
     .mc-status-text {
@@ -1432,14 +1515,14 @@
       min-width: 0;
       padding: 0.4rem 0.65rem;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background-color: rgba(15, 23, 42, 0.35);
+      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+      background-color: color-mix(in srgb, var(--text-primary) 35%, transparent);
       color: inherit;
       font-size: 0.8rem;
     }
 
     .mc-quick-input::placeholder {
-      color: rgba(148, 163, 184, 0.8);
+      color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
     }
 
     .mc-quick-submit,
@@ -1451,8 +1534,8 @@
       min-height: 2.1rem;
       border-radius: 999px;
       border: none;
-      background: rgba(59, 130, 246, 0.85);
-      color: #fff;
+      background: color-mix(in srgb, var(--primary-color) 85%, transparent);
+      color: var(--card-bg);
       font-size: 0.8rem;
       font-weight: 500;
       padding: 0 0.75rem;
@@ -1464,15 +1547,15 @@
     }
 
     .mc-quick-voice {
-      background: rgba(148, 163, 184, 0.35);
-      color: rgba(241, 245, 249, 0.95);
+      background: color-mix(in srgb, var(--text-secondary) 35%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
       padding-inline: 0.6rem;
       font-size: 1rem;
     }
 
     .mc-quick-voice.is-listening {
-      background: rgba(59, 130, 246, 0.95);
-      color: #fff;
+      background: color-mix(in srgb, var(--primary-color) 95%, transparent);
+      color: var(--card-bg);
     }
 
     @media (max-width: 420px) {
