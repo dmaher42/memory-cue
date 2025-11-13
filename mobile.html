@@ -5,17 +5,17 @@
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
-    /* Reminders wrapper spacing on mobile */
-    #remindersWrapper {
-      margin-top: 0.75rem;
-    }
+  /* Reminders wrapper spacing on mobile */
+  #remindersWrapper {
+    margin-top: 0.75rem;
+  }
 
-    /* Main reminders list container */
-    #reminderList {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
+  /* Main reminders list container */
+  #reminderList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
 
     /* Each reminder item: flatten all card styling */
     #reminderList > * {
@@ -29,11 +29,11 @@
       font-size: 0.875rem;
       line-height: 1.4;
 
-      /* strip “card” look */
-      background: transparent !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-    }
+    /* strip “card” look */
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
 
     /* If reminders are wrapped in DaisyUI cards, flatten them too */
     #reminderList > * .card,
@@ -46,10 +46,10 @@
       border: none !important;
     }
 
-    /* Remove divider on last item */
-    #reminderList > *:last-child {
-      border-bottom: none;
-    }
+  /* Remove divider on last item */
+  #reminderList > *:last-child {
+    border-bottom: none;
+  }
 
     /* Title on the left */
     #reminderList > * h3,
@@ -83,12 +83,12 @@
       display: none !important;
     }
 
-    /* Slight hover feedback on devices with hover */
-    @media (hover: hover) {
-      #reminderList > *:hover {
-        background-color: rgba(15, 23, 42, 0.03);
-      }
+  /* Slight hover feedback on devices with hover */
+  @media (hover: hover) {
+    #reminderList > *:hover {
+      background-color: rgba(15, 23, 42, 0.03);
     }
+  }
   </style>
   <meta charset="UTF-8" />
   <meta
