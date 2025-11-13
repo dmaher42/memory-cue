@@ -769,28 +769,45 @@
       font-weight: 600;
     }
 
-    /* Responsive reminder grid */
+    /* Responsive reminder grid - default grid layout */
     #reminderList {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 12px;
+      gap: 8px;
       align-content: start;
+      width: 100%;
     }
 
+    /* List view override */
     #reminderList.space-y-3 {
       display: block;
+      gap: 0;
     }
 
     #reminderList.space-y-3 .task-item {
       margin-bottom: 0;
     }
 
-    /* 2-column layout on wider phones */
+    /* 2-column grid layout on wider screens */
     @media (min-width: 380px) {
       #reminderList.grid-cols-2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 8px;
       }
+    }
+    
+    /* Ensure task items use full available width in grid */
+    #reminderList .task-item {
+      width: 100%;
+      box-sizing: border-box;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    
+    /* Remove any inherited margins/padding that might constrain width */
+    #reminderList > * {
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     /* Compact reminder card styling */
@@ -2085,7 +2102,7 @@
   </script>
 
   <div class="container">
-    <main id="main" class="mx-auto pt-0 pb-4 max-w-none sm:max-w-md" tabindex="-1" data-active-view="reminders">
+    <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -2098,7 +2115,7 @@
           <span class="grid-icon">⊞</span>
           <span class="list-icon hidden">☰</span>
         </button>
-        <div class="px-3 py-2" id="remindersWrapper">
+        <div class="px-1 py-2" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60 py-8"></div>
           <ul id="reminderList" class="grid gap-3"></ul>
           <p class="text-xs text-base-content/50 mt-4 pt-3 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
