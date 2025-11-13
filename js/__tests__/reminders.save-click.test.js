@@ -30,6 +30,7 @@ function loadRemindersModule() {
     Blob: global.Blob,
     Response: global.Response,
     URL: global.URL,
+    HTMLElement: window.HTMLElement,
   };
   vm.runInNewContext(source, sandbox, { filename: filePath });
   return module.exports;
@@ -94,6 +95,9 @@ describe('mobile save interactions', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
     window.fetch = global.fetch;
 
+    global.HTMLElement = window.HTMLElement;
+    window.HTMLElement = window.HTMLElement || global.HTMLElement;
+
     global.Notification = MockNotification;
     window.Notification = MockNotification;
 
@@ -135,6 +139,7 @@ describe('mobile save interactions', () => {
     jest.clearAllTimers();
     delete window.toast;
     delete global.toast;
+    delete global.HTMLElement;
   });
 
   test('clicking Save creates and then updates a reminder without duplicate handlers', () => {
@@ -160,9 +165,9 @@ describe('mobile save interactions', () => {
     expect(events.filter((entry) => entry[0] === 'memoryCue:remindersUpdated').length).toBe(initialMemoryCueUpdated + 1);
 
     // Enter edit mode via rendered list button
-    const editButton = document.querySelector('[data-edit]');
-    expect(editButton).toBeTruthy();
-    editButton.click();
+    const reminderRow = document.querySelector('[data-reminder-item="true"]');
+    expect(reminderRow).toBeTruthy();
+    reminderRow.click();
 
     title.value = 'Call Alex Updated';
     highChip.checked = true;

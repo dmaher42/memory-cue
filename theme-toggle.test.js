@@ -2,6 +2,29 @@
  * @jest-environment jsdom
  */
 const { test, expect, beforeEach } = require('@jest/globals');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+function runMainModule() {
+  const filePath = path.resolve(__dirname, './js/main.js');
+  let source = fs.readFileSync(filePath, 'utf8');
+  source = source.replace(
+    "import { initViewportHeight } from './modules/viewport-height.js';",
+    'const initViewportHeight = () => () => {};',
+  );
+  const script = new vm.Script(source, { filename: filePath });
+  const context = vm.createContext({
+    window,
+    document,
+    console,
+    localStorage,
+    CustomEvent: window.CustomEvent,
+    setTimeout,
+    clearTimeout,
+  });
+  script.runInContext(context);
+}
 
 beforeEach(() => {
   // Minimal DOM with theme toggle button
@@ -23,7 +46,7 @@ beforeEach(() => {
     ),
   };
   jest.resetModules();
-  require('./js/main.js');
+  runMainModule();
 });
 
 test('toggle persists theme', () => {

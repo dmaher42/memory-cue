@@ -30,13 +30,13 @@ const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
 
 const FALLBACK_FIREBASE_CONFIG = Object.freeze({
-  apiKey: 'AIzaSyB8n0PCndJgHnU_i5y4PiFv8zn2eA1New0',
-  authDomain: 'memory-cue-pro.firebaseapp.com',
-  projectId: 'memory-cue-pro',
-  storageBucket: 'memory-cue-pro.firebasestorage.app',
-  messagingSenderId: '494760962301',
-  appId: '1:494760962301:web:52c0fe3567f0c8f8b9e5e6',
-  measurementId: 'G-1H4CPRO123'
+  apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
+  authDomain: 'memory-cue-app.firebaseapp.com',
+  projectId: 'memory-cue-app',
+  storageBucket: 'memory-cue-app.firebasestorage.app',
+  messagingSenderId: '751284466633',
+  appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
+  measurementId: 'G-R0V4M7VCE6'
 });
 
 let cachedFirebaseConfig = null;
