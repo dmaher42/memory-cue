@@ -1246,6 +1246,66 @@
   }
   </style>
 
+  <!-- Header layout fix -->
+  <style>
+    /* Make the header a proper top bar */
+    header.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background-color: #020617; /* dark background */
+      color: #f9fafb;            /* light text */
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.7);
+    }
+
+    /* Inner container: single row, spaced out */
+    header.sticky .mx-auto {
+      max-width: 28rem;          /* similar to max-w-md */
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0.75rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    /* Centre title */
+    header.sticky h1 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-align: center;
+      flex: 1;
+    }
+
+    /* Round icon buttons */
+    header.sticky button {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 999px;
+      border: none;
+      background-color: rgba(15, 23, 42, 0.8);
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    header.sticky button span {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    header.sticky button:active {
+      transform: scale(0.95);
+      background-color: rgba(30, 64, 175, 0.9);
+    }
+  </style>
+
   <header class="sticky top-0 z-20 bg-slate-900 text-slate-50 shadow-md">
     <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-2">
       <!-- Left: Home button -->
