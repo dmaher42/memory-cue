@@ -688,6 +688,78 @@
       background: var(--fallback-p, #2563eb); color: var(--fallback-pc, #fff);
       box-shadow: 0 2px 6px rgba(0,0,0,.15);
     }
+
+    /* --- Reminder list: force flat list layout, neutralize old card styles --- */
+
+    /* Neutralize any card/grid wrapper for reminders */
+    #reminderList .task-item,
+    #reminderList .task-card,
+    #reminderList .card,
+    #reminderList .card-body,
+    #reminderList .task-grid {
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+    }
+
+    /* Ensure each reminder behaves like a flat row */
+    #reminderList [data-reminder] {
+      display: flex !important;
+      align-items: baseline !important;
+      justify-content: space-between !important;
+      gap: 0.75rem !important;
+      padding: 0.5rem 0.25rem !important;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4) !important;
+      font-size: 0.875rem !important;
+      line-height: 1.4 !important;
+    }
+
+    /* Remove divider on the last reminder */
+    #reminderList [data-reminder]:last-child {
+      border-bottom: none !important;
+    }
+
+    /* Title/label on the left */
+    #reminderList [data-reminder] h3,
+    #reminderList [data-reminder] h4,
+    #reminderList [data-reminder] strong,
+    #reminderList [data-reminder] [data-reminder-title] {
+      margin: 0 !important;
+      font-weight: 500 !important;
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+
+    /* Meta info (date/time/status) on the right */
+    #reminderList [data-reminder] time,
+    #reminderList [data-reminder] .reminder-meta {
+      font-size: 0.75rem !important;
+      opacity: 0.75 !important;
+      white-space: nowrap !important;
+      margin-left: 0.5rem !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Hide extra verbose details to keep list minimal */
+    #reminderList [data-reminder] p,
+    #reminderList [data-reminder] .description,
+    #reminderList [data-reminder] .details,
+    #reminderList [data-reminder] .card-actions {
+      display: none !important;
+    }
+
+    /* Subtle hover feedback for pointer devices */
+    @media (hover: hover) {
+      #reminderList [data-reminder]:hover {
+        background-color: rgba(15, 23, 42, 0.03) !important;
+      }
+    }
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
   <style>
