@@ -445,7 +445,7 @@
                     type="button"
                     data-open-reminder-modal
                     aria-haspopup="dialog"
-                    aria-controls="reminder-modal"
+                    aria-controls="add-reminder-modal"
                   >
                     Add reminder
                   </button>
@@ -627,12 +627,12 @@
             class="btn btn-primary rounded-full"
             data-open-reminder-modal
             aria-haspopup="dialog"
-            aria-controls="reminder-modal"
+            aria-controls="add-reminder-modal"
           >
             Add reminder
           </button>
         </div>
-        <ul class="space-y-3">
+        <ul id="reminders-list" class="space-y-3">
           <li class="reminder-item">
             <div class="reminder-main space-y-2">
               <p class="font-semibold text-base-content">Submit unit overview</p>
@@ -1057,7 +1057,7 @@
       </div>
     </div>
   </footer>
-  <div id="reminder-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
+  <div id="add-reminder-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
     <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center px-4" data-reminder-modal-backdrop>
       <div
         class="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-900"
@@ -1077,7 +1077,7 @@
             ✕
           </button>
         </div>
-        <form id="reminder-form" class="mt-4 space-y-4">
+        <form id="add-reminder-form" class="mt-4 space-y-4">
           <label class="block">
             <span class="font-medium text-base-content">Title</span>
             <input
@@ -1217,7 +1217,7 @@
     window.addEventListener('hashchange', renderRoute);
     window.addEventListener('DOMContentLoaded', renderRoute);
   </script>
-  <script type="module" src="./assets/app-RUBDXMLV.js" defer></script>
+  <script type="module" src="./assets/app-KWR2DLCJ.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script src="./assets/register-service-worker-VJMOHPCS.js" defer></script>
   <script>
