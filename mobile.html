@@ -96,6 +96,28 @@
       background: var(--hover-bg);
     }
 
+    /* --- Priority Tints & Borders --- */
+
+    /* Update the base card to include a default border */
+    .reminder-card {
+      border-left: 3px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+
+    /* High priority: Red tint + Red border */
+    .reminder-card.priority-high {
+      background-color: rgba(229, 115, 115, 0.1);
+      border-left-color: #e57373;
+    }
+
+    /* Medium priority: Orange tint + Orange border */
+    .reminder-card.priority-medium {
+      background-color: rgba(255, 183, 77, 0.1);
+      border-left-color: #ffb74d;
+    }
+
+    /* Low priority cards will just use the default styles */
+
     /* If reminders are wrapped in DaisyUI cards, ensure they inherit the new look */
     #reminderList > * .card,
     #reminderList > * .card-body {
