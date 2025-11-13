@@ -17,6 +17,12 @@
       --bg-color: #f4f5f7;
       --card-bg: #ffffff;
       --border-color: #e9ecef;
+      --priority-high-border: #d92d20;
+      --priority-high-bg: #fef3f2;
+      --priority-medium-border: #f79009;
+      --priority-medium-bg: #fef6e7;
+      --priority-low-border: #12b76a;
+      --priority-low-bg: #ecfdf3;
       --shadow-sm: 0 0 0.5rem rgba(0, 0, 0, 0.075);
       --shadow-md: 0 0 2rem rgba(136, 152, 170, 0.15);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -986,36 +992,42 @@
     }
 
     #reminderList [data-reminder][data-priority="High"] {
-      border-left: 3px solid color-mix(in srgb, var(--secondary-color) 70%, transparent) !important;
+      border-left: 3px solid var(--priority-high-border) !important;
       padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: color-mix(in srgb, var(--secondary-color) 6%, var(--card-bg) 94%) !important;
+      background-color: var(--priority-high-bg) !important;
+      color: color-mix(in srgb, var(--priority-high-border) 18%, var(--text-primary) 82%);
     }
 
     .dark #reminderList [data-reminder][data-priority="High"] {
-      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%) !important;
-      background-color: color-mix(in srgb, var(--secondary-color) 8%, var(--text-primary) 92%) !important;
+      border-left-color: color-mix(in srgb, var(--priority-high-border) 70%, transparent) !important;
+      background-color: color-mix(in srgb, var(--priority-high-border) 22%, #0b1220) !important;
+      color: color-mix(in srgb, var(--priority-high-border) 25%, #e2e8f0);
     }
 
     #reminderList [data-reminder][data-priority="Medium"] {
-      border-left: 3px solid color-mix(in srgb, var(--warning-color) 70%, transparent) !important;
+      border-left: 3px solid var(--priority-medium-border) !important;
       padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: color-mix(in srgb, var(--warning-color) 6%, var(--card-bg) 94%) !important;
+      background-color: var(--priority-medium-bg) !important;
+      color: color-mix(in srgb, var(--priority-medium-border) 14%, var(--text-primary) 86%);
     }
 
     .dark #reminderList [data-reminder][data-priority="Medium"] {
-      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%) !important;
-      background-color: color-mix(in srgb, var(--warning-color) 8%, var(--text-primary) 92%) !important;
+      border-left-color: color-mix(in srgb, var(--priority-medium-border) 70%, transparent) !important;
+      background-color: color-mix(in srgb, var(--priority-medium-border) 20%, #0b1220) !important;
+      color: color-mix(in srgb, var(--priority-medium-border) 18%, #e2e8f0);
     }
 
     #reminderList [data-reminder][data-priority="Low"] {
-      border-left: 3px solid color-mix(in srgb, var(--success-color) 70%, transparent) !important;
+      border-left: 3px solid var(--priority-low-border) !important;
       padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: color-mix(in srgb, var(--success-color) 6%, var(--card-bg) 94%) !important;
+      background-color: var(--priority-low-bg) !important;
+      color: color-mix(in srgb, var(--priority-low-border) 12%, var(--text-primary) 88%);
     }
 
     .dark #reminderList [data-reminder][data-priority="Low"] {
-      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%) !important;
-      background-color: color-mix(in srgb, var(--success-color) 8%, var(--text-primary) 92%) !important;
+      border-left-color: color-mix(in srgb, var(--priority-low-border) 65%, transparent) !important;
+      background-color: color-mix(in srgb, var(--priority-low-border) 18%, #0b1220) !important;
+      color: color-mix(in srgb, var(--priority-low-border) 20%, #e2e8f0);
     }
 
     /* Remove divider on the last reminder */
