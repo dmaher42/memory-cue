@@ -1267,6 +1267,12 @@
     border-radius: 999px !important;
   }
 
+  /* Prevent circle constraint on generic add button */
+  .mc-add-btn {
+    width: auto !important;
+    height: auto !important;
+  }
+
   .mc-add-btn-wide {
     padding: 0.35rem 0.85rem !important;
     border-radius: 999px !important;
@@ -1277,6 +1283,18 @@
     justify-content: center !important;
     white-space: nowrap !important;
     max-width: 100% !important;
+  }
+
+  /* Ensure Add Reminder button can expand horizontally */
+  .mc-add-btn-wide {
+    width: auto !important;
+    height: auto !important;
+    padding: 0.35rem 0.9rem !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
   }
 
   /* On slightly larger phones show small text label next to logo (optional) */
