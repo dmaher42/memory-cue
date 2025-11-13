@@ -1,6 +1,6 @@
 # Memory Cue
 
-Memory Cue is a progressive web app for capturing reminders, notes, and study aids. The interface relies on Tailwind CSS v4 via CDN so you can work with the project without compiling styles or running a build pipeline.
+Memory Cue is a progressive web app for capturing reminders, notes, and study aids. The interface uses a Tailwind CSS pipeline so you can iterate locally with a file watcher and ship an optimised bundle for production.
 
 ## Background reminders
 
@@ -20,12 +20,21 @@ Each notification links back to the Reminders board; tapping it reopens the PWA 
 1. Clone the repository: `git clone https://github.com/<your-account>/memory-cue.git`
 2. Move into the project directory: `cd memory-cue`
 3. Install dependencies: `npm install`
-4. Start a local server: `npm start`
-5. (Optional) Run the automated test suite: `npm test`
+4. In a new terminal, start the Tailwind watcher to keep `dist/styles.css` in sync while you edit templates: `npm run dev`
+5. Start a local server (for example via `serve`): `npm start`
+6. (Optional) Run the automated test suite: `npm test`
 
 ## Deployment
 
 ### GitHub Pages
+
+Before deploying, create the production CSS bundle:
+
+```bash
+npm run build
+```
+
+This runs the Tailwind and PostCSS pipeline, generating a hashed asset reference inside `dist/` that static hosts can cache aggressively.
 
 Deploy the current contents of the repository to GitHub Pages with:
 
