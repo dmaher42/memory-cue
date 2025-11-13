@@ -28,6 +28,21 @@ initViewportHeight();
     }
   }
 
+  const THEME_CHANGE_EVENT = 'memoryCue:theme-change';
+
+  function dispatchThemeChange(theme) {
+    if (typeof window === 'undefined' || !theme) return;
+    try {
+      window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme } }));
+    } catch (error) {
+      if (typeof document !== 'undefined' && typeof document.createEvent === 'function') {
+        const fallbackEvent = document.createEvent('CustomEvent');
+        fallbackEvent.initCustomEvent(THEME_CHANGE_EVENT, true, true, { theme });
+        window.dispatchEvent(fallbackEvent);
+      }
+    }
+  }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
   }
@@ -63,6 +78,7 @@ initViewportHeight();
     let theme = resolveInitialTheme();
     applyTheme(theme);
     updateThemeButton(button, theme);
+    dispatchThemeChange(theme);
 
     if (!button) {
       return;
@@ -73,7 +89,23 @@ initViewportHeight();
       safeSetItem(THEME_STORAGE_KEY, theme);
       applyTheme(theme);
       updateThemeButton(button, theme);
+      dispatchThemeChange(theme);
     });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(THEME_CHANGE_EVENT, (event) => {
+        const newTheme = event?.detail?.theme;
+        if (!newTheme) {
+          return;
+        }
+        if (newTheme !== theme) {
+          theme = newTheme;
+          safeSetItem(THEME_STORAGE_KEY, theme);
+          applyTheme(theme);
+        }
+        updateThemeButton(button, theme);
+      });
+    }
   }
 
   function getCurrentRoute() {
