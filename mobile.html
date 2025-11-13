@@ -1298,9 +1298,15 @@
       </button>
 
       <!-- Centre: Title -->
-      <h1 class="text-base font-semibold tracking-wide text-slate-50">
-        Reminders
-      </h1>
+      <button
+        id="addReminderBtn"
+        type="button"
+        class="mc-add-btn mc-add-btn-wide"
+        data-open-add-task
+      >
+        <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+        <span class="mc-add-btn-label">Add reminder</span>
+      </button>
 
       <!-- Right: Settings button -->
       <button
@@ -1321,16 +1327,6 @@
         </div>
         <span id="mcStatusText" class="mc-status-text">Offline</span>
       </div>
-
-      <button
-        id="addReminderBtn"
-        type="button"
-        class="mc-add-btn mc-add-btn-wide"
-        data-open-add-task
-      >
-        <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-        <span class="mc-add-btn-label">Add reminder</span>
-      </button>
 
       <div class="mc-quick-more">
         <button
