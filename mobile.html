@@ -911,12 +911,20 @@
       }
     }
 
-    /* Optional: Add view toggle button */
+    /* View toggle button - positioned over the reminders */
     .view-toggle {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 8px;
+      right: 8px;
       z-index: 10;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark .view-toggle {
+      background: rgba(0, 0, 0, 0.7);
+      border-color: rgba(255, 255, 255, 0.1);
     }
   </style>
   <!-- Skip-link CSS: fully hidden until keyboard focus -->
@@ -2109,16 +2117,16 @@
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <section
         id="reminderListSection"
-        class="card bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30 relative"
+        class="w-full relative"
       >
-        <button id="viewToggle" class="view-toggle btn btn-ghost btn-xs" type="button">
+        <button id="viewToggle" class="view-toggle btn btn-ghost btn-xs absolute top-2 right-2 z-10" type="button">
           <span class="grid-icon">⊞</span>
           <span class="list-icon hidden">☰</span>
         </button>
-        <div class="px-1 py-2" id="remindersWrapper">
-          <div id="emptyState" class="hidden text-center text-base-content/60 py-8"></div>
-          <ul id="reminderList" class="grid gap-3"></ul>
-          <p class="text-xs text-base-content/50 mt-4 pt-3 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
+        <div class="w-full" id="remindersWrapper">
+          <div id="emptyState" class="hidden text-center text-base-content/60 py-8 px-4"></div>
+          <ul id="reminderList" class="grid gap-3 w-full"></ul>
+          <p class="text-xs text-base-content/50 mt-4 pt-3 px-4 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
     </section>
