@@ -255,6 +255,147 @@
       column-width: 16rem;
       column-gap: 1.5rem;
     }
+    
+    /* Enhanced notes editor styles */
+    .notes-editor.enhanced {
+      min-height: 12rem;
+      max-height: 60vh;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    
+    .notes-editor strong {
+      font-weight: 700;
+    }
+    
+    .notes-editor em {
+      font-style: italic;
+    }
+    
+    .notes-editor s {
+      text-decoration: line-through;
+    }
+    
+    .notes-editor h1, .notes-editor h2, .notes-editor h3 {
+      font-weight: 600;
+      margin: 0.75rem 0 0.5rem 0;
+      line-height: 1.3;
+    }
+    
+    .notes-editor h1 {
+      font-size: 1.25rem;
+      border-bottom: 2px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+      padding-bottom: 0.25rem;
+    }
+    
+    .notes-editor h2 {
+      font-size: 1.125rem;
+    }
+    
+    .notes-editor h3 {
+      font-size: 1rem;
+    }
+    
+    .notes-editor a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+    
+    .notes-editor hr {
+      margin: 1rem 0;
+      border: none;
+      border-top: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+    }
+    
+    .notes-editor .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin: 0.25rem 0;
+    }
+    
+    .notes-editor .checklist-checkbox {
+      cursor: pointer;
+      margin-top: 0.125rem;
+    }
+    
+    .notes-editor .highlight {
+      background: color-mix(in srgb, var(--warning-color) 25%, transparent);
+      padding: 0 0.25rem;
+      border-radius: 0.25rem;
+    }
+    
+    /* Mobile-optimized toolbar */
+    @media (max-width: 640px) {
+      #notesToolbar {
+        gap: 1px;
+        padding: 0.5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      
+      #notesToolbar::-webkit-scrollbar {
+        display: none;
+      }
+      
+      #notesToolbar .btn {
+        min-width: 2.5rem;
+        padding: 0.375rem 0.25rem;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+      }
+      
+      #notesToolbar > div {
+        border-right: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+        padding-right: 0.5rem;
+        margin-right: 0.5rem;
+        display: flex;
+        gap: 1px;
+        flex-shrink: 0;
+      }
+      
+      #notesToolbar > div:last-child {
+        border-right: none;
+        padding-right: 0;
+        margin-right: 0;
+      }
+      
+      /* Improve search panel on mobile */
+      #searchPanel {
+        margin: 0 -0.5rem;
+      }
+      
+      #searchPanel .flex {
+        flex-wrap: nowrap;
+      }
+      
+      #searchInput {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+    }
+    
+    /* Auto-save status indicator */
+    .sync-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    
+    .sync-dot.saving {
+      background: color-mix(in srgb, var(--warning-color) 80%, transparent);
+      animation: pulse 1.5s infinite;
+    }
+    
+    .sync-dot.saved {
+      background: color-mix(in srgb, var(--success-color) 80%, transparent);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
     .view-panel {
       display: grid;
       gap: 1.5rem;
@@ -669,6 +810,7 @@
       line-height: 1.3;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       margin-bottom: 8px;
@@ -677,6 +819,7 @@
     .task-item[data-compact="true"] .task-notes {
       display: -webkit-box;
       -webkit-line-clamp: 1;
+      line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
       font-size: 12px;
@@ -747,6 +890,7 @@
       .task-item[data-compact="true"] .task-title {
         font-size: 15px;
         -webkit-line-clamp: 3;
+        line-clamp: 3;
       }
     }
 
@@ -1970,36 +2114,100 @@
             <h2 class="card-title text-base">Scratch Notes</h2>
             <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
           </div>
+          <!-- Enhanced formatting toolbar -->
           <div
             id="notesToolbar"
-            class="flex flex-wrap gap-2"
+            class="flex flex-wrap gap-1.5 p-2 bg-base-200/30 rounded-lg"
             role="toolbar"
-            aria-label="Scratch notes formatting options"
+            aria-label="Note formatting options"
             aria-controls="notes"
           >
-            <button type="button" class="btn btn-xs" data-action="bullets">• Bullets</button>
-            <button type="button" class="btn btn-xs" data-action="numbers">1. Numbers</button>
-            <button
-              type="button"
-              class="btn btn-xs"
-              data-action="columns"
-              aria-pressed="false"
-            >
-              Columns
-            </button>
+            <!-- Text formatting -->
+            <div class="flex gap-1 border-r border-base-300 pr-2">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="bold" title="Bold (Ctrl+B)" aria-label="Make text bold">
+                <strong>B</strong>
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="italic" title="Italic (Ctrl+I)" aria-label="Make text italic">
+                <em>I</em>
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="strikethrough" title="Strikethrough" aria-label="Strike through text">
+                <s>S</s>
+              </button>
+            </div>
+            
+            <!-- Lists -->
+            <div class="flex gap-1 border-r border-base-300 pr-2">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="bullets" title="Bullet list">•</button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="numbers" title="Numbered list">1.</button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="checklist" title="Checklist">☐</button>
+            </div>
+            
+            <!-- Structure -->
+            <div class="flex gap-1 border-r border-base-300 pr-2">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="heading" title="Heading">
+                H
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="divider" title="Add divider">
+                ─
+              </button>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-1">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="link" title="Add link">
+                🔗
+              </button>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="clear" title="Clear formatting">
+                ✕
+              </button>
+            </div>
           </div>
           <div
             id="notes"
-            class="notes-editor"
+            class="notes-editor enhanced"
             contenteditable="true"
             role="textbox"
             aria-multiline="true"
             spellcheck="true"
-            data-placeholder="Quick personal notes"
+            data-placeholder="Start typing your notes... (auto-saves)"
+            data-auto-save="true"
           ></div>
-          <div class="flex gap-2">
-            <button id="saveNotes" class="btn btn-outline flex-1" type="button">Save notes</button>
-            <button id="loadNotes" class="btn btn-outline flex-1" type="button">Load notes</button>
+          
+          <!-- Auto-save status -->
+          <div class="flex items-center justify-between text-xs text-base-content/60">
+            <div id="notesStatus" class="flex items-center gap-1">
+              <span class="sync-dot offline" id="notesSyncStatus"></span>
+              <span id="notesStatusText">Ready</span>
+            </div>
+            <div id="notesWordCount">0 words</div>
+          </div>
+          <!-- Enhanced action buttons -->
+          <div class="flex flex-wrap gap-2">
+            <button id="searchNotes" class="btn btn-outline btn-sm flex-1" type="button">
+              🔍 Search
+            </button>
+            <button id="exportNotes" class="btn btn-outline btn-sm flex-1" type="button">
+              📤 Export
+            </button>
+            <button id="voiceNotes" class="btn btn-outline btn-sm flex-1" type="button">
+              🎤 Voice
+            </button>
+          </div>
+          
+          <!-- Search panel (hidden by default) -->
+          <div id="searchPanel" class="hidden bg-base-200/50 p-3 rounded-lg border">
+            <div class="flex gap-2 mb-2">
+              <input 
+                id="searchInput" 
+                type="text" 
+                placeholder="Search in notes..." 
+                class="input input-sm flex-1"
+              />
+              <button id="searchPrev" class="btn btn-sm btn-ghost" title="Previous">↑</button>
+              <button id="searchNext" class="btn btn-sm btn-ghost" title="Next">↓</button>
+              <button id="closeSearch" class="btn btn-sm btn-ghost" title="Close">✕</button>
+            </div>
+            <div id="searchResults" class="text-xs text-base-content/70"></div>
           </div>
         </div>
       </section>
@@ -3106,6 +3314,375 @@
         });
       }
     });
+  </script>
+
+  <!-- Enhanced Notes Functionality -->
+  <script>
+    (function() {
+      // Enhanced Notes Editor
+      const notesEditor = document.getElementById('notes');
+      const notesToolbar = document.getElementById('notesToolbar');
+      const notesStatus = document.getElementById('notesStatusText');
+      const notesSyncStatus = document.getElementById('notesSyncStatus');
+      const notesWordCount = document.getElementById('notesWordCount');
+      const searchPanel = document.getElementById('searchPanel');
+      const searchInput = document.getElementById('searchInput');
+      const searchResults = document.getElementById('searchResults');
+
+      if (!notesEditor) return;
+
+      let autoSaveTimeout;
+      let currentSearchIndex = 0;
+      let searchMatches = [];
+
+      // Auto-save functionality
+      const autoSave = () => {
+        if (!notesEditor) return;
+        
+        clearTimeout(autoSaveTimeout);
+        setStatus('saving', 'Saving...');
+        
+        autoSaveTimeout = setTimeout(() => {
+          try {
+            const content = notesEditor.innerHTML;
+            if (content !== localStorage.getItem('memory-cue-notes')) {
+              localStorage.setItem('memory-cue-notes', content);
+              setStatus('saved', 'Saved');
+              setTimeout(() => setStatus('ready', 'Ready'), 1500);
+            } else {
+              setStatus('ready', 'Ready');
+            }
+          } catch (error) {
+            console.error('Failed to save notes:', error);
+            setStatus('error', 'Save failed');
+            // Retry after a delay
+            setTimeout(autoSave, 3000);
+          }
+        }, 800);
+      };
+
+      // Status management
+      const setStatus = (state, message) => {
+        if (notesStatus) notesStatus.textContent = message;
+        if (notesSyncStatus) {
+          notesSyncStatus.className = `sync-dot ${state}`;
+        }
+      };
+
+      // Word count
+      const updateWordCount = () => {
+        if (!notesWordCount || !notesEditor) return;
+        const text = notesEditor.textContent || '';
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        notesWordCount.textContent = `${words.length} words`;
+      };
+
+      // Load saved notes
+      const loadNotes = () => {
+        try {
+          const saved = localStorage.getItem('memory-cue-notes');
+          if (saved && notesEditor) {
+            notesEditor.innerHTML = saved;
+            updateWordCount();
+            setStatus('ready', 'Notes loaded');
+          }
+        } catch (error) {
+          console.error('Failed to load notes:', error);
+        }
+      };
+
+      // Formatting functions
+      const formatText = (command, value = null) => {
+        document.execCommand(command, false, value);
+        notesEditor.focus();
+        autoSave();
+      };
+
+      const insertAtCursor = (html) => {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          const fragment = range.createContextualFragment(html);
+          range.insertNode(fragment);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        autoSave();
+      };
+
+      // Toolbar event handlers
+      if (notesToolbar) {
+        notesToolbar.addEventListener('click', (e) => {
+          const button = e.target.closest('button');
+          if (!button) return;
+
+          const action = button.dataset.action;
+          e.preventDefault();
+
+          switch(action) {
+            case 'bold':
+              formatText('bold');
+              break;
+            case 'italic':
+              formatText('italic');
+              break;
+            case 'strikethrough':
+              formatText('strikeThrough');
+              break;
+            case 'bullets':
+              formatText('insertUnorderedList');
+              break;
+            case 'numbers':
+              formatText('insertOrderedList');
+              break;
+            case 'checklist':
+              insertAtCursor('<div class="checklist-item"><span class="checklist-checkbox" role="button" tabindex="0" onclick="toggleCheckbox(this)" onkeypress="if(event.key===\'Enter\')toggleCheckbox(this)">☐</span><span contenteditable="true">New item</span></div>');
+              break;
+            case 'heading':
+              formatText('formatBlock', 'h2');
+              break;
+            case 'divider':
+              insertAtCursor('<hr>');
+              break;
+            case 'link':
+              const url = prompt('Enter URL:');
+              if (url) formatText('createLink', url);
+              break;
+            case 'clear':
+              formatText('removeFormat');
+              break;
+          }
+        });
+      }
+
+      // Search functionality
+      const performSearch = (query) => {
+        if (!query.trim()) {
+          clearHighlights();
+          updateSearchResults(0);
+          return;
+        }
+
+        clearHighlights();
+        searchMatches = [];
+        
+        try {
+          const content = notesEditor.innerHTML;
+          const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escapedQuery})`, 'gi');
+          
+          const highlightedContent = content.replace(regex, '<span class="highlight">$1</span>');
+          notesEditor.innerHTML = highlightedContent;
+          
+          searchMatches = Array.from(notesEditor.querySelectorAll('.highlight'));
+          updateSearchResults(searchMatches.length);
+          
+          if (searchMatches.length > 0) {
+            currentSearchIndex = 0;
+            highlightCurrentMatch();
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          updateSearchResults(0);
+        }
+      };
+
+      const clearHighlights = () => {
+        const highlights = notesEditor.querySelectorAll('.highlight');
+        highlights.forEach(highlight => {
+          const parent = highlight.parentNode;
+          parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+          parent.normalize();
+        });
+      };
+
+      const highlightCurrentMatch = () => {
+        searchMatches.forEach((match, index) => {
+          match.style.backgroundColor = index === currentSearchIndex 
+            ? 'color-mix(in srgb, var(--primary-color) 40%, transparent)' 
+            : 'color-mix(in srgb, var(--warning-color) 25%, transparent)';
+        });
+        
+        if (searchMatches[currentSearchIndex]) {
+          searchMatches[currentSearchIndex].scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      };
+
+      const updateSearchResults = (count) => {
+        if (searchResults) {
+          searchResults.textContent = count > 0 
+            ? `${count} matches found` 
+            : 'No matches found';
+        }
+      };
+
+      // Search controls
+      document.getElementById('searchNotes')?.addEventListener('click', () => {
+        searchPanel?.classList.toggle('hidden');
+        if (!searchPanel?.classList.contains('hidden')) {
+          searchInput?.focus();
+        } else {
+          clearHighlights();
+        }
+      });
+
+      document.getElementById('closeSearch')?.addEventListener('click', () => {
+        searchPanel?.classList.add('hidden');
+        clearHighlights();
+      });
+
+      searchInput?.addEventListener('input', (e) => {
+        performSearch(e.target.value);
+      });
+
+      document.getElementById('searchNext')?.addEventListener('click', () => {
+        if (searchMatches.length > 0) {
+          currentSearchIndex = (currentSearchIndex + 1) % searchMatches.length;
+          highlightCurrentMatch();
+        }
+      });
+
+      document.getElementById('searchPrev')?.addEventListener('click', () => {
+        if (searchMatches.length > 0) {
+          currentSearchIndex = currentSearchIndex === 0 
+            ? searchMatches.length - 1 
+            : currentSearchIndex - 1;
+          highlightCurrentMatch();
+        }
+      });
+
+      // Export functionality
+      document.getElementById('exportNotes')?.addEventListener('click', () => {
+        if (!notesEditor) return;
+        
+        try {
+          const content = notesEditor.textContent || '';
+          if (!content.trim()) {
+            alert('No content to export');
+            return;
+          }
+          
+          // For mobile devices, use share API if available
+          if (navigator.share) {
+            navigator.share({
+              title: 'My Notes',
+              text: content,
+            }).catch(error => {
+              console.log('Error sharing:', error);
+              fallbackExport(content);
+            });
+          } else {
+            fallbackExport(content);
+          }
+        } catch (error) {
+          console.error('Export failed:', error);
+          alert('Export failed. Please try again.');
+        }
+      });
+      
+      const fallbackExport = (content) => {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `memory-cue-notes-${new Date().toISOString().split('T')[0]}.txt`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      // Voice notes (integrate with existing voice functionality)
+      document.getElementById('voiceNotes')?.addEventListener('click', () => {
+        // Trigger existing voice functionality if available
+        const voiceBtn = document.getElementById('voiceBtn') || document.getElementById('quickAddVoice');
+        if (voiceBtn) {
+          voiceBtn.click();
+        } else {
+          alert('Voice functionality not available');
+        }
+      });
+
+      // Event listeners
+      notesEditor.addEventListener('input', () => {
+        updateWordCount();
+        autoSave();
+      });
+
+      notesEditor.addEventListener('paste', (e) => {
+        // Clean pasted content
+        setTimeout(() => {
+          updateWordCount();
+          autoSave();
+        }, 100);
+      });
+
+      // Keyboard shortcuts
+      notesEditor.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch(e.key.toLowerCase()) {
+            case 'b':
+              e.preventDefault();
+              formatText('bold');
+              break;
+            case 'i':
+              e.preventDefault();
+              formatText('italic');
+              break;
+            case 'f':
+              e.preventDefault();
+              document.getElementById('searchNotes')?.click();
+              break;
+          }
+        }
+      });
+
+      // Helper function for checkbox toggling
+      window.toggleCheckbox = function(element) {
+        if (element && element.textContent) {
+          element.textContent = element.textContent === '☐' ? '☑' : '☐';
+          autoSave();
+        }
+      };
+      
+      // Improve mobile keyboard handling
+      notesEditor.addEventListener('focus', () => {
+        // Prevent zoom on iOS
+        if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
+          const viewport = document.querySelector('meta[name="viewport"]');
+          if (viewport) {
+            viewport.setAttribute('content', viewport.getAttribute('content') + ', user-scalable=no');
+          }
+        }
+      });
+      
+      notesEditor.addEventListener('blur', () => {
+        // Re-enable zoom
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+          const content = viewport.getAttribute('content').replace(', user-scalable=no', '');
+          viewport.setAttribute('content', content);
+        }
+      });
+
+      // Initialize
+      loadNotes();
+      updateWordCount();
+      setStatus('ready', 'Ready');
+      
+      // Add mobile-friendly touch handling for toolbar
+      if (notesToolbar) {
+        notesToolbar.addEventListener('touchstart', (e) => {
+          e.preventDefault(); // Prevent double-tap zoom
+        }, { passive: false });
+      }
+    })();
   </script>
 
 </body>
