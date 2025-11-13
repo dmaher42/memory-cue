@@ -2135,7 +2135,14 @@
         </button>
         <div class="w-full" id="remindersWrapper">
           <div id="emptyState" class="hidden text-center text-base-content/60 py-8 px-4"></div>
-          <ul id="reminderList" class="grid gap-3 w-full"></ul>
+          <div class="flex items-center gap-2 px-4 pb-3 text-xs text-base-content/70">
+            <span aria-hidden="true" class="text-base">↕️</span>
+            <span>Press, hold, and drag a card to reorder your reminders.</span>
+          </div>
+          <p id="reminderReorderHint" class="sr-only">
+            Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
+          </p>
+          <ul id="reminderList" class="grid gap-3 w-full" aria-describedby="reminderReorderHint"></ul>
           <p class="text-xs text-base-content/50 mt-4 pt-3 px-4 border-t border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
         </div>
       </section>
@@ -2405,7 +2412,7 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-E7JAESGN.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-HWMXOWR5.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-KTZLCBCC.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
