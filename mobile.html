@@ -1448,10 +1448,11 @@
           id="overflowMenuBtn"
           type="button"
           class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-          aria-label="Open settings menu"
+          aria-label="Open settings"
           aria-haspopup="true"
           aria-controls="overflowMenu"
           aria-expanded="false"
+          data-open="settings"
         >
           <span class="text-xl leading-none">⚙️</span>
         </button>
@@ -2914,9 +2915,8 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const homeBtn = document.querySelector('header.sticky [aria-label="Go to home"]');
-      const settingsBtn = document.querySelector('header.sticky [aria-label="Open settings"]');
 
-      // Locate reminders section
+      // Locate reminders section or fall back to the document body
       const remindersSection =
         document.getElementById('remindersWrapper') ||
         document.querySelector('[data-section="reminders"]') ||
@@ -2927,26 +2927,6 @@
         homeBtn.addEventListener('click', () => {
           remindersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
-      }
-
-      // Locate settings section
-      let settingsSection =
-        document.getElementById('settingsSection') ||
-        document.getElementById('settings') ||
-        document.querySelector('[data-section="settings"]');
-
-      const drawerOpenBtn = document.querySelector('[data-open-drawer]');
-
-      if (settingsBtn) {
-        if (settingsSection) {
-          settingsBtn.addEventListener('click', () => {
-            settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          });
-        } else if (drawerOpenBtn) {
-          settingsBtn.addEventListener('click', () => {
-            drawerOpenBtn.click();
-          });
-        }
       }
     });
   </script>
