@@ -1419,11 +1419,39 @@
 
   <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
     <div class="mc-quick-add-inner">
+      <!-- Left: Sync status -->
       <div class="mc-quick-status">
         <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
           <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
         </div>
         <span id="mcStatusText" class="mc-status-text">Offline</span>
+      </div>
+
+      <!-- Right: Quick add row -->
+      <div class="mc-quick-add-row">
+        <input
+          id="quickAddInput"
+          class="mc-quick-input"
+          type="text"
+          autocomplete="off"
+          placeholder="Quick reminder…"
+        />
+        <button
+          id="quickAddSubmit"
+          type="button"
+          class="mc-quick-submit"
+          aria-label="Add reminder"
+        >
+          Add
+        </button>
+        <button
+          id="quickAddVoice"
+          type="button"
+          class="mc-quick-voice"
+          aria-label="Use voice to add reminder"
+        >
+          🎤
+        </button>
       </div>
     </div>
   </section>
