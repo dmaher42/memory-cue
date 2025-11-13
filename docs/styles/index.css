@@ -198,6 +198,40 @@ html {
   --indicator-color: rgb(74, 222, 128);
 }
 
+.reminder-draggable {
+  position: relative;
+  cursor: grab;
+}
+
+.reminder-draggable.is-dragging {
+  opacity: 0.75;
+}
+
+.reminder-draggable.drag-over-before::before,
+.reminder-draggable.drag-over-after::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.8), rgba(59, 130, 246, 0.8));
+  pointer-events: none;
+}
+
+.reminder-draggable.drag-over-before::before {
+  top: -6px;
+}
+
+.reminder-draggable.drag-over-after::after {
+  bottom: -6px;
+}
+
+.drag-over-list {
+  outline: 2px dashed rgba(56, 189, 248, 0.35);
+  outline-offset: 6px;
+}
+
 .sync-status.offline,
 .sync-status.error {
   color: rgb(220 38 38);
@@ -1147,4 +1181,15 @@ html {
   background: rgba(15, 23, 42, 0.65);
   border-color: rgba(148, 163, 184, 0.45);
   color: rgb(226 232 240);
+}
+
+[data-reminder][data-notification-active="true"] {
+  border-color: rgb(34 197 94);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35), 0 10px 25px -15px rgba(34, 197, 94, 0.45);
+}
+
+.dark [data-reminder][data-notification-active="true"],
+[data-theme="dark"] [data-reminder][data-notification-active="true"] {
+  border-color: rgb(74 222 128);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35), 0 10px 25px -12px rgba(34, 197, 94, 0.55);
 }

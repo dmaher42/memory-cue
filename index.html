@@ -8,6 +8,13 @@
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
+<!-- BEGIN GPT CHANGE: supabase env bootstrap -->
+<script
+  src="./js/runtime-env.js"
+  data-supabase-url="https://YOUR-PROJECT.supabase.co"
+  data-supabase-anon-key="YOUR_SUPABASE_ANON_KEY"
+></script>
+<!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
 <script type="module" src="./js/config-supabase.js" defer></script>
 <!-- END GPT CHANGE -->

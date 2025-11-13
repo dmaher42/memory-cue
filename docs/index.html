@@ -3,13 +3,20 @@
 <head>
   <base href="/memory-cue/">
   <!-- BEGIN GPT CHANGE: external styles -->
-  <link rel="stylesheet" href="./assets/styles-9e21a754.css">
+  <link rel="stylesheet" href="./assets/styles-c4a67059.css">
   <!-- END GPT CHANGE -->
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
+<!-- BEGIN GPT CHANGE: supabase env bootstrap -->
+<script
+  src="./assets/runtime-env-4ERS5VXU.js"
+  data-supabase-url="https://YOUR-PROJECT.supabase.co"
+  data-supabase-anon-key="YOUR_SUPABASE_ANON_KEY"
+></script>
+<!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
-<script type="module" src="./assets/config-supabase-NJI5WPHR.js" defer></script>
+<script type="module" src="./assets/config-supabase-3XPKV46A.js" defer></script>
 <!-- END GPT CHANGE -->
 <!-- === /SUPABASE CONFIG === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
@@ -82,6 +89,134 @@
     .dashboard-widget [aria-hidden="true"].animate-pulse {
       opacity: .85;
     }
+
+    /* Reminders: clean flat row layout */
+    [data-route="reminders"] ul.space-y-3 > li {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 0.6rem 0.75rem;
+      background-color: rgba(15, 23, 42, 0.02);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li + li {
+      margin-top: 0.4rem;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:hover {
+      border-color: rgba(59, 130, 246, 0.35);
+      background-color: rgba(59, 130, 246, 0.06);
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .reminder-main {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .reminder-meta {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      opacity: 0.75;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      align-items: flex-end;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .reminder-meta .reminder-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .card,
+    [data-route="reminders"] ul.space-y-3 > li .card-body {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:has(.text-error) {
+      border-left: 4px solid hsl(var(--er));
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:has(.text-warning) {
+      border-left: 4px solid hsl(var(--wa));
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:has(.text-secondary) {
+      border-left: 4px solid hsl(var(--se));
+    }
+
+    #quick-action-toolbar {
+      opacity: 0.9;
+      backdrop-filter: blur(10px);
+      background-color: rgba(15, 23, 42, 0.55);
+      border-radius: 1.25rem;
+      padding: 0.5rem;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+    }
+
+    #quick-action-toolbar .quick-action-btn {
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.35);
+    }
+
+    /* Dashboard overall spacing */
+    section[data-route="dashboard"] {
+      max-width: 56rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Dashboard: emphasise Today's focus card */
+    .dashboard-today-focus {
+      border-radius: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: linear-gradient(to right, rgba(59, 130, 246, 0.04), rgba(15, 23, 42, 0.02));
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .dashboard-today-focus h2,
+    .dashboard-today-focus h3 {
+      font-weight: 600;
+    }
+
+    /* Dashboard: soften KPI tiles */
+    .dashboard-kpis {
+      gap: 0.75rem;
+    }
+
+    .dashboard-kpis .card {
+      border-radius: 0.75rem;
+      box-shadow: none;
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+      background-color: rgba(15, 23, 42, 0.01);
+    }
+
+    .dashboard-kpis .card h3,
+    .dashboard-kpis .card h4 {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    /* Dashboard: lighter action shortcuts card */
+    .dashboard-shortcuts {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background-color: rgba(15, 23, 42, 0.015);
+      box-shadow: none;
+    }
+
+    .dashboard-shortcuts .btn {
+      border-radius: 999px;
+    }
   </style>
   <script src="./assets/runtime-env-shim-TYQCA2C5.js" defer></script>
 </head>
@@ -116,8 +251,7 @@
             MC
           </span>
           <span class="flex flex-col leading-tight">
-            <span class="sr-only">Memory Cue</span>
-            <span class="text-xs font-normal text-base-content/70">Balanced planning for busy teachers</span>
+            <span class="text-base font-semibold text-base-content">Memory Cue</span>
           </span>
         </a>
       </div>
@@ -141,18 +275,7 @@
           <li>
             <a href="#templates" data-nav="templates" id="nav-templates" class="btn btn-sm btn-ghost">Templates</a>
           </li>
-          <li>
-            <a href="#settings" data-nav="settings" id="nav-settings" class="btn btn-sm btn-ghost">Settings</a>
-          </li>
         </ul>
-      </div>
-      <div class="navbar-end gap-2">
-        <div class="hidden flex-col text-right text-xs font-medium leading-tight text-base-content/60 lg:flex">
-          <span>Next prep window</span>
-          <span class="text-base-content">Today · 3:15 PM</span>
-        </div>
-        <button id="theme-toggle" type="button" class="btn btn-sm btn-ghost text-base-content">Toggle theme</button>
-        <a href="#planner" class="btn btn-sm btn-primary hidden sm:inline-flex">Open planner</a>
       </div>
     </div>
     <div
@@ -172,7 +295,6 @@
           <li><a href="#notes" data-nav="notes" class="btn btn-ghost justify-start">Notes</a></li>
           <li><a href="#resources" data-nav="resources" class="btn btn-ghost justify-start">Resources</a></li>
           <li><a href="#templates" data-nav="templates" class="btn btn-ghost justify-start">Templates</a></li>
-          <li><a href="#settings" data-nav="settings" class="btn btn-ghost justify-start">Settings</a></li>
         </ul>
         <a href="#planner" class="btn btn-primary btn-sm mt-3 w-full">Jump into planner</a>
       </div>
@@ -180,7 +302,7 @@
   </nav>
     <main id="mainContent" class="pt-24 min-h-screen" tabindex="-1">
     <div class="mx-auto max-w-6xl px-4 py-6 space-y-8">
-      <section data-route="dashboard" class="space-y-12">
+      <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div
           class="relative overflow-hidden rounded-3xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70 p-8 shadow-sm"
         >
@@ -257,7 +379,7 @@
           </div>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 dashboard-kpis">
           <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
             <div class="card-body gap-3 p-5">
               <div class="flex items-center justify-between text-base-content/80">
@@ -301,7 +423,7 @@
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.1fr)]">
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-today-focus">
             <div class="card-body gap-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="space-y-3">
@@ -325,7 +447,15 @@
                   </dl>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <button class="btn btn-primary btn-sm sm:btn-md" type="button">Add reminder</button>
+                  <button
+                    class="btn btn-primary btn-sm sm:btn-md"
+                    type="button"
+                    data-open-reminder-modal
+                    aria-haspopup="dialog"
+                    aria-controls="add-reminder-modal"
+                  >
+                    Add reminder
+                  </button>
                   <div class="join hidden sm:inline-flex">
                     <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
                     <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
@@ -452,7 +582,7 @@
             </div>
           </section>
 
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-shortcuts">
             <div class="card-body gap-5">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="text-lg font-semibold text-base-content">Action shortcuts</h2>
@@ -494,54 +624,56 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70">All</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Today</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">This week</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Later</button>
+            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70 cursor-default" title="Filtering not available yet">All</span>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Today</button>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">This week</button>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Later</button>
           </div>
-          <button type="button" class="btn btn-sm btn-outline">Add reminder</button>
+          <button
+            type="button"
+            class="btn btn-primary rounded-full"
+            data-open-reminder-modal
+            aria-haspopup="dialog"
+            aria-controls="add-reminder-modal"
+          >
+            Add reminder
+          </button>
         </div>
-        <ul class="space-y-3">
-          <li class="rounded-2xl border border-base-300 bg-base-200/70 p-5 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-              <div class="space-y-1 sm:flex-1 sm:min-w-0">
-                <p class="font-medium text-base-content">
-                  <span class="font-semibold">Submit unit overview</span>
-                </p>
-                <p class="text-sm text-base-content/70">Due Friday · Curriculum team</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                <span class="badge badge-outline text-warning">Due soon</span>
+        <ul id="reminders-list" class="space-y-3">
+          <li class="reminder-item">
+            <div class="reminder-main space-y-2">
+              <p class="font-semibold text-base-content">Submit unit overview</p>
+              <p class="text-sm text-base-content/70">Due Friday · Curriculum team</p>
+              <p class="text-sm text-base-content/60">Attach the new literacy checkpoints before sending.</p>
+            </div>
+            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span class="badge badge-outline text-warning">Due soon</span>
+              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
                 <button class="btn btn-sm btn-success" type="button" disabled title="Coming soon">Complete</button>
                 <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Snooze</button>
               </div>
             </div>
-            <p class="mt-3 text-sm text-base-content/60">Attach the new literacy checkpoints before sending.</p>
           </li>
-          <li class="rounded-2xl border border-base-300 bg-base-200/70 p-5 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-              <div class="space-y-1 sm:flex-1 sm:min-w-0">
-                <p class="font-medium text-base-content">
-                  <span class="font-semibold">Email newsletter blurb</span>
-                </p>
-                <p class="text-sm text-base-content/70">Add upcoming excursions to the weekly update.</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                <span class="badge badge-outline text-secondary">This week</span>
+          <li class="reminder-item">
+            <div class="reminder-main space-y-2">
+              <p class="font-semibold text-base-content">Email newsletter blurb</p>
+              <p class="text-sm text-base-content/70">Add upcoming excursions to the weekly update.</p>
+            </div>
+            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span class="badge badge-outline text-secondary">This week</span>
+              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
                 <button class="btn btn-sm btn-outline" type="button">Open notes</button>
               </div>
             </div>
           </li>
-          <li class="rounded-2xl border border-base-300 bg-base-200/70 p-5 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-              <div class="space-y-1 sm:flex-1 sm:min-w-0">
-                <p class="font-medium text-base-content">
-                  <span class="font-semibold">Call guardians</span>
-                </p>
-                <p class="text-sm text-base-content/70">Follow up on field trip permissions · Family liaison</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                <span class="badge badge-outline text-error">High priority</span>
+          <li class="reminder-item">
+            <div class="reminder-main space-y-2">
+              <p class="font-semibold text-base-content">Call guardians</p>
+              <p class="text-sm text-base-content/70">Follow up on field trip permissions · Family liaison</p>
+            </div>
+            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span class="badge badge-outline text-error">High priority</span>
+              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
                 <button class="btn btn-sm btn-outline" type="button">Log call</button>
               </div>
             </div>
@@ -652,10 +784,10 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70">Pinned</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Class</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Student</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Ideas</button>
+            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70 cursor-default" title="Filtering not available yet">Pinned</span>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Class</button>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Student</button>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Ideas</button>
           </div>
           <button type="button" class="btn btn-sm btn-primary" disabled title="Coming soon">New note</button>
         </div>
@@ -706,10 +838,10 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70">All</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Lesson</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Family</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Admin</button>
+            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70 cursor-default" title="Filtering not available yet">All</span>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Lesson</button>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Family</button>
+            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Admin</button>
           </div>
           <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Upload resource</button>
         </div>
@@ -932,6 +1064,60 @@
       </div>
     </div>
   </footer>
+  <div id="add-reminder-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
+    <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center px-4" data-reminder-modal-backdrop>
+      <div
+        class="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-900"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reminder-modal-title"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <h3 id="reminder-modal-title" class="text-lg font-semibold text-base-content">Add new reminder</h3>
+          <button
+            type="button"
+            id="closeReminderModal"
+            data-close-modal
+            class="rounded px-2 py-1 text-gray-600 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <form id="add-reminder-form" class="mt-4 space-y-4">
+          <label class="block">
+            <span class="font-medium text-base-content">Title</span>
+            <input
+              id="reminder-title"
+              type="text"
+              class="input input-bordered mt-1 w-full"
+              required
+            />
+          </label>
+          <label class="block">
+            <span class="font-medium text-base-content">Due date</span>
+            <input id="reminder-date" type="date" class="input input-bordered mt-1 w-full" />
+          </label>
+          <label class="block">
+            <span class="font-medium text-base-content">Priority</span>
+            <select id="reminder-priority" class="select select-bordered mt-1 w-full">
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="font-medium text-base-content">Notes</span>
+            <textarea id="reminder-notes" class="textarea textarea-bordered mt-1 w-full" rows="3"></textarea>
+          </label>
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" class="btn" data-close-modal>Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
   <div id="activity-ideas-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
     <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center">
       <div
@@ -1036,32 +1222,39 @@
       });
     }
     window.addEventListener('hashchange', renderRoute);
-    window.addEventListener('DOMContentLoaded', () => {
-      renderRoute();
-      const settingsSaveButton = document.getElementById('settings-save-button');
-      const settingsSaveConfirmation = document.getElementById('settings-save-confirmation');
-      const liveStatusRegion = document.getElementById('live-status');
-      if (settingsSaveButton && settingsSaveConfirmation) {
-        let hideSettingsSaveTimeoutId = null;
-        settingsSaveButton.addEventListener('click', (event) => {
-          event.preventDefault();
-          settingsSaveConfirmation.classList.remove('hidden');
-          settingsSaveConfirmation.textContent = 'Settings saved!';
-          if (liveStatusRegion) {
-            liveStatusRegion.textContent = 'Settings saved!';
-          }
-          if (hideSettingsSaveTimeoutId) {
-            window.clearTimeout(hideSettingsSaveTimeoutId);
-          }
-          hideSettingsSaveTimeoutId = window.setTimeout(() => {
-            settingsSaveConfirmation.classList.add('hidden');
-          }, 3000);
-        });
-      }
-    });
+    window.addEventListener('DOMContentLoaded', renderRoute);
   </script>
-  <script type="module" src="./assets/app-KGXXFHHO.js" defer></script>
+  <script type="module" src="./assets/app-GB2QV5U4.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script src="./assets/register-service-worker-VJMOHPCS.js" defer></script>
+  <script>
+    (function () {
+      const toggleButton = document.getElementById('mobile-nav-toggle');
+      const mobileMenu = document.getElementById('mobile-nav-menu');
+
+      if (!toggleButton || !mobileMenu) {
+        return;
+      }
+
+      toggleButton.addEventListener('click', () => {
+        const isHidden = mobileMenu.hasAttribute('hidden');
+
+        if (isHidden) {
+          mobileMenu.removeAttribute('hidden');
+          toggleButton.setAttribute('aria-expanded', 'true');
+        } else {
+          mobileMenu.setAttribute('hidden', '');
+          toggleButton.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      mobileMenu.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          mobileMenu.setAttribute('hidden', '');
+          toggleButton.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
