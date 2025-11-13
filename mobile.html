@@ -22,6 +22,26 @@
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    padding: 24px;
+    margin-bottom: 20px;
+    transition: var(--transition);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
     margin-top: 0.75rem;
@@ -1921,12 +1941,16 @@
     })();
   </script>
 
-  <main id="main" class="max-w-md mx-auto px-4 pt-0 pb-4" tabindex="-1" data-active-view="reminders">
+  <div class="container">
+    <main id="main" class="max-w-md mx-auto px-4 pt-0 pb-4" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <section id="reminderListSection" class="bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30 relative">
+      <section
+        id="reminderListSection"
+        class="card bg-base-100/60 backdrop-blur-sm rounded-xl border border-base-200/30 relative"
+      >
         <button id="viewToggle" class="view-toggle btn btn-ghost btn-xs" type="button">
           <span class="grid-icon">⊞</span>
           <span class="list-icon hidden">☰</span>
@@ -1983,7 +2007,8 @@
 
     </section>
     <!-- END GPT CHANGE -->
-</main>
+    </main>
+  </div>
 
   <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
     <button type="button" aria-current="page" class="active">
