@@ -29,7 +29,7 @@ describe('firebase-config', () => {
     const config = getFirebaseConfig();
     expect(config).toEqual(DEFAULT_FIREBASE_CONFIG);
     expect(config).not.toBe(DEFAULT_FIREBASE_CONFIG);
-    expect(config.projectId).toBe('memory-cue-pro');
+    expect(config.projectId).toBe('memory-cue-app');
   });
 
   it('merges direct global overrides', () => {

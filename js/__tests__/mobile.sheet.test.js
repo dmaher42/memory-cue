@@ -10,6 +10,10 @@ function runMobileModule(window) {
   const filePath = path.resolve(__dirname, '../../mobile.js');
   let source = fs.readFileSync(filePath, 'utf8');
   source = source.replace(
+    "import { initViewportHeight } from './js/modules/viewport-height.js';",
+    'const initViewportHeight = () => () => {};',
+  );
+  source = source.replace(
     "import { initReminders } from './js/reminders.js';",
     'const initReminders = window.__initReminders;',
   );
