@@ -3,7 +3,7 @@
 <head>
   <base href="/memory-cue/">
   <!-- BEGIN GPT CHANGE: external styles -->
-  <link rel="stylesheet" href="./assets/styles-e2062b22.css">
+  <link rel="stylesheet" href="./assets/styles-f7f938b5.css">
   <!-- END GPT CHANGE -->
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
@@ -81,6 +81,84 @@
 
     .dashboard-widget [aria-hidden="true"].animate-pulse {
       opacity: .85;
+    }
+
+    /* Reminders: clean flat row layout */
+    [data-route="reminders"] ul.space-y-3 > li {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 0.6rem 0.75rem;
+      background-color: rgba(15, 23, 42, 0.02);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li + li {
+      margin-top: 0.4rem;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:hover {
+      border-color: rgba(59, 130, 246, 0.35);
+      background-color: rgba(59, 130, 246, 0.06);
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .reminder-main {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .reminder-meta {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      opacity: 0.75;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      align-items: flex-end;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .reminder-meta .reminder-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li .card,
+    [data-route="reminders"] ul.space-y-3 > li .card-body {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:has(.text-error) {
+      border-left: 4px solid hsl(var(--er));
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:has(.text-warning) {
+      border-left: 4px solid hsl(var(--wa));
+    }
+
+    [data-route="reminders"] ul.space-y-3 > li:has(.text-secondary) {
+      border-left: 4px solid hsl(var(--se));
+    }
+
+    #quick-action-toolbar {
+      opacity: 0.9;
+      backdrop-filter: blur(10px);
+      background-color: rgba(15, 23, 42, 0.55);
+      border-radius: 1.25rem;
+      padding: 0.5rem;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+    }
+
+    #quick-action-toolbar .quick-action-btn {
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.35);
     }
   </style>
   <script src="./assets/runtime-env-shim-TYQCA2C5.js" defer></script>
@@ -496,7 +574,7 @@
           </div>
           <button
             type="button"
-            class="btn btn-sm btn-outline"
+            class="btn btn-primary rounded-full"
             data-open-reminder-modal
             aria-haspopup="dialog"
             aria-controls="reminder-modal"
@@ -505,46 +583,40 @@
           </button>
         </div>
         <ul class="space-y-3">
-          <li class="rounded-2xl border border-base-300 bg-base-200/70 p-5 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-              <div class="space-y-1 sm:flex-1 sm:min-w-0">
-                <p class="font-medium text-base-content">
-                  <span class="font-semibold">Submit unit overview</span>
-                </p>
-                <p class="text-sm text-base-content/70">Due Friday · Curriculum team</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                <span class="badge badge-outline text-warning">Due soon</span>
+          <li class="reminder-item">
+            <div class="reminder-main space-y-2">
+              <p class="font-semibold text-base-content">Submit unit overview</p>
+              <p class="text-sm text-base-content/70">Due Friday · Curriculum team</p>
+              <p class="text-sm text-base-content/60">Attach the new literacy checkpoints before sending.</p>
+            </div>
+            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span class="badge badge-outline text-warning">Due soon</span>
+              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
                 <button class="btn btn-sm btn-success" type="button" disabled title="Coming soon">Complete</button>
                 <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Snooze</button>
               </div>
             </div>
-            <p class="mt-3 text-sm text-base-content/60">Attach the new literacy checkpoints before sending.</p>
           </li>
-          <li class="rounded-2xl border border-base-300 bg-base-200/70 p-5 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-              <div class="space-y-1 sm:flex-1 sm:min-w-0">
-                <p class="font-medium text-base-content">
-                  <span class="font-semibold">Email newsletter blurb</span>
-                </p>
-                <p class="text-sm text-base-content/70">Add upcoming excursions to the weekly update.</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                <span class="badge badge-outline text-secondary">This week</span>
+          <li class="reminder-item">
+            <div class="reminder-main space-y-2">
+              <p class="font-semibold text-base-content">Email newsletter blurb</p>
+              <p class="text-sm text-base-content/70">Add upcoming excursions to the weekly update.</p>
+            </div>
+            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span class="badge badge-outline text-secondary">This week</span>
+              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
                 <button class="btn btn-sm btn-outline" type="button">Open notes</button>
               </div>
             </div>
           </li>
-          <li class="rounded-2xl border border-base-300 bg-base-200/70 p-5 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-              <div class="space-y-1 sm:flex-1 sm:min-w-0">
-                <p class="font-medium text-base-content">
-                  <span class="font-semibold">Call guardians</span>
-                </p>
-                <p class="text-sm text-base-content/70">Follow up on field trip permissions · Family liaison</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                <span class="badge badge-outline text-error">High priority</span>
+          <li class="reminder-item">
+            <div class="reminder-main space-y-2">
+              <p class="font-semibold text-base-content">Call guardians</p>
+              <p class="text-sm text-base-content/70">Follow up on field trip permissions · Family liaison</p>
+            </div>
+            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span class="badge badge-outline text-error">High priority</span>
+              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
                 <button class="btn btn-sm btn-outline" type="button">Log call</button>
               </div>
             </div>
