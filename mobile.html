@@ -1193,35 +1193,30 @@
   }
   </style>
 
-  <header class="mc-header" role="banner" aria-label="Primary header">
-    <div class="mc-header-top">
-      <div class="mc-brand" aria-hidden="false">
-        <a href="#" class="logo" title="Memory Cue">MC</a>
-          </div>
+  <header class="sticky top-0 z-20 bg-slate-900 text-slate-50 shadow-md">
+    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-2">
+      <!-- Left: Home button -->
+      <button
+        type="button"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+        aria-label="Go to home"
+      >
+        <span class="text-xl leading-none">🏠</span>
+      </button>
 
-      <div class="mc-header-meta">
-        <!-- status (visual tiny dot + accessible text) -->
-        <div id="syncStatus" class="sync-inline" aria-hidden="false" data-state="offline" title="Sync status">
-          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
-        </div>
-        <span id="mcStatusText" class="sr-only">Offline</span>
+      <!-- Centre: Title -->
+      <h1 class="text-base font-semibold tracking-wide text-slate-50">
+        Tasks
+      </h1>
 
-        <div class="mc-actions" id="headerQuickActions" role="group" aria-label="Header actions">
-          <button type="button" class="mc-add-btn" data-open-add-task>
-                     <span class="mc-add-btn__hint" aria-hidden="true">＋</span>
-          </button>
-          <!-- Overflow / more -->
-          <div style="position:relative;">
-            <button id="overflowMenuBtn" type="button" class="mc-btn btn btn-ghost icon-only" aria-label="More options" aria-haspopup="true" aria-controls="overflowMenu" aria-expanded="false">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
-            </button>
-
-            <div id="overflowMenu" class="menu-card hidden absolute right-0 mt-2 w-44 rounded-xl shadow-lg bg-base-100 border" role="menu" aria-hidden="true">
-              <ul class="py-2 text-sm" role="none"></ul>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Right: Settings button -->
+      <button
+        type="button"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+        aria-label="Open settings"
+      >
+        <span class="text-xl leading-none">⚙️</span>
+      </button>
     </div>
   </header>
 
