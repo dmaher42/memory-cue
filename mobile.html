@@ -2775,6 +2775,46 @@
       });
     })();
   </script>
-  
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const homeBtn = document.querySelector('header.sticky [aria-label="Go to home"]');
+      const settingsBtn = document.querySelector('header.sticky [aria-label="Open settings"]');
+
+      // Locate reminders section
+      const remindersSection =
+        document.getElementById('remindersWrapper') ||
+        document.querySelector('[data-section="reminders"]') ||
+        document.getElementById('reminders') ||
+        document.body;
+
+      if (homeBtn && remindersSection) {
+        homeBtn.addEventListener('click', () => {
+          remindersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      // Locate settings section
+      let settingsSection =
+        document.getElementById('settingsSection') ||
+        document.getElementById('settings') ||
+        document.querySelector('[data-section="settings"]');
+
+      const drawerOpenBtn = document.querySelector('[data-open-drawer]');
+
+      if (settingsBtn) {
+        if (settingsSection) {
+          settingsBtn.addEventListener('click', () => {
+            settingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        } else if (drawerOpenBtn) {
+          settingsBtn.addEventListener('click', () => {
+            drawerOpenBtn.click();
+          });
+        }
+      }
+    });
+  </script>
+
 </body>
 </html>
