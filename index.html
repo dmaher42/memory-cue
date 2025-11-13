@@ -1220,5 +1220,34 @@
   <script type="module" src="./assets/app-RUBDXMLV.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script src="./assets/register-service-worker-VJMOHPCS.js" defer></script>
+  <script>
+    (function () {
+      const toggleButton = document.getElementById('mobile-nav-toggle');
+      const mobileMenu = document.getElementById('mobile-nav-menu');
+
+      if (!toggleButton || !mobileMenu) {
+        return;
+      }
+
+      toggleButton.addEventListener('click', () => {
+        const isHidden = mobileMenu.hasAttribute('hidden');
+
+        if (isHidden) {
+          mobileMenu.removeAttribute('hidden');
+          toggleButton.setAttribute('aria-expanded', 'true');
+        } else {
+          mobileMenu.setAttribute('hidden', '');
+          toggleButton.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      mobileMenu.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          mobileMenu.setAttribute('hidden', '');
+          toggleButton.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
