@@ -30,12 +30,12 @@
       --info-color: var(--accent-color);
       --bg-color: var(--background-color);
       --border-color: var(--card-border);
-      --priority-high-border: #EF4444;
-      --priority-high-bg: rgba(239, 68, 68, 0.08);
-      --priority-medium-border: #F59E0B;
-      --priority-medium-bg: rgba(245, 158, 11, 0.08);
-      --priority-low-border: #10B981;
-      --priority-low-bg: rgba(16, 185, 129, 0.08);
+      --priority-high-border: #F4A259; /* Bio Orange */
+      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
+      --priority-medium-border: #6C8AE4; /* Quantum Blue */
+      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 16%, #FFFFFF);
+      --priority-low-border: #6B8F71; /* Digital Sage */
+      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 16%, #FFFFFF);
       --shadow-sm: 0 1px 3px var(--shadow-color);
       --shadow-md: 0 4px 12px var(--shadow-color);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -184,19 +184,19 @@
       transition: all 0.2s ease;
     }
 
-    /* High priority: Red tint + Red border */
+    /* High priority: Bio Orange tint + border */
     .reminder-card.priority-high {
-      background-color: rgba(229, 115, 115, 0.1);
-      border-left-color: #e57373;
+      background-color: var(--priority-high-bg);
+      border-left-color: var(--priority-high-border);
     }
 
-    /* Medium priority: Orange tint + Orange border */
+    /* Medium priority: Quantum Blue tint + border */
     .reminder-card.priority-medium {
-      background-color: rgba(255, 183, 77, 0.1);
-      border-left-color: #ffb74d;
+      background-color: var(--priority-medium-bg);
+      border-left-color: var(--priority-medium-border);
     }
 
-    /* Low priority cards will just use the default styles */
+    /* Low priority: Digital Sage accent */
 
     /* If reminders are wrapped in DaisyUI cards, ensure they inherit the new look */
     #reminderList > * .card,
@@ -217,12 +217,27 @@
         gap: 0.5rem;
         padding: 0.6rem 0.8rem;
         margin-bottom: 0.5rem;
-        background: #FFFFFF;
-        border: 1px solid #E5E7EB;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: 0.5rem;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
         font-size: var(--reminder-card-font-size);
         line-height: 1.4;
+      }
+
+      #reminderList > .reminder-card.priority-high {
+        background: var(--priority-high-bg);
+        border-left: 3px solid var(--priority-high-border);
+      }
+
+      #reminderList > .reminder-card.priority-medium {
+        background: var(--priority-medium-bg);
+        border-left: 3px solid var(--priority-medium-border);
+      }
+
+      #reminderList > .reminder-card.priority-low {
+        background: var(--priority-low-bg);
+        border-left: 3px solid var(--priority-low-border);
       }
 
       #reminderList > .reminder-card:last-child {
@@ -266,21 +281,21 @@
       }
 
       .priority-pill.priority-high {
-        background: rgba(239, 68, 68, 0.12);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        color: #B91C1C;
+        background: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--priority-high-border) 32%, transparent);
+        color: var(--priority-high-border);
       }
 
       .priority-pill.priority-medium {
-        background: rgba(245, 158, 11, 0.12);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        color: #B45309;
+        background: color-mix(in srgb, var(--priority-medium-border) 18%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--priority-medium-border) 32%, transparent);
+        color: var(--priority-medium-border);
       }
 
       .priority-pill.priority-low {
-        background: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        color: #047857;
+        background: color-mix(in srgb, var(--priority-low-border) 18%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--priority-low-border) 32%, transparent);
+        color: var(--priority-low-border);
       }
     }
 
@@ -1181,15 +1196,15 @@
     }
 
     .priority-chip-dot.priority-high::before {
-      background: var(--priority-high-border, #EF4444);
+      background: var(--priority-high-border, #F4A259);
     }
 
     .priority-chip-dot.priority-medium::before {
-      background: var(--priority-medium-border, #F59E0B);
+      background: var(--priority-medium-border, #6C8AE4);
     }
 
     .priority-chip-dot.priority-low::before {
-      background: var(--priority-low-border, #10B981);
+      background: var(--priority-low-border, #6B8F71);
     }
 
     .dark .priority-chip-dot {
@@ -1377,19 +1392,19 @@
 
     .dark .cue-item[data-priority="High"],
     .dark #reminderList [data-reminder][data-priority="High"] {
-      background: color-mix(in srgb, rgba(239, 68, 68, 0.22) 60%, rgba(15, 23, 42, 0.92) 40%);
+      background: color-mix(in srgb, var(--priority-high-border) 28%, rgba(15, 23, 42, 0.92) 72%);
       border-left-color: color-mix(in srgb, var(--priority-high-border) 80%, transparent);
     }
 
     .dark .cue-item[data-priority="Medium"],
     .dark #reminderList [data-reminder][data-priority="Medium"] {
-      background: color-mix(in srgb, rgba(245, 158, 11, 0.22) 60%, rgba(15, 23, 42, 0.92) 40%);
+      background: color-mix(in srgb, var(--priority-medium-border) 26%, rgba(15, 23, 42, 0.92) 74%);
       border-left-color: color-mix(in srgb, var(--priority-medium-border) 80%, transparent);
     }
 
     .dark .cue-item[data-priority="Low"],
     .dark #reminderList [data-reminder][data-priority="Low"] {
-      background: color-mix(in srgb, rgba(16, 185, 129, 0.22) 60%, rgba(15, 23, 42, 0.92) 40%);
+      background: color-mix(in srgb, var(--priority-low-border) 26%, rgba(15, 23, 42, 0.92) 74%);
       border-left-color: color-mix(in srgb, var(--priority-low-border) 80%, transparent);
     }
 
