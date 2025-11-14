@@ -159,7 +159,9 @@ initViewportHeight();
     openers.forEach((trigger) => {
       trigger.addEventListener('click', (event) => {
         event.preventDefault();
-        openSheet(trigger);
+        const detail = { mode: 'create', trigger };
+        dispatchSheetEvent('cue:prepare', detail);
+        dispatchSheetEvent('cue:open', detail);
       });
     });
 
