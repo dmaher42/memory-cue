@@ -5,7 +5,7 @@ ${o}`:o,n.updatedAt=Date.now(),H(n),M(),P(),Q({action:"updated",label:`Reminder 
           <div class="task-header">
             <div class="task-title"><strong>${ue(c.title)}</strong></div>
             <div class="task-toolbar" role="toolbar" aria-label="Reminder actions">
-              <button class="task-toolbar-btn" data-del type="button" aria-label="Delete reminder">
+              <button class="task-toolbar-btn cue-btn delete" data-del type="button" aria-label="Delete reminder">
                 <span aria-hidden="true">\u{1F5D1}\uFE0F</span>
                 <span class="task-toolbar-label">Delete</span>
               </button>
