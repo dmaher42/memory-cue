@@ -988,7 +988,7 @@
 
     /* Mobile-first optimizations */
     :root {
-      --mobile-header-height: 45px;
+      --mobile-header-height: calc(45px / 2);
       --mobile-safe-area-top: env(safe-area-inset-top, 0px);
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
@@ -1747,7 +1747,7 @@
   <!-- Clean Mobile Header -->
   <style id="mobile-header-compact" aria-hidden="true">
   :root {
-    --mobile-header-height: 45px;
+    --mobile-header-height: calc(45px / 2);
   }
 
   /* Make header visually compact while preserving touch targets and accessibility */
@@ -2040,6 +2040,7 @@
       color: color-mix(in srgb, var(--card-bg) 95%, transparent);            /* light text */
       box-shadow: 0 1px 4px color-mix(in srgb, var(--text-primary) 70%, transparent);
       min-height: var(--mobile-header-height);
+      padding-block: 0;
     }
 
     /* Inner container: single row, spaced out */
@@ -2067,8 +2068,8 @@
 
     /* Round icon buttons */
     header.sticky button {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
       border-radius: 999px;
       border: none;
       background-color: color-mix(in srgb, var(--text-primary) 80%, transparent);
@@ -2078,6 +2079,10 @@
       justify-content: center;
       padding: 0;
       cursor: pointer;
+    }
+
+    header.sticky .mc-add-btn {
+      padding-block: 0.15rem !important;
     }
 
     header.sticky .header-action-group {
@@ -2242,7 +2247,7 @@
   </style>
 
   <header class="sticky top-0 z-20 text-black shadow-md" style="background-color: #2f2a33;">
-    <div class="mx-auto max-w-md px-3 py-1 flex items-center justify-between gap-2">
+    <div class="mx-auto max-w-md px-3 py-0 flex items-center justify-between gap-2">
       <!-- Left: Home button -->
       <button
         id="btn-open-drawer"
@@ -4186,6 +4191,14 @@
             } else {
               payload.updatedAt = new Date();
             }
+            const user = firebaseContext?.auth?.currentUser;
+            console.log(
+              'Notes sync debug:',
+              'user.uid =',
+              user?.uid,
+              'remoteNotesDocRef path =',
+              remoteNotesDocRef.path
+            );
             await firebaseContext.setDoc(remoteNotesDocRef, payload, { merge: true });
             lastRemoteContent = content;
             setStatus('saved', 'Synced');
