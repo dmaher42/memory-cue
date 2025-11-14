@@ -30,7 +30,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (!authForm) return;
 
   if (syncStatus && !syncStatus.textContent) {
-    syncStatus.textContent = 'Sign in to sync reminders across devices.';
+    syncStatus.textContent = 'Sign in to sync your reminders.';
     syncStatus.classList.remove('online');
     syncStatus.dataset.state = 'offline';
     toggleElementVisibility(syncStatus, true);
@@ -76,7 +76,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       await supabase.from('profiles').upsert({ id: user.id, email: user.email });
     } else if (syncStatus) {
-      syncStatus.textContent = 'Sign in to sync reminders across devices.';
+      syncStatus.textContent = 'Sign in to sync your reminders.';
       syncStatus.classList.remove('online');
       syncStatus.dataset.state = 'offline';
     }
