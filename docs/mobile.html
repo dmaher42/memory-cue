@@ -42,59 +42,65 @@
     transform: translateY(-2px);
   }
 
-  .menu-card {
-    padding: 0.25rem 0;
-    background: color-mix(in srgb, var(--card-bg, #ffffff) 70%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-color, rgba(148, 163, 184, 0.28)) 65%, transparent);
-    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.18);
-    color: var(--text-primary, rgba(15, 23, 42, 0.88));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+  .quick-actions-panel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    box-shadow: none;
     z-index: 50;
+    justify-items: center;
   }
 
-  html[data-theme="dark"] .menu-card {
-    background: color-mix(in srgb, rgba(15, 23, 42, 0.92) 80%, transparent);
-    border-color: rgba(148, 163, 184, 0.28);
-    box-shadow: 0 24px 40px rgba(2, 6, 23, 0.6);
-    color: rgba(226, 232, 240, 0.92);
+  .quick-actions li {
+    list-style: none;
   }
 
-  @supports not (color-mix(in srgb, red, transparent)) {
-    .menu-card {
-      background: rgba(255, 255, 255, 0.82);
-      border-color: rgba(148, 163, 184, 0.24);
-    }
-
-    html[data-theme="dark"] .menu-card {
-      background: rgba(15, 23, 42, 0.88);
-    }
+  .quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 9999px;
+    border: none;
+    background: rgba(15, 23, 42, 0.1);
+    color: var(--text-primary, rgba(15, 23, 42, 0.88));
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
   }
 
-    .menu-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      width: 100%;
-      text-align: left;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      border-radius: 0.5rem;
-      color: inherit;
-      font: inherit;
-      transition: background-color 0.2s ease;
-    }
-
-  .menu-item:hover,
-  .menu-item:focus-visible {
-    background: rgba(15, 23, 42, 0.06);
+  .quick-action-btn:hover,
+  .quick-action-btn:focus-visible {
+    background: rgba(15, 23, 42, 0.16);
+    transform: translateY(-1px);
     outline: none;
   }
 
-  html[data-theme="dark"] .menu-item:hover,
-  html[data-theme="dark"] .menu-item:focus-visible {
-    background: rgba(148, 163, 184, 0.12);
+  html[data-theme="dark"] .quick-action-btn {
+    background: rgba(226, 232, 240, 0.08);
+    color: rgba(226, 232, 240, 0.92);
+  }
+
+  html[data-theme="dark"] .quick-action-btn:hover,
+  html[data-theme="dark"] .quick-action-btn:focus-visible {
+    background: rgba(226, 232, 240, 0.16);
+  }
+
+  .quick-action-icon {
+    font-size: 1.25rem;
+    line-height: 1;
   }
 
   /* Reminders wrapper spacing on mobile */
@@ -1887,32 +1893,61 @@
 
         <div
           id="overflowMenu"
-          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg"
+          class="hidden quick-actions-panel absolute right-0 mt-2"
           role="menu"
           aria-hidden="true"
           aria-labelledby="overflowMenuHeading"
         >
           <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-          <ul class="py-2 text-sm">
-            <li>
-              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
-                <span aria-hidden="true">🎙️</span>
-                <span>Dictate reminder</span>
+          <ul class="quick-actions" role="presentation">
+            <li role="none">
+              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                <span class="sr-only">Dictate reminder</span>
               </button>
             </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
-            <li>
-              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2" data-open="settings">Settings</button>
+            <li role="none">
+              <button
+                id="viewToggleMenu"
+                type="button"
+                class="quick-action-btn"
+                title="Toggle layout"
+                role="menuitem"
+              >
+                <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+              </button>
             </li>
-            <li>
-              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+            <li role="none">
+              <button
+                id="openSettings"
+                type="button"
+                class="quick-action-btn"
+                data-open="settings"
+                title="Open settings"
+                role="menuitem"
+              >
+                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                <span class="sr-only">Open settings</span>
+              </button>
             </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
-            <li>
-              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+            <li role="none">
+              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                <span class="sr-only">Toggle theme</span>
+              </button>
             </li>
-            <li>
-              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+            <li role="none">
+              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                <span class="sr-only">Sign in</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                <span class="sr-only">Sign out</span>
+              </button>
             </li>
           </ul>
         </div>
