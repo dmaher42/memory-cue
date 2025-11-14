@@ -59,7 +59,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-5184cfce.css" />
+  <link rel="stylesheet" href="./assets/styles-ba77c496.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -693,42 +693,97 @@
             Add reminder
           </button>
         </div>
-        <ul id="reminders-list" class="space-y-2">
-          <li class="reminder-item">
-            <div class="reminder-main space-y-2">
-              <p class="font-semibold text-base-content">Submit unit overview</p>
-              <p class="text-sm text-base-content/70">Due Friday · Curriculum team</p>
-              <p class="text-sm text-base-content/60 hidden">Attach the new literacy checkpoints before sending.</p>
-            </div>
-            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <span class="badge badge-outline text-warning">Due soon</span>
-              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
-                <button class="btn btn-sm btn-outline" type="button">Open notes</button>
+        <ul id="reminders-list" class="space-y-1.5">
+          <li
+            class="task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            role="button"
+            tabindex="0"
+            aria-label="Edit reminder: Submit unit overview"
+          >
+            <div class="flex min-w-0 flex-col gap-2">
+              <p class="text-sm font-semibold leading-snug text-base-content">Submit unit overview</p>
+              <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
+                  <span class="h-1.5 w-1.5 rounded-full bg-base-content/40"></span>
+                  <span class="truncate">Due Friday</span>
+                </span>
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
+                  <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                  <span class="truncate">Curriculum team</span>
+                </span>
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-warning">
+                  <span class="h-1.5 w-1.5 rounded-full bg-warning"></span>
+                  <span class="truncate">Medium priority</span>
+                </span>
               </div>
+            </div>
+            <div class="flex items-start gap-1">
+              <button type="button" class="btn btn-ghost btn-circle btn-xs text-success" aria-label="Mark reminder as done">
+                <span aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete reminder">
+                <span aria-hidden="true">🗑️</span>
+              </button>
             </div>
           </li>
-          <li class="reminder-item">
-            <div class="reminder-main space-y-2">
-              <p class="font-semibold text-base-content">Email newsletter blurb</p>
-              <p class="text-sm text-base-content/70 hidden">Add upcoming excursions to the weekly update.</p>
-            </div>
-            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <span class="badge badge-outline text-secondary">This week</span>
-              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
-                <button class="btn btn-sm btn-outline" type="button">Open notes</button>
+          <li
+            class="task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            role="button"
+            tabindex="0"
+            aria-label="Edit reminder: Email newsletter blurb"
+          >
+            <div class="flex min-w-0 flex-col gap-2">
+              <p class="text-sm font-semibold leading-snug text-base-content">Email newsletter blurb</p>
+              <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
+                  <span class="h-1.5 w-1.5 rounded-full bg-base-content/40"></span>
+                  <span class="truncate">Due next week</span>
+                </span>
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary">
+                  <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+                  <span class="truncate">Communications</span>
+                </span>
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary">
+                  <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+                  <span class="truncate">Scheduled</span>
+                </span>
               </div>
+            </div>
+            <div class="flex items-start gap-1">
+              <button type="button" class="btn btn-ghost btn-circle btn-xs text-success" aria-label="Mark reminder as done">
+                <span aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete reminder">
+                <span aria-hidden="true">🗑️</span>
+              </button>
             </div>
           </li>
-          <li class="reminder-item">
-            <div class="reminder-main space-y-2">
-              <p class="font-semibold text-base-content">Call guardians</p>
-              <p class="text-sm text-base-content/70">Follow up on field trip permissions · Family liaison</p>
-            </div>
-            <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <span class="badge badge-outline text-error">High priority</span>
-              <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
-                <button class="btn btn-sm btn-outline" type="button">Log call</button>
+          <li
+            class="task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            role="button"
+            tabindex="0"
+            aria-label="Edit reminder: Call guardians"
+          >
+            <div class="flex min-w-0 flex-col gap-2">
+              <p class="text-sm font-semibold leading-snug text-base-content">Call guardians</p>
+              <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
+                  <span class="h-1.5 w-1.5 rounded-full bg-base-content/40"></span>
+                  <span class="truncate">Due tomorrow</span>
+                </span>
+                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-error">
+                  <span class="h-1.5 w-1.5 rounded-full bg-error"></span>
+                  <span class="truncate">High priority</span>
+                </span>
               </div>
+            </div>
+            <div class="flex items-start gap-1">
+              <button type="button" class="btn btn-ghost btn-circle btn-xs text-success" aria-label="Mark reminder as done">
+                <span aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete reminder">
+                <span aria-hidden="true">🗑️</span>
+              </button>
             </div>
           </li>
         </ul>
@@ -1264,7 +1319,7 @@
     </div>
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
-  <script type="module" src="./assets/app-ETQDV4K7.js" defer></script>
+  <script type="module" src="./assets/app-DLVMV76N.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
