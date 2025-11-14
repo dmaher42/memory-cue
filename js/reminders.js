@@ -3018,6 +3018,25 @@ export async function initReminders(sel = {}) {
 
     const shouldGroupCategories = true;
 
+    const priorityClassTokens = ['priority-high', 'priority-medium', 'priority-low'];
+    const applyPriorityTokensToCard = (card, priorityValue) => {
+      if (!(card instanceof HTMLElement)) {
+        return;
+      }
+
+      card.classList.remove(...priorityClassTokens);
+
+      const normalized = typeof priorityValue === 'string' ? priorityValue.trim().toLowerCase() : '';
+
+      if (normalized.startsWith('h')) {
+        card.classList.add('priority-high');
+      } else if (normalized.startsWith('m')) {
+        card.classList.add('priority-medium');
+      } else if (normalized.startsWith('l')) {
+        card.classList.add('priority-low');
+      }
+    };
+
     const createMetaChip = (label, tone = 'neutral') => {
       const chip = document.createElement('span');
       chip.className =
@@ -3082,6 +3101,8 @@ export async function initReminders(sel = {}) {
       itemEl.setAttribute('role', 'button');
       itemEl.tabIndex = 0;
       itemEl.setAttribute('aria-label', `Edit reminder: ${reminder.title}`);
+
+      applyPriorityTokensToCard(itemEl, summary.priority);
 
       if (pendingNotificationIds.has(summary.id)) {
         itemEl.dataset.notificationActive = 'true';
