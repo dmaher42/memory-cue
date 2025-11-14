@@ -2269,7 +2269,7 @@
                 role="menuitem"
               >
                 <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Full</span>
               </button>
             </li>
             <li role="none">
@@ -2830,7 +2830,8 @@
       };
 
       const setCompactMode = (compact) => {
-        reminderList.querySelectorAll('.task-item').forEach((item) => {
+        reminderList.querySelectorAll('.task-item, [data-compact]').forEach((item) => {
+          if (!(item instanceof HTMLElement)) return;
           if (compact) {
             item.setAttribute('data-compact', 'true');
           } else {
@@ -2842,19 +2843,22 @@
       const ensureInitialState = () => {
         let isGridView = reminderList.classList.contains('grid-cols-2');
 
-        if (!isGridView && !reminderList.classList.contains('space-y-3')) {
-          reminderList.classList.add('grid-cols-2');
-          isGridView = true;
+        if (isGridView) {
+          reminderList.classList.remove('grid-cols-2');
+          reminderList.classList.add('space-y-3');
+          isGridView = false;
+        } else if (!reminderList.classList.contains('space-y-3')) {
+          reminderList.classList.add('space-y-3');
         }
 
         updateToggleState(isGridView);
-        setCompactMode(true);
+        setCompactMode(false);
         applyNotificationHighlights();
       };
 
       const observer = new MutationObserver(() => {
         const isGridView = reminderList.classList.contains('grid-cols-2');
-        setCompactMode(true);
+        setCompactMode(isGridView);
         applyNotificationHighlights();
         updateToggleState(isGridView);
       });
@@ -2872,7 +2876,7 @@
 
         const isNowGridView = !isGridView;
         updateToggleState(isNowGridView);
-        setCompactMode(true);
+        setCompactMode(isNowGridView);
 
         applyNotificationHighlights();
       });
