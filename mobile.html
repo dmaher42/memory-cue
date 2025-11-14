@@ -946,6 +946,10 @@
     #reminderList .task-toolbar-btn .task-toolbar-label {
       display: none;
     }
+    .task-toolbar-btn.delete span[aria-hidden="true"] {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
     .dark .task-toolbar-btn {
       color: color-mix(in srgb, var(--card-bg) 92%, transparent);
       border-color: transparent;
@@ -1089,6 +1093,7 @@
       box-sizing: border-box;
       margin-left: 0;
       margin-right: 0;
+      padding: 0.5rem 0.75rem;
     }
     
     /* Remove any inherited margins/padding that might constrain width */
@@ -1100,7 +1105,7 @@
     /* Compact reminder card styling */
     .task-item[data-compact="true"] {
       margin-bottom: 0.5rem !important;
-      padding: 0.75rem 0.875rem;
+      padding: 0.6rem 0.85rem;
       min-height: 64px;
       border-left-width: 3px;
       border-radius: 0.75rem;
