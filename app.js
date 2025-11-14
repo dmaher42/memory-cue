@@ -512,10 +512,6 @@ const initialiseReminders = () => {
   const hasDesktopForm = Boolean(titleInput);
   const hasMobileForm = Boolean(mobileTitleInput);
 
-  if (!hasDesktopForm && !hasMobileForm) {
-    return Promise.resolve();
-  }
-
   if (hasMobileForm) {
     return initReminders({
       variant: 'mobile',
@@ -549,7 +545,7 @@ const initialiseReminders = () => {
     });
   }
 
-  return initReminders({
+  const desktopConfig = {
     titleSel: '#title',
     dateSel: '#date',
     timeSel: '#time',
@@ -572,7 +568,32 @@ const initialiseReminders = () => {
     googleUserNameSel: '#googleUserName',
     variant: 'desktop',
     autoWireAuthButtons: true
-  });
+  };
+
+  if (!hasDesktopForm) {
+    return initReminders({
+      ...desktopConfig,
+      // Ensure auth feedback continues to surface in the header even when
+      // the desktop reminder form is not rendered on the page.
+      listSel: null,
+      listWrapperSel: null,
+      emptyStateSel: null,
+      countTotalSel: null,
+      voiceBtnSel: null,
+      categoryOptionsSel: null,
+      dateSel: null,
+      timeSel: null,
+      prioritySel: null,
+      categorySel: null,
+      saveBtnSel: null,
+      cancelEditBtnSel: null,
+      detailsSel: null,
+      titleSel: null,
+      dateFeedbackSel: null,
+    });
+  }
+
+  return initReminders(desktopConfig);
 };
 
 initialiseReminders().catch((error) => {
