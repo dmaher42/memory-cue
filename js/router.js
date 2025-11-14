@@ -57,8 +57,34 @@ function initGroupedNavHandlers() {
   }
 }
 
+function initMobileNavHandlers() {
+  const navMobileDetails = document.querySelector('.nav-mobile');
+  if (!navMobileDetails) {
+    return;
+  }
+
+  const navMobileSummary = navMobileDetails.querySelector('.nav-mobile-summary');
+  const syncExpanded = () => {
+    if (navMobileSummary) {
+      navMobileSummary.setAttribute('aria-expanded', navMobileDetails.open ? 'true' : 'false');
+    }
+  };
+
+  syncExpanded();
+
+  navMobileDetails.addEventListener('toggle', syncExpanded);
+
+  navMobileDetails.querySelectorAll('[data-nav]').forEach((link) => {
+    link.addEventListener('click', () => {
+      navMobileDetails.removeAttribute('open');
+      syncExpanded();
+    });
+  });
+}
+
 function initRouter() {
   initGroupedNavHandlers();
+  initMobileNavHandlers();
   renderRoute();
 }
 
