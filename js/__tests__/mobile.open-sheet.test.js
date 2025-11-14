@@ -18,6 +18,10 @@ function loadMobileModule() {
     "import { initReminders } from './js/reminders.js';",
     'const { initReminders } = window.__mobileMocks;'
   );
+  source = source.replace(
+    "import { initSupabaseAuth } from './js/supabase-auth.js';",
+    'const { initSupabaseAuth } = window.__mobileMocks;'
+  );
   const context = vm.createContext({
     window,
     document,
@@ -70,6 +74,7 @@ describe('mobile sheet opener events', () => {
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
+      initSupabaseAuth: jest.fn(),
     };
 
     loadMobileModule();

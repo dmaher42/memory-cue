@@ -1,5 +1,6 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
+import { initSupabaseAuth } from './js/supabase-auth.js';
 
 initViewportHeight();
 
@@ -294,6 +295,22 @@ if (document.readyState === 'loading') {
 } else {
   bootstrapReminders();
 }
+
+initSupabaseAuth({
+  selectors: {
+    signInButtons: ['#googleSignInBtn'],
+    signOutButtons: ['#googleSignOutBtn'],
+    userBadge: '#user-badge',
+    userBadgeEmail: '#user-badge-email',
+    userBadgeInitial: '#user-badge-initial',
+    userName: '#googleUserName',
+    syncStatus: ['#sync-status', '#syncStatus'],
+    syncStatusText: ['#mcStatusText'],
+    statusIndicator: ['#mcStatus'],
+    feedback: '#auth-feedback',
+  },
+  disableButtonBinding: true,
+});
 
 (() => {
   const menuBtn = document.getElementById('overflowMenuBtn');
