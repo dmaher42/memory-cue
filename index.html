@@ -32,11 +32,12 @@
     http-equiv="Content-Security-Policy"
     content="default-src 'self';
              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
-             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
+             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com https://apis.google.com;
              style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
              img-src 'self' data:;
              font-src 'self' data:;
              worker-src 'self';
+             frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.google.com;
              base-uri 'self';
              form-action 'self'"
   >
@@ -1240,7 +1241,7 @@
     </div>
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
-  <script type="module" src="./assets/app-N4OTB544.js" defer></script>
+  <script type="module" src="./assets/app-FIGBGMY6.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
