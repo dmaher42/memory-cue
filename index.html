@@ -58,7 +58,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-df3ddf7f.css" />
+  <link rel="stylesheet" href="./assets/styles-58472c38.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -266,12 +266,36 @@
             <li>
               <a href="#notes" data-nav="notes" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Notes</a>
             </li>
-            <li class="menu-title">More</li>
             <li>
-              <a href="#resources" data-nav="resources" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Resources</a>
-            </li>
-            <li>
-              <a href="#templates" data-nav="templates" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Templates</a>
+              <details class="nav-mobile-more">
+                <summary
+                  class="nav-mobile-more-summary btn btn-sm btn-ghost w-full justify-between"
+                  aria-expanded="false"
+                  aria-haspopup="menu"
+                  aria-controls="mobile-more-menu"
+                >
+                  <span>More</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    class="nav-mobile-more-chevron size-4"
+                    aria-hidden="true"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                  </svg>
+                </summary>
+                <ul id="mobile-more-menu" class="nav-mobile-more-menu" role="menu">
+                  <li>
+                    <a href="#resources" data-nav="resources" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Resources</a>
+                  </li>
+                  <li>
+                    <a href="#templates" data-nav="templates" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Templates</a>
+                  </li>
+                </ul>
+              </details>
             </li>
           </ul>
         </details>
@@ -304,7 +328,7 @@
                 class="btn btn-sm btn-ghost nav-more-summary items-center gap-1"
                 data-nav-group="more"
                 aria-expanded="false"
-                aria-haspopup="true"
+                aria-haspopup="menu"
                 aria-controls="nav-more-menu"
               >
                 <span>More</span>
@@ -1215,7 +1239,7 @@
       </div>
     </div>
   </div>
-  <script src="./assets/router-ZH4CUUEZ.js" defer></script>
+  <script src="./assets/router-7FWGRX2U.js" defer></script>
   <script type="module" src="./assets/app-N4OTB544.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>

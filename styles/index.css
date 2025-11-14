@@ -418,6 +418,47 @@ textarea {
   font-weight: 600;
 }
 
+.nav-mobile-more {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.nav-mobile-more summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-mobile-more summary::-webkit-details-marker,
+.nav-mobile-more summary::marker {
+  display: none;
+}
+
+.nav-mobile-more .nav-mobile-more-chevron {
+  transition: transform 0.2s ease;
+}
+
+.nav-mobile-more[open] .nav-mobile-more-summary {
+  font-weight: 600;
+}
+
+.nav-mobile-more[open] .nav-mobile-more-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-mobile-more-menu {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0;
+  margin-inline: 0;
+  list-style: none;
+}
+
 .nav-mobile[open] .nav-mobile-chevron {
   transform: rotate(180deg);
 }
