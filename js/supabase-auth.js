@@ -325,3 +325,60 @@ export function getSupabaseAuthElements(selectors = {}, scope = document) {
     ...selectors,
   }, scope);
 }
+
+// Provide a minimal auth context and sign-in/out helpers for other modules
+// (reminders.js and app.js expect these exports).
+let __supabaseAuthContext = {};
+
+export function setAuthContext(ctx = {}) {
+  try {
+    __supabaseAuthContext = { ...__supabaseAuthContext, ...ctx };
+  } catch {
+    __supabaseAuthContext = ctx;
+  }
+  return __supabaseAuthContext;
+}
+
+function getRuntimeSupabase() {
+  try {
+    const client = (typeof getSupabaseClient === 'function' && getSupabaseClient()) || (typeof window !== 'undefined' ? window.supabase : null);
+    return client || null;
+  } catch {
+    return typeof window !== 'undefined' ? window.supabase : null;
+  }
+}
+
+export async function startSignInFlow() {
+  const supabase = getRuntimeSupabase();
+  if (!supabase || !supabase.auth) {
+    throw new Error('Supabase client unavailable for sign-in');
+  }
+
+  try {
+    if (typeof supabase.auth.signInWithOAuth === 'function') {
+      return await supabase.auth.signInWithOAuth({ provider: 'google' });
+    }
+    if (typeof supabase.auth.signIn === 'function') {
+      return await supabase.auth.signIn({ provider: 'google' });
+    }
+    throw new Error('Supabase auth sign-in API not available');
+  } catch (err) {
+    console.error('[supabase] startSignInFlow failed', err);
+    throw err;
+  }
+}
+
+export async function startSignOutFlow() {
+  const supabase = getRuntimeSupabase();
+  if (!supabase || !supabase.auth) {
+    return;
+  }
+  try {
+    if (typeof supabase.auth.signOut === 'function') {
+      return await supabase.auth.signOut();
+    }
+  } catch (err) {
+    console.error('[supabase] startSignOutFlow failed', err);
+    throw err;
+  }
+}
