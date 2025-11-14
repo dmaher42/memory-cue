@@ -359,6 +359,7 @@ initialiseReminders().catch((error) => {
 });
 
 const cuesList = document.getElementById('cues-list');
+const pinnedNotesList = document.getElementById('pinnedNotesList');
 const cueForm = document.getElementById('cue-form');
 const cueIdInput = cueForm?.querySelector('#cue-id-input');
 const defaultCueModalTitle =
@@ -632,6 +633,81 @@ const firebaseCueConfig = {
 
 let firestoreCueContextPromise = null;
 
+const PINNED_NOTES_DISPLAY_LIMIT = 3;
+const PINNED_NOTES_EXCERPT_LIMIT = 120;
+
+function normaliseCueExcerpt(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const text = String(value).replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return '';
+  }
+
+  if (text.length <= PINNED_NOTES_EXCERPT_LIMIT) {
+    return text;
+  }
+
+  return `${text.slice(0, PINNED_NOTES_EXCERPT_LIMIT - 1)}…`;
+}
+
+function isCueMarkedPinned(cue) {
+  if (!cue || typeof cue !== 'object') {
+    return false;
+  }
+
+  const candidates = [cue.pinned, cue.isPinned, cue.pin];
+  return candidates.some((value) => {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const normalised = value.trim().toLowerCase();
+      return normalised === 'true' || normalised === '1' || normalised === 'yes';
+    }
+    return false;
+  });
+}
+
+function renderPinnedNotesList(cues) {
+  if (!pinnedNotesList) {
+    return;
+  }
+
+  const list = Array.isArray(cues) ? cues : [];
+
+  if (!list.length) {
+    pinnedNotesList.innerHTML =
+      '<li class="text-sm text-base-content/60">No pinned notes yet.</li>';
+    return;
+  }
+
+  const pinnedCues = list.filter((cue) => isCueMarkedPinned(cue));
+  const cuesToRender = (pinnedCues.length ? pinnedCues : list).slice(0, PINNED_NOTES_DISPLAY_LIMIT);
+
+  const markup = cuesToRender
+    .map((cue) => {
+      const title = escapeCueText(getCueFieldValueFromData(cue, 'title') || 'Untitled Cue');
+      const rawDetails = getCueFieldValueFromData(cue, 'details');
+      const excerpt = escapeCueText(normaliseCueExcerpt(rawDetails));
+      const detailsMarkup = excerpt
+        ? `<p class="mt-1 text-sm text-base-content/70">${excerpt}</p>`
+        : '';
+
+      return `
+        <li class="rounded-xl border border-base-300 bg-base-100/80 p-3">
+          <p class="font-medium text-base-content">${title}</p>
+          ${detailsMarkup}
+        </li>
+      `;
+    })
+    .join('');
+
+  pinnedNotesList.innerHTML = markup;
+}
+
 function renderCueList(cues) {
   if (!cuesList) {
     return;
@@ -776,14 +852,16 @@ async function fetchCueById(id) {
 }
 
 async function refreshCueList() {
-  if (!cuesList) {
+  if (!cuesList && !pinnedNotesList) {
     return;
   }
   try {
     const cues = await fetchCues();
     renderCueList(cues);
+    renderPinnedNotesList(cues);
   } catch (error) {
     console.error('Failed to load cues', error);
+    renderPinnedNotesList([]);
   }
 }
 
@@ -861,7 +939,6 @@ async function initialiseCueEditing() {
   if (!cueForm || !cueIdInput || !cuesList) {
     return;
   }
-  await refreshCueList();
   cuesList.addEventListener('click', handleCueEditClick);
   cueForm.addEventListener('submit', handleCueFormSubmit);
 }
@@ -881,6 +958,10 @@ if (cueForm && cueIdInput && cuesList) {
   initialiseCueEditing().catch((error) => {
     console.error('Failed to initialise cue editing', error);
   });
+}
+
+if (cuesList || pinnedNotesList) {
+  refreshCueList();
 }
 
 let currentDailyTasks = [];
