@@ -458,6 +458,8 @@ export async function initReminders(sel = {}) {
   const listWrapper = $(sel.listWrapperSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
   const variant = sel.variant || 'mobile';
+  const autoWireAuthButtons =
+    typeof sel.autoWireAuthButtons === 'boolean' ? sel.autoWireAuthButtons : variant !== 'desktop';
 
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
 
@@ -2294,7 +2296,7 @@ export async function initReminders(sel = {}) {
     toast,
   });
 
-  const shouldWireAuthButtons = variant !== 'desktop';
+  const shouldWireAuthButtons = autoWireAuthButtons;
 
   const wireAuthButton = (button, handler) => {
     if (!(button instanceof HTMLElement) || button._authWired) {
