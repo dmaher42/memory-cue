@@ -3235,8 +3235,12 @@
           content.appendChild(secondaryRow);
         }
 
-        card.dataset.compact = 'true';
         card.dataset.compactLayout = 'true';
+        if (list.classList.contains('grid-cols-2')) {
+          card.dataset.compact = 'true';
+        } else {
+          card.removeAttribute('data-compact');
+        }
       };
 
       const upgrade = (node) => {
