@@ -75,6 +75,9 @@
   <style>
     :root {
       --vh: 1vh;
+      --reminder-digital-sage: #5f7a6b;
+      --reminder-quantum-blue: #7a9acd;
+      --reminder-bio-orange: #f2a65a;
     }
 
     body,
@@ -89,15 +92,21 @@
     /* Reminders: clean flat row layout */
     [data-route="reminders"] ul.space-y-3 > li {
       border-radius: 0.75rem;
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      border: 1px solid rgba(95, 122, 107, 0.35);
       padding: 0.6rem 0.75rem;
-      background-color: rgba(15, 23, 42, 0.02);
+      background: linear-gradient(
+        135deg,
+        rgba(95, 122, 107, 0.14),
+        rgba(122, 154, 205, 0.12) 55%,
+        rgba(242, 166, 90, 0.16)
+      );
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 0.75rem;
-      transition: border-color 0.2s ease, background-color 0.2s ease;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
 
     [data-route="reminders"] ul.space-y-3 > li + li {
@@ -105,8 +114,14 @@
     }
 
     [data-route="reminders"] ul.space-y-3 > li:hover {
-      border-color: rgba(59, 130, 246, 0.35);
-      background-color: rgba(59, 130, 246, 0.06);
+      border-color: rgba(122, 154, 205, 0.55);
+      background: linear-gradient(
+        135deg,
+        rgba(95, 122, 107, 0.18),
+        rgba(122, 154, 205, 0.18) 55%,
+        rgba(242, 166, 90, 0.22)
+      );
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
     }
 
     [data-route="reminders"] ul.space-y-3 > li .reminder-main {
@@ -140,15 +155,15 @@
     }
 
     [data-route="reminders"] ul.space-y-3 > li:has(.text-error) {
-      border-left: 4px solid hsl(var(--er));
+      border-left: 4px solid var(--reminder-bio-orange);
     }
 
     [data-route="reminders"] ul.space-y-3 > li:has(.text-warning) {
-      border-left: 4px solid hsl(var(--wa));
+      border-left: 4px solid var(--reminder-quantum-blue);
     }
 
     [data-route="reminders"] ul.space-y-3 > li:has(.text-secondary) {
-      border-left: 4px solid hsl(var(--se));
+      border-left: 4px solid var(--reminder-digital-sage);
     }
 
     #quick-action-toolbar {
