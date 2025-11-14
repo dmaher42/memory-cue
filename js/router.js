@@ -74,6 +74,34 @@ function initMobileNavHandlers() {
 
   navMobileDetails.addEventListener('toggle', syncExpanded);
 
+  const navMobileMoreDetails = navMobileDetails.querySelector('.nav-mobile-more');
+  if (navMobileMoreDetails) {
+    const navMobileMoreSummary = navMobileMoreDetails.querySelector('.nav-mobile-more-summary');
+    const syncMobileMoreExpanded = () => {
+      if (navMobileMoreSummary) {
+        navMobileMoreSummary.setAttribute('aria-expanded', navMobileMoreDetails.open ? 'true' : 'false');
+      }
+    };
+
+    syncMobileMoreExpanded();
+
+    navMobileMoreDetails.addEventListener('toggle', syncMobileMoreExpanded);
+
+    navMobileDetails.addEventListener('toggle', () => {
+      if (!navMobileDetails.open) {
+        navMobileMoreDetails.removeAttribute('open');
+        syncMobileMoreExpanded();
+      }
+    });
+
+    navMobileMoreDetails.querySelectorAll('[data-nav]').forEach((link) => {
+      link.addEventListener('click', () => {
+        navMobileMoreDetails.removeAttribute('open');
+        syncMobileMoreExpanded();
+      });
+    });
+  }
+
   navMobileDetails.querySelectorAll('[data-nav]').forEach((link) => {
     link.addEventListener('click', () => {
       navMobileDetails.removeAttribute('open');
