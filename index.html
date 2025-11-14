@@ -59,7 +59,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-1b64920f.css" />
+  <link rel="stylesheet" href="./assets/styles-8bccc77f.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -891,52 +891,44 @@
           <h1 class="text-2xl font-semibold text-base-content">Notes</h1>
           <p class="text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
         </header>
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
-          <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">Pinned</span>
-            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Class</button>
-            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Student</button>
-            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Ideas</button>
-          </div>
-          <button type="button" class="btn btn-sm btn-primary" disabled title="Coming soon">New note</button>
-        </div>
-        <div class="grid gap-3 md:grid-cols-2">
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <article class="card border border-base-300 bg-base-200/70 shadow-sm">
             <div class="card-body gap-4">
-              <div class="space-y-2">
-                <h2 class="text-lg font-semibold text-base-content">Maths group reflection</h2>
-                <p class="text-sm text-base-content/70">Students responded well to manipulatives; revisit fractions model next week.</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="badge badge-outline text-primary">Strategy</span>
-                <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Archive</button>
+              <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-2 mb-3">
+                  <label for="noteTitle" class="text-sm font-medium">Title</label>
+                  <input
+                    id="noteTitle"
+                    type="text"
+                    class="input input-bordered w-full"
+                    placeholder="e.g. Kids basketball schedule – this weekend"
+                  />
+                </div>
+                <div class="flex items-center gap-2 mb-3">
+                  <button id="noteSaveBtn" type="button" class="btn btn-primary btn-sm">Save</button>
+                  <button id="noteNewBtn" type="button" class="btn btn-ghost btn-sm">New note</button>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label for="noteBody" class="text-sm font-medium">Body</label>
+                  <textarea
+                    id="noteBody"
+                    class="textarea textarea-bordered w-full"
+                    rows="10"
+                    placeholder="Write your note here…"
+                  ></textarea>
+                </div>
               </div>
             </div>
           </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <aside class="card border border-base-300 bg-base-200/70 shadow-sm">
             <div class="card-body gap-4">
-              <div class="space-y-2">
-                <h2 class="text-lg font-semibold text-base-content">Student wellbeing</h2>
-                <p class="text-sm text-base-content/70">Check in with Aidan about new seating plan and group expectations.</p>
+              <div>
+                <h3 class="text-base font-semibold text-base-content">Saved notes</h3>
+                <p class="text-sm text-base-content/70">Select a note to load it in the editor.</p>
               </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="badge badge-outline text-secondary">Follow up</span>
-                <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Pin</button>
-              </div>
+              <ul id="notesList" class="space-y-1 max-h-80 overflow-y-auto text-sm"></ul>
             </div>
-          </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm md:col-span-2">
-            <div class="card-body gap-4">
-              <div class="space-y-2">
-                <h2 class="text-lg font-semibold text-base-content">Ideas for next assembly</h2>
-                <p class="text-sm text-base-content/70">Collect short student shout-outs and share quick wellbeing wins from the week.</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="badge badge-outline text-accent">Idea</span>
-                <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Convert to template</button>
-              </div>
-            </div>
-          </article>
+          </aside>
         </div>
       </section>
 
@@ -1320,7 +1312,7 @@
     </div>
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
-  <script type="module" src="./assets/app-R7IOTNVE.js" defer></script>
+  <script type="module" src="./assets/app-3K4LVXAA.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
