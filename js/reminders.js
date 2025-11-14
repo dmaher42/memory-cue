@@ -3058,7 +3058,7 @@ export async function initReminders(sel = {}) {
 
       const itemEl = document.createElement(elementTag);
       itemEl.className =
-        'task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
+        'task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
       if (isMobile) {
         itemEl.classList.add('w-full');
       }
