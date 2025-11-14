@@ -61,9 +61,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    const user = session?.user || null;
-
+  const applyAuthState = async (user) => {
     toggleElementVisibility(signOutBtn, Boolean(user));
     toggleElementVisibility(authForm, !user);
     toggleElementVisibility(userBadge, Boolean(user));
@@ -77,20 +75,27 @@ window.addEventListener('DOMContentLoaded', () => {
         syncStatus.dataset.state = 'online';
       }
       await supabase.from('profiles').upsert({ id: user.id, email: user.email });
-    } else {
-      if (syncStatus) {
-        syncStatus.textContent = 'Sign in to sync reminders across devices.';
-        syncStatus.classList.remove('online');
-        syncStatus.dataset.state = 'offline';
-      }
+    } else if (syncStatus) {
+      syncStatus.textContent = 'Sign in to sync reminders across devices.';
+      syncStatus.classList.remove('online');
+      syncStatus.dataset.state = 'offline';
     }
 
     if (syncStatus) {
-      toggleElementVisibility(syncStatus, true);
+      toggleElementVisibility(syncStatus, !user);
     }
 
     setFeedback('');
+  };
+
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    await applyAuthState(session?.user || null);
   });
+
+  supabase.auth
+    .getSession()
+    .then(({ data }) => applyAuthState(data?.session?.user || null))
+    .catch(() => applyAuthState(null));
 
   (async () => {
     try {
