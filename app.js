@@ -1037,12 +1037,21 @@ function renderPinnedNotesList(cues) {
   pinnedNotesList.innerHTML = markup;
 }
 
+function renderCueListMessage(message, { tone = 'muted' } = {}) {
+  if (!cuesList) {
+    return;
+  }
+  const classes = ['text-sm'];
+  classes.push(tone === 'error' ? 'text-error' : 'text-base-content/60');
+  cuesList.innerHTML = `<p class="${classes.join(' ')}">${escapeCueText(message)}</p>`;
+}
+
 function renderCueList(cues) {
   if (!cuesList) {
     return;
   }
   if (!Array.isArray(cues) || cues.length === 0) {
-    cuesList.innerHTML = '<p class="text-sm text-base-content/60">No cues yet.</p>';
+    renderCueListMessage('No cues yet.');
     return;
   }
   const markup = cues
@@ -1190,6 +1199,11 @@ async function refreshCueList() {
     renderPinnedNotesList(cues);
   } catch (error) {
     console.error('Failed to load cues', error);
+    if (isPermissionDeniedError(error)) {
+      renderCueListMessage('Sign in to view your cues.', { tone: 'muted' });
+    } else {
+      renderCueListMessage('Unable to load cues right now.', { tone: 'error' });
+    }
     renderPinnedNotesList([]);
   }
 }
