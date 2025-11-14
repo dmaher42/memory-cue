@@ -2608,13 +2608,13 @@
         }
 
         updateToggleIcons(isGridView);
-        setCompactMode(isGridView);
+        setCompactMode(true);
         applyNotificationHighlights();
       };
 
       const observer = new MutationObserver(() => {
         const isGridView = reminderList.classList.contains('grid-cols-2');
-        setCompactMode(isGridView);
+        setCompactMode(true);
         applyNotificationHighlights();
       });
 
@@ -2625,13 +2625,13 @@
           reminderList.classList.remove('grid-cols-2');
           reminderList.classList.add('space-y-3');
           updateToggleIcons(false);
-          setCompactMode(false);
         } else {
           reminderList.classList.add('grid-cols-2');
           reminderList.classList.remove('space-y-3');
           updateToggleIcons(true);
-          setCompactMode(true);
         }
+
+        setCompactMode(true);
 
         applyNotificationHighlights();
       });
