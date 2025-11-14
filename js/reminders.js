@@ -2385,6 +2385,7 @@ export async function initReminders(sel = {}) {
     if(!firebaseReady || !userId || !db || typeof doc !== 'function' || typeof setDoc !== 'function' || typeof serverTimestamp !== 'function') return;
     try {
       await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
+        ownerUid: userId,
         title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
         category: item.category || DEFAULT_CATEGORY,
         orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
