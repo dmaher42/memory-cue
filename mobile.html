@@ -2375,7 +2375,7 @@
         <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
           <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
         </div>
-        <p id="sync-status" class="mc-sync-message">Sign in to sync reminders across devices.</p>
+        <p id="sync-status" class="mc-sync-message"></p>
         <span id="mcStatusText" class="mc-status-text">Offline</span>
       </div>
 
@@ -3002,8 +3002,12 @@
                 <option value="Medium" selected>Medium</option>
                 <option value="Low">Low</option>
               </select>
-              <!-- BEGIN GPT CHANGE: priority chips -->
-             
+              <!-- BEGIN GPT CHANGE: priority s -->
+               <fieldset id="prioritys" aria-label="Priority" class="chip-row">
+                <label><input type="radio" name="priority" value="High"> High</label>
+                <label><input type="radio" name="priority" value="Medium" checked> Medium</label>
+                <label><input type="radio" name="priority" value="Low"> Low</label>
+              </fieldset>             
               <!-- END GPT CHANGE: priority chips -->
             </div>
             <label class="form-control">
