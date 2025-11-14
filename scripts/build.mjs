@@ -147,8 +147,7 @@ async function rewriteHtml(assetMap, cssPath) {
     const targetPath = path.join(distDir, file);
     try {
       let html = await fs.readFile(targetPath, 'utf8');
-      html = html.replace(/\.\/dist\/styles\.css/g, cssPath);
-      html = html.replace(/(^|['"(\s])dist\/styles\.css/g, (match, prefix) => `${prefix}${cssPath}`);
+      html = html.replace(/\.\/styles\/tailwind\.css/g, cssPath);
       for (const [original, hashed] of assetMap) {
         const pattern = new RegExp(original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
         html = html.replace(pattern, hashed);
