@@ -487,9 +487,9 @@
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-semibold text-base-content">Week at a glance</h2>
                 <div class="join">
-                  <button class="btn btn-sm join-item" type="button">Prev</button>
+                  <button class="btn btn-sm btn-secondary join-item" type="button">Prev</button>
                   <button class="btn btn-sm btn-primary join-item" type="button">Today</button>
-                  <button class="btn btn-sm join-item" type="button">Next</button>
+                  <button class="btn btn-sm btn-secondary join-item" type="button">Next</button>
                 </div>
               </div>
               <ol id="weekAtAGlanceList" class="relative space-y-4 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"></ol>
@@ -498,7 +498,7 @@
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-pinned-notes">
             <div class="card-body gap-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
@@ -550,14 +550,14 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70 cursor-default" title="Filtering not available yet">All</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Today</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">This week</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Later</button>
+            <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">All</span>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Today</button>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">This week</button>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Later</button>
           </div>
           <button
             type="button"
-            class="btn btn-primary rounded-full"
+            class="btn btn-primary"
             data-open-reminder-modal
             aria-haspopup="dialog"
             aria-controls="add-reminder-modal"
@@ -614,9 +614,9 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70">Week 7</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Week 8</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/70 hover:bg-base-100">Week 9</button>
+            <span class="btn btn-xs btn-secondary cursor-default">Week 7</span>
+            <button type="button" class="btn btn-xs btn-secondary">Week 8</button>
+            <button type="button" class="btn btn-xs btn-secondary">Week 9</button>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Duplicate plan</button>
@@ -710,10 +710,10 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70 cursor-default" title="Filtering not available yet">Pinned</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Class</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Student</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Ideas</button>
+            <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">Pinned</span>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Class</button>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Student</button>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Ideas</button>
           </div>
           <button type="button" class="btn btn-sm btn-primary" disabled title="Coming soon">New note</button>
         </div>
@@ -764,10 +764,10 @@
         </header>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="rounded-full bg-base-100 px-3 py-1 text-base-content/70 cursor-default" title="Filtering not available yet">All</span>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Lesson</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Family</button>
-            <button type="button" class="rounded-full px-3 py-1 text-base-content/50 cursor-default" disabled title="Filtering not available yet">Admin</button>
+            <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">All</span>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Lesson</button>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Family</button>
+            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Admin</button>
           </div>
           <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Upload resource</button>
         </div>
