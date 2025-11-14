@@ -518,15 +518,17 @@
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-pinned-notes">
-            <div class="card-body gap-4">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
-                <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
+          <div id="pinnedNotesCard" class="h-full">
+            <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-pinned-notes">
+              <div class="card-body gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
+                  <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
+                </div>
+                <ul id="pinnedNotesList" class="space-y-3"></ul>
               </div>
-              <ul id="pinnedNotesList" class="space-y-3"></ul>
-            </div>
-          </section>
+            </section>
+          </div>
 
           <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-shortcuts">
             <div class="card-body gap-5">
@@ -1177,7 +1179,7 @@
     window.addEventListener('hashchange', renderRoute);
     window.addEventListener('DOMContentLoaded', renderRoute);
   </script>
-  <script type="module" src="./assets/app-7B3SWRDY.js" defer></script>
+  <script type="module" src="./assets/app-6PSQLEAL.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script src="./js/supabase-auth.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
