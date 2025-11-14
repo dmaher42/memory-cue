@@ -386,6 +386,218 @@ const templatesCountElement = document.getElementById('templatesCount');
 const dailySnapshotList = document.getElementById('dailySnapshotList');
 const todaysFocusList = document.getElementById('todaysFocusList');
 
+const REMINDER_PRIORITY_CONFIG = {
+  high: { badgeClass: 'badge badge-outline text-error', badgeLabel: 'High priority', rank: 0 },
+  medium: { badgeClass: 'badge badge-outline text-warning', badgeLabel: 'Due soon', rank: 1 },
+  low: { badgeClass: 'badge badge-outline text-secondary', badgeLabel: 'Scheduled', rank: 2 }
+};
+
+const reminderTimeFormatter = (() => {
+  try {
+    return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return null;
+  }
+})();
+
+const reminderDateFormatter = (() => {
+  try {
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+  } catch {
+    return null;
+  }
+})();
+
+const getReminderTitle = (reminder) => {
+  if (!reminder) {
+    return '';
+  }
+  const title = typeof reminder.title === 'string' ? reminder.title.trim() : '';
+  return title || 'Untitled reminder';
+};
+
+const getReminderDueDate = (reminder) => {
+  if (!reminder?.due) {
+    return null;
+  }
+  try {
+    const date = new Date(reminder.due);
+    return Number.isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
+};
+
+const isSameDay = (date, reference) => {
+  if (!date || !reference) {
+    return false;
+  }
+  return (
+    date.getFullYear() === reference.getFullYear() &&
+    date.getMonth() === reference.getMonth() &&
+    date.getDate() === reference.getDate()
+  );
+};
+
+const formatReminderTime = (date) => {
+  if (!date) {
+    return '';
+  }
+  if (reminderTimeFormatter) {
+    try {
+      return reminderTimeFormatter.format(date);
+    } catch {
+      // fall through to manual formatting
+    }
+  }
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const formatReminderDate = (date) => {
+  if (!date) {
+    return '';
+  }
+  if (reminderDateFormatter) {
+    try {
+      return reminderDateFormatter.format(date);
+    } catch {
+      // ignore formatter failures and use fallback below
+    }
+  }
+  return date.toLocaleDateString();
+};
+
+const getPriorityKey = (reminder) => {
+  const value = typeof reminder?.priority === 'string' ? reminder.priority.trim().toLowerCase() : '';
+  return Object.prototype.hasOwnProperty.call(REMINDER_PRIORITY_CONFIG, value) ? value : 'medium';
+};
+
+const getPriorityRank = (reminder) => {
+  const key = getPriorityKey(reminder);
+  return REMINDER_PRIORITY_CONFIG[key]?.rank ?? REMINDER_PRIORITY_CONFIG.medium.rank;
+};
+
+const getPriorityDisplay = (reminder) => {
+  const key = getPriorityKey(reminder);
+  return REMINDER_PRIORITY_CONFIG[key] ?? REMINDER_PRIORITY_CONFIG.medium;
+};
+
+const getDueTimestamp = (reminder) => {
+  const date = getReminderDueDate(reminder);
+  return date ? date.getTime() : Number.POSITIVE_INFINITY;
+};
+
+function updateDailySnapshot(items = []) {
+  if (!dailySnapshotList) {
+    return;
+  }
+
+  const now = new Date();
+  const todaysReminders = (Array.isArray(items) ? items : [])
+    .map((reminder) => ({ reminder, date: getReminderDueDate(reminder) }))
+    .filter(({ date }) => date && isSameDay(date, now))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  if (!todaysReminders.length) {
+    dailySnapshotList.innerHTML = '<p class="text-sm text-base-content/60">No reminders due today.</p>';
+    return;
+  }
+
+  dailySnapshotList.innerHTML = '';
+
+  todaysReminders.forEach(({ reminder, date }) => {
+    const listItem = document.createElement('li');
+    listItem.className = 'rounded-xl border border-base-200 bg-base-100/80 p-3 shadow-sm';
+
+    const titleEl = document.createElement('p');
+    titleEl.className = 'font-semibold text-base-content';
+    titleEl.textContent = getReminderTitle(reminder);
+    listItem.appendChild(titleEl);
+
+    const timeLabel = formatReminderTime(date);
+    const metaEl = document.createElement('p');
+    metaEl.className = 'text-xs text-base-content/70';
+    metaEl.textContent = timeLabel ? `Due ${timeLabel}` : 'Due today';
+    listItem.appendChild(metaEl);
+
+    dailySnapshotList.appendChild(listItem);
+  });
+}
+
+function updateTodaysFocus(items = []) {
+  if (!todaysFocusList) {
+    return;
+  }
+
+  const focusCandidates = (Array.isArray(items) ? items : [])
+    .filter((item) => item && !item.done)
+    .sort((a, b) => {
+      const priorityDiff = getPriorityRank(a) - getPriorityRank(b);
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      const dueDiff = getDueTimestamp(a) - getDueTimestamp(b);
+      if (dueDiff !== 0) {
+        return dueDiff;
+      }
+
+      return getReminderTitle(a).localeCompare(getReminderTitle(b), undefined, { sensitivity: 'base' });
+    })
+    .slice(0, 3);
+
+  if (!focusCandidates.length) {
+    todaysFocusList.innerHTML = '<li class="text-sm text-base-content/60">No focus items.</li>';
+    return;
+  }
+
+  todaysFocusList.innerHTML = '';
+
+  focusCandidates.forEach((reminder) => {
+    const listItem = document.createElement('li');
+    listItem.className = 'rounded-xl border border-base-200 bg-base-100/80 p-4 shadow-sm';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between gap-3';
+
+    const titleEl = document.createElement('p');
+    titleEl.className = 'font-semibold text-base-content';
+    titleEl.textContent = getReminderTitle(reminder);
+    header.appendChild(titleEl);
+
+    const priorityDisplay = getPriorityDisplay(reminder);
+    const badge = document.createElement('span');
+    badge.className = priorityDisplay.badgeClass;
+    badge.textContent = priorityDisplay.badgeLabel;
+    header.appendChild(badge);
+
+    listItem.appendChild(header);
+
+    const dueDate = getReminderDueDate(reminder);
+    const metaEl = document.createElement('p');
+    metaEl.className = 'text-xs text-base-content/70';
+    if (dueDate) {
+      const timeLabel = formatReminderTime(dueDate);
+      const dateLabel = formatReminderDate(dueDate);
+      const parts = [];
+      if (timeLabel) {
+        parts.push(`Due ${timeLabel}`);
+      }
+      if (dateLabel) {
+        parts.push(dateLabel);
+      }
+      metaEl.textContent = parts.length ? parts.join(' • ') : 'Due soon';
+    } else {
+      metaEl.textContent = 'No due date';
+    }
+    listItem.appendChild(metaEl);
+
+    todaysFocusList.appendChild(listItem);
+  });
+}
+
 const updateRemindersCountDisplay = (items) => {
   if (!remindersCountElement) {
     return;
@@ -394,9 +606,17 @@ const updateRemindersCountDisplay = (items) => {
   remindersCountElement.textContent = String(count);
 };
 
-document.addEventListener('memoryCue:remindersUpdated', (event) => {
-  updateRemindersCountDisplay(event?.detail?.items);
-});
+const handleRemindersUpdated = (event) => {
+  const items = Array.isArray(event?.detail?.items) ? event.detail.items : [];
+  updateRemindersCountDisplay(items);
+  updateDailySnapshot(items);
+  updateTodaysFocus(items);
+};
+
+document.addEventListener('memoryCue:remindersUpdated', handleRemindersUpdated);
+
+updateDailySnapshot();
+updateTodaysFocus();
 
 const cueFieldElements = getFieldElements(CUE_FIELD_DEFINITIONS);
 
