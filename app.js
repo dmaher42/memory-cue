@@ -247,88 +247,143 @@ function initReminderModalUI() {
     });
   };
 
-  const createReminderItem = ({ title, dueDate, priority, notes }) => {
+  const createReminderItem = ({ title, dueDate, priority }) => {
     if (typeof document === 'undefined') {
       return null;
     }
 
     const item = document.createElement('li');
-    item.className = 'reminder-item';
+    item.className =
+      'task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
+    item.dataset.compact = 'true';
+    item.setAttribute('role', 'button');
+    item.tabIndex = 0;
+    item.setAttribute('aria-label', `Edit reminder: ${title}`);
 
     const main = document.createElement('div');
-    main.className = 'reminder-main space-y-2';
+    main.className = 'flex min-w-0 flex-col gap-2';
+
     const titleEl = document.createElement('p');
-    titleEl.className = 'font-semibold text-base-content';
+    titleEl.className = 'text-sm font-semibold leading-snug text-base-content';
     titleEl.textContent = title;
     main.appendChild(titleEl);
 
-    const detailParts = [];
+    const createMetaChip = (label, tone = 'neutral') => {
+      const chip = document.createElement('span');
+      chip.className =
+        'inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70';
+      chip.title = label;
+
+      const dot = document.createElement('span');
+      dot.className = 'h-1.5 w-1.5 rounded-full';
+      if (tone === 'priority-high') {
+        dot.classList.add('bg-error');
+      } else if (tone === 'priority-medium') {
+        dot.classList.add('bg-warning');
+      } else if (tone === 'priority-low') {
+        dot.classList.add('bg-secondary');
+      } else {
+        dot.classList.add('bg-base-content/40');
+      }
+
+      const text = document.createElement('span');
+      text.className = 'truncate';
+      text.textContent = label;
+
+      chip.append(dot, text);
+      return chip;
+    };
+
+    const details = document.createElement('div');
+    details.className = 'flex flex-wrap items-center gap-1 text-xs text-base-content/70';
+
     const formattedDate = formatDueDate(dueDate);
     if (formattedDate) {
-      detailParts.push(`Due ${formattedDate}`);
+      details.appendChild(createMetaChip(`Due ${formattedDate}`));
     }
 
     const priorityKey = priority ? priority.trim().toLowerCase() : '';
-    const priorityConfig = {
-      high: { badgeClass: 'badge badge-outline text-error', badgeLabel: 'High priority', detailLabel: 'High priority' },
-      medium: { badgeClass: 'badge badge-outline text-warning', badgeLabel: 'Due soon', detailLabel: 'Medium priority' },
-      low: { badgeClass: 'badge badge-outline text-secondary', badgeLabel: 'Scheduled', detailLabel: 'Low priority' }
-    };
+    const priorityTone =
+      priorityKey === 'high' ? 'priority-high' : priorityKey === 'low' ? 'priority-low' : priorityKey === 'medium' ? 'priority-medium' : 'neutral';
 
-    const priorityData = priorityConfig[priorityKey] ?? {
-      badgeClass: 'badge badge-outline text-secondary',
-      badgeLabel: 'Scheduled',
-      detailLabel: priority || ''
-    };
+    const priorityLabel = priority ? priority : 'Medium';
+    details.appendChild(createMetaChip(priorityLabel, priorityTone));
 
-    if (priorityData.detailLabel) {
-      detailParts.push(priorityData.detailLabel);
-    }
-
-    if (detailParts.length) {
-      const detailsEl = document.createElement('p');
-      detailsEl.className = 'text-sm text-base-content/70';
-      detailsEl.textContent = detailParts.join(' · ');
-      main.appendChild(detailsEl);
-    }
-
-    if (notes) {
-      const notesEl = document.createElement('p');
-      notesEl.className = 'text-sm text-base-content/60';
-      notesEl.textContent = notes;
-      main.appendChild(notesEl);
+    if (details.children.length) {
+      main.appendChild(details);
     }
 
     item.appendChild(main);
 
-    const meta = document.createElement('div');
-    meta.className = 'reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3';
+    const controls = document.createElement('div');
+    controls.className = 'flex items-start gap-1';
 
-    const badge = document.createElement('span');
-    badge.className = priorityData.badgeClass;
-    badge.textContent = priorityData.badgeLabel;
-    meta.appendChild(badge);
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'btn btn-ghost btn-circle btn-xs text-success';
+    toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
 
-    const actions = document.createElement('div');
-    actions.className = 'reminder-actions flex flex-wrap items-center justify-end gap-2';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error';
+    deleteBtn.setAttribute('aria-label', `Delete reminder: ${title}`);
+    deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
 
-    const completeBtn = document.createElement('button');
-    completeBtn.className = 'btn btn-sm btn-success';
-    completeBtn.type = 'button';
-    completeBtn.textContent = 'Complete';
-    completeBtn.disabled = true;
-    completeBtn.title = 'Coming soon';
+    let isDone = false;
+    const updateToggleState = () => {
+      if (isDone) {
+        titleEl.classList.add('line-through', 'text-base-content/60');
+        toggleBtn.classList.remove('text-success');
+        toggleBtn.classList.add('text-base-content/60');
+        toggleBtn.innerHTML = '<span aria-hidden="true">↺</span>';
+        toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${title}`);
+      } else {
+        titleEl.classList.remove('line-through', 'text-base-content/60');
+        toggleBtn.classList.add('text-success');
+        toggleBtn.classList.remove('text-base-content/60');
+        toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
+        toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${title}`);
+      }
+    };
 
-    const snoozeBtn = document.createElement('button');
-    snoozeBtn.className = 'btn btn-sm btn-outline';
-    snoozeBtn.type = 'button';
-    snoozeBtn.textContent = 'Snooze';
-    snoozeBtn.disabled = true;
-    snoozeBtn.title = 'Coming soon';
+    updateToggleState();
 
-    actions.append(completeBtn, snoozeBtn);
-    meta.appendChild(actions);
-    item.appendChild(meta);
+    toggleBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      isDone = !isDone;
+      updateToggleState();
+    });
+
+    deleteBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      item.remove();
+    });
+
+    controls.append(toggleBtn, deleteBtn);
+    item.appendChild(controls);
+
+    const openForEdit = () => {
+      if (titleField) {
+        titleField.value = title;
+      }
+      if (dateField) {
+        dateField.value = dueDate || '';
+      }
+      if (priorityField) {
+        priorityField.value = priority || 'Medium';
+      }
+      openModal({ triggerElement: item });
+    };
+
+    item.addEventListener('click', openForEdit);
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openForEdit();
+      }
+    });
 
     return item;
   };

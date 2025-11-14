@@ -3018,87 +3018,197 @@ export async function initReminders(sel = {}) {
 
     const shouldGroupCategories = true;
 
-    const createMobileItem = (r, catName) => {
-      const div = document.createElement('div');
-      div.className = 'task-item';
-      const summary = {
-        id: r.id,
-        title: r.title,
-        dueIso: r.due || null,
-        priority: r.priority || 'Medium',
-        category: catName,
-        done: Boolean(r.done),
-      };
-      div.dataset.category = catName;
-      // Make rows discoverable by other modules (e.g., syncing, exports)
-      div.dataset.reminder = JSON.stringify(summary);
-      div.dataset.id = summary.id;
-      div.dataset.title = summary.title;
-      div.dataset.priority = summary.priority;
-      div.dataset.done = String(summary.done);
-      div.dataset.orderIndex = Number.isFinite(r.orderIndex) ? String(r.orderIndex) : '';
-      div.dataset.reminderItem = 'true';
-      div.setAttribute('draggable', 'true');
-      div.classList.add('reminder-draggable');
-      div.setAttribute('role', 'button');
-      div.tabIndex = 0;
-      div.setAttribute('aria-label', `Edit reminder: ${r.title}`);
-      if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
-      if (pendingNotificationIds.has(summary.id)) {
-        div.dataset.notificationActive = 'true';
+    const createMetaChip = (label, tone = 'neutral') => {
+      const chip = document.createElement('span');
+      chip.className =
+        'inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70';
+      chip.title = label;
+
+      const dot = document.createElement('span');
+      dot.className = 'h-1.5 w-1.5 rounded-full';
+      if (tone === 'priority-high') {
+        dot.classList.add('bg-error');
+      } else if (tone === 'priority-medium') {
+        dot.classList.add('bg-warning');
+      } else if (tone === 'priority-low') {
+        dot.classList.add('bg-secondary');
+      } else if (tone === 'category') {
+        dot.classList.add('bg-primary');
       } else {
-        delete div.dataset.notificationActive;
+        dot.classList.add('bg-base-content', 'opacity-40');
       }
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'truncate';
+      textSpan.textContent = label;
+
+      chip.append(dot, textSpan);
+      return chip;
+    };
+
+    const buildReminderCard = (reminder, catName, { elementTag, isMobile }) => {
+      const summary = {
+        id: reminder.id,
+        title: reminder.title,
+        dueIso: reminder.due || null,
+        priority: reminder.priority || 'Medium',
+        category: catName,
+        done: Boolean(reminder.done),
+      };
+
+      const itemEl = document.createElement(elementTag);
+      itemEl.className =
+        'task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
+      if (isMobile) {
+        itemEl.classList.add('w-full');
+      }
+      itemEl.dataset.id = summary.id;
+      itemEl.dataset.category = summary.category;
+      itemEl.dataset.title = summary.title;
+      itemEl.dataset.priority = summary.priority;
+      itemEl.dataset.done = String(summary.done);
+      if (summary.dueIso) {
+        itemEl.dataset.due = summary.dueIso;
+      } else {
+        delete itemEl.dataset.due;
+      }
+      itemEl.dataset.reminder = JSON.stringify(summary);
+      itemEl.dataset.orderIndex = Number.isFinite(reminder.orderIndex) ? String(reminder.orderIndex) : '';
+      itemEl.dataset.reminderItem = 'true';
+      itemEl.dataset.compact = 'true';
+      itemEl.classList.add('reminder-draggable');
+      itemEl.setAttribute('draggable', 'true');
+      itemEl.setAttribute('role', 'button');
+      itemEl.tabIndex = 0;
+      itemEl.setAttribute('aria-label', `Edit reminder: ${reminder.title}`);
+
+      if (pendingNotificationIds.has(summary.id)) {
+        itemEl.dataset.notificationActive = 'true';
+      } else {
+        delete itemEl.dataset.notificationActive;
+      }
+
       const dueDate = summary.dueIso ? new Date(summary.dueIso) : null;
       const dueIsToday = highlightToday && dueDate && dueDate >= t0 && dueDate <= t1;
       if (dueIsToday) {
-        div.classList.add('is-today');
-        div.dataset.today = 'true';
+        itemEl.classList.add('is-today');
+        itemEl.dataset.today = 'true';
+      } else {
+        itemEl.classList.remove('is-today');
+        delete itemEl.dataset.today;
       }
-      const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-      const dueLabel = r.due ? escapeHtml(dueTxt) : '';
-      const hasCustomCategory = Boolean(catName && catName !== DEFAULT_CATEGORY);
-      const catLabel = hasCustomCategory ? escapeHtml(catName) : '';
-      const priorityLabel = escapeHtml(summary.priority);
-      const priorityChipMarkup = `<span class="task-chip" data-chip="priority">${priorityLabel}</span>`;
-      const metaTextParts = [];
+
+      const content = document.createElement('div');
+      content.className = 'flex min-w-0 flex-col gap-2';
+
+      const titleEl = document.createElement('p');
+      titleEl.className = 'text-sm font-semibold leading-snug text-base-content';
+      if (!isMobile) {
+        titleEl.classList.add('sm:text-[0.95rem]');
+      }
+      if (summary.done) {
+        titleEl.classList.add('line-through', 'text-base-content/60');
+      }
+      titleEl.textContent = reminder.title;
+      content.appendChild(titleEl);
+
+      const metaRow = document.createElement('div');
+      metaRow.className = 'flex flex-wrap items-center gap-1 text-xs text-base-content/70';
+
+      const dueLabelRaw = formatDesktopDue(reminder);
+      const dueLabel = dueLabelRaw && dueLabelRaw !== 'No due date' ? dueLabelRaw : '';
       if (dueLabel) {
-        metaTextParts.push(dueLabel);
+        metaRow.appendChild(createMetaChip(dueLabel, 'due'));
       }
-      if (catLabel) {
-        metaTextParts.push(catLabel);
+
+      const hasCustomCategory = Boolean(catName && catName !== DEFAULT_CATEGORY);
+      if (hasCustomCategory) {
+        metaRow.appendChild(createMetaChip(catName, 'category'));
       }
-      const metaTextHtml = metaTextParts.length
-        ? `<div class="task-meta-text">${metaTextParts.join(' • ')}</div>`
-        : '';
-      const notesHtml = '';
-      div.innerHTML = `
-        <div class="task-content">
-          <div class="task-header">
-            <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
-          </div>
-          ${metaTextHtml}
-          <div class="task-meta">
-            ${priorityChipMarkup}
-          </div>
-          ${notesHtml}
-        </div>`;
-      enableSwipeToDelete(div, () => removeItem(r.id));
-      const openReminder = () => loadForEdit(r.id);
-      div.addEventListener('click', (event) => {
+
+      const priorityKey = (summary.priority || '').trim().toLowerCase();
+      const priorityTone =
+        priorityKey === 'high'
+          ? 'priority-high'
+          : priorityKey === 'low'
+            ? 'priority-low'
+            : priorityKey === 'medium'
+              ? 'priority-medium'
+              : 'neutral';
+      metaRow.appendChild(createMetaChip(summary.priority, priorityTone));
+
+      if (metaRow.children.length) {
+        content.appendChild(metaRow);
+      }
+
+      itemEl.appendChild(content);
+
+      const controls = document.createElement('div');
+      controls.className = 'flex items-start gap-1';
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs';
+      if (summary.done) {
+        toggleBtn.classList.add('text-base-content/60');
+        toggleBtn.innerHTML = '<span aria-hidden="true">↺</span>';
+        toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminder.title}`);
+      } else {
+        toggleBtn.classList.add('text-success');
+        toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
+        toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
+      }
+      toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
+      toggleBtn.setAttribute('data-reminder-control', 'toggle');
+      toggleBtn.setAttribute('data-no-swipe', 'true');
+      toggleBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleDone(summary.id);
+      });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error';
+      deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
+      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
+      deleteBtn.setAttribute('data-reminder-control', 'delete');
+      deleteBtn.setAttribute('data-no-swipe', 'true');
+      deleteBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        removeItem(summary.id);
+      });
+
+      controls.append(toggleBtn, deleteBtn);
+      itemEl.appendChild(controls);
+
+      const openReminder = () => loadForEdit(summary.id);
+      itemEl.addEventListener('click', (event) => {
         if (event.defaultPrevented) return;
+        const target = event.target;
+        if (target && typeof target.closest === 'function' && target.closest('[data-reminder-control]')) {
+          return;
+        }
         openReminder();
       });
-      div.addEventListener('keydown', (event) => {
+      itemEl.addEventListener('keydown', (event) => {
         if (event.defaultPrevented) return;
-        if (event.target !== div) return;
+        if (event.target !== itemEl) return;
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           openReminder();
         }
       });
-      return div;
+
+      if (isMobile) {
+        enableSwipeToDelete(itemEl, () => removeItem(summary.id));
+      }
+
+      return itemEl;
     };
+
+    const createMobileItem = (r, catName) => buildReminderCard(r, catName, { elementTag: 'div', isMobile: true });
 
     if (variant !== 'desktop' && !shouldGroupCategories) {
       rows.forEach((r) => {
@@ -3151,100 +3261,9 @@ export async function initReminders(sel = {}) {
 
       catRows.forEach(r => {
         if(variant === 'desktop'){
-          const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
-          const summary = {
-            id: r.id,
-            title: r.title,
-            dueIso: r.due || null,
-            priority: r.priority || 'Medium',
-            category: catName,
-            done: Boolean(r.done),
-          };
-          itemEl.dataset.id = summary.id;
-          itemEl.dataset.category = summary.category;
-          itemEl.dataset.title = summary.title;
-          itemEl.dataset.priority = summary.priority;
-          itemEl.dataset.done = String(summary.done);
-          if (summary.dueIso) itemEl.dataset.due = summary.dueIso;
-          itemEl.dataset.reminder = JSON.stringify(summary);
-          itemEl.dataset.orderIndex = Number.isFinite(r.orderIndex) ? String(r.orderIndex) : '';
-          itemEl.dataset.reminderItem = 'true';
-          itemEl.dataset.compact = 'true';
-          itemEl.setAttribute('draggable', 'true');
-          itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200 task-item';
-          if (pendingNotificationIds.has(summary.id)) {
-            itemEl.dataset.notificationActive = 'true';
-          } else {
-            delete itemEl.dataset.notificationActive;
-          }
-          const dueLabel = formatDesktopDue(r);
-          const titleClasses = r.done ? 'line-through text-base-content/50' : 'text-base-content';
-          const statusLabel = r.done ? 'Completed' : 'Active';
-          const statusBadgeClass = r.done
-            ? 'badge badge-outline border-success text-success'
-            : 'badge badge-outline border-neutral text-neutral';
-          const toggleClasses = r.done
-            ? 'btn btn-sm btn-outline'
-            : 'btn btn-sm btn-outline btn-success';
-          const notesHtml = r.notes ? `<p class="text-sm leading-relaxed text-base-content/70">${notesToHtml(r.notes)}</p>` : '';
-          itemEl.innerHTML = `
-    <div class="card-body gap-4 task-content">
-      <div class="flex items-start justify-between gap-3 task-header">
-        <div class="space-y-3">
-          <h3 class="card-title text-base sm:text-lg font-semibold task-title ${titleClasses}">${escapeHtml(r.title)}</h3>
-          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-base-content/70 task-meta">
-            <span class="badge badge-outline gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-              ${escapeHtml(dueLabel)}
-            </span>
-            <span class="badge badge-outline border-primary text-primary gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full bg-sky-400"></span>
-              ${escapeHtml(catName)}
-            </span>
-            <span class="${statusBadgeClass} text-[0.7rem] sm:text-xs">${statusLabel}</span>
-          </div>
-        </div>
-        <button type="button" data-action="delete" class="btn btn-ghost btn-circle btn-sm text-error" aria-label="Delete reminder">
-          <span aria-hidden="true">🗑️</span>
-        </button>
-      </div>
-      ${notesHtml}
-      <div class="card-actions justify-end">
-        <button data-action="toggle" type="button" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
-      </div>
-    </div>`;
-          itemEl.setAttribute('role', 'button');
-          itemEl.tabIndex = 0;
-          itemEl.setAttribute('aria-label', `Edit reminder: ${r.title}`);
-          const deleteBtn = itemEl.querySelector('[data-action="delete"]');
-          if (deleteBtn) {
-            deleteBtn.addEventListener('click', (event) => {
-              event.stopPropagation();
-              removeItem(r.id);
-            });
-          }
-          const toggleBtn = itemEl.querySelector('[data-action="toggle"]');
-          if (toggleBtn) {
-            toggleBtn.addEventListener('click', (event) => {
-              event.stopPropagation();
-              toggleDone(r.id);
-            });
-          }
-          const openReminder = () => loadForEdit(r.id);
-          itemEl.addEventListener('click', (event) => {
-            if (event.defaultPrevented) return;
-            if (event.target.closest('[data-action="delete"], [data-action="toggle"]')) {
-              return;
-            }
-            openReminder();
-          });
-          itemEl.addEventListener('keydown', (event) => {
-            if (event.defaultPrevented) return;
-            if (event.target !== itemEl) return;
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              openReminder();
-            }
+          const itemEl = buildReminderCard(r, catName, {
+            elementTag: listIsSemantic ? 'li' : 'div',
+            isMobile: false,
           });
           frag.appendChild(itemEl);
           return;
