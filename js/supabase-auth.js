@@ -1,5 +1,83 @@
 import { getSupabaseClient } from './supabase-client.js';
 
+// Module-level external auth context (populated by callers such as reminders.js)
+let _externalAuthContext = {
+  authReady: false,
+  auth: null,
+  GoogleAuthProvider: null,
+  signInWithPopup: null,
+  signInWithRedirect: null,
+  signOut: null,
+  toast: null,
+};
+
+export function setAuthContext(ctx = {}) {
+  try {
+    Object.assign(_externalAuthContext, ctx || {});
+  } catch (err) {
+    console.warn('[supabase-auth] setAuthContext failed', err);
+  }
+}
+
+export async function startSignInFlow(options = {}) {
+  try {
+    if (
+      _externalAuthContext &&
+      typeof _externalAuthContext.signInWithPopup === 'function' &&
+      _externalAuthContext.auth &&
+      typeof _externalAuthContext.GoogleAuthProvider === 'function'
+    ) {
+      return _externalAuthContext.signInWithPopup(
+        _externalAuthContext.auth,
+        new _externalAuthContext.GoogleAuthProvider()
+      );
+    }
+
+    if (
+      _externalAuthContext &&
+      typeof _externalAuthContext.signInWithRedirect === 'function' &&
+      _externalAuthContext.auth &&
+      typeof _externalAuthContext.GoogleAuthProvider === 'function'
+    ) {
+      return _externalAuthContext.signInWithRedirect(
+        _externalAuthContext.auth,
+        new _externalAuthContext.GoogleAuthProvider()
+      );
+    }
+
+    const supabase = getSupabaseClient();
+    if (supabase && supabase.auth) {
+      if (typeof supabase.auth.signInWithOAuth === 'function') {
+        return supabase.auth.signInWithOAuth({ provider: 'google', ...options });
+      }
+      if (typeof supabase.auth.signIn === 'function') {
+        return supabase.auth.signIn({ provider: 'google' });
+      }
+    }
+  } catch (err) {
+    console.error('[supabase-auth] startSignInFlow error', err);
+    try { _externalAuthContext?.toast?.('Sign-in failed'); } catch {}
+    throw err;
+  }
+  return Promise.resolve(null);
+}
+
+export async function startSignOutFlow() {
+  try {
+    if (_externalAuthContext && typeof _externalAuthContext.signOut === 'function') {
+      return _externalAuthContext.signOut(_externalAuthContext.auth);
+    }
+    const supabase = getSupabaseClient();
+    if (supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
+      return supabase.auth.signOut();
+    }
+  } catch (err) {
+    console.error('[supabase-auth] startSignOutFlow error', err);
+    throw err;
+  }
+  return Promise.resolve(null);
+}
+
 const DEFAULT_SELECTORS = {
   authForm: '#auth-form',
   emailInput: '#auth-email',
@@ -324,61 +402,4 @@ export function getSupabaseAuthElements(selectors = {}, scope = document) {
     ...DEFAULT_SELECTORS,
     ...selectors,
   }, scope);
-}
-
-// Provide a minimal auth context and sign-in/out helpers for other modules
-// (reminders.js and app.js expect these exports).
-let __supabaseAuthContext = {};
-
-export function setAuthContext(ctx = {}) {
-  try {
-    __supabaseAuthContext = { ...__supabaseAuthContext, ...ctx };
-  } catch {
-    __supabaseAuthContext = ctx;
-  }
-  return __supabaseAuthContext;
-}
-
-function getRuntimeSupabase() {
-  try {
-    const client = (typeof getSupabaseClient === 'function' && getSupabaseClient()) || (typeof window !== 'undefined' ? window.supabase : null);
-    return client || null;
-  } catch {
-    return typeof window !== 'undefined' ? window.supabase : null;
-  }
-}
-
-export async function startSignInFlow() {
-  const supabase = getRuntimeSupabase();
-  if (!supabase || !supabase.auth) {
-    throw new Error('Supabase client unavailable for sign-in');
-  }
-
-  try {
-    if (typeof supabase.auth.signInWithOAuth === 'function') {
-      return await supabase.auth.signInWithOAuth({ provider: 'google' });
-    }
-    if (typeof supabase.auth.signIn === 'function') {
-      return await supabase.auth.signIn({ provider: 'google' });
-    }
-    throw new Error('Supabase auth sign-in API not available');
-  } catch (err) {
-    console.error('[supabase] startSignInFlow failed', err);
-    throw err;
-  }
-}
-
-export async function startSignOutFlow() {
-  const supabase = getRuntimeSupabase();
-  if (!supabase || !supabase.auth) {
-    return;
-  }
-  try {
-    if (typeof supabase.auth.signOut === 'function') {
-      return await supabase.auth.signOut();
-    }
-  } catch (err) {
-    console.error('[supabase] startSignOutFlow failed', err);
-    throw err;
-  }
 }
