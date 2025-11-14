@@ -39,7 +39,111 @@ function initReminderModalUI() {
   const mainContent = document.getElementById('mainContent');
   const primaryNav = document.querySelector('nav[aria-label="Primary"]');
   const backgroundTargets = [mainContent, primaryNav];
+  const focusTrapRoot = modal.querySelector('[role="dialog"]') ?? modal;
+  const focusableSelectors = [
+    'a[href]',
+    'area[href]',
+    'button:not([disabled])',
+    'input:not([type="hidden"]):not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ];
+
   let lastActiveElement = null;
+
+  const getFocusableElements = () => {
+    if (!(focusTrapRoot instanceof HTMLElement)) {
+      return [];
+    }
+
+    const nodes = focusTrapRoot.querySelectorAll(focusableSelectors.join(','));
+
+    return Array.from(nodes).filter((element) => {
+      const isHtmlElement = element instanceof HTMLElement;
+      const isSvgElement = typeof SVGElement !== 'undefined' && element instanceof SVGElement;
+
+      if (!isHtmlElement && !isSvgElement) {
+        return false;
+      }
+
+      if (element.getAttribute('aria-hidden') === 'true') {
+        return false;
+      }
+
+      if ('disabled' in element && element.disabled) {
+        return false;
+      }
+
+      if (element.hidden || element.closest('[hidden]')) {
+        return false;
+      }
+
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+  };
+
+  const focusFirstElement = () => {
+    const focusableElements = getFocusableElements();
+    const preferredElement =
+      focusableElements.find((node) => node.hasAttribute('data-autofocus') || node.hasAttribute('autofocus')) ||
+      (titleField && focusableElements.includes(titleField) ? titleField : null) ||
+      focusableElements[0];
+
+    if (preferredElement && typeof preferredElement.focus === 'function') {
+      preferredElement.focus({ preventScroll: true });
+      return;
+    }
+
+    if (focusTrapRoot instanceof HTMLElement && typeof focusTrapRoot.focus === 'function') {
+      focusTrapRoot.focus({ preventScroll: true });
+    }
+  };
+
+  const enforceFocusWithinModal = (event) => {
+    if (!(focusTrapRoot instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!(event.target instanceof Node) || !focusTrapRoot.contains(event.target)) {
+      event.stopPropagation();
+      focusFirstElement();
+    }
+  };
+
+  const handleTabKey = (event) => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const focusableElements = getFocusableElements();
+
+    if (!focusableElements.length) {
+      event.preventDefault();
+      if (focusTrapRoot instanceof HTMLElement) {
+        focusTrapRoot.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const activeElement = document.activeElement;
+
+    if (event.shiftKey) {
+      if (!focusTrapRoot.contains(activeElement) || activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+      return;
+    }
+
+    if (!focusTrapRoot.contains(activeElement) || activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
 
   const setBackgroundInert = (shouldInert) => {
     backgroundTargets.forEach((node) => {
@@ -60,9 +164,12 @@ function initReminderModalUI() {
     modal.setAttribute('inert', '');
     setBackgroundInert(false);
     document.removeEventListener('keydown', handleEscape, true);
+    modal.removeEventListener('keydown', handleTabKey, true);
+    modal.removeEventListener('focusin', enforceFocusWithinModal, true);
     if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
       lastActiveElement.focus();
     }
+    lastActiveElement = null;
   };
 
   const handleEscape = (event) => {
@@ -72,22 +179,29 @@ function initReminderModalUI() {
     }
   };
 
-  const openModal = () => {
-    lastActiveElement = document.activeElement;
+  const openModal = ({ triggerElement } = {}) => {
+    if (triggerElement && typeof triggerElement.focus === 'function') {
+      lastActiveElement = triggerElement;
+    } else {
+      lastActiveElement = document.activeElement;
+    }
     modal.classList.remove('hidden');
     modal.removeAttribute('aria-hidden');
     modal.removeAttribute('inert');
     setBackgroundInert(true);
     document.addEventListener('keydown', handleEscape, true);
+    modal.addEventListener('keydown', handleTabKey, true);
+    modal.addEventListener('focusin', enforceFocusWithinModal, true);
     window.requestAnimationFrame(() => {
-      titleField.focus();
+      focusFirstElement();
     });
   };
 
   openButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
-      openModal();
+      const triggerElement = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+      openModal({ triggerElement });
     });
   });
 

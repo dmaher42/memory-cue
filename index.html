@@ -427,8 +427,18 @@
               </section>
             </div>
             <div class="relative rounded-2xl border border-base-300 bg-base-100/85 p-6 shadow-sm backdrop-blur">
-              <h2 class="text-lg font-semibold uppercase tracking-[0.2em] text-base-content/70">Daily snapshot</h2>
-              <ul id="dailySnapshotList" class="mt-5 space-y-4 text-sm text-base-content/80"></ul>
+              <h2
+                id="daily-snapshot-heading"
+                class="text-lg font-semibold uppercase tracking-[0.2em] text-base-content/70"
+              >
+                Daily snapshot
+              </h2>
+              <ul
+                id="dailySnapshotList"
+                class="mt-5 space-y-4 text-sm text-base-content/80"
+                role="list"
+                aria-labelledby="daily-snapshot-heading"
+              ></ul>
               <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4 text-xs text-base-content/70">
                 <p class="font-semibold uppercase tracking-[0.3em] text-base-content/50">Shortcut</p>
                 <p class="mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
@@ -442,7 +452,7 @@
             <div class="card-body gap-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="space-y-3">
-                  <h2 class="text-lg font-semibold text-base-content">Today's focus</h2>
+                  <h2 id="todays-focus-heading" class="text-lg font-semibold text-base-content">Today's focus</h2>
                   <p class="text-sm text-base-content/70">
                     Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
                   </p>
@@ -478,21 +488,31 @@
                   </div>
                 </div>
               </div>
-              <ol id="todaysFocusList" class="space-y-3"></ol>
+              <ol
+                id="todaysFocusList"
+                class="space-y-3"
+                role="list"
+                aria-labelledby="todays-focus-heading"
+              ></ol>
             </div>
           </section>
 
           <section class="card h-full border border-base-300 bg-base-200/70 shadow-sm">
             <div class="card-body gap-5">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-base-content">Week at a glance</h2>
+                <h2 id="week-at-a-glance-heading" class="text-lg font-semibold text-base-content">Week at a glance</h2>
                 <div class="join">
                   <button class="btn btn-sm btn-secondary join-item" type="button">Prev</button>
                   <button class="btn btn-sm btn-primary join-item" type="button">Today</button>
                   <button class="btn btn-sm btn-secondary join-item" type="button">Next</button>
                 </div>
               </div>
-              <ol id="weekAtAGlanceList" class="relative space-y-4 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"></ol>
+              <ol
+                id="weekAtAGlanceList"
+                class="relative space-y-4 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"
+                role="list"
+                aria-labelledby="week-at-a-glance-heading"
+              ></ol>
             </div>
           </section>
         </div>
@@ -997,6 +1017,8 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="reminder-modal-title"
+        aria-describedby="reminder-modal-description"
+        tabindex="-1"
       >
         <div class="flex items-center justify-between gap-4">
           <h3 id="reminder-modal-title" class="text-lg font-semibold text-base-content">Add new reminder</h3>
@@ -1010,6 +1032,9 @@
             ✕
           </button>
         </div>
+        <p id="reminder-modal-description" class="mt-2 text-sm text-base-content/70">
+          Fill out the details below to save a reminder for later.
+        </p>
         <form id="add-reminder-form" class="mt-4 space-y-4">
           <label class="block">
             <span class="font-medium text-base-content">Title</span>
@@ -1051,6 +1076,8 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="ideas-title"
+        aria-describedby="activity-ideas-modal-description"
+        tabindex="-1"
       >
         <div class="flex items-center justify-between">
           <h3 id="ideas-title" class="text-lg font-semibold">Get activity ideas</h3>
