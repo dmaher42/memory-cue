@@ -287,14 +287,40 @@
           <li>
             <a href="#planner" data-nav="planner" id="nav-planner" class="btn btn-sm btn-ghost">Planner</a>
           </li>
-          <li>
-            <a href="#notes" data-nav="notes" id="nav-notes" class="btn btn-sm btn-ghost">Notes</a>
-          </li>
-          <li>
-            <a href="#resources" data-nav="resources" id="nav-resources" class="btn btn-sm btn-ghost">Resources</a>
-          </li>
-          <li>
-            <a href="#templates" data-nav="templates" id="nav-templates" class="btn btn-sm btn-ghost">Templates</a>
+          <li class="nav-more-item">
+            <details class="nav-more-details">
+              <summary
+                class="btn btn-sm btn-ghost"
+                data-nav-group="more"
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-controls="nav-more-menu"
+              >
+                <span>More</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  class="size-4"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              <ul id="nav-more-menu" class="nav-more-menu menu menu-sm gap-1">
+                <li>
+                  <a href="#notes" data-nav="notes" id="nav-notes" class="btn btn-ghost btn-sm">Notes</a>
+                </li>
+                <li>
+                  <a href="#resources" data-nav="resources" id="nav-resources" class="btn btn-ghost btn-sm">Resources</a>
+                </li>
+                <li>
+                  <a href="#templates" data-nav="templates" id="nav-templates" class="btn btn-ghost btn-sm">Templates</a>
+                </li>
+              </ul>
+            </details>
           </li>
         </ul>
       </div>
@@ -347,9 +373,34 @@
           <li><a href="#dashboard" data-nav="dashboard" class="btn btn-ghost justify-start">Dashboard</a></li>
           <li><a href="#reminders" data-nav="reminders" class="btn btn-ghost justify-start">Reminders</a></li>
           <li><a href="#planner" data-nav="planner" class="btn btn-ghost justify-start">Planner</a></li>
-          <li><a href="#notes" data-nav="notes" class="btn btn-ghost justify-start">Notes</a></li>
-          <li><a href="#resources" data-nav="resources" class="btn btn-ghost justify-start">Resources</a></li>
-          <li><a href="#templates" data-nav="templates" class="btn btn-ghost justify-start">Templates</a></li>
+          <li>
+            <details class="mobile-nav-more">
+              <summary
+                class="btn btn-ghost justify-between"
+                aria-haspopup="true"
+                aria-controls="mobile-more-menu"
+                aria-expanded="false"
+              >
+                <span>More</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  class="size-4"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              <ul id="mobile-more-menu" class="mt-2 space-y-1 text-sm">
+                <li><a href="#notes" data-nav="notes" class="btn btn-ghost justify-start">Notes</a></li>
+                <li><a href="#resources" data-nav="resources" class="btn btn-ghost justify-start">Resources</a></li>
+                <li><a href="#templates" data-nav="templates" class="btn btn-ghost justify-start">Templates</a></li>
+              </ul>
+            </details>
+          </li>
         </ul>
         <a href="#planner" class="btn btn-primary btn-sm mt-3 w-full">Jump into planner</a>
       </div>
@@ -1159,6 +1210,8 @@
     </div>
   </div>
   <script>
+    const groupedRoutes = new Set(['notes', 'resources', 'templates']);
+
     function renderRoute() {
       const route = (location.hash || '#dashboard').replace('#', '');
       document.querySelectorAll('[data-route]').forEach((node) => {
@@ -1175,9 +1228,40 @@
           link.removeAttribute('aria-current');
         }
       });
+      const moreSummary = document.querySelector('[data-nav-group="more"]');
+      const moreDetails = moreSummary ? moreSummary.closest('details') : null;
+      if (moreSummary && moreDetails) {
+        if (groupedRoutes.has(activeRoute)) {
+          moreDetails.setAttribute('open', '');
+        } else {
+          moreDetails.removeAttribute('open');
+        }
+        moreSummary.classList.toggle('btn-active', groupedRoutes.has(activeRoute));
+        moreSummary.setAttribute('aria-expanded', moreDetails.open ? 'true' : 'false');
+      }
     }
     window.addEventListener('hashchange', renderRoute);
     window.addEventListener('DOMContentLoaded', renderRoute);
+
+    const navMoreDetails = document.querySelector('.nav-more-details');
+    const navMoreSummary = document.querySelector('[data-nav-group="more"]');
+    if (navMoreDetails && navMoreSummary) {
+      navMoreSummary.setAttribute('aria-expanded', navMoreDetails.open ? 'true' : 'false');
+      navMoreDetails.addEventListener('toggle', () => {
+        navMoreSummary.setAttribute('aria-expanded', navMoreDetails.open ? 'true' : 'false');
+      });
+    }
+
+    document.querySelectorAll('.mobile-nav-more').forEach((details) => {
+      const summary = details.querySelector('summary');
+      if (!summary) {
+        return;
+      }
+      summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+      details.addEventListener('toggle', () => {
+        summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+      });
+    });
   </script>
   <script type="module" src="./app.js" defer></script>
   <script src="./js/update-footer-year.js" defer></script>
@@ -1208,6 +1292,14 @@
         link.addEventListener('click', () => {
           mobileMenu.setAttribute('hidden', '');
           toggleButton.setAttribute('aria-expanded', 'false');
+          const parentDetails = link.closest('details');
+          if (parentDetails) {
+            parentDetails.removeAttribute('open');
+            const summary = parentDetails.querySelector('summary');
+            if (summary) {
+              summary.setAttribute('aria-expanded', 'false');
+            }
+          }
         });
       });
     })();
