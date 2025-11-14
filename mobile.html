@@ -708,6 +708,19 @@
       gap: 0.5rem;
       align-items: center;
       font-size: 0.8125rem;
+      margin-top: 0.35rem;
+    }
+    .task-meta-text {
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      margin: 0;
+    }
+    .task-meta-text + .task-meta {
+      margin-top: 0.25rem;
+    }
+    .dark .task-meta-text {
+      color: color-mix(in srgb, var(--card-bg) 70%, var(--text-secondary) 30%);
     }
     .task-chip {
       display: inline-flex;
@@ -1008,6 +1021,16 @@
       font-size: 11px;
       gap: 4px;
       margin-top: auto;
+    }
+    .task-item[data-compact="true"] .task-meta-text {
+      font-size: 11px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: color-mix(in srgb, var(--text-secondary) 80%, var(--text-primary) 20%);
+      margin-bottom: 0.25rem;
     }
 
     .task-item[data-compact="true"] .task-chip {
@@ -2672,7 +2695,7 @@
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script defer src="./js/firebase-config.js"></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-LVEAX2P2.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-J6FQTOMJ.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
