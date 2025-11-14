@@ -347,6 +347,9 @@ const initialiseReminders = () => {
     emptyStateSel: '#emptyState',
     listWrapperSel: '#remindersWrapper',
     dateFeedbackSel: '#dateFeedback',
+    googleSignInBtnSel: '#googleSignInBtn',
+    googleSignOutBtnSel: '#googleSignOutBtn',
+    googleUserNameSel: '#googleUserName',
     variant: 'desktop'
   });
 };
