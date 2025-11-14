@@ -198,221 +198,88 @@ function initReminderModalUI() {
     });
   };
 
+  const dispatchCueEvent = (type, detail = {}) => {
+    try {
+      document.dispatchEvent(new CustomEvent(type, { detail }));
+    } catch {
+      if (typeof document !== 'undefined' && typeof document.createEvent === 'function') {
+        const legacyEvent = document.createEvent('CustomEvent');
+        legacyEvent.initCustomEvent(type, true, true, detail);
+        document.dispatchEvent(legacyEvent);
+      }
+    }
+  };
+
+  const handleCancelRequest = (detail = {}) => {
+    dispatchCueEvent('cue:cancelled', detail);
+  };
+
   openButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
       const triggerElement = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-      openModal({ triggerElement });
+      const detail = { trigger: triggerElement, mode: 'create' };
+      dispatchCueEvent('cue:prepare', detail);
+      dispatchCueEvent('cue:open', detail);
     });
   });
 
   closeButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
-      closeModal();
+      handleCancelRequest({ trigger: button, reason: 'button' });
     });
   });
 
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
-      closeModal();
+      handleCancelRequest({ reason: 'backdrop' });
     }
   });
 
   backdrop?.addEventListener('click', (event) => {
     if (event.target === backdrop) {
-      closeModal();
+      handleCancelRequest({ reason: 'backdrop' });
     }
   });
 
-  const remindersList = document.getElementById('reminders-list');
-  const dateField = document.getElementById('reminder-date');
-  const priorityField = document.getElementById('reminder-priority');
-  const notesField = document.getElementById('reminder-notes');
+  document.addEventListener('cue:open', (event) => {
+    const trigger = event?.detail?.trigger;
+    const triggerElement = trigger instanceof HTMLElement ? trigger : null;
+    openModal({ triggerElement });
+  });
 
-  const formatDueDate = (value) => {
-    if (!value) {
-      return '';
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return '';
-    }
-
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const createReminderItem = ({ title, dueDate, priority }) => {
-    if (typeof document === 'undefined') {
-      return null;
-    }
-
-    const item = document.createElement('li');
-    item.className =
-      'task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
-    item.dataset.compact = 'true';
-    item.setAttribute('role', 'button');
-    item.tabIndex = 0;
-    item.setAttribute('aria-label', `Edit reminder: ${title}`);
-
-    const main = document.createElement('div');
-    main.className = 'flex min-w-0 flex-col gap-2';
-
-    const titleEl = document.createElement('p');
-    titleEl.className = 'text-sm font-semibold leading-snug text-base-content';
-    titleEl.textContent = title;
-    main.appendChild(titleEl);
-
-    const createMetaChip = (label, tone = 'neutral') => {
-      const chip = document.createElement('span');
-      chip.className =
-        'inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70';
-      chip.title = label;
-
-      const dot = document.createElement('span');
-      dot.className = 'h-1.5 w-1.5 rounded-full';
-      if (tone === 'priority-high') {
-        dot.classList.add('bg-error');
-      } else if (tone === 'priority-medium') {
-        dot.classList.add('bg-warning');
-      } else if (tone === 'priority-low') {
-        dot.classList.add('bg-secondary');
-      } else {
-        dot.classList.add('bg-base-content/40');
-      }
-
-      const text = document.createElement('span');
-      text.className = 'truncate';
-      text.textContent = label;
-
-      chip.append(dot, text);
-      return chip;
-    };
-
-    const details = document.createElement('div');
-    details.className = 'flex flex-wrap items-center gap-1 text-xs text-base-content/70';
-
-    const formattedDate = formatDueDate(dueDate);
-    if (formattedDate) {
-      details.appendChild(createMetaChip(`Due ${formattedDate}`));
-    }
-
-    const priorityKey = priority ? priority.trim().toLowerCase() : '';
-    const priorityTone =
-      priorityKey === 'high' ? 'priority-high' : priorityKey === 'low' ? 'priority-low' : priorityKey === 'medium' ? 'priority-medium' : 'neutral';
-
-    const priorityLabel = priority ? priority : 'Medium';
-    details.appendChild(createMetaChip(priorityLabel, priorityTone));
-
-    if (details.children.length) {
-      main.appendChild(details);
-    }
-
-    item.appendChild(main);
-
-    const controls = document.createElement('div');
-    controls.className = 'flex items-start gap-1';
-
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.className = 'btn btn-ghost btn-circle btn-xs text-success';
-    toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error';
-    deleteBtn.setAttribute('aria-label', `Delete reminder: ${title}`);
-    deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
-
-    let isDone = false;
-    const updateToggleState = () => {
-      if (isDone) {
-        titleEl.classList.add('line-through', 'text-base-content/60');
-        toggleBtn.classList.remove('text-success');
-        toggleBtn.classList.add('text-base-content/60');
-        toggleBtn.innerHTML = '<span aria-hidden="true">↺</span>';
-        toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${title}`);
-      } else {
-        titleEl.classList.remove('line-through', 'text-base-content/60');
-        toggleBtn.classList.add('text-success');
-        toggleBtn.classList.remove('text-base-content/60');
-        toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
-        toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${title}`);
-      }
-    };
-
-    updateToggleState();
-
-    toggleBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      isDone = !isDone;
-      updateToggleState();
-    });
-
-    deleteBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      item.remove();
-    });
-
-    controls.append(toggleBtn, deleteBtn);
-    item.appendChild(controls);
-
-    const openForEdit = () => {
-      if (titleField) {
-        titleField.value = title;
-      }
-      if (dateField) {
-        dateField.value = dueDate || '';
-      }
-      if (priorityField) {
-        priorityField.value = priority || 'Medium';
-      }
-      openModal({ triggerElement: item });
-    };
-
-    item.addEventListener('click', openForEdit);
-    item.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        openForEdit();
-      }
-    });
-
-    return item;
-  };
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    const title = titleField.value.trim();
-    if (!title) {
-      titleField.focus();
-      return;
-    }
-
-    const notesValue = notesField?.value ?? '';
-    const reminderData = {
-      title,
-      dueDate: dateField?.value || '',
-      priority: priorityField?.value || '',
-      notes: notesValue.trim()
-    };
-
-    const reminderItem = remindersList ? createReminderItem(reminderData) : null;
-    if (reminderItem && remindersList) {
-      remindersList.prepend(reminderItem);
-    }
-
-    form.reset();
+  const handleExternalClose = () => {
     closeModal();
-  });
+  };
+
+  document.addEventListener('cue:close', handleExternalClose);
+  document.addEventListener('cue:cancelled', handleExternalClose);
+
+  const saveButton = modal.querySelector('#saveReminder');
+
+  if (form instanceof HTMLFormElement && saveButton instanceof HTMLElement) {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (saveButton.matches(':disabled')) {
+        return;
+      }
+      saveButton.click();
+    });
+  }
+
+  if (saveButton instanceof HTMLElement) {
+    document.addEventListener('reminder:save', (event) => {
+      const trigger = event?.detail?.trigger;
+      if (trigger && trigger !== saveButton) {
+        return;
+      }
+      if (saveButton.matches(':disabled')) {
+        return;
+      }
+      saveButton.click();
+    });
+  }
 }
 
 initReminderModalUI();
@@ -544,7 +411,7 @@ if (settingsSaveButton && settingsSaveConfirmation) {
   });
 }
 
-const titleInput = document.getElementById('title');
+const titleInput = document.getElementById('reminder-title');
 const mobileTitleInput = document.getElementById('reminderText');
 
 const modalController = (() => {
@@ -601,23 +468,23 @@ const initialiseReminders = () => {
   }
 
   const desktopConfig = {
-    titleSel: '#title',
-    dateSel: '#date',
-    timeSel: '#time',
-    detailsSel: '#details',
-    prioritySel: '#priority',
-    categorySel: '#category',
-    saveBtnSel: '#saveBtn',
-    cancelEditBtnSel: '#cancelEditBtn',
-    listSel: '#reminderList',
+    titleSel: '#reminder-title',
+    dateSel: '#reminder-date',
+    timeSel: null,
+    detailsSel: '#reminder-notes',
+    prioritySel: '#reminder-priority',
+    categorySel: null,
+    saveBtnSel: '#saveReminder',
+    cancelEditBtnSel: null,
+    listSel: '#reminders-list',
     statusSel: '#auth-feedback',
-    syncStatusSel: '#syncStatus',
-    voiceBtnSel: '#voiceBtn',
-    categoryOptionsSel: '#categorySuggestions',
-    countTotalSel: '#inlineTotalCount',
-    emptyStateSel: '#emptyState',
-    listWrapperSel: '#remindersWrapper',
-    dateFeedbackSel: '#dateFeedback',
+    syncStatusSel: '#sync-status',
+    voiceBtnSel: null,
+    categoryOptionsSel: null,
+    countTotalSel: '#remindersCount',
+    emptyStateSel: null,
+    listWrapperSel: null,
+    dateFeedbackSel: null,
     googleSignInBtnSel: '#googleSignInBtn',
     googleSignOutBtnSel: '#googleSignOutBtn',
     googleUserNameSel: '#googleUserName',
