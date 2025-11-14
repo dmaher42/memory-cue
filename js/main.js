@@ -153,55 +153,6 @@ initViewportHeight();
     });
   }
 
-  function initMobileNav() {
-    const toggle = document.getElementById('mobile-nav-toggle');
-    const menu = document.getElementById('mobile-nav-menu');
-    if (!toggle || !menu) return;
-
-    const close = () => {
-      menu.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('click', onOutsideClick, true);
-    };
-
-    const open = () => {
-      menu.hidden = false;
-      toggle.setAttribute('aria-expanded', 'true');
-      const first = menu.querySelector('a,button,[tabindex]:not([tabindex="-1"])');
-      if (first) first.focus();
-      document.addEventListener('keydown', onKeyDown);
-      document.addEventListener('click', onOutsideClick, true);
-    };
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        close();
-      }
-    };
-
-    const onOutsideClick = (event) => {
-      if (!menu.contains(event.target) && event.target !== toggle) {
-        close();
-      }
-    };
-
-    toggle.addEventListener('click', () => {
-      if (menu.hidden) {
-        open();
-      } else {
-        close();
-      }
-    });
-
-    menu.addEventListener('click', (event) => {
-      const link = event.target.closest('[data-nav]');
-      if (link) {
-        close();
-      }
-    });
-  }
-
   function handleRouteUpdate() {
     const route = getCurrentRoute();
     updateActiveNavigation(route);
@@ -214,7 +165,6 @@ initViewportHeight();
     ensureDefaultHash();
     initThemeToggle();
     initSkipLink();
-    initMobileNav();
     handleRouteUpdate();
   }
 

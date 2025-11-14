@@ -116,20 +116,6 @@ html {
   box-shadow: 0 16px 30px rgba(45, 212, 191, 0.32);
 }
 
-.mobile-nav-glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.7));
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 28px 45px rgba(15, 23, 42, 0.18);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
-
-[data-theme="dark"] .mobile-nav-glass {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(30, 41, 59, 0.72));
-  border-color: rgba(148, 163, 184, 0.2);
-  box-shadow: 0 26px 48px rgba(2, 6, 23, 0.6);
-}
-
 .glass-effect {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
