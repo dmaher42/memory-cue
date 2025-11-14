@@ -10,6 +10,42 @@ const generateId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const decodeLegacyBody = (body) => {
+  if (typeof body !== 'string') {
+    return '';
+  }
+
+  const trimmed = body.trim();
+  if (!trimmed.length) {
+    return '';
+  }
+
+  if (!/[<>]/.test(trimmed)) {
+    return body;
+  }
+
+  try {
+    if (typeof document !== 'undefined') {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = trimmed;
+      const text =
+        typeof wrapper.innerText === 'string' && wrapper.innerText.length
+          ? wrapper.innerText
+          : wrapper.textContent || '';
+      return text.replace(/\r?\n/g, '\n');
+    }
+  } catch {
+    // Ignore DOM conversion errors and fall back to regex handling below.
+  }
+
+  return trimmed
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<\/?div[^>]*>/gi, '\n')
+    .replace(/<\/?p[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n');
+};
+
 const isValidDateString = (value) => {
   if (typeof value !== 'string') {
     return false;
@@ -23,7 +59,7 @@ export const createNote = (title, body, overrides = {}) => {
   return {
     id: overrides.id && typeof overrides.id === 'string' ? overrides.id : generateId(),
     title: trimmedTitle || 'Untitled note',
-    body: typeof body === 'string' ? body : '',
+    body: typeof body === 'string' ? decodeLegacyBody(body) : '',
     updatedAt:
       overrides.updatedAt && isValidDateString(overrides.updatedAt)
         ? overrides.updatedAt
@@ -39,7 +75,7 @@ const normalizeNotes = (value) => {
           return null;
         }
         const title = typeof note.title === 'string' ? note.title.trim() : '';
-        const body = typeof note.body === 'string' ? note.body : '';
+        const body = typeof note.body === 'string' ? decodeLegacyBody(note.body) : '';
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
         if (!title && !body) {
@@ -57,7 +93,7 @@ const normalizeNotes = (value) => {
 
   if (value && typeof value === 'object') {
     const title = typeof value.title === 'string' ? value.title : '';
-    const body = typeof value.body === 'string' ? value.body : '';
+    const body = typeof value.body === 'string' ? decodeLegacyBody(value.body) : '';
     if (!title && !body) {
       return [];
     }
@@ -70,7 +106,7 @@ const normalizeNotes = (value) => {
   }
 
   if (typeof value === 'string' && value.trim().length) {
-    return [createNote('Notebook (legacy)', value)];
+    return [createNote('Notebook (legacy)', decodeLegacyBody(value))];
   }
 
   return [];
