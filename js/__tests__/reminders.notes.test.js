@@ -6,6 +6,7 @@ const { beforeEach, afterEach, describe, expect, test } = require('@jest/globals
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const firebaseConfigModule = require('../firebase-config.js');
 
 function loadRemindersModule() {
   const filePath = path.resolve(__dirname, '../reminders.js');
@@ -30,6 +31,7 @@ function loadRemindersModule() {
     Response: global.Response,
     URL: global.URL,
   };
+  sandbox.memoryCueFirebase = global.memoryCueFirebase;
   vm.runInNewContext(source, sandbox, { filename: filePath });
   return module.exports;
 }
@@ -90,6 +92,13 @@ describe('reminder note management', () => {
 
     emitSnapshot = () => {};
 
+    const firebaseConfig = firebaseConfigModule.getFirebaseConfig();
+    global.memoryCueFirebase = {
+      getFirebaseConfig: jest.fn(() => ({ ...firebaseConfig })),
+      DEFAULT_FIREBASE_CONFIG: { ...firebaseConfig },
+    };
+    global.__FIREBASE_CONFIG = { ...firebaseConfig };
+
     firebaseDeps = {
       initializeApp: jest.fn(() => ({})),
       initializeFirestore: jest.fn(() => ({})),
@@ -145,6 +154,8 @@ describe('reminder note management', () => {
     api?.closeActiveNotifications();
     localStorage.clear();
     jest.clearAllTimers();
+    delete global.memoryCueFirebase;
+    delete global.__FIREBASE_CONFIG;
   });
 
   test('appends notes to an existing reminder and saves to firestore', () => {

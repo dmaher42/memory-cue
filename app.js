@@ -13,6 +13,7 @@ import {
   escapeCueText
 } from './js/modules/field-helpers.js';
 import { createModalController } from './js/modules/modal-controller.js';
+import { initSupabaseAuth } from './js/supabase-auth.js';
 
 initViewportHeight();
 
@@ -610,6 +611,20 @@ initialiseReminders()
   .catch((error) => {
     console.error('Failed to initialise reminders', error);
   });
+
+initSupabaseAuth({
+  selectors: {
+    signInButtons: ['#googleSignInBtn'],
+    signOutButtons: ['#googleSignOutBtn'],
+    userBadge: '#user-badge',
+    userBadgeEmail: '#user-badge-email',
+    userBadgeInitial: '#user-badge-initial',
+    userName: '#googleUserName',
+    syncStatus: ['#sync-status'],
+    feedback: '#auth-feedback',
+  },
+  disableButtonBinding: true,
+});
 
 const cuesList = document.getElementById('cues-list');
 const pinnedNotesCard = document.getElementById('pinnedNotesCard');
