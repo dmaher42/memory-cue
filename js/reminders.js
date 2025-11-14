@@ -3126,17 +3126,6 @@ export async function initReminders(sel = {}) {
         metaRow.appendChild(createMetaChip(catName, 'category'));
       }
 
-      const priorityKey = (summary.priority || '').trim().toLowerCase();
-      const priorityTone =
-        priorityKey === 'high'
-          ? 'priority-high'
-          : priorityKey === 'low'
-            ? 'priority-low'
-            : priorityKey === 'medium'
-              ? 'priority-medium'
-              : 'neutral';
-      metaRow.appendChild(createMetaChip(summary.priority, priorityTone));
-
       if (metaRow.children.length) {
         content.appendChild(metaRow);
       }
