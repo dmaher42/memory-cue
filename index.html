@@ -58,7 +58,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-1aa7bfb8.css" />
+  <link rel="stylesheet" href="./assets/styles-df3ddf7f.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -216,7 +216,65 @@
   <a class="skip-link" href="#mainContent">Skip to main content</a>
   <nav aria-label="Primary" class="relative fixed top-0 z-50 w-full navbar-glass">
     <div class="navbar mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="navbar-start">
+      <div class="navbar-start items-center gap-2">
+        <details class="nav-mobile dropdown dropdown-bottom lg:hidden">
+          <summary
+            class="nav-mobile-summary btn btn-sm btn-ghost gap-2"
+            aria-label="Toggle navigation menu"
+            aria-haspopup="menu"
+            aria-controls="mobile-nav-menu"
+            aria-expanded="false"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="size-5"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            <span>Menu</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="nav-mobile-chevron size-4"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
+          <ul
+            id="mobile-nav-menu"
+            class="nav-mobile-menu menu menu-sm dropdown-content mt-3 w-56 gap-1 rounded-box bg-base-100/95 p-3 text-sm text-base-content shadow-lg"
+            role="menu"
+          >
+            <li>
+              <a href="#dashboard" data-nav="dashboard" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Dashboard</a>
+            </li>
+            <li>
+              <a href="#reminders" data-nav="reminders" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Reminders</a>
+            </li>
+            <li>
+              <a href="#planner" data-nav="planner" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Planner</a>
+            </li>
+            <li>
+              <a href="#notes" data-nav="notes" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Notes</a>
+            </li>
+            <li class="menu-title">More</li>
+            <li>
+              <a href="#resources" data-nav="resources" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Resources</a>
+            </li>
+            <li>
+              <a href="#templates" data-nav="templates" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Templates</a>
+            </li>
+          </ul>
+        </details>
         <a href="#dashboard" class="btn btn-ghost gap-2 text-left text-lg font-semibold normal-case text-base-content">
           <span class="inline-flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary">
             MC
@@ -243,7 +301,7 @@
           <li class="nav-more-item">
             <details class="nav-more-details">
               <summary
-                class="btn btn-sm btn-ghost"
+                class="btn btn-sm btn-ghost nav-more-summary items-center gap-1"
                 data-nav-group="more"
                 aria-expanded="false"
                 aria-haspopup="true"
@@ -256,7 +314,7 @@
                   fill="none"
                   stroke="currentColor"
                   stroke-width="1.5"
-                  class="size-4"
+                  class="nav-more-chevron size-4"
                   aria-hidden="true"
                 >
                   <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
@@ -1157,7 +1215,7 @@
       </div>
     </div>
   </div>
-  <script src="./assets/router-APCONZOP.js" defer></script>
+  <script src="./assets/router-ZH4CUUEZ.js" defer></script>
   <script type="module" src="./assets/app-4IFQBJHN.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
