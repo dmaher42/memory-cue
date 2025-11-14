@@ -4191,6 +4191,14 @@
             } else {
               payload.updatedAt = new Date();
             }
+            const user = firebaseContext?.auth?.currentUser;
+            console.log(
+              'Notes sync debug:',
+              'user.uid =',
+              user?.uid,
+              'remoteNotesDocRef path =',
+              remoteNotesDocRef.path
+            );
             await firebaseContext.setDoc(remoteNotesDocRef, payload, { merge: true });
             lastRemoteContent = content;
             setStatus('saved', 'Synced');
