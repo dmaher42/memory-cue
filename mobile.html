@@ -34,9 +34,9 @@
       --shadow-sm: 0 1px 3px var(--shadow-color);
       --shadow-md: 0 4px 12px var(--shadow-color);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      --reminder-card-padding-y: 0.75rem;
-      --reminder-card-padding-x: 0.5rem;
-      --reminder-card-gap: 0.75rem;
+      --reminder-card-padding-y: 0.6rem;
+      --reminder-card-padding-x: 0.8rem;
+      --reminder-card-gap: 0.5rem;
       --reminder-card-font-size: 0.9rem;
     }
 
@@ -127,6 +127,81 @@
       padding: 0;
       margin: 0;
       border: none;
+    }
+
+    @media (max-width: 640px) {
+      #reminderList > .reminder-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0.5rem;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        font-size: var(--reminder-card-font-size);
+        line-height: 1.4;
+      }
+
+      #reminderList > .reminder-card:last-child {
+        margin-bottom: 0;
+      }
+
+      #reminderList > .reminder-card h3,
+      #reminderList > .reminder-card h4,
+      #reminderList > .reminder-card strong,
+      #reminderList > .reminder-card [data-reminder-title] {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      #reminderList > .reminder-card time,
+      #reminderList > .reminder-card .reminder-meta {
+        font-size: 0.825rem;
+        color: #6B7280;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      #reminderList > .reminder-card .priority-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .priority-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      .priority-pill.priority-high {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #B91C1C;
+      }
+
+      .priority-pill.priority-medium {
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #B45309;
+      }
+
+      .priority-pill.priority-low {
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #047857;
+      }
     }
 
   /* Remove extra spacing on the last item */
@@ -2747,6 +2822,76 @@
         }
       });
     });
+
+    (function () {
+      const list = document.getElementById('reminderList');
+      if (!list) return;
+
+      const applyPriorityPills = (container) => {
+        const pills = container.querySelectorAll('[data-chip="priority"], [data-priority-pill], .priority-pill');
+        pills.forEach((pill) => {
+          if (!(pill instanceof HTMLElement)) return;
+
+          const prioritySource =
+            pill.dataset.priority ||
+            pill.dataset.level ||
+            pill.dataset.value ||
+            container.dataset.priority ||
+            container.getAttribute('data-priority') ||
+            '';
+
+          const textPriority = prioritySource || pill.textContent?.trim() || '';
+          const normalized = textPriority.toLowerCase();
+
+          pill.classList.add('priority-pill');
+          pill.classList.remove('priority-high', 'priority-medium', 'priority-low');
+
+          if (normalized.startsWith('h')) {
+            pill.classList.add('priority-high');
+          } else if (normalized.startsWith('m')) {
+            pill.classList.add('priority-medium');
+          } else if (normalized.startsWith('l')) {
+            pill.classList.add('priority-low');
+          }
+        });
+      };
+
+      const upgrade = (node) => {
+        if (!(node instanceof HTMLElement)) return;
+        if (node.parentElement !== list) return;
+        if (node.classList.contains('reminder-card')) return;
+        if (node.classList.contains('card')) {
+          node.classList.remove('card');
+        }
+        node.classList.add('reminder-card');
+        applyPriorityPills(node);
+      };
+
+      Array.from(list.children).forEach((child) => {
+        upgrade(child);
+        applyPriorityPills(child);
+      });
+
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof HTMLElement) {
+              upgrade(node);
+              applyPriorityPills(node);
+            } else if (node instanceof DocumentFragment) {
+              Array.from(node.childNodes).forEach((child) => {
+                if (child instanceof HTMLElement) {
+                  upgrade(child);
+                  applyPriorityPills(child);
+                }
+              });
+            }
+          });
+        });
+      });
+
+      observer.observe(list, { childList: true });
+    })();
 
     // Enhanced add button functionality
     (function () {
