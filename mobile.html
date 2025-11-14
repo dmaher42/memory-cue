@@ -2090,7 +2090,18 @@
       align-items: center;
       gap: 0.25rem;
       font-size: 0.7rem;
-      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
+      color: color-mix(in srgb, var(--text-primary, rgba(15, 23, 42, 0.88)) 85%, rgba(15, 23, 42, 0.9));
+    }
+
+    .dark .mc-quick-status {
+      color: color-mix(in srgb, rgba(226, 232, 240, 0.92) 90%, transparent);
+    }
+
+    .mc-sync-message {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
     }
 
     .mc-status-text {
@@ -2334,6 +2345,7 @@
         <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
           <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
         </div>
+        <p id="sync-status" class="mc-sync-message">Sign in to sync reminders across devices.</p>
         <span id="mcStatusText" class="mc-status-text">Offline</span>
       </div>
 
@@ -2896,7 +2908,7 @@
   <script type="module" src="./assets/config-supabase-MP3TZUE5.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-2YZWGPXC.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-OPPRCJWK.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
