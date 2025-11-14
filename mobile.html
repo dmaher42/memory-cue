@@ -60,6 +60,36 @@
     transform: translateY(-2px);
   }
 
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    color: inherit;
+    font: inherit;
+    transition: background-color 0.2s ease;
+  }
+
+  .menu-item:hover,
+  .menu-item:focus-visible {
+    background: rgba(15, 23, 42, 0.05);
+    outline: none;
+  }
+
+  .menu-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .menu-label {
+    flex: 1;
+  }
+
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
     margin-top: 0.75rem;
@@ -1985,8 +2015,7 @@
     }
 
     .mc-quick-submit,
-    .mc-quick-voice,
-    .mc-quick-toggle {
+    .mc-quick-voice {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -2016,23 +2045,6 @@
     .mc-quick-voice.is-listening {
       background: color-mix(in srgb, var(--primary-color) 95%, transparent);
       color: var(--card-bg);
-    }
-
-    .mc-quick-toggle {
-      background: color-mix(in srgb, var(--text-secondary) 28%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
-      font-size: 0.8rem;
-      padding: 0;
-    }
-
-    .mc-quick-toggle .grid-icon,
-    .mc-quick-toggle .list-icon {
-      line-height: 1;
-    }
-
-    .mc-quick-toggle:focus-visible {
-      outline: 2px solid color-mix(in srgb, var(--primary-color) 80%, transparent);
-      outline-offset: 2px;
     }
 
     @media (max-width: 420px) {
@@ -2101,24 +2113,68 @@
         >
           <ul class="py-2 text-sm">
             <li>
-              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
-                <span aria-hidden="true">🎙️</span>
-                <span>Dictate reminder</span>
+              <button
+                id="voiceAddBtn"
+                type="button"
+                class="menu-item flex items-center gap-3 w-full px-4 py-2 text-sm"
+              >
+                <span class="menu-icon" aria-hidden="true">🎤</span>
+                <span class="menu-label">Dictate reminder</span>
               </button>
             </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
             <li>
-              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2" data-open="settings">Settings</button>
+              <button
+                id="viewToggleMenu"
+                type="button"
+                class="menu-item flex items-center gap-3 w-full px-4 py-2 text-sm"
+                aria-label="Toggle reminder layout"
+              >
+                <span class="menu-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="menu-label">View layout: Compact</span>
+              </button>
+            </li>
+            <li role="separator" class="my-1 border-t border-base-300"></li>
+            <li>
+              <button
+                id="openSettings"
+                type="button"
+                class="menu-item flex items-center gap-3 w-full px-4 py-2 text-sm"
+                data-open="settings"
+              >
+                <span class="menu-icon" aria-hidden="true">⚙️</span>
+                <span class="menu-label">Settings</span>
+              </button>
             </li>
             <li>
-              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+              <button
+                id="themeToggle"
+                type="button"
+                class="menu-item flex items-center gap-3 w-full px-4 py-2 text-sm"
+              >
+                <span class="menu-icon" aria-hidden="true">🌗</span>
+                <span class="menu-label">Theme</span>
+              </button>
             </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
+            <li role="separator" class="my-1 border-t border-base-300"></li>
             <li>
-              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+              <button
+                id="googleSignInBtn"
+                type="button"
+                class="menu-item flex items-center gap-3 w-full px-4 py-2 text-sm"
+              >
+                <span class="menu-icon" aria-hidden="true">🔐</span>
+                <span class="menu-label">Sign in</span>
+              </button>
             </li>
             <li>
-              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+              <button
+                id="googleSignOutBtn"
+                type="button"
+                class="menu-item flex items-center gap-3 w-full px-4 py-2 text-sm hidden"
+              >
+                <span class="menu-icon" aria-hidden="true">🔓</span>
+                <span class="menu-label">Sign out</span>
+              </button>
             </li>
           </ul>
         </div>
@@ -2159,18 +2215,7 @@
             type="button"
             class="mc-quick-voice"
             aria-label="Use voice to add reminder"
-          >
-            🎤
-          </button>
-          <button
-            id="viewToggle"
-            type="button"
-            class="mc-quick-toggle"
-            aria-label="Switch between compact and full reminder layouts"
-          >
-            <span class="grid-icon" aria-hidden="true">⊞</span>
-            <span class="list-icon hidden" aria-hidden="true">☰</span>
-          </button>
+          ></button>
         </div>
       </div>
     </div>
@@ -2592,10 +2637,11 @@
       target.replaceChildren(wrapper);
     };
 
-    const viewToggle = document.getElementById('viewToggle');
+    const viewToggleMenu = document.getElementById('viewToggleMenu');
+    const viewToggleLabel = document.getElementById('viewToggleLabel');
     const reminderList = document.getElementById('reminderList');
 
-    if (viewToggle && reminderList) {
+    if (viewToggleMenu && reminderList) {
       const getPendingNotificationIds = () => {
         if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
           return new Set();
@@ -2628,6 +2674,16 @@
         });
       };
 
+      const updateViewToggleLabel = (isCompact) => {
+        if (!viewToggleLabel) return;
+        viewToggleLabel.textContent = isCompact ? 'View layout: Compact' : 'View layout: Full';
+      };
+
+      const updateToggleState = (isCompact) => {
+        updateViewToggleLabel(isCompact);
+        viewToggleMenu.setAttribute('aria-pressed', isCompact ? 'true' : 'false');
+      };
+
       const setCompactMode = (compact) => {
         reminderList.querySelectorAll('.task-item').forEach((item) => {
           if (compact) {
@@ -2638,19 +2694,6 @@
         });
       };
 
-      const updateToggleIcons = (isGridView) => {
-        const gridIcon = viewToggle.querySelector('.grid-icon');
-        const listIcon = viewToggle.querySelector('.list-icon');
-        if (!gridIcon || !listIcon) return;
-        if (isGridView) {
-          gridIcon.classList.add('hidden');
-          listIcon.classList.remove('hidden');
-        } else {
-          gridIcon.classList.remove('hidden');
-          listIcon.classList.add('hidden');
-        }
-      };
-
       const ensureInitialState = () => {
         let isGridView = reminderList.classList.contains('grid-cols-2');
 
@@ -2659,7 +2702,7 @@
           isGridView = true;
         }
 
-        updateToggleIcons(isGridView);
+        updateToggleState(isGridView);
         setCompactMode(true);
         applyNotificationHighlights();
       };
@@ -2668,21 +2711,22 @@
         const isGridView = reminderList.classList.contains('grid-cols-2');
         setCompactMode(true);
         applyNotificationHighlights();
+        updateToggleState(isGridView);
       });
 
-      viewToggle.addEventListener('click', function () {
+      viewToggleMenu.addEventListener('click', function () {
         const isGridView = reminderList.classList.contains('grid-cols-2');
 
         if (isGridView) {
           reminderList.classList.remove('grid-cols-2');
           reminderList.classList.add('space-y-3');
-          updateToggleIcons(false);
         } else {
           reminderList.classList.add('grid-cols-2');
           reminderList.classList.remove('space-y-3');
-          updateToggleIcons(true);
         }
 
+        const isNowGridView = !isGridView;
+        updateToggleState(isNowGridView);
         setCompactMode(true);
 
         applyNotificationHighlights();
