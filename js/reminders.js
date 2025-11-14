@@ -2556,6 +2556,112 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  function enableSwipeToDelete(element, onDelete) {
+    if (!element || typeof element.addEventListener !== 'function' || typeof onDelete !== 'function') {
+      return;
+    }
+
+    const MIN_DISTANCE = 80;
+    const MAX_VERTICAL_DISTANCE = 48;
+    const MAX_DURATION = 800;
+    const INTERACTIVE_SELECTOR =
+      '[data-no-swipe], a[href], button, input, textarea, select, [role="button"], [role="link"], [contenteditable="true"], [contenteditable=""]';
+
+    let pointerId = null;
+    let tracking = false;
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+
+    const cleanupTracking = () => {
+      if (!tracking) {
+        return;
+      }
+      tracking = false;
+      if (pointerId != null && element.hasPointerCapture?.(pointerId)) {
+        try {
+          element.releasePointerCapture(pointerId);
+        } catch {
+          /* noop */
+        }
+      }
+      pointerId = null;
+      element.removeEventListener('pointermove', handlePointerMove);
+      element.removeEventListener('pointerup', handlePointerUp);
+      element.removeEventListener('pointercancel', handlePointerCancel);
+      element.removeEventListener('pointerleave', handlePointerCancel);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerCancel);
+    };
+
+    const handlePointerDown = (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) {
+        return;
+      }
+      if (tracking) {
+        cleanupTracking();
+      }
+      const target = event.target;
+      if (target instanceof Element && target.closest(INTERACTIVE_SELECTOR)) {
+        return;
+      }
+
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      startTime = typeof event.timeStamp === 'number' ? event.timeStamp : Date.now();
+      tracking = true;
+
+      element.addEventListener('pointermove', handlePointerMove);
+      element.addEventListener('pointerup', handlePointerUp);
+      element.addEventListener('pointercancel', handlePointerCancel);
+      element.addEventListener('pointerleave', handlePointerCancel);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointercancel', handlePointerCancel);
+    };
+
+    const handlePointerMove = (event) => {
+      if (!tracking || event.pointerId !== pointerId) {
+        return;
+      }
+      const deltaY = Math.abs(event.clientY - startY);
+      if (deltaY > MAX_VERTICAL_DISTANCE) {
+        cleanupTracking();
+      }
+    };
+
+    const handlePointerUp = (event) => {
+      if (!tracking || event.pointerId !== pointerId) {
+        return;
+      }
+      const deltaX = event.clientX - startX;
+      const deltaY = Math.abs(event.clientY - startY);
+      const duration = (typeof event.timeStamp === 'number' ? event.timeStamp : Date.now()) - startTime;
+      cleanupTracking();
+      if (deltaX <= -MIN_DISTANCE && deltaY <= MAX_VERTICAL_DISTANCE && duration <= MAX_DURATION) {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          onDelete();
+        } catch (error) {
+          console.warn('Swipe delete handler failed', error);
+        }
+      }
+    };
+
+    const handlePointerCancel = (event) => {
+      if (!tracking) {
+        return;
+      }
+      if (typeof event.pointerId === 'number' && event.pointerId !== pointerId) {
+        return;
+      }
+      cleanupTracking();
+    };
+
+    element.addEventListener('pointerdown', handlePointerDown);
+  }
+
   function buildReminderNotificationBody(entry) {
     if (!entry) return 'Due now';
     const notesText = typeof entry.notes === 'string' ? entry.notes : '';
@@ -2970,12 +3076,6 @@ export async function initReminders(sel = {}) {
         <div class="task-content">
           <div class="task-header">
             <div class="task-title"><strong>${escapeHtml(r.title)}</strong></div>
-            <div class="task-toolbar" role="toolbar" aria-label="Reminder actions">
-              <button class="task-toolbar-btn cue-btn delete" data-del type="button" aria-label="Delete reminder">
-                <span aria-hidden="true">🗑️</span>
-                <span class="task-toolbar-label">Delete</span>
-              </button>
-            </div>
           </div>
           ${metaTextHtml}
           <div class="task-meta">
@@ -2983,19 +3083,10 @@ export async function initReminders(sel = {}) {
           </div>
           ${notesHtml}
         </div>`;
-      const deleteBtn = div.querySelector('[data-del]');
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          removeItem(r.id);
-        });
-      }
+      enableSwipeToDelete(div, () => removeItem(r.id));
       const openReminder = () => loadForEdit(r.id);
       div.addEventListener('click', (event) => {
         if (event.defaultPrevented) return;
-        if (event.target instanceof HTMLElement && event.target.closest('[data-del]')) {
-          return;
-        }
         openReminder();
       });
       div.addEventListener('keydown', (event) => {
