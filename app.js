@@ -361,6 +361,111 @@ function initReminderModalUI() {
 
 initReminderModalUI();
 
+let routeFocusTimeoutId = null;
+
+function getActiveRouteFromHash() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  const hash = window.location.hash || '#dashboard';
+  const route = hash.startsWith('#') ? hash.slice(1) : hash;
+
+  return route || 'dashboard';
+}
+
+function focusPrimaryRouteHeading(route) {
+  if (typeof document === 'undefined' || !route) {
+    return;
+  }
+
+  window.clearTimeout(routeFocusTimeoutId);
+  routeFocusTimeoutId = window.setTimeout(() => {
+    const section = document.querySelector(`[data-route="${route}"]`);
+    if (!section) {
+      return;
+    }
+
+    const heading = section.querySelector('h1, [data-primary-heading]');
+    if (!(heading instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!heading.hasAttribute('tabindex')) {
+      heading.setAttribute('tabindex', '-1');
+    }
+
+    if (typeof heading.focus !== 'function') {
+      return;
+    }
+
+    try {
+      heading.focus({ preventScroll: true });
+    } catch {
+      heading.focus();
+    }
+  }, 0);
+}
+
+function scheduleRouteFocus(route) {
+  const activeRoute = route || getActiveRouteFromHash();
+  if (!activeRoute) {
+    return;
+  }
+
+  focusPrimaryRouteHeading(activeRoute);
+}
+
+function initRouteFocusManagement() {
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return;
+  }
+
+  const handleRouteFocus = () => {
+    scheduleRouteFocus();
+  };
+
+  window.addEventListener('hashchange', handleRouteFocus);
+  window.addEventListener('DOMContentLoaded', handleRouteFocus);
+
+  const navLinks = document.querySelectorAll('[data-nav]');
+  navLinks.forEach((link) => {
+    link.addEventListener('click', (event) => {
+      if (!(event.currentTarget instanceof HTMLAnchorElement)) {
+        return;
+      }
+
+      const href = event.currentTarget.getAttribute('href') || '';
+      if (!href.startsWith('#')) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const targetHash = href || '#dashboard';
+      const targetRoute = targetHash.replace('#', '') || 'dashboard';
+
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
+      }
+
+      if (typeof window.renderRoute === 'function') {
+        window.renderRoute();
+      }
+
+      scheduleRouteFocus(targetRoute);
+    });
+  });
+
+  if (typeof window.renderRoute === 'function') {
+    window.renderRoute();
+  }
+
+  scheduleRouteFocus();
+}
+
+initRouteFocusManagement();
+
 const settingsSaveButton = document.getElementById('settings-save-button');
 const settingsSaveConfirmation = document.getElementById('settings-save-confirmation');
 const liveStatusRegion = document.getElementById('live-status');
