@@ -1,5 +1,6 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
+import { startSignInFlow, startSignOutFlow } from './js/supabase-auth.js';
 import {
   CUE_FIELD_DEFINITIONS,
   DEFAULT_CUE_MODAL_TITLE,
@@ -574,9 +575,42 @@ const initialiseReminders = () => {
   });
 };
 
-initialiseReminders().catch((error) => {
-  console.error('Failed to initialise reminders', error);
-});
+const desktopGoogleSignInBtn = document.getElementById('googleSignInBtn');
+const desktopGoogleSignOutBtn = document.getElementById('googleSignOutBtn');
+
+initialiseReminders()
+  .then(() => {
+    if (desktopGoogleSignInBtn && !desktopGoogleSignInBtn._authWired) {
+      desktopGoogleSignInBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        try {
+          await startSignInFlow();
+        } catch (error) {
+          console.error('Sign-in failed:', error);
+          const feedback = document.getElementById('auth-feedback');
+          if (feedback) {
+            feedback.textContent = 'Sign-in failed. Please try again.';
+          }
+        }
+      });
+      desktopGoogleSignInBtn._authWired = true;
+    }
+
+    if (desktopGoogleSignOutBtn && !desktopGoogleSignOutBtn._authWired) {
+      desktopGoogleSignOutBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        try {
+          await startSignOutFlow();
+        } catch (error) {
+          console.error('Sign-out failed:', error);
+        }
+      });
+      desktopGoogleSignOutBtn._authWired = true;
+    }
+  })
+  .catch((error) => {
+    console.error('Failed to initialise reminders', error);
+  });
 
 initSupabaseAuth({
   selectors: {

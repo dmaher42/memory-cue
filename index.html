@@ -9,13 +9,7 @@
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase env bootstrap -->
-<script>
-  window.__ENV = window.__ENV || {};
-  window.__ENV.SUPABASE_URL =
-    window.__ENV.SUPABASE_URL || 'https://xyzcompany.supabase.co';
-  window.__ENV.SUPABASE_ANON_KEY =
-    window.__ENV.SUPABASE_ANON_KEY || 'public-anon-key';
-</script>
+<script type="module" src="./js/init-env.js" defer></script>
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
 <script type="module" src="./js/config-supabase.js" defer></script>
@@ -41,7 +35,7 @@
     http-equiv="Content-Security-Policy"
     content="default-src 'self';
              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
-             script-src 'self' 'sha256-kMYc78URdr+aJUHWA/38o1X+RSC6JA2C6q6/FuuMHxs=' 'sha256-TJ0CUW9xqAVyWqDifQ0y55Q5DjTIO9oJDxnWme8x0s4=' 'sha256-KG8CGrF3wtkuXLG8uh8X8AZybyhNMJXtaKgai1NIG8s=' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
+             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
              style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
              img-src 'self' data:;
              font-src 'self' data:;
@@ -1208,132 +1202,11 @@
       </div>
     </div>
   </div>
-  <script>
-    const groupedRoutes = new Set(['notes', 'resources', 'templates']);
-
-    function renderRoute() {
-      const route = (location.hash || '#dashboard').replace('#', '');
-      document.querySelectorAll('[data-route]').forEach((node) => {
-        const isDashboardFallback = route === '' && node.dataset.route === 'dashboard';
-        node.style.display = node.dataset.route === route || isDashboardFallback ? '' : 'none';
-      });
-      const activeRoute = route === '' ? 'dashboard' : route;
-      document.querySelectorAll('[data-nav]').forEach((link) => {
-        const isActive = link.dataset.nav === activeRoute;
-        link.classList.toggle('btn-active', isActive);
-        if (isActive) {
-          link.setAttribute('aria-current', 'page');
-        } else {
-          link.removeAttribute('aria-current');
-        }
-      });
-      const isGroupedRoute = groupedRoutes.has(activeRoute);
-      document
-        .querySelectorAll('#nav-more-menu [data-nav], #mobile-more-menu [data-nav]')
-        .forEach((link) => {
-          const isActive = link.dataset.nav === activeRoute;
-          link.classList.toggle('btn-active', isActive);
-          if (isActive) {
-            link.setAttribute('aria-current', 'page');
-          } else {
-            link.removeAttribute('aria-current');
-          }
-        });
-      const moreSummary = document.querySelector('[data-nav-group="more"]');
-      const moreDetails = moreSummary ? moreSummary.closest('details') : null;
-      if (moreSummary && moreDetails) {
-        if (isGroupedRoute) {
-          moreDetails.setAttribute('open', '');
-        } else {
-          moreDetails.removeAttribute('open');
-        }
-        moreSummary.classList.toggle('btn-active', isGroupedRoute);
-        moreSummary.setAttribute('aria-expanded', moreDetails.open ? 'true' : 'false');
-        moreSummary.classList.toggle('more-active', moreDetails.open);
-      }
-      document.querySelectorAll('.mobile-nav-more').forEach((details) => {
-        const summary = details.querySelector('summary');
-        if (!summary) {
-          return;
-        }
-        if (isGroupedRoute) {
-          details.setAttribute('open', '');
-        } else {
-          details.removeAttribute('open');
-        }
-        summary.classList.toggle('btn-active', isGroupedRoute);
-        summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
-        summary.classList.toggle('more-active', details.open);
-      });
-    }
-    window.addEventListener('hashchange', renderRoute);
-    window.addEventListener('DOMContentLoaded', renderRoute);
-
-    const navMoreDetails = document.querySelector('.nav-more-details');
-    const navMoreSummary = document.querySelector('[data-nav-group="more"]');
-    if (navMoreDetails && navMoreSummary) {
-      navMoreSummary.setAttribute('aria-expanded', navMoreDetails.open ? 'true' : 'false');
-      navMoreSummary.classList.toggle('more-active', navMoreDetails.open);
-      navMoreDetails.addEventListener('toggle', () => {
-        navMoreSummary.setAttribute('aria-expanded', navMoreDetails.open ? 'true' : 'false');
-        navMoreSummary.classList.toggle('more-active', navMoreDetails.open);
-      });
-    }
-
-    document.querySelectorAll('.mobile-nav-more').forEach((details) => {
-      const summary = details.querySelector('summary');
-      if (!summary) {
-        return;
-      }
-      summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
-      summary.classList.toggle('more-active', details.open);
-      details.addEventListener('toggle', () => {
-        summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
-        summary.classList.toggle('more-active', details.open);
-      });
-    });
-  </script>
+  <script src="./js/router.js" defer></script>
   <script type="module" src="./app.js" defer></script>
   <script src="./js/update-footer-year.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./js/register-service-worker.js" defer></script>
-  <script>
-    (function () {
-      const toggleButton = document.getElementById('mobile-nav-toggle');
-      const mobileMenu = document.getElementById('mobile-nav-menu');
-
-      if (!toggleButton || !mobileMenu) {
-        return;
-      }
-
-      toggleButton.addEventListener('click', () => {
-        const isHidden = mobileMenu.hasAttribute('hidden');
-
-        if (isHidden) {
-          mobileMenu.removeAttribute('hidden');
-          toggleButton.setAttribute('aria-expanded', 'true');
-        } else {
-          mobileMenu.setAttribute('hidden', '');
-          toggleButton.setAttribute('aria-expanded', 'false');
-        }
-      });
-
-      mobileMenu.querySelectorAll('a').forEach((link) => {
-        link.addEventListener('click', () => {
-          mobileMenu.setAttribute('hidden', '');
-          toggleButton.setAttribute('aria-expanded', 'false');
-          const parentDetails = link.closest('details');
-          if (parentDetails) {
-            parentDetails.removeAttribute('open');
-            const summary = parentDetails.querySelector('summary');
-            if (summary) {
-              summary.setAttribute('aria-expanded', 'false');
-              summary.classList.remove('more-active');
-            }
-          }
-        });
-      });
-    })();
-  </script>
+  <script src="./js/mobile-nav.js" defer></script>
 </body>
 </html>

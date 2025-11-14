@@ -1,3 +1,5 @@
+import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
+
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
 
@@ -2282,48 +2284,47 @@ export async function initReminders(sel = {}) {
   // Auth
   const authReady = firebaseReady && auth && typeof GoogleAuthProvider === 'function';
 
-  if (googleSignInBtns.length) {
-    const handleGoogleSignIn = async () => {
-      if (!authReady || typeof signInWithPopup !== 'function' || typeof signInWithRedirect !== 'function') {
-        toast('Sign-in unavailable offline');
-        return;
-      }
-      const provider = new GoogleAuthProvider();
+  setAuthContext({
+    authReady,
+    auth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithRedirect,
+    signOut,
+    toast,
+  });
+
+  const shouldWireAuthButtons = variant !== 'desktop';
+
+  const wireAuthButton = (button, handler) => {
+    if (!(button instanceof HTMLElement) || button._authWired) {
+      return;
+    }
+    button.addEventListener('click', (event) => {
       try {
-        await signInWithPopup(auth, provider);
-      } catch (error) {
-        try {
-          await signInWithRedirect(auth, provider);
-        } catch {
-          toast('Google sign-in failed');
+        const outcome = handler(event);
+        if (outcome && typeof outcome.then === 'function') {
+          outcome.catch((error) => {
+            console.error('Auth handler error:', error);
+          });
         }
+      } catch (error) {
+        console.error('Auth handler error:', error);
       }
-    };
-    googleSignInBtns.forEach((btn) => {
-      btn.addEventListener('click', handleGoogleSignIn);
     });
+    button._authWired = true;
+  };
+
+  if (shouldWireAuthButtons && googleSignInBtns.length) {
+    googleSignInBtns.forEach((btn) => wireAuthButton(btn, startSignInFlow));
   }
 
   if (authReady && typeof getRedirectResult === 'function') {
     getRedirectResult(auth).catch(()=>{});
   }
 
-  if (googleSignOutBtns.length) {
-    const handleGoogleSignOut = async () => {
-      if (!authReady || typeof signOut !== 'function') {
-        toast('Sign-out unavailable offline');
-        return;
-      }
-      try {
-        await signOut(auth);
-        toast('Signed out');
-      } catch {
-        toast('Sign-out failed');
-      }
-    };
-    googleSignOutBtns.forEach((btn) => {
-      btn.addEventListener('click', handleGoogleSignOut);
-    });
+  if (shouldWireAuthButtons && googleSignOutBtns.length) {
+    googleSignOutBtns.forEach((btn) => wireAuthButton(btn, startSignOutFlow));
   }
 
   if (authReady && typeof onAuthStateChanged === 'function') {
