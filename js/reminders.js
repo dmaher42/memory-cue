@@ -2962,7 +2962,7 @@ export async function initReminders(sel = {}) {
       const metaTextHtml = metaTextParts.length
         ? `<div class="task-meta-text">${metaTextParts.join(' • ')}</div>`
         : '';
-      const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
+      const notesHtml = '';
       div.innerHTML = `
         <div class="task-content">
           <div class="task-header">
