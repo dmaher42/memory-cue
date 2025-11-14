@@ -279,6 +279,47 @@
           </li>
         </ul>
       </div>
+      <div class="navbar-end flex-1 justify-end">
+        <div class="flex w-full flex-col items-end gap-1 text-right">
+          <p id="sync-status" class="sync-status hidden text-xs text-base-content/70" data-compact="true"></p>
+          <div
+            id="user-badge"
+            class="hidden items-center gap-3 rounded-full border border-base-200 bg-base-100/80 px-3 py-1.5 text-sm shadow-sm backdrop-blur"
+          >
+            <span
+              id="user-badge-initial"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-content text-base font-semibold"
+              aria-hidden="true"
+            >T</span>
+            <div class="text-left leading-tight">
+              <p id="user-badge-email" class="text-sm font-semibold text-base-content"></p>
+              <p class="text-xs text-base-content/60">Reminders syncing</p>
+            </div>
+          </div>
+          <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <form id="auth-form" class="hidden flex flex-wrap items-center justify-end gap-2">
+              <label for="auth-email" class="sr-only">Email address</label>
+              <input
+                id="auth-email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@school.edu"
+                class="input input-sm input-bordered w-full max-w-xs sm:w-56"
+              />
+              <button id="sign-in-btn" type="submit" class="btn btn-sm btn-primary">Send link</button>
+            </form>
+            <button
+              id="sign-out-btn"
+              type="button"
+              class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
+            >
+              Sign out
+            </button>
+          </div>
+          <div id="auth-feedback" class="hidden text-xs text-base-content/70" role="status" aria-live="polite"></div>
+        </div>
+      </div>
     </div>
     <div
       id="mobile-nav-menu"
@@ -1228,6 +1269,7 @@
   </script>
   <script type="module" src="./assets/app-GB2QV5U4.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
+  <script src="./assets/supabase-auth.js" defer></script>
   <script src="./assets/register-service-worker-VJMOHPCS.js" defer></script>
   <script>
     (function () {
