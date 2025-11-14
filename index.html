@@ -393,35 +393,7 @@
             </div>
             <div class="relative rounded-2xl border border-base-300 bg-base-100/85 p-6 shadow-sm backdrop-blur">
               <h2 class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Daily snapshot</h2>
-              <ul class="mt-5 space-y-4 text-sm text-base-content/80">
-                <li class="flex items-start gap-3">
-                  <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-                    09
-                  </span>
-                  <div>
-                    <p class="font-medium text-base-content">Group reading circles</p>
-                    <p class="text-xs text-base-content/60">Period 2 · Comprehension focus</p>
-                  </div>
-                </li>
-                <li class="flex items-start gap-3">
-                  <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary/15 text-sm font-semibold text-secondary">
-                    11
-                  </span>
-                  <div>
-                    <p class="font-medium text-base-content">STEM lab check-in</p>
-                    <p class="text-xs text-base-content/60">Confirm robotics kit setup</p>
-                  </div>
-                </li>
-                <li class="flex items-start gap-3">
-                  <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-accent">
-                    15
-                  </span>
-                  <div>
-                    <p class="font-medium text-base-content">Family updates</p>
-                    <p class="text-xs text-base-content/60">Send check-in note before home time</p>
-                  </div>
-                </li>
-              </ul>
+              <ul id="dailySnapshotList" class="mt-5 space-y-4 text-sm text-base-content/80"></ul>
               <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4 text-xs text-base-content/70">
                 <p class="font-semibold uppercase tracking-[0.3em] text-base-content/50">Shortcut</p>
                 <p class="mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
@@ -437,8 +409,8 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.3em]">Reminders</p>
                 <span aria-hidden="true">🔔</span>
               </div>
-              <p class="text-3xl font-semibold text-base-content">3</p>
-              <p class="text-sm text-base-content/70">Due before midday</p>
+              <p class="text-3xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
+              <p class="text-sm text-base-content/70"><span id="remindersSubtitle"></span></p>
             </div>
           </article>
           <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
@@ -447,8 +419,8 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.3em]">Planner</p>
                 <span aria-hidden="true">🗂️</span>
               </div>
-              <p class="text-3xl font-semibold text-base-content">5</p>
-              <p class="text-sm text-base-content/70">Lessons ready to go</p>
+              <p class="text-3xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
+              <p class="text-sm text-base-content/70"><span id="plannerSubtitle"></span></p>
             </div>
           </article>
           <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
@@ -457,8 +429,8 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.3em]">Resources</p>
                 <span aria-hidden="true">📁</span>
               </div>
-              <p class="text-3xl font-semibold text-base-content">12</p>
-              <p class="text-sm text-base-content/70">Tagged for this term</p>
+              <p class="text-3xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
+              <p class="text-sm text-base-content/70"><span id="resourcesSubtitle"></span></p>
             </div>
           </article>
           <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
@@ -467,8 +439,8 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.3em]">Templates</p>
                 <span aria-hidden="true">🧩</span>
               </div>
-              <p class="text-3xl font-semibold text-base-content">8</p>
-              <p class="text-sm text-base-content/70">Pinned for quick reuse</p>
+              <p class="text-3xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
+              <p class="text-sm text-base-content/70"><span id="templatesSubtitle"></span></p>
             </div>
           </article>
         </div>
@@ -514,38 +486,7 @@
                   </div>
                 </div>
               </div>
-              <ol class="space-y-3">
-                <li class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                  <div class="space-y-1">
-                    <p class="font-medium text-base-content">
-                      <span class="font-semibold">Send excursion reminder</span>
-                    </p>
-                    <time class="text-sm text-base-content/70" datetime="2024-04-18T09:30">Before 9:30 AM · Families group</time>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    <button class="btn btn-sm btn-success" type="button">Mark done</button>
-                    <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Snooze</button>
-                  </div>
-                </li>
-                <li class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                  <div class="space-y-1">
-                    <p class="font-medium text-base-content">
-                      <span class="font-semibold">Prep science lab</span>
-                    </p>
-                    <p class="text-sm text-base-content/70">Room 204 · Check goggles + robotics sets</p>
-                  </div>
-                  <span class="badge badge-outline text-primary">Lab</span>
-                </li>
-                <li class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                  <div class="space-y-1">
-                    <p class="font-medium text-base-content">
-                      <span class="font-semibold">Call guardians</span>
-                    </p>
-                    <p class="text-sm text-base-content/70">Follow up on field trip slips</p>
-                  </div>
-                  <span class="badge badge-outline text-error">High</span>
-                </li>
-              </ol>
+              <ol id="todaysFocusList" class="space-y-3"></ol>
             </div>
           </section>
 
@@ -559,40 +500,7 @@
                   <button class="btn btn-sm join-item" type="button">Next</button>
                 </div>
               </div>
-              <ol class="relative space-y-4 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60">
-                <li class="relative flex gap-4 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm">
-                  <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">Mon</span>
-                  <div class="space-y-1 text-sm">
-                    <p class="font-semibold text-base-content">Stage rehearsal</p>
-                    <p class="text-base-content/70">Auditorium · Checklist ready</p>
-                    <span class="badge badge-outline badge-sm text-primary">Ready</span>
-                  </div>
-                </li>
-                <li class="relative flex gap-4 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm">
-                  <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary/15 text-xs font-semibold text-secondary">Tue</span>
-                  <div class="space-y-1 text-sm">
-                    <p class="font-semibold text-base-content">STEM lab rotations</p>
-                    <p class="text-base-content/70">Robotics challenges</p>
-                    <span class="badge badge-outline badge-sm text-secondary">In prep</span>
-                  </div>
-                </li>
-                <li class="relative flex gap-4 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm">
-                  <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-warning/15 text-xs font-semibold text-warning">Wed</span>
-                  <div class="space-y-1 text-sm">
-                    <p class="font-semibold text-base-content">Parent interviews</p>
-                    <p class="text-base-content/70">3:00 – 6:00 PM · Prep student snapshots</p>
-                    <span class="badge badge-outline badge-sm text-warning">Confirm</span>
-                  </div>
-                </li>
-                <li class="relative flex gap-4 rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm">
-                  <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">Thu</span>
-                  <div class="space-y-1 text-sm">
-                    <p class="font-semibold text-base-content">Lesson study</p>
-                    <p class="text-base-content/70">Staffroom · Shared facilitation</p>
-                    <span class="badge badge-outline badge-sm text-accent">Shared</span>
-                  </div>
-                </li>
-              </ol>
+              <ol id="weekAtAGlanceList" class="relative space-y-4 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"></ol>
             </div>
           </section>
         </div>
@@ -604,32 +512,7 @@
                 <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
                 <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
               </div>
-              <ul class="space-y-3">
-                <li class="rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm">
-                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="space-y-1">
-                      <p class="font-medium text-base-content">Year 8 group goals</p>
-                      <p class="text-sm text-base-content/70">Focus on inquiry questions for Friday.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                      <button class="btn btn-sm btn-outline" type="button">Open</button>
-                      <button class="btn btn-sm btn-ghost" type="button">Share</button>
-                    </div>
-                  </div>
-                </li>
-                <li class="rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm">
-                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="space-y-1">
-                      <p class="font-medium text-base-content">Camps &amp; excursions</p>
-                      <p class="text-sm text-base-content/70">Confirm transport numbers with admin.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                      <button class="btn btn-sm btn-outline" type="button">Pin</button>
-                      <button class="btn btn-sm btn-ghost" type="button">Archive</button>
-                    </div>
-                  </div>
-                </li>
-              </ul>
+              <ul id="pinnedNotesList" class="space-y-3"></ul>
             </div>
           </section>
 
