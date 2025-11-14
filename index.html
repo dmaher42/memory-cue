@@ -90,10 +90,10 @@
     }
 
     /* Reminders: clean flat row layout */
-    [data-route="reminders"] ul.space-y-3 > li {
+    [data-route="reminders"] ul.space-y-2 > li {
       border-radius: 0.75rem;
       border: 1px solid rgba(95, 122, 107, 0.35);
-      padding: 0.6rem 0.75rem;
+      padding: 0.4rem 0.6rem;
       background: linear-gradient(
         135deg,
         rgba(95, 122, 107, 0.14),
@@ -109,11 +109,11 @@
       transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
 
-    [data-route="reminders"] ul.space-y-3 > li + li {
+    [data-route="reminders"] ul.space-y-2 > li + li {
       margin-top: 0.4rem;
     }
 
-    [data-route="reminders"] ul.space-y-3 > li:hover {
+    [data-route="reminders"] ul.space-y-2 > li:hover {
       border-color: rgba(122, 154, 205, 0.55);
       background: linear-gradient(
         135deg,
@@ -124,12 +124,12 @@
       box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
     }
 
-    [data-route="reminders"] ul.space-y-3 > li .reminder-main {
+    [data-route="reminders"] ul.space-y-2 > li .reminder-main {
       flex: 1 1 auto;
       min-width: 0;
     }
 
-    [data-route="reminders"] ul.space-y-3 > li .reminder-meta {
+    [data-route="reminders"] ul.space-y-2 > li .reminder-meta {
       flex-shrink: 0;
       font-size: 0.75rem;
       opacity: 0.75;
@@ -140,29 +140,29 @@
       align-items: flex-end;
     }
 
-    [data-route="reminders"] ul.space-y-3 > li .reminder-meta .reminder-actions {
+    [data-route="reminders"] ul.space-y-2 > li .reminder-meta .reminder-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.4rem;
     }
 
-    [data-route="reminders"] ul.space-y-3 > li .card,
-    [data-route="reminders"] ul.space-y-3 > li .card-body {
+    [data-route="reminders"] ul.space-y-2 > li .card,
+    [data-route="reminders"] ul.space-y-2 > li .card-body {
       background: transparent;
       border: none;
       box-shadow: none;
       padding: 0;
     }
 
-    [data-route="reminders"] ul.space-y-3 > li:has(.text-error) {
+    [data-route="reminders"] ul.space-y-2 > li:has(.text-error) {
       border-left: 4px solid var(--reminder-bio-orange);
     }
 
-    [data-route="reminders"] ul.space-y-3 > li:has(.text-warning) {
+    [data-route="reminders"] ul.space-y-2 > li:has(.text-warning) {
       border-left: 4px solid var(--reminder-quantum-blue);
     }
 
-    [data-route="reminders"] ul.space-y-3 > li:has(.text-secondary) {
+    [data-route="reminders"] ul.space-y-2 > li:has(.text-secondary) {
       border-left: 4px solid var(--reminder-digital-sage);
     }
 
@@ -684,25 +684,23 @@
             Add reminder
           </button>
         </div>
-        <ul id="reminders-list" class="space-y-3">
+        <ul id="reminders-list" class="space-y-2">
           <li class="reminder-item">
             <div class="reminder-main space-y-2">
               <p class="font-semibold text-base-content">Submit unit overview</p>
               <p class="text-sm text-base-content/70">Due Friday · Curriculum team</p>
-              <p class="text-sm text-base-content/60">Attach the new literacy checkpoints before sending.</p>
+              <p class="text-sm text-base-content/60 hidden">Attach the new literacy checkpoints before sending.</p>
             </div>
             <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
               <span class="badge badge-outline text-warning">Due soon</span>
               <div class="reminder-actions flex flex-wrap items-center justify-end gap-2">
-                <button class="btn btn-sm btn-success" type="button" disabled title="Coming soon">Complete</button>
-                <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Snooze</button>
               </div>
             </div>
           </li>
           <li class="reminder-item">
             <div class="reminder-main space-y-2">
               <p class="font-semibold text-base-content">Email newsletter blurb</p>
-              <p class="text-sm text-base-content/70">Add upcoming excursions to the weekly update.</p>
+              <p class="text-sm text-base-content/70 hidden">Add upcoming excursions to the weekly update.</p>
             </div>
             <div class="reminder-meta flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
               <span class="badge badge-outline text-secondary">This week</span>
