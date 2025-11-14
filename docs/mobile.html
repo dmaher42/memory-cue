@@ -42,6 +42,67 @@
     transform: translateY(-2px);
   }
 
+  .quick-actions-panel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    z-index: 50;
+    justify-items: center;
+  }
+
+  .quick-actions li {
+    list-style: none;
+  }
+
+  .quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 9999px;
+    border: none;
+    background: rgba(15, 23, 42, 0.1);
+    color: var(--text-primary, rgba(15, 23, 42, 0.88));
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .quick-action-btn:hover,
+  .quick-action-btn:focus-visible {
+    background: rgba(15, 23, 42, 0.16);
+    transform: translateY(-1px);
+    outline: none;
+  }
+
+  html[data-theme="dark"] .quick-action-btn {
+    background: rgba(226, 232, 240, 0.08);
+    color: rgba(226, 232, 240, 0.92);
+  }
+
+  html[data-theme="dark"] .quick-action-btn:hover,
+  html[data-theme="dark"] .quick-action-btn:focus-visible {
+    background: rgba(226, 232, 240, 0.16);
+  }
+
+  .quick-action-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
     margin-top: 0.75rem;
@@ -1818,44 +1879,75 @@
 
       <!-- Right: Settings button with quick menu -->
       <div class="relative">
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-          aria-label="Open menu"
-          aria-haspopup="true"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none">⚙️</span>
-        </button>
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+            aria-label="Open menu"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none">⚙️</span>
+          </button>
 
         <div
           id="overflowMenu"
-          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border border-base-200/40 dark:bg-slate-800"
+          class="hidden quick-actions-panel absolute right-0 mt-2"
           role="menu"
           aria-hidden="true"
+          aria-labelledby="overflowMenuHeading"
         >
-          <ul class="py-2 text-sm">
-            <li>
-              <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
-                <span aria-hidden="true">🎙️</span>
-                <span>Dictate reminder</span>
+          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+          <ul class="quick-actions" role="presentation">
+            <li role="none">
+              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                <span class="sr-only">Dictate reminder</span>
               </button>
             </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
-            <li>
-              <button id="openSettings" type="button" class="menu-item text-left px-4 py-2" data-open="settings">Settings</button>
+            <li role="none">
+              <button
+                id="viewToggleMenu"
+                type="button"
+                class="quick-action-btn"
+                title="Toggle layout"
+                role="menuitem"
+              >
+                <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+              </button>
             </li>
-            <li>
-              <button id="themeToggle" type="button" class="menu-item text-left px-4 py-2">Theme</button>
+            <li role="none">
+              <button
+                id="openSettings"
+                type="button"
+                class="quick-action-btn"
+                data-open="settings"
+                title="Open settings"
+                role="menuitem"
+              >
+                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                <span class="sr-only">Open settings</span>
+              </button>
             </li>
-            <li><div class="h-px bg-base-300 my-1"></div></li>
-            <li>
-              <button id="googleSignInBtn" type="button" class="menu-item text-left px-4 py-2">Sign in</button>
+            <li role="none">
+              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                <span class="sr-only">Toggle theme</span>
+              </button>
             </li>
-            <li>
-              <button id="googleSignOutBtn" type="button" class="menu-item text-left px-4 py-2 hidden">Sign out</button>
+            <li role="none">
+              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                <span class="sr-only">Sign in</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                <span class="sr-only">Sign out</span>
+              </button>
             </li>
           </ul>
         </div>
