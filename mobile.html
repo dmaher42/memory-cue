@@ -4315,20 +4315,43 @@
         remoteNotesDocRef = context.doc(context.db, 'users', user.uid, 'notebook', 'scratch');
         remoteUserId = user.uid;
 
-        try {
-          remoteNotesUnsubscribe = context.onSnapshot(remoteNotesDocRef, handleRemoteSnapshot, (error) => {
-            console.error('Notes sync: Listener error', error);
-            setStatus('error', 'Sync error');
-          });
-        } catch (error) {
-          console.error('Notes sync: Unable to subscribe to updates', error);
-        }
+        const ensureRemoteDoc = typeof context.setDoc === 'function'
+          ? context.setDoc(remoteNotesDocRef, { ownerUid: user.uid }, { merge: true }).catch((error) => {
+              console.error('Notes sync: Unable to prepare remote notebook', error);
+              if (error && error.code === 'permission-denied') {
+                setStatus('error', 'Sync unavailable');
+                stopRemoteNotesSync();
+              }
+              return null;
+            })
+          : Promise.resolve(null);
 
-        const initialContent = notesEditor.innerHTML || lastStoredLocalContent;
-        if (initialContent && !isApplyingRemoteUpdate) {
-          setStatus('saving', 'Syncing...');
-          scheduleRemoteSave(initialContent);
-        }
+        ensureRemoteDoc.then(() => {
+          if (!remoteSyncActive) {
+            return;
+          }
+
+          try {
+            remoteNotesUnsubscribe = context.onSnapshot(remoteNotesDocRef, handleRemoteSnapshot, (error) => {
+              console.error('Notes sync: Listener error', error);
+              if (error && error.code === 'permission-denied') {
+                setStatus('error', 'Sync unavailable');
+                stopRemoteNotesSync();
+              } else {
+                setStatus('error', 'Sync error');
+              }
+            });
+          } catch (error) {
+            console.error('Notes sync: Unable to subscribe to updates', error);
+            return;
+          }
+
+          const initialContent = notesEditor.innerHTML || lastStoredLocalContent;
+          if (initialContent && !isApplyingRemoteUpdate) {
+            setStatus('saving', 'Syncing...');
+            scheduleRemoteSave(initialContent);
+          }
+        });
       };
 
       const initRemoteNotebookSync = () => {
