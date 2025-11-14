@@ -1,14 +1,109 @@
 // js/supabase-auth.js
-// Uses the global window.supabase that you already create in index.html
+// Provides shared authentication helpers for Memory Cue.
 
-window.addEventListener('DOMContentLoaded', () => {
+const EMPTY_AUTH_CONTEXT = Object.freeze({
+  authReady: false,
+  auth: null,
+  GoogleAuthProvider: null,
+  signInWithPopup: null,
+  signInWithRedirect: null,
+  signOut: null,
+  toast: null,
+});
+
+let authContext = { ...EMPTY_AUTH_CONTEXT };
+
+function getToast() {
+  return typeof authContext.toast === 'function' ? authContext.toast : null;
+}
+
+function warnAuthNotReady(message) {
+  if (typeof console !== 'undefined' && console.warn) {
+    console.warn(message);
+  }
+}
+
+export function setAuthContext(context = {}) {
+  authContext = { ...EMPTY_AUTH_CONTEXT, ...context };
+}
+
+export function clearAuthContext() {
+  authContext = { ...EMPTY_AUTH_CONTEXT };
+}
+
+export async function startSignInFlow() {
+  const toast = getToast();
+  if (!authContext || typeof authContext !== 'object') {
+    warnAuthNotReady('Authentication context is not configured.');
+    throw new Error('Authentication context unavailable');
+  }
+
+  const {
+    authReady,
+    auth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithRedirect,
+  } = authContext;
+
+  if (!authReady || typeof GoogleAuthProvider !== 'function' ||
+      typeof signInWithPopup !== 'function' || typeof signInWithRedirect !== 'function') {
+    toast?.('Sign-in unavailable offline');
+    warnAuthNotReady('Attempted sign-in before Firebase auth was ready.');
+    return;
+  }
+
+  const provider = new GoogleAuthProvider();
+
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (popupError) {
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (redirectError) {
+      toast?.('Google sign-in failed');
+      warnAuthNotReady('Google sign-in failed via popup and redirect.');
+    }
+  }
+}
+
+export async function startSignOutFlow() {
+  const toast = getToast();
+  if (!authContext || typeof authContext !== 'object') {
+    warnAuthNotReady('Authentication context is not configured.');
+    throw new Error('Authentication context unavailable');
+  }
+
+  const { authReady, auth, signOut } = authContext;
+
+  if (!authReady || typeof signOut !== 'function') {
+    toast?.('Sign-out unavailable offline');
+    warnAuthNotReady('Attempted sign-out before Firebase auth was ready.');
+    return;
+  }
+
+  try {
+    await signOut(auth);
+    toast?.('Signed out');
+  } catch (error) {
+    toast?.('Sign-out failed');
+    if (typeof console !== 'undefined' && console.error) {
+      console.error('Sign-out failed:', error);
+    }
+  }
+}
+
+function initSupabaseAuthUi() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
   const supabase = window.supabase;
   if (!supabase) {
     console.error('Supabase client not found. Check your URL/key config in index.html.');
     return;
   }
 
-  // ---- Elements ----
   const authForm = document.getElementById('auth-form');
   const emailInput = document.getElementById('auth-email');
   const signOutBtn = document.getElementById('sign-out-btn');
@@ -28,7 +123,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // If the page doesn't have the auth UI, bail quietly
   if (!authForm) return;
 
   if (syncStatus && !syncStatus.textContent) {
@@ -44,7 +138,6 @@ window.addEventListener('DOMContentLoaded', () => {
     toggleElementVisibility(feedback, Boolean(msg));
   };
 
-  // Prevent double-binding if this file is included twice
   if (!authForm._wired) {
     authForm._wired = true;
 
@@ -64,7 +157,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Session/UI sync
   supabase.auth.onAuthStateChange(async (_event, session) => {
     const user = session?.user || null;
 
@@ -81,12 +173,10 @@ window.addEventListener('DOMContentLoaded', () => {
         syncStatus.dataset.state = 'online';
       }
       await supabase.from('profiles').upsert({ id: user.id, email: user.email });
-    } else {
-      if (syncStatus) {
-        syncStatus.textContent = 'Sign in to sync reminders across devices.';
-        syncStatus.classList.remove('online');
-        syncStatus.dataset.state = 'offline';
-      }
+    } else if (syncStatus) {
+      syncStatus.textContent = 'Sign in to sync reminders across devices.';
+      syncStatus.classList.remove('online');
+      syncStatus.dataset.state = 'offline';
     }
 
     if (syncStatus) {
@@ -96,7 +186,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setFeedback('');
   });
 
-  // Optional: quick sanity test in console
   (async () => {
     try {
       const { data, error } = await supabase.from('activities').select('*').limit(1);
@@ -105,4 +194,8 @@ window.addEventListener('DOMContentLoaded', () => {
       console.error('Supabase sanity test error:', err);
     }
   })();
-});
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', initSupabaseAuthUi, { once: true });
+}
