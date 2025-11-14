@@ -258,9 +258,9 @@ export function applyAuthState(elements, { user, messages } = {}) {
     ? resolvedMessages.signedOut(user)
     : resolvedMessages.signedOut;
   const statusMessage = isSignedIn ? signedInMessage : signedOutMessage;
+  const shouldShowSyncStatus = !isSignedIn;
 
   if (elements.syncStatusEls.length) {
-    toggleElements(elements.syncStatusEls, true);
     setTextContent(elements.syncStatusEls, statusMessage);
     elements.syncStatusEls.forEach((element) => {
       if (!(element instanceof HTMLElement)) {
@@ -269,6 +269,7 @@ export function applyAuthState(elements, { user, messages } = {}) {
       element.classList.toggle('online', isSignedIn);
       element.dataset.state = isSignedIn ? 'online' : 'offline';
     });
+    toggleElements(elements.syncStatusEls, shouldShowSyncStatus);
   }
 
   const syncStatusText = isSignedIn

@@ -149,12 +149,12 @@ html {
 }
 
 .sync-status {
-  --indicator-color: rgba(100, 116, 139, 0.9);
+  --indicator-color: rgba(30, 41, 59, 0.9);
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
   padding: 0.125rem 0.25rem;
-  color: rgb(100 116 139);
+  color: rgb(30 41 59);
   font-size: 0.875rem;
   line-height: 1.25;
   transition: color 0.2s ease;

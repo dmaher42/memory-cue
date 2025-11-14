@@ -304,7 +304,7 @@ initSupabaseAuth({
     userBadgeEmail: '#user-badge-email',
     userBadgeInitial: '#user-badge-initial',
     userName: '#googleUserName',
-    syncStatus: ['#sync-status', '#syncStatus'],
+    syncStatus: ['#sync-status'],
     syncStatusText: ['#mcStatusText'],
     statusIndicator: ['#mcStatus'],
     feedback: '#auth-feedback',
