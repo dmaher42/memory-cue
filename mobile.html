@@ -658,24 +658,23 @@
     /* Enhanced reminder visibility styles */
     .task-item {
       position: relative;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1rem;
-      align-items: start;
-      padding: 1rem;
-      padding-left: 1.25rem;
-      margin-bottom: var(--reminder-card-gap);
-      background: color-mix(in srgb, var(--card-bg) 95%, transparent);
-      border: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch;
+      padding: 0.75rem 0.875rem;
+      margin-bottom: 0.5rem;
+      background: color-mix(in srgb, var(--card-bg) 98%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border-color) 28%, transparent);
       border-left-width: 3px;
       border-left-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
-      border-radius: 0.5rem;
-      box-shadow: var(--shadow-sm);
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 2px var(--shadow-color);
       transition: var(--transition);
     }
     .task-item:hover {
-      border-left-color: color-mix(in srgb, var(--primary-color) 90%, transparent);
-      box-shadow: var(--shadow-md);
+      border-left-color: color-mix(in srgb, var(--primary-color) 85%, transparent);
+      box-shadow: 0 2px 6px var(--shadow-color);
       transform: translateY(-1px);
     }
     .dark .task-item {
@@ -1027,7 +1026,7 @@
     #reminderList {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 4px;
+      gap: 0.5rem;
       align-content: start;
       width: 100%;
     }
@@ -1066,113 +1065,192 @@
 
     /* Compact reminder card styling */
     .task-item[data-compact="true"] {
-      margin-bottom: 0 !important;
-      padding: 12px;
-      padding-left: 14px;
-      min-height: 80px;
-      display: flex;
-      flex-direction: column;
+      margin-bottom: 0.5rem !important;
+      padding: 0.75rem 0.875rem;
+      min-height: 64px;
       border-left-width: 3px;
-      border-radius: 0.5rem;
+      border-radius: 0.75rem;
+      gap: 0.4rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-primary-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-control-slot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.25rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-control-slot--empty {
+      min-width: 1.5rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-title-slot {
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     .task-item[data-compact="true"] .task-title {
-      font-size: 14px;
+      font-size: 0.95rem;
       line-height: 1.3;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
+      margin: 0;
+      white-space: nowrap;
       overflow: hidden;
-      margin-bottom: 8px;
+      text-overflow: ellipsis;
     }
 
-    .task-item[data-compact="true"] .task-notes {
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      font-size: 12px;
-      line-height: 1.3;
-      margin-top: 0.25rem;
-      padding-top: 0.25rem;
+    .task-item[data-compact="true"] .task-title strong {
+      font-weight: 600;
     }
 
-    .task-item[data-compact="true"] .task-meta {
-      font-size: 11px;
-      gap: 4px;
-      margin-top: auto;
-    }
-    .task-item[data-compact="true"] .task-meta-text {
-      font-size: 11px;
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      color: color-mix(in srgb, var(--text-secondary) 80%, var(--text-primary) 20%);
-      margin-bottom: 0.25rem;
+    .task-item[data-compact="true"] .reminder-meta-slot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      min-width: 0;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
+      text-align: right;
     }
 
-    .task-item[data-compact="true"] .task-chip {
-      padding: 2px 6px;
-      font-size: 10px;
-    }
-
-    .task-item[data-compact="true"] .task-chip:not([data-chip="priority"]) {
+    .task-item[data-compact="true"] .reminder-meta-slot--empty {
       display: none;
     }
 
-    .task-item[data-compact="true"] .task-header {
-      gap: 0.5rem;
+    .dark .task-item[data-compact="true"] .reminder-meta-slot {
+      color: color-mix(in srgb, var(--card-bg) 78%, transparent);
+    }
+
+    .task-item[data-compact="true"] .reminder-due {
+      display: inline-block;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      max-width: 10.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-item[data-compact="true"] .priority-chip-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: color-mix(in srgb, var(--text-secondary) 85%, transparent);
+      text-transform: uppercase;
+    }
+
+    .task-item[data-compact="true"] .priority-chip-dot::before {
+      content: '';
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 9999px;
+      background: currentColor;
+    }
+
+    .priority-chip-dot.priority-high::before {
+      background: var(--priority-high-border, #EF4444);
+    }
+
+    .priority-chip-dot.priority-medium::before {
+      background: var(--priority-medium-border, #F59E0B);
+    }
+
+    .priority-chip-dot.priority-low::before {
+      background: var(--priority-low-border, #10B981);
+    }
+
+    .dark .priority-chip-dot {
+      color: color-mix(in srgb, var(--card-bg) 90%, transparent);
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+    }
+
+    .dark .task-item[data-compact="true"] .reminder-secondary-row {
+      color: color-mix(in srgb, var(--card-bg) 75%, transparent);
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row .task-meta-text {
+      font-size: inherit;
+      color: inherit;
+      margin-right: 0.25rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row .task-chip:not(.priority-chip-dot) {
+      padding: 0.2rem 0.45rem;
+      font-size: 0.68rem;
+      border-radius: 9999px;
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 0.35rem;
       align-items: center;
     }
 
-    .task-item[data-compact="true"] .task-toolbar {
-      gap: 0.25rem;
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0;
+      border-radius: 9999px;
+      border: 1px solid color-mix(in srgb, var(--border-color) 35%, transparent);
+      background: transparent;
+      color: color-mix(in srgb, var(--text-secondary) 90%, transparent);
+      font-size: 1rem;
     }
 
-    .task-item[data-compact="true"] .task-toolbar-btn {
-      padding: 0.25rem 0.45rem;
-      font-size: 0.7rem;
+    .dark .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn {
+      border-color: color-mix(in srgb, var(--text-secondary) 45%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 90%, transparent);
     }
 
-    .task-item[data-compact="true"] .task-toolbar-btn .task-toolbar-label {
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn .task-toolbar-label {
       display: none;
     }
 
-    .task-item[data-compact="true"][data-notification-active="true"] {
-      border-color: color-mix(in srgb, var(--success-color) 75%, transparent);
-      border-left-color: color-mix(in srgb, var(--success-color) 95%, transparent);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
-        0 8px 18px color-mix(in srgb, var(--success-color) 25%, transparent);
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn:hover,
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn:focus-visible {
+      color: var(--text-primary);
+      border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+      background: color-mix(in srgb, var(--primary-color) 14%, transparent);
     }
 
-    .dark .task-item[data-compact="true"][data-notification-active="true"] {
-      border-color: color-mix(in srgb, var(--success-color) 85%, var(--card-bg) 15%);
-      border-left-color: color-mix(in srgb, var(--success-color) 95%, var(--card-bg) 5%);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
-        0 10px 24px color-mix(in srgb, var(--success-color) 35%, transparent);
+    .task-item[data-compact="true"] .task-notes {
+      flex-basis: 100%;
+      margin: 0;
+      margin-top: 0.25rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid color-mix(in srgb, var(--border-color) 20%, transparent);
+      font-size: 0.8rem;
+      line-height: 1.4;
     }
 
-    /* Single column on narrow phones */
-    @media (max-width: 379px) {
-      #reminderList.grid-cols-2 {
-        grid-template-columns: 1fr;
-      }
-
-      .task-item[data-compact="true"] {
-        padding: 16px;
-        padding-left: 18px;
-        border-left-width: 3px;
-      }
-
-      .task-item[data-compact="true"] .task-title {
-        font-size: 15px;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-      }
+    .dark .task-item[data-compact="true"] .task-notes {
+      border-top-color: color-mix(in srgb, var(--text-secondary) 35%, transparent);
     }
 
   </style>
@@ -2800,9 +2878,10 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
+  <script type="module" src="./assets/config-supabase-MP3TZUE5.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-E5NGCQ7K.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-XJNBORV5.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -3011,20 +3090,137 @@
         });
       };
 
+      const restructureReminderCard = (card) => {
+        if (!(card instanceof HTMLElement)) return;
+        if (card.dataset.compactLayout === 'true') return;
+
+        const content = card.querySelector('.task-content') || card;
+        if (!(content instanceof HTMLElement)) return;
+
+        const header = content.querySelector('.task-header');
+        const titleEl = header?.querySelector('.task-title, [data-reminder-title], strong');
+        if (!(titleEl instanceof HTMLElement)) return;
+
+        const toolbar = header?.querySelector('.task-toolbar');
+        const metaTextEl = content.querySelector('.task-meta-text');
+        const metaContainer = content.querySelector('.task-meta');
+        const notesEl = content.querySelector('.task-notes');
+
+        const primaryRow = document.createElement('div');
+        primaryRow.className = 'reminder-primary-row';
+
+        const controlSlot = document.createElement('div');
+        controlSlot.className = 'reminder-control-slot';
+        const control =
+          card.querySelector('[data-action="toggle"]') ||
+          card.querySelector('[data-done]') ||
+          card.querySelector('[data-complete]') ||
+          card.querySelector('input[type="checkbox"]');
+        if (control instanceof HTMLElement) {
+          controlSlot.appendChild(control);
+        } else {
+          controlSlot.classList.add('reminder-control-slot--empty');
+        }
+
+        const titleSlot = document.createElement('div');
+        titleSlot.className = 'reminder-title-slot';
+        titleSlot.appendChild(titleEl);
+
+        const metaSlot = document.createElement('div');
+        metaSlot.className = 'reminder-meta-slot';
+
+        let extraMetaEl = null;
+        if (metaTextEl instanceof HTMLElement) {
+          const segments = (metaTextEl.textContent || '')
+            .split('•')
+            .map((segment) => segment.trim())
+            .filter(Boolean);
+          const dueSegments = [];
+          if (segments.length) {
+            dueSegments.push(segments.shift());
+          }
+          if (segments.length) {
+            dueSegments.push(segments.shift());
+          }
+          if (dueSegments.length) {
+            const dueEl = document.createElement('span');
+            dueEl.className = 'reminder-due';
+            dueEl.textContent = dueSegments.join(' • ');
+            metaSlot.appendChild(dueEl);
+          }
+          if (segments.length) {
+            metaTextEl.textContent = segments.join(' • ');
+            extraMetaEl = metaTextEl;
+          } else {
+            metaTextEl.remove();
+          }
+        }
+
+        let priorityChip = null;
+        const secondaryChips = [];
+        if (metaContainer instanceof HTMLElement) {
+          Array.from(metaContainer.children).forEach((child) => {
+            if (!(child instanceof HTMLElement)) return;
+            if (!priorityChip && child.matches('[data-chip="priority"], [data-priority-pill], .priority-pill')) {
+              priorityChip = child;
+            } else {
+              secondaryChips.push(child);
+            }
+          });
+        }
+
+        if (priorityChip) {
+          priorityChip.classList.add('priority-chip-dot');
+          metaSlot.appendChild(priorityChip);
+        }
+        if (metaContainer instanceof HTMLElement) {
+          metaContainer.remove();
+        }
+
+        if (!metaSlot.childElementCount) {
+          metaSlot.classList.add('reminder-meta-slot--empty');
+        }
+
+        primaryRow.append(controlSlot, titleSlot, metaSlot);
+
+        const secondaryRow = document.createElement('div');
+        secondaryRow.className = 'reminder-secondary-row';
+
+        if (extraMetaEl) {
+          secondaryRow.appendChild(extraMetaEl);
+        }
+        secondaryChips.forEach((chip) => secondaryRow.appendChild(chip));
+        if (notesEl instanceof HTMLElement) {
+          secondaryRow.appendChild(notesEl);
+        }
+        if (toolbar instanceof HTMLElement) {
+          secondaryRow.appendChild(toolbar);
+        }
+
+        content.replaceChildren(primaryRow);
+        if (secondaryRow.childElementCount) {
+          content.appendChild(secondaryRow);
+        }
+
+        card.dataset.compact = 'true';
+        card.dataset.compactLayout = 'true';
+      };
+
       const upgrade = (node) => {
         if (!(node instanceof HTMLElement)) return;
         if (node.parentElement !== list) return;
-        if (node.classList.contains('reminder-card')) return;
-        if (node.classList.contains('card')) {
-          node.classList.remove('card');
+        if (!node.classList.contains('reminder-card')) {
+          if (node.classList.contains('card')) {
+            node.classList.remove('card');
+          }
+          node.classList.add('reminder-card');
         }
-        node.classList.add('reminder-card');
         applyPriorityPills(node);
+        restructureReminderCard(node);
       };
 
       Array.from(list.children).forEach((child) => {
         upgrade(child);
-        applyPriorityPills(child);
       });
 
       const observer = new MutationObserver((mutations) => {
@@ -3032,12 +3228,10 @@
           mutation.addedNodes.forEach((node) => {
             if (node instanceof HTMLElement) {
               upgrade(node);
-              applyPriorityPills(node);
             } else if (node instanceof DocumentFragment) {
               Array.from(node.childNodes).forEach((child) => {
                 if (child instanceof HTMLElement) {
                   upgrade(child);
-                  applyPriorityPills(child);
                 }
               });
             }
