@@ -3021,11 +3021,12 @@ export async function initReminders(sel = {}) {
     const createMetaChip = (label, tone = 'neutral') => {
       const chip = document.createElement('span');
       chip.className =
-        'inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70';
+        'desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70';
       chip.title = label;
+      chip.dataset.tone = tone;
 
       const dot = document.createElement('span');
-      dot.className = 'h-1.5 w-1.5 rounded-full';
+      dot.className = 'desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full';
       if (tone === 'priority-high') {
         dot.classList.add('bg-error');
       } else if (tone === 'priority-medium') {
@@ -3058,7 +3059,7 @@ export async function initReminders(sel = {}) {
 
       const itemEl = document.createElement(elementTag);
       itemEl.className =
-        'task-item reminder-card grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-300 bg-base-100/80 p-3 pl-[calc(0.75rem+3px)] text-sm shadow-sm transition hover:border-base-200 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
+        'task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
       if (isMobile) {
         itemEl.classList.add('w-full');
       }
@@ -3103,6 +3104,7 @@ export async function initReminders(sel = {}) {
 
       const titleEl = document.createElement('p');
       titleEl.className = 'text-sm font-semibold leading-snug text-base-content';
+      titleEl.classList.add('desktop-reminder-title');
       if (!isMobile) {
         titleEl.classList.add('sm:text-[0.95rem]');
       }
@@ -3113,7 +3115,7 @@ export async function initReminders(sel = {}) {
       content.appendChild(titleEl);
 
       const metaRow = document.createElement('div');
-      metaRow.className = 'flex flex-wrap items-center gap-1 text-xs text-base-content/70';
+      metaRow.className = 'desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70';
 
       const dueLabelRaw = formatDesktopDue(reminder);
       const dueLabel = dueLabelRaw && dueLabelRaw !== 'No due date' ? dueLabelRaw : '';
