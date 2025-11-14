@@ -3109,6 +3109,26 @@
       const list = document.getElementById('reminderList');
       if (!list) return;
 
+      const TEXT_NODE = typeof Node !== 'undefined' ? Node.TEXT_NODE : 3;
+      const priorityLabels = {
+        high: 'High priority',
+        medium: 'Medium priority',
+        low: 'Low priority',
+      };
+      const removePriorityText = (element) => {
+        if (!(element instanceof HTMLElement)) return;
+        Array.from(element.childNodes).forEach((child) => {
+          if (child.nodeType === TEXT_NODE) {
+            child.remove();
+          } else if (child instanceof HTMLElement) {
+            removePriorityText(child);
+            if (!child.childNodes.length) {
+              child.remove();
+            }
+          }
+        });
+      };
+
       const applyPriorityPills = (container) => {
         const pills = container.querySelectorAll('[data-chip="priority"], [data-priority-pill], .priority-pill');
         pills.forEach((pill) => {
@@ -3125,16 +3145,29 @@
           const textPriority = prioritySource || pill.textContent?.trim() || '';
           const normalized = textPriority.toLowerCase();
 
+          let priorityKey = '';
+
           pill.classList.add('priority-pill');
           pill.classList.remove('priority-high', 'priority-medium', 'priority-low');
 
           if (normalized.startsWith('h')) {
             pill.classList.add('priority-high');
+            priorityKey = 'high';
           } else if (normalized.startsWith('m')) {
             pill.classList.add('priority-medium');
+            priorityKey = 'medium';
           } else if (normalized.startsWith('l')) {
             pill.classList.add('priority-low');
+            priorityKey = 'low';
           }
+
+          const accessibleLabel = textPriority || (priorityKey ? priorityLabels[priorityKey] : '');
+          if (accessibleLabel) {
+            pill.setAttribute('aria-label', accessibleLabel);
+            pill.setAttribute('title', accessibleLabel);
+          }
+
+          removePriorityText(pill);
         });
       };
 
