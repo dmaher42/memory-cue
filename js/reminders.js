@@ -2946,13 +2946,21 @@ export async function initReminders(sel = {}) {
         div.dataset.today = 'true';
       }
       const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-      const catLabel = catName ? escapeHtml(catName) : '';
+      const dueLabel = r.due ? escapeHtml(dueTxt) : '';
+      const hasCustomCategory = Boolean(catName && catName !== DEFAULT_CATEGORY);
+      const catLabel = hasCustomCategory ? escapeHtml(catName) : '';
       const priorityLabel = escapeHtml(summary.priority);
-      const chipMarkup = [
-        `<span class="task-chip" data-chip="due">${escapeHtml(dueTxt)}</span>`,
-        catLabel ? `<span class="task-chip" data-chip="category">${catLabel}</span>` : '',
-        `<span class="task-chip" data-chip="priority">${priorityLabel}</span>`
-      ].filter(Boolean).join('');
+      const priorityChipMarkup = `<span class="task-chip" data-chip="priority">${priorityLabel}</span>`;
+      const metaTextParts = [];
+      if (dueLabel) {
+        metaTextParts.push(dueLabel);
+      }
+      if (catLabel) {
+        metaTextParts.push(catLabel);
+      }
+      const metaTextHtml = metaTextParts.length
+        ? `<div class="task-meta-text">${metaTextParts.join(' • ')}</div>`
+        : '';
       const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
       div.innerHTML = `
         <div class="task-content">
@@ -2965,10 +2973,9 @@ export async function initReminders(sel = {}) {
               </button>
             </div>
           </div>
+          ${metaTextHtml}
           <div class="task-meta">
-            <div class="task-meta-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-              ${chipMarkup}
-            </div>
+            ${priorityChipMarkup}
           </div>
           ${notesHtml}
         </div>`;
