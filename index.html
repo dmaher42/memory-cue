@@ -380,7 +380,7 @@
         >
           <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" aria-hidden="true"></div>
           <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true"></div>
-          <div class="relative grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
+          <div class="relative space-y-6">
             <div class="space-y-6">
               <div class="space-y-4">
                 <h1 class="text-3xl font-semibold text-base-content sm:text-4xl">
@@ -393,24 +393,6 @@
               <div class="flex flex-wrap gap-3">
                 <a href="#planner" class="btn btn-primary btn-sm sm:btn-md">Start planning</a>
                 <a href="#reminders" class="btn btn-outline btn-sm sm:btn-md">Review reminders</a>
-              </div>
-            </div>
-            <div class="relative rounded-2xl border border-base-300 bg-base-100/85 p-6 shadow-sm backdrop-blur">
-              <h2
-                id="daily-snapshot-heading"
-                class="text-lg font-semibold uppercase tracking-[0.2em] text-base-content/70"
-              >
-                Daily snapshot
-              </h2>
-              <ul
-                id="dailySnapshotList"
-                class="mt-5 space-y-4 text-sm text-base-content/80"
-                role="list"
-                aria-labelledby="daily-snapshot-heading"
-              ></ul>
-              <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4 text-xs text-base-content/70">
-                <p class="font-semibold uppercase tracking-[0.3em] text-base-content/50">Shortcut</p>
-                <p class="mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
               </div>
             </div>
           </div>
@@ -462,7 +444,26 @@
           </div>
         </section>
 
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.1fr)]">
+        <div class="grid gap-6 lg:grid-cols-2">
+          <section class="relative rounded-2xl border border-base-300 bg-base-100/85 p-6 shadow-sm backdrop-blur">
+            <h2
+              id="daily-snapshot-heading"
+              class="text-lg font-semibold uppercase tracking-[0.2em] text-base-content/70"
+            >
+              Daily snapshot
+            </h2>
+            <ul
+              id="dailySnapshotList"
+              class="mt-5 space-y-4 text-sm text-base-content/80"
+              role="list"
+              aria-labelledby="daily-snapshot-heading"
+            ></ul>
+            <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4 text-xs text-base-content/70">
+              <p class="font-semibold uppercase tracking-[0.3em] text-base-content/50">Shortcut</p>
+              <p class="mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
+            </div>
+          </section>
+
           <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-today-focus">
             <div class="card-body gap-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
@@ -511,7 +512,9 @@
               ></ol>
             </div>
           </section>
+        </div>
 
+        <div class="grid gap-6 lg:grid-cols-2">
           <section class="card h-full border border-base-300 bg-base-200/70 shadow-sm">
             <div class="card-body gap-5">
               <div class="flex flex-wrap items-center justify-between gap-3">
@@ -530,53 +533,53 @@
               ></ol>
             </div>
           </section>
-        </div>
 
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <div id="pinnedNotesCard" class="h-full">
-            <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-pinned-notes">
-              <div class="card-body gap-4">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
-                  <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
+          <div class="flex flex-col gap-6">
+            <div id="pinnedNotesCard" class="h-full">
+              <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-pinned-notes">
+                <div class="card-body gap-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
+                    <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
+                  </div>
+                  <ul id="pinnedNotesList" class="space-y-3"></ul>
                 </div>
-                <ul id="pinnedNotesList" class="space-y-3"></ul>
+              </section>
+            </div>
+
+            <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-shortcuts">
+              <div class="card-body gap-5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h2 class="text-lg font-semibold text-base-content">Action shortcuts</h2>
+                  <span class="text-xs uppercase tracking-[0.3em] text-base-content/50">Jump back in</span>
+                </div>
+                <div class="grid gap-2 sm:grid-cols-2">
+                  <a href="#reminders" class="btn btn-sm btn-outline justify-start gap-2" data-nav="reminders">
+                    <span aria-hidden="true">🔔</span>
+                    Open reminders
+                  </a>
+                  <a href="#planner" class="btn btn-sm btn-outline justify-start gap-2" data-nav="planner">
+                    <span aria-hidden="true">🗓️</span>
+                    Weekly planner
+                  </a>
+                  <a href="#notes" class="btn btn-sm btn-outline justify-start gap-2" data-nav="notes">
+                    <span aria-hidden="true">📝</span>
+                    Daily notes
+                  </a>
+                  <a href="#resources" class="btn btn-sm btn-outline justify-start gap-2" data-nav="resources">
+                    <span aria-hidden="true">📚</span>
+                    Resource library
+                  </a>
+                </div>
+                <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4 text-sm text-base-content/80">
+                  <p class="font-medium text-base-content">Need inspiration?</p>
+                  <p class="mt-1">
+                    Open the activity ideas modal from the quick action toolbar to gather ready-to-run activities tailored to your class context.
+                  </p>
+                </div>
               </div>
             </section>
           </div>
-
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-shortcuts">
-            <div class="card-body gap-5">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="text-lg font-semibold text-base-content">Action shortcuts</h2>
-                <span class="text-xs uppercase tracking-[0.3em] text-base-content/50">Jump back in</span>
-              </div>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <a href="#reminders" class="btn btn-sm btn-outline justify-start gap-2" data-nav="reminders">
-                  <span aria-hidden="true">🔔</span>
-                  Open reminders
-                </a>
-                <a href="#planner" class="btn btn-sm btn-outline justify-start gap-2" data-nav="planner">
-                  <span aria-hidden="true">🗓️</span>
-                  Weekly planner
-                </a>
-                <a href="#notes" class="btn btn-sm btn-outline justify-start gap-2" data-nav="notes">
-                  <span aria-hidden="true">📝</span>
-                  Daily notes
-                </a>
-                <a href="#resources" class="btn btn-sm btn-outline justify-start gap-2" data-nav="resources">
-                  <span aria-hidden="true">📚</span>
-                  Resource library
-                </a>
-              </div>
-              <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4 text-sm text-base-content/80">
-                <p class="font-medium text-base-content">Need inspiration?</p>
-                <p class="mt-1">
-                  Open the activity ideas modal from the quick action toolbar to gather ready-to-run activities tailored to your class context.
-                </p>
-              </div>
-            </div>
-          </section>
         </div>
       </section>
 
