@@ -379,6 +379,25 @@ const dailyTasksContainer = document.getElementById('daily-tasks-container');
 const clearCompletedButton = document.getElementById('clear-completed-btn');
 const dailyListPermissionNotice = document.getElementById('daily-list-permission-notice');
 
+const remindersCountElement = document.getElementById('remindersCount');
+const plannerCountElement = document.getElementById('plannerCount');
+const resourcesCountElement = document.getElementById('resourcesCount');
+const templatesCountElement = document.getElementById('templatesCount');
+const dailySnapshotList = document.getElementById('dailySnapshotList');
+const todaysFocusList = document.getElementById('todaysFocusList');
+
+const updateRemindersCountDisplay = (items) => {
+  if (!remindersCountElement) {
+    return;
+  }
+  const count = Array.isArray(items) ? items.length : 0;
+  remindersCountElement.textContent = String(count);
+};
+
+document.addEventListener('memoryCue:remindersUpdated', (event) => {
+  updateRemindersCountDisplay(event?.detail?.items);
+});
+
 const cueFieldElements = getFieldElements(CUE_FIELD_DEFINITIONS);
 
 const firebaseCueConfig = {
@@ -648,6 +667,32 @@ let currentDailyTasks = [];
 let dailyListLoadPromise = null;
 let shouldUseLocalDailyList = false;
 
+const updatePlannerCountDisplay = (tasks) => {
+  if (!plannerCountElement) {
+    return;
+  }
+  const taskList = Array.isArray(tasks) ? tasks : [];
+  plannerCountElement.textContent = String(taskList.length);
+};
+
+const trackPlannerCountFromPromise = (maybePromise) => {
+  if (!maybePromise || typeof maybePromise.then !== 'function') {
+    updatePlannerCountDisplay(currentDailyTasks);
+    return;
+  }
+  maybePromise
+    .then((tasks) => {
+      if (Array.isArray(tasks)) {
+        updatePlannerCountDisplay(tasks);
+        return;
+      }
+      updatePlannerCountDisplay(currentDailyTasks);
+    })
+    .catch(() => {
+      updatePlannerCountDisplay(currentDailyTasks);
+    });
+};
+
 const DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
 let firestoreDailyListContextPromise = null;
 
@@ -839,6 +884,7 @@ async function loadDailyList() {
     const localTasks = getLocalDailyTasks(todayId);
     currentDailyTasks = localTasks;
     renderDailyTasks(localTasks);
+    updatePlannerCountDisplay(localTasks);
     return Promise.resolve(localTasks);
   }
   if (!dailyListLoadPromise) {
@@ -855,6 +901,8 @@ async function loadDailyList() {
         setLocalDailyTasks(todayId, currentDailyTasks);
         shouldUseLocalDailyList = false;
         hideDailyListPermissionNotice();
+        updatePlannerCountDisplay(currentDailyTasks);
+        return currentDailyTasks;
       } catch (error) {
         if (isPermissionDeniedError(error)) {
           console.warn('Falling back to local daily tasks due to permission issue', error);
@@ -863,12 +911,15 @@ async function loadDailyList() {
           const localTasks = getLocalDailyTasks(todayId);
           currentDailyTasks = localTasks;
           renderDailyTasks(localTasks);
-          return;
+          updatePlannerCountDisplay(localTasks);
+          return localTasks;
         }
         console.error('Failed to load daily list', error);
         dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
         currentDailyTasks = [];
         updateClearCompletedButtonState(currentDailyTasks);
+        updatePlannerCountDisplay(currentDailyTasks);
+        return currentDailyTasks;
       }
     })().finally(() => {
       dailyListLoadPromise = null;
@@ -968,7 +1019,7 @@ function showDailyTab() {
   cuesView.classList.add('hidden');
   dailyListView.classList.remove('hidden');
   activateTab(dailyTab);
-  loadDailyList();
+  trackPlannerCountFromPromise(loadDailyList());
 }
 
 if (cuesTab && dailyTab && cuesView && dailyListView) {
@@ -1147,7 +1198,8 @@ quickAddForm?.addEventListener('submit', async (event) => {
   quickAddInput.focus();
   try {
     await addTaskToDailyList(task);
-    await loadDailyList();
+    const tasksForToday = await loadDailyList();
+    updatePlannerCountDisplay(tasksForToday ?? currentDailyTasks);
   } catch (error) {
     console.error('Failed to add task to the daily list', error);
     quickAddInput.value = value;
@@ -1170,12 +1222,14 @@ dailyTasksContainer?.addEventListener('change', async (event) => {
   );
   currentDailyTasks = updatedTasks;
   renderDailyTasks(updatedTasks);
+  updatePlannerCountDisplay(updatedTasks);
   try {
     await saveDailyTasks(updatedTasks);
   } catch (error) {
     console.error('Failed to update task completion state', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
+    updatePlannerCountDisplay(previousState);
   }
 });
 
@@ -1190,16 +1244,20 @@ clearCompletedButton?.addEventListener('click', async () => {
   const previousState = currentDailyTasks.map((task) => ({ ...task }));
   currentDailyTasks = remainingTasks;
   renderDailyTasks(remainingTasks);
+  updatePlannerCountDisplay(remainingTasks);
   try {
     await saveDailyTasks(remainingTasks);
   } catch (error) {
     console.error('Failed to clear completed tasks', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
+    updatePlannerCountDisplay(previousState);
   }
 });
 
 updateClearCompletedButtonState(currentDailyTasks);
+updatePlannerCountDisplay(currentDailyTasks);
+trackPlannerCountFromPromise(loadDailyList());
 
 const THEME_STORAGE_KEY = 'theme';
 const THEME_CHANGE_EVENT = 'memoryCue:theme-change';
