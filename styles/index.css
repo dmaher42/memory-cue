@@ -42,6 +42,72 @@ textarea {
   font-family: inherit;
 }
 
+.tooltip,
+:where([title]:not([title=""])) {
+  position: relative;
+}
+
+.tooltip::after,
+:where([title]:not([title=""]))::after {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translate(-50%, 0.25rem);
+  background-color: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 60;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+}
+
+:where([title]:not([title=""]))::after {
+  content: attr(title);
+}
+
+.tooltip::before,
+:where([title]:not([title=""]))::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 0.25rem);
+  left: 50%;
+  transform: translate(-50%, 0.25rem);
+  border-width: 0.35rem;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  z-index: 59;
+}
+
+.tooltip:focus-visible::after,
+.tooltip:hover::after,
+:where([title]:not([title=""])):focus-visible::after,
+:where([title]:not([title=""])):hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.tooltip:focus-visible::before,
+.tooltip:hover::before,
+:where([title]:not([title=""])):focus-visible::before,
+:where([title]:not([title=""])):hover::before {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 :root :where(.btn) {
   border-radius: 9999px;
   font-family: var(--font-body);
@@ -196,6 +262,110 @@ textarea {
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(56, 189, 248, 0.28));
   color: rgb(187 247 208);
   box-shadow: 0 16px 30px rgba(45, 212, 191, 0.32);
+}
+
+.nav-more-item {
+  position: relative;
+}
+
+.nav-more-details {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.nav-more-details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-more-details summary::-webkit-details-marker,
+.nav-more-details summary::marker {
+  display: none;
+}
+
+.nav-more-details summary svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.nav-more-menu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  min-width: 11rem;
+  border-radius: 0.85rem;
+  padding: 0.5rem;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(-0.25rem);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 55;
+}
+
+.nav-more-details[open] .nav-more-menu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+[data-theme="dark"] .nav-more-menu,
+.dark .nav-more-menu {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: 0 24px 45px rgba(2, 6, 23, 0.55);
+}
+
+.nav-more-menu .btn {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.mobile-nav-more {
+  border-radius: 0.75rem;
+  background: rgba(148, 163, 184, 0.08);
+  padding: 0.25rem 0.4rem;
+}
+
+.mobile-nav-more summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.35rem 0.5rem;
+  border-radius: 999px;
+  width: 100%;
+}
+
+.mobile-nav-more summary::-webkit-details-marker,
+.mobile-nav-more summary::marker {
+  display: none;
+}
+
+.mobile-nav-more summary:hover,
+.mobile-nav-more summary:focus-visible {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.mobile-nav-more[open] summary {
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.mobile-nav-more ul {
+  margin-top: 0.4rem;
+  padding-left: 0.75rem;
+  display: grid;
+  gap: 0.3rem;
 }
 
 .mobile-nav-glass {
