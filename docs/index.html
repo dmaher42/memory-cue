@@ -23,6 +23,7 @@
 <!-- === /SUPABASE CONFIG === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
+  <script defer src="./js/firebase-config.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <!-- BEGIN GPT CHANGE: social meta -->
@@ -170,6 +171,20 @@
       box-shadow: 0 3px 8px rgba(15, 23, 42, 0.35);
     }
 
+    .google-user-chip {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .google-user-chip:not(:empty) {
+      display: inline-flex;
+    }
+
+    #auth-feedback:empty {
+      display: none;
+    }
+
     /* Dashboard overall spacing */
     section[data-route="dashboard"] {
       max-width: 56rem;
@@ -297,27 +312,20 @@
             </div>
           </div>
           <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
-            <form id="auth-form" class="hidden flex flex-wrap items-center justify-end gap-2">
-              <label for="auth-email" class="sr-only">Email address</label>
-              <input
-                id="auth-email"
-                type="email"
-                required
-                autocomplete="email"
-                placeholder="you@school.edu"
-                class="input input-sm input-bordered w-full max-w-xs sm:w-56"
-              />
-              <button id="sign-in-btn" type="submit" class="btn btn-sm btn-primary">Send link</button>
-            </form>
+            <div
+              id="googleUserName"
+              class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
+            ></div>
+            <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
             <button
-              id="sign-out-btn"
+              id="googleSignOutBtn"
               type="button"
               class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
             >
               Sign out
             </button>
           </div>
-          <div id="auth-feedback" class="hidden text-xs text-base-content/70" role="status" aria-live="polite"></div>
+          <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
       </div>
     </div>

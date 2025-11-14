@@ -339,7 +339,7 @@ const initialiseReminders = () => {
     saveBtnSel: '#saveBtn',
     cancelEditBtnSel: '#cancelEditBtn',
     listSel: '#reminderList',
-    statusSel: '#status',
+    statusSel: '#auth-feedback',
     syncStatusSel: '#syncStatus',
     voiceBtnSel: '#voiceBtn',
     categoryOptionsSel: '#categorySuggestions',
@@ -347,6 +347,9 @@ const initialiseReminders = () => {
     emptyStateSel: '#emptyState',
     listWrapperSel: '#remindersWrapper',
     dateFeedbackSel: '#dateFeedback',
+    googleSignInBtnSel: '#googleSignInBtn',
+    googleSignOutBtnSel: '#googleSignOutBtn',
+    googleUserNameSel: '#googleUserName',
     variant: 'desktop'
   });
 };
