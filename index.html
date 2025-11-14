@@ -59,7 +59,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-281e46f9.css" />
+  <link rel="stylesheet" href="./assets/styles-2eedec72.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -89,14 +89,99 @@
       opacity: .85;
     }
 
-    /* Reminders: desktop card hover polish */
+    [data-route="reminders"] {
+      --card-bg: #ffffff;
+      --card-border: #cbe6d5;
+      --border-color: var(--card-border);
+      --text-primary: #1f2a24;
+      --text-secondary: #4c6457;
+      --accent-color: #b5a9ff;
+      --success-color: #63c69b;
+      --hover-bg: #dcefe2;
+      --shadow-color: rgba(31, 42, 36, 0.08);
+      --shadow-sm: 0 1px 3px var(--shadow-color);
+      --shadow-md: 0 4px 12px var(--shadow-color);
+      --delete-color: #ef6a6a;
+      --priority-high-border: #f4a259;
+      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 18%, #ffffff);
+      --priority-medium-border: #6c8ae4;
+      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 16%, #ffffff);
+      --priority-low-border: #6b8f71;
+      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 16%, #ffffff);
+    }
+
+    /* Reminders: desktop card styling */
     [data-route="reminders"] .desktop-task-card {
-      transition: box-shadow 0.15s ease, transform 0.15s ease;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-left: 3px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      color: var(--text-secondary);
+      transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease,
+        background 0.15s ease;
     }
 
     [data-route="reminders"] .desktop-task-card:hover {
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-md);
       transform: translateY(-1px);
+      border-color: var(--accent-color);
+      border-left-color: var(--accent-color);
+      background: var(--hover-bg);
+    }
+
+    [data-route="reminders"] .desktop-task-card[data-priority="High"] {
+      background-color: var(--priority-high-bg);
+      border-left-color: var(--priority-high-border);
+    }
+
+    [data-route="reminders"] .desktop-task-card[data-priority="Medium"] {
+      background-color: var(--priority-medium-bg);
+      border-left-color: var(--priority-medium-border);
+    }
+
+    [data-route="reminders"] .desktop-task-card[data-priority="Low"] {
+      background-color: var(--priority-low-bg);
+      border-left-color: var(--priority-low-border);
+    }
+
+    [data-route="reminders"] .desktop-reminder-title {
+      color: var(--text-primary);
+    }
+
+    [data-route="reminders"] .desktop-reminder-meta {
+      color: var(--text-secondary);
+    }
+
+    [data-route="reminders"] .desktop-reminder-chip {
+      border-color: color-mix(in srgb, var(--card-border) 75%, transparent 25%);
+      background: color-mix(in srgb, var(--hover-bg) 28%, var(--card-bg) 72%);
+      color: var(--text-secondary);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    [data-route="reminders"] .desktop-reminder-chip:hover {
+      background: color-mix(in srgb, var(--hover-bg) 40%, var(--card-bg) 60%);
+      border-color: var(--accent-color);
+    }
+
+    [data-route="reminders"] .desktop-reminder-chip__dot {
+      background: rgba(31, 42, 36, 0.35);
+    }
+
+    [data-route="reminders"] .desktop-reminder-chip[data-tone="category"] .desktop-reminder-chip__dot {
+      background: var(--accent-color);
+    }
+
+    [data-route="reminders"] .desktop-reminder-chip[data-tone="due"] .desktop-reminder-chip__dot {
+      background: rgba(31, 42, 36, 0.45);
+    }
+
+    [data-route="reminders"] .desktop-task-card .btn.text-success {
+      color: var(--success-color);
+    }
+
+    [data-route="reminders"] .desktop-task-card .btn.text-error {
+      color: var(--delete-color);
     }
 
     #quick-action-toolbar {
@@ -625,14 +710,14 @@
             aria-label="Edit reminder: Submit unit overview"
           >
             <div class="flex min-w-0 flex-col gap-2">
-              <p class="text-sm font-semibold leading-snug text-base-content">Submit unit overview</p>
-              <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
-                  <span class="h-1.5 w-1.5 rounded-full bg-base-content/40"></span>
+              <p class="desktop-reminder-title text-sm font-semibold leading-snug text-base-content">Submit unit overview</p>
+              <div class="desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
+                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Due Friday</span>
                 </span>
-                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
-                  <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="category">
+                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Curriculum team</span>
                 </span>
               </div>
@@ -653,18 +738,18 @@
             aria-label="Edit reminder: Email newsletter blurb"
           >
             <div class="flex min-w-0 flex-col gap-2">
-              <p class="text-sm font-semibold leading-snug text-base-content">Email newsletter blurb</p>
-              <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
-                  <span class="h-1.5 w-1.5 rounded-full bg-base-content/40"></span>
+              <p class="desktop-reminder-title text-sm font-semibold leading-snug text-base-content">Email newsletter blurb</p>
+              <div class="desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
+                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Due next week</span>
                 </span>
-                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary">
-                  <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary" data-tone="category">
+                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Communications</span>
                 </span>
-                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary">
-                  <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary">
+                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Scheduled</span>
                 </span>
               </div>
@@ -685,10 +770,10 @@
             aria-label="Edit reminder: Call guardians"
           >
             <div class="flex min-w-0 flex-col gap-2">
-              <p class="text-sm font-semibold leading-snug text-base-content">Call guardians</p>
-              <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
-                  <span class="h-1.5 w-1.5 rounded-full bg-base-content/40"></span>
+              <p class="desktop-reminder-title text-sm font-semibold leading-snug text-base-content">Call guardians</p>
+              <div class="desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
+                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Due tomorrow</span>
                 </span>
               </div>
@@ -1235,7 +1320,7 @@
     </div>
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
-  <script type="module" src="./assets/app-55GNQBQ6.js" defer></script>
+  <script type="module" src="./assets/app-R7IOTNVE.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
