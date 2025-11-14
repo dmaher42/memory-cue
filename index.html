@@ -181,6 +181,10 @@
       display: inline-flex;
     }
 
+    #auth-feedback:empty {
+      display: none;
+    }
+
     /* Dashboard overall spacing */
     section[data-route="dashboard"] {
       max-width: 56rem;
@@ -321,7 +325,7 @@
               Sign out
             </button>
           </div>
-          <div id="auth-feedback" class="hidden text-xs text-base-content/70" role="status" aria-live="polite"></div>
+          <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
       </div>
     </div>
