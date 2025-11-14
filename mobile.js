@@ -301,37 +301,147 @@ if (document.readyState === 'loading') {
     return;
   }
 
-  const closeMenu = () => {
+  const FOCUSABLE_SELECTOR =
+    'button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
+
+  let restoreFocusTo = menuBtn;
+
+  const isVisible = (element) => {
+    if (!(element instanceof HTMLElement)) return false;
+    if (element.getAttribute('aria-hidden') === 'true') return false;
+    if (element.hasAttribute('disabled')) return false;
+    if (element.tabIndex < 0) return false;
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 || rect.height > 0;
+  };
+
+  const getFocusableItems = () =>
+    Array.from(menu.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isVisible);
+
+  const updateAriaHidden = () => {
+    const hidden = menu.classList.contains('hidden');
+    menu.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+  };
+
+  updateAriaHidden();
+
+  const handleFocusIn = (event) => {
+    if (!menu.contains(event.target) && event.target !== menuBtn) {
+      closeMenu({ restoreFocus: false });
+    }
+  };
+
+  const focusFirstItem = () => {
+    const [firstItem] = getFocusableItems();
+    if (firstItem instanceof HTMLElement) {
+      try {
+        firstItem.focus();
+      } catch {
+        /* ignore focus errors */
+      }
+    }
+  };
+
+  const openMenu = () => {
     if (!menu.classList.contains('hidden')) {
-      menu.classList.add('hidden');
-      menuBtn.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
+    restoreFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : menuBtn;
+    menu.classList.remove('hidden');
+    menuBtn.setAttribute('aria-expanded', 'true');
+    updateAriaHidden();
+    document.addEventListener('focusin', handleFocusIn);
+
+    if (menu.contains(document.activeElement)) {
+      return;
+    }
+
+    focusFirstItem();
+  };
+
+  const closeMenu = ({ restoreFocus = true } = {}) => {
+    if (menu.classList.contains('hidden')) {
+      return;
+    }
+
+    menu.classList.add('hidden');
+    menuBtn.setAttribute('aria-expanded', 'false');
+    updateAriaHidden();
+    document.removeEventListener('focusin', handleFocusIn);
+
+    if (restoreFocus && restoreFocusTo instanceof HTMLElement) {
+      try {
+        restoreFocusTo.focus();
+      } catch {
+        /* ignore focus restoration errors */
+      }
     }
   };
 
   menuBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     if (menu.classList.contains('hidden')) {
-      menu.classList.remove('hidden');
-      menuBtn.setAttribute('aria-expanded', 'true');
+      openMenu();
     } else {
       closeMenu();
     }
   });
 
-  document.addEventListener('click', () => {
-    closeMenu();
+  document.addEventListener('click', (event) => {
+    if (event.target === menuBtn || menu.contains(event.target)) {
+      return;
+    }
+    closeMenu({ restoreFocus: false });
   });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeMenu();
+      return;
+    }
+
+    if (event.key === 'ArrowDown' && !menu.classList.contains('hidden')) {
+      event.preventDefault();
+      focusFirstItem();
     }
   });
 
   menu.addEventListener('click', (event) => {
     event.stopPropagation();
     if (event.target instanceof HTMLElement && event.target.closest('button')) {
-      closeMenu();
+      closeMenu({ restoreFocus: false });
+    }
+  });
+
+  menu.addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const items = getFocusableItems();
+    if (!items.length) {
+      return;
+    }
+
+    const currentIndex = items.indexOf(document.activeElement);
+    const lastIndex = items.length - 1;
+    let nextIndex = currentIndex;
+
+    if (event.shiftKey) {
+      nextIndex = currentIndex <= 0 ? lastIndex : currentIndex - 1;
+    } else {
+      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+    }
+
+    event.preventDefault();
+    const target = items[nextIndex] || items[0];
+    if (target instanceof HTMLElement) {
+      try {
+        target.focus();
+      } catch {
+        /* ignore focus errors */
+      }
     }
   });
 })();
