@@ -70,20 +70,34 @@
     }
   }
 
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    text-align: left;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    border-radius: 0.5rem;
-    color: inherit;
-    font: inherit;
-    transition: background-color 0.2s ease;
-  }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      color: inherit;
+      font: inherit;
+      transition: background-color 0.2s ease;
+    }
+
+    .menu-heading {
+      margin: 0;
+      padding: 0.75rem 1rem 0.25rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: rgba(15, 23, 42, 0.6);
+    }
+
+    html[data-theme="dark"] .menu-heading {
+      color: rgba(226, 232, 240, 0.65);
+    }
 
   .menu-item:hover,
   .menu-item:focus-visible {
@@ -1872,20 +1886,27 @@
 
       <!-- Right: Settings button with quick menu -->
       <div class="relative">
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-          aria-label="Open menu"
-          aria-haspopup="true"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none">⚙️</span>
-        </button>
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+            aria-label="Open menu"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none">⚙️</span>
+          </button>
 
-        <div id="overflowMenu" class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg" role="menu" aria-hidden="true">
-          <ul class="py-2 text-sm">
+          <div
+            id="overflowMenu"
+            class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg"
+            role="menu"
+            aria-hidden="true"
+            aria-labelledby="overflowMenuHeading"
+          >
+            <h2 id="overflowMenuHeading" class="menu-heading" tabindex="-1">Quick settings</h2>
+            <ul class="py-2 text-sm">
             <li>
               <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
                 <span aria-hidden="true">🎙️</span>
