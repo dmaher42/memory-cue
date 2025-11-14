@@ -58,7 +58,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-aae8a885.css" />
+  <link rel="stylesheet" href="./assets/styles-1aa7bfb8.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -186,37 +186,16 @@
 
     /* Dashboard: emphasise Today's focus card */
     .dashboard-today-focus {
-      border-radius: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.45);
       background: linear-gradient(to right, rgba(59, 130, 246, 0.04), rgba(15, 23, 42, 0.02));
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     }
 
-    .dashboard-today-focus h2,
-    .dashboard-today-focus h3 {
-      font-weight: 600;
-    }
-
-    /* Dashboard: soften KPI tiles */
+    /* Dashboard layout tweaks */
     .dashboard-kpis {
       margin-top: 1.75rem;
     }
 
     .dashboard-kpis__grid {
       gap: 0.75rem;
-    }
-
-    .dashboard-kpis .card {
-      border-radius: 0.75rem;
-      box-shadow: none;
-      border: 1px dashed rgba(148, 163, 184, 0.5);
-      background-color: rgba(15, 23, 42, 0.01);
-    }
-
-    .dashboard-kpis .card h3,
-    .dashboard-kpis .card h4 {
-      font-size: 0.95rem;
-      font-weight: 500;
     }
 
     /* Dashboard: lighter action shortcuts card */
@@ -376,17 +355,17 @@
     <div class="mx-auto max-w-6xl px-4 py-6 space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div
-          class="relative overflow-hidden rounded-3xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70 p-8 shadow-sm"
+          class="dashboard-card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70"
         >
           <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" aria-hidden="true"></div>
           <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true"></div>
-          <div class="relative space-y-6">
+          <div class="dashboard-card-content relative space-y-6">
             <div class="space-y-6">
               <div class="space-y-4">
-                <h1 class="text-3xl font-semibold text-base-content sm:text-4xl">
+                <h1 class="dashboard-card-title dashboard-card-title--hero">
                   Settle into teaching with a focused, organised workspace
                 </h1>
-                <p class="max-w-2xl text-base text-base-content/80">
+                <p class="dashboard-card-text max-w-2xl">
                   Memory Cue keeps reminders, planning, and quick wins together so you can move from intention to action without searching across tools.
                 </p>
               </div>
@@ -401,75 +380,77 @@
         <section class="dashboard-kpis" aria-labelledby="kpi-heading">
           <h2 id="kpi-heading" class="sr-only">Key metrics</h2>
           <div class="dashboard-kpis__grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-              <div class="card-body gap-3 p-5">
-                <div class="flex items-center justify-between text-base-content/80">
-                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Reminders</h3>
+            <article class="dashboard-card dashboard-card--compact card transition">
+              <div class="card-body dashboard-card-body gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="dashboard-card-eyebrow">Reminders</h3>
                   <span aria-hidden="true">🔔</span>
                 </div>
-                <p class="text-3xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
-                <p class="text-sm text-base-content/70"><span id="remindersSubtitle"></span></p>
+                <p class="dashboard-card-metric"><span id="remindersCount">0</span></p>
+                <p class="dashboard-card-support"><span id="remindersSubtitle"></span></p>
               </div>
             </article>
-            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-              <div class="card-body gap-3 p-5">
-                <div class="flex items-center justify-between text-base-content/80">
-                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Planner</h3>
+            <article class="dashboard-card dashboard-card--compact card transition">
+              <div class="card-body dashboard-card-body gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="dashboard-card-eyebrow">Planner</h3>
                   <span aria-hidden="true">🗂️</span>
                 </div>
-                <p class="text-3xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
-                <p class="text-sm text-base-content/70"><span id="plannerSubtitle"></span></p>
+                <p class="dashboard-card-metric"><span id="plannerCount">0</span></p>
+                <p class="dashboard-card-support"><span id="plannerSubtitle"></span></p>
               </div>
             </article>
-            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-              <div class="card-body gap-3 p-5">
-                <div class="flex items-center justify-between text-base-content/80">
-                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Resources</h3>
+            <article class="dashboard-card dashboard-card--compact card transition">
+              <div class="card-body dashboard-card-body gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="dashboard-card-eyebrow">Resources</h3>
                   <span aria-hidden="true">📁</span>
                 </div>
-                <p class="text-3xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
-                <p class="text-sm text-base-content/70"><span id="resourcesSubtitle"></span></p>
+                <p class="dashboard-card-metric"><span id="resourcesCount">0</span></p>
+                <p class="dashboard-card-support"><span id="resourcesSubtitle"></span></p>
               </div>
             </article>
-            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-              <div class="card-body gap-3 p-5">
-                <div class="flex items-center justify-between text-base-content/80">
-                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Templates</h3>
+            <article class="dashboard-card dashboard-card--compact card transition">
+              <div class="card-body dashboard-card-body gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="dashboard-card-eyebrow">Templates</h3>
                   <span aria-hidden="true">🧩</span>
                 </div>
-                <p class="text-3xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
-                <p class="text-sm text-base-content/70"><span id="templatesSubtitle"></span></p>
+                <p class="dashboard-card-metric"><span id="templatesCount">0</span></p>
+                <p class="dashboard-card-support"><span id="templatesSubtitle"></span></p>
               </div>
             </article>
           </div>
         </section>
 
         <div class="grid gap-6 lg:grid-cols-2">
-          <section class="relative rounded-2xl border border-base-300 bg-base-100/85 p-6 shadow-sm backdrop-blur">
-            <h2
-              id="daily-snapshot-heading"
-              class="text-lg font-semibold uppercase tracking-[0.2em] text-base-content/70"
-            >
-              Daily snapshot
-            </h2>
-            <ul
-              id="dailySnapshotList"
-              class="mt-5 space-y-4 text-sm text-base-content/80"
-              role="list"
-              aria-labelledby="daily-snapshot-heading"
-            ></ul>
-            <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4 text-xs text-base-content/70">
-              <p class="font-semibold uppercase tracking-[0.3em] text-base-content/50">Shortcut</p>
-              <p class="mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
+          <section class="dashboard-card relative backdrop-blur">
+            <div class="dashboard-card-content">
+              <h2
+                id="daily-snapshot-heading"
+                class="dashboard-card-title"
+              >
+                Daily snapshot
+              </h2>
+              <ul
+                id="dailySnapshotList"
+                class="mt-5 space-y-4 dashboard-card-text"
+                role="list"
+                aria-labelledby="daily-snapshot-heading"
+              ></ul>
+              <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
+                <p class="dashboard-card-eyebrow">Shortcut</p>
+                <p class="dashboard-card-text mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
+              </div>
             </div>
           </section>
 
-          <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-today-focus">
-            <div class="card-body gap-6">
+          <section class="dashboard-card card dashboard-today-focus">
+            <div class="card-body dashboard-card-body gap-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="space-y-3">
-                  <h2 id="todays-focus-heading" class="text-lg font-semibold text-base-content">Today's focus</h2>
-                  <p class="text-sm text-base-content/70">
+                  <h2 id="todays-focus-heading" class="dashboard-card-title">Today's focus</h2>
+                  <p class="dashboard-card-text">
                     Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
                   </p>
                   <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
@@ -515,10 +496,10 @@
         </div>
 
         <div class="grid gap-6 lg:grid-cols-2">
-          <section class="card h-full border border-base-300 bg-base-200/70 shadow-sm">
-            <div class="card-body gap-5">
+          <section class="dashboard-card card h-full">
+            <div class="card-body dashboard-card-body gap-5">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="week-at-a-glance-heading" class="text-lg font-semibold text-base-content">Week at a glance</h2>
+                <h2 id="week-at-a-glance-heading" class="dashboard-card-title">Week at a glance</h2>
                 <div class="join">
                   <button class="btn btn-sm btn-secondary join-item" type="button">Prev</button>
                   <button class="btn btn-sm btn-primary join-item" type="button">Today</button>
@@ -527,7 +508,7 @@
               </div>
               <ol
                 id="weekAtAGlanceList"
-                class="relative space-y-4 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"
+                class="relative space-y-4 dashboard-card-text before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"
                 role="list"
                 aria-labelledby="week-at-a-glance-heading"
               ></ol>
@@ -536,22 +517,22 @@
 
           <div class="flex flex-col gap-6">
             <div id="pinnedNotesCard" class="h-full">
-              <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-pinned-notes">
-                <div class="card-body gap-4">
+              <section class="dashboard-card card dashboard-pinned-notes">
+                <div class="card-body dashboard-card-body gap-4">
                   <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
+                    <h2 class="dashboard-card-title">Pinned notes</h2>
                     <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
                   </div>
-                  <ul id="pinnedNotesList" class="space-y-3"></ul>
+                  <ul id="pinnedNotesList" class="space-y-3 dashboard-card-text"></ul>
                 </div>
               </section>
             </div>
 
-            <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-shortcuts">
-              <div class="card-body gap-5">
+            <section class="dashboard-card card dashboard-shortcuts">
+              <div class="card-body dashboard-card-body gap-5">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <h2 class="text-lg font-semibold text-base-content">Action shortcuts</h2>
-                  <span class="text-xs uppercase tracking-[0.3em] text-base-content/50">Jump back in</span>
+                  <h2 class="dashboard-card-title">Action shortcuts</h2>
+                  <span class="dashboard-card-eyebrow">Jump back in</span>
                 </div>
                 <div class="grid gap-2 sm:grid-cols-2">
                   <a href="#reminders" class="btn btn-sm btn-outline justify-start gap-2" data-nav="reminders">
@@ -571,9 +552,9 @@
                     Resource library
                   </a>
                 </div>
-                <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4 text-sm text-base-content/80">
-                  <p class="font-medium text-base-content">Need inspiration?</p>
-                  <p class="mt-1">
+                <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
+                  <p class="dashboard-card-text font-semibold">Need inspiration?</p>
+                  <p class="dashboard-card-text mt-1">
                     Open the activity ideas modal from the quick action toolbar to gather ready-to-run activities tailored to your class context.
                   </p>
                 </div>

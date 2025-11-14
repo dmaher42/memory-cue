@@ -631,6 +631,83 @@ textarea {
   }
 }
 
+section[data-route="dashboard"] .dashboard-card {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid hsla(var(--b3) / 0.35);
+  background-color: hsla(var(--b1) / 0.85);
+  box-shadow: 0 26px 60px -36px rgba(15, 23, 42, 0.22);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-theme="dark"] section[data-route="dashboard"] .dashboard-card {
+  border-color: hsla(var(--b3) / 0.5);
+  background-color: hsla(var(--b2) / 0.4);
+  box-shadow: 0 28px 64px -36px rgba(2, 6, 23, 0.7);
+}
+
+section[data-route="dashboard"] .dashboard-card:is(:hover, :focus-within) {
+  box-shadow: 0 32px 72px -34px rgba(15, 23, 42, 0.3);
+  transform: translateY(-2px);
+}
+
+section[data-route="dashboard"] .dashboard-card-content,
+section[data-route="dashboard"] .dashboard-card .card-body {
+  padding: clamp(1.5rem, 2.3vw, 1.9rem);
+}
+
+section[data-route="dashboard"] .dashboard-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 1.8vw, 1.5rem);
+}
+
+section[data-route="dashboard"] .dashboard-card--compact .dashboard-card-content,
+section[data-route="dashboard"] .dashboard-card--compact .card-body {
+  padding: clamp(1.25rem, 1.8vw, 1.5rem);
+}
+
+section[data-route="dashboard"] .dashboard-card--hero .dashboard-card-content {
+  padding: clamp(2.25rem, 3vw, 3rem);
+}
+
+section[data-route="dashboard"] .dashboard-card-title {
+  font-size: clamp(1.125rem, 1.7vw, 1.35rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: hsl(var(--bc) / 0.92);
+}
+
+section[data-route="dashboard"] .dashboard-card-title--hero {
+  font-size: clamp(2.1rem, 4vw, 2.85rem);
+  line-height: 1.1;
+  color: hsl(var(--bc));
+}
+
+section[data-route="dashboard"] .dashboard-card-text {
+  font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+  color: hsl(var(--bc) / 0.72);
+}
+
+section[data-route="dashboard"] .dashboard-card-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: hsl(var(--bc) / 0.55);
+}
+
+section[data-route="dashboard"] .dashboard-card-metric {
+  font-size: clamp(2.25rem, 3vw, 2.7rem);
+  font-weight: 600;
+  color: hsl(var(--bc) / 0.96);
+}
+
+section[data-route="dashboard"] .dashboard-card-support {
+  font-size: 0.9rem;
+  color: hsl(var(--bc) / 0.6);
+}
+
 .dashboard-kpis {
   margin-top: var(--dashboard-section-spacing);
 }
