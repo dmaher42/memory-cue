@@ -1,6 +1,7 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
 import { initSupabaseAuth } from './js/supabase-auth.js';
+import { loadAllNotes, saveAllNotes, createNote } from './js/modules/notes-storage.js';
 
 initViewportHeight();
 
@@ -280,9 +281,6 @@ const bootstrapReminders = () => {
     saveSettingsSel: '#saveSyncSettings',
     testSyncSel: '#testSync',
     openSettingsSel: '[data-open="settings"]',
-    notesSel: '#notes',
-    saveNotesBtnSel: '#saveNotes',
-    loadNotesBtnSel: '#loadNotes',
     dateFeedbackSel: '#dateFeedback',
     voiceBtnSel: '#voiceBtn',
   }).catch((error) => {
@@ -294,6 +292,169 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bootstrapReminders, { once: true });
 } else {
   bootstrapReminders();
+}
+
+const initMobileNotes = () => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const titleInput = document.getElementById('noteTitleMobile');
+  const bodyInput = document.getElementById('noteBodyMobile');
+  const saveButton = document.getElementById('noteSaveMobile');
+  const newButton = document.getElementById('noteNewMobile');
+  const listElement = document.getElementById('notesListMobile');
+
+  if (!titleInput || !bodyInput || !saveButton) {
+    return;
+  }
+
+  let currentNoteId = null;
+
+  const setEditorValues = (note) => {
+    if (!note) {
+      currentNoteId = null;
+      titleInput.value = '';
+      bodyInput.value = '';
+      return;
+    }
+    currentNoteId = note.id;
+    titleInput.value = note.title || '';
+    bodyInput.value = note.body || '';
+  };
+
+  const updateListSelection = () => {
+    if (!listElement) {
+      return;
+    }
+    const buttons = listElement.querySelectorAll('button[data-note-id]');
+    buttons.forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const isActive = button.getAttribute('data-note-id') === currentNoteId;
+      button.classList.toggle('bg-base-200', isActive);
+      button.classList.toggle('border-base-200', !isActive);
+      button.classList.toggle('border-primary', isActive);
+      button.classList.toggle('font-medium', isActive);
+      button.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
+  };
+
+  const getSortedNotes = () => {
+    const notes = loadAllNotes();
+    if (!Array.isArray(notes)) {
+      return [];
+    }
+    return [...notes].sort((a, b) => {
+      const aTime = Date.parse(a?.updatedAt || '');
+      const bTime = Date.parse(b?.updatedAt || '');
+      return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+    });
+  };
+
+  const renderNotesList = (notes = getSortedNotes()) => {
+    if (!listElement) {
+      return notes;
+    }
+
+    listElement.innerHTML = '';
+
+    if (!notes.length) {
+      const emptyItem = document.createElement('li');
+      emptyItem.className = 'text-sm italic text-base-content/60';
+      emptyItem.textContent = 'No saved notes yet.';
+      listElement.appendChild(emptyItem);
+      return notes;
+    }
+
+    notes.forEach((note) => {
+      const listItem = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.noteId = note.id;
+      button.className =
+        'w-full rounded-lg border border-base-200 bg-base-100 px-3 py-2 text-left transition hover:bg-base-200 focus:outline-none focus-visible:ring focus-visible:ring-primary/60';
+      button.textContent = note.title || 'Untitled note';
+      button.addEventListener('click', () => {
+        setEditorValues(note);
+        updateListSelection();
+      });
+      listItem.appendChild(button);
+      listElement.appendChild(listItem);
+    });
+
+    updateListSelection();
+    return notes;
+  };
+
+  const applyInitialSelection = () => {
+    const notes = renderNotesList();
+    if (!notes.length) {
+      setEditorValues(null);
+      updateListSelection();
+      return;
+    }
+    const existing = currentNoteId ? notes.find((note) => note.id === currentNoteId) : null;
+    setEditorValues(existing || notes[0]);
+    updateListSelection();
+  };
+
+  saveButton.addEventListener('click', () => {
+    const existingNotes = loadAllNotes();
+    const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
+    const title = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
+    const body = typeof bodyInput.value === 'string' ? bodyInput.value : '';
+    const sanitizedTitle = title || 'Untitled note';
+    const timestamp = new Date().toISOString();
+
+    if (currentNoteId) {
+      const noteIndex = notesArray.findIndex((note) => note.id === currentNoteId);
+      if (noteIndex >= 0) {
+        notesArray[noteIndex] = {
+          ...notesArray[noteIndex],
+          title: sanitizedTitle,
+          body,
+          updatedAt: timestamp,
+        };
+      } else {
+        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp });
+        currentNoteId = newNote.id;
+        notesArray.unshift(newNote);
+      }
+    } else {
+      const newNote = createNote(sanitizedTitle, body);
+      currentNoteId = newNote.id;
+      notesArray.unshift(newNote);
+    }
+
+    saveAllNotes(notesArray);
+
+    const notes = renderNotesList();
+    const activeNote = currentNoteId ? notes.find((note) => note.id === currentNoteId) : null;
+    setEditorValues(activeNote || null);
+    updateListSelection();
+  });
+
+  if (newButton) {
+    newButton.addEventListener('click', () => {
+      currentNoteId = null;
+      titleInput.value = '';
+      bodyInput.value = '';
+      updateListSelection();
+      if (typeof titleInput.focus === 'function') {
+        titleInput.focus();
+      }
+    });
+  }
+
+  applyInitialSelection();
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMobileNotes, { once: true });
+} else {
+  initMobileNotes();
 }
 
 initSupabaseAuth({

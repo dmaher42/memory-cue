@@ -13,6 +13,7 @@ import {
 } from './js/modules/field-helpers.js';
 import { createModalController } from './js/modules/modal-controller.js';
 import { initSupabaseAuth } from './js/supabase-auth.js';
+import { loadAllNotes, saveAllNotes, createNote } from './js/modules/notes-storage.js';
 
 initViewportHeight();
 
@@ -1812,6 +1813,163 @@ clearCompletedButton?.addEventListener('click', async () => {
 updateClearCompletedButtonState(currentDailyTasks);
 updatePlannerCountDisplay(currentDailyTasks);
 trackPlannerCountFromPromise(loadDailyList());
+
+function initDesktopNotes() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const titleInput = document.getElementById('noteTitle');
+  const bodyInput = document.getElementById('noteBody');
+  const saveButton = document.getElementById('noteSaveBtn');
+  const newButton = document.getElementById('noteNewBtn');
+  const notesListElement = document.getElementById('notesList');
+
+  if (!titleInput || !bodyInput || !saveButton || !newButton) {
+    return;
+  }
+
+  let currentNoteId = null;
+
+  const setEditorValues = (note) => {
+    if (!note) {
+      currentNoteId = null;
+      titleInput.value = '';
+      bodyInput.value = '';
+      return;
+    }
+    currentNoteId = note.id;
+    titleInput.value = note.title || '';
+    bodyInput.value = note.body || '';
+  };
+
+  const updateListSelection = () => {
+    if (!notesListElement) {
+      return;
+    }
+    const buttons = notesListElement.querySelectorAll('button[data-note-id]');
+    buttons.forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const isActive = button.getAttribute('data-note-id') === currentNoteId;
+      button.classList.toggle('bg-base-200/80', isActive);
+      button.classList.toggle('border-base-300', !isActive);
+      button.classList.toggle('border-primary', isActive);
+      button.classList.toggle('font-medium', isActive);
+      button.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
+  };
+
+  const getSortedNotes = () => {
+    const notes = loadAllNotes();
+    if (!Array.isArray(notes)) {
+      return [];
+    }
+    return [...notes].sort((a, b) => {
+      const aTime = Date.parse(a?.updatedAt || '');
+      const bTime = Date.parse(b?.updatedAt || '');
+      return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+    });
+  };
+
+  const renderNotesList = (notes = getSortedNotes()) => {
+    if (!notesListElement) {
+      return notes;
+    }
+
+    notesListElement.innerHTML = '';
+
+    if (!notes.length) {
+      const emptyItem = document.createElement('li');
+      emptyItem.className = 'text-sm italic text-base-content/60';
+      emptyItem.textContent = 'No saved notes yet.';
+      notesListElement.appendChild(emptyItem);
+      return notes;
+    }
+
+    notes.forEach((note) => {
+      const listItem = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.noteId = note.id;
+      button.className =
+        'w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-left transition hover:bg-base-200 focus:outline-none focus-visible:ring focus-visible:ring-primary/60';
+      button.textContent = note.title || 'Untitled note';
+      button.addEventListener('click', () => {
+        setEditorValues(note);
+        updateListSelection();
+      });
+      listItem.appendChild(button);
+      notesListElement.appendChild(listItem);
+    });
+
+    updateListSelection();
+    return notes;
+  };
+
+  const applyInitialSelection = () => {
+    const notes = renderNotesList();
+    if (!notes.length) {
+      setEditorValues(null);
+      updateListSelection();
+      return;
+    }
+    const existing = currentNoteId ? notes.find((note) => note.id === currentNoteId) : null;
+    setEditorValues(existing || notes[0]);
+    updateListSelection();
+  };
+
+  saveButton.addEventListener('click', () => {
+    const existingNotes = loadAllNotes();
+    const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
+    const title = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
+    const body = typeof bodyInput.value === 'string' ? bodyInput.value : '';
+    const sanitizedTitle = title || 'Untitled note';
+    const timestamp = new Date().toISOString();
+
+    if (currentNoteId) {
+      const noteIndex = notesArray.findIndex((note) => note.id === currentNoteId);
+      if (noteIndex >= 0) {
+        notesArray[noteIndex] = {
+          ...notesArray[noteIndex],
+          title: sanitizedTitle,
+          body,
+          updatedAt: timestamp,
+        };
+      } else {
+        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp });
+        currentNoteId = newNote.id;
+        notesArray.unshift(newNote);
+      }
+    } else {
+      const newNote = createNote(sanitizedTitle, body);
+      currentNoteId = newNote.id;
+      notesArray.unshift(newNote);
+    }
+
+    saveAllNotes(notesArray);
+
+    const notes = renderNotesList();
+    const activeNote = currentNoteId ? notes.find((note) => note.id === currentNoteId) : null;
+    setEditorValues(activeNote || null);
+    updateListSelection();
+  });
+
+  newButton.addEventListener('click', () => {
+    currentNoteId = null;
+    titleInput.value = '';
+    bodyInput.value = '';
+    updateListSelection();
+    if (typeof titleInput.focus === 'function') {
+      titleInput.focus();
+    }
+  });
+
+  applyInitialSelection();
+}
+
+initDesktopNotes();
 
 const THEME_STORAGE_KEY = 'theme';
 const THEME_CHANGE_EVENT = 'memoryCue:theme-change';
