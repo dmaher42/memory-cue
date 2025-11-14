@@ -118,7 +118,7 @@ const DEFAULT_SELECTORS = {
 };
 
 const DEFAULT_MESSAGES = {
-  signedOut: 'Sign in to sync reminders across devices.',
+  signedOut: 'Sign in to sync your reminders.',
   signedIn: (user) => `Reminders syncing for ${user?.email || 'your account'}.`,
   syncStatusText: {
     signedOut: 'Offline',
