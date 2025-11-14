@@ -988,7 +988,7 @@
 
     /* Mobile-first optimizations */
     :root {
-      --mobile-header-height: 90px;
+      --mobile-header-height: 45px;
       --mobile-safe-area-top: env(safe-area-inset-top, 0px);
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
@@ -1747,7 +1747,7 @@
   <!-- Clean Mobile Header -->
   <style id="mobile-header-compact" aria-hidden="true">
   :root {
-    --mobile-header-height: 90px;
+    --mobile-header-height: 45px;
   }
 
   /* Make header visually compact while preserving touch targets and accessibility */
@@ -2039,6 +2039,7 @@
       background-color: color-mix(in srgb, var(--text-primary) 90%, transparent); /* dark background */
       color: color-mix(in srgb, var(--card-bg) 95%, transparent);            /* light text */
       box-shadow: 0 1px 4px color-mix(in srgb, var(--text-primary) 70%, transparent);
+      min-height: var(--mobile-header-height);
     }
 
     /* Inner container: single row, spaced out */
@@ -2046,7 +2047,8 @@
       max-width: 28rem;          /* similar to max-w-md */
       margin-left: auto;
       margin-right: auto;
-      padding: 0.5625rem 0.75rem;
+      padding: 0 0.75rem;
+      min-height: var(--mobile-header-height);
       display: flex;
       align-items: center;
       justify-content: space-between;
