@@ -473,6 +473,7 @@ initialiseReminders().catch((error) => {
 });
 
 const cuesList = document.getElementById('cues-list');
+const pinnedNotesCard = document.getElementById('pinnedNotesCard');
 const pinnedNotesList = document.getElementById('pinnedNotesList');
 const cueForm = document.getElementById('cue-form');
 const cueIdInput = cueForm?.querySelector('#cue-id-input');
@@ -500,6 +501,54 @@ const resourcesCountElement = document.getElementById('resourcesCount');
 const templatesCountElement = document.getElementById('templatesCount');
 const dailySnapshotList = document.getElementById('dailySnapshotList');
 const todaysFocusList = document.getElementById('todaysFocusList');
+const weekAtAGlanceList = document.getElementById('weekAtAGlanceList');
+
+let weekAtAGlanceEmptyState = null;
+
+if (weekAtAGlanceList) {
+  weekAtAGlanceEmptyState = document.createElement('li');
+  weekAtAGlanceEmptyState.dataset.emptyState = 'week';
+  weekAtAGlanceEmptyState.className =
+    'list-none rounded-xl border border-dashed border-base-300/70 bg-base-100/60 p-4 text-sm italic text-base-content/60';
+  weekAtAGlanceEmptyState.textContent = 'No upcoming events this week.';
+}
+
+const updateWeekAtAGlanceEmptyState = () => {
+  if (!weekAtAGlanceList || !weekAtAGlanceEmptyState) {
+    return;
+  }
+  const visibleItems = weekAtAGlanceList.querySelectorAll(
+    ':scope > li:not([data-empty-state]):not(.hidden):not([hidden])'
+  );
+  if (visibleItems.length === 0) {
+    if (!weekAtAGlanceList.contains(weekAtAGlanceEmptyState)) {
+      weekAtAGlanceList.appendChild(weekAtAGlanceEmptyState);
+    }
+  } else if (weekAtAGlanceList.contains(weekAtAGlanceEmptyState)) {
+    weekAtAGlanceList.removeChild(weekAtAGlanceEmptyState);
+  }
+};
+
+if (weekAtAGlanceList) {
+  updateWeekAtAGlanceEmptyState();
+  new MutationObserver(updateWeekAtAGlanceEmptyState).observe(weekAtAGlanceList, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'hidden']
+  });
+}
+
+const setPinnedNotesCardVisibility = (shouldShow) => {
+  if (!pinnedNotesCard) {
+    return;
+  }
+  if (shouldShow) {
+    pinnedNotesCard.classList.remove('hidden');
+  } else {
+    pinnedNotesCard.classList.add('hidden');
+  }
+};
 
 const REMINDER_PRIORITY_CONFIG = {
   high: { badgeClass: 'badge badge-outline text-error', badgeLabel: 'High priority', rank: 0 },
@@ -616,7 +665,7 @@ function updateDailySnapshot(items = []) {
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
   if (!todaysReminders.length) {
-    dailySnapshotList.innerHTML = '<p class="text-sm text-base-content/60">No reminders due today.</p>';
+    dailySnapshotList.innerHTML = '<p class="text-sm italic text-base-content/60">No reminders due today.</p>';
     return;
   }
 
@@ -664,7 +713,8 @@ function updateTodaysFocus(items = []) {
     .slice(0, 3);
 
   if (!focusCandidates.length) {
-    todaysFocusList.innerHTML = '<li class="text-sm text-base-content/60">No focus items.</li>';
+    todaysFocusList.innerHTML =
+      '<li class="list-none text-sm italic text-base-content/60">No focus items.</li>';
     return;
   }
 
@@ -794,12 +844,23 @@ function renderPinnedNotesList(cues) {
 
   if (!list.length) {
     pinnedNotesList.innerHTML =
-      '<li class="text-sm text-base-content/60">No pinned notes yet.</li>';
+      '<li class="list-none text-sm italic text-base-content/60">No pinned notes yet.</li>';
+    setPinnedNotesCardVisibility(false);
     return;
   }
 
   const pinnedCues = list.filter((cue) => isCueMarkedPinned(cue));
-  const cuesToRender = (pinnedCues.length ? pinnedCues : list).slice(0, PINNED_NOTES_DISPLAY_LIMIT);
+
+  if (!pinnedCues.length) {
+    pinnedNotesList.innerHTML =
+      '<li class="list-none text-sm italic text-base-content/60">No pinned notes yet.</li>';
+    setPinnedNotesCardVisibility(false);
+    return;
+  }
+
+  setPinnedNotesCardVisibility(true);
+
+  const cuesToRender = pinnedCues.slice(0, PINNED_NOTES_DISPLAY_LIMIT);
 
   const markup = cuesToRender
     .map((cue) => {
