@@ -1,0 +1,289 @@
+/* Base Styles */
+body.mobile-theme {
+  background-color: #F3F4F6;
+  color: #111827;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+body.mobile-theme main,
+body.mobile-theme section,
+body.mobile-theme header,
+body.mobile-theme footer {
+  color: inherit;
+}
+
+/* Header / Top Bar */
+body.mobile-theme .app-header,
+body.mobile-theme header,
+body.mobile-theme .top-bar {
+  background-color: #0F172A;
+  color: #FFFFFF;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+body.mobile-theme .app-header h1,
+body.mobile-theme header h1,
+body.mobile-theme .top-bar h1,
+body.mobile-theme .app-header h2,
+body.mobile-theme header h2,
+body.mobile-theme .top-bar h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+body.mobile-theme .app-header button,
+body.mobile-theme .top-bar button,
+body.mobile-theme header button,
+body.mobile-theme .app-header .icon-button,
+body.mobile-theme .top-bar .icon-button {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 999px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body.mobile-theme .app-header button:focus-visible,
+body.mobile-theme .top-bar button:focus-visible,
+body.mobile-theme header button:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+body.mobile-theme .app-header button:hover,
+body.mobile-theme .top-bar button:hover,
+body.mobile-theme header button:hover {
+  color: #2563EB;
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+body.mobile-theme .app-header button.is-active,
+body.mobile-theme .top-bar button.is-active {
+  color: #2563EB;
+}
+
+/* Card Styles */
+body.mobile-theme .card,
+body.mobile-theme .note-card,
+body.mobile-theme .reminder-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  padding: 1rem 1.25rem;
+  color: #111827;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+body.mobile-theme .card h2,
+body.mobile-theme .card h3,
+body.mobile-theme .card h4,
+body.mobile-theme .card .title,
+body.mobile-theme .note-card h2,
+body.mobile-theme .note-card h3,
+body.mobile-theme .note-card h4,
+body.mobile-theme .note-card .title,
+body.mobile-theme .reminder-card h2,
+body.mobile-theme .reminder-card h3,
+body.mobile-theme .reminder-card h4,
+body.mobile-theme .reminder-card .title {
+  color: #111827;
+  margin: 0;
+}
+
+body.mobile-theme .card .meta,
+body.mobile-theme .note-card .meta,
+body.mobile-theme .reminder-card .meta,
+body.mobile-theme .text-secondary {
+  color: #6B7280;
+}
+
+/* Buttons */
+body.mobile-theme .btn-primary,
+body.mobile-theme button.btn-primary,
+body.mobile-theme .button-primary {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 0.65rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+body.mobile-theme .btn-primary:hover,
+body.mobile-theme button.btn-primary:hover,
+body.mobile-theme .button-primary:hover {
+  background-color: #1D4ED8;
+}
+
+body.mobile-theme .btn-primary:focus-visible,
+body.mobile-theme button.btn-primary:focus-visible,
+body.mobile-theme .button-primary:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 2px;
+}
+
+body.mobile-theme .btn-primary:active,
+body.mobile-theme button.btn-primary:active,
+body.mobile-theme .button-primary:active {
+  transform: translateY(1px);
+}
+
+/* Priority Pills */
+body.mobile-theme .priority-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+body.mobile-theme .priority-pill.priority-high {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+}
+
+body.mobile-theme .priority-pill.priority-medium {
+  background-color: #FEF9C3;
+  color: #B45309;
+}
+
+body.mobile-theme .priority-pill.priority-low {
+  background-color: #DCFCE7;
+  color: #15803D;
+}
+
+/* Forms */
+body.mobile-theme input,
+body.mobile-theme select,
+body.mobile-theme textarea,
+body.mobile-theme button,
+body.mobile-theme .form-control {
+  font-family: inherit;
+}
+
+body.mobile-theme input,
+body.mobile-theme select,
+body.mobile-theme textarea,
+body.mobile-theme .form-control {
+  width: 100%;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  color: #111827;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.mobile-theme input:focus,
+body.mobile-theme select:focus,
+body.mobile-theme textarea:focus,
+body.mobile-theme .form-control:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+body.mobile-theme input::placeholder,
+body.mobile-theme select::placeholder,
+body.mobile-theme textarea::placeholder {
+  color: #6B7280;
+}
+
+body.mobile-theme label {
+  color: #111827;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+body.mobile-theme form .form-group,
+body.mobile-theme form .field,
+body.mobile-theme form .input-group {
+  margin-bottom: 1rem;
+}
+
+/* Links & Icons */
+body.mobile-theme a,
+body.mobile-theme .link,
+body.mobile-theme .icon,
+body.mobile-theme .text-accent {
+  color: #2563EB;
+  text-decoration: none;
+}
+
+body.mobile-theme a:hover,
+body.mobile-theme .link:hover,
+body.mobile-theme .hover\:text-accent-dark:hover {
+  color: #1D4ED8;
+}
+
+/* Utilities */
+body.mobile-theme .text-muted,
+body.mobile-theme .text-secondary,
+body.mobile-theme .meta-text {
+  color: #6B7280;
+}
+
+body.mobile-theme .text-primary {
+  color: #111827;
+}
+
+body.mobile-theme .bg-app,
+body.mobile-theme .app-background {
+  background-color: #F3F4F6;
+}
+
+body.mobile-theme .card-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Accessibility Helpers */
+body.mobile-theme :focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+/* Media Queries */
+@media (max-width: 640px) {
+  body.mobile-theme .app-header,
+  body.mobile-theme header,
+  body.mobile-theme .top-bar {
+    padding: 1.25rem 1.5rem;
+  }
+  body.mobile-theme .card,
+  body.mobile-theme .note-card,
+  body.mobile-theme .reminder-card {
+    padding: 1.15rem 1.35rem;
+  }
+  body.mobile-theme .btn-primary,
+  body.mobile-theme button.btn-primary,
+  body.mobile-theme .button-primary {
+    width: 100%;
+    font-size: 1.05rem;
+    padding: 0.85rem 1.25rem;
+  }
+  body.mobile-theme .card-grid {
+    gap: 1.25rem;
+  }
+}
