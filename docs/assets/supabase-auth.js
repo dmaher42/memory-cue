@@ -1,5 +1,5 @@
-// js/supabase-auth.js
-// Uses the global window.supabase that you already create in index.html
+// docs/assets/supabase-auth.js
+// Mirrors the browser auth wiring so the static build can load it directly.
 
 window.addEventListener('DOMContentLoaded', () => {
   const supabase = window.supabase;
@@ -8,7 +8,6 @@ window.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // ---- Elements ----
   const authForm = document.getElementById('auth-form');
   const emailInput = document.getElementById('auth-email');
   const signOutBtn = document.getElementById('sign-out-btn');
@@ -28,7 +27,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // If the page doesn't have the auth UI, bail quietly
   if (!authForm) return;
 
   if (syncStatus && !syncStatus.textContent) {
@@ -44,7 +42,6 @@ window.addEventListener('DOMContentLoaded', () => {
     toggleElementVisibility(feedback, Boolean(msg));
   };
 
-  // Prevent double-binding if this file is included twice
   if (!authForm._wired) {
     authForm._wired = true;
 
@@ -64,7 +61,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Session/UI sync
   supabase.auth.onAuthStateChange(async (_event, session) => {
     const user = session?.user || null;
 
@@ -96,7 +92,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setFeedback('');
   });
 
-  // Optional: quick sanity test in console
   (async () => {
     try {
       const { data, error } = await supabase.from('activities').select('*').limit(1);
