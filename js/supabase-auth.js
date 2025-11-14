@@ -341,29 +341,42 @@ export function setAuthContext(ctx = {}) {
   try {
     Object.assign(_externalAuthContext, ctx || {});
   } catch (err) {
-    // non-fatal
     console.warn('[supabase-auth] setAuthContext failed', err);
   }
 }
 
 export async function startSignInFlow(options = {}) {
   try {
-    // Prefer handlers supplied via setAuthContext
-    if (_externalAuthContext && typeof _externalAuthContext.signInWithPopup === 'function' && _externalAuthContext.auth && _externalAuthContext.GoogleAuthProvider) {
-      return _externalAuthContext.signInWithPopup(_externalAuthContext.auth, new _externalAuthContext.GoogleAuthProvider());
-    }
-    if (_externalAuthContext && typeof _externalAuthContext.signInWithRedirect === 'function' && _externalAuthContext.auth && _externalAuthContext.GoogleAuthProvider) {
-      return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, new _externalAuthContext.GoogleAuthProvider());
+    if (
+      _externalAuthContext &&
+      typeof _externalAuthContext.signInWithPopup === 'function' &&
+      _externalAuthContext.auth &&
+      typeof _externalAuthContext.GoogleAuthProvider === 'function'
+    ) {
+      return _externalAuthContext.signInWithPopup(
+        _externalAuthContext.auth,
+        new _externalAuthContext.GoogleAuthProvider()
+      );
     }
 
-    // Fallback to Supabase client if available
+    if (
+      _externalAuthContext &&
+      typeof _externalAuthContext.signInWithRedirect === 'function' &&
+      _externalAuthContext.auth &&
+      typeof _externalAuthContext.GoogleAuthProvider === 'function'
+    ) {
+      return _externalAuthContext.signInWithRedirect(
+        _externalAuthContext.auth,
+        new _externalAuthContext.GoogleAuthProvider()
+      );
+    }
+
     const supabase = getSupabaseClient();
     if (supabase && supabase.auth) {
       if (typeof supabase.auth.signInWithOAuth === 'function') {
         return supabase.auth.signInWithOAuth({ provider: 'google', ...options });
       }
       if (typeof supabase.auth.signIn === 'function') {
-        // legacy: try signIn with provider
         return supabase.auth.signIn({ provider: 'google' });
       }
     }
