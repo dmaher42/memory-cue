@@ -50,8 +50,13 @@ html {
 }
 
 .navbar {
-  min-height: 3.25rem;
-  padding-block: clamp(0.35rem, 1vw, 0.6rem);
+  min-height: 0;
+  padding-block: clamp(0.2rem, 0.8vw, 0.4rem);
+  align-items: center;
+}
+
+.navbar > * {
+  min-height: 0;
 }
 
 [data-theme="dark"] .navbar-glass {
