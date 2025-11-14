@@ -3169,8 +3169,9 @@ export async function initReminders(sel = {}) {
           itemEl.dataset.reminder = JSON.stringify(summary);
           itemEl.dataset.orderIndex = Number.isFinite(r.orderIndex) ? String(r.orderIndex) : '';
           itemEl.dataset.reminderItem = 'true';
+          itemEl.dataset.compact = 'true';
           itemEl.setAttribute('draggable', 'true');
-          itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
+          itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200 task-item';
           if (pendingNotificationIds.has(summary.id)) {
             itemEl.dataset.notificationActive = 'true';
           } else {
@@ -3187,11 +3188,11 @@ export async function initReminders(sel = {}) {
             : 'btn btn-sm btn-outline btn-success';
           const notesHtml = r.notes ? `<p class="text-sm leading-relaxed text-base-content/70">${notesToHtml(r.notes)}</p>` : '';
           itemEl.innerHTML = `
-    <div class="card-body gap-4">
-      <div class="flex items-start justify-between gap-3">
+    <div class="card-body gap-4 task-content">
+      <div class="flex items-start justify-between gap-3 task-header">
         <div class="space-y-3">
-          <h3 class="card-title text-base sm:text-lg font-semibold ${titleClasses}">${escapeHtml(r.title)}</h3>
-          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-base-content/70">
+          <h3 class="card-title text-base sm:text-lg font-semibold task-title ${titleClasses}">${escapeHtml(r.title)}</h3>
+          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-base-content/70 task-meta">
             <span class="badge badge-outline gap-2 text-[0.7rem] sm:text-xs">
               <span class="h-2 w-2 rounded-full bg-gray-400"></span>
               ${escapeHtml(dueLabel)}
@@ -3203,24 +3204,48 @@ export async function initReminders(sel = {}) {
             <span class="${statusBadgeClass} text-[0.7rem] sm:text-xs">${statusLabel}</span>
           </div>
         </div>
-        <div class="dropdown dropdown-end">
-          <button type="button" tabindex="0" class="btn btn-ghost btn-circle btn-sm" aria-label="Cue actions">
-            <span class="text-xl leading-none">⋮</span>
-          </button>
-          <ul tabindex="0" class="dropdown-content menu menu-sm p-2 shadow bg-base-100 rounded-box w-40">
-            <li><button type="button" data-action="edit" class="justify-start">Edit</button></li>
-            <li><button type="button" data-action="delete" class="justify-start text-error">Delete</button></li>
-          </ul>
-        </div>
+        <button type="button" data-action="delete" class="btn btn-ghost btn-circle btn-sm text-error" aria-label="Delete reminder">
+          <span aria-hidden="true">🗑️</span>
+        </button>
       </div>
       ${notesHtml}
       <div class="card-actions justify-end">
         <button data-action="toggle" type="button" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
       </div>
     </div>`;
-          itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
-          itemEl.querySelector('[data-action="edit"]').addEventListener('click', () => loadForEdit(r.id));
-          itemEl.querySelector('[data-action="delete"]').addEventListener('click', () => removeItem(r.id));
+          itemEl.setAttribute('role', 'button');
+          itemEl.tabIndex = 0;
+          itemEl.setAttribute('aria-label', `Edit reminder: ${r.title}`);
+          const deleteBtn = itemEl.querySelector('[data-action="delete"]');
+          if (deleteBtn) {
+            deleteBtn.addEventListener('click', (event) => {
+              event.stopPropagation();
+              removeItem(r.id);
+            });
+          }
+          const toggleBtn = itemEl.querySelector('[data-action="toggle"]');
+          if (toggleBtn) {
+            toggleBtn.addEventListener('click', (event) => {
+              event.stopPropagation();
+              toggleDone(r.id);
+            });
+          }
+          const openReminder = () => loadForEdit(r.id);
+          itemEl.addEventListener('click', (event) => {
+            if (event.defaultPrevented) return;
+            if (event.target.closest('[data-action="delete"], [data-action="toggle"]')) {
+              return;
+            }
+            openReminder();
+          });
+          itemEl.addEventListener('keydown', (event) => {
+            if (event.defaultPrevented) return;
+            if (event.target !== itemEl) return;
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              openReminder();
+            }
+          });
           frag.appendChild(itemEl);
           return;
         }
