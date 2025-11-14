@@ -382,66 +382,18 @@
           <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true"></div>
           <div class="relative grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
             <div class="space-y-6">
-              <span class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">
-                <span aria-hidden="true">✨</span>
-                A clear start to your day
-              </span>
-              <h1 class="text-3xl font-semibold text-base-content sm:text-4xl">
-                Settle into teaching with a focused, organised workspace
-              </h1>
-              <p class="max-w-2xl text-base text-base-content/80">
-                Memory Cue keeps reminders, planning, and quick wins together so you can move from intention to action without searching across tools.
-              </p>
+              <div class="space-y-4">
+                <h1 class="text-3xl font-semibold text-base-content sm:text-4xl">
+                  Settle into teaching with a focused, organised workspace
+                </h1>
+                <p class="max-w-2xl text-base text-base-content/80">
+                  Memory Cue keeps reminders, planning, and quick wins together so you can move from intention to action without searching across tools.
+                </p>
+              </div>
               <div class="flex flex-wrap gap-3">
                 <a href="#planner" class="btn btn-primary btn-sm sm:btn-md">Start planning</a>
                 <a href="#reminders" class="btn btn-outline btn-sm sm:btn-md">Review reminders</a>
-                <a href="#resources" class="btn btn-ghost btn-sm sm:btn-md">Browse resources</a>
               </div>
-              <section class="dashboard-kpis" aria-labelledby="kpi-heading">
-                <h2 id="kpi-heading" class="sr-only">Key metrics</h2>
-                <div class="dashboard-kpis__grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-                    <div class="card-body gap-3 p-5">
-                      <div class="flex items-center justify-between text-base-content/80">
-                        <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Reminders</h3>
-                        <span aria-hidden="true">🔔</span>
-                      </div>
-                      <p class="text-3xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
-                      <p class="text-sm text-base-content/70"><span id="remindersSubtitle"></span></p>
-                    </div>
-                  </article>
-                  <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-                    <div class="card-body gap-3 p-5">
-                      <div class="flex items-center justify-between text-base-content/80">
-                        <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Planner</h3>
-                        <span aria-hidden="true">🗂️</span>
-                      </div>
-                      <p class="text-3xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
-                      <p class="text-sm text-base-content/70"><span id="plannerSubtitle"></span></p>
-                    </div>
-                  </article>
-                  <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-                    <div class="card-body gap-3 p-5">
-                      <div class="flex items-center justify-between text-base-content/80">
-                        <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Resources</h3>
-                        <span aria-hidden="true">📁</span>
-                      </div>
-                      <p class="text-3xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
-                      <p class="text-sm text-base-content/70"><span id="resourcesSubtitle"></span></p>
-                    </div>
-                  </article>
-                  <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
-                    <div class="card-body gap-3 p-5">
-                      <div class="flex items-center justify-between text-base-content/80">
-                        <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Templates</h3>
-                        <span aria-hidden="true">🧩</span>
-                      </div>
-                      <p class="text-3xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
-                      <p class="text-sm text-base-content/70"><span id="templatesSubtitle"></span></p>
-                    </div>
-                  </article>
-                </div>
-              </section>
             </div>
             <div class="relative rounded-2xl border border-base-300 bg-base-100/85 p-6 shadow-sm backdrop-blur">
               <h2
@@ -463,6 +415,52 @@
             </div>
           </div>
         </div>
+
+        <section class="dashboard-kpis" aria-labelledby="kpi-heading">
+          <h2 id="kpi-heading" class="sr-only">Key metrics</h2>
+          <div class="dashboard-kpis__grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
+              <div class="card-body gap-3 p-5">
+                <div class="flex items-center justify-between text-base-content/80">
+                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Reminders</h3>
+                  <span aria-hidden="true">🔔</span>
+                </div>
+                <p class="text-3xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
+                <p class="text-sm text-base-content/70"><span id="remindersSubtitle"></span></p>
+              </div>
+            </article>
+            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
+              <div class="card-body gap-3 p-5">
+                <div class="flex items-center justify-between text-base-content/80">
+                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Planner</h3>
+                  <span aria-hidden="true">🗂️</span>
+                </div>
+                <p class="text-3xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
+                <p class="text-sm text-base-content/70"><span id="plannerSubtitle"></span></p>
+              </div>
+            </article>
+            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
+              <div class="card-body gap-3 p-5">
+                <div class="flex items-center justify-between text-base-content/80">
+                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Resources</h3>
+                  <span aria-hidden="true">📁</span>
+                </div>
+                <p class="text-3xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
+                <p class="text-sm text-base-content/70"><span id="resourcesSubtitle"></span></p>
+              </div>
+            </article>
+            <article class="card border border-base-300 bg-base-200/80 shadow-sm transition hover:-translate-y-1 hover:shadow">
+              <div class="card-body gap-3 p-5">
+                <div class="flex items-center justify-between text-base-content/80">
+                  <h3 class="text-sm font-semibold uppercase tracking-[0.3em]">Templates</h3>
+                  <span aria-hidden="true">🧩</span>
+                </div>
+                <p class="text-3xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
+                <p class="text-sm text-base-content/70"><span id="templatesSubtitle"></span></p>
+              </div>
+            </article>
+          </div>
+        </section>
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.1fr)]">
           <section class="card border border-base-300 bg-base-200/70 shadow-sm dashboard-today-focus">
