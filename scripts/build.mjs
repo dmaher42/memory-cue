@@ -72,7 +72,6 @@ async function buildScripts() {
     './js/update-footer-year.js': 'update-footer-year',
     './js/register-service-worker.js': 'register-service-worker',
     './js/router.js': 'router',
-    './js/mobile-nav.js': 'mobile-nav',
   };
 
   const moduleResult = await build({

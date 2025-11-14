@@ -237,28 +237,7 @@
   <a class="skip-link" href="#mainContent">Skip to main content</a>
   <nav aria-label="Primary" class="relative fixed top-0 z-50 w-full navbar-glass">
     <div class="navbar mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="navbar-start gap-3">
-        <button
-          id="mobile-nav-toggle"
-          type="button"
-          class="btn btn-ghost btn-circle text-base-content lg:hidden"
-          aria-label="Toggle navigation"
-          aria-expanded="false"
-          aria-controls="mobile-nav-menu"
-        >
-          <span class="sr-only">Open navigation</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            class="size-6"
-            aria-hidden="true"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+      <div class="navbar-start">
         <a href="#dashboard" class="btn btn-ghost gap-2 text-left text-lg font-semibold normal-case text-base-content">
           <span class="inline-flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary">
             MC
@@ -390,51 +369,6 @@
           </div>
           <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
-      </div>
-    </div>
-    <div
-      id="mobile-nav-menu"
-      role="menu"
-      hidden
-      class="absolute left-0 right-0 top-full z-40 gap-2 px-4 pb-4 sm:px-6 lg:hidden"
-    >
-      <div class="mobile-nav-glass rounded-2xl p-4">
-        <div class="mb-3 rounded-xl bg-base-200/80 p-3 text-sm text-base-content/70">
-          Set the tone for today and keep your planning in one place.
-        </div>
-        <ul class="menu menu-vertical gap-1 text-base-content">
-          <li><a href="#dashboard" data-nav="dashboard" class="btn btn-ghost justify-start">Dashboard</a></li>
-          <li><a href="#reminders" data-nav="reminders" class="btn btn-ghost justify-start">Reminders</a></li>
-          <li><a href="#planner" data-nav="planner" class="btn btn-ghost justify-start">Planner</a></li>
-          <li><a href="#notes" data-nav="notes" class="btn btn-ghost justify-start">Notes</a></li>
-          <li>
-            <details class="mobile-nav-more">
-              <summary
-                class="btn btn-ghost justify-between"
-                aria-haspopup="true"
-                aria-controls="mobile-more-menu"
-                aria-expanded="false"
-              >
-                <span>More</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  class="size-4"
-                  aria-hidden="true"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                </svg>
-              </summary>
-              <ul id="mobile-more-menu" class="mt-2 space-y-1 text-sm">
-                <li><a href="#resources" data-nav="resources" class="btn btn-ghost justify-start">Resources</a></li>
-                <li><a href="#templates" data-nav="templates" class="btn btn-ghost justify-start">Templates</a></li>
-              </ul>
-            </details>
-          </li>
-        </ul>
       </div>
     </div>
   </nav>
@@ -1246,6 +1180,5 @@
   <script src="./js/update-footer-year.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./js/register-service-worker.js" defer></script>
-  <script src="./js/mobile-nav.js" defer></script>
 </body>
 </html>

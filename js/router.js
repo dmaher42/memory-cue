@@ -19,17 +19,15 @@ function renderRoute() {
   });
 
   const isGroupedRoute = groupedRoutes.has(activeRoute);
-  document
-    .querySelectorAll('#nav-more-menu [data-nav], #mobile-more-menu [data-nav]')
-    .forEach((link) => {
-      const isActive = link.dataset.nav === activeRoute;
-      link.classList.toggle('btn-active', isActive);
-      if (isActive) {
-        link.setAttribute('aria-current', 'page');
-      } else {
-        link.removeAttribute('aria-current');
-      }
-    });
+  document.querySelectorAll('#nav-more-menu [data-nav]').forEach((link) => {
+    const isActive = link.dataset.nav === activeRoute;
+    link.classList.toggle('btn-active', isActive);
+    if (isActive) {
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  });
 
   const moreSummary = document.querySelector('[data-nav-group="more"]');
   const moreDetails = moreSummary ? moreSummary.closest('details') : null;
@@ -44,20 +42,6 @@ function renderRoute() {
     moreSummary.classList.toggle('more-active', moreDetails.open);
   }
 
-  document.querySelectorAll('.mobile-nav-more').forEach((details) => {
-    const summary = details.querySelector('summary');
-    if (!summary) {
-      return;
-    }
-    if (isGroupedRoute) {
-      details.setAttribute('open', '');
-    } else {
-      details.removeAttribute('open');
-    }
-    summary.classList.toggle('btn-active', isGroupedRoute);
-    summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
-    summary.classList.toggle('more-active', details.open);
-  });
 }
 
 function initGroupedNavHandlers() {
@@ -71,19 +55,6 @@ function initGroupedNavHandlers() {
       navMoreSummary.classList.toggle('more-active', navMoreDetails.open);
     });
   }
-
-  document.querySelectorAll('.mobile-nav-more').forEach((details) => {
-    const summary = details.querySelector('summary');
-    if (!summary) {
-      return;
-    }
-    summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
-    summary.classList.toggle('more-active', details.open);
-    details.addEventListener('toggle', () => {
-      summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
-      summary.classList.toggle('more-active', details.open);
-    });
-  });
 }
 
 function initRouter() {
