@@ -2,6 +2,11 @@
 <html lang="en" data-theme="light">
 <head>
   <base href="/memory-cue/" />
+  <!-- === SUPABASE CONFIG (put before your main JS) === -->
+  <script type="module" src="./js/init-env.js" defer></script>
+  <script type="module" src="./js/config-supabase.js" defer></script>
+  <script defer src="./js/firebase-config.js"></script>
+  <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
@@ -2905,8 +2910,6 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./js/config-supabase.js" defer></script>
-  <script defer src="./js/firebase-config.js"></script>
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./mobile.js?v=2025-10-29-1"></script>
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
