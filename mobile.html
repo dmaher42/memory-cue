@@ -123,6 +123,20 @@
     flex: 1;
   }
 
+  .menu-heading {
+    margin: 0;
+    padding: 0.75rem 1rem 0.25rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.6);
+  }
+
+  html[data-theme="dark"] .menu-heading {
+    color: rgba(226, 232, 240, 0.65);
+  }
+
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
     margin-top: 0.75rem;
@@ -2138,7 +2152,14 @@
           <span class="text-xl leading-none">⚙️</span>
         </button>
 
-        <div id="overflowMenu" class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg" role="menu" aria-hidden="true">
+        <div
+          id="overflowMenu"
+          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg"
+          role="menu"
+          aria-hidden="true"
+          aria-labelledby="overflowMenuHeading"
+        >
+          <h2 id="overflowMenuHeading" class="menu-heading" tabindex="-1">Quick settings</h2>
           <ul class="py-2 text-sm">
             <li>
               <button
