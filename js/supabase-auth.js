@@ -11,16 +11,30 @@ let _externalAuthContext = {
   toast: null,
 };
 
+/**
+ * Allow other modules to supply a small auth context (handlers + helpers).
+ * Defensive: merges values and tolerates invalid input.
+ */
 export function setAuthContext(ctx = {}) {
   try {
     Object.assign(_externalAuthContext, ctx || {});
   } catch (err) {
+    // non-fatal; keep module usable even if callers pass odd values
+    // eslint-disable-next-line no-console
     console.warn('[supabase-auth] setAuthContext failed', err);
   }
 }
 
+/**
+ * Start a sign-in flow.
+ * Preference order:
+ * - If an external handler (signInWithPopup or signInWithRedirect) was supplied via setAuthContext, use it.
+ * - Fallback to the Supabase client (getSupabaseClient()) when available.
+ * - Resolves null when no auth facilities are available.
+ */
 export async function startSignInFlow(options = {}) {
   try {
+    // Prefer supplied handlers
     if (
       _externalAuthContext &&
       typeof _externalAuthContext.signInWithPopup === 'function' &&
@@ -32,7 +46,6 @@ export async function startSignInFlow(options = {}) {
         new _externalAuthContext.GoogleAuthProvider()
       );
     }
-
     if (
       _externalAuthContext &&
       typeof _externalAuthContext.signInWithRedirect === 'function' &&
@@ -44,24 +57,34 @@ export async function startSignInFlow(options = {}) {
         new _externalAuthContext.GoogleAuthProvider()
       );
     }
-
+    // Fallback to Supabase client if available
     const supabase = getSupabaseClient();
     if (supabase && supabase.auth) {
       if (typeof supabase.auth.signInWithOAuth === 'function') {
         return supabase.auth.signInWithOAuth({ provider: 'google', ...options });
       }
       if (typeof supabase.auth.signIn === 'function') {
+        // legacy support
         return supabase.auth.signIn({ provider: 'google' });
       }
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('[supabase-auth] startSignInFlow error', err);
-    try { _externalAuthContext?.toast?.('Sign-in failed'); } catch {}
+    try {
+      _externalAuthContext?.toast?.('Sign-in failed');
+    } catch (toastErr) {
+      // eslint-disable-next-line no-console
+      console.warn('[supabase-auth] toast handler failed', toastErr);
+    }
     throw err;
   }
   return Promise.resolve(null);
 }
 
+/**
+ * Start sign-out flow. Prefer supplied handler, otherwise try supabase.auth.signOut().
+ */
 export async function startSignOutFlow() {
   try {
     if (_externalAuthContext && typeof _externalAuthContext.signOut === 'function') {
@@ -72,6 +95,7 @@ export async function startSignOutFlow() {
       return supabase.auth.signOut();
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('[supabase-auth] startSignOutFlow error', err);
     throw err;
   }
@@ -403,3 +427,4 @@ export function getSupabaseAuthElements(selectors = {}, scope = document) {
     ...selectors,
   }, scope);
 }
+
