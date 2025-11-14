@@ -42,6 +42,74 @@
     transform: translateY(-2px);
   }
 
+  .menu-card {
+    background: color-mix(in srgb, var(--card-bg, #ffffff) 82%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-color, rgba(148, 163, 184, 0.2)) 75%, transparent);
+    box-shadow: 0 22px 45px rgba(15, 23, 42, 0.16);
+    color: var(--text-primary, rgba(15, 23, 42, 0.9));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    z-index: 50;
+  }
+
+  html[data-theme="dark"] .menu-card {
+    background: color-mix(in srgb, rgba(15, 23, 42, 0.92) 88%, transparent);
+    border-color: rgba(148, 163, 184, 0.32);
+    box-shadow: 0 26px 52px rgba(2, 6, 23, 0.6);
+    color: rgba(226, 232, 240, 0.95);
+  }
+
+  @supports not (color-mix(in srgb, red, transparent)) {
+    .menu-card {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    html[data-theme="dark"] .menu-card {
+      background: rgba(15, 23, 42, 0.9);
+    }
+  }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      color: inherit;
+      font: inherit;
+      transition: background-color 0.2s ease;
+    }
+
+    .menu-heading {
+      margin: 0;
+      padding: 0.75rem 1rem 0.25rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: rgba(15, 23, 42, 0.6);
+    }
+
+    html[data-theme="dark"] .menu-heading {
+      color: rgba(226, 232, 240, 0.65);
+    }
+
+  .menu-item:hover,
+  .menu-item:focus-visible {
+    background: rgba(15, 23, 42, 0.06);
+    outline: none;
+  }
+
+  html[data-theme="dark"] .menu-item:hover,
+  html[data-theme="dark"] .menu-item:focus-visible {
+    background: rgba(148, 163, 184, 0.12);
+  }
+
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
     margin-top: 0.75rem;
@@ -1818,25 +1886,27 @@
 
       <!-- Right: Settings button with quick menu -->
       <div class="relative">
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-          aria-label="Open menu"
-          aria-haspopup="true"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none">⚙️</span>
-        </button>
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+            aria-label="Open menu"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none">⚙️</span>
+          </button>
 
-        <div
-          id="overflowMenu"
-          class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-base-100 border border-base-200/40 dark:bg-slate-800"
-          role="menu"
-          aria-hidden="true"
-        >
-          <ul class="py-2 text-sm">
+          <div
+            id="overflowMenu"
+            class="menu-card hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg"
+            role="menu"
+            aria-hidden="true"
+            aria-labelledby="overflowMenuHeading"
+          >
+            <h2 id="overflowMenuHeading" class="menu-heading" tabindex="-1">Quick settings</h2>
+            <ul class="py-2 text-sm">
             <li>
               <button id="voiceAddBtn" type="button" class="menu-item text-left px-4 py-2">
                 <span aria-hidden="true">🎙️</span>
