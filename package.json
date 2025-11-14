@@ -7,7 +7,7 @@
     "start": "serve .",
     "test": "jest",
     "deploy": "npm run build && gh-pages -d dist",
-    "dev": "tailwindcss -i src/input.css -o dist/styles.css --watch",
+    "dev": "tailwindcss -i src/input.css -o styles/tailwind.css --watch",
     "build": "node scripts/build.mjs"
   },
   "keywords": [],

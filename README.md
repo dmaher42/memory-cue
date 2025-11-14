@@ -20,7 +20,7 @@ Each notification links back to the Reminders board; tapping it reopens the PWA 
 1. Clone the repository: `git clone https://github.com/<your-account>/memory-cue.git`
 2. Move into the project directory: `cd memory-cue`
 3. Install dependencies: `npm install`
-4. In a new terminal, start the Tailwind watcher to keep `dist/styles.css` in sync while you edit templates: `npm run dev`
+4. In a new terminal, start the Tailwind watcher to keep `styles/tailwind.css` in sync while you edit templates: `npm run dev`
 5. Start a local server (for example via `serve`): `npm start`
 6. (Optional) Run the automated test suite: `npm test`
 
