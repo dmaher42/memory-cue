@@ -4139,6 +4139,7 @@
       let remoteSaveTimeout = null;
       let remoteSyncActive = false;
       let isApplyingRemoteUpdate = false;
+      let remoteUserId = null;
       let lastStoredLocalContent = '';
       let lastRemoteContent = '';
 
@@ -4209,6 +4210,7 @@
       const stopRemoteNotesSync = () => {
         remoteSyncActive = false;
         remoteNotesDocRef = null;
+        remoteUserId = null;
         if (remoteSaveTimeout) {
           clearTimeout(remoteSaveTimeout);
           remoteSaveTimeout = null;
@@ -4243,6 +4245,9 @@
         remoteSaveTimeout = setTimeout(async () => {
           try {
             const payload = { content };
+            if (remoteUserId) {
+              payload.ownerUid = remoteUserId;
+            }
             if (typeof firebaseContext.serverTimestamp === 'function') {
               payload.updatedAt = firebaseContext.serverTimestamp();
             } else {
@@ -4254,7 +4259,12 @@
             setTimeout(() => setStatus('ready', 'Ready'), 1200);
           } catch (error) {
             console.error('Notes sync: Failed to sync notes', error);
-            setStatus('error', 'Sync failed');
+            if (error && error.code === 'permission-denied') {
+              setStatus('error', 'Sync unavailable');
+              stopRemoteNotesSync();
+            } else {
+              setStatus('error', 'Sync failed');
+            }
           }
         }, 400);
       };
@@ -4303,6 +4313,7 @@
         firebaseContext = context;
         remoteSyncActive = true;
         remoteNotesDocRef = context.doc(context.db, 'users', user.uid, 'notebook', 'scratch');
+        remoteUserId = user.uid;
 
         try {
           remoteNotesUnsubscribe = context.onSnapshot(remoteNotesDocRef, handleRemoteSnapshot, (error) => {
