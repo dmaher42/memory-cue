@@ -17,7 +17,7 @@
       --text-secondary: #4C6457;
       --accent-color: #B5A9FF;
       --success-color: #63C69B;
-      --background-color: #2f2a33;
+      --background-color: #eef2ff;
       --hover-bg: #DCEFE2;
       --shadow-color: rgba(31, 42, 36, 0.08);
       --delete-color: #EF6A6A;
@@ -43,6 +43,30 @@
       --reminder-card-padding-x: 0.6rem;
       --reminder-card-gap: 0.3rem;
       --reminder-card-font-size: 0.85rem;
+
+      /* Mobile chrome for refreshed indigo shell */
+      --mobile-header-bg: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(14, 165, 233, 0.1));
+      --mobile-header-border: rgba(99, 102, 241, 0.22);
+      --mobile-header-shadow: 0 18px 32px rgba(79, 70, 229, 0.18);
+      --mobile-header-text: var(--text-primary);
+      --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(79, 70, 229, 0.12));
+      --mobile-header-button-color: color-mix(in srgb, var(--accent-color) 92%, var(--text-primary) 8%);
+      --mobile-header-button-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
+      --mobile-quick-surface: color-mix(in srgb, var(--card-bg) 96%, rgba(79, 70, 229, 0.08));
+      --mobile-quick-shadow: 0 20px 34px rgba(79, 70, 229, 0.16);
+    }
+
+    html[data-theme="dark"],
+    html.dark {
+      --mobile-header-bg: color-mix(in srgb, rgba(15, 23, 42, 0.92) 96%, transparent);
+      --mobile-header-border: rgba(148, 163, 184, 0.35);
+      --mobile-header-shadow: 0 16px 32px rgba(15, 23, 42, 0.55);
+      --mobile-header-text: color-mix(in srgb, var(--card-bg) 94%, transparent);
+      --mobile-header-button-bg: color-mix(in srgb, rgba(148, 163, 184, 0.2) 100%, transparent);
+      --mobile-header-button-color: color-mix(in srgb, var(--card-bg) 92%, transparent);
+      --mobile-header-button-border: rgba(148, 163, 184, 0.45);
+      --mobile-quick-surface: color-mix(in srgb, rgba(15, 23, 42, 0.92) 94%, transparent);
+      --mobile-quick-shadow: 0 18px 30px rgba(15, 23, 42, 0.6);
     }
 
     /* Mobile reminder cards coloured by priority using existing tokens */
@@ -139,9 +163,12 @@
   }
 
   .quick-actions-panel {
-    background: transparent;
-    border: none;
-    box-shadow: none;
+    background: var(--mobile-quick-surface);
+    border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
+    border-radius: 20px;
+    box-shadow: var(--mobile-quick-shadow);
+    padding: 0.6rem;
+    backdrop-filter: blur(18px);
   }
 
   .quick-actions {
@@ -169,29 +196,39 @@
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 9999px;
-    border: none;
-    background: rgba(15, 23, 42, 0.1);
-    color: var(--text-primary, rgba(15, 23, 42, 0.88));
+    border: 1px solid var(--mobile-header-button-border);
+    background: var(--mobile-header-button-bg);
+    color: var(--mobile-header-button-color);
     font-size: 1.2rem;
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18);
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .quick-action-btn:hover,
   .quick-action-btn:focus-visible {
-    background: rgba(15, 23, 42, 0.16);
+    background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+    color: color-mix(in srgb, var(--card-bg) 96%, transparent);
     transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(79, 70, 229, 0.2);
     outline: none;
   }
 
-  html[data-theme="dark"] .quick-action-btn {
-    background: rgba(226, 232, 240, 0.08);
-    color: rgba(226, 232, 240, 0.92);
+  .quick-action-btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+    outline-offset: 2px;
+  }
+
+  html[data-theme="dark"] .quick-action-btn,
+  html.dark .quick-action-btn {
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
   }
 
   html[data-theme="dark"] .quick-action-btn:hover,
-  html[data-theme="dark"] .quick-action-btn:focus-visible {
-    background: rgba(226, 232, 240, 0.16);
+  html[data-theme="dark"] .quick-action-btn:focus-visible,
+  html.dark .quick-action-btn:hover,
+  html.dark .quick-action-btn:focus-visible {
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
   }
 
   .quick-action-icon {
@@ -2101,11 +2138,13 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background-color: color-mix(in srgb, var(--text-primary) 90%, transparent); /* dark background */
-      color: color-mix(in srgb, var(--card-bg) 95%, transparent);            /* light text */
-      box-shadow: 0 1px 4px color-mix(in srgb, var(--text-primary) 70%, transparent);
+      background: var(--mobile-header-bg);
+      color: var(--mobile-header-text);
+      border-bottom: 1px solid var(--mobile-header-border);
+      box-shadow: var(--mobile-header-shadow);
       min-height: var(--mobile-header-height);
       padding-block: 0;
+      backdrop-filter: blur(18px);
     }
 
     /* Inner container: single row, spaced out */
@@ -2136,14 +2175,30 @@
       width: 1.5rem;
       height: 1.5rem;
       border-radius: 999px;
-      border: none;
-      background-color: color-mix(in srgb, var(--text-primary) 80%, transparent);
-      color: inherit;
+      border: 1px solid var(--mobile-header-button-border);
+      background-color: var(--mobile-header-button-bg);
+      color: var(--mobile-header-button-color);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       cursor: pointer;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.18);
+      transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    header.sticky button:hover,
+    header.sticky button:focus-visible {
+      background-color: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
+      box-shadow: 0 16px 30px rgba(79, 70, 229, 0.22);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    header.sticky button:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+      outline-offset: 2px;
     }
 
     header.sticky .mc-add-btn {
@@ -2163,7 +2218,25 @@
 
     header.sticky button:active {
       transform: scale(0.95);
-      background-color: color-mix(in srgb, var(--primary-dark) 90%, transparent);
+      background-color: color-mix(in srgb, var(--accent-color) 25%, var(--mobile-header-button-bg) 75%);
+      box-shadow: 0 8px 16px rgba(79, 70, 229, 0.18);
+    }
+
+    html[data-theme="dark"] header.sticky button,
+    html.dark header.sticky button {
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
+    }
+
+    html[data-theme="dark"] header.sticky button:hover,
+    html[data-theme="dark"] header.sticky button:focus-visible,
+    html.dark header.sticky button:hover,
+    html.dark header.sticky button:focus-visible {
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
+    }
+
+    html[data-theme="dark"] header.sticky button:active,
+    html.dark header.sticky button:active {
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.55);
     }
 
     .mc-quick-add-bar {
@@ -2178,11 +2251,16 @@
     .mc-quick-add-inner {
       max-width: 28rem;
       margin: 0 auto;
-      padding: 0.25rem 0.75rem;
+      padding: 0.4rem 0.85rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
+      border-radius: 999px;
+      background: var(--mobile-quick-surface);
+      border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent);
+      box-shadow: var(--mobile-quick-shadow);
+      backdrop-filter: blur(14px);
     }
 
     .mc-quick-status {
@@ -2190,11 +2268,11 @@
       align-items: center;
       gap: 0.25rem;
       font-size: 0.7rem;
-      color: color-mix(in srgb, var(--text-primary, rgba(15, 23, 42, 0.88)) 85%, rgba(15, 23, 42, 0.9));
+      color: color-mix(in srgb, var(--accent-color) 42%, var(--text-secondary) 58%);
     }
 
     .dark .mc-quick-status {
-      color: color-mix(in srgb, rgba(226, 232, 240, 0.92) 90%, transparent);
+      color: color-mix(in srgb, rgba(226, 232, 240, 0.92) 88%, transparent);
     }
 
     .mc-sync-message {
@@ -2249,14 +2327,28 @@
       min-width: 0;
       padding: 0.4rem 0.65rem;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-      background-color: color-mix(in srgb, var(--text-primary) 35%, transparent);
-      color: inherit;
+      border: 1px solid color-mix(in srgb, var(--card-border) 65%, transparent);
+      background-color: var(--card-bg);
+      color: var(--text-primary);
       font-size: 0.8rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
     .mc-quick-input::placeholder {
-      color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+      color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
+    }
+
+    html[data-theme="dark"] .mc-quick-input,
+    html.dark .mc-quick-input {
+      background-color: color-mix(in srgb, rgba(15, 23, 42, 0.92) 85%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 94%, transparent);
+      border-color: color-mix(in srgb, rgba(148, 163, 184, 0.45) 100%, transparent);
+      box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.6);
+    }
+
+    html[data-theme="dark"] .mc-quick-input::placeholder,
+    html.dark .mc-quick-input::placeholder {
+      color: color-mix(in srgb, rgba(226, 232, 240, 0.8) 85%, transparent);
     }
 
     .mc-quick-submit,
@@ -2268,12 +2360,47 @@
       min-height: 2.1rem;
       border-radius: 999px;
       border: none;
-      background: color-mix(in srgb, var(--primary-color) 85%, transparent);
-      color: var(--card-bg);
+      background: linear-gradient(135deg, var(--accent-color), var(--primary-dark));
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
       font-size: 0.8rem;
       font-weight: 500;
       padding: 0 0.75rem;
       cursor: pointer;
+      box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .mc-quick-submit:hover,
+    .mc-quick-submit:focus-visible,
+    .mc-quick-voice:hover,
+    .mc-quick-voice:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(79, 70, 229, 0.22);
+      outline: none;
+    }
+
+    .mc-quick-submit:focus-visible,
+    .mc-quick-voice:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+      outline-offset: 2px;
+    }
+
+    html[data-theme="dark"] .mc-quick-submit,
+    html[data-theme="dark"] .mc-quick-voice,
+    html.dark .mc-quick-submit,
+    html.dark .mc-quick-voice {
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
+    }
+
+    html[data-theme="dark"] .mc-quick-submit:hover,
+    html[data-theme="dark"] .mc-quick-submit:focus-visible,
+    html[data-theme="dark"] .mc-quick-voice:hover,
+    html[data-theme="dark"] .mc-quick-voice:focus-visible,
+    html.dark .mc-quick-submit:hover,
+    html.dark .mc-quick-submit:focus-visible,
+    html.dark .mc-quick-voice:hover,
+    html.dark .mc-quick-voice:focus-visible {
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
     }
 
     .mc-quick-submit {
@@ -2281,15 +2408,15 @@
     }
 
     .mc-quick-voice {
-      background: color-mix(in srgb, var(--text-secondary) 35%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
       padding-inline: 0.6rem;
       font-size: 1rem;
     }
 
     .mc-quick-voice.is-listening {
-      background: color-mix(in srgb, var(--primary-color) 95%, transparent);
-      color: var(--card-bg);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 45%, transparent), var(--primary-dark));
+      color: color-mix(in srgb, var(--card-bg) 98%, transparent);
     }
 
     @media (max-width: 420px) {
@@ -2311,13 +2438,13 @@
     }
   </style>
 
-  <header class="sticky top-0 z-20 text-black shadow-md" style="background-color: #2B3A55;">
+  <header class="sticky top-0 z-20 text-black shadow-md">
     <div class="mx-auto max-w-md px-3 py-0 flex items-center justify-between gap-2">
       <!-- Left: Home button -->
       <button
         id="btn-open-drawer"
         type="button"
-        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-full transition active:scale-95"
         aria-label="Open navigation menu"
         aria-controls="mobile-drawer"
         aria-expanded="false"
@@ -2341,7 +2468,7 @@
         <button
           id="overflowMenuBtn"
           type="button"
-          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+          class="inline-flex items-center justify-center w-9 h-9 rounded-full transition active:scale-95"
           aria-label="Open menu"
           aria-haspopup="menu"
           aria-controls="overflowMenu"
