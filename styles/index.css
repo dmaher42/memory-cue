@@ -25,31 +25,15 @@ body {
   line-height: 1.6;
 }
 
-body.desktop-shell {
-  --desktop-bg: #0f172a0d;
-  --desktop-surface: #ffffff;
-  --desktop-surface-muted: #f8fafc;
-  --desktop-border-subtle: #e2e8f0;
-  --desktop-header-bg: #1e293b;
-  --desktop-header-border: #0f172a;
-  --desktop-text-main: #0f172a;
-  --desktop-text-muted: #64748b;
-  --desktop-nav-bg: #0b1120;
-  --desktop-nav-active: #1d4ed8;
-  --desktop-nav-text: #e5e7eb;
-  --desktop-nav-text-muted: #9ca3af;
-  --desktop-radius-card: 18px;
-  --desktop-radius-chip: 999px;
-  --desktop-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.1);
-  --desktop-shadow-subtle: 0 2px 8px rgba(15, 23, 42, 0.06);
-
+html[data-theme="professional"] body.desktop-shell {
   background: radial-gradient(circle at top, rgba(148, 163, 184, 0.12), transparent 55%), var(--desktop-bg);
   color: var(--desktop-text-main);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100vh;
 }
 
-.desktop-shell .dashboard-root {
+
+html[data-theme="professional"] .desktop-shell .dashboard-root {
   max-width: 1180px;
   margin: 0 auto;
   padding: 1.25rem 1.5rem 2rem;
@@ -58,12 +42,12 @@ body.desktop-shell {
   gap: 1rem;
 }
 
-.desktop-shell .desktop-main {
+html[data-theme="professional"] .desktop-shell .desktop-main {
   padding-top: 0;
   min-height: auto;
 }
 
-.desktop-shell .desktop-main-inner {
+html[data-theme="professional"] .desktop-shell .desktop-main-inner {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -71,7 +55,7 @@ body.desktop-shell {
   width: 100%;
 }
 
-.desktop-shell .desktop-header {
+html[data-theme="professional"] .desktop-shell .desktop-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -87,13 +71,13 @@ body.desktop-shell {
   backdrop-filter: blur(12px);
 }
 
-.desktop-shell .desktop-header-brand {
+html[data-theme="professional"] .desktop-shell .desktop-header-brand {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.desktop-shell .desktop-header-brand-link {
+html[data-theme="professional"] .desktop-shell .desktop-header-brand-link {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -105,12 +89,12 @@ body.desktop-shell {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.desktop-shell .desktop-header-logo {
+html[data-theme="professional"] .desktop-shell .desktop-header-logo {
   font-weight: 700;
   font-size: 0.95rem;
 }
 
-.desktop-shell .desktop-header-title {
+html[data-theme="professional"] .desktop-shell .desktop-header-title {
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -118,12 +102,12 @@ body.desktop-shell {
   color: #cbd5f5;
 }
 
-.desktop-shell .desktop-header-subtitle {
+html[data-theme="professional"] .desktop-shell .desktop-header-subtitle {
   font-size: 0.8rem;
   color: #94a3b8;
 }
 
-.desktop-shell .desktop-header-nav {
+html[data-theme="professional"] .desktop-shell .desktop-header-nav {
   color: var(--desktop-nav-text);
   background: rgba(255, 255, 255, 0.04);
   padding: 0.25rem 0.5rem;
@@ -132,28 +116,28 @@ body.desktop-shell {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.desktop-shell .desktop-header-nav .btn {
+html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn {
   color: var(--desktop-nav-text-muted);
 }
 
-.desktop-shell .desktop-header-nav .btn:hover,
-.desktop-shell .desktop-header-nav .btn:focus-visible,
-.desktop-shell .desktop-header-nav .btn[aria-current="page"] {
+html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn:hover,
+html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn:focus-visible,
+html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn[aria-current="page"] {
   color: var(--desktop-nav-text);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.desktop-shell .desktop-header-actions {
+html[data-theme="professional"] .desktop-shell .desktop-header-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.desktop-shell .desktop-header-actions > *:not(:last-child) {
+html[data-theme="professional"] .desktop-shell .desktop-header-actions > *:not(:last-child) {
   margin-right: 0.35rem;
 }
 
-.desktop-shell .desktop-header-action-bar {
+html[data-theme="professional"] .desktop-shell .desktop-header-action-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -161,7 +145,7 @@ body.desktop-shell {
   gap: 0.4rem;
 }
 
-.desktop-shell .desktop-dashboard-grid {
+html[data-theme="professional"] .desktop-shell .desktop-dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr);
   gap: 1rem;
@@ -169,24 +153,24 @@ body.desktop-shell {
 }
 
 @media (max-width: 1024px) {
-  .desktop-shell .desktop-dashboard-grid {
+  html[data-theme="professional"] .desktop-shell .desktop-dashboard-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .desktop-shell .desktop-header {
+  html[data-theme="professional"] .desktop-shell .desktop-header {
     flex-wrap: wrap;
     gap: 0.75rem;
   }
 
-  .desktop-shell .desktop-header-actions {
+  html[data-theme="professional"] .desktop-shell .desktop-header-actions {
     width: 100%;
     justify-content: flex-end;
   }
 }
 
-.desktop-shell .desktop-panel {
+html[data-theme="professional"] .desktop-shell .desktop-panel {
   background: var(--desktop-surface);
   border-radius: var(--desktop-radius-card);
   border: 1px solid var(--desktop-border-subtle);
@@ -197,7 +181,7 @@ body.desktop-shell {
   gap: 0.6rem;
 }
 
-.desktop-shell .desktop-panel-header {
+html[data-theme="professional"] .desktop-shell .desktop-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,13 +189,13 @@ body.desktop-shell {
   margin-bottom: 0.2rem;
 }
 
-.desktop-shell .desktop-panel-actions {
+html[data-theme="professional"] .desktop-shell .desktop-panel-actions {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.desktop-shell .desktop-panel-title {
+html[data-theme="professional"] .desktop-shell .desktop-panel-title {
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -219,12 +203,12 @@ body.desktop-shell {
   color: var(--desktop-text-muted);
 }
 
-.desktop-shell .desktop-panel-subtitle {
+html[data-theme="professional"] .desktop-shell .desktop-panel-subtitle {
   font-size: 0.8rem;
   color: var(--desktop-text-muted);
 }
 
-.desktop-shell .desktop-panel-toolbar {
+html[data-theme="professional"] .desktop-shell .desktop-panel-toolbar {
   background: var(--desktop-surface-muted);
   border-radius: calc(var(--desktop-radius-card) - 6px);
   border: 1px solid var(--desktop-border-subtle);
@@ -232,19 +216,19 @@ body.desktop-shell {
   padding: 0.5rem 0.75rem;
 }
 
-.desktop-shell .desktop-reminders-list {
+html[data-theme="professional"] .desktop-shell .desktop-reminders-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.5rem;
 }
 
 @media (max-width: 900px) {
-  .desktop-shell .desktop-reminders-list {
+  html[data-theme="professional"] .desktop-shell .desktop-reminders-list {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.desktop-shell .reminder-item {
+html[data-theme="professional"] .desktop-shell .reminder-item {
   border-radius: 12px;
   border: 1px solid var(--desktop-border-subtle);
   background-color: var(--desktop-surface-muted);
@@ -258,13 +242,13 @@ body.desktop-shell {
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
-.desktop-shell .reminder-item:hover {
+html[data-theme="professional"] .desktop-shell .reminder-item:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
   border-color: rgba(148, 163, 184, 0.9);
 }
 
-.desktop-shell .reminder-title {
+html[data-theme="professional"] .desktop-shell .reminder-title {
   font-weight: 600;
   color: var(--desktop-text-main);
   white-space: nowrap;
@@ -272,7 +256,7 @@ body.desktop-shell {
   text-overflow: ellipsis;
 }
 
-.desktop-shell .reminder-meta {
+html[data-theme="professional"] .desktop-shell .reminder-meta {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
@@ -280,8 +264,8 @@ body.desktop-shell {
   color: var(--desktop-text-muted);
 }
 
-.desktop-shell .btn-primary,
-.desktop-shell .cue-btn-primary {
+html[data-theme="professional"] .desktop-shell .btn-primary,
+html[data-theme="professional"] .desktop-shell .cue-btn-primary {
   background: linear-gradient(135deg, #2563eb, #4f46e5);
   border: none;
   color: #f9fafb;
@@ -293,15 +277,15 @@ body.desktop-shell {
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
 }
 
-.desktop-shell .btn-primary:hover,
-.desktop-shell .cue-btn-primary:hover {
+html[data-theme="professional"] .desktop-shell .btn-primary:hover,
+html[data-theme="professional"] .desktop-shell .cue-btn-primary:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);
   box-shadow: 0 12px 24px rgba(37, 99, 235, 0.45);
 }
 
-.desktop-shell .btn-ghost,
-.desktop-shell .cue-btn-ghost {
+html[data-theme="professional"] .desktop-shell .btn-ghost,
+html[data-theme="professional"] .desktop-shell .cue-btn-ghost {
   background: transparent;
   border-radius: 999px;
   font-size: 0.8rem;
