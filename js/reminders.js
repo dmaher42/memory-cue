@@ -3085,7 +3085,12 @@ export async function initReminders(sel = {}) {
       itemEl.dataset.id = summary.id;
       itemEl.dataset.category = summary.category;
       itemEl.dataset.title = summary.title;
-      itemEl.dataset.priority = summary.priority;
+      const priorityValue = summary.priority && String(summary.priority).trim();
+      if (priorityValue) {
+        itemEl.dataset.priority = priorityValue;
+      } else {
+        delete itemEl.dataset.priority;
+      }
       itemEl.dataset.done = String(summary.done);
       if (summary.dueIso) {
         itemEl.dataset.due = summary.dueIso;
