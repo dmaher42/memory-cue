@@ -3124,7 +3124,7 @@ export async function initReminders(sel = {}) {
       content.className = 'flex min-w-0 flex-col gap-2';
 
       const titleEl = document.createElement('p');
-      titleEl.className = 'text-sm font-semibold leading-snug text-base-content';
+      titleEl.className = 'text-sm font-bold leading-snug text-base-content';
       titleEl.classList.add('desktop-reminder-title');
       if (!isMobile) {
         titleEl.classList.add('sm:text-[0.95rem]');
