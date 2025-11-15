@@ -220,16 +220,16 @@
     }
 
     #quick-action-toolbar {
-      opacity: 0.9;
-      backdrop-filter: blur(10px);
-      background-color: rgba(15, 23, 42, 0.55);
+      opacity: 0.95;
+      backdrop-filter: blur(14px);
+      background-color: color-mix(in srgb, var(--desktop-header-bg) 88%, transparent);
       border-radius: 1.25rem;
       padding: 0.5rem;
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+      box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22);
     }
 
     #quick-action-toolbar .quick-action-btn {
-      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.35);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
 
     .google-user-chip {
@@ -255,7 +255,7 @@
 
     /* Dashboard: emphasise Today's focus card */
     .dashboard-today-focus {
-      background: linear-gradient(to right, rgba(59, 130, 246, 0.04), rgba(15, 23, 42, 0.02));
+      background: linear-gradient(to right, rgba(79, 70, 229, 0.08), rgba(14, 165, 233, 0.05));
     }
 
     /* Dashboard layout tweaks */
@@ -270,8 +270,8 @@
     /* Dashboard: lighter action shortcuts card */
     .dashboard-shortcuts {
       border-radius: 0.75rem;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      background-color: rgba(15, 23, 42, 0.015);
+      border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 70%, transparent);
+      background-color: color-mix(in srgb, var(--desktop-header-bg) 50%, transparent);
       box-shadow: none;
     }
 

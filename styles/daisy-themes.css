@@ -47,22 +47,22 @@
   default: false;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: #f8fafc;
-  --color-base-200: #e2e8f0;
-  --color-base-300: #cbd5f5;
-  --color-base-content: #0f172a;
-  --color-primary: #2563eb;
+  --color-base-100: #f5f7ff;
+  --color-base-200: #e6edff;
+  --color-base-300: #d0dcff;
+  --color-base-content: #1f2937;
+  --color-primary: #4f46e5;
   --color-primary-content: #f8fafc;
-  --color-secondary: #1e293b;
-  --color-secondary-content: #e2e8f0;
-  --color-accent: #38bdf8;
-  --color-accent-content: #0f172a;
-  --color-neutral: #0b1120;
-  --color-neutral-content: #e2e8f0;
-  --color-info: #1d4ed8;
+  --color-secondary: #1d4ed8;
+  --color-secondary-content: #f8fafc;
+  --color-accent: #0ea5e9;
+  --color-accent-content: #06263a;
+  --color-neutral: #1f2937;
+  --color-neutral-content: #f5f7ff;
+  --color-info: #2563eb;
   --color-info-content: #f8fafc;
-  --color-success: #22c55e;
-  --color-success-content: #052e16;
+  --color-success: #059669;
+  --color-success-content: #f0fdfa;
   --color-warning: #f59e0b;
   --color-warning-content: #3b2100;
   --color-error: #ef4444;
@@ -76,26 +76,26 @@
   --depth: 0;
   --noise: 0;
 
-  --background-color: #0f172a0d;
-  --card-border: #e2e8f0;
-  --accent-color: #2563eb;
+  --background-color: #eef2ff;
+  --card-border: #d7def1;
+  --accent-color: #4f46e5;
 
-  --desktop-bg: #0f172a0d;
+  --desktop-bg: #eef2ff;
   --desktop-surface: #ffffff;
-  --desktop-surface-muted: #f8fafc;
-  --desktop-border-subtle: #e2e8f0;
-  --desktop-header-bg: #1e293b;
-  --desktop-header-border: #0f172a;
-  --desktop-text-main: #0f172a;
-  --desktop-text-muted: #64748b;
-  --desktop-nav-bg: #0b1120;
-  --desktop-nav-active: #1d4ed8;
-  --desktop-nav-text: #e5e7eb;
-  --desktop-nav-text-muted: #9ca3af;
+  --desktop-surface-muted: #f6f7ff;
+  --desktop-border-subtle: #d7def1;
+  --desktop-header-bg: #e3e9ff;
+  --desktop-header-border: #c0ccf2;
+  --desktop-text-main: #1f2a44;
+  --desktop-text-muted: #55607a;
+  --desktop-nav-bg: #e6ecff;
+  --desktop-nav-active: #4f46e5;
+  --desktop-nav-text: #1f2a44;
+  --desktop-nav-text-muted: #6b7694;
   --desktop-radius-card: 18px;
   --desktop-radius-chip: 999px;
-  --desktop-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.10);
-  --desktop-shadow-subtle: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --desktop-shadow-card: 0 12px 30px rgba(79, 70, 229, 0.12);
+  --desktop-shadow-subtle: 0 4px 14px rgba(79, 70, 229, 0.08);
 }
 
 @plugin "daisyui/theme" {
@@ -205,22 +205,22 @@
 :root[data-theme="professional"],
 [data-theme="professional"] {
   color-scheme: light;
-  --color-base-100: #f8fafc;
-  --color-base-200: #e2e8f0;
-  --color-base-300: #cbd5f5;
-  --color-base-content: #0f172a;
-  --color-primary: #2563eb;
+  --color-base-100: #f5f7ff;
+  --color-base-200: #e6edff;
+  --color-base-300: #d0dcff;
+  --color-base-content: #1f2937;
+  --color-primary: #4f46e5;
   --color-primary-content: #f8fafc;
-  --color-secondary: #1e293b;
-  --color-secondary-content: #e2e8f0;
-  --color-accent: #38bdf8;
-  --color-accent-content: #0f172a;
-  --color-neutral: #0b1120;
-  --color-neutral-content: #e2e8f0;
-  --color-info: #1d4ed8;
+  --color-secondary: #1d4ed8;
+  --color-secondary-content: #f8fafc;
+  --color-accent: #0ea5e9;
+  --color-accent-content: #06263a;
+  --color-neutral: #1f2937;
+  --color-neutral-content: #f5f7ff;
+  --color-info: #2563eb;
   --color-info-content: #f8fafc;
-  --color-success: #22c55e;
-  --color-success-content: #052e16;
+  --color-success: #059669;
+  --color-success-content: #f0fdfa;
   --color-warning: #f59e0b;
   --color-warning-content: #3b2100;
   --color-error: #ef4444;
@@ -234,26 +234,26 @@
   --depth: 0;
   --noise: 0;
 
-  --background-color: #0f172a0d;
-  --card-border: #e2e8f0;
-  --accent-color: #2563eb;
+  --background-color: #eef2ff;
+  --card-border: #d7def1;
+  --accent-color: #4f46e5;
 
-  --desktop-bg: #0f172a0d;
+  --desktop-bg: #eef2ff;
   --desktop-surface: #ffffff;
-  --desktop-surface-muted: #f8fafc;
-  --desktop-border-subtle: #e2e8f0;
-  --desktop-header-bg: #1e293b;
-  --desktop-header-border: #0f172a;
-  --desktop-text-main: #0f172a;
-  --desktop-text-muted: #64748b;
-  --desktop-nav-bg: #0b1120;
-  --desktop-nav-active: #1d4ed8;
-  --desktop-nav-text: #e5e7eb;
-  --desktop-nav-text-muted: #9ca3af;
+  --desktop-surface-muted: #f6f7ff;
+  --desktop-border-subtle: #d7def1;
+  --desktop-header-bg: #e3e9ff;
+  --desktop-header-border: #c0ccf2;
+  --desktop-text-main: #1f2a44;
+  --desktop-text-muted: #55607a;
+  --desktop-nav-bg: #e6ecff;
+  --desktop-nav-active: #4f46e5;
+  --desktop-nav-text: #1f2a44;
+  --desktop-nav-text-muted: #6b7694;
   --desktop-radius-card: 18px;
   --desktop-radius-chip: 999px;
-  --desktop-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.10);
-  --desktop-shadow-subtle: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --desktop-shadow-card: 0 12px 30px rgba(79, 70, 229, 0.12);
+  --desktop-shadow-subtle: 0 4px 14px rgba(79, 70, 229, 0.08);
 }
 
 :root[data-theme="dracula"],
