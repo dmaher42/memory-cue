@@ -4179,6 +4179,61 @@
 
       if (!notesEditor) return;
 
+      let savedSelectionRange = null;
+
+      const focusEditor = () => {
+        try {
+          notesEditor.focus({ preventScroll: true });
+        } catch {
+          notesEditor.focus();
+        }
+      };
+
+      const saveSelectionRange = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const container = range.commonAncestorContainer;
+        const containerElement =
+          container && container.nodeType === 1
+            ? container
+            : container?.parentElement || null;
+
+        if (!containerElement || !notesEditor.contains(containerElement)) {
+          return;
+        }
+
+        savedSelectionRange = range.cloneRange();
+      };
+
+      const restoreSelectionRange = () => {
+        if (!savedSelectionRange) {
+          return false;
+        }
+
+        const selection = window.getSelection();
+        if (!selection) {
+          return false;
+        }
+
+        try {
+          selection.removeAllRanges();
+          selection.addRange(savedSelectionRange);
+          return true;
+        } catch {
+          savedSelectionRange = null;
+          return false;
+        }
+      };
+
+      document.addEventListener('selectionchange', saveSelectionRange);
+      notesEditor.addEventListener('mouseup', saveSelectionRange);
+      notesEditor.addEventListener('keyup', saveSelectionRange);
+      notesEditor.addEventListener('touchend', saveSelectionRange);
+
       let autoSaveTimeout;
       let currentSearchIndex = 0;
       let searchMatches = [];
@@ -4361,6 +4416,7 @@
 
         isApplyingRemoteUpdate = true;
         notesEditor.innerHTML = remoteContent;
+        savedSelectionRange = null;
         updateWordCount();
         try {
           localStorage.setItem('memory-cue-notes', remoteContent);
@@ -4498,6 +4554,7 @@
           const saved = localStorage.getItem('memory-cue-notes');
           if (typeof saved === 'string' && saved && notesEditor) {
             notesEditor.innerHTML = saved;
+            savedSelectionRange = null;
             lastStoredLocalContent = saved;
             lastRemoteContent = saved;
             setStatus('ready', 'Notes loaded');
@@ -4514,14 +4571,42 @@
 
       // Formatting functions
       const formatText = (command, value = null) => {
+        if (typeof document.execCommand !== 'function') {
+          return;
+        }
+
+        focusEditor();
+        if (!restoreSelectionRange()) {
+          const selection = window.getSelection();
+          if (selection) {
+            const fallbackRange = document.createRange();
+            fallbackRange.selectNodeContents(notesEditor);
+            fallbackRange.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(fallbackRange);
+          }
+        }
+
         document.execCommand(command, false, value);
-        notesEditor.focus();
+        saveSelectionRange();
         autoSave();
       };
 
       const insertAtCursor = (html) => {
+        focusEditor();
+        if (!restoreSelectionRange()) {
+          const selection = window.getSelection();
+          if (selection) {
+            const fallbackRange = document.createRange();
+            fallbackRange.selectNodeContents(notesEditor);
+            fallbackRange.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(fallbackRange);
+          }
+        }
+
         const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
+        if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
           range.deleteContents();
           const fragment = range.createContextualFragment(html);
@@ -4529,8 +4614,10 @@
           range.collapse(false);
           selection.removeAllRanges();
           selection.addRange(range);
+          savedSelectionRange = range.cloneRange();
         }
         autoSave();
+        saveSelectionRange();
       };
 
       // Toolbar event handlers
@@ -4596,7 +4683,8 @@
           
           const highlightedContent = content.replace(regex, '<span class="highlight">$1</span>');
           notesEditor.innerHTML = highlightedContent;
-          
+          savedSelectionRange = null;
+
           searchMatches = Array.from(notesEditor.querySelectorAll('.highlight'));
           updateSearchResults(searchMatches.length);
           
@@ -4617,6 +4705,7 @@
           parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
           parent.normalize();
         });
+        savedSelectionRange = null;
       };
 
       const highlightCurrentMatch = () => {
@@ -4734,6 +4823,7 @@
       notesEditor.addEventListener('input', () => {
         updateWordCount();
         autoSave();
+        saveSelectionRange();
       });
 
       notesEditor.addEventListener('paste', (e) => {
@@ -4741,6 +4831,7 @@
         setTimeout(() => {
           updateWordCount();
           autoSave();
+          saveSelectionRange();
         }, 100);
       });
 
@@ -4769,11 +4860,13 @@
         if (element && element.textContent) {
           element.textContent = element.textContent === '☐' ? '☑' : '☐';
           autoSave();
+          saveSelectionRange();
         }
       };
       
       // Improve mobile keyboard handling
       notesEditor.addEventListener('focus', () => {
+        restoreSelectionRange();
         // Prevent zoom on iOS
         if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
           const viewport = document.querySelector('meta[name="viewport"]');
@@ -4782,8 +4875,9 @@
           }
         }
       });
-      
+
       notesEditor.addEventListener('blur', () => {
+        saveSelectionRange();
         // Re-enable zoom
         const viewport = document.querySelector('meta[name="viewport"]');
         if (viewport) {
