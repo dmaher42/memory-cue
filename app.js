@@ -418,13 +418,22 @@ const mobileTitleInput = document.getElementById('reminderText');
 
 const modalController = (() => {
   const modalElement = document.getElementById('cue-modal') ?? document.getElementById('cue_modal');
+  if (!(modalElement instanceof HTMLElement)) {
+    return null;
+  }
+
+  const openButton = document.getElementById('openCueModal');
+  const closeButton = document.getElementById('closeCueModal');
+  const backdropButton = modalElement.querySelector('.modal-backdrop button');
+  const modalTitle = document.getElementById('modal-title');
+
   return createModalController({
     modalElement,
-    openButton: document.getElementById('openCueModal'),
-    closeButton: document.getElementById('closeCueModal'),
-    backdropButton: modalElement?.querySelector('.modal-backdrop button') ?? null,
+    openButton: openButton instanceof HTMLElement ? openButton : null,
+    closeButton: closeButton instanceof HTMLElement ? closeButton : null,
+    backdropButton: backdropButton instanceof HTMLElement ? backdropButton : null,
     titleInput,
-    modalTitle: document.getElementById('modal-title'),
+    modalTitle: modalTitle instanceof HTMLElement ? modalTitle : null,
     defaultTitle: DEFAULT_CUE_MODAL_TITLE,
     editTitle: EDIT_CUE_MODAL_TITLE
   });

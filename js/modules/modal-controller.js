@@ -87,6 +87,7 @@ export class ModalController {
     this.animationHooks = options.animationHooks ?? {};
     this.enableStacking = options.enableStacking !== false;
     this.isDisabled = false;
+    this.isValid = false;
 
     this.previouslyFocusedElement = null;
     this.boundHandlers = {
@@ -104,7 +105,8 @@ export class ModalController {
 
   /** Initialise the controller and wire listeners. */
   init() {
-    if (!this.validateModal()) {
+    this.validateModal();
+    if (!this.isValid) {
       this.isDisabled = true;
       return;
     }
@@ -116,10 +118,12 @@ export class ModalController {
 
   /** Validate modal element. */
   validateModal() {
-    if (!this.modal || !(this.modal instanceof HTMLElement)) {
-      console.warn('[ModalController] Modal element is not provided or invalid.');
+    if (!(this.modal instanceof HTMLElement)) {
+      console.warn('[ModalController] Modal element is not provided or invalid.', this.modal);
+      this.isValid = false;
       return false;
     }
+    this.isValid = true;
     if (typeof this.modal.showModal !== 'function') {
       this.modal.showModal = this.modal.showModal || (() => {
         this.modal?.setAttribute('open', '');
