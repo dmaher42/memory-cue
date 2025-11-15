@@ -3146,6 +3146,19 @@
         medium: 'Medium priority',
         low: 'Low priority',
       };
+      const priorityValues = {
+        high: 'High',
+        medium: 'Medium',
+        low: 'Low',
+      };
+      const priorityClassTokens = ['priority-high', 'priority-medium', 'priority-low'];
+      const detectPriorityKey = (value) => {
+        const normalized = (value || '').trim().toLowerCase();
+        if (normalized.startsWith('h')) return 'high';
+        if (normalized.startsWith('m')) return 'medium';
+        if (normalized.startsWith('l')) return 'low';
+        return '';
+      };
       const removePriorityText = (element) => {
         if (!(element instanceof HTMLElement)) return;
         Array.from(element.childNodes).forEach((child) => {
@@ -3162,6 +3175,10 @@
 
       const applyPriorityPills = (container) => {
         const pills = container.querySelectorAll('[data-chip="priority"], [data-priority-pill], .priority-pill');
+        let containerPriorityKey = detectPriorityKey(
+          container.dataset.priority || container.getAttribute('data-priority') || ''
+        );
+
         pills.forEach((pill) => {
           if (!(pill instanceof HTMLElement)) return;
 
@@ -3174,22 +3191,16 @@
             '';
 
           const textPriority = prioritySource || pill.textContent?.trim() || '';
-          const normalized = textPriority.toLowerCase();
-
-          let priorityKey = '';
+          const priorityKey = detectPriorityKey(textPriority);
 
           pill.classList.add('priority-pill');
-          pill.classList.remove('priority-high', 'priority-medium', 'priority-low');
+          pill.classList.remove(...priorityClassTokens);
 
-          if (normalized.startsWith('h')) {
-            pill.classList.add('priority-high');
-            priorityKey = 'high';
-          } else if (normalized.startsWith('m')) {
-            pill.classList.add('priority-medium');
-            priorityKey = 'medium';
-          } else if (normalized.startsWith('l')) {
-            pill.classList.add('priority-low');
-            priorityKey = 'low';
+          if (priorityKey) {
+            pill.classList.add(`priority-${priorityKey}`);
+            if (!containerPriorityKey) {
+              containerPriorityKey = priorityKey;
+            }
           }
 
           const accessibleLabel = textPriority || (priorityKey ? priorityLabels[priorityKey] : '');
@@ -3200,6 +3211,18 @@
 
           removePriorityText(pill);
         });
+
+        container.classList.remove(...priorityClassTokens);
+
+        if (containerPriorityKey) {
+          const priorityValue = priorityValues[containerPriorityKey];
+          if (priorityValue) {
+            container.dataset.priority = priorityValue;
+          }
+          container.classList.add(`priority-${containerPriorityKey}`);
+        } else if (!detectPriorityKey(container.dataset.priority)) {
+          delete container.dataset.priority;
+        }
       };
 
       const restructureReminderCard = (card) => {
