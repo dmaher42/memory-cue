@@ -2038,7 +2038,10 @@ function initDesktopNotes() {
 
 initDesktopNotes();
 
+// Theme system: we persist DaisyUI theme names (light, dark, dracula, synthwave, cupcake, caramellatte, night, professional)
+// in localStorage under `theme` and apply them via <html data-theme="…"> so CSS tokens update globally.
 const THEME_STORAGE_KEY = 'theme';
+const DEFAULT_THEME = 'professional';
 const THEME_CHANGE_EVENT = 'memoryCue:theme-change';
 const themeMenu = document.getElementById('theme-menu');
 const themeOptionSelector = '[data-theme-name],[data-theme-option]';
@@ -2138,7 +2141,7 @@ function loadSavedTheme() {
     console.warn('Unable to load theme preference', error);
   }
 
-  const fallbackTheme = storedTheme || document.documentElement.getAttribute('data-theme') || '';
+  const fallbackTheme = storedTheme || document.documentElement.getAttribute('data-theme') || DEFAULT_THEME;
   if (!fallbackTheme) {
     return;
   }
