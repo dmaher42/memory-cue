@@ -1,7 +1,12 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
 import { initSupabaseAuth } from './js/supabase-auth.js';
-import { loadAllNotes, saveAllNotes, createNote } from './js/modules/notes-storage.js';
+import {
+  loadAllNotes,
+  saveAllNotes,
+  createNote,
+  NOTES_STORAGE_KEY,
+} from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
 
 initViewportHeight();
@@ -317,11 +322,15 @@ const initMobileNotes = () => {
       currentNoteId = null;
       titleInput.value = '';
       bodyInput.value = '';
+      delete titleInput.dataset.noteOriginalTitle;
+      delete bodyInput.dataset.noteOriginalBody;
       return;
     }
     currentNoteId = note.id;
     titleInput.value = note.title || '';
     bodyInput.value = note.body || '';
+    titleInput.dataset.noteOriginalTitle = note.title || '';
+    bodyInput.dataset.noteOriginalBody = note.body || '';
   };
 
   const updateListSelection = () => {
@@ -342,6 +351,14 @@ const initMobileNotes = () => {
     });
   };
 
+  const hasUnsavedChanges = () => {
+    const currentTitle = typeof titleInput.value === 'string' ? titleInput.value : '';
+    const currentBody = typeof bodyInput.value === 'string' ? bodyInput.value : '';
+    const originalTitle = titleInput.dataset.noteOriginalTitle ?? '';
+    const originalBody = bodyInput.dataset.noteOriginalBody ?? '';
+    return currentTitle !== originalTitle || currentBody !== originalBody;
+  };
+
   const getSortedNotes = () => {
     const notes = loadAllNotes();
     if (!Array.isArray(notes)) {
@@ -352,6 +369,57 @@ const initMobileNotes = () => {
       const bTime = Date.parse(b?.updatedAt || '');
       return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
     });
+  };
+
+  const readStoredSnapshot = () => {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+    try {
+      return localStorage.getItem(NOTES_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  let lastSerializedNotes = readStoredSnapshot();
+
+  const updateStoredSnapshot = () => {
+    lastSerializedNotes = readStoredSnapshot();
+    return lastSerializedNotes;
+  };
+
+  const refreshFromStorage = ({ preserveDraft = true } = {}) => {
+    const notes = renderNotesList();
+    const shouldPreserveEditor = preserveDraft && hasUnsavedChanges();
+
+    if (!notes.length) {
+      if (!shouldPreserveEditor) {
+        setEditorValues(null);
+      }
+      updateListSelection();
+      updateStoredSnapshot();
+      return notes;
+    }
+
+    if (currentNoteId) {
+      const activeNote = notes.find((note) => note.id === currentNoteId) || null;
+      if (activeNote) {
+        if (!shouldPreserveEditor) {
+          setEditorValues(activeNote);
+        }
+      } else if (!shouldPreserveEditor) {
+        setEditorValues(notes[0]);
+      } else {
+        currentNoteId = null;
+      }
+    } else if (!shouldPreserveEditor) {
+      setEditorValues(notes[0]);
+    }
+
+    updateListSelection();
+    updateStoredSnapshot();
+    return notes;
   };
 
   const handleDeleteNote = (noteId) => {
@@ -370,21 +438,13 @@ const initMobileNotes = () => {
     }
 
     saveAllNotes(filteredNotes);
+    updateStoredSnapshot();
 
     if (currentNoteId === noteId) {
       currentNoteId = null;
     }
 
-    const notes = renderNotesList();
-    if (currentNoteId) {
-      const activeNote = notes.find((note) => note.id === currentNoteId) || null;
-      setEditorValues(activeNote);
-    } else if (notes.length) {
-      setEditorValues(notes[0]);
-    } else {
-      setEditorValues(null);
-    }
-    updateListSelection();
+    refreshFromStorage({ preserveDraft: false });
   };
 
   const renderNotesList = (notes = getSortedNotes()) => {
@@ -435,15 +495,7 @@ const initMobileNotes = () => {
   };
 
   const applyInitialSelection = () => {
-    const notes = renderNotesList();
-    if (!notes.length) {
-      setEditorValues(null);
-      updateListSelection();
-      return;
-    }
-    const existing = currentNoteId ? notes.find((note) => note.id === currentNoteId) : null;
-    setEditorValues(existing || notes[0]);
-    updateListSelection();
+    refreshFromStorage({ preserveDraft: false });
   };
 
   saveButton.addEventListener('click', () => {
@@ -475,18 +527,13 @@ const initMobileNotes = () => {
     }
 
     saveAllNotes(notesArray);
-
-    const notes = renderNotesList();
-    const activeNote = currentNoteId ? notes.find((note) => note.id === currentNoteId) : null;
-    setEditorValues(activeNote || null);
-    updateListSelection();
+    updateStoredSnapshot();
+    refreshFromStorage({ preserveDraft: false });
   });
 
   if (newButton) {
     newButton.addEventListener('click', () => {
-      currentNoteId = null;
-      titleInput.value = '';
-      bodyInput.value = '';
+      setEditorValues(null);
       updateListSelection();
       if (typeof titleInput.focus === 'function') {
         titleInput.focus();
@@ -495,6 +542,25 @@ const initMobileNotes = () => {
   }
 
   applyInitialSelection();
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (event) => {
+      if (event.key === NOTES_STORAGE_KEY) {
+        lastSerializedNotes = event.newValue ?? null;
+        refreshFromStorage({ preserveDraft: true });
+      }
+    });
+
+    if (!window.__memoryCueNotesWatcher) {
+      window.__memoryCueNotesWatcher = window.setInterval(() => {
+        const snapshot = readStoredSnapshot();
+        if (snapshot !== lastSerializedNotes) {
+          lastSerializedNotes = snapshot;
+          refreshFromStorage({ preserveDraft: true });
+        }
+      }, 2000);
+    }
+  }
 };
 
 if (document.readyState === 'loading') {
