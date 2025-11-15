@@ -26,7 +26,12 @@ body {
 }
 
 html[data-theme="professional"] body.desktop-shell {
-  background: radial-gradient(circle at top, rgba(148, 163, 184, 0.12), transparent 55%), var(--desktop-bg);
+  background: radial-gradient(
+      circle at top,
+      rgba(99, 102, 241, 0.14),
+      rgba(14, 165, 233, 0.08) 55%
+    ),
+    var(--desktop-bg);
   color: var(--desktop-text-main);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100vh;
@@ -45,11 +50,11 @@ html[data-theme="professional"] .desktop-header-bar {
   padding: 0.45rem 1.25rem;
   margin: 0 auto 0.75rem;
   max-width: 1180px;
-  background: rgba(248, 250, 252, 0.92);
+  background: color-mix(in srgb, var(--desktop-header-bg) 92%, transparent);
   backdrop-filter: blur(14px);
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 75%, transparent);
+  box-shadow: 0 18px 38px rgba(79, 70, 229, 0.16);
 }
 
 html[data-theme="professional"] .desktop-header-left {
@@ -87,14 +92,14 @@ html[data-theme="professional"] .desktop-header-brand-link {
   gap: 0.6rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: color-mix(in srgb, var(--desktop-header-bg) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 65%, transparent);
   color: var(--desktop-text-main);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 html[data-theme="professional"] .desktop-header-brand-link:hover {
-  background: rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--desktop-header-bg) 80%, transparent);
 }
 
 html[data-theme="professional"] .desktop-header-logo {
@@ -137,14 +142,9 @@ html[data-theme="professional"] .desktop-header-nav-tabs {
   gap: 0.25rem;
   padding: 0.3rem;
   border-radius: 999px;
-  background: radial-gradient(
-      circle at top left,
-      rgba(59, 130, 246, 0.09),
-      rgba(125, 211, 252, 0.08) 45%,
-      rgba(248, 250, 252, 0.98)
-    );
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(14, 165, 233, 0.12));
+  box-shadow: 0 16px 32px rgba(79, 70, 229, 0.18);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 70%, transparent);
 }
 
 html[data-theme="professional"] .desktop-header-nav-tabs .btn {
@@ -154,20 +154,20 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn {
   padding: 0.3rem 0.85rem;
   border-width: 0;
   background: transparent;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-nav-text-muted);
   box-shadow: none;
 }
 
 html[data-theme="professional"] .desktop-header-nav-tabs .btn[aria-current="page"],
 html[data-theme="professional"] .desktop-header-nav-tabs .btn.btn-active {
-  background: linear-gradient(135deg, #22c55e, #38bdf8);
-  color: #0f172a;
-  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.35);
+  background: linear-gradient(135deg, #4f46e5, #22d3ee);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
 }
 
 html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
-  background: rgba(148, 163, 184, 0.14);
-  color: var(--desktop-text-main);
+  background: color-mix(in srgb, var(--desktop-nav-active) 18%, transparent);
+  color: var(--desktop-nav-text);
 }
 
 @media (max-width: 960px) {
@@ -236,9 +236,9 @@ html[data-theme="professional"] .desktop-shell .desktop-hero {
   padding-block: 1.5rem;
   background: radial-gradient(
       circle at top left,
-      rgba(129, 140, 248, 0.18),
-      rgba(244, 114, 182, 0.12) 40%,
-      #f8fafc
+      rgba(99, 102, 241, 0.16),
+      rgba(14, 165, 233, 0.12) 45%,
+      var(--desktop-surface)
     );
 }
 
@@ -309,8 +309,8 @@ html[data-theme="professional"] .desktop-shell .reminder-item {
 
 html[data-theme="professional"] .desktop-shell .reminder-item:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
-  border-color: rgba(148, 163, 184, 0.9);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.18);
+  border-color: color-mix(in srgb, var(--desktop-border-subtle) 45%, var(--desktop-nav-active) 55%);
 }
 
 html[data-theme="professional"] .desktop-shell .reminder-title {
@@ -331,14 +331,14 @@ html[data-theme="professional"] .desktop-shell .reminder-meta {
 
 html[data-theme="professional"] .desktop-shell .btn-primary,
 html[data-theme="professional"] .desktop-shell .cue-btn-primary {
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  background: linear-gradient(135deg, #4f46e5, #22d3ee);
   border: none;
-  color: #f9fafb;
+  color: #ffffff;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 600;
   padding: 0.4rem 0.85rem;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
 }
 
@@ -346,7 +346,7 @@ html[data-theme="professional"] .desktop-shell .btn-primary:hover,
 html[data-theme="professional"] .desktop-shell .cue-btn-primary:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.4);
 }
 
 html[data-theme="professional"] .desktop-shell .btn-ghost,
@@ -355,7 +355,7 @@ html[data-theme="professional"] .desktop-shell .cue-btn-ghost {
   border-radius: 999px;
   font-size: 0.8rem;
   padding: 0.35rem 0.7rem;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-nav-text-muted);
 }
 
 h1,
