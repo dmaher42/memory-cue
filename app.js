@@ -2052,6 +2052,7 @@ initDesktopNotes();
 const THEME_STORAGE_KEY = 'theme';
 const DEFAULT_THEME = 'professional';
 const THEME_CHANGE_EVENT = 'memoryCue:theme-change';
+const DESKTOP_THEME = 'professional';
 const themeMenu = document.getElementById('theme-menu');
 const themeOptionSelector = '[data-theme-name],[data-theme-option]';
 
@@ -2143,6 +2144,15 @@ function setTheme(themeName, { persist = true, notify = true } = {}) {
 }
 
 function loadSavedTheme() {
+  const isDesktopShell = typeof document !== 'undefined'
+    && document.body instanceof HTMLElement
+    && document.body.classList.contains('desktop-shell');
+
+  if (isDesktopShell) {
+    setTheme(DESKTOP_THEME, { persist: true, notify: true });
+    return;
+  }
+
   let storedTheme = '';
   try {
     storedTheme = localStorage.getItem(THEME_STORAGE_KEY) || '';
