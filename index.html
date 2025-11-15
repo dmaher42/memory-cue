@@ -284,101 +284,103 @@
 <body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen desktop-shell">
   <a class="skip-link" href="#mainContent">Skip to main content</a>
   <div class="dashboard-root">
-    <header class="desktop-header" aria-label="Primary">
-      <div class="desktop-header-brand">
-        <details class="nav-mobile dropdown dropdown-bottom lg:hidden">
-          <summary
-            class="nav-mobile-summary btn btn-sm btn-ghost gap-2"
-            aria-label="Toggle navigation menu"
-            aria-haspopup="menu"
-            aria-controls="mobile-nav-menu"
-            aria-expanded="false"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              class="size-5"
-              aria-hidden="true"
+    <header class="desktop-header desktop-header-bar" aria-label="Primary">
+      <div class="desktop-header-left">
+        <div class="desktop-header-brand">
+          <details class="nav-mobile dropdown dropdown-bottom lg:hidden">
+            <summary
+              class="nav-mobile-summary btn btn-sm btn-ghost gap-2"
+              aria-label="Toggle navigation menu"
+              aria-haspopup="menu"
+              aria-controls="mobile-nav-menu"
+              aria-expanded="false"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-            <span>Menu</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              class="nav-mobile-chevron size-4"
-              aria-hidden="true"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                class="size-5"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+              <span>Menu</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                class="nav-mobile-chevron size-4"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <ul
+              id="mobile-nav-menu"
+              class="nav-mobile-menu menu menu-sm dropdown-content mt-3 w-56 gap-1 rounded-box bg-base-100/95 p-3 text-sm text-base-content shadow-lg"
+              role="menu"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-            </svg>
-          </summary>
-          <ul
-            id="mobile-nav-menu"
-            class="nav-mobile-menu menu menu-sm dropdown-content mt-3 w-56 gap-1 rounded-box bg-base-100/95 p-3 text-sm text-base-content shadow-lg"
-            role="menu"
-          >
-            <li>
-              <a href="#dashboard" data-nav="dashboard" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Dashboard</a>
-            </li>
-            <li>
-              <a href="#reminders" data-nav="reminders" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Reminders</a>
-            </li>
-            <li>
-              <a href="#planner" data-nav="planner" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Planner</a>
-            </li>
-            <li>
-              <a href="#notes" data-nav="notes" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Notes</a>
-            </li>
-            <li>
-              <details class="nav-mobile-more">
-                <summary
-                  class="nav-mobile-more-summary btn btn-sm btn-ghost w-full justify-between"
-                  aria-expanded="false"
-                  aria-haspopup="menu"
-                  aria-controls="mobile-more-menu"
-                >
-                  <span>More</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    class="nav-mobile-more-chevron size-4"
-                    aria-hidden="true"
+              <li>
+                <a href="#dashboard" data-nav="dashboard" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Dashboard</a>
+              </li>
+              <li>
+                <a href="#reminders" data-nav="reminders" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Reminders</a>
+              </li>
+              <li>
+                <a href="#planner" data-nav="planner" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Planner</a>
+              </li>
+              <li>
+                <a href="#notes" data-nav="notes" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Notes</a>
+              </li>
+              <li>
+                <details class="nav-mobile-more">
+                  <summary
+                    class="nav-mobile-more-summary btn btn-sm btn-ghost w-full justify-between"
+                    aria-expanded="false"
+                    aria-haspopup="menu"
+                    aria-controls="mobile-more-menu"
                   >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                  </svg>
-                </summary>
-                <ul id="mobile-more-menu" class="nav-mobile-more-menu" role="menu">
-                  <li>
-                    <a href="#resources" data-nav="resources" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Resources</a>
-                  </li>
-                  <li>
-                    <a href="#templates" data-nav="templates" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Templates</a>
-                  </li>
-                </ul>
-              </details>
-            </li>
-          </ul>
-        </details>
-        <a href="#dashboard" class="desktop-header-brand-link btn btn-ghost gap-2 text-left normal-case text-base-content">
-          <span class="desktop-header-logo inline-flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary">
-            MC
-          </span>
-          <span class="flex flex-col leading-tight">
-            <span class="desktop-header-title text-base font-semibold text-base-content">Memory Cue</span>
-            <span class="desktop-header-subtitle">Teacher workspace</span>
-          </span>
-        </a>
+                    <span>More</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      class="nav-mobile-more-chevron size-4"
+                      aria-hidden="true"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                    </svg>
+                  </summary>
+                  <ul id="mobile-more-menu" class="nav-mobile-more-menu" role="menu">
+                    <li>
+                      <a href="#resources" data-nav="resources" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Resources</a>
+                    </li>
+                    <li>
+                      <a href="#templates" data-nav="templates" class="btn btn-sm btn-ghost w-full justify-start" role="menuitem">Templates</a>
+                    </li>
+                  </ul>
+                </details>
+              </li>
+            </ul>
+          </details>
+          <a href="#dashboard" class="desktop-header-brand-link btn btn-ghost gap-2 text-left normal-case text-base-content">
+            <span class="desktop-header-logo inline-flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary">
+              MC
+            </span>
+            <span class="flex flex-col leading-tight">
+              <span class="desktop-header-title text-base font-semibold text-base-content">Memory Cue</span>
+              <span class="desktop-header-subtitle">Teacher workspace</span>
+            </span>
+          </a>
+        </div>
       </div>
-      <nav class="desktop-header-nav nav-desktop hidden lg:flex" aria-label="Primary navigation">
+      <nav class="desktop-header-nav-tabs nav-desktop hidden lg:flex" aria-label="Primary">
         <ul class="menu menu-horizontal gap-1 nav-pill-glass text-sm">
           <li>
             <a href="#dashboard" data-nav="dashboard" id="nav-dashboard" class="btn btn-sm btn-ghost">Dashboard</a>
@@ -394,7 +396,7 @@
           </li>
         </ul>
       </nav>
-      <div class="desktop-header-actions">
+      <div class="desktop-header-right">
         <p id="sync-status" class="sync-status hidden text-xs text-base-content" data-compact="true"></p>
         <div
           id="user-badge"
@@ -435,13 +437,12 @@
         </div>
         <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
       </div>
-    </div>
   </header>
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
-        <div
-          class="dashboard-card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70"
+        <section
+          class="desktop-panel desktop-hero dashboard-card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70"
         >
           <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" aria-hidden="true"></div>
           <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true"></div>
@@ -461,7 +462,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <section class="dashboard-kpis" aria-labelledby="kpi-heading">
           <h2 id="kpi-heading" class="sr-only">Key metrics</h2>

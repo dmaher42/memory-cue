@@ -32,6 +32,158 @@ html[data-theme="professional"] body.desktop-shell {
   min-height: 100vh;
 }
 
+/* PROFESSIONAL DESKTOP HEADER */
+
+html[data-theme="professional"] .desktop-header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 1.25rem;
+  margin: 0 auto 0.75rem;
+  max-width: 1180px;
+  background: rgba(248, 250, 252, 0.92);
+  backdrop-filter: blur(14px);
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="professional"] .desktop-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+html[data-theme="professional"] .desktop-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+html[data-theme="professional"] .desktop-header-bar .btn,
+html[data-theme="professional"] .desktop-header-bar button {
+  min-height: 0;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+
+html[data-theme="professional"] .desktop-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+html[data-theme="professional"] .desktop-header-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: var(--desktop-text-main);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="professional"] .desktop-header-brand-link:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="professional"] .desktop-header-logo {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+html[data-theme="professional"] .desktop-header-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--desktop-text-main);
+}
+
+html[data-theme="professional"] .desktop-header-subtitle {
+  font-size: 0.78rem;
+  color: var(--desktop-text-muted);
+}
+
+html[data-theme="professional"] .desktop-header-right #auth-feedback {
+  width: 100%;
+  text-align: right;
+}
+
+html[data-theme="professional"] .desktop-header-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+html[data-theme="professional"] .desktop-header-action-bar > .flex {
+  gap: 0.4rem;
+}
+
+html[data-theme="professional"] .desktop-header-nav-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: radial-gradient(
+      circle at top left,
+      rgba(59, 130, 246, 0.09),
+      rgba(125, 211, 252, 0.08) 45%,
+      rgba(248, 250, 252, 0.98)
+    );
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+html[data-theme="professional"] .desktop-header-nav-tabs .btn {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.85rem;
+  border-width: 0;
+  background: transparent;
+  color: var(--desktop-text-muted);
+  box-shadow: none;
+}
+
+html[data-theme="professional"] .desktop-header-nav-tabs .btn[aria-current="page"],
+html[data-theme="professional"] .desktop-header-nav-tabs .btn.btn-active {
+  background: linear-gradient(135deg, #22c55e, #38bdf8);
+  color: #0f172a;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.35);
+}
+
+html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--desktop-text-main);
+}
+
+@media (max-width: 960px) {
+  html[data-theme="professional"] .desktop-header-bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  html[data-theme="professional"] .desktop-header-nav-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
 
 html[data-theme="professional"] .desktop-shell .dashboard-root {
   max-width: 1180px;
@@ -55,96 +207,6 @@ html[data-theme="professional"] .desktop-shell .desktop-main-inner {
   width: 100%;
 }
 
-html[data-theme="professional"] .desktop-shell .desktop-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1.25rem;
-  background: linear-gradient(135deg, var(--desktop-header-bg), #020617);
-  border-radius: 999px;
-  box-shadow: var(--desktop-shadow-subtle);
-  border: 1px solid rgba(15, 23, 42, 0.7);
-  color: #e5e7eb;
-  position: sticky;
-  top: 0.75rem;
-  z-index: 20;
-  backdrop-filter: blur(12px);
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-brand-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  color: var(--desktop-nav-text);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-logo {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #cbd5f5;
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-subtitle {
-  font-size: 0.8rem;
-  color: #94a3b8;
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-nav {
-  color: var(--desktop-nav-text);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn {
-  color: var(--desktop-nav-text-muted);
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn:hover,
-html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn:focus-visible,
-html[data-theme="professional"] .desktop-shell .desktop-header-nav .btn[aria-current="page"] {
-  color: var(--desktop-nav-text);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-actions > *:not(:last-child) {
-  margin-right: 0.35rem;
-}
-
-html[data-theme="professional"] .desktop-shell .desktop-header-action-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-}
-
 html[data-theme="professional"] .desktop-shell .desktop-dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr);
@@ -158,17 +220,6 @@ html[data-theme="professional"] .desktop-shell .desktop-dashboard-grid {
   }
 }
 
-@media (max-width: 768px) {
-  html[data-theme="professional"] .desktop-shell .desktop-header {
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-
-  html[data-theme="professional"] .desktop-shell .desktop-header-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-}
 
 html[data-theme="professional"] .desktop-shell .desktop-panel {
   background: var(--desktop-surface);
@@ -179,6 +230,20 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+html[data-theme="professional"] .desktop-shell .desktop-hero {
+  padding-block: 1.5rem;
+  background: radial-gradient(
+      circle at top left,
+      rgba(129, 140, 248, 0.18),
+      rgba(244, 114, 182, 0.12) 40%,
+      #f8fafc
+    );
+}
+
+html[data-theme="professional"] .desktop-shell .desktop-hero h1 {
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-panel-header {
