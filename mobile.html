@@ -51,6 +51,36 @@
     padding: 20px;
   }
 
+  body[data-active-view="notebook"] .container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  body[data-active-view="notebook"] #main {
+    max-width: none;
+    margin: 0;
+    padding-bottom: 0;
+  }
+
+  body[data-active-view="notebook"] #view-notebook {
+    background: var(--card-bg);
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card-body {
+    padding: clamp(1.25rem, 5vw, 2rem);
+    padding-bottom: clamp(5rem, 10vw, 6rem);
+    min-height: calc(100dvh - 4rem);
+  }
+
   .card {
     background: var(--card-bg);
     border-radius: 12px;
@@ -2695,8 +2725,8 @@
               Body
               <textarea
                 id="noteBodyMobile"
-                rows="8"
-                class="textarea textarea-bordered w-full"
+                rows="14"
+                class="textarea textarea-bordered w-full max-w-none"
                 placeholder="Write your note here…"
               ></textarea>
             </label>
@@ -3364,6 +3394,19 @@
         : null;
 
       let activeView = order[0];
+      const main = document.getElementById('main') || document.querySelector('main');
+      const body = document.body;
+
+      if (main) {
+        const preset = main.getAttribute('data-active-view');
+        if (preset && order.includes(preset)) {
+          activeView = preset;
+        }
+      }
+
+      if (body && activeView) {
+        body.setAttribute('data-active-view', activeView);
+      }
 
       const setActiveView = (target) => {
         if (!order.includes(target)) return;
@@ -3389,9 +3432,11 @@
         const skipLink =
           document.querySelector('.skip-link') ||
           document.querySelector('a[href$="#main"]');
-        const main = document.getElementById('main') || document.querySelector('main');
         if (main) {
           main.setAttribute('data-active-view', target);
+        }
+        if (body) {
+          body.setAttribute('data-active-view', target);
         }
         if (skipLink && main) {
           const behaviour = reduceMotion?.matches ? 'auto' : 'smooth';
@@ -3432,7 +3477,6 @@
         });
       });
 
-      const main = document.getElementById('main') || document.querySelector('main');
       if (main) {
         const SWIPE_MIN_DISTANCE = 60;
         const SWIPE_MAX_OFF_AXIS = 80;
