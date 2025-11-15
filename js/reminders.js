@@ -3313,14 +3313,19 @@ export async function initReminders(sel = {}) {
     // Debug: log when save handler invoked to help trace click issues
     try { console.log('handleSaveAction invoked', { editingId, title: title?.value }); } catch (e) {}
 
+    const rawTitle = typeof title?.value === 'string' ? title.value : '';
+    const trimmedTitle = rawTitle.trim();
+    const dateValue = typeof date?.value === 'string' ? date.value : '';
+    const timeValue = typeof time?.value === 'string' ? time.value : '';
+
     if(editingId){
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }
-      const tNew = title.value.trim(); if(!tNew){ toast('Add a reminder title'); return; }
+      if(!trimmedTitle){ toast('Add a reminder title'); return; }
       let due=null;
-      if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
-      else { const p=parseQuickWhen(tNew); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-      it.title = tNew;
+      if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
+      else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+      it.title = trimmedTitle;
       const nextPriority = getPriorityInputValue();
       it.priority = nextPriority;
       setPriorityInputValue(nextPriority);
@@ -3343,13 +3348,15 @@ export async function initReminders(sel = {}) {
       dispatchCueEvent('cue:close', { reason: 'updated' });
       return;
     }
-    const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
+    if(!trimmedTitle){ toast('Add a reminder title'); return; }
     const noteText = details ? details.value.trim() : '';
     let due=null;
-    if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
-    else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:t, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText });
-    title.value=''; time.value=''; if(details) details.value='';
+    if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
+    else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+    addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText });
+    if(title) title.value='';
+    if(time) time.value='';
+    if(details) details.value='';
     dispatchCueEvent('cue:close', { reason: 'created' });
   }
 
