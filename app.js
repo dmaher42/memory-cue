@@ -14,6 +14,7 @@ import {
 import { createModalController } from './js/modules/modal-controller.js';
 import { initSupabaseAuth } from './js/supabase-auth.js';
 import { loadAllNotes, saveAllNotes, createNote } from './js/modules/notes-storage.js';
+import { initNotesSync } from './js/modules/notes-sync.js';
 
 initViewportHeight();
 
@@ -523,7 +524,9 @@ initialiseReminders().catch((error) => {
     console.error('Failed to initialise reminders', error);
   });
 
-initSupabaseAuth({
+const notesSyncController = initNotesSync();
+
+const supabaseAuthController = initSupabaseAuth({
   selectors: {
     signInButtons: ['#googleSignInBtn'],
     signOutButtons: ['#googleSignOutBtn'],
@@ -535,7 +538,26 @@ initSupabaseAuth({
     feedback: '#auth-feedback',
   },
   disableButtonBinding: true,
+  onSessionChange: (user) => {
+    notesSyncController?.handleSessionChange(user);
+  },
 });
+
+if (supabaseAuthController?.supabase) {
+  notesSyncController?.setSupabaseClient(supabaseAuthController.supabase);
+  try {
+    supabaseAuthController.supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+      })
+      .catch(() => {
+        /* noop */
+      });
+  } catch {
+    /* noop */
+  }
+}
 
 const cuesList = document.getElementById('cues-list');
 const pinnedNotesCard = document.getElementById('pinnedNotesCard');

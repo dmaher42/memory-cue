@@ -2,6 +2,7 @@ import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
 import { initSupabaseAuth } from './js/supabase-auth.js';
 import { loadAllNotes, saveAllNotes, createNote } from './js/modules/notes-storage.js';
+import { initNotesSync } from './js/modules/notes-sync.js';
 
 initViewportHeight();
 
@@ -502,7 +503,9 @@ if (document.readyState === 'loading') {
   initMobileNotes();
 }
 
-initSupabaseAuth({
+const notesSyncController = initNotesSync();
+
+const supabaseAuthController = initSupabaseAuth({
   selectors: {
     signInButtons: ['#googleSignInBtn'],
     signOutButtons: ['#googleSignOutBtn'],
@@ -516,7 +519,26 @@ initSupabaseAuth({
     feedback: '#auth-feedback',
   },
   disableButtonBinding: true,
+  onSessionChange: (user) => {
+    notesSyncController?.handleSessionChange(user);
+  },
 });
+
+if (supabaseAuthController?.supabase) {
+  notesSyncController?.setSupabaseClient(supabaseAuthController.supabase);
+  try {
+    supabaseAuthController.supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+      })
+      .catch(() => {
+        /* noop */
+      });
+  } catch {
+    /* noop */
+  }
+}
 
 (() => {
   const menuBtn = document.getElementById('overflowMenuBtn');

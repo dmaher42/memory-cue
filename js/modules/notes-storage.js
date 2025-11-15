@@ -3,6 +3,12 @@ const LEGACY_NOTE_KEYS = ['mobileNotes'];
 
 const hasLocalStorage = () => typeof localStorage !== 'undefined';
 
+let remoteSyncHandler = null;
+
+export const setRemoteSyncHandler = (handler) => {
+  remoteSyncHandler = typeof handler === 'function' ? handler : null;
+};
+
 const generateId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -171,7 +177,7 @@ export const loadAllNotes = () => {
   return [];
 };
 
-export const saveAllNotes = (notes) => {
+export const saveAllNotes = (notes, options = {}) => {
   if (!hasLocalStorage() || !Array.isArray(notes)) {
     return false;
   }
@@ -183,6 +189,18 @@ export const saveAllNotes = (notes) => {
 
   try {
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(serializable));
+    if (!options.skipRemoteSync && typeof remoteSyncHandler === 'function') {
+      try {
+        const maybePromise = remoteSyncHandler(serializable);
+        if (maybePromise && typeof maybePromise.then === 'function') {
+          maybePromise.catch((error) => {
+            console.error('[notes-storage] Remote sync failed.', error);
+          });
+        }
+      } catch (error) {
+        console.error('[notes-storage] Remote sync handler threw.', error);
+      }
+    }
     return true;
   } catch {
     return false;
