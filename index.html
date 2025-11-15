@@ -281,11 +281,11 @@
   </style>
   <script src="./js/runtime-env-shim.js" defer></script>
 </head>
-<body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen">
+<body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen desktop-shell">
   <a class="skip-link" href="#mainContent">Skip to main content</a>
-  <nav aria-label="Primary" class="relative fixed top-0 z-50 w-full navbar-glass">
-    <div class="navbar mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="navbar-start items-center gap-2">
+  <div class="dashboard-root">
+    <header class="desktop-header" aria-label="Primary">
+      <div class="desktop-header-brand">
         <details class="nav-mobile dropdown dropdown-bottom lg:hidden">
           <summary
             class="nav-mobile-summary btn btn-sm btn-ghost gap-2"
@@ -368,16 +368,17 @@
             </li>
           </ul>
         </details>
-        <a href="#dashboard" class="btn btn-ghost gap-2 text-left text-lg font-semibold normal-case text-base-content">
-          <span class="inline-flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary">
+        <a href="#dashboard" class="desktop-header-brand-link btn btn-ghost gap-2 text-left normal-case text-base-content">
+          <span class="desktop-header-logo inline-flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary">
             MC
           </span>
           <span class="flex flex-col leading-tight">
-            <span class="text-base font-semibold text-base-content">Memory Cue</span>
+            <span class="desktop-header-title text-base font-semibold text-base-content">Memory Cue</span>
+            <span class="desktop-header-subtitle">Teacher workspace</span>
           </span>
         </a>
       </div>
-      <div class="navbar-center nav-desktop hidden lg:flex">
+      <nav class="desktop-header-nav nav-desktop hidden lg:flex" aria-label="Primary navigation">
         <ul class="menu menu-horizontal gap-1 nav-pill-glass text-sm">
           <li>
             <a href="#dashboard" data-nav="dashboard" id="nav-dashboard" class="btn btn-sm btn-ghost">Dashboard</a>
@@ -424,86 +425,84 @@
             </details>
           </li>
         </ul>
-      </div>
-      <div class="navbar-end flex-1 justify-end">
-        <div class="flex w-full flex-col items-end gap-1 text-right">
-          <p id="sync-status" class="sync-status hidden text-xs text-base-content" data-compact="true"></p>
-          <div
-            id="user-badge"
-            class="hidden items-center gap-3 rounded-full border border-base-200 bg-base-100/80 px-3 py-1.5 text-sm shadow-sm backdrop-blur"
-          >
-            <span
-              id="user-badge-initial"
-              class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-content text-base font-semibold"
-              aria-hidden="true"
-            >T</span>
-            <div class="text-left leading-tight">
-              <p id="user-badge-email" class="text-sm font-semibold text-base-content"></p>
-              <p class="text-xs text-base-content/60">Reminders syncing</p>
-            </div>
+      </nav>
+      <div class="desktop-header-actions">
+        <p id="sync-status" class="sync-status hidden text-xs text-base-content" data-compact="true"></p>
+        <div
+          id="user-badge"
+          class="hidden items-center gap-3 rounded-full border border-base-200 bg-base-100/80 px-3 py-1.5 text-sm shadow-sm backdrop-blur"
+        >
+          <span
+            id="user-badge-initial"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-content text-base font-semibold"
+            aria-hidden="true"
+          >T</span>
+          <div class="text-left leading-tight">
+            <p id="user-badge-email" class="text-sm font-semibold text-base-content"></p>
+            <p class="text-xs text-base-content/60">Reminders syncing</p>
           </div>
-          <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
-            <button
-              id="theme-toggle"
-              type="button"
-              class="btn btn-sm btn-ghost text-base-content"
-              data-icon-dark="🌙"
-              data-icon-light="☀️"
-            ></button>
-            <div class="dropdown dropdown-end">
-              <button
-                type="button"
-                class="btn btn-sm btn-ghost gap-2 text-base-content"
-                aria-haspopup="menu"
-                aria-expanded="false"
-              >
-                <span>Theme</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-4"
-                  aria-hidden="true"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <ul
-                id="theme-menu"
-                class="menu dropdown-content bg-base-100 text-base-content rounded-box z-[1] mt-3 w-48 p-2 shadow"
-                role="menu"
-                tabindex="0"
-              >
-                <li><a href="#" data-theme-name="light" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
-                <li><a href="#" data-theme-name="dark" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
-                <li><a href="#" data-theme-name="dracula" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
-                <li><a href="#" data-theme-name="cupcake" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
-                <li><a href="#" data-theme-name="caramellatte" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
-                <li><a href="#" data-theme-name="synthwave" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
-              </ul>
-            </div>
-            <div
-              id="googleUserName"
-              class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
-            ></div>
-            <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
-            <button
-              id="googleSignOutBtn"
-              type="button"
-              class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
-            >
-              Sign out
-            </button>
-          </div>
-          <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
+        <div class="desktop-header-action-bar flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+          <button
+            id="theme-toggle"
+            type="button"
+            class="btn btn-sm btn-ghost text-base-content"
+            data-icon-dark="🌙"
+            data-icon-light="☀️"
+          ></button>
+          <div class="dropdown dropdown-end">
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost gap-2 text-base-content"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              <span>Theme</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="size-4"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <ul
+              id="theme-menu"
+              class="menu dropdown-content bg-base-100 text-base-content rounded-box z-[1] mt-3 w-48 p-2 shadow"
+              role="menu"
+              tabindex="0"
+            >
+              <li><a href="#" data-theme-name="light" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
+              <li><a href="#" data-theme-name="dark" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
+              <li><a href="#" data-theme-name="dracula" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
+              <li><a href="#" data-theme-name="cupcake" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
+              <li><a href="#" data-theme-name="caramellatte" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
+              <li><a href="#" data-theme-name="synthwave" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
+            </ul>
+          </div>
+          <div
+            id="googleUserName"
+            class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
+          ></div>
+          <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
+          <button
+            id="googleSignOutBtn"
+            type="button"
+            class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
+          >
+            Sign out
+          </button>
+        </div>
+        <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
       </div>
     </div>
-  </nav>
-    <main id="mainContent" class="pt-24 min-h-screen" tabindex="-1">
-    <div class="mx-auto max-w-7xl px-4 py-6 space-y-8">
+  </header>
+    <main id="mainContent" class="desktop-main" tabindex="-1">
+      <div class="desktop-main-inner space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div
           class="dashboard-card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70"
@@ -716,37 +715,40 @@
       </section>
 
       <section data-route="reminders" class="space-y-6" style="display: none;">
-        <header class="space-y-2">
-          <h1 class="text-2xl font-semibold text-base-content">Reminders</h1>
-          <p class="text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
-        </header>
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
-          <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
+        <div class="desktop-panel desktop-panel--reminders">
+          <header class="desktop-panel-header">
+            <div class="flex flex-col gap-1">
+              <h1 class="desktop-panel-title">Reminders</h1>
+              <p class="desktop-panel-subtitle">Keep track of tasks, family updates, and prep work in one organised list.</p>
+            </div>
+            <div class="desktop-panel-actions">
+              <button
+                type="button"
+                class="btn btn-primary"
+                data-open-reminder-modal
+                aria-haspopup="dialog"
+                aria-controls="add-reminder-modal"
+              >
+                Add reminder
+              </button>
+            </div>
+          </header>
+          <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
             <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">All</span>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Today</button>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">This week</button>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Later</button>
           </div>
-          <button
-            type="button"
-            class="btn btn-primary"
-            data-open-reminder-modal
-            aria-haspopup="dialog"
-            aria-controls="add-reminder-modal"
-          >
-            Add reminder
-          </button>
-        </div>
-        <ul id="reminders-list" class="grid list-none gap-4 sm:grid-cols-2 xl:grid-cols-2">
+          <ul id="reminders-list" class="desktop-reminders-list list-none">
           <li
-            class="task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Submit unit overview"
           >
             <div class="flex min-w-0 flex-col gap-2">
-              <p class="desktop-reminder-title text-sm font-semibold leading-snug text-base-content">Submit unit overview</p>
-              <div class="desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+              <p class="desktop-reminder-title reminder-title text-sm font-semibold leading-snug text-base-content">Submit unit overview</p>
+              <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
                 <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
                   <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Due Friday</span>
@@ -767,14 +769,14 @@
             </div>
           </li>
           <li
-            class="task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Email newsletter blurb"
           >
             <div class="flex min-w-0 flex-col gap-2">
-              <p class="desktop-reminder-title text-sm font-semibold leading-snug text-base-content">Email newsletter blurb</p>
-              <div class="desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+              <p class="desktop-reminder-title reminder-title text-sm font-semibold leading-snug text-base-content">Email newsletter blurb</p>
+              <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
                 <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
                   <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Due next week</span>
@@ -799,14 +801,14 @@
             </div>
           </li>
           <li
-            class="task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Call guardians"
           >
             <div class="flex min-w-0 flex-col gap-2">
-              <p class="desktop-reminder-title text-sm font-semibold leading-snug text-base-content">Call guardians</p>
-              <div class="desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
+              <p class="desktop-reminder-title reminder-title text-sm font-semibold leading-snug text-base-content">Call guardians</p>
+              <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
                 <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
                   <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Due tomorrow</span>
@@ -823,26 +825,28 @@
             </div>
           </li>
         </ul>
+        </div>
       </section>
 
       <section data-route="planner" class="space-y-6" style="display: none;">
-        <header class="space-y-2">
-          <h1 class="text-2xl font-semibold text-base-content">Weekly planner</h1>
-          <p class="text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
-        </header>
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
-          <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
+        <div class="desktop-panel desktop-panel--planner">
+          <header class="desktop-panel-header">
+            <div class="flex flex-col gap-1">
+              <h1 class="desktop-panel-title">Weekly planner</h1>
+              <p class="desktop-panel-subtitle">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
+            </div>
+            <div class="desktop-panel-actions flex flex-wrap items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Duplicate plan</button>
+              <button type="button" class="btn btn-sm btn-primary" disabled title="Coming soon">New lesson</button>
+            </div>
+          </header>
+          <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
             <span class="btn btn-xs btn-secondary cursor-default">Week 7</span>
             <button type="button" class="btn btn-xs btn-secondary">Week 8</button>
             <button type="button" class="btn btn-xs btn-secondary">Week 9</button>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Duplicate plan</button>
-            <button type="button" class="btn btn-sm btn-primary" disabled title="Coming soon">New lesson</button>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
             <div class="card-body gap-4">
               <div>
                 <h2 class="text-lg font-semibold text-base-content">Monday</h2>
@@ -918,16 +922,21 @@
               <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Add detail</button>
             </div>
           </article>
+          </div>
         </div>
       </section>
 
       <section data-route="notes" class="space-y-6" style="display: none;">
-        <header class="space-y-2">
-          <h1 class="text-2xl font-semibold text-base-content">Notes</h1>
-          <p class="text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
-        </header>
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
-          <article class="card notes-editor-card border border-base-300 bg-base-200/70 shadow-sm">
+        <div class="desktop-panel desktop-panel--notes-intro">
+          <header class="desktop-panel-header">
+            <div class="flex flex-col gap-1">
+              <h1 class="desktop-panel-title">Notes</h1>
+              <p class="desktop-panel-subtitle">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
+            </div>
+          </header>
+        </div>
+        <div class="desktop-notes-grid grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
+          <article class="desktop-panel card notes-editor-card border border-base-300 bg-base-200/70 shadow-sm">
             <div class="card-body gap-4">
               <div class="flex flex-col gap-3">
                 <div class="flex flex-col gap-2 mb-3">
@@ -955,7 +964,7 @@
               </div>
             </div>
           </article>
-          <aside class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <aside class="desktop-panel card border border-base-300 bg-base-200/70 shadow-sm">
             <div class="card-body gap-4">
               <div>
                 <h3 class="text-base font-semibold text-base-content">Saved notes</h3>
@@ -1127,6 +1136,7 @@
       </section>
     </div>
   </main>
+  </div>
   <!-- BEGIN GPT CHANGE: live region -->
   <div id="live-status" class="sr-only" aria-live="polite" role="status"></div>
   <!-- END GPT CHANGE -->
