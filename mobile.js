@@ -353,6 +353,39 @@ const initMobileNotes = () => {
     });
   };
 
+  const handleDeleteNote = (noteId) => {
+    if (!noteId) {
+      return;
+    }
+
+    const existingNotes = loadAllNotes();
+    if (!Array.isArray(existingNotes)) {
+      return;
+    }
+
+    const filteredNotes = existingNotes.filter((note) => note.id !== noteId);
+    if (filteredNotes.length === existingNotes.length) {
+      return;
+    }
+
+    saveAllNotes(filteredNotes);
+
+    if (currentNoteId === noteId) {
+      currentNoteId = null;
+    }
+
+    const notes = renderNotesList();
+    if (currentNoteId) {
+      const activeNote = notes.find((note) => note.id === currentNoteId) || null;
+      setEditorValues(activeNote);
+    } else if (notes.length) {
+      setEditorValues(notes[0]);
+    } else {
+      setEditorValues(null);
+    }
+    updateListSelection();
+  };
+
   const renderNotesList = (notes = getSortedNotes()) => {
     if (!listElement) {
       return notes;
@@ -370,17 +403,29 @@ const initMobileNotes = () => {
 
     notes.forEach((note) => {
       const listItem = document.createElement('li');
+      listItem.className = 'flex items-center gap-2';
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.noteId = note.id;
       button.className =
-        'w-full rounded-lg border border-base-200 bg-base-100 px-3 py-2 text-left transition hover:bg-base-200 focus:outline-none focus-visible:ring focus-visible:ring-primary/60';
+        'w-full flex-1 rounded-lg border border-base-200 bg-base-100 px-3 py-2 text-left transition hover:bg-base-200 focus:outline-none focus-visible:ring focus-visible:ring-primary/60';
       button.textContent = note.title || 'Untitled note';
       button.addEventListener('click', () => {
         setEditorValues(note);
         updateListSelection();
       });
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className =
+        'btn btn-ghost btn-xs text-error focus-visible:ring focus-visible:ring-error/60';
+      deleteButton.setAttribute('aria-label', `Delete note "${note.title || 'Untitled note'}"`);
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        handleDeleteNote(note.id);
+      });
       listItem.appendChild(button);
+      listItem.appendChild(deleteButton);
       listElement.appendChild(listItem);
     });
 
