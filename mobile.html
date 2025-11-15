@@ -2740,100 +2740,49 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden">
-      <section class="card bg-base-100 border">
-        <div class="card-body gap-3 compact">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="card-title text-base">Scratch Notes</h2>
-            <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
-          </div>
-          <div
-            id="notesToolbar"
-            class="flex flex-wrap gap-1.5 p-2 bg-base-200/30 rounded-lg"
-            role="toolbar"
-            aria-label="Note formatting options"
-            aria-controls="notes"
-          >
-            <div class="flex gap-1 border-r border-base-300 pr-2">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="bold" title="Bold (Ctrl+B)" aria-label="Make text bold">
-                <strong>B</strong>
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="italic" title="Italic (Ctrl+I)" aria-label="Make text italic">
-                <em>I</em>
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="strikethrough" title="Strikethrough" aria-label="Strike through text">
-                <s>S</s>
-              </button>
+      <div class="flex flex-col gap-4">
+        <section class="card bg-base-100 border">
+          <div class="card-body gap-4 compact">
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="card-title text-base">Scratch Notes</h2>
+              <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
             </div>
-            <div class="flex gap-1 border-r border-base-300 pr-2">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="bullets" title="Bullet list">•</button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="numbers" title="Numbered list">1.</button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="checklist" title="Checklist">☐</button>
-            </div>
-            <div class="flex gap-1 border-r border-base-300 pr-2">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="heading" title="Heading">
-                H
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="divider" title="Add divider">
-                ─
-              </button>
-            </div>
-            <div class="flex gap-1">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="link" title="Add link">
-                🔗
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="clear" title="Clear formatting">
-                ✕
-              </button>
+            <div class="flex flex-col gap-4">
+              <label class="flex flex-col gap-2" for="noteTitleMobile">
+                <span class="text-sm font-medium">Title</span>
+                <input
+                  id="noteTitleMobile"
+                  type="text"
+                  class="input input-bordered w-full"
+                  placeholder="e.g. Kids basketball schedule – this weekend"
+                />
+              </label>
+              <div class="flex items-center gap-2">
+                <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">Save</button>
+                <button id="noteNewMobile" class="btn btn-ghost btn-sm flex-1" type="button">New note</button>
+              </div>
+              <label class="flex flex-col gap-2" for="noteBodyMobile">
+                <span class="text-sm font-medium">Body</span>
+                <textarea
+                  id="noteBodyMobile"
+                  class="textarea textarea-bordered w-full"
+                  rows="8"
+                  placeholder="Write your note here…"
+                ></textarea>
+              </label>
             </div>
           </div>
-          <div
-            id="notes"
-            class="notes-editor enhanced"
-            contenteditable="true"
-            role="textbox"
-            aria-multiline="true"
-            spellcheck="true"
-            data-placeholder="Start typing your notes... (auto-saves)"
-            data-auto-save="true"
-          ></div>
-          <div class="flex items-center justify-between text-xs text-base-content/60">
-            <div id="notesStatus" class="flex items-center gap-1">
-              <span class="sync-dot offline" id="notesSyncStatus"></span>
-              <span id="notesStatusText">Ready</span>
+        </section>
+        <section class="card bg-base-100 border">
+          <div class="card-body gap-3">
+            <div>
+              <h3 class="text-base font-semibold text-base-content">Saved notes</h3>
+              <p class="text-sm text-base-content/70">Tap a note to load it in the editor.</p>
             </div>
-            <div id="notesWordCount">0 words</div>
+            <ul id="notesListMobile" class="space-y-1 max-h-64 overflow-y-auto text-sm"></ul>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">
-              💾 Save
-            </button>
-            <button id="searchNotes" class="btn btn-outline btn-sm flex-1" type="button">
-              🔍 Search
-            </button>
-            <button id="exportNotes" class="btn btn-outline btn-sm flex-1" type="button">
-              📤 Export
-            </button>
-            <button id="voiceNotes" class="btn btn-outline btn-sm flex-1" type="button">
-              🎤 Voice
-            </button>
-          </div>
-          <div id="searchPanel" class="hidden bg-base-200/50 p-3 rounded-lg border">
-            <div class="flex gap-2 mb-2">
-              <input
-                id="searchInput"
-                type="text"
-                placeholder="Search in notes..."
-                class="input input-sm flex-1"
-              />
-              <button id="searchPrev" class="btn btn-sm btn-ghost" title="Previous">↑</button>
-              <button id="searchNext" class="btn btn-sm btn-ghost" title="Next">↓</button>
-              <button id="closeSearch" class="btn btn-sm btn-ghost" title="Close">✕</button>
-            </div>
-            <div id="searchResults" class="text-xs text-base-content/70"></div>
-          </div>
-        </div>
-      </section>
-
+        </section>
+      </div>
     </section>
     <!-- END GPT CHANGE -->
     </main>
