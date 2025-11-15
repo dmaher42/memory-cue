@@ -2409,7 +2409,7 @@ export async function initReminders(sel = {}) {
     if(categoryInput) categoryInput.value = DEFAULT_CATEGORY;
     applyStoredDefaultsToInputs();
     editingId=null;
-    if(saveBtn) saveBtn.textContent='Save Cue';
+    if(saveBtn) saveBtn.textContent='Save';
     cancelEditBtn?.classList.add('hidden');
   }
   function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } setPriorityInputValue(it?.priority || 'Medium'); if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
