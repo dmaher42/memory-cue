@@ -9,7 +9,7 @@ initViewportHeight();
   }
 
   const THEME_STORAGE_KEY = 'theme';
-  const DEFAULT_THEME = 'light';
+  const DEFAULT_THEME = 'professional';
 
   function safeGetItem(key) {
     try {
@@ -52,12 +52,7 @@ initViewportHeight();
     if (stored) {
       return stored;
     }
-    const prefersDark = typeof window !== 'undefined'
-      && typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = prefersDark ? 'dark' : DEFAULT_THEME;
-    safeSetItem(THEME_STORAGE_KEY, theme);
-    return theme;
+    return DEFAULT_THEME;
   }
 
   function updateThemeButton(button, theme) {
