@@ -59,7 +59,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-6100f878.css" />
+  <link rel="stylesheet" href="./assets/styles-b8b688bc.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -392,38 +392,6 @@
           <li>
             <a href="#notes" data-nav="notes" id="nav-notes" class="btn btn-sm btn-ghost">Notes</a>
           </li>
-          <li class="nav-more-item">
-            <details class="nav-more-details">
-              <summary
-                class="btn btn-sm btn-ghost nav-more-summary items-center gap-1"
-                data-nav-group="more"
-                aria-expanded="false"
-                aria-haspopup="menu"
-                aria-controls="nav-more-menu"
-              >
-                <span>More</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  class="nav-more-chevron size-4"
-                  aria-hidden="true"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                </svg>
-              </summary>
-              <ul id="nav-more-menu" class="nav-more-menu menu menu-sm gap-1">
-                <li>
-                  <a href="#resources" data-nav="resources" id="nav-resources" class="btn btn-ghost btn-sm">Resources</a>
-                </li>
-                <li>
-                  <a href="#templates" data-nav="templates" id="nav-templates" class="btn btn-ghost btn-sm">Templates</a>
-                </li>
-              </ul>
-            </details>
-          </li>
         </ul>
       </nav>
       <div class="desktop-header-actions">
@@ -442,7 +410,7 @@
             <p class="text-xs text-base-content/60">Reminders syncing</p>
           </div>
         </div>
-        <div class="desktop-header-action-bar flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+        <div class="desktop-header-action-bar flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
           <button
             id="theme-toggle"
             type="button"
@@ -450,52 +418,20 @@
             data-icon-dark="🌙"
             data-icon-light="☀️"
           ></button>
-          <div class="dropdown dropdown-end">
+          <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
+            <div
+              id="googleUserName"
+              class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
+            ></div>
+            <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
             <button
+              id="googleSignOutBtn"
               type="button"
-              class="btn btn-sm btn-ghost gap-2 text-base-content"
-              aria-haspopup="menu"
-              aria-expanded="false"
+              class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
             >
-              <span>Theme</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="size-4"
-                aria-hidden="true"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-              </svg>
+              Sign out
             </button>
-            <ul
-              id="theme-menu"
-              class="menu dropdown-content bg-base-100 text-base-content rounded-box z-[1] mt-3 w-48 p-2 shadow"
-              role="menu"
-              tabindex="0"
-            >
-              <li><a href="#" data-theme-name="light" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
-              <li><a href="#" data-theme-name="dark" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
-              <li><a href="#" data-theme-name="dracula" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
-              <li><a href="#" data-theme-name="cupcake" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
-              <li><a href="#" data-theme-name="caramellatte" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
-              <li><a href="#" data-theme-name="synthwave" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
-            </ul>
           </div>
-          <div
-            id="googleUserName"
-            class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
-          ></div>
-          <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
-          <button
-            id="googleSignOutBtn"
-            type="button"
-            class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
-          >
-            Sign out
-          </button>
         </div>
         <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
       </div>
