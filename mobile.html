@@ -45,6 +45,49 @@
       --reminder-card-font-size: 0.85rem;
     }
 
+    /* Mobile reminder cards coloured by priority using existing tokens */
+    .task-item,
+    .cue-task-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-left-width: 3px;
+      border-left-color: var(--card-border);
+      border-radius: 0.75rem;
+    }
+
+    .task-item[data-priority="High"],
+    .task-item.priority-high,
+    .cue-task-card[data-priority="High"],
+    .cue-task-card.priority-high {
+      background-color: var(--priority-high-bg);
+      border-color: var(--priority-high-border);
+      border-left-color: var(--priority-high-border);
+      border-style: solid;
+      border-width: 1px;
+    }
+
+    .task-item[data-priority="Medium"],
+    .task-item.priority-medium,
+    .cue-task-card[data-priority="Medium"],
+    .cue-task-card.priority-medium {
+      background-color: var(--priority-medium-bg);
+      border-color: var(--priority-medium-border);
+      border-left-color: var(--priority-medium-border);
+      border-style: solid;
+      border-width: 1px;
+    }
+
+    .task-item[data-priority="Low"],
+    .task-item.priority-low,
+    .cue-task-card[data-priority="Low"],
+    .cue-task-card.priority-low {
+      background-color: var(--priority-low-bg);
+      border-color: var(--priority-low-border);
+      border-left-color: var(--priority-low-border);
+      border-style: solid;
+      border-width: 1px;
+    }
+
   .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -203,7 +246,6 @@
       box-shadow: 0 4px 12px var(--shadow-color);
       transform: translateY(-2px);
       border-color: var(--accent-color);
-      background: var(--hover-bg);
     }
 
     /* --- Priority Tints & Borders --- */
@@ -227,6 +269,10 @@
     }
 
     /* Low priority: Digital Sage accent */
+    .reminder-card.priority-low {
+      background-color: var(--priority-low-bg);
+      border-left-color: var(--priority-low-border);
+    }
 
     /* If reminders are wrapped in DaisyUI cards, ensure they inherit the new look */
     #reminderList > * .card,
@@ -716,27 +762,27 @@
       align-items: stretch;
       padding: 0.75rem 0.875rem;
       margin-bottom: 0.5rem;
-      background: color-mix(in srgb, var(--card-bg) 98%, transparent);
-      border: 1px solid color-mix(in srgb, var(--border-color) 28%, transparent);
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-left-width: 3px;
-      border-left-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
+      border-left-color: var(--card-border);
       border-radius: 0.75rem;
       box-shadow: 0 1px 2px var(--shadow-color);
       transition: var(--transition);
     }
     .task-item:hover {
-      border-left-color: color-mix(in srgb, var(--primary-color) 85%, transparent);
+      border-left-color: color-mix(in srgb, var(--card-border) 45%, transparent);
       box-shadow: 0 2px 6px var(--shadow-color);
       transform: translateY(-1px);
     }
     .dark .task-item {
-      background: color-mix(in srgb, var(--text-primary) 85%, transparent);
-      border-color: color-mix(in srgb, var(--border-color) 25%, transparent);
-      border-left-color: color-mix(in srgb, var(--primary-color) 70%, var(--card-bg) 30%);
+      background-color: color-mix(in srgb, var(--text-primary) 24%, rgba(15, 23, 42, 0.92) 76%);
+      border-color: color-mix(in srgb, var(--card-border) 55%, transparent);
+      border-left-color: color-mix(in srgb, var(--card-border) 70%, transparent);
       box-shadow: var(--shadow-sm);
     }
     .dark .task-item:hover {
-      border-left-color: color-mix(in srgb, var(--primary-color) 100%, var(--card-bg) 20%);
+      border-left-color: color-mix(in srgb, var(--card-border) 85%, transparent);
       box-shadow: var(--shadow-md);
     }
     .task-item[data-notification-active="true"] {
@@ -760,53 +806,41 @@
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 50%, transparent),
         0 12px 26px color-mix(in srgb, var(--success-color) 45%, transparent);
     }
-    .task-item[data-priority="High"] {
-      border-left-color: color-mix(in srgb, var(--secondary-color) 70%, transparent);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--secondary-color) 40%, var(--card-bg) 60%),
-        color-mix(in srgb, var(--card-bg) 95%, transparent)
-      );
+    .task-item[data-priority="High"],
+    .task-item.priority-high {
+      background-color: var(--priority-high-bg);
+      border-color: var(--priority-high-border);
+      border-left-color: var(--priority-high-border);
     }
-    .dark .task-item[data-priority="High"] {
-      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--secondary-color) 30%, var(--text-primary) 70%),
-        color-mix(in srgb, var(--text-primary) 85%, transparent)
-      );
+    .dark .task-item[data-priority="High"],
+    .dark .task-item.priority-high {
+      background-color: color-mix(in srgb, var(--priority-high-border) 28%, rgba(15, 23, 42, 0.92) 72%);
+      border-color: color-mix(in srgb, var(--priority-high-border) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--priority-high-border) 85%, rgba(15, 23, 42, 0.92) 15%);
     }
-    .task-item[data-priority="Medium"] {
-      border-left-color: color-mix(in srgb, var(--warning-color) 70%, transparent);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--warning-color) 35%, var(--card-bg) 65%),
-        color-mix(in srgb, var(--card-bg) 95%, transparent)
-      );
+    .task-item[data-priority="Medium"],
+    .task-item.priority-medium {
+      background-color: var(--priority-medium-bg);
+      border-color: var(--priority-medium-border);
+      border-left-color: var(--priority-medium-border);
     }
-    .dark .task-item[data-priority="Medium"] {
-      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--warning-color) 25%, var(--text-primary) 75%),
-        color-mix(in srgb, var(--text-primary) 85%, transparent)
-      );
+    .dark .task-item[data-priority="Medium"],
+    .dark .task-item.priority-medium {
+      background-color: color-mix(in srgb, var(--priority-medium-border) 26%, rgba(15, 23, 42, 0.92) 74%);
+      border-color: color-mix(in srgb, var(--priority-medium-border) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--priority-medium-border) 85%, rgba(15, 23, 42, 0.92) 15%);
     }
-    .task-item[data-priority="Low"] {
-      border-left-color: color-mix(in srgb, var(--success-color) 70%, transparent);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--success-color) 35%, var(--card-bg) 65%),
-        color-mix(in srgb, var(--card-bg) 95%, transparent)
-      );
+    .task-item[data-priority="Low"],
+    .task-item.priority-low {
+      background-color: var(--priority-low-bg);
+      border-color: var(--priority-low-border);
+      border-left-color: var(--priority-low-border);
     }
-    .dark .task-item[data-priority="Low"] {
-      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--success-color) 25%, var(--text-primary) 75%),
-        color-mix(in srgb, var(--text-primary) 85%, transparent)
-      );
+    .dark .task-item[data-priority="Low"],
+    .dark .task-item.priority-low {
+      background-color: color-mix(in srgb, var(--priority-low-border) 26%, rgba(15, 23, 42, 0.92) 74%);
+      border-color: color-mix(in srgb, var(--priority-low-border) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--priority-low-border) 85%, rgba(15, 23, 42, 0.92) 15%);
     }
     .task-content {
       min-width: 0;
@@ -1391,7 +1425,6 @@
       box-shadow: 0 4px 12px var(--shadow-color);
       transform: translateY(-2px);
       border-color: var(--accent-color);
-      background: var(--hover-bg);
     }
 
     .dark .cue-item,
@@ -1403,7 +1436,7 @@
 
     .dark .cue-item:hover,
     .dark #reminderList [data-reminder]:hover {
-      background: color-mix(in srgb, rgba(30, 41, 59, 0.95) 75%, var(--accent-color) 25%);
+      border-color: color-mix(in srgb, var(--accent-color) 65%, transparent);
     }
 
     .cue-item[data-priority="High"],
@@ -2960,7 +2993,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-T55FPE22.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-DYIDP7AY.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
