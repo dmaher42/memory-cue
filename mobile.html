@@ -2804,6 +2804,9 @@
             <div id="notesWordCount">0 words</div>
           </div>
           <div class="flex flex-wrap gap-2">
+            <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">
+              💾 Save
+            </button>
             <button id="searchNotes" class="btn btn-outline btn-sm flex-1" type="button">
               🔍 Search
             </button>
@@ -4851,6 +4854,36 @@
           alert('Voice functionality not available');
         }
       });
+
+      const manualSaveButton = document.getElementById('noteSaveMobile');
+      if (manualSaveButton) {
+        manualSaveButton.addEventListener('click', () => {
+          if (!notesEditor) return;
+
+          const content = notesEditor.innerHTML;
+          clearTimeout(autoSaveTimeout);
+          setStatus('saving', remoteSyncActive ? 'Syncing...' : 'Saving...');
+
+          try {
+            if (content !== lastStoredLocalContent) {
+              localStorage.setItem('memory-cue-notes', content);
+              lastStoredLocalContent = content;
+            }
+          } catch (error) {
+            console.error('Failed to save notes:', error);
+            setStatus('error', 'Save failed');
+            setTimeout(autoSave, 3000);
+            return;
+          }
+
+          if (remoteSyncActive && !isApplyingRemoteUpdate) {
+            scheduleRemoteSave(content);
+          } else {
+            setStatus('saved', 'Saved');
+            setTimeout(() => setStatus('ready', 'Ready'), 1500);
+          }
+        });
+      }
 
       // Event listeners
       notesEditor.addEventListener('input', () => {
