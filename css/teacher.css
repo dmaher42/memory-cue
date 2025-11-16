@@ -768,10 +768,11 @@ input::placeholder, textarea::placeholder {
   outline: none;
   line-height: 1.6;
   color: var(--text-primary);
+  background: var(--bg-secondary);
 }
 
 .notes-content:focus {
-  background: var(--bg-primary);
+  background: var(--bg-tertiary);
 }
 
 /* Resource List */
