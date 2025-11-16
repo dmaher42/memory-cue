@@ -197,13 +197,19 @@ const normaliseLesson = (lesson, fallback = {}) => {
     : typeof defaults.id === 'string' && defaults.id.trim()
       ? defaults.id
       : generateId();
+  const rawPosition = Number.isFinite(lesson?.position)
+    ? lesson.position
+    : Number.isFinite(defaults.position)
+      ? defaults.position
+      : Number.NaN;
   return {
     id,
     dayIndex,
     dayLabel: DAY_NAMES[dayIndex] || 'Lesson',
     title: titleSource,
     summary,
-    details
+    details,
+    position: Number.isFinite(rawPosition) ? rawPosition : null
   };
 };
 
@@ -212,14 +218,65 @@ const sortLessons = (lessons) => {
     if (a.dayIndex !== b.dayIndex) {
       return a.dayIndex - b.dayIndex;
     }
+    const hasPositionA = Number.isFinite(a.position);
+    const hasPositionB = Number.isFinite(b.position);
+    if (hasPositionA && hasPositionB && a.position !== b.position) {
+      return a.position - b.position;
+    }
+    if (hasPositionA && !hasPositionB) {
+      return -1;
+    }
+    if (!hasPositionA && hasPositionB) {
+      return 1;
+    }
     return a.title.localeCompare(b.title);
   });
+};
+
+const ensureLessonPositions = (lessons) => {
+  const dayCounters = new Map();
+  lessons.forEach((lesson) => {
+    const dayKey = String(lesson.dayIndex);
+    const counter = dayCounters.get(dayKey) ?? 0;
+    if (Number.isFinite(lesson.position)) {
+      dayCounters.set(dayKey, Math.max(counter, lesson.position + 1));
+    } else {
+      lesson.position = counter;
+      dayCounters.set(dayKey, counter + 1);
+    }
+  });
+  return lessons;
+};
+
+const getNextPositionForDay = (lessons, dayIndex, excludedLessonId) => {
+  const dayLessons = lessons.filter((lesson) => {
+    if (lesson.dayIndex !== dayIndex) {
+      return false;
+    }
+    if (excludedLessonId && lesson.id === excludedLessonId) {
+      return false;
+    }
+    return true;
+  });
+  if (!dayLessons.length) {
+    return 0;
+  }
+  return (
+    dayLessons.reduce((max, lesson) => {
+      if (Number.isFinite(lesson.position)) {
+        return Math.max(max, lesson.position);
+      }
+      return max;
+    }, -1) + 1
+  );
 };
 
 const normalisePlan = (plan, fallbackWeekId) => {
   const targetWeekId = typeof plan?.weekId === 'string' && plan.weekId ? plan.weekId : fallbackWeekId;
   const weekStartDate = parseWeekId(targetWeekId);
-  const lessons = Array.isArray(plan?.lessons) ? plan.lessons.map((lesson) => normaliseLesson(lesson)).filter(Boolean) : [];
+  const lessons = Array.isArray(plan?.lessons)
+    ? ensureLessonPositions(plan.lessons.map((lesson) => normaliseLesson(lesson)).filter(Boolean))
+    : [];
   const templateId = typeof plan?.templateId === 'string' ? plan.templateId.trim() : '';
   return {
     weekId: targetWeekId,
@@ -568,6 +625,7 @@ export const addLessonToWeek = async (weekId, lessonInput) => {
   }
   const plan = await loadWeekPlan(weekId);
   const nextLesson = normaliseLesson(lessonInput);
+  nextLesson.position = getNextPositionForDay(plan?.lessons || [], nextLesson.dayIndex);
   const nextPlan = {
     ...plan,
     lessons: sortLessons([...(plan?.lessons || []), nextLesson]),
@@ -588,7 +646,12 @@ export const updateLessonInWeek = async (weekId, lessonId, updates = {}) => {
   if (index === -1) {
     return plan;
   }
-  const updatedLesson = normaliseLesson({ ...lessons[index], ...updates, id: lessonId }, lessons[index]);
+  const currentLesson = lessons[index];
+  const updatedLesson = normaliseLesson({ ...currentLesson, ...updates, id: lessonId }, currentLesson);
+  if (updatedLesson.dayIndex !== currentLesson.dayIndex) {
+    const remainingLessons = lessons.filter((_, idx) => idx !== index);
+    updatedLesson.position = getNextPositionForDay(remainingLessons, updatedLesson.dayIndex);
+  }
   lessons[index] = updatedLesson;
   const nextPlan = {
     ...plan,
@@ -609,6 +672,57 @@ export const deleteLessonFromWeek = async (weekId, lessonId) => {
   const nextPlan = {
     ...plan,
     lessons: sortLessons(remaining),
+    updatedAt: new Date().toISOString()
+  };
+  const persisted = await persistPlan(nextPlan);
+  dispatchPlannerUpdated(persisted);
+  return persisted;
+};
+
+export const movePlannerLesson = async (weekId, lessonId, direction) => {
+  if (!weekId || !lessonId || !direction) {
+    return null;
+  }
+  const offset = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
+  if (!offset) {
+    return loadWeekPlan(weekId);
+  }
+  const plan = await loadWeekPlan(weekId);
+  const lessons = [...(plan?.lessons || [])];
+  const lessonIndex = lessons.findIndex((lesson) => lesson.id === lessonId);
+  if (lessonIndex === -1) {
+    return plan;
+  }
+  const currentLesson = lessons[lessonIndex];
+  const dayLessons = sortLessons(lessons).filter((lesson) => lesson.dayIndex === currentLesson.dayIndex);
+  const currentDayIndex = dayLessons.findIndex((lesson) => lesson.id === lessonId);
+  if (currentDayIndex === -1) {
+    return plan;
+  }
+  const targetDayIndex = currentDayIndex + offset;
+  if (targetDayIndex < 0 || targetDayIndex >= dayLessons.length) {
+    return plan;
+  }
+  const reordered = [...dayLessons];
+  const [movedLesson] = reordered.splice(currentDayIndex, 1);
+  reordered.splice(targetDayIndex, 0, movedLesson);
+  const updatedPositions = new Map();
+  reordered.forEach((lesson, index) => {
+    updatedPositions.set(lesson.id, index);
+  });
+  const nextLessons = lessons.map((lesson) => {
+    if (lesson.dayIndex !== currentLesson.dayIndex) {
+      return lesson;
+    }
+    const newPosition = updatedPositions.get(lesson.id);
+    if (typeof newPosition === 'number') {
+      return { ...lesson, position: newPosition };
+    }
+    return lesson;
+  });
+  const nextPlan = {
+    ...plan,
+    lessons: sortLessons(nextLessons),
     updatedAt: new Date().toISOString()
   };
   const persisted = await persistPlan(nextPlan);
