@@ -220,6 +220,7 @@ html[data-theme="professional"] [data-account-panel-container][data-account-coll
 html[data-theme="professional"] .desktop-header-nav-tabs {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
   padding: 0.3rem;
   border-radius: 999px;
@@ -249,6 +250,26 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn.btn-active {
 html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
   background: color-mix(in srgb, var(--desktop-nav-active) 18%, transparent);
   color: var(--desktop-nav-text);
+}
+
+@media (min-width: 1024px) {
+  html[data-theme="professional"] .desktop-header-bar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  html[data-theme="professional"] .desktop-header-left,
+  html[data-theme="professional"] .desktop-header-right {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  html[data-theme="professional"] .desktop-header-nav-tabs {
+    margin: 0 auto;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 960px) {
