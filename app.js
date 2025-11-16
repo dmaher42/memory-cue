@@ -32,7 +32,8 @@ import {
   loadPlannerTemplates,
   savePlannerTemplate,
   applyPlannerTemplate,
-  getLastUsedTemplateId
+  getLastUsedTemplateId,
+  getWeekDateForDayIndex
 } from './js/modules/planner.js';
 
 initViewportHeight();
@@ -304,6 +305,21 @@ function initReminderModalUI() {
 }
 
 initReminderModalUI();
+
+function safeDispatchDocumentEvent(eventName, detail = {}) {
+  if (typeof document === 'undefined' || !eventName) {
+    return;
+  }
+  try {
+    document.dispatchEvent(new CustomEvent(eventName, { detail }));
+  } catch {
+    if (typeof document.createEvent === 'function') {
+      const fallbackEvent = document.createEvent('CustomEvent');
+      fallbackEvent.initCustomEvent(eventName, true, true, detail);
+      document.dispatchEvent(fallbackEvent);
+    }
+  }
+}
 
 let routeFocusTimeoutId = null;
 
@@ -792,7 +808,9 @@ const initialiseReminders = () => {
     googleSignOutBtnSel: '#googleSignOutBtn',
     googleUserNameSel: '#googleUserName',
     variant: 'desktop',
-    autoWireAuthButtons: true
+    autoWireAuthButtons: true,
+    plannerContextSel: '#planner-reminder-context',
+    plannerLessonInputSel: '#planner-reminder-lesson-id'
   };
 
   if (!hasDesktopForm) {
@@ -891,6 +909,34 @@ const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
 const plannerTemplateSelect = document.getElementById('planner-template-select');
 const plannerTemplateSaveButton = document.getElementById('planner-template-save-btn');
+const PLANNER_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function resolvePlannerLessonDayIndex(lesson) {
+  if (lesson && Number.isFinite(lesson.dayIndex)) {
+    return lesson.dayIndex;
+  }
+  const label =
+    typeof lesson?.dayLabel === 'string' && lesson.dayLabel.trim()
+      ? lesson.dayLabel.trim()
+      : typeof lesson?.dayName === 'string' && lesson.dayName.trim()
+        ? lesson.dayName.trim()
+        : '';
+  if (!label) {
+    return 0;
+  }
+  const matchIndex = PLANNER_DAY_NAMES.findIndex((day) => day.toLowerCase() === label.toLowerCase());
+  return matchIndex >= 0 ? matchIndex : 0;
+}
+
+function formatDateForInputValue(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function createPlannerLessonModal() {
   if (typeof document === 'undefined') {
@@ -2211,7 +2257,15 @@ function renderPlannerLessons(plan) {
               </div>
             </div>
             ${detailsSection}
-            <div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                data-planner-action="create-reminder"
+                data-lesson-id="${lessonId}"
+              >
+                Create reminder
+              </button>
               <button
                 type="button"
                 class="btn btn-sm btn-outline"
@@ -2319,7 +2373,50 @@ async function ensurePlannerPlanAvailable() {
   }
 }
 
-function handlePlannerCardAction(event) {
+async function handlePlannerCreateReminder(lessonId, triggerElement) {
+  if (!lessonId) {
+    return;
+  }
+  await ensurePlannerPlanAvailable();
+  const lessons = Array.isArray(currentPlannerPlan?.lessons) ? currentPlannerPlan.lessons : [];
+  if (!lessons.length) {
+    return;
+  }
+  const lesson = lessons.find((entry) => entry?.id === lessonId);
+  if (!lesson) {
+    return;
+  }
+  const dayLabel =
+    typeof lesson.dayLabel === 'string' && lesson.dayLabel.trim()
+      ? lesson.dayLabel.trim()
+      : typeof lesson.dayName === 'string' && lesson.dayName.trim()
+        ? lesson.dayName.trim()
+        : '';
+  const lessonTitle =
+    typeof lesson.title === 'string' && lesson.title.trim()
+      ? lesson.title.trim()
+      : dayLabel || 'Lesson';
+  const summary = typeof lesson.summary === 'string' && lesson.summary.trim() ? lesson.summary.trim() : '';
+  const baseTitle = summary || lessonTitle;
+  const reminderTitle = dayLabel ? `${dayLabel} · ${baseTitle}` : baseTitle;
+  const reminderNotes = summary || '';
+  const dayIndex = resolvePlannerLessonDayIndex(lesson);
+  const dueDateValue = formatDateForInputValue(getWeekDateForDayIndex(activePlannerWeekId, dayIndex));
+  const detail = {
+    reminderTitle,
+    reminderNotes,
+    dueDate: dueDateValue,
+    dayLabel,
+    lessonTitle,
+    summary,
+    plannerLessonId: lessonId,
+  };
+  safeDispatchDocumentEvent('cue:prepare', { trigger: triggerElement, source: 'planner' });
+  safeDispatchDocumentEvent('planner:prefillReminder', detail);
+  safeDispatchDocumentEvent('cue:open', { trigger: triggerElement, source: 'planner' });
+}
+
+async function handlePlannerCardAction(event) {
   const trigger = event.target instanceof Element ? event.target.closest('[data-planner-action]') : null;
   if (!trigger) {
     return;
@@ -2345,6 +2442,9 @@ function handlePlannerCardAction(event) {
       break;
     case 'move-down':
       handlePlannerMoveLesson(lessonId, 'down', trigger);
+      break;
+    case 'create-reminder':
+      await handlePlannerCreateReminder(lessonId, trigger);
       break;
     default:
       break;

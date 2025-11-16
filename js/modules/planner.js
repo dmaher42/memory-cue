@@ -533,6 +533,18 @@ export const getWeekIdFromOffset = (weekId, offset = 0) => {
   return formatDateKey(next);
 };
 
+export const getWeekDateForDayIndex = (weekId = getWeekIdFromDate(), dayIndex = 0) => {
+  const weekStart = parseWeekId(weekId);
+  if (!weekStart) {
+    return null;
+  }
+  const resolvedIndex = Number.isFinite(dayIndex) ? dayIndex : 0;
+  const clampedIndex = clampDayIndex(resolvedIndex);
+  const date = new Date(weekStart);
+  date.setDate(weekStart.getDate() + clampedIndex);
+  return date;
+};
+
 export const getWeekLabel = (weekId, { short = false } = {}) => {
   const start = parseWeekId(weekId);
   if (!start) {

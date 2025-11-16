@@ -457,11 +457,79 @@ export async function initReminders(sel = {}) {
   const emptyStateEl = $(sel.emptyStateSel);
   const listWrapper = $(sel.listWrapperSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
+  const plannerContext = $(sel.plannerContextSel);
+  const plannerLessonInput = $(sel.plannerLessonInputSel);
   const variant = sel.variant || 'mobile';
   const autoWireAuthButtons =
     typeof sel.autoWireAuthButtons === 'boolean' ? sel.autoWireAuthButtons : variant !== 'desktop';
 
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
+
+  const clearPlannerReminderContext = () => {
+    if (plannerContext) {
+      plannerContext.classList.add('hidden');
+      plannerContext.setAttribute('aria-hidden', 'true');
+      if (typeof plannerContext.replaceChildren === 'function') {
+        plannerContext.replaceChildren();
+      } else {
+        plannerContext.textContent = '';
+      }
+    }
+    if (plannerLessonInput) {
+      plannerLessonInput.value = '';
+    }
+  };
+
+  const showPlannerReminderContext = (detail = {}) => {
+    if (!plannerContext) {
+      return;
+    }
+    const dayLabel = typeof detail.dayLabel === 'string' ? detail.dayLabel.trim() : '';
+    const lessonTitle = typeof detail.lessonTitle === 'string' ? detail.lessonTitle.trim() : '';
+    const summary = typeof detail.summary === 'string' ? detail.summary.trim() : '';
+    const heading = document.createElement('p');
+    heading.className = 'text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-base-content/60';
+    heading.textContent = dayLabel ? `${dayLabel} lesson` : 'Planner lesson';
+    const titleLine = document.createElement('p');
+    titleLine.className = 'text-sm font-semibold text-base-content';
+    titleLine.textContent = lessonTitle || summary || 'Planner reminder';
+    const summaryLine = summary ? document.createElement('p') : null;
+    if (summaryLine) {
+      summaryLine.className = 'text-sm text-base-content/70';
+      summaryLine.textContent = summary;
+    }
+    if (typeof plannerContext.replaceChildren === 'function') {
+      plannerContext.replaceChildren(...[heading, titleLine, summaryLine].filter(Boolean));
+    } else {
+      plannerContext.textContent = '';
+      plannerContext.append(heading, titleLine);
+      if (summaryLine) {
+        plannerContext.append(summaryLine);
+      }
+    }
+    plannerContext.classList.remove('hidden');
+    plannerContext.removeAttribute('aria-hidden');
+  };
+
+  const applyPlannerReminderPrefill = (detail = {}) => {
+    if (!detail || typeof detail !== 'object') {
+      return;
+    }
+    const plannerLessonId = typeof detail.plannerLessonId === 'string' ? detail.plannerLessonId : '';
+    if (title && typeof detail.reminderTitle === 'string') {
+      title.value = detail.reminderTitle;
+    }
+    if (details && typeof detail.reminderNotes === 'string') {
+      details.value = detail.reminderNotes;
+    }
+    if (date && typeof detail.dueDate === 'string') {
+      date.value = detail.dueDate;
+    }
+    if (plannerLessonInput) {
+      plannerLessonInput.value = plannerLessonId;
+    }
+    showPlannerReminderContext(detail);
+  };
 
   function loadLastDefaults() {
     if (typeof localStorage === 'undefined') return {};
@@ -1779,6 +1847,10 @@ export async function initReminders(sel = {}) {
             due: typeof entry.due === 'string' && entry.due ? entry.due : null,
             pendingSync: !!entry.pendingSync,
             orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
+            plannerLessonId:
+              typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
+                ? entry.plannerLessonId.trim()
+                : null,
           };
         })
         .filter(Boolean);
@@ -1809,6 +1881,10 @@ export async function initReminders(sel = {}) {
           due: typeof entry.due === 'string' && entry.due ? entry.due : null,
           pendingSync: !!entry.pendingSync,
           orderIndex: Number.isFinite(entry.orderIndex) ? entry.orderIndex : null,
+          plannerLessonId:
+            typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
+              ? entry.plannerLessonId.trim()
+              : null,
         }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
@@ -2367,7 +2443,21 @@ export async function initReminders(sel = {}) {
       snapshot.forEach((d)=>{
         const data = d.data();
         const orderValue = Number(data.orderIndex);
-        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0, pendingSync: false, orderIndex: Number.isFinite(orderValue) ? orderValue : null });
+        const plannerLessonId = typeof data.plannerLessonId === 'string' && data.plannerLessonId ? data.plannerLessonId : null;
+        remoteItems.push({
+          id: d.id,
+          title: data.title,
+          priority: data.priority,
+          notes: data.notes || '',
+          done: !!data.done,
+          due: data.due || null,
+          category: normalizeCategory(data.category),
+          createdAt: data.createdAt?.toMillis?.() || 0,
+          updatedAt: data.updatedAt?.toMillis?.() || 0,
+          pendingSync: false,
+          orderIndex: Number.isFinite(orderValue) ? orderValue : null,
+          plannerLessonId,
+        });
       });
       items = ensureOrderIndicesInitialized(remoteItems);
       render();
@@ -2389,6 +2479,7 @@ export async function initReminders(sel = {}) {
         title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
         category: item.category || DEFAULT_CATEGORY,
         orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
+        plannerLessonId: typeof item.plannerLessonId === 'string' && item.plannerLessonId ? item.plannerLessonId : null,
         createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -2411,8 +2502,25 @@ export async function initReminders(sel = {}) {
     editingId=null;
     if(saveBtn) saveBtn.textContent='Save';
     cancelEditBtn?.classList.add('hidden');
+    clearPlannerReminderContext();
   }
-  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } setPriorityInputValue(it?.priority || 'Medium'); if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
+  function loadForEdit(id){
+    const it = items.find(x=>x.id===id);
+    if(!it) return;
+    if(title) title.value=it.title||'';
+    if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } }
+    setPriorityInputValue(it?.priority || 'Medium');
+    if(categoryInput) categoryInput.value = normalizeCategory(it.category);
+    if(details) details.value = typeof it.notes === 'string' ? it.notes : '';
+    if(plannerLessonInput) plannerLessonInput.value = typeof it.plannerLessonId === 'string' ? it.plannerLessonId : '';
+    clearPlannerReminderContext();
+    editingId=id;
+    if(saveBtn) saveBtn.textContent='Update';
+    cancelEditBtn?.classList.remove('hidden');
+    window.scrollTo({top:0,behavior:'smooth'});
+    title?.focus();
+    dispatchCueEvent('cue:open', { mode: 'edit' });
+  }
 
   function addItem(obj){
     const nowMs = Date.now();
@@ -2429,6 +2537,10 @@ export async function initReminders(sel = {}) {
       updatedAt: nowMs,
       due: obj.due || null,
       pendingSync: !userId,
+      plannerLessonId:
+        typeof obj.plannerLessonId === 'string' && obj.plannerLessonId.trim()
+          ? obj.plannerLessonId.trim()
+          : null,
     };
     assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
@@ -3322,6 +3434,7 @@ export async function initReminders(sel = {}) {
     const trimmedTitle = rawTitle.trim();
     const dateValue = typeof date?.value === 'string' ? date.value : '';
     const timeValue = typeof time?.value === 'string' ? time.value : '';
+    const plannerLinkId = typeof plannerLessonInput?.value === 'string' ? plannerLessonInput.value.trim() : '';
 
     if(editingId){
       const it = items.find(x=>x.id===editingId);
@@ -3337,6 +3450,7 @@ export async function initReminders(sel = {}) {
       if(categoryInput){ it.category = normalizeCategory(categoryInput.value); }
       it.due = due;
       if(details){ it.notes = details.value.trim(); }
+      it.plannerLessonId = plannerLinkId || null;
       it.updatedAt=Date.now();
       saveToFirebase(it);
       tryCalendarSync(it);
@@ -3358,10 +3472,11 @@ export async function initReminders(sel = {}) {
     let due=null;
     if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
     else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText });
+    addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText, plannerLessonId: plannerLinkId || null });
     if(title) title.value='';
     if(time) time.value='';
     if(details) details.value='';
+    clearPlannerReminderContext();
     dispatchCueEvent('cue:close', { reason: 'created' });
   }
 
@@ -3373,6 +3488,9 @@ export async function initReminders(sel = {}) {
   cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); dispatchCueEvent('cue:close', { reason: 'edit-cancelled' }); });
   document.addEventListener('cue:cancelled', () => { resetForm(); });
   document.addEventListener('cue:prepare', () => { resetForm(); });
+  document.addEventListener('planner:prefillReminder', (event) => {
+    applyPlannerReminderPrefill(event?.detail || {});
+  });
   window.addEventListener('load', ()=> title?.focus());
   copyMtlBtn?.addEventListener('click', () => {
     const lines = items.filter(x=>!x.done).map(x=>{ const datePart = x.due ? fmtDayDate(x.due.slice(0,10)) : ''; const timePart = x.due ? new Date(x.due).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit', timeZone: TZ}) : ''; const pieces = [ 'mtl '+x.title, x.due ? `Due Date: ${datePart}` : '', x.due ? `Time: ${timePart}` : '', `Status: Not started` ].filter(Boolean); return pieces.join('\n'); });
