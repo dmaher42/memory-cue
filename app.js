@@ -27,7 +27,11 @@ import {
   addLessonDetail,
   duplicateWeekPlan,
   PLANNER_UPDATED_EVENT,
-  getPlannerLessonsForWeek
+  getPlannerLessonsForWeek,
+  loadPlannerTemplates,
+  savePlannerTemplate,
+  applyPlannerTemplate,
+  getLastUsedTemplateId
 } from './js/modules/planner.js';
 
 initViewportHeight();
@@ -671,6 +675,7 @@ async function handleResourcePlannerButtonClick(event) {
       currentPlannerPlan = plan;
       renderPlannerLessons(plan);
       updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      syncPlannerTemplateSelection(plan);
       const successMessage = selectedLessonId
         ? `Added "${resourceTitle}" to your selected lesson.`
         : `Created a lesson for "${resourceTitle}" in this week's planner.`;
@@ -883,6 +888,8 @@ const plannerNextButton = document.getElementById('planner-next');
 const plannerTodayButton = document.getElementById('planner-today');
 const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
+const plannerTemplateSelect = document.getElementById('planner-template-select');
+const plannerTemplateSaveButton = document.getElementById('planner-template-save-btn');
 
 function createPlannerLessonModal() {
   if (typeof document === 'undefined') {
@@ -1261,6 +1268,7 @@ function createPlannerLessonModal() {
           renderPlannerLessons(plan);
           updatePlannerWeekHeading(targetWeekId);
           updatePlannerDashboardSummary(plan, targetWeekId);
+          syncPlannerTemplateSelection(plan);
           closeModal();
         }
         return;
@@ -1282,6 +1290,7 @@ function createPlannerLessonModal() {
           currentPlannerPlan = plan;
           renderPlannerLessons(plan);
           updatePlannerDashboardSummary(plan, activePlannerWeekId);
+          syncPlannerTemplateSelection(plan);
           closeModal();
         }
         return;
@@ -1314,6 +1323,7 @@ function createPlannerLessonModal() {
           currentPlannerPlan = plan;
           renderPlannerLessons(plan);
           updatePlannerDashboardSummary(plan, activePlannerWeekId);
+          syncPlannerTemplateSelection(plan);
           closeModal();
         }
         return;
@@ -1328,6 +1338,7 @@ function createPlannerLessonModal() {
         currentPlannerPlan = plan;
         renderPlannerLessons(plan);
         updatePlannerDashboardSummary(plan, activePlannerWeekId);
+        syncPlannerTemplateSelection(plan);
         closeModal();
       }
     } catch (error) {
@@ -2036,6 +2047,7 @@ let activePlannerWeekId = defaultPlannerWeekId;
 let currentPlannerPlan = null;
 let plannerRenderPromise = null;
 let selectedPlannerLessonId = null;
+let plannerTemplates = loadPlannerTemplates();
 
 const updatePlannerCountDisplay = (sourceLessons) => {
   if (!plannerCountElement) {
@@ -2083,6 +2095,33 @@ function updatePlannerWeekHeading(weekId) {
   }
   const label = getWeekLabel(weekId);
   plannerWeekHeading.textContent = label || '';
+}
+
+function renderPlannerTemplateOptions(selectedTemplateId) {
+  if (!plannerTemplateSelect) {
+    return;
+  }
+  plannerTemplates = loadPlannerTemplates();
+  const templates = Object.values(plannerTemplates).sort((a, b) => a.name.localeCompare(b.name));
+  const hasTemplates = templates.length > 0;
+  const placeholder = hasTemplates ? 'Select template' : 'No templates saved';
+  const options = [`<option value="">${escapeCueText(placeholder)}</option>`];
+  templates.forEach((template) => {
+    const value = template.name;
+    options.push(`<option value="${escapeCueText(value)}">${escapeCueText(value)}</option>`);
+  });
+  plannerTemplateSelect.innerHTML = options.join('');
+  plannerTemplateSelect.disabled = !hasTemplates;
+  if (selectedTemplateId && plannerTemplates[selectedTemplateId]) {
+    plannerTemplateSelect.value = selectedTemplateId;
+  } else {
+    plannerTemplateSelect.value = '';
+  }
+}
+
+function syncPlannerTemplateSelection(plan) {
+  const preferredTemplateId = plan?.templateId || getLastUsedTemplateId();
+  renderPlannerTemplateOptions(preferredTemplateId);
 }
 
 function renderPlannerLessons(plan) {
@@ -2229,6 +2268,7 @@ function renderPlannerForWeek(weekId) {
       currentPlannerPlan = plan;
       renderPlannerLessons(plan);
       updatePlannerDashboardSummary(plan, targetWeekId);
+      syncPlannerTemplateSelection(plan);
     } catch (error) {
       console.error('Failed to load planner week', error);
       renderPlannerMessage('Unable to load this week\'s planner.', { tone: 'error' });
@@ -2308,6 +2348,59 @@ async function handlePlannerDuplicatePlan(event) {
   plannerLessonModalController.openDuplicatePlan({ suggestedWeekId, trigger: triggerElement });
 }
 
+async function handlePlannerTemplateChange(event) {
+  if (!plannerTemplateSelect) {
+    return;
+  }
+  const select = event?.currentTarget instanceof HTMLSelectElement ? event.currentTarget : plannerTemplateSelect;
+  const templateId = select.value?.trim();
+  if (!templateId) {
+    return;
+  }
+  select.disabled = true;
+  try {
+    const plan = await applyPlannerTemplate(activePlannerWeekId, templateId);
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      syncPlannerTemplateSelection(plan);
+    }
+  } catch (error) {
+    console.error('Failed to apply planner template', error);
+    window.alert('Unable to apply that template right now.');
+  } finally {
+    renderPlannerTemplateOptions(templateId);
+  }
+}
+
+async function handlePlannerSaveTemplate(event) {
+  event?.preventDefault?.();
+  if (!plannerTemplateSaveButton) {
+    return;
+  }
+  const plan = currentPlannerPlan || (await loadWeekPlan(activePlannerWeekId));
+  const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
+  if (!lessons.length) {
+    window.alert('Add at least one lesson before saving a template.');
+    return;
+  }
+  const templateName = typeof window !== 'undefined'
+    ? window.prompt('Name this template:', plan?.templateId || '')
+    : null;
+  const trimmedName = typeof templateName === 'string' ? templateName.trim() : '';
+  if (!trimmedName) {
+    return;
+  }
+  try {
+    savePlannerTemplate(trimmedName, { lessons });
+    renderPlannerTemplateOptions(trimmedName);
+  } catch (error) {
+    console.error('Failed to save planner template', error);
+    window.alert('Unable to save that template right now.');
+  }
+}
+
 async function handlePlannerAddDetail(lessonId, triggerElement) {
   if (!lessonId || !plannerLessonModalController) {
     return;
@@ -2349,6 +2442,7 @@ async function handlePlannerDeleteLesson(lessonId) {
       currentPlannerPlan = plan;
       renderPlannerLessons(plan);
       updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      syncPlannerTemplateSelection(plan);
     }
   } catch (error) {
     console.error('Failed to delete planner lesson', error);
@@ -2369,6 +2463,8 @@ function initPlannerView() {
   plannerCardsContainer.addEventListener('click', handlePlannerCardAction);
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
+  plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);
+  plannerTemplateSaveButton?.addEventListener('click', handlePlannerSaveTemplate);
   plannerPrevButton?.addEventListener('click', () => {
     const previousWeek = getWeekIdFromOffset(activePlannerWeekId, -1);
     renderPlannerForWeek(previousWeek);
@@ -2380,6 +2476,7 @@ function initPlannerView() {
   plannerTodayButton?.addEventListener('click', () => {
     renderPlannerForWeek(getPlannerWeekIdFromDate());
   });
+  renderPlannerTemplateOptions(getLastUsedTemplateId());
   renderPlannerForWeek(activePlannerWeekId);
 }
 
@@ -2401,6 +2498,7 @@ function handlePlannerUpdated(event) {
     currentPlannerPlan = plan;
     renderPlannerLessons(plan);
     updatePlannerWeekHeading(plan.weekId);
+    syncPlannerTemplateSelection(plan);
   }
   if (plan.weekId === defaultPlannerWeekId) {
     updatePlannerDashboardSummary(plan, defaultPlannerWeekId);
