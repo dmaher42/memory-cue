@@ -148,6 +148,20 @@
     min-height: calc(100dvh - 4rem);
   }
 
+  .mobile-shell #view-notebook .card {
+    border-radius: 1.1rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .mobile-shell #view-notebook .card-title {
+    font-weight: 600;
+  }
+
+  .mobile-shell #view-notebook .input-sm,
+  .mobile-shell #view-notebook .textarea-sm {
+    font-size: 0.86rem;
+  }
+
   .card {
     background: var(--card-bg);
     border-radius: 12px;
@@ -160,6 +174,33 @@
   .card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
+  }
+
+  .mobile-shell #notesListMobile button {
+    border-radius: 0.9rem;
+    background-color: var(--desktop-surface-muted, #f8fafc);
+    transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  }
+
+  .mobile-shell #notesListMobile button:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+  }
+
+  .mobile-shell #notesListMobile button:active {
+    transform: scale(0.99);
+  }
+
+  .mobile-shell #notesListMobile button[data-state="active"] {
+    border-color: var(--accent-color);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(56, 189, 248, 0.03));
+  }
+
+  .mobile-shell #notesListMobile .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .quick-actions-panel {
@@ -3077,46 +3118,66 @@
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden">
       <div class="flex flex-col gap-4">
-        <section class="card bg-base-100 border">
-          <div class="card-body gap-4 compact">
-            <div class="flex items-center justify-between gap-2">
-              <h2 class="card-title text-base">Scratch Notes</h2>
-              <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
-            </div>
-            <div class="flex flex-col gap-4">
-              <label class="flex flex-col gap-2" for="noteTitleMobile">
-                <span class="text-sm font-medium">Title</span>
+        <section class="card bg-base-100 border shadow-sm rounded-2xl">
+          <div class="card-body gap-4">
+            <header class="flex items-center justify-between gap-2">
+              <div class="flex flex-col">
+                <h2 class="card-title text-base leading-tight">Scratch Notes</h2>
+                <p class="text-xs text-base-content/60">
+                  Quick jot pad that syncs with your desktop notebook.
+                </p>
+              </div>
+              <button type="button" class="btn btn-ghost btn-xs whitespace-nowrap" data-jump-view="reminders">
+                Back to reminders
+              </button>
+            </header>
+
+            <div class="flex flex-col gap-3">
+              <label class="flex flex-col gap-1.5" for="noteTitleMobile">
+                <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Title</span>
                 <input
                   id="noteTitleMobile"
                   type="text"
-                  class="input input-bordered w-full"
+                  class="input input-bordered input-sm w-full"
                   placeholder="e.g. Kids basketball schedule – this weekend"
                 />
               </label>
-              <div class="flex items-center gap-2">
-                <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">Save</button>
-                <button id="noteNewMobile" class="btn btn-ghost btn-sm flex-1" type="button">New note</button>
-              </div>
-              <label class="flex flex-col gap-2" for="noteBodyMobile">
-                <span class="text-sm font-medium">Body</span>
+
+              <label class="flex flex-col gap-1.5" for="noteBodyMobile">
+                <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Body</span>
                 <textarea
                   id="noteBodyMobile"
-                  class="textarea textarea-bordered w-full"
-                  rows="8"
-                  placeholder="Write your note here…"
+                  class="textarea textarea-bordered textarea-sm w-full min-h-[140px] leading-snug"
+                  placeholder="Capture ideas, quick plans, or a schedule you don’t want to forget…"
                 ></textarea>
               </label>
+
+              <div class="flex items-center gap-2">
+                <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">
+                  Save note
+                </button>
+                <button id="noteNewMobile" class="btn btn-ghost btn-sm flex-none" type="button">
+                  New
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between gap-2 text-[0.7rem] text-base-content/60">
+                <span id="notesStatusText" class="truncate"></span>
+                <span class="flex items-center gap-1 whitespace-nowrap">
+                  <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>
+                </span>
+              </div>
             </div>
           </div>
         </section>
-        <section class="card bg-base-100 border">
-          <div class="card-body gap-3">
-            <div>
-              <h3 class="text-base font-semibold text-base-content">Saved notes</h3>
-              <p class="text-sm text-base-content/70">Tap a note to load it in the editor.</p>
-            </div>
-            <ul id="notesListMobile" class="space-y-1 max-h-64 overflow-y-auto text-sm"></ul>
+        <section class="mt-4">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs font-semibold tracking-wide uppercase text-base-content/60">
+              Saved notes
+            </h3>
+            <span id="notesCountMobile" class="text-[0.7rem] text-base-content/50"></span>
           </div>
+          <ul id="notesListMobile" class="flex flex-col gap-1.5" aria-label="Saved scratch notes"></ul>
         </section>
       </div>
     </section>
