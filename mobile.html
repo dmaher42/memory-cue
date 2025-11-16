@@ -211,6 +211,24 @@
     overflow: hidden;
   }
 
+  .mobile-shell #savedNotesSheet {
+    transition: opacity 0.2s ease;
+    opacity: 0;
+  }
+
+  .mobile-shell #savedNotesSheet[data-open="true"] {
+    opacity: 1;
+  }
+
+  .mobile-shell #savedNotesSheet[data-open="true"] > div {
+    transform: translateY(0);
+  }
+
+  .mobile-shell #savedNotesSheet > div {
+    transform: translateY(100%);
+    transition: transform 0.25s ease-out;
+  }
+
   .quick-actions-panel {
     background: var(--mobile-quick-surface);
     border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
@@ -3105,14 +3123,41 @@
       <div class="flex flex-col gap-4">
         <section class="card bg-base-100 border shadow-sm rounded-2xl">
           <div class="card-body gap-4">
-            <div class="flex flex-col gap-0.5">
-              <h2 class="card-title text-sm font-semibold leading-tight text-base-content/90">Notes</h2>
-                          </div>
+            <header class="flex items-center justify-between gap-2">
+              <div class="flex flex-col">
+                <h2 class="card-title text-base leading-tight">Scratch Notes</h2>
+                <p class="text-xs text-base-content/60">
+                  Quick jot pad that syncs with your desktop notebook.
+                </p>
+              </div>
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs"
+                  data-jump-view="reminders"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs"
+                  data-action="open-saved-notes"
+                >
+                  Saved notes
+                </button>
+              </div>
+            </header>
 
             <div class="flex flex-col gap-3">
               <label class="flex flex-col gap-1.5" for="noteTitleMobile">
                 <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Title</span>
-                             </label>
+                <input
+                  id="noteTitleMobile"
+                  type="text"
+                  class="input input-bordered input-sm w-full"
+                  placeholder="e.g. Kids basketball schedule – this weekend"
+                />
+              </label>
 
               <label class="flex flex-col gap-1.5" for="noteBodyMobile">
                 <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Body</span>
@@ -3141,30 +3186,59 @@
             </div>
           </div>
         </section>
-        <section class="mt-4">
-          <div class="flex items-center justify-between mb-1 gap-2">
-            <h3 class="text-xs font-semibold tracking-wide uppercase text-base-content/60">
-              Saved notes
-            </h3>
-            <div class="flex-1">
-              <label class="sr-only" for="notesFilterMobile">Filter notes</label>
-              <input
-                id="notesFilterMobile"
-                type="search"
-                class="input input-bordered input-xs w-full text-[0.75rem]"
-                placeholder="Filter by title or text…"
-              />
-            </div>
-          </div>
-          <div class="flex items-center justify-end mb-1 text-[0.7rem] text-base-content/50">
-            <span id="notesCountMobile" class="whitespace-nowrap"></span>
-          </div>
-          <ul id="notesListMobile" class="flex flex-col gap-1.5" aria-label="Saved notes"></ul>
-        </section>
       </div>
     </section>
     <!-- END GPT CHANGE -->
     </main>
+  </div>
+
+  <div
+    id="savedNotesSheet"
+    class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
+    aria-hidden="true"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="savedNotesSheetTitle"
+    data-open="false"
+  >
+    <div
+      class="absolute inset-x-0 bottom-0 max-h-[80vh] bg-base-100 rounded-t-2xl shadow-2xl flex flex-col"
+    >
+      <header class="flex items-center justify-between px-4 pt-3 pb-2 border-b border-base-200/70">
+        <div class="flex flex-col">
+          <h3 id="savedNotesSheetTitle" class="text-sm font-semibold">Saved notes</h3>
+          <p class="text-[0.7rem] text-base-content/60">Tap a note to load it here.</p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs"
+          data-action="close-saved-notes"
+        >
+          Close
+        </button>
+      </header>
+
+      <div class="px-4 pt-2 pb-3 border-b border-base-200/60 space-y-2">
+        <label class="sr-only" for="notesFilterMobile">Filter notes</label>
+        <input
+          id="notesFilterMobile"
+          type="search"
+          class="input input-bordered input-xs w-full text-[0.75rem]"
+          placeholder="Filter by title or text…"
+        />
+        <div class="text-[0.7rem] text-base-content/60 text-right">
+          <span id="notesCountMobile" class="whitespace-nowrap"></span>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-3 pb-4 pt-1">
+        <ul
+          id="notesListMobile"
+          class="flex flex-col gap-1.5"
+          aria-label="Saved scratch notes"
+        ></ul>
+      </div>
+    </div>
   </div>
 
   <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
