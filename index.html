@@ -392,9 +392,18 @@
               <div class="flex justify-end">
                 <span id="weatherIcon" class="text-5xl" aria-hidden="true">⛅️</span>
               </div>
-              <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
-                Checking the latest forecast…
-              </p>
+              <div class="weather-status-row">
+                <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
+                  Checking the latest forecast…
+                </p>
+                <button
+                  type="button"
+                  class="cue-btn-ghost cue-btn-sm"
+                  data-action="open-windy-map"
+                >
+                  View radar
+                </button>
+              </div>
               <div class="flex flex-wrap items-end gap-6">
                 <div>
                   <p id="weatherTemperature" class="text-5xl font-semibold text-base-content">--°C</p>
@@ -775,6 +784,96 @@
           <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
         </div>
       </section>
+
+      <div id="planner-lesson-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
+        <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center px-4" data-planner-modal-backdrop>
+          <div
+            class="w-full max-w-2xl rounded-2xl bg-base-100 p-6 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="planner-modal-title"
+            aria-describedby="planner-modal-description"
+            tabindex="-1"
+            data-planner-modal-dialog
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Planner</p>
+                <h3 id="planner-modal-title" class="text-xl font-semibold text-base-content">Plan lesson</h3>
+                <p id="planner-modal-description" class="text-sm text-base-content/70">
+                  Capture the lesson details you want to remember this week.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                aria-label="Close planner modal"
+                data-planner-modal-close
+              >
+                ✕
+              </button>
+            </div>
+            <form id="planner-lesson-form" class="mt-6 space-y-4" novalidate>
+              <div class="grid gap-4 md:grid-cols-2" data-planner-lesson-section>
+                <label class="block text-sm font-medium text-base-content">
+                  Day
+                  <select id="planner-lesson-day" class="select select-bordered mt-1 w-full" required>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                  </select>
+                </label>
+                <label class="block text-sm font-medium text-base-content">
+                  Title
+                  <input id="planner-lesson-title" type="text" class="input input-bordered mt-1 w-full" required />
+                </label>
+              </div>
+              <label class="block text-sm font-medium text-base-content" data-planner-summary-section>
+                Summary
+                <textarea
+                  id="planner-lesson-summary"
+                  class="textarea textarea-bordered mt-1 w-full"
+                  rows="3"
+                  placeholder="What is the focus for this lesson?"
+                ></textarea>
+              </label>
+              <div class="grid gap-4 md:grid-cols-2 hidden" data-planner-detail-section aria-hidden="true">
+                <label class="block text-sm font-medium text-base-content">
+                  Detail badge (optional)
+                  <input id="planner-detail-badge" type="text" class="input input-bordered mt-1 w-full" />
+                </label>
+                <label class="block text-sm font-medium text-base-content">
+                  Detail text
+                  <textarea
+                    id="planner-detail-text"
+                    class="textarea textarea-bordered mt-1 w-full"
+                    rows="2"
+                    placeholder="Add a quick reminder, resource, or checkpoint."
+                  ></textarea>
+                </label>
+              </div>
+              <div class="space-y-2 hidden" data-planner-duplicate-section aria-hidden="true">
+                <label class="block text-sm font-medium text-base-content">
+                  Week starting Monday (YYYY-MM-DD)
+                  <input id="planner-duplicate-week" type="date" class="input input-bordered mt-1 w-full" />
+                </label>
+                <p class="text-sm text-base-content/70">
+                  Choose the Monday date for the week that should receive a copy of this plan.
+                </p>
+              </div>
+              <p id="planner-modal-error" class="hidden text-sm text-error" aria-live="assertive" aria-hidden="true"></p>
+              <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                <button type="button" class="btn" data-planner-modal-close>Cancel</button>
+                <button type="submit" id="planner-modal-submit" class="btn btn-primary">Save lesson</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
 
       <section data-route="notes" class="space-y-6" style="display: none;">
         <div class="desktop-panel desktop-panel--notes-intro">
@@ -1225,6 +1324,15 @@
             </div>
           </form>
         </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="windyWeatherModal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="windyWeatherModalTitle">
+      <h3 id="windyWeatherModalTitle" class="font-semibold mb-2">Weather radar</h3>
+      <div class="windy-embed-wrapper" data-loaded="false"></div>
+      <div class="modal-action">
+        <button type="button" class="cue-btn-ghost" data-action="close-windy-map">Close</button>
       </div>
     </div>
   </div>

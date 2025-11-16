@@ -220,6 +220,7 @@ html[data-theme="professional"] [data-account-panel-container][data-account-coll
 html[data-theme="professional"] .desktop-header-nav-tabs {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
   padding: 0.3rem;
   border-radius: 999px;
@@ -251,6 +252,26 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
   color: var(--desktop-nav-text);
 }
 
+@media (min-width: 1024px) {
+  html[data-theme="professional"] .desktop-header-bar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  html[data-theme="professional"] .desktop-header-left,
+  html[data-theme="professional"] .desktop-header-right {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  html[data-theme="professional"] .desktop-header-nav-tabs {
+    margin: 0 auto;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 960px) {
   html[data-theme="professional"] .desktop-header-bar {
     flex-wrap: wrap;
@@ -267,12 +288,21 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
 
 
 html[data-theme="professional"] .desktop-shell .dashboard-root {
-  max-width: 1180px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 1.25rem 1.5rem 2rem;
+  padding: 1.25rem 2.25rem 2.5rem;
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 1rem;
+}
+
+html[data-theme="professional"] .desktop-shell .desktop-hero,
+html[data-theme="professional"] .desktop-shell .desktop-panel,
+html[data-theme="professional"] .desktop-shell .desktop-dashboard-grid {
+  width: 100%;
+  max-width: 1320px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-main {
@@ -313,18 +343,77 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
   gap: 0.6rem;
 }
 
+html[data-theme="professional"] .desktop-shell .desktop-panel-body {
+  font-size: 0.85rem;
+  color: var(--desktop-text-main);
+}
+
 html[data-theme="professional"] .desktop-shell .desktop-hero {
   width: 100%;
-  max-width: 1180px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: clamp(2rem, 3vw, 4rem) 1.5rem;
+  padding: clamp(1.4rem, 2vw, 2.5rem);
   box-sizing: border-box;
-  background: radial-gradient(
-      circle at top left,
-      rgba(99, 102, 241, 0.16),
-      rgba(14, 165, 233, 0.12) 45%,
-      var(--desktop-surface)
-    );
+  background: var(--desktop-surface);
+  border-radius: var(--desktop-radius-card);
+  border: 1px solid var(--desktop-border-subtle);
+  box-shadow: var(--desktop-shadow-card);
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  [data-route="dashboard"]
+  .dashboard-card {
+  background: var(--desktop-surface);
+  border-radius: var(--desktop-radius-card);
+  border: 1px solid var(--desktop-border-subtle);
+  box-shadow: var(--desktop-shadow-card);
+  overflow: hidden;
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  [data-route="dashboard"]
+  :is(.dashboard-card-content, .dashboard-card-body) {
+  padding: 0.9rem 1rem;
+  gap: 0.85rem;
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  [data-route="dashboard"]
+  .dashboard-card--compact {
+  border-radius: calc(var(--desktop-radius-card) - 6px);
+  box-shadow: var(--desktop-shadow-subtle);
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  [data-route="dashboard"]
+  .dashboard-card--compact
+  :is(.dashboard-card-body, .dashboard-card-content) {
+  padding: 0.6rem 0.75rem;
+  gap: 0.6rem;
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  :is(.dashboard-kpi-strip, .dashboard-kpis) {
+  background: var(--desktop-surface);
+  border-radius: var(--desktop-radius-card);
+  border: 1px solid var(--desktop-border-subtle);
+  box-shadow: var(--desktop-shadow-card);
+  padding: 0.9rem 1rem;
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  :is(.dashboard-kpi-strip, .dashboard-kpis)
+  :is(.dashboard-kpi-tile, .dashboard-card--compact) {
+  background: var(--desktop-surface);
+  border-radius: calc(var(--desktop-radius-card) - 6px);
+  border: 1px solid var(--desktop-border-subtle);
+  box-shadow: var(--desktop-shadow-subtle);
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-hero .hero-content {
@@ -334,6 +423,114 @@ html[data-theme="professional"] .desktop-shell .desktop-hero .hero-content {
 
 html[data-theme="professional"] .desktop-shell .desktop-hero h1 {
   font-size: clamp(1.8rem, 3vw, 2.3rem);
+}
+
+html[data-theme="professional"] .desktop-shell #dailySnapshotList,
+html[data-theme="professional"] .desktop-shell #todaysFocusList,
+html[data-theme="professional"] .desktop-shell #weekAtAGlanceList,
+html[data-theme="professional"] .desktop-shell #pinnedNotesList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+html[data-theme="professional"] .desktop-shell #weekAtAGlanceList {
+  position: relative;
+  padding-left: 0;
+}
+
+html[data-theme="professional"] .desktop-shell #weekAtAGlanceList::before {
+  content: '';
+  position: absolute;
+  left: 1.1rem;
+  top: 0.7rem;
+  bottom: 1.1rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--desktop-border-subtle) 70%, transparent);
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  :is(#dailySnapshotList, #todaysFocusList, #weekAtAGlanceList, #pinnedNotesList)
+  > li:not([data-empty-state]) {
+  border-radius: calc(var(--desktop-radius-card) - 6px);
+  border: 1px solid var(--desktop-border-subtle);
+  background: var(--desktop-surface);
+  box-shadow: var(--desktop-shadow-subtle);
+  padding: 0.85rem 0.95rem;
+  gap: 0.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  #weekAtAGlanceList
+  > li:not([data-empty-state]) {
+  position: relative;
+  padding-left: 2.5rem;
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  #weekAtAGlanceList
+  > li:not([data-empty-state])::before {
+  content: '';
+  position: absolute;
+  left: 1.1rem;
+  top: 0.95rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--desktop-nav-active);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--desktop-nav-active) 25%, transparent);
+}
+
+html[data-theme="professional"] .desktop-shell .dashboard-today-focus dl,
+html[data-theme="professional"] .desktop-shell .dashboard-today-focus dd {
+  color: var(--desktop-text-main);
+}
+
+html[data-theme="professional"] .desktop-shell .dashboard-pinned-notes li p,
+html[data-theme="professional"] .desktop-shell .dashboard-today-focus li p,
+html[data-theme="professional"] .desktop-shell #dailySnapshotList p {
+  color: var(--desktop-text-main);
+}
+
+html[data-theme="professional"] .desktop-shell .dashboard-shortcuts .btn {
+  border-radius: calc(var(--desktop-radius-card) - 10px);
+  border: 1px solid var(--desktop-border-subtle);
+  background: color-mix(in srgb, var(--desktop-surface) 86%, transparent);
+  color: var(--desktop-text-main);
+  box-shadow: var(--desktop-shadow-subtle);
+  padding: 0.55rem 0.75rem;
+  font-weight: 600;
+}
+
+html[data-theme="professional"] .desktop-shell .dashboard-shortcuts .btn:hover,
+html[data-theme="professional"] .desktop-shell .dashboard-shortcuts .btn:focus-visible {
+  background: color-mix(in srgb, var(--desktop-nav-active) 14%, var(--desktop-surface) 80%);
+  color: var(--desktop-text-main);
+}
+
+html[data-theme="professional"]
+  .desktop-shell
+  :is(#dailySnapshotList, #todaysFocusList, #pinnedNotesList)
+  > p,
+html[data-theme="professional"]
+  .desktop-shell
+  :is(#dailySnapshotList, #todaysFocusList, #pinnedNotesList)
+  > li.list-none,
+html[data-theme="professional"]
+  .desktop-shell
+  #weekAtAGlanceList
+  > li[data-empty-state] {
+  font-style: italic;
+  color: var(--desktop-text-muted);
+  margin-top: 0.4rem;
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-panel-header {
@@ -377,7 +574,7 @@ html[data-theme="professional"] .desktop-shell .desktop-reminders-list {
   gap: 1.25rem;
   margin: 0 auto;
   width: 100%;
-  max-width: 1180px;
+  max-width: 1320px;
   padding: 0 1.5rem;
   box-sizing: border-box;
 }
@@ -462,6 +659,12 @@ html[data-theme="professional"] .desktop-shell .cue-btn-ghost {
   font-size: 0.8rem;
   padding: 0.35rem 0.7rem;
   color: var(--desktop-nav-text-muted);
+}
+
+html[data-theme="professional"] .desktop-shell .cue-btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.85rem;
+  line-height: 1.2;
 }
 
 h1,
@@ -1221,6 +1424,19 @@ section[data-route="dashboard"] .dashboard-card--hero .dashboard-card-eyebrow {
 section[data-route="dashboard"] .dashboard-card--hero #weatherIcon,
 section[data-route="dashboard"] .dashboard-card--hero #weatherTemperature {
   font-size: 2.25rem;
+}
+
+section[data-route="dashboard"] .weather-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+section[data-route="dashboard"] .weather-status-row #weatherStatus {
+  flex: 1 1 auto;
+  min-width: 220px;
 }
 
 section[data-route="dashboard"] .dashboard-card--hero #weatherStatus {
