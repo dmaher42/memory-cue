@@ -3223,9 +3223,9 @@
               </div>
             </header>
 
-            <div class="flex flex-col gap-3">
-              <label class="flex flex-col gap-1.5" for="noteTitleMobile">
-                <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Title</span>
+            <div class="flex flex-col gap-4">
+              <label class="flex flex-col gap-2" for="noteTitleMobile">
+                <span class="text-sm font-medium text-base-content">Title</span>
                 <input
                   id="noteTitleMobile"
                   type="text"
@@ -3234,18 +3234,16 @@
                 />
               </label>
 
-              <label class="flex flex-col gap-1.5" for="noteBodyMobile">
-                <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Body</span>
-                <textarea
-                  id="noteBodyMobile"
-                  class="textarea textarea-bordered textarea-sm w-full min-h-[140px] leading-snug"
-                  placeholder="Capture ideas, quick plans, or a schedule you don’t want to forget…"
-                ></textarea>
-              </label>
-
-              <div class="flex items-center gap-2">
-                <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">
-                  Save note
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1 min-w-[6rem]" type="button">
+                  Save
+                </button>
+                <button
+                  id="noteNewMobile"
+                  type="button"
+                  class="btn btn-ghost btn-sm flex-1 min-w-[6rem]"
+                >
+                  New note
                 </button>
                 <button
                   type="button"
@@ -3255,7 +3253,15 @@
                   Saved notes
                 </button>
               </div>
-            </header>
+
+              <label class="flex flex-col gap-2" for="noteBodyMobile">
+                <span class="text-sm font-medium text-base-content">Body</span>
+                <textarea
+                  id="noteBodyMobile"
+                  class="textarea textarea-bordered textarea-sm w-full min-h-[160px] leading-snug"
+                  placeholder="Write your note here…"
+                ></textarea>
+              </label>
 
               <div class="flex items-center justify-between gap-2 text-[0.7rem] text-base-content/60">
                 <span id="notesStatusText" class="truncate"></span>
