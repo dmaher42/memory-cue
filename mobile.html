@@ -176,24 +176,32 @@
     transform: translateY(-2px);
   }
 
-  .mobile-shell #notesListMobile button {
+  .mobile-shell #notesListMobile button[data-role="open-note"] {
     border-radius: 0.9rem;
     background-color: var(--desktop-surface-muted, #f8fafc);
     transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
   }
 
-  .mobile-shell #notesListMobile button:focus-visible {
+  .mobile-shell #notesListMobile button[data-role="open-note"]:focus-visible {
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
   }
 
-  .mobile-shell #notesListMobile button:active {
+  .mobile-shell #notesListMobile button[data-role="open-note"]:active {
     transform: scale(0.99);
   }
 
-  .mobile-shell #notesListMobile button[data-state="active"] {
+  .mobile-shell #notesListMobile button[data-role="open-note"][data-state="active"] {
     border-color: var(--accent-color);
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(56, 189, 248, 0.03));
+  }
+
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"] {
+    background-color: rgba(15, 23, 42, 0.04);
+  }
+
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:active {
+    background-color: rgba(15, 23, 42, 0.08);
   }
 
   .mobile-shell #notesListMobile .line-clamp-2 {
@@ -3171,11 +3179,22 @@
           </div>
         </section>
         <section class="mt-4">
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-1 gap-2">
             <h3 class="text-xs font-semibold tracking-wide uppercase text-base-content/60">
               Saved notes
             </h3>
-            <span id="notesCountMobile" class="text-[0.7rem] text-base-content/50"></span>
+            <div class="flex-1">
+              <label class="sr-only" for="notesFilterMobile">Filter notes</label>
+              <input
+                id="notesFilterMobile"
+                type="search"
+                class="input input-bordered input-xs w-full text-[0.75rem]"
+                placeholder="Filter by title or text…"
+              />
+            </div>
+          </div>
+          <div class="flex items-center justify-end mb-1 text-[0.7rem] text-base-content/50">
+            <span id="notesCountMobile" class="whitespace-nowrap"></span>
           </div>
           <ul id="notesListMobile" class="flex flex-col gap-1.5" aria-label="Saved scratch notes"></ul>
         </section>

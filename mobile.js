@@ -311,12 +311,46 @@ const initMobileNotes = () => {
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
+  const filterInput = document.getElementById('notesFilterMobile');
 
   if (!titleInput || !bodyInput || !saveButton) {
     return;
   }
 
+  const debounce = (fn, delay = 200) => {
+    let timeoutId;
+    return (...args) => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(() => {
+        fn(...args);
+      }, delay);
+    };
+  };
+
   let currentNoteId = null;
+  let allNotes = [];
+  let filterQuery = '';
+  let skipAutoSelectOnce = false;
+
+  const getNormalizedFilterQuery = () =>
+    typeof filterQuery === 'string' ? filterQuery.trim().toLowerCase() : '';
+
+  const getFilteredNotes = (source = allNotes) => {
+    if (!Array.isArray(source)) {
+      return [];
+    }
+    const normalizedQuery = getNormalizedFilterQuery();
+    if (!normalizedQuery) {
+      return [...source];
+    }
+    return source.filter((note) => {
+      const title = typeof note?.title === 'string' ? note.title.toLowerCase() : '';
+      const body = typeof note?.body === 'string' ? note.body.toLowerCase() : '';
+      return title.includes(normalizedQuery) || body.includes(normalizedQuery);
+    });
+  };
 
   const setEditorValues = (note) => {
     if (!note) {
@@ -338,7 +372,9 @@ const initMobileNotes = () => {
     if (!listElement) {
       return;
     }
-    const buttons = listElement.querySelectorAll('button[data-note-id]');
+    const buttons = listElement.querySelectorAll(
+      'button[data-role="open-note"][data-note-id]'
+    );
     buttons.forEach((button) => {
       if (!(button instanceof HTMLElement)) {
         return;
@@ -413,36 +449,44 @@ const initMobileNotes = () => {
   };
 
   const refreshFromStorage = ({ preserveDraft = true } = {}) => {
-    const notes = renderNotesList();
+    const sortedNotes = getSortedNotes();
+    allNotes = Array.isArray(sortedNotes) ? [...sortedNotes] : [];
     const shouldPreserveEditor = preserveDraft && hasUnsavedChanges();
+    const hasAnyNotes = allNotes.length > 0;
+    const visibleNotes = getFilteredNotes();
 
-    if (!notes.length) {
+    renderNotesList(visibleNotes);
+
+    if (!hasAnyNotes) {
       if (!shouldPreserveEditor) {
         setEditorValues(null);
       }
       updateListSelection();
       updateStoredSnapshot();
-      return notes;
+      skipAutoSelectOnce = false;
+      return visibleNotes;
     }
 
     if (currentNoteId) {
-      const activeNote = notes.find((note) => note.id === currentNoteId) || null;
+      const activeNote = allNotes.find((note) => note.id === currentNoteId) || null;
       if (activeNote) {
         if (!shouldPreserveEditor) {
           setEditorValues(activeNote);
         }
-      } else if (!shouldPreserveEditor) {
-        setEditorValues(notes[0]);
       } else {
         currentNoteId = null;
+        if (!shouldPreserveEditor && !skipAutoSelectOnce && allNotes[0]) {
+          setEditorValues(allNotes[0]);
+        }
       }
-    } else if (!shouldPreserveEditor) {
-      setEditorValues(notes[0]);
+    } else if (!shouldPreserveEditor && !skipAutoSelectOnce && allNotes[0]) {
+      setEditorValues(allNotes[0]);
     }
 
+    skipAutoSelectOnce = false;
     updateListSelection();
     updateStoredSnapshot();
-    return notes;
+    return visibleNotes;
   };
 
   const handleDeleteNote = (noteId) => {
@@ -464,13 +508,14 @@ const initMobileNotes = () => {
     updateStoredSnapshot();
 
     if (currentNoteId === noteId) {
-      currentNoteId = null;
+      setEditorValues(null);
+      skipAutoSelectOnce = true;
     }
 
     refreshFromStorage({ preserveDraft: false });
   };
 
-  const renderNotesList = (notes = getSortedNotes()) => {
+  const renderNotesList = (notes = []) => {
     if (!listElement) {
       return notes;
     }
@@ -478,25 +523,34 @@ const initMobileNotes = () => {
     listElement.innerHTML = '';
 
     if (countElement) {
-      countElement.textContent = `${notes.length} saved`;
+      const totalSaved = allNotes.length;
+      countElement.textContent = `${totalSaved} saved`;
     }
 
     if (!notes.length) {
       const emptyItem = document.createElement('li');
       emptyItem.className = 'text-xs italic text-base-content/60 px-1';
-      emptyItem.textContent = 'No saved notes yet.';
+      emptyItem.textContent =
+        allNotes.length && getNormalizedFilterQuery()
+          ? 'No notes match this filter.'
+          : 'No saved notes yet.';
       listElement.appendChild(emptyItem);
       return notes;
     }
 
     notes.forEach((note) => {
       const listItem = document.createElement('li');
-      listItem.className = 'note-item-mobile flex items-center gap-2';
+      listItem.className = 'note-item-mobile';
+
+      const row = document.createElement('div');
+      row.className = 'flex items-stretch gap-1';
+
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.noteId = note.id;
+      button.dataset.role = 'open-note';
       button.className =
-        'flex-1 w-full text-left rounded-xl border border-base-200/70 bg-base-100 px-3 py-2.5 flex flex-col gap-0.5 transition-transform';
+        'flex-1 text-left rounded-xl border border-base-200/70 bg-base-100 px-3 py-2.5 flex flex-col gap-0.5 active:scale-[0.99] transition-transform';
 
       const headerRow = document.createElement('div');
       headerRow.className = 'flex items-center justify-between gap-2';
@@ -523,28 +577,81 @@ const initMobileNotes = () => {
       button.appendChild(headerRow);
       button.appendChild(preview);
 
-      button.addEventListener('click', () => {
-        setEditorValues(note);
-        updateListSelection();
-      });
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
+      deleteButton.dataset.noteId = note.id;
+      deleteButton.dataset.role = 'delete-note';
       deleteButton.className =
-        'btn btn-ghost btn-xs text-error focus-visible:ring focus-visible:ring-error/60 flex-none';
-      deleteButton.setAttribute('aria-label', `Delete note "${note.title || 'Untitled note'}"`);
-      deleteButton.innerHTML = '<span aria-hidden="true">✕</span>';
-      deleteButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        handleDeleteNote(note.id);
-      });
-      listItem.appendChild(button);
-      listItem.appendChild(deleteButton);
+        'shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-base-200/80 text-base-content/60 text-xs active:scale-95';
+      deleteButton.setAttribute('aria-label', 'Delete note');
+      deleteButton.textContent = '✕';
+
+      row.appendChild(button);
+      row.appendChild(deleteButton);
+      listItem.appendChild(row);
       listElement.appendChild(listItem);
     });
 
     updateListSelection();
     return notes;
   };
+
+  if (listElement) {
+    listElement.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const deleteTrigger = target.closest('button[data-role="delete-note"]');
+      if (deleteTrigger && listElement.contains(deleteTrigger)) {
+        event.preventDefault();
+        const noteId = deleteTrigger.getAttribute('data-note-id');
+        if (!noteId) {
+          return;
+        }
+        const confirmFn =
+          typeof window !== 'undefined' && typeof window.confirm === 'function'
+            ? window.confirm
+            : null;
+        const shouldDelete = confirmFn
+          ? confirmFn('Delete this note? This cannot be undone.')
+          : true;
+        if (shouldDelete) {
+          handleDeleteNote(noteId);
+        }
+        return;
+      }
+
+      const openTrigger = target.closest('button[data-role="open-note"]');
+      if (openTrigger && listElement.contains(openTrigger)) {
+        event.preventDefault();
+        const noteId = openTrigger.getAttribute('data-note-id');
+        if (!noteId) {
+          return;
+        }
+        const note = allNotes.find((item) => item.id === noteId);
+        if (note) {
+          setEditorValues(note);
+          updateListSelection();
+        }
+      }
+    });
+  }
+
+  const renderFilteredNotes = () => {
+    renderNotesList(getFilteredNotes());
+  };
+
+  if (filterInput) {
+    const handleFilterInput = debounce(() => {
+      filterQuery = typeof filterInput.value === 'string' ? filterInput.value : '';
+      renderFilteredNotes();
+    }, 180);
+
+    filterInput.addEventListener('input', handleFilterInput);
+    filterInput.addEventListener('search', handleFilterInput);
+  }
 
   const applyInitialSelection = () => {
     refreshFromStorage({ preserveDraft: false });
