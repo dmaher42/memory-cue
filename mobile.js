@@ -312,6 +312,9 @@ const initMobileNotes = () => {
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notesFilterMobile');
+  const savedNotesSheet = document.getElementById('savedNotesSheet');
+  const openSavedNotesButton = document.querySelector('[data-action="open-saved-notes"]');
+  const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
 
   if (!titleInput || !bodyInput || !saveButton) {
     return;
@@ -333,6 +336,63 @@ const initMobileNotes = () => {
   let allNotes = [];
   let filterQuery = '';
   let skipAutoSelectOnce = false;
+  let savedNotesSheetHideTimeout = null;
+
+  const isSavedNotesSheetOpen = () =>
+    savedNotesSheet?.dataset.open === 'true';
+
+  const showSavedNotesSheet = () => {
+    if (!savedNotesSheet) {
+      return;
+    }
+    if (savedNotesSheetHideTimeout) {
+      clearTimeout(savedNotesSheetHideTimeout);
+      savedNotesSheetHideTimeout = null;
+    }
+    savedNotesSheet.classList.remove('hidden');
+    savedNotesSheet.dataset.open = 'true';
+    savedNotesSheet.setAttribute('aria-hidden', 'false');
+  };
+
+  const hideSavedNotesSheet = () => {
+    if (!savedNotesSheet) {
+      return;
+    }
+    savedNotesSheet.dataset.open = 'false';
+    savedNotesSheet.setAttribute('aria-hidden', 'true');
+    if (savedNotesSheetHideTimeout) {
+      clearTimeout(savedNotesSheetHideTimeout);
+    }
+    savedNotesSheetHideTimeout = setTimeout(() => {
+      savedNotesSheet?.classList.add('hidden');
+    }, 200);
+  };
+
+  const bindSavedNotesSheetEvents = () => {
+    if (!savedNotesSheet) {
+      return;
+    }
+    openSavedNotesButton?.addEventListener('click', (event) => {
+      event.preventDefault();
+      showSavedNotesSheet();
+    });
+    closeSavedNotesButton?.addEventListener('click', (event) => {
+      event.preventDefault();
+      hideSavedNotesSheet();
+    });
+    savedNotesSheet.addEventListener('click', (event) => {
+      if (event.target === savedNotesSheet) {
+        hideSavedNotesSheet();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isSavedNotesSheetOpen()) {
+        hideSavedNotesSheet();
+      }
+    });
+  };
+
+  bindSavedNotesSheetEvents();
 
   const getNormalizedFilterQuery = () =>
     typeof filterQuery === 'string' ? filterQuery.trim().toLowerCase() : '';
@@ -634,6 +694,9 @@ const initMobileNotes = () => {
         if (note) {
           setEditorValues(note);
           updateListSelection();
+          if (isSavedNotesSheetOpen()) {
+            hideSavedNotesSheet();
+          }
         }
       }
     });
