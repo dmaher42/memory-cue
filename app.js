@@ -24,6 +24,7 @@ import {
   addLessonToWeek,
   updateLessonInWeek,
   deleteLessonFromWeek,
+  movePlannerLesson,
   addLessonDetail,
   duplicateWeekPlan,
   PLANNER_UPDATED_EVENT,
@@ -2180,6 +2181,22 @@ function renderPlannerLessons(plan) {
                 ${summaryMarkup}
               </div>
               <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs"
+                  data-planner-action="move-up"
+                  data-lesson-id="${lessonId}"
+                >
+                  Move up
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs"
+                  data-planner-action="move-down"
+                  data-lesson-id="${lessonId}"
+                >
+                  Move down
+                </button>
                 <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
                   Edit
                 </button>
@@ -2323,6 +2340,12 @@ function handlePlannerCardAction(event) {
     case 'delete':
       handlePlannerDeleteLesson(lessonId);
       break;
+    case 'move-up':
+      handlePlannerMoveLesson(lessonId, 'up', trigger);
+      break;
+    case 'move-down':
+      handlePlannerMoveLesson(lessonId, 'down', trigger);
+      break;
     default:
       break;
   }
@@ -2423,6 +2446,38 @@ async function handlePlannerEditLesson(lessonId, triggerElement) {
   }
   const trigger = triggerElement instanceof HTMLElement ? triggerElement : null;
   plannerLessonModalController.openEditLesson({ lesson, trigger });
+}
+
+async function handlePlannerMoveLesson(lessonId, direction, triggerElement) {
+  if (!lessonId || !direction) {
+    return;
+  }
+  const weekId = activePlannerWeekId || getPlannerWeekIdFromDate();
+  if (!weekId) {
+    return;
+  }
+  const trigger = triggerElement instanceof HTMLElement ? triggerElement : null;
+  if (trigger) {
+    trigger.setAttribute('disabled', 'true');
+  }
+  try {
+    const plan = await movePlannerLesson(weekId, lessonId, direction);
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, weekId);
+      syncPlannerTemplateSelection(plan);
+    }
+  } catch (error) {
+    console.error('Failed to move planner lesson', error);
+    if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+      window.alert('Unable to move that lesson right now.');
+    }
+  } finally {
+    if (trigger) {
+      trigger.removeAttribute('disabled');
+    }
+  }
 }
 
 async function handlePlannerDeleteLesson(lessonId) {
