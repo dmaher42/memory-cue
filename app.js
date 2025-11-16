@@ -531,6 +531,59 @@ if (settingsSaveButton && settingsSaveConfirmation) {
   });
 }
 
+function handlePlannerQuickAction(event) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  event.preventDefault();
+
+  const targetRoute = 'planner';
+  const targetHash = '#planner';
+
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  }
+
+  if (typeof window.renderRoute === 'function') {
+    window.renderRoute();
+  }
+
+  scheduleRouteFocus(targetRoute);
+
+  if (liveStatusRegion) {
+    liveStatusRegion.textContent = 'Opening planner to add a new lesson.';
+  }
+
+  initPlannerView();
+
+  window.requestAnimationFrame(() => {
+    const result = handlePlannerNewLesson();
+    if (result && typeof result.catch === 'function') {
+      result.catch((error) => {
+        console.error('Planner quick action failed to start new lesson flow', error);
+      });
+    }
+  });
+}
+
+function initPlannerQuickActions() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const plannerQuickActions = document.querySelectorAll('[data-quick-action="planner"]');
+  if (!plannerQuickActions.length) {
+    return;
+  }
+
+  plannerQuickActions.forEach((action) => {
+    action.addEventListener('click', handlePlannerQuickAction);
+  });
+}
+
+initPlannerQuickActions();
+
 const titleInput = document.getElementById('reminder-title');
 const mobileTitleInput = document.getElementById('reminderText');
 
