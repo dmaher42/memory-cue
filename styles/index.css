@@ -1695,11 +1695,19 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   .dashboard-widgets-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dashboard-widgets-grid > .dashboard-widget {
+    grid-column: span 2;
+  }
 }
 
 @media (min-width: 1024px) {
   .dashboard-widgets-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .dashboard-widgets-grid > .dashboard-widget {
+    grid-column: span 6;
   }
 }
 
@@ -1716,11 +1724,11 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   }
 
   .dashboard-widget--primary {
-    grid-column: span 3;
+    grid-column: span 6;
   }
 
   .dashboard-widget--secondary {
-    grid-column: span 3;
+    grid-column: span 6;
   }
 }
 
