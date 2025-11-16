@@ -251,7 +251,7 @@ async function updateNewsCard() {
       newsElements.content.classList.remove('hidden');
     }
 
-    safeText(newsElements.status, 'Latest headlines are ready.');
+    safeText(newsElements.status, 'Top educational news is ready.');
     safeText(newsElements.footnote, `Updated ${formatTimeLabel(new Date())}`);
   } catch (error) {
     safeText(newsElements.status, 'Unable to load headlines right now.');
