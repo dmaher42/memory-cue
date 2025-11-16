@@ -1224,6 +1224,13 @@
           Fill out the details below to save a reminder for later.
         </p>
         <form id="add-reminder-form" class="mt-4 space-y-4">
+          <div
+            id="planner-reminder-context"
+            class="hidden rounded-xl bg-base-200/80 px-4 py-3 text-sm text-base-content/80 dark:bg-base-200/20"
+            aria-live="polite"
+            aria-hidden="true"
+          ></div>
+          <input type="hidden" id="planner-reminder-lesson-id" />
           <label class="block">
             <span class="font-medium text-base-content">Title</span>
             <input
