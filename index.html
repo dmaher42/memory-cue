@@ -392,9 +392,18 @@
               <div class="flex justify-end">
                 <span id="weatherIcon" class="text-5xl" aria-hidden="true">⛅️</span>
               </div>
-              <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
-                Checking the latest forecast…
-              </p>
+              <div class="weather-status-row">
+                <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
+                  Checking the latest forecast…
+                </p>
+                <button
+                  type="button"
+                  class="cue-btn-ghost cue-btn-sm"
+                  data-action="open-windy-map"
+                >
+                  View radar
+                </button>
+              </div>
               <div class="flex flex-wrap items-end gap-6">
                 <div>
                   <p id="weatherTemperature" class="text-5xl font-semibold text-base-content">--°C</p>
@@ -1292,6 +1301,15 @@
             </div>
           </form>
         </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="windyWeatherModal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="windyWeatherModalTitle">
+      <h3 id="windyWeatherModalTitle" class="font-semibold mb-2">Weather radar</h3>
+      <div class="windy-embed-wrapper" data-loaded="false"></div>
+      <div class="modal-action">
+        <button type="button" class="cue-btn-ghost" data-action="close-windy-map">Close</button>
       </div>
     </div>
   </div>
