@@ -56,7 +56,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-3d56ba06.css" />
+  <link rel="stylesheet" href="./assets/styles-7f78609c.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -780,6 +780,23 @@
             <button type="button" id="planner-today" class="btn btn-xs btn-secondary" aria-label="Jump to current week">Today</button>
             <button type="button" id="planner-next" class="btn btn-xs btn-secondary" aria-label="View next week">Next</button>
           </div>
+          <div class="flex flex-wrap items-end gap-3 text-sm text-base-content/80">
+            <label class="form-control w-full max-w-xs md:w-auto">
+              <div class="label py-0">
+                <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Template</span>
+              </div>
+              <select
+                id="planner-template-select"
+                class="select select-bordered select-sm w-full md:w-56"
+                aria-label="Choose a planner template"
+              >
+                <option value="">No templates saved</option>
+              </select>
+            </label>
+            <button type="button" id="planner-template-save-btn" class="btn btn-sm btn-outline">
+              Save current week as template
+            </button>
+          </div>
           <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
           <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
         </div>
@@ -1338,7 +1355,7 @@
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-WWDTIPVN.js" defer></script>
+  <script type="module" src="./assets/app-SMX5NG6S.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
