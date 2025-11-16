@@ -1,4 +1,6 @@
 const PLANNER_STORAGE_KEY = 'memoryCue:plannerPlans';
+const PLANNER_TEMPLATES_KEY = 'memoryCue:plannerTemplates';
+const PLANNER_LAST_TEMPLATE_KEY = 'memoryCue:lastPlannerTemplate';
 const PLANNER_UPDATED_EVENT = 'memoryCue:plannerUpdated';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -46,6 +48,32 @@ const hasLocalStorage = () => {
     return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
   } catch {
     return false;
+  }
+};
+
+const getStoredValue = (key) => {
+  if (!hasLocalStorage() || !key) {
+    return null;
+  }
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setStoredValue = (key, value) => {
+  if (!hasLocalStorage() || !key) {
+    return;
+  }
+  try {
+    if (typeof value === 'string' && value.length) {
+      window.localStorage.setItem(key, value);
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    /* noop */
   }
 };
 
@@ -192,11 +220,13 @@ const normalisePlan = (plan, fallbackWeekId) => {
   const targetWeekId = typeof plan?.weekId === 'string' && plan.weekId ? plan.weekId : fallbackWeekId;
   const weekStartDate = parseWeekId(targetWeekId);
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons.map((lesson) => normaliseLesson(lesson)).filter(Boolean) : [];
+  const templateId = typeof plan?.templateId === 'string' ? plan.templateId.trim() : '';
   return {
     weekId: targetWeekId,
     startDate: weekStartDate ? weekStartDate.toISOString() : '',
     lessons: sortLessons(lessons),
-    updatedAt: typeof plan?.updatedAt === 'string' ? plan.updatedAt : new Date().toISOString()
+    updatedAt: typeof plan?.updatedAt === 'string' ? plan.updatedAt : new Date().toISOString(),
+    templateId
   };
 };
 
@@ -205,7 +235,7 @@ const readLocalPlans = () => {
     return {};
   }
   try {
-    const stored = window.localStorage.getItem(PLANNER_STORAGE_KEY);
+    const stored = getStoredValue(PLANNER_STORAGE_KEY);
     if (typeof stored !== 'string' || !stored.length) {
       return {};
     }
@@ -225,6 +255,34 @@ const writeLocalPlans = (map) => {
     window.localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(map));
   } catch (error) {
     console.warn('Unable to persist planner data locally', error);
+  }
+};
+
+const readTemplateMap = () => {
+  if (!hasLocalStorage()) {
+    return {};
+  }
+  try {
+    const stored = getStoredValue(PLANNER_TEMPLATES_KEY);
+    if (typeof stored !== 'string' || !stored.length) {
+      return {};
+    }
+    const parsed = safeParseJson(stored);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    console.warn('Unable to read planner templates from storage', error);
+    return {};
+  }
+};
+
+const writeTemplateMap = (map) => {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(PLANNER_TEMPLATES_KEY, JSON.stringify(map));
+  } catch (error) {
+    console.warn('Unable to persist planner templates locally', error);
   }
 };
 
@@ -254,6 +312,31 @@ const plannerCache = new Map();
 let ensureFirestoreFn = null;
 let plannerFirestorePromise = null;
 let shouldUseLocalPlanner = false;
+let lastTemplatePreference = null;
+
+const getStoredLastTemplateId = () => {
+  if (typeof lastTemplatePreference === 'string') {
+    return lastTemplatePreference;
+  }
+  const stored = getStoredValue(PLANNER_LAST_TEMPLATE_KEY);
+  lastTemplatePreference = typeof stored === 'string' ? stored : '';
+  return lastTemplatePreference;
+};
+
+const rememberLastTemplateId = (templateId) => {
+  if (typeof templateId !== 'string' || !templateId.trim()) {
+    return;
+  }
+  const trimmed = templateId.trim();
+  lastTemplatePreference = trimmed;
+  setStoredValue(PLANNER_LAST_TEMPLATE_KEY, trimmed);
+};
+
+const syncTemplatePreferenceFromPlan = (plan) => {
+  if (plan?.templateId) {
+    rememberLastTemplateId(plan.templateId);
+  }
+};
 
 const isPermissionDeniedError = (error) => {
   const code = typeof error?.code === 'string' ? error.code.toLowerCase() : '';
@@ -342,6 +425,7 @@ const persistPlan = async (plan) => {
   const normalised = normalisePlan(plan, plan.weekId);
   setLocalPlan(normalised.weekId, normalised);
   cachePlan(normalised);
+  syncTemplatePreferenceFromPlan(normalised);
   if (shouldUseLocalPlanner || !ensureFirestoreFn) {
     return normalised;
   }
@@ -430,15 +514,21 @@ export const loadWeekPlan = async (weekId = getWeekIdFromDate()) => {
     return null;
   }
   if (plannerCache.has(weekId)) {
-    return plannerCache.get(weekId);
+    const cachedPlan = plannerCache.get(weekId);
+    syncTemplatePreferenceFromPlan(cachedPlan);
+    return cachedPlan;
   }
   if (shouldUseLocalPlanner || !ensureFirestoreFn) {
-    return ensureLocalPlan(weekId);
+    const localPlan = ensureLocalPlan(weekId);
+    syncTemplatePreferenceFromPlan(localPlan);
+    return localPlan;
   }
   try {
     const firestore = await ensurePlannerFirestore();
     if (!firestore) {
-      return ensureLocalPlan(weekId);
+      const fallbackPlan = ensureLocalPlan(weekId);
+      syncTemplatePreferenceFromPlan(fallbackPlan);
+      return fallbackPlan;
     }
     const ref = getPlannerDocRef(firestore, weekId);
     const snapshot = await firestore.getDoc(ref);
@@ -448,21 +538,27 @@ export const loadWeekPlan = async (weekId = getWeekIdFromDate()) => {
       setLocalPlan(weekId, plan);
       cachePlan(plan);
       shouldUseLocalPlanner = false;
+      syncTemplatePreferenceFromPlan(plan);
       return plan;
     }
     const fallback = ensureLocalPlan(weekId);
     if (typeof firestore.setDoc === 'function') {
       await firestore.setDoc(ref, fallback, { merge: true });
     }
+    syncTemplatePreferenceFromPlan(fallback);
     return fallback;
   } catch (error) {
     if (isPermissionDeniedError(error)) {
       console.warn('Falling back to local planner data due to permission issue', error);
       shouldUseLocalPlanner = true;
-      return ensureLocalPlan(weekId);
+      const localPlan = ensureLocalPlan(weekId);
+      syncTemplatePreferenceFromPlan(localPlan);
+      return localPlan;
     }
     console.error('Failed to load planner data', error);
-    return ensureLocalPlan(weekId);
+    const fallbackPlan = ensureLocalPlan(weekId);
+    syncTemplatePreferenceFromPlan(fallbackPlan);
+    return fallbackPlan;
   }
 };
 
@@ -564,7 +660,135 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
       text: detail.text
     }))
   }));
-  const nextPlan = normalisePlan({ weekId: targetWeekId, lessons: duplicatedLessons }, targetWeekId);
+  const nextPlan = normalisePlan(
+    {
+      weekId: targetWeekId,
+      lessons: duplicatedLessons,
+      templateId: typeof sourcePlan?.templateId === 'string' ? sourcePlan.templateId : ''
+    },
+    targetWeekId
+  );
+  nextPlan.updatedAt = new Date().toISOString();
+  const persisted = await persistPlan(nextPlan);
+  dispatchPlannerUpdated(persisted);
+  return persisted;
+};
+
+const cloneTemplateLesson = (lesson) => {
+  if (!lesson || typeof lesson !== 'object') {
+    return null;
+  }
+  const dayIndex = clampDayIndex(
+    Number.isFinite(lesson.dayIndex) ? lesson.dayIndex : resolveDayIndexFromName(lesson.dayLabel || lesson.dayName)
+  );
+  const title = typeof lesson.title === 'string' ? lesson.title : '';
+  const summary = typeof lesson.summary === 'string' ? lesson.summary : '';
+  const details = Array.isArray(lesson.details)
+    ? lesson.details
+        .map((detail) => {
+          if (!detail || typeof detail !== 'object') {
+            return null;
+          }
+          const badge = typeof detail.badge === 'string' ? detail.badge : '';
+          const text = typeof detail.text === 'string' ? detail.text : '';
+          if (!text.trim()) {
+            return null;
+          }
+          return { badge, text };
+        })
+        .filter(Boolean)
+    : [];
+  return { dayIndex, title, summary, details };
+};
+
+export const loadPlannerTemplates = () => {
+  const raw = readTemplateMap();
+  const templates = {};
+  Object.keys(raw).forEach((key) => {
+    const entry = raw[key];
+    if (!entry || typeof entry !== 'object') {
+      return;
+    }
+    const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : key;
+    const lessons = Array.isArray(entry.lessons)
+      ? entry.lessons.map((lesson) => cloneTemplateLesson(lesson)).filter(Boolean)
+      : [];
+    templates[name] = {
+      name,
+      lessons,
+      updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : ''
+    };
+  });
+  return templates;
+};
+
+export const savePlannerTemplates = (templates = {}) => {
+  if (!templates || typeof templates !== 'object') {
+    writeTemplateMap({});
+    return {};
+  }
+  const serialised = {};
+  Object.keys(templates).forEach((key) => {
+    const entry = templates[key];
+    if (!entry || typeof entry !== 'object') {
+      return;
+    }
+    const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : key;
+    const lessons = Array.isArray(entry.lessons)
+      ? entry.lessons.map((lesson) => cloneTemplateLesson(lesson)).filter(Boolean)
+      : [];
+    serialised[name] = {
+      name,
+      lessons,
+      updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : new Date().toISOString()
+    };
+  });
+  writeTemplateMap(serialised);
+  return loadPlannerTemplates();
+};
+
+export const savePlannerTemplate = (templateId, templateInput = {}) => {
+  const templateName = typeof templateId === 'string' ? templateId.trim() : '';
+  if (!templateName) {
+    return null;
+  }
+  const templates = loadPlannerTemplates();
+  const lessons = Array.isArray(templateInput.lessons)
+    ? templateInput.lessons.map((lesson) => cloneTemplateLesson(lesson)).filter(Boolean)
+    : [];
+  templates[templateName] = {
+    name: templateName,
+    lessons,
+    updatedAt: new Date().toISOString()
+  };
+  writeTemplateMap(templates);
+  return templates[templateName];
+};
+
+export const getLastUsedTemplateId = () => {
+  return getStoredLastTemplateId();
+};
+
+export const applyPlannerTemplate = async (weekId, templateId) => {
+  if (!weekId || !templateId) {
+    return null;
+  }
+  const templates = loadPlannerTemplates();
+  const template = templates[templateId];
+  if (!template) {
+    return loadWeekPlan(weekId);
+  }
+  const lessons = Array.isArray(template.lessons)
+    ? template.lessons.map((lesson) => ({
+        dayIndex: lesson.dayIndex,
+        title: lesson.title,
+        summary: lesson.summary,
+        details: Array.isArray(lesson.details)
+          ? lesson.details.map((detail) => ({ badge: detail.badge, text: detail.text }))
+          : []
+      }))
+    : [];
+  const nextPlan = normalisePlan({ weekId, lessons, templateId }, weekId);
   nextPlan.updatedAt = new Date().toISOString();
   const persisted = await persistPlan(nextPlan);
   dispatchPlannerUpdated(persisted);
