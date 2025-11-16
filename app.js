@@ -537,6 +537,21 @@ let hideSettingsSaveConfirmationTimeoutId = null;
 const resourcePlannerStatusElement = document.getElementById('resourcePlannerStatus');
 let resourcePlannerStatusTimeoutId = null;
 
+document.addEventListener('planner:reminderCreated', (event) => {
+  if (!liveStatusRegion) {
+    return;
+  }
+  const detail = event?.detail || {};
+  const lessonTitle = typeof detail.lessonTitle === 'string' && detail.lessonTitle.trim() ? detail.lessonTitle.trim() : '';
+  const dayLabel = typeof detail.dayLabel === 'string' && detail.dayLabel.trim() ? detail.dayLabel.trim() : '';
+  const message = dayLabel
+    ? `Reminder saved for ${dayLabel}${lessonTitle ? ` · ${lessonTitle}` : ''}.`
+    : lessonTitle
+      ? `Reminder saved for ${lessonTitle}.`
+      : 'Planner reminder saved.';
+  liveStatusRegion.textContent = message;
+});
+
 if (settingsSaveButton && settingsSaveConfirmation) {
   settingsSaveButton.addEventListener('click', (event) => {
     event.preventDefault();
@@ -2295,6 +2310,7 @@ function renderPlannerLessons(plan) {
                 type="button"
                 class="btn btn-sm btn-primary"
                 data-planner-action="create-reminder"
+                data-open-reminder-modal="true"
                 data-lesson-id="${lessonId}"
               >
                 Create reminder
