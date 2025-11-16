@@ -769,6 +769,490 @@ const plannerTodayButton = document.getElementById('planner-today');
 const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
 
+function createPlannerLessonModal() {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const modal = document.getElementById('planner-lesson-modal');
+  const form = document.getElementById('planner-lesson-form');
+  const modalTitle = document.getElementById('planner-modal-title');
+  const modalDescription = document.getElementById('planner-modal-description');
+  const errorElement = document.getElementById('planner-modal-error');
+  const submitButton = document.getElementById('planner-modal-submit');
+  const dayField = document.getElementById('planner-lesson-day');
+  const titleField = document.getElementById('planner-lesson-title');
+  const summaryField = document.getElementById('planner-lesson-summary');
+  const detailBadgeField = document.getElementById('planner-detail-badge');
+  const detailTextField = document.getElementById('planner-detail-text');
+  const duplicateWeekInput = document.getElementById('planner-duplicate-week');
+
+  if (
+    !(modal instanceof HTMLElement) ||
+    !(form instanceof HTMLFormElement) ||
+    !(submitButton instanceof HTMLElement) ||
+    !(dayField instanceof HTMLSelectElement) ||
+    !(titleField instanceof HTMLInputElement) ||
+    !(summaryField instanceof HTMLTextAreaElement)
+  ) {
+    return null;
+  }
+
+  const lessonSection = form.querySelector('[data-planner-lesson-section]');
+  const summarySection = form.querySelector('[data-planner-summary-section]');
+  const detailSection = form.querySelector('[data-planner-detail-section]');
+  const duplicateSection = form.querySelector('[data-planner-duplicate-section]');
+  const dialog = modal.querySelector('[data-planner-modal-dialog]');
+  const backdrop = modal.querySelector('[data-planner-modal-backdrop]');
+  const closeButtons = modal.querySelectorAll('[data-planner-modal-close]');
+  const mainContent = document.getElementById('mainContent');
+  const primaryNav = document.querySelector('nav[aria-label="Primary"]');
+  const backgroundTargets = [mainContent, primaryNav].filter(Boolean);
+
+  const focusableSelectors = [
+    'a[href]',
+    'area[href]',
+    'button:not([disabled])',
+    'input:not([type="hidden"]):not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ];
+
+  const state = { mode: 'add', lessonId: null, trigger: null };
+  let preferredFocusElement = null;
+  let lastActiveElement = null;
+
+  const setPreferredFocus = (element) => {
+    preferredFocusElement = element instanceof HTMLElement ? element : null;
+  };
+
+  const setBackgroundInert = (shouldInert) => {
+    backgroundTargets.forEach((target) => {
+      if (!target) {
+        return;
+      }
+      if (shouldInert) {
+        target.setAttribute('inert', '');
+      } else {
+        target.removeAttribute('inert');
+      }
+    });
+  };
+
+  const getFocusableElements = () => {
+    if (!(dialog instanceof HTMLElement)) {
+      return [];
+    }
+    const nodes = dialog.querySelectorAll(focusableSelectors.join(','));
+    return Array.from(nodes).filter((element) => {
+      if (element.closest('[aria-hidden="true"]')) {
+        return false;
+      }
+      if ('disabled' in element && element.disabled) {
+        return false;
+      }
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+  };
+
+  const focusFirstElement = () => {
+    const focusableElements = getFocusableElements();
+    const target =
+      (preferredFocusElement && focusableElements.includes(preferredFocusElement)
+        ? preferredFocusElement
+        : null) ||
+      focusableElements[0] ||
+      dialog;
+    if (target && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  };
+
+  const enforceFocusWithinModal = (event) => {
+    if (!(dialog instanceof HTMLElement)) {
+      return;
+    }
+    if (!dialog.contains(event.target)) {
+      focusFirstElement();
+    }
+  };
+
+  const handleTabKey = (event) => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+    const focusableElements = getFocusableElements();
+    if (!focusableElements.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusableElements[0];
+    const last = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const handleKeydown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModal();
+      return;
+    }
+    handleTabKey(event);
+  };
+
+  const clearError = () => {
+    if (!errorElement) {
+      return;
+    }
+    errorElement.textContent = '';
+    errorElement.classList.add('hidden');
+    errorElement.setAttribute('aria-hidden', 'true');
+  };
+
+  const showError = (message) => {
+    if (!errorElement) {
+      return;
+    }
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+    errorElement.removeAttribute('aria-hidden');
+  };
+
+  const setSubmitting = (isSubmitting) => {
+    submitButton.disabled = Boolean(isSubmitting);
+    submitButton.classList.toggle('loading', Boolean(isSubmitting));
+  };
+
+  const toggleSection = (section, shouldShow) => {
+    if (!(section instanceof HTMLElement)) {
+      return;
+    }
+    section.classList.toggle('hidden', !shouldShow);
+    if (shouldShow) {
+      section.removeAttribute('aria-hidden');
+    } else {
+      section.setAttribute('aria-hidden', 'true');
+    }
+  };
+
+  const setLessonFieldsDisabled = (isDisabled) => {
+    [dayField, titleField, summaryField].forEach((field) => {
+      if (field instanceof HTMLElement) {
+        field.disabled = Boolean(isDisabled);
+        field.classList.toggle('opacity-60', Boolean(isDisabled));
+        field.classList.toggle('cursor-not-allowed', Boolean(isDisabled));
+      }
+    });
+  };
+
+  const resetForm = () => {
+    form.reset();
+    clearError();
+    setPreferredFocus(null);
+    setLessonFieldsDisabled(false);
+    if (detailBadgeField instanceof HTMLInputElement) {
+      detailBadgeField.value = '';
+    }
+    if (detailTextField instanceof HTMLTextAreaElement) {
+      detailTextField.value = '';
+    } else if (detailTextField instanceof HTMLInputElement) {
+      detailTextField.value = '';
+    }
+    if (duplicateWeekInput instanceof HTMLInputElement) {
+      duplicateWeekInput.value = '';
+    }
+  };
+
+  const updateModalCopy = ({ title, description, action }) => {
+    if (modalTitle) {
+      modalTitle.textContent = title || 'Plan lesson';
+    }
+    if (modalDescription) {
+      modalDescription.textContent = description || '';
+    }
+    submitButton.textContent = action || 'Save lesson';
+  };
+
+  const openModal = ({ trigger } = {}) => {
+    state.trigger = trigger instanceof HTMLElement ? trigger : null;
+    lastActiveElement = state.trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    modal.classList.remove('hidden');
+    modal.removeAttribute('aria-hidden');
+    modal.removeAttribute('inert');
+    setBackgroundInert(true);
+    document.addEventListener('keydown', handleKeydown, true);
+    modal.addEventListener('focusin', enforceFocusWithinModal, true);
+    window.requestAnimationFrame(() => {
+      focusFirstElement();
+    });
+  };
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    setBackgroundInert(false);
+    document.removeEventListener('keydown', handleKeydown, true);
+    modal.removeEventListener('focusin', enforceFocusWithinModal, true);
+    const target = state.trigger || lastActiveElement;
+    state.mode = 'add';
+    state.lessonId = null;
+    state.trigger = null;
+    setPreferredFocus(null);
+    resetForm();
+    if (target && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  };
+
+  const openAddLesson = ({ defaultDay = 'Monday', trigger } = {}) => {
+    state.mode = 'add';
+    state.lessonId = null;
+    resetForm();
+    toggleSection(lessonSection, true);
+    toggleSection(summarySection, true);
+    toggleSection(detailSection, false);
+    toggleSection(duplicateSection, false);
+    setLessonFieldsDisabled(false);
+    const resolvedDay = typeof defaultDay === 'string' && defaultDay.trim() ? defaultDay.trim() : 'Monday';
+    dayField.value = resolvedDay;
+    if (dayField.value !== resolvedDay) {
+      dayField.value = 'Monday';
+    }
+    titleField.value = resolvedDay ? `${resolvedDay} lesson` : '';
+    summaryField.value = '';
+    updateModalCopy({
+      title: 'Add lesson',
+      description: 'Pick a day and capture the lesson focus for this week.',
+      action: 'Save lesson'
+    });
+    setPreferredFocus(titleField);
+    openModal({ trigger });
+  };
+
+  const openEditLesson = ({ lesson, trigger } = {}) => {
+    if (!lesson) {
+      return;
+    }
+    state.mode = 'edit';
+    state.lessonId = lesson.id;
+    resetForm();
+    toggleSection(lessonSection, true);
+    toggleSection(summarySection, true);
+    toggleSection(detailSection, false);
+    toggleSection(duplicateSection, false);
+    setLessonFieldsDisabled(false);
+    const dayValue = lesson.dayLabel || lesson.dayName || 'Monday';
+    dayField.value = dayValue;
+    if (dayField.value !== dayValue) {
+      dayField.value = 'Monday';
+    }
+    titleField.value = lesson.title || '';
+    summaryField.value = lesson.summary || '';
+    updateModalCopy({
+      title: 'Edit lesson',
+      description: 'Update the lesson information for this week.',
+      action: 'Update lesson'
+    });
+    setPreferredFocus(titleField);
+    openModal({ trigger });
+  };
+
+  const openAddDetail = ({ lesson, trigger } = {}) => {
+    if (!lesson) {
+      return;
+    }
+    state.mode = 'detail';
+    state.lessonId = lesson.id;
+    resetForm();
+    toggleSection(lessonSection, true);
+    toggleSection(summarySection, true);
+    toggleSection(detailSection, true);
+    toggleSection(duplicateSection, false);
+    setLessonFieldsDisabled(true);
+    const dayValue = lesson.dayLabel || lesson.dayName || 'Monday';
+    dayField.value = dayValue;
+    if (dayField.value !== dayValue) {
+      dayField.value = 'Monday';
+    }
+    titleField.value = lesson.title || '';
+    summaryField.value = lesson.summary || '';
+    if (detailBadgeField instanceof HTMLInputElement) {
+      detailBadgeField.value = '';
+    }
+    if (detailTextField instanceof HTMLTextAreaElement) {
+      detailTextField.value = '';
+    } else if (detailTextField instanceof HTMLInputElement) {
+      detailTextField.value = '';
+    }
+    updateModalCopy({
+      title: 'Add lesson detail',
+      description: 'Add a quick badge and note to this lesson.',
+      action: 'Save detail'
+    });
+    setPreferredFocus(detailTextField instanceof HTMLElement ? detailTextField : null);
+    openModal({ trigger });
+  };
+
+  const openDuplicatePlan = ({ suggestedWeekId = '', trigger } = {}) => {
+    state.mode = 'duplicate';
+    state.lessonId = null;
+    resetForm();
+    toggleSection(lessonSection, false);
+    toggleSection(summarySection, false);
+    toggleSection(detailSection, false);
+    toggleSection(duplicateSection, true);
+    if (duplicateWeekInput instanceof HTMLInputElement) {
+      duplicateWeekInput.value = suggestedWeekId;
+    }
+    updateModalCopy({
+      title: 'Duplicate plan',
+      description: 'Copy everything from this week into another week.',
+      action: 'Duplicate week'
+    });
+    setPreferredFocus(duplicateWeekInput instanceof HTMLElement ? duplicateWeekInput : null);
+    openModal({ trigger });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    clearError();
+    setSubmitting(true);
+    try {
+      if (state.mode === 'duplicate') {
+        const targetWeekId = duplicateWeekInput?.value?.trim();
+        if (!targetWeekId) {
+          showError('Enter the Monday date for the destination week.');
+          return;
+        }
+        if (targetWeekId === activePlannerWeekId) {
+          showError('Choose a different week to duplicate into.');
+          return;
+        }
+        const plan = await duplicateWeekPlan(activePlannerWeekId, targetWeekId);
+        if (plan) {
+          activePlannerWeekId = targetWeekId;
+          currentPlannerPlan = plan;
+          renderPlannerLessons(plan);
+          updatePlannerWeekHeading(targetWeekId);
+          updatePlannerDashboardSummary(plan, targetWeekId);
+          closeModal();
+        }
+        return;
+      }
+
+      if (state.mode === 'detail') {
+        if (!state.lessonId) {
+          showError('Select a lesson before adding details.');
+          return;
+        }
+        const detailText = detailTextField?.value?.trim();
+        if (!detailText) {
+          showError('Add text for this detail.');
+          return;
+        }
+        const badge = detailBadgeField?.value?.trim() || '';
+        const plan = await addLessonDetail(activePlannerWeekId, state.lessonId, { badge, text: detailText });
+        if (plan) {
+          currentPlannerPlan = plan;
+          renderPlannerLessons(plan);
+          updatePlannerDashboardSummary(plan, activePlannerWeekId);
+          closeModal();
+        }
+        return;
+      }
+
+      const dayName = dayField.value.trim();
+      const title = titleField.value.trim();
+      const summary = summaryField.value.trim();
+
+      if (!dayName) {
+        showError('Choose a day for this lesson.');
+        return;
+      }
+      if (!title) {
+        showError('Enter a lesson title.');
+        return;
+      }
+
+      if (state.mode === 'edit') {
+        if (!state.lessonId) {
+          showError('Select a lesson to edit.');
+          return;
+        }
+        const plan = await updateLessonInWeek(activePlannerWeekId, state.lessonId, {
+          dayName,
+          title,
+          summary
+        });
+        if (plan) {
+          currentPlannerPlan = plan;
+          renderPlannerLessons(plan);
+          updatePlannerDashboardSummary(plan, activePlannerWeekId);
+          closeModal();
+        }
+        return;
+      }
+
+      const plan = await addLessonToWeek(activePlannerWeekId, {
+        dayName,
+        title,
+        summary
+      });
+      if (plan) {
+        currentPlannerPlan = plan;
+        renderPlannerLessons(plan);
+        updatePlannerDashboardSummary(plan, activePlannerWeekId);
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Failed to save planner change', error);
+      showError('Unable to save changes right now. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  form.addEventListener('submit', handleSubmit);
+
+  closeButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeModal();
+    });
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  backdrop?.addEventListener('click', (event) => {
+    if (event.target === backdrop) {
+      closeModal();
+    }
+  });
+
+  return {
+    openAddLesson,
+    openEditLesson,
+    openAddDetail,
+    openDuplicatePlan,
+    close: closeModal
+  };
+}
+
 const remindersCountElement = document.getElementById('remindersCount');
 const plannerCountElement = document.getElementById('plannerCount');
 const plannerSubtitleElement = document.getElementById('plannerSubtitle');
@@ -1435,6 +1919,7 @@ const defaultPlannerWeekId = getPlannerWeekIdFromDate();
 let plannerViewInitialised = false;
 let activePlannerWeekId = defaultPlannerWeekId;
 let currentPlannerPlan = null;
+const plannerLessonModalController = createPlannerLessonModal();
 
 const updatePlannerCountDisplay = (sourceLessons) => {
   if (!plannerCountElement) {
@@ -1593,10 +2078,10 @@ function handlePlannerCardAction(event) {
   }
   switch (action) {
     case 'add-detail':
-      handlePlannerAddDetail(lessonId);
+      handlePlannerAddDetail(lessonId, trigger);
       break;
     case 'edit':
-      handlePlannerEditLesson(lessonId);
+      handlePlannerEditLesson(lessonId, trigger);
       break;
     case 'delete':
       handlePlannerDeleteLesson(lessonId);
@@ -1606,127 +2091,48 @@ function handlePlannerCardAction(event) {
   }
 }
 
-async function handlePlannerNewLesson() {
-  if (typeof window === 'undefined') {
+async function handlePlannerNewLesson(event) {
+  if (typeof document === 'undefined' || !plannerLessonModalController) {
     return;
   }
+  event?.preventDefault?.();
+  const triggerElement = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   const defaultDay = currentPlannerPlan?.lessons?.[0]?.dayLabel || 'Monday';
-  const dayNameInput = window.prompt('Which day is this lesson for?', defaultDay);
-  if (!dayNameInput) {
-    return;
-  }
-  const titleInput = window.prompt('Lesson title', `${dayNameInput.trim()} lesson`);
-  if (!titleInput) {
-    return;
-  }
-  const summaryInput = window.prompt('What is the focus for this lesson?', '');
-  if (summaryInput === null) {
-    return;
-  }
-  try {
-    const plan = await addLessonToWeek(activePlannerWeekId, {
-      dayName: dayNameInput,
-      title: titleInput,
-      summary: summaryInput
-    });
-    if (plan) {
-      currentPlannerPlan = plan;
-      renderPlannerLessons(plan);
-      updatePlannerDashboardSummary(plan, activePlannerWeekId);
-    }
-  } catch (error) {
-    console.error('Failed to add planner lesson', error);
-    window.alert('Unable to add a new lesson right now. Please try again.');
-  }
+  plannerLessonModalController.openAddLesson({ defaultDay, trigger: triggerElement });
 }
 
-async function handlePlannerDuplicatePlan() {
-  if (typeof window === 'undefined') {
+async function handlePlannerDuplicatePlan(event) {
+  if (!plannerLessonModalController) {
     return;
   }
+  event?.preventDefault?.();
+  const triggerElement = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   const suggestedWeekId = getWeekIdFromOffset(activePlannerWeekId, 1);
-  const targetWeekId = window.prompt(
-    'Enter the Monday date (YYYY-MM-DD) for the week that should receive this copy.',
-    suggestedWeekId
-  );
-  if (!targetWeekId || targetWeekId === activePlannerWeekId) {
-    return;
-  }
-  try {
-    const plan = await duplicateWeekPlan(activePlannerWeekId, targetWeekId);
-    if (plan) {
-      activePlannerWeekId = targetWeekId;
-      currentPlannerPlan = plan;
-      renderPlannerLessons(plan);
-      updatePlannerWeekHeading(targetWeekId);
-      updatePlannerDashboardSummary(plan, targetWeekId);
-    }
-  } catch (error) {
-    console.error('Failed to duplicate planner week', error);
-    window.alert('Unable to duplicate that plan right now. Please try again.');
-  }
+  plannerLessonModalController.openDuplicatePlan({ suggestedWeekId, trigger: triggerElement });
 }
 
-async function handlePlannerAddDetail(lessonId) {
-  if (!lessonId || typeof window === 'undefined') {
-    return;
-  }
-  const badge = window.prompt('Label for this detail (optional):', '');
-  if (badge === null) {
-    return;
-  }
-  const detailText = window.prompt('What detail would you like to add?', '');
-  if (!detailText || !detailText.trim()) {
-    return;
-  }
-  try {
-    const plan = await addLessonDetail(activePlannerWeekId, lessonId, { badge, text: detailText });
-    if (plan) {
-      currentPlannerPlan = plan;
-      renderPlannerLessons(plan);
-      updatePlannerDashboardSummary(plan, activePlannerWeekId);
-    }
-  } catch (error) {
-    console.error('Failed to add planner detail', error);
-    window.alert('Unable to add this detail right now.');
-  }
-}
-
-async function handlePlannerEditLesson(lessonId) {
-  if (!lessonId || typeof window === 'undefined') {
+async function handlePlannerAddDetail(lessonId, triggerElement) {
+  if (!lessonId || !plannerLessonModalController) {
     return;
   }
   const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
   if (!lesson) {
     return;
   }
-  const nextTitle = window.prompt('Lesson title', lesson.title);
-  if (nextTitle === null || !nextTitle.trim()) {
+  const trigger = triggerElement instanceof HTMLElement ? triggerElement : null;
+  plannerLessonModalController.openAddDetail({ lesson, trigger });
+}
+
+async function handlePlannerEditLesson(lessonId, triggerElement) {
+  if (!lessonId || !plannerLessonModalController) {
     return;
   }
-  const nextSummary = window.prompt('Lesson summary', lesson.summary || '');
-  if (nextSummary === null) {
+  const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
+  if (!lesson) {
     return;
   }
-  const nextDay = window.prompt('Day of the week', lesson.dayLabel || 'Monday');
-  if (!nextDay) {
-    return;
-  }
-  try {
-    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, {
-      title: nextTitle,
-      summary: nextSummary,
-      dayName: nextDay
-    });
-    if (plan) {
-      currentPlannerPlan = plan;
-      renderPlannerLessons(plan);
-      updatePlannerDashboardSummary(plan, activePlannerWeekId);
-    }
-  } catch (error) {
-    console.error('Failed to update planner lesson', error);
-    window.alert('Unable to update that lesson right now.');
-  }
+  const trigger = triggerElement instanceof HTMLElement ? triggerElement : null;
+  plannerLessonModalController.openEditLesson({ lesson, trigger });
 }
 
 async function handlePlannerDeleteLesson(lessonId) {
