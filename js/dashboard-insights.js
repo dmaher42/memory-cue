@@ -262,6 +262,68 @@ async function updateNewsCard() {
   }
 }
 
+function initWindyModal() {
+  const openBtn = document.querySelector('[data-action="open-windy-map"]');
+  const closeBtn = document.querySelector('[data-action="close-windy-map"]');
+  const modal = document.getElementById('windyWeatherModal');
+
+  if (!openBtn || !modal) {
+    return;
+  }
+
+  const wrapper = modal.querySelector('.windy-embed-wrapper');
+
+  const loadIframe = () => {
+    if (!wrapper || wrapper.dataset.loaded === 'true') {
+      return;
+    }
+
+    wrapper.innerHTML = `
+        <!-- TODO: Use the Windy "Embed" tool to generate this URL for your preferred zoom/location and paste it here. -->
+        <iframe
+          title="Windy weather map"
+          style="width:100%;height:360px;border:0;border-radius:12px;"
+          src="YOUR_WINDY_EMBED_URL_HERE"
+          loading="lazy"
+        ></iframe>`;
+    wrapper.dataset.loaded = 'true';
+  };
+
+  function hideModal() {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    document.removeEventListener('keydown', handleEscape, true);
+  }
+
+  function handleEscape(event) {
+    if (event.key === 'Escape' && !modal.hidden) {
+      hideModal();
+    }
+  }
+
+  const showModal = () => {
+    modal.hidden = false;
+    modal.removeAttribute('aria-hidden');
+    loadIframe();
+    document.addEventListener('keydown', handleEscape, true);
+    if (closeBtn) {
+      closeBtn.focus();
+    }
+  };
+
+  openBtn.addEventListener('click', showModal);
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideModal);
+  }
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      hideModal();
+    }
+  });
+}
+
 function initDashboardInsights() {
   if (typeof document === 'undefined') {
     return;
@@ -274,6 +336,8 @@ function initDashboardInsights() {
   if (newsElements.status) {
     updateNewsCard();
   }
+
+  initWindyModal();
 }
 
 if (document.readyState === 'loading') {
