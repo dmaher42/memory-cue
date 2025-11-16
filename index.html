@@ -766,8 +766,8 @@
               <p class="desktop-panel-subtitle">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
             </div>
             <div class="desktop-panel-actions flex flex-wrap items-center gap-2">
-              <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Duplicate plan</button>
-              <button type="button" class="btn btn-sm btn-primary" disabled title="Coming soon">New lesson</button>
+              <button type="button" id="planner-duplicate-btn" class="btn btn-sm btn-outline">Duplicate plan</button>
+              <button type="button" id="planner-new-lesson-btn" class="btn btn-sm btn-primary">New lesson</button>
             </div>
           </header>
           <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
@@ -775,84 +775,8 @@
             <button type="button" class="btn btn-xs btn-secondary">Week 8</button>
             <button type="button" class="btn btn-xs btn-secondary">Week 9</button>
           </div>
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
-            <div class="card-body gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-base-content">Monday</h2>
-                <p class="text-sm text-base-content/70">Co-teach literacy rotations with Mia. Collect exit slips.</p>
-              </div>
-              <ul class="space-y-2 text-sm text-base-content/70">
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-primary">Workshop</span>
-                  Shared reading focus · 45 mins
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-secondary">Prep</span>
-                  Print small group checklists
-                </li>
-              </ul>
-              <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Add detail</button>
-            </div>
-          </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
-            <div class="card-body gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-base-content">Tuesday</h2>
-                <p class="text-sm text-base-content/70">STEM lab – robotics challenges for groups A &amp; B.</p>
-              </div>
-              <ul class="space-y-2 text-sm text-base-content/70">
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-accent">Lab</span>
-                  Calibrate sensors before class
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-warning">Check-in</span>
-                  Collect student reflections in Notes
-                </li>
-              </ul>
-              <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Add detail</button>
-            </div>
-          </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
-            <div class="card-body gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-base-content">Wednesday</h2>
-                <p class="text-sm text-base-content/70">Parent interviews from 3 PM. Prepare student snapshots.</p>
-              </div>
-              <ul class="space-y-2 text-sm text-base-content/70">
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-secondary">Families</span>
-                  Finalise progress highlights
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-primary">Reminder</span>
-                  Email timetable to staff
-                </li>
-              </ul>
-              <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Add detail</button>
-            </div>
-          </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
-            <div class="card-body gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-base-content">Thursday</h2>
-                <p class="text-sm text-base-content/70">Lesson study · co-design inquiry prompts with team.</p>
-              </div>
-              <ul class="space-y-2 text-sm text-base-content/70">
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-success">Collab</span>
-                  Align goals with team rubric
-                </li>
-                <li class="flex items-center gap-2">
-                  <span class="badge badge-outline badge-sm text-info">Resource</span>
-                  Attach planning template
-                </li>
-              </ul>
-              <button class="btn btn-sm btn-outline" type="button" disabled title="Coming soon">Add detail</button>
-            </div>
-          </article>
-          </div>
+          <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
+          <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
         </div>
       </section>
 
@@ -1287,7 +1211,7 @@
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-Q2AHUT4U.js" defer></script>
+  <script type="module" src="./assets/app-EHW6H5LZ.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
