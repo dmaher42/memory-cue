@@ -307,6 +307,7 @@ const initMobileNotes = () => {
 
   const titleInput = document.getElementById('noteTitleMobile');
   const bodyInput = document.getElementById('noteBodyMobile');
+  const bodyInputWrapper = bodyInput?.closest('[data-role="note-body-field"]');
   const saveButton = document.getElementById('noteSaveMobile');
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
@@ -319,6 +320,17 @@ const initMobileNotes = () => {
   if (!titleInput || !bodyInput || !saveButton) {
     return;
   }
+
+  const syncBodyPlaceholderState = () => {
+    if (!bodyInputWrapper || !bodyInput) {
+      return;
+    }
+    const hasContent = typeof bodyInput.value === 'string' && bodyInput.value.trim().length > 0;
+    bodyInputWrapper.setAttribute('data-has-content', hasContent ? 'true' : 'false');
+  };
+
+  syncBodyPlaceholderState();
+  bodyInput.addEventListener('input', syncBodyPlaceholderState);
 
   const debounce = (fn, delay = 200) => {
     let timeoutId;
@@ -419,6 +431,7 @@ const initMobileNotes = () => {
       bodyInput.value = '';
       delete titleInput.dataset.noteOriginalTitle;
       delete bodyInput.dataset.noteOriginalBody;
+      syncBodyPlaceholderState();
       return;
     }
     currentNoteId = note.id;
@@ -426,6 +439,7 @@ const initMobileNotes = () => {
     bodyInput.value = note.body || '';
     titleInput.dataset.noteOriginalTitle = note.title || '';
     bodyInput.dataset.noteOriginalBody = note.body || '';
+    syncBodyPlaceholderState();
   };
 
   const updateListSelection = () => {
@@ -584,12 +598,16 @@ const initMobileNotes = () => {
 
     if (countElement) {
       const totalSaved = allNotes.length;
-      countElement.textContent = `${totalSaved} saved`;
+      const visibleCount = notes.length;
+      countElement.textContent = totalSaved
+        ? `${visibleCount} of ${totalSaved} saved`
+        : 'No saved notes yet';
     }
 
     if (!notes.length) {
       const emptyItem = document.createElement('li');
-      emptyItem.className = 'text-xs italic text-base-content/60 px-1';
+      emptyItem.className =
+        'text-xs italic text-base-content/60 px-3 py-4 text-center rounded-2xl border border-dashed border-base-200/80 bg-base-100/50';
       emptyItem.textContent =
         allNotes.length && getNormalizedFilterQuery()
           ? 'No notes match this filter.'
@@ -600,36 +618,36 @@ const initMobileNotes = () => {
 
     notes.forEach((note) => {
       const listItem = document.createElement('li');
-      listItem.className = 'note-item-mobile';
+      listItem.className = 'note-item-mobile w-full';
 
       const row = document.createElement('div');
-      row.className = 'flex items-stretch gap-1';
+      row.className = 'flex items-center gap-2';
 
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.noteId = note.id;
       button.dataset.role = 'open-note';
       button.className =
-        'flex-1 text-left rounded-xl border border-base-200/70 bg-base-100 px-3 py-2.5 flex flex-col gap-0.5 active:scale-[0.99] transition-transform';
+        'note-card group flex-1 text-left rounded-2xl border border-base-200/70 bg-base-100 px-4 py-3 flex flex-col gap-1 shadow-sm transition-all duration-200 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
 
       const headerRow = document.createElement('div');
       headerRow.className = 'flex items-center justify-between gap-2';
 
       const titleSpan = document.createElement('span');
-      titleSpan.className = 'text-[0.82rem] font-medium truncate';
+      titleSpan.className = 'text-sm font-semibold truncate text-base-content';
       titleSpan.textContent = note.title || 'Untitled note';
       headerRow.appendChild(titleSpan);
 
       const timestampText = formatNoteTimestamp(note.updatedAt || note.createdAt);
       if (timestampText) {
         const dateSpan = document.createElement('span');
-        dateSpan.className = 'text-[0.7rem] text-base-content/50 whitespace-nowrap';
+        dateSpan.className = 'text-[0.7rem] text-base-content/50 whitespace-nowrap font-medium';
         dateSpan.textContent = timestampText;
         headerRow.appendChild(dateSpan);
       }
 
       const preview = document.createElement('p');
-      preview.className = 'text-[0.75rem] text-base-content/60 line-clamp-2';
+      preview.className = 'text-xs text-base-content/70 line-clamp-2 leading-snug';
       const bodyText =
         typeof note.body === 'string' ? note.body.replace(/\s+/g, ' ').trim() : '';
       preview.textContent = bodyText || 'No body text yet.';
@@ -642,7 +660,7 @@ const initMobileNotes = () => {
       deleteButton.dataset.noteId = note.id;
       deleteButton.dataset.role = 'delete-note';
       deleteButton.className =
-        'shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-base-200/80 text-base-content/60 text-xs active:scale-95';
+        'btn btn-ghost btn-circle btn-sm shrink-0 text-error/70 hover:text-error focus-visible:outline-none focus-visible:ring focus-visible:ring-error/30';
       deleteButton.setAttribute('aria-label', 'Delete note');
       deleteButton.textContent = '✕';
 
