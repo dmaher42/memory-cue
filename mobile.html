@@ -214,7 +214,7 @@
     background: linear-gradient(to top, rgba(15, 23, 42, 0.08), transparent);
   }
 
-  .card {
+  #view-notebook .card {
     background: var(--card-bg);
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
@@ -223,7 +223,7 @@
     transition: var(--transition);
   }
 
-  .card:hover {
+  #view-notebook .card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
   }
@@ -2791,9 +2791,88 @@
     }
   </style>
 
-  <header class="sticky top-0 z-20 text-black shadow-md">
-    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-center">
-      <h1 class="text-lg font-semibold tracking-tight">Notes</h1>
+  <header class="sticky top-0 z-20 text-black shadow-md bg-white/80 backdrop-blur">
+    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-3">
+      <div class="header-action-group">
+        <button
+          id="btn-open-drawer"
+          type="button"
+          class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-200/70 bg-white/90 text-slate-800 shadow-sm transition"
+          aria-label="Open navigation menu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+        </button>
+      </div>
+
+      <div class="flex-1 flex justify-center">
+        <button id="addReminderBtn" type="button" class="mc-add-btn mc-add-btn-wide" data-open-add-task>
+          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+          <span class="mc-add-btn-label">Add reminder</span>
+        </button>
+      </div>
+
+      <div class="relative header-action-group">
+        <button
+          id="overflowMenuBtn"
+          type="button"
+          class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-200/70 bg-white/90 text-slate-800 shadow-sm transition"
+          aria-label="Open quick settings"
+          aria-haspopup="menu"
+          aria-controls="overflowMenu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+        </button>
+
+        <div
+          id="overflowMenu"
+          class="hidden quick-actions-panel absolute right-0 mt-2"
+          role="menu"
+          aria-hidden="true"
+          aria-labelledby="overflowMenuHeading"
+        >
+          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+          <ul class="quick-actions" role="presentation">
+            <li role="none">
+              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                <span class="sr-only">Dictate reminder</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                <span class="sr-only">Open settings</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                <span class="sr-only">Toggle theme</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                <span class="sr-only">Sign in</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                <span class="sr-only">Sign out</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </header>
 
