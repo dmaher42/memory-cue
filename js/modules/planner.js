@@ -410,6 +410,21 @@ export const getWeekLabel = (weekId, { short = false } = {}) => {
   return `${startLabel} – ${endLabel}, ${yearLabel}`;
 };
 
+export const getPlannerLessonsForWeek = (weekId = getWeekIdFromDate()) => {
+  if (!weekId) {
+    return [];
+  }
+  const cached = plannerCache.get(weekId);
+  if (cached && Array.isArray(cached.lessons)) {
+    return [...cached.lessons];
+  }
+  const localPlan = getLocalPlan(weekId);
+  if (Array.isArray(localPlan?.lessons)) {
+    return [...localPlan.lessons];
+  }
+  return [];
+};
+
 export const loadWeekPlan = async (weekId = getWeekIdFromDate()) => {
   if (!weekId) {
     return null;

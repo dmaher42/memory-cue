@@ -26,7 +26,8 @@ import {
   deleteLessonFromWeek,
   addLessonDetail,
   duplicateWeekPlan,
-  PLANNER_UPDATED_EVENT
+  PLANNER_UPDATED_EVENT,
+  getPlannerLessonsForWeek
 } from './js/modules/planner.js';
 
 initViewportHeight();
@@ -1382,40 +1383,23 @@ let plannerViewInitialised = false;
 let activePlannerWeekId = defaultPlannerWeekId;
 let currentPlannerPlan = null;
 
-const updateDailyTaskCountDisplay = (tasks) => {
+const updatePlannerCountDisplay = (sourceLessons) => {
   if (!plannerCountElement) {
     return;
   }
-  if (plannerSubtitleElement?.textContent) {
-    return;
+  let lessons = [];
+  if (Array.isArray(sourceLessons)) {
+    lessons = sourceLessons;
+  } else if (sourceLessons && typeof sourceLessons === 'object' && Array.isArray(sourceLessons.lessons)) {
+    lessons = sourceLessons.lessons;
+  } else {
+    lessons = getPlannerLessonsForWeek(defaultPlannerWeekId);
   }
-  const taskList = Array.isArray(tasks) ? tasks : [];
-  plannerCountElement.textContent = String(taskList.length);
-};
-
-const trackDailyTaskCountFromPromise = (maybePromise) => {
-  if (!maybePromise || typeof maybePromise.then !== 'function') {
-    updateDailyTaskCountDisplay(currentDailyTasks);
-    return;
-  }
-  maybePromise
-    .then((tasks) => {
-      if (Array.isArray(tasks)) {
-        updateDailyTaskCountDisplay(tasks);
-        return;
-      }
-      updateDailyTaskCountDisplay(currentDailyTasks);
-    })
-    .catch(() => {
-      updateDailyTaskCountDisplay(currentDailyTasks);
-    });
+  plannerCountElement.textContent = String(lessons.length);
 };
 
 function updatePlannerDashboardSummary(plan, fallbackWeekId) {
-  if (plannerCountElement) {
-    const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
-    plannerCountElement.textContent = String(lessons.length);
-  }
+  updatePlannerCountDisplay(plan);
   if (plannerSubtitleElement) {
     const label = getWeekLabel(plan?.weekId || fallbackWeekId, { short: true });
     plannerSubtitleElement.textContent = label || '';
@@ -1968,7 +1952,6 @@ async function loadDailyList() {
     const localTasks = getLocalDailyTasks(todayId);
     currentDailyTasks = localTasks;
     renderDailyTasks(localTasks);
-    updateDailyTaskCountDisplay(localTasks);
     return Promise.resolve(localTasks);
   }
   if (!dailyListLoadPromise) {
@@ -1985,7 +1968,6 @@ async function loadDailyList() {
         setLocalDailyTasks(todayId, currentDailyTasks);
         shouldUseLocalDailyList = false;
         hideDailyListPermissionNotice();
-        updateDailyTaskCountDisplay(currentDailyTasks);
         return currentDailyTasks;
       } catch (error) {
         if (isPermissionDeniedError(error)) {
@@ -1995,14 +1977,12 @@ async function loadDailyList() {
           const localTasks = getLocalDailyTasks(todayId);
           currentDailyTasks = localTasks;
           renderDailyTasks(localTasks);
-          updateDailyTaskCountDisplay(localTasks);
           return localTasks;
         }
         console.error('Failed to load daily list', error);
         dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
         currentDailyTasks = [];
         updateClearCompletedButtonState(currentDailyTasks);
-        updateDailyTaskCountDisplay(currentDailyTasks);
         return currentDailyTasks;
       }
     })().finally(() => {
@@ -2103,7 +2083,7 @@ function showDailyTab() {
   cuesView.classList.add('hidden');
   dailyListView.classList.remove('hidden');
   activateTab(dailyTab);
-  trackDailyTaskCountFromPromise(loadDailyList());
+  loadDailyList();
 }
 
 if (cuesTab && dailyTab && cuesView && dailyListView) {
@@ -2282,8 +2262,7 @@ quickAddForm?.addEventListener('submit', async (event) => {
   quickAddInput.focus();
   try {
     await addTaskToDailyList(task);
-    const tasksForToday = await loadDailyList();
-    updateDailyTaskCountDisplay(tasksForToday ?? currentDailyTasks);
+    await loadDailyList();
   } catch (error) {
     console.error('Failed to add task to the daily list', error);
     quickAddInput.value = value;
@@ -2306,14 +2285,12 @@ dailyTasksContainer?.addEventListener('change', async (event) => {
   );
   currentDailyTasks = updatedTasks;
   renderDailyTasks(updatedTasks);
-  updateDailyTaskCountDisplay(updatedTasks);
   try {
     await saveDailyTasks(updatedTasks);
   } catch (error) {
     console.error('Failed to update task completion state', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
-    updateDailyTaskCountDisplay(previousState);
   }
 });
 
@@ -2328,20 +2305,17 @@ clearCompletedButton?.addEventListener('click', async () => {
   const previousState = currentDailyTasks.map((task) => ({ ...task }));
   currentDailyTasks = remainingTasks;
   renderDailyTasks(remainingTasks);
-  updateDailyTaskCountDisplay(remainingTasks);
   try {
     await saveDailyTasks(remainingTasks);
   } catch (error) {
     console.error('Failed to clear completed tasks', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
-    updateDailyTaskCountDisplay(previousState);
   }
 });
 
 updateClearCompletedButtonState(currentDailyTasks);
-updateDailyTaskCountDisplay(currentDailyTasks);
-trackDailyTaskCountFromPromise(loadDailyList());
+loadDailyList();
 
 function initDesktopNotes() {
   if (typeof document === 'undefined') {
