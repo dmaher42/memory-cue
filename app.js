@@ -513,6 +513,8 @@ const settingsSaveButton = document.getElementById('settings-save-button');
 const settingsSaveConfirmation = document.getElementById('settings-save-confirmation');
 const liveStatusRegion = document.getElementById('live-status');
 let hideSettingsSaveConfirmationTimeoutId = null;
+const resourcePlannerStatusElement = document.getElementById('resourcePlannerStatus');
+let resourcePlannerStatusTimeoutId = null;
 
 if (settingsSaveButton && settingsSaveConfirmation) {
   settingsSaveButton.addEventListener('click', (event) => {
@@ -583,6 +585,119 @@ function initPlannerQuickActions() {
 }
 
 initPlannerQuickActions();
+
+function showResourcePlannerStatus(message, { tone = 'success' } = {}) {
+  if (resourcePlannerStatusElement) {
+    resourcePlannerStatusElement.textContent = message;
+    resourcePlannerStatusElement.classList.remove('hidden');
+    resourcePlannerStatusElement.classList.remove('text-success', 'text-error');
+    resourcePlannerStatusElement.classList.add(tone === 'error' ? 'text-error' : 'text-success');
+    if (typeof window !== 'undefined') {
+      if (resourcePlannerStatusTimeoutId) {
+        window.clearTimeout(resourcePlannerStatusTimeoutId);
+      }
+      resourcePlannerStatusTimeoutId = window.setTimeout(() => {
+        resourcePlannerStatusElement.classList.add('hidden');
+        resourcePlannerStatusElement.textContent = '';
+      }, 4000);
+    }
+  }
+  if (liveStatusRegion) {
+    liveStatusRegion.textContent = message;
+  }
+}
+
+function generateClientId(prefix = 'resource') {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function handleResourcePlannerButtonClick(event) {
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return;
+  }
+  event.preventDefault();
+  const trigger =
+    event.currentTarget instanceof Element
+      ? event.currentTarget
+      : event.target instanceof Element
+        ? event.target.closest('[data-resource-planner]')
+        : null;
+  if (!trigger) {
+    return;
+  }
+  const resourceCard = trigger.closest('[data-resource-title][data-resource-link]');
+  if (!resourceCard) {
+    return;
+  }
+  const resourceTitle = resourceCard.getAttribute('data-resource-title')?.trim();
+  const resourceLink = resourceCard.getAttribute('data-resource-link')?.trim();
+  if (!resourceTitle || !resourceLink) {
+    return;
+  }
+  const targetHash = '#planner';
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  }
+  if (typeof window.renderRoute === 'function') {
+    window.renderRoute();
+  }
+  scheduleRouteFocus('planner');
+  initPlannerView();
+  await ensurePlannerPlanAvailable();
+  const detailText = `${resourceTitle} — ${resourceLink}`;
+  const selectedLessonId = getSelectedPlannerLessonId();
+  let plan = null;
+  try {
+    if (selectedLessonId) {
+      plan = await addLessonDetail(activePlannerWeekId, selectedLessonId, { badge: 'Resource', text: detailText });
+    } else {
+      const generatedLessonId = generateClientId('lesson');
+      const defaultDayLabel = currentPlannerPlan?.lessons?.[0]?.dayLabel || 'Monday';
+      plan = await addLessonToWeek(activePlannerWeekId, {
+        id: generatedLessonId,
+        dayName: defaultDayLabel,
+        title: resourceTitle,
+        summary: `Resource link: ${resourceLink}`,
+        details: [{ badge: 'Resource', text: detailText }]
+      });
+      if (plan) {
+        selectedPlannerLessonId = generatedLessonId;
+      }
+    }
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      const successMessage = selectedLessonId
+        ? `Added "${resourceTitle}" to your selected lesson.`
+        : `Created a lesson for "${resourceTitle}" in this week's planner.`;
+      showResourcePlannerStatus(successMessage);
+      return;
+    }
+    showResourcePlannerStatus('Unable to save that resource to the planner right now.', { tone: 'error' });
+  } catch (error) {
+    console.error('Failed to save resource to planner', error);
+    showResourcePlannerStatus('Unable to save that resource to the planner right now.', { tone: 'error' });
+  }
+}
+
+function initResourcePlannerButtons() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const plannerButtons = document.querySelectorAll('[data-resource-planner]');
+  if (!plannerButtons.length) {
+    return;
+  }
+  plannerButtons.forEach((button) => {
+    button.addEventListener('click', handleResourcePlannerButtonClick);
+  });
+}
+
+initResourcePlannerButtons();
 
 const titleInput = document.getElementById('reminder-title');
 const mobileTitleInput = document.getElementById('reminderText');
@@ -1435,6 +1550,8 @@ const defaultPlannerWeekId = getPlannerWeekIdFromDate();
 let plannerViewInitialised = false;
 let activePlannerWeekId = defaultPlannerWeekId;
 let currentPlannerPlan = null;
+let plannerRenderPromise = null;
+let selectedPlannerLessonId = null;
 
 const updatePlannerCountDisplay = (sourceLessons) => {
   if (!plannerCountElement) {
@@ -1491,7 +1608,14 @@ function renderPlannerLessons(plan) {
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
   if (!lessons.length) {
     renderPlannerMessage('No lessons saved for this week yet.');
+    selectedPlannerLessonId = null;
     return;
+  }
+  const lessonIds = lessons
+    .map((lesson) => (typeof lesson.id === 'string' && lesson.id ? lesson.id : ''))
+    .filter((id) => Boolean(id));
+  if (selectedPlannerLessonId && !lessonIds.includes(selectedPlannerLessonId)) {
+    selectedPlannerLessonId = null;
   }
   const markup = lessons
     .map((lesson) => {
@@ -1514,11 +1638,15 @@ function renderPlannerLessons(plan) {
         ? `<ul class="space-y-2 text-sm text-base-content/70">${detailItems}</ul>`
         : '<p class="text-sm text-base-content/60">No details yet.</p>';
       const lessonId = typeof lesson.id === 'string' ? lesson.id : '';
+      const isSelected = Boolean(selectedPlannerLessonId && lessonId && selectedPlannerLessonId === lessonId);
+      const selectionAttributes = ['data-planner-lesson', lessonId ? `data-lesson-id="${lessonId}"` : '', isSelected ? 'data-planner-selected="true"' : '']
+        .filter(Boolean)
+        .join(' ');
       const summaryMarkup = lesson.summary
         ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
         : '';
       return `
-        <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
+        <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow" ${selectionAttributes}>
           <div class="card-body gap-4">
             <div class="flex items-start justify-between gap-2">
               <div>
@@ -1559,24 +1687,94 @@ function renderPlannerLessons(plan) {
     })
     .join('');
   plannerCardsContainer.innerHTML = markup;
+  if (selectedPlannerLessonId) {
+    setSelectedPlannerLesson(selectedPlannerLessonId);
+  } else {
+    setSelectedPlannerLesson(null);
+  }
 }
 
-async function renderPlannerForWeek(weekId) {
+function setSelectedPlannerLesson(lessonId) {
+  selectedPlannerLessonId = lessonId || null;
   if (!plannerCardsContainer) {
     return;
+  }
+  const cards = plannerCardsContainer.querySelectorAll('[data-planner-lesson]');
+  cards.forEach((card) => {
+    const matches = Boolean(lessonId) && card.getAttribute('data-lesson-id') === lessonId;
+    if (matches) {
+      card.setAttribute('data-planner-selected', 'true');
+    } else {
+      card.removeAttribute('data-planner-selected');
+    }
+  });
+}
+
+function getSelectedPlannerLessonId() {
+  if (!selectedPlannerLessonId) {
+    return null;
+  }
+  const lessons = Array.isArray(currentPlannerPlan?.lessons) ? currentPlannerPlan.lessons : [];
+  return lessons.some((lesson) => lesson.id === selectedPlannerLessonId) ? selectedPlannerLessonId : null;
+}
+
+function handlePlannerSelection(event) {
+  const lessonCard = event.target instanceof Element ? event.target.closest('[data-planner-lesson][data-lesson-id]') : null;
+  if (!lessonCard) {
+    return;
+  }
+  const lessonId = lessonCard.getAttribute('data-lesson-id');
+  if (!lessonId || lessonId === selectedPlannerLessonId) {
+    return;
+  }
+  setSelectedPlannerLesson(lessonId);
+}
+
+function renderPlannerForWeek(weekId) {
+  if (!plannerCardsContainer) {
+    plannerRenderPromise = null;
+    return Promise.resolve();
   }
   const targetWeekId = weekId || getPlannerWeekIdFromDate();
   activePlannerWeekId = targetWeekId;
   updatePlannerWeekHeading(targetWeekId);
   renderPlannerMessage('Loading plan…');
-  try {
-    const plan = await loadWeekPlan(targetWeekId);
-    currentPlannerPlan = plan;
-    renderPlannerLessons(plan);
-    updatePlannerDashboardSummary(plan, targetWeekId);
-  } catch (error) {
-    console.error('Failed to load planner week', error);
-    renderPlannerMessage('Unable to load this week\'s planner.', { tone: 'error' });
+  const loadOperation = (async () => {
+    try {
+      const plan = await loadWeekPlan(targetWeekId);
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, targetWeekId);
+    } catch (error) {
+      console.error('Failed to load planner week', error);
+      renderPlannerMessage('Unable to load this week\'s planner.', { tone: 'error' });
+    }
+  })();
+  plannerRenderPromise = loadOperation;
+  return loadOperation.finally(() => {
+    if (plannerRenderPromise === loadOperation) {
+      plannerRenderPromise = null;
+    }
+  });
+}
+
+async function ensurePlannerPlanAvailable() {
+  if (!plannerCardsContainer) {
+    return;
+  }
+  if (!plannerViewInitialised) {
+    initPlannerView();
+  }
+  let pendingRender = plannerRenderPromise;
+  if (!pendingRender && (!currentPlannerPlan || currentPlannerPlan.weekId !== activePlannerWeekId)) {
+    pendingRender = renderPlannerForWeek(activePlannerWeekId);
+  }
+  if (pendingRender && typeof pendingRender.then === 'function') {
+    try {
+      await pendingRender;
+    } catch (error) {
+      console.error('Planner failed to load', error);
+    }
   }
 }
 
@@ -1762,6 +1960,7 @@ function initPlannerView() {
   }
   plannerViewInitialised = true;
   initPlannerStore({ ensureFirestore: ensureCueFirestore });
+  plannerCardsContainer.addEventListener('click', handlePlannerSelection);
   plannerCardsContainer.addEventListener('click', handlePlannerCardAction);
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
