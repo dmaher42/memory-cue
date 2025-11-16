@@ -142,6 +142,10 @@
     background: transparent;
   }
 
+  [data-view="notebook"] .textarea {
+    min-height: 0 !important;
+  }
+
   body[data-active-view="notebook"] #view-notebook .card-body {
     padding: clamp(1.25rem, 5vw, 2rem);
     padding-bottom: clamp(5rem, 10vw, 6rem);
@@ -3120,7 +3124,7 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden">
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col h-full max-h-screen overflow-hidden">
         <section class="card bg-base-100 border shadow-sm rounded-2xl">
           <div class="card-body gap-4">
             <header class="flex items-center justify-between gap-2">
@@ -3163,7 +3167,7 @@
                 <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Body</span>
                 <textarea
                   id="noteBodyMobile"
-                  class="textarea textarea-bordered textarea-sm w-full min-h-[140px] leading-snug"
+                  class="textarea textarea-bordered textarea-sm w-full flex-1 resize-none overflow-auto leading-snug"
                   placeholder="Capture ideas, quick plans, or a schedule you don’t want to forget…"
                 ></textarea>
               </label>
