@@ -2018,29 +2018,6 @@
       line-height: 1.35;
     }
 
-    .mobile-shell .reminder-card[data-priority="high" i] .card-accent-dot {
-      background: var(--priority-high-border);
-    }
-
-    .mobile-shell .reminder-card[data-priority="medium" i] .card-accent-dot {
-      background: var(--priority-medium-border);
-    }
-
-    .mobile-shell .reminder-card[data-priority="low" i] .card-accent-dot {
-      background: var(--priority-low-border);
-    }
-
-    .mobile-shell .reminder-card .card-accent-dot {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--accent-color) 70%, transparent);
-      box-shadow: 0 0 0 3px var(--surface-bg, var(--desktop-surface, var(--card-bg)));
-    }
-
     .mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
       flex: 0 0 auto;
       display: flex;
@@ -3718,17 +3695,6 @@
         }
       };
 
-      const ensureCardAccentDot = (card) => {
-        if (!(card instanceof HTMLElement)) return;
-        let accentDot = card.querySelector('.card-accent-dot');
-        if (!accentDot) {
-          accentDot = document.createElement('span');
-          accentDot.className = 'card-accent-dot';
-          accentDot.setAttribute('aria-hidden', 'true');
-          card.appendChild(accentDot);
-        }
-      };
-
       const upgrade = (node) => {
         if (!(node instanceof HTMLElement)) return;
         if (node.parentElement !== list) return;
@@ -3740,7 +3706,6 @@
         }
         applyPriorityPills(node);
         restructureReminderCard(node);
-        ensureCardAccentDot(node);
       };
 
       Array.from(list.children).forEach((child) => {
