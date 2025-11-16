@@ -1442,6 +1442,8 @@ function createPlannerLessonModal() {
 }
 
 const remindersCountElement = document.getElementById('remindersCount');
+const plannerLessonModalController =
+  typeof document !== 'undefined' ? createPlannerLessonModal() : null;
 const plannerCountElement = document.getElementById('plannerCount');
 const plannerSubtitleElement = document.getElementById('plannerSubtitle');
 const resourcesCountElement = document.getElementById('resourcesCount');
