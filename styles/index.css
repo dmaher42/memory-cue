@@ -220,6 +220,7 @@ html[data-theme="professional"] [data-account-panel-container][data-account-coll
 html[data-theme="professional"] .desktop-header-nav-tabs {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
   padding: 0.3rem;
   border-radius: 999px;
@@ -255,14 +256,19 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
   html[data-theme="professional"] .desktop-header-bar {
     position: sticky;
     top: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  html[data-theme="professional"] .desktop-header-left,
+  html[data-theme="professional"] .desktop-header-right {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   html[data-theme="professional"] .desktop-header-nav-tabs {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1;
+    margin: 0 auto;
+    justify-content: center;
   }
 }
 
