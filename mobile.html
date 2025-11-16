@@ -1845,7 +1845,8 @@
   <style id="mobile-reminder-card-refresh">
     .mobile-shell #reminderList,
     .mobile-shell .reminder-list {
-      padding: 0 0.75rem;
+      padding: 0 0.8rem;
+      margin-top: 0.8rem;
       width: 100%;
       box-sizing: border-box;
     }
@@ -1862,29 +1863,28 @@
       gap: 0;
     }
 
-    .mobile-shell #reminderList > .reminder-card {
+    .mobile-shell .reminder-card {
+      position: relative;
       width: 100%;
-      background-color: var(--desktop-surface, var(--card-bg));
-      border-radius: 12px;
-      border: 1px solid var(--card-border);
-      border-left: 4px solid var(--card-border);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-      padding: 0.9rem 1rem;
-      padding-left: calc(1rem - 4px);
+      background: var(--surface-bg, var(--desktop-surface, var(--card-bg)));
+      border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--card-border) 35%, transparent);
+      padding: 0.85rem 1rem;
+      box-shadow: 3px 3px 8px rgba(15, 23, 42, 0.06), -2px -2px 6px rgba(255, 255, 255, 0.9);
       margin-bottom: 0.9rem;
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
       min-height: 48px;
       line-height: 1.4;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
       touch-action: manipulation;
     }
 
-    .dark .mobile-shell #reminderList > .reminder-card {
-      background-color: color-mix(in srgb, var(--text-primary) 24%, rgba(15, 23, 42, 0.92) 76%);
+    .dark .mobile-shell .reminder-card {
+      background: color-mix(in srgb, var(--text-primary) 18%, rgba(15, 23, 42, 0.92) 82%);
       border-color: color-mix(in srgb, var(--card-border) 55%, transparent);
-      box-shadow: 0 3px 14px rgba(15, 23, 42, 0.6);
+      box-shadow: 3px 3px 10px rgba(15, 23, 42, 0.65), -2px -2px 5px rgba(255, 255, 255, 0.04);
     }
 
     .mobile-shell #reminderList.space-y-3 > .reminder-card:last-child,
@@ -1897,22 +1897,22 @@
       outline-offset: 2px;
     }
 
-    .mobile-shell #reminderList > .reminder-card:active {
+    .mobile-shell .reminder-card:active {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09);
+      box-shadow: 1px 1px 4px rgba(15, 23, 42, 0.1), -1px -1px 4px rgba(255, 255, 255, 0.95);
     }
 
     @media (hover: hover) {
-      .mobile-shell #reminderList > .reminder-card:hover {
+      .mobile-shell .reminder-card:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09);
+        box-shadow: 1px 1px 4px rgba(15, 23, 42, 0.1), -1px -1px 4px rgba(255, 255, 255, 0.95);
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .mobile-shell #reminderList > .reminder-card,
-      .mobile-shell #reminderList > .reminder-card:hover,
-      .mobile-shell #reminderList > .reminder-card:active {
+      .mobile-shell .reminder-card,
+      .mobile-shell .reminder-card:hover,
+      .mobile-shell .reminder-card:active {
         transition: box-shadow 0.12s ease, border-color 0.12s ease;
         transform: none;
       }
@@ -1950,11 +1950,12 @@
       min-width: 0;
     }
 
+    .mobile-shell .reminder-card .title,
     .mobile-shell #reminderList > .reminder-card .reminder-title-slot > *,
     .mobile-shell #reminderList > .reminder-card [data-reminder-title] {
-      font-size: 0.95rem;
+      font-size: 1.02rem;
       font-weight: 600;
-      color: var(--text-primary, var(--desktop-text-main));
+      color: var(--desktop-text-main, var(--text-primary));
       line-height: 1.3;
       margin: 0;
       overflow: hidden;
@@ -1965,14 +1966,38 @@
       word-break: break-word;
     }
 
+    .mobile-shell .reminder-card .meta,
     .mobile-shell #reminderList > .reminder-card .reminder-meta-slot,
     .mobile-shell #reminderList > .reminder-card .reminder-secondary-row,
     .mobile-shell #reminderList > .reminder-card .reminder-due,
     .mobile-shell #reminderList > .reminder-card .task-meta-text,
     .mobile-shell #reminderList > .reminder-card time {
       font-size: 0.78rem;
-      color: var(--text-secondary, var(--desktop-text-muted));
+      color: var(--desktop-text-muted, var(--text-secondary));
       line-height: 1.35;
+    }
+
+    .mobile-shell .reminder-card[data-priority="high" i] .card-accent-dot {
+      background: var(--priority-high-border);
+    }
+
+    .mobile-shell .reminder-card[data-priority="medium" i] .card-accent-dot {
+      background: var(--priority-medium-border);
+    }
+
+    .mobile-shell .reminder-card[data-priority="low" i] .card-accent-dot {
+      background: var(--priority-low-border);
+    }
+
+    .mobile-shell .reminder-card .card-accent-dot {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--accent-color) 70%, transparent);
+      box-shadow: 0 0 0 3px var(--surface-bg, var(--desktop-surface, var(--card-bg)));
     }
 
     .mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
@@ -3640,6 +3665,17 @@
         }
       };
 
+      const ensureCardAccentDot = (card) => {
+        if (!(card instanceof HTMLElement)) return;
+        let accentDot = card.querySelector('.card-accent-dot');
+        if (!accentDot) {
+          accentDot = document.createElement('span');
+          accentDot.className = 'card-accent-dot';
+          accentDot.setAttribute('aria-hidden', 'true');
+          card.appendChild(accentDot);
+        }
+      };
+
       const upgrade = (node) => {
         if (!(node instanceof HTMLElement)) return;
         if (node.parentElement !== list) return;
@@ -3651,6 +3687,7 @@
         }
         applyPriorityPills(node);
         restructureReminderCard(node);
+        ensureCardAccentDot(node);
       };
 
       Array.from(list.children).forEach((child) => {
