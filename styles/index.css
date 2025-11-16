@@ -16,24 +16,52 @@ html {
   --font-heading-weight: 600;
   --font-body: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body-weight: 400;
+  --font-body-size: clamp(1rem, 0.97rem + 0.2vw, 1.1rem);
+  --font-heading-size: clamp(1.35rem, 1rem + 1vw, 2.5rem);
+  --page-bg-base: #f7f8fb;
+  --page-bg-muted: #eef2ff;
+  --page-bg-accent: rgba(79, 70, 229, 0.16);
+  --page-bg-highlight: rgba(14, 165, 233, 0.12);
   --dashboard-section-spacing: clamp(2.25rem, 4vw, 3.5rem);
 }
 
 body {
   font-family: var(--font-body);
   font-weight: var(--font-body-weight);
-  line-height: 1.6;
+  line-height: 1.65;
+  font-size: var(--font-body-size);
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(circle at 12% 20%, var(--page-bg-accent), transparent 60%),
+    radial-gradient(circle at 85% 0%, var(--page-bg-highlight), transparent 55%),
+    linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
+  background-attachment: fixed;
+  color: var(--desktop-text-main, #0f172a);
+}
+
+html[data-theme="night"],
+html[data-theme="dracula"] {
+  --page-bg-base: #050812;
+  --page-bg-muted: #0b1220;
+  --page-bg-accent: rgba(56, 189, 248, 0.14);
+  --page-bg-highlight: rgba(99, 102, 241, 0.12);
+}
+
+html[data-theme="caramellatte"] {
+  --page-bg-base: #fff9f2;
+  --page-bg-muted: #fde4cf;
+  --page-bg-accent: rgba(242, 166, 90, 0.25);
+  --page-bg-highlight: rgba(188, 108, 37, 0.2);
 }
 
 html[data-theme="professional"] body.desktop-shell {
-  background: radial-gradient(
-      circle at top,
-      rgba(99, 102, 241, 0.14),
-      rgba(14, 165, 233, 0.08) 55%
-    ),
-    var(--desktop-bg);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(99, 102, 241, 0.18), transparent 60%),
+    radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
+    linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
   color: var(--desktop-text-main);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   min-height: 100vh;
 }
 
@@ -675,6 +703,12 @@ h5,
 h6 {
   font-family: var(--font-heading);
   font-weight: var(--font-heading-weight);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--font-heading-size);
 }
 
 button,
