@@ -391,6 +391,110 @@ function initRouteFocusManagement() {
 
 initRouteFocusManagement();
 
+const ACCOUNT_PANEL_STORAGE_KEY = 'memoryCue:accountPanelCollapsed';
+
+function readAccountPanelPreference() {
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+    return null;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(ACCOUNT_PANEL_STORAGE_KEY);
+    if (stored === 'true' || stored === 'false') {
+      return stored === 'true';
+    }
+  } catch (error) {
+    console.warn('Unable to read account panel preference', error);
+  }
+
+  return null;
+}
+
+function writeAccountPanelPreference(isCollapsed) {
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(ACCOUNT_PANEL_STORAGE_KEY, isCollapsed ? 'true' : 'false');
+  } catch (error) {
+    console.warn('Unable to save account panel preference', error);
+  }
+}
+
+function initDesktopAccountPanel() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const container = document.querySelector('[data-account-panel-container]');
+  const toggle = document.getElementById('desktopAccountToggle');
+  const panel = document.getElementById('desktopAccountPanel');
+
+  if (!container || !toggle || !panel) {
+    return;
+  }
+
+  const visibleLabelCollapsed = (toggle.getAttribute('data-collapsed-label') || '').trim() || 'Account';
+  const visibleLabelExpanded = (toggle.getAttribute('data-expanded-label') || '').trim() || visibleLabelCollapsed;
+  const a11yLabelCollapsed = (toggle.getAttribute('data-collapsed-aria') || '').trim() || 'Show account controls';
+  const a11yLabelExpanded = (toggle.getAttribute('data-expanded-aria') || '').trim() || 'Hide account controls';
+
+  const visualLabelNode = toggle.querySelector('[data-account-toggle-label]');
+  const assistiveTextNode = toggle.querySelector('[data-account-toggle-a11y]');
+
+  let collapsed = readAccountPanelPreference();
+  if (typeof collapsed !== 'boolean') {
+    collapsed = true;
+  }
+
+  const applyState = (nextCollapsed, { persist = true } = {}) => {
+    collapsed = Boolean(nextCollapsed);
+    container.setAttribute('data-account-collapsed', collapsed ? 'true' : 'false');
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+
+    const nextVisibleLabel = collapsed ? visibleLabelCollapsed : visibleLabelExpanded;
+    const nextAssistiveLabel = collapsed ? a11yLabelCollapsed : a11yLabelExpanded;
+
+    if (visualLabelNode) {
+      visualLabelNode.textContent = nextVisibleLabel;
+    } else {
+      toggle.textContent = nextVisibleLabel;
+    }
+
+    toggle.setAttribute('aria-label', nextAssistiveLabel);
+
+    if (assistiveTextNode) {
+      assistiveTextNode.textContent = nextAssistiveLabel;
+    }
+
+    if (collapsed) {
+      panel.setAttribute('aria-hidden', 'true');
+      panel.setAttribute('inert', '');
+    } else {
+      panel.setAttribute('aria-hidden', 'false');
+      panel.removeAttribute('inert');
+    }
+
+    if (!collapsed) {
+      panel.removeAttribute('hidden');
+    }
+
+    if (persist) {
+      writeAccountPanelPreference(collapsed);
+    }
+  };
+
+  applyState(collapsed, { persist: false });
+
+  toggle.addEventListener('click', (event) => {
+    event.preventDefault();
+    applyState(!collapsed);
+  });
+}
+
+initDesktopAccountPanel();
+
 const settingsSaveButton = document.getElementById('settings-save-button');
 const settingsSaveConfirmation = document.getElementById('settings-save-confirmation');
 const liveStatusRegion = document.getElementById('live-status');
