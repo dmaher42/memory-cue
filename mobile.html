@@ -157,6 +157,14 @@
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
   }
 
+  .mobile-shell #view-notebook .card-body {
+    padding-bottom: 0.5rem;
+  }
+
+  .mobile-shell #view-notebook .textarea {
+    min-height: 0 !important;
+  }
+
   .mobile-shell #view-notebook .card-title {
     font-weight: 600;
   }
@@ -164,6 +172,46 @@
   .mobile-shell #view-notebook .input-sm,
   .mobile-shell #view-notebook .textarea-sm {
     font-size: 0.86rem;
+  }
+
+  .mobile-shell #noteBodyMobile {
+    background: radial-gradient(
+        circle at top,
+        rgba(148, 163, 184, 0.06),
+        transparent 55%
+      ),
+      var(--b1);
+  }
+
+  .mobile-shell #noteBodyMobile:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--accent-color, #2563eb),
+      0 0 0 6px rgba(37, 99, 235, 0.12);
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper {
+    position: relative;
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper::before,
+  .mobile-shell #view-notebook .note-body-wrapper::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 14px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.08), transparent);
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.08), transparent);
   }
 
   .card {
@@ -180,24 +228,42 @@
     transform: translateY(-2px);
   }
 
-  .mobile-shell #notesListMobile button[data-role="open-note"] {
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="open-note"] {
     border-radius: 0.9rem;
     background-color: var(--desktop-surface-muted, #f8fafc);
     transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
   }
 
-  .mobile-shell #notesListMobile button[data-role="open-note"]:focus-visible {
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="open-note"]:focus-visible {
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
   }
 
-  .mobile-shell #notesListMobile button[data-role="open-note"]:active {
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="open-note"]:active {
     transform: scale(0.99);
   }
 
-  .mobile-shell #notesListMobile button[data-role="open-note"][data-state="active"] {
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="open-note"][data-state="active"] {
     border-color: var(--accent-color);
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(56, 189, 248, 0.03));
+  }
+
+  .mobile-shell #savedNotesSheet {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .mobile-shell #savedNotesSheet[data-open="true"] {
+    opacity: 1;
+  }
+
+  .mobile-shell #savedNotesSheet > div {
+    transform: translateY(100%);
+    transition: transform 0.25s ease-out;
+  }
+
+  .mobile-shell #savedNotesSheet[data-open="true"] > div {
+    transform: translateY(0);
   }
 
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"] {
@@ -3124,7 +3190,7 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden">
-      <div class="flex flex-col h-full max-h-screen overflow-hidden">
+      <div class="flex flex-col gap-4">
         <section class="card bg-base-100 border shadow-sm rounded-2xl">
           <div class="card-body gap-4">
             <header class="flex items-center justify-between gap-2">
@@ -3167,7 +3233,7 @@
                 <span class="text-xs font-medium uppercase tracking-wide text-base-content/70">Body</span>
                 <textarea
                   id="noteBodyMobile"
-                  class="textarea textarea-bordered textarea-sm w-full flex-1 resize-none overflow-auto leading-snug"
+                  class="textarea textarea-bordered textarea-sm w-full min-h-[140px] leading-snug"
                   placeholder="Capture ideas, quick plans, or a schedule you don’t want to forget…"
                 ></textarea>
               </label>
@@ -3176,10 +3242,15 @@
                 <button id="noteSaveMobile" class="btn btn-primary btn-sm flex-1" type="button">
                   Save note
                 </button>
-                <button id="noteNewMobile" class="btn btn-ghost btn-sm flex-none" type="button">
-                  New
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs"
+                  data-action="open-saved-notes"
+                >
+                  Saved notes
                 </button>
               </div>
+            </header>
 
               <div class="flex items-center justify-between gap-2 text-[0.7rem] text-base-content/60">
                 <span id="notesStatusText" class="truncate"></span>
@@ -3200,6 +3271,9 @@
     id="savedNotesSheet"
     class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
     aria-hidden="true"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="savedNotesSheetTitle"
     data-open="false"
   >
     <div
@@ -3207,7 +3281,7 @@
     >
       <header class="flex items-center justify-between px-4 pt-3 pb-2 border-b border-base-200/70">
         <div class="flex flex-col">
-          <h3 class="text-sm font-semibold">Saved notes</h3>
+          <h3 id="savedNotesSheetTitle" class="text-sm font-semibold">Saved notes</h3>
           <p class="text-[0.7rem] text-base-content/60">Tap a note to load it here.</p>
         </div>
         <button

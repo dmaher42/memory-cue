@@ -2241,6 +2241,28 @@ function renderPlannerLessons(plan) {
       const summaryMarkup = lesson.summary
         ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
         : '';
+      const moveControls = lessonId
+        ? `
+            <div class="flex items-center gap-1" role="group" aria-label="Reorder lesson">
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs"
+                data-planner-action="move-up"
+                data-lesson-id="${lessonId}"
+              >
+                Move up
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs"
+                data-planner-action="move-down"
+                data-lesson-id="${lessonId}"
+              >
+                Move down
+              </button>
+            </div>
+          `
+        : '';
       return `
         <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow" ${selectionAttributes}>
           <div class="card-body gap-4">
@@ -2253,22 +2275,7 @@ function renderPlannerLessons(plan) {
                 ${summaryMarkup}
               </div>
               <div class="flex items-center gap-1">
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-xs"
-                  data-planner-action="move-up"
-                  data-lesson-id="${lessonId}"
-                >
-                  Move up
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-xs"
-                  data-planner-action="move-down"
-                  data-lesson-id="${lessonId}"
-                >
-                  Move down
-                </button>
+                ${moveControls}
                 <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
                   Edit
                 </button>

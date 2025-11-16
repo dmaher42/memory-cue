@@ -706,22 +706,23 @@ export const movePlannerLesson = async (weekId, lessonId, direction) => {
     return plan;
   }
   const currentLesson = lessons[lessonIndex];
-  const dayLessons = sortLessons(lessons).filter((lesson) => lesson.dayIndex === currentLesson.dayIndex);
-  const currentDayIndex = dayLessons.findIndex((lesson) => lesson.id === lessonId);
+  const dayLessons = lessons.filter((lesson) => lesson.dayIndex === currentLesson.dayIndex);
+  if (dayLessons.length <= 1) {
+    return plan;
+  }
+  const orderedDayLessons = sortLessons(dayLessons);
+  const dayOrderIds = orderedDayLessons.map((lesson) => lesson.id);
+  const currentDayIndex = dayOrderIds.indexOf(lessonId);
   if (currentDayIndex === -1) {
     return plan;
   }
   const targetDayIndex = currentDayIndex + offset;
-  if (targetDayIndex < 0 || targetDayIndex >= dayLessons.length) {
+  if (targetDayIndex < 0 || targetDayIndex >= dayOrderIds.length) {
     return plan;
   }
-  const reordered = [...dayLessons];
-  const [movedLesson] = reordered.splice(currentDayIndex, 1);
-  reordered.splice(targetDayIndex, 0, movedLesson);
-  const updatedPositions = new Map();
-  reordered.forEach((lesson, index) => {
-    updatedPositions.set(lesson.id, index);
-  });
+  const [movedLessonId] = dayOrderIds.splice(currentDayIndex, 1);
+  dayOrderIds.splice(targetDayIndex, 0, movedLessonId);
+  const updatedPositions = new Map(dayOrderIds.map((id, index) => [id, index]));
   const nextLessons = lessons.map((lesson) => {
     if (lesson.dayIndex !== currentLesson.dayIndex) {
       return lesson;
