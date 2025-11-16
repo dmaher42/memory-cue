@@ -202,6 +202,11 @@ const normaliseLesson = (lesson, fallback = {}) => {
     : Number.isFinite(defaults.position)
       ? defaults.position
       : Number.NaN;
+  const notes = typeof lesson?.notes === 'string'
+    ? lesson.notes
+    : typeof defaults.notes === 'string'
+      ? defaults.notes
+      : '';
   return {
     id,
     dayIndex,
@@ -209,6 +214,7 @@ const normaliseLesson = (lesson, fallback = {}) => {
     title: titleSource,
     summary,
     details,
+    notes,
     position: Number.isFinite(rawPosition) ? rawPosition : null
   };
 };
@@ -782,6 +788,7 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
     title: lesson.title,
     summary: lesson.summary,
     dayIndex: lesson.dayIndex,
+    notes: typeof lesson.notes === 'string' ? lesson.notes : '',
     details: (lesson.details || []).map((detail) => ({
       badge: detail.badge,
       text: detail.text
@@ -810,6 +817,7 @@ const cloneTemplateLesson = (lesson) => {
   );
   const title = typeof lesson.title === 'string' ? lesson.title : '';
   const summary = typeof lesson.summary === 'string' ? lesson.summary : '';
+  const notes = typeof lesson.notes === 'string' ? lesson.notes : '';
   const details = Array.isArray(lesson.details)
     ? lesson.details
         .map((detail) => {
@@ -825,7 +833,7 @@ const cloneTemplateLesson = (lesson) => {
         })
         .filter(Boolean)
     : [];
-  return { dayIndex, title, summary, details };
+  return { dayIndex, title, summary, details, notes };
 };
 
 export const loadPlannerTemplates = () => {
@@ -911,6 +919,7 @@ export const applyPlannerTemplate = async (weekId, templateId) => {
         dayIndex: lesson.dayIndex,
         title: lesson.title,
         summary: lesson.summary,
+        notes: typeof lesson.notes === 'string' ? lesson.notes : '',
         details: Array.isArray(lesson.details)
           ? lesson.details.map((detail) => ({ badge: detail.badge, text: detail.text }))
           : []
