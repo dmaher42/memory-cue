@@ -1467,6 +1467,25 @@ section[data-route="dashboard"] .dashboard-card--hero #weatherFootnote {
   font-size: 0.5625rem;
 }
 
+section[data-route="dashboard"] .dashboard-card--hero .weather-radar {
+  margin-top: 1rem;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 10px 25px hsl(var(--bc) / 0.08);
+  border: 1px solid hsl(var(--b2) / 0.3);
+  background: hsl(var(--b2) / 0.25);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+section[data-route="dashboard"] .dashboard-card--hero .weather-radar .weather-radar__message {
+  margin: 0;
+  flex: 1 1 220px;
+}
+
 section[data-route="dashboard"] .dashboard-card-text {
   font-size: clamp(0.95rem, 1.3vw, 1.05rem);
   color: hsl(var(--bc) / 0.72);

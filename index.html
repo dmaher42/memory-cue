@@ -396,13 +396,6 @@
                 <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
                   Checking the latest forecast…
                 </p>
-                <button
-                  type="button"
-                  class="cue-btn-ghost cue-btn-sm"
-                  data-action="open-windy-map"
-                >
-                  View radar
-                </button>
               </div>
               <div class="flex flex-wrap items-end gap-6">
                 <div>
@@ -429,6 +422,19 @@
                 </dl>
               </div>
               <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
+              <div class="weather-radar" aria-label="Live radar" role="group">
+                <p class="weather-radar__message text-sm text-base-content/70">
+                  Live radar opens in a new tab due to browser security settings.
+                </p>
+                <a
+                  class="btn btn-sm btn-primary"
+                  href="https://www.windy.com/-Weather-radar-radar"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open Windy radar
+                </a>
+              </div>
             </div>
           </article>
           <article class="dashboard-card card border border-base-300 bg-base-100/90 shadow-sm">
@@ -1348,15 +1354,6 @@
             </div>
           </form>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="modal" id="windyWeatherModal" hidden>
-    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="windyWeatherModalTitle">
-      <h3 id="windyWeatherModalTitle" class="font-semibold mb-2">Weather radar</h3>
-      <div class="windy-embed-wrapper" data-loaded="false"></div>
-      <div class="modal-action">
-        <button type="button" class="cue-btn-ghost" data-action="close-windy-map">Close</button>
       </div>
     </div>
   </div>
