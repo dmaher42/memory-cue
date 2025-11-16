@@ -396,13 +396,6 @@
                 <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
                   Checking the latest forecast…
                 </p>
-                <button
-                  type="button"
-                  class="cue-btn-ghost cue-btn-sm"
-                  data-action="open-windy-map"
-                >
-                  View radar
-                </button>
               </div>
               <div class="flex flex-wrap items-end gap-6">
                 <div>
@@ -429,6 +422,15 @@
                 </dl>
               </div>
               <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
+              <div class="weather-radar" aria-label="Live radar preview" role="group">
+                <iframe
+                  title="Windy weather radar"
+                  src="https://embed.windy.com/embed2.html?lat=39.8283&lon=-98.5795&detailLat=39.8283&detailLon=-98.5795&width=650&height=450&zoom=4&level=surface&overlay=radar&product=radar&menu=&message=true&marker=false&calendar=now&pressure=true&type=map&location=coordinates&detail=true&metricWind=kmh&metricTemp=default&radarRange=-1"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  allowfullscreen="false"
+                ></iframe>
+              </div>
             </div>
           </article>
           <article class="dashboard-card card border border-base-300 bg-base-100/90 shadow-sm">
@@ -1348,15 +1350,6 @@
             </div>
           </form>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="modal" id="windyWeatherModal" hidden>
-    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="windyWeatherModalTitle">
-      <h3 id="windyWeatherModalTitle" class="font-semibold mb-2">Weather radar</h3>
-      <div class="windy-embed-wrapper" data-loaded="false"></div>
-      <div class="modal-action">
-        <button type="button" class="cue-btn-ghost" data-action="close-windy-map">Close</button>
       </div>
     </div>
   </div>
