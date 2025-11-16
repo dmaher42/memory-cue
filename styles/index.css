@@ -251,6 +251,21 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
   color: var(--desktop-nav-text);
 }
 
+@media (min-width: 1024px) {
+  html[data-theme="professional"] .desktop-header-bar {
+    position: sticky;
+    top: 0;
+  }
+
+  html[data-theme="professional"] .desktop-header-nav-tabs {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+}
+
 @media (max-width: 960px) {
   html[data-theme="professional"] .desktop-header-bar {
     flex-wrap: wrap;
