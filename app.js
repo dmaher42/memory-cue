@@ -15,6 +15,19 @@ import { createModalController } from './js/modules/modal-controller.js';
 import { initSupabaseAuth } from './js/supabase-auth.js';
 import { loadAllNotes, saveAllNotes, createNote } from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
+import {
+  initPlannerStore,
+  getWeekIdFromDate as getPlannerWeekIdFromDate,
+  getWeekIdFromOffset,
+  getWeekLabel,
+  loadWeekPlan,
+  addLessonToWeek,
+  updateLessonInWeek,
+  deleteLessonFromWeek,
+  addLessonDetail,
+  duplicateWeekPlan,
+  PLANNER_UPDATED_EVENT
+} from './js/modules/planner.js';
 
 initViewportHeight();
 
@@ -694,9 +707,17 @@ const quickAddVoiceButton = document.getElementById('daily-voice-btn');
 const dailyTasksContainer = document.getElementById('daily-tasks-container');
 const clearCompletedButton = document.getElementById('clear-completed-btn');
 const dailyListPermissionNotice = document.getElementById('daily-list-permission-notice');
+const plannerCardsContainer = document.getElementById('plannerCards') || document.getElementById('planner-grid');
+const plannerWeekHeading = document.getElementById('planner-week');
+const plannerPrevButton = document.getElementById('planner-prev');
+const plannerNextButton = document.getElementById('planner-next');
+const plannerTodayButton = document.getElementById('planner-today');
+const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
+const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
 
 const remindersCountElement = document.getElementById('remindersCount');
 const plannerCountElement = document.getElementById('plannerCount');
+const plannerSubtitleElement = document.getElementById('plannerSubtitle');
 const resourcesCountElement = document.getElementById('resourcesCount');
 const templatesCountElement = document.getElementById('templatesCount');
 const dailySnapshotList = document.getElementById('dailySnapshotList');
@@ -1356,32 +1377,405 @@ if (cuesList || pinnedNotesList) {
 let currentDailyTasks = [];
 let dailyListLoadPromise = null;
 let shouldUseLocalDailyList = false;
+const defaultPlannerWeekId = getPlannerWeekIdFromDate();
+let plannerViewInitialised = false;
+let activePlannerWeekId = defaultPlannerWeekId;
+let currentPlannerPlan = null;
 
-const updatePlannerCountDisplay = (tasks) => {
+const updateDailyTaskCountDisplay = (tasks) => {
   if (!plannerCountElement) {
+    return;
+  }
+  if (plannerSubtitleElement?.textContent) {
     return;
   }
   const taskList = Array.isArray(tasks) ? tasks : [];
   plannerCountElement.textContent = String(taskList.length);
 };
 
-const trackPlannerCountFromPromise = (maybePromise) => {
+const trackDailyTaskCountFromPromise = (maybePromise) => {
   if (!maybePromise || typeof maybePromise.then !== 'function') {
-    updatePlannerCountDisplay(currentDailyTasks);
+    updateDailyTaskCountDisplay(currentDailyTasks);
     return;
   }
   maybePromise
     .then((tasks) => {
       if (Array.isArray(tasks)) {
-        updatePlannerCountDisplay(tasks);
+        updateDailyTaskCountDisplay(tasks);
         return;
       }
-      updatePlannerCountDisplay(currentDailyTasks);
+      updateDailyTaskCountDisplay(currentDailyTasks);
     })
     .catch(() => {
-      updatePlannerCountDisplay(currentDailyTasks);
+      updateDailyTaskCountDisplay(currentDailyTasks);
     });
 };
+
+function updatePlannerDashboardSummary(plan, fallbackWeekId) {
+  if (plannerCountElement) {
+    const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
+    plannerCountElement.textContent = String(lessons.length);
+  }
+  if (plannerSubtitleElement) {
+    const label = getWeekLabel(plan?.weekId || fallbackWeekId, { short: true });
+    plannerSubtitleElement.textContent = label || '';
+  }
+}
+
+function renderPlannerMessage(message, { tone = 'muted' } = {}) {
+  if (!plannerCardsContainer) {
+    return;
+  }
+  const classes = [
+    'rounded-xl',
+    'border',
+    'border-dashed',
+    'border-base-300/70',
+    'bg-base-100/60',
+    'p-4',
+    'text-sm'
+  ];
+  classes.push(tone === 'error' ? 'text-error' : 'text-base-content/70');
+  plannerCardsContainer.innerHTML = `<p class="${classes.join(' ')}">${escapeCueText(message)}</p>`;
+}
+
+function updatePlannerWeekHeading(weekId) {
+  if (!plannerWeekHeading) {
+    return;
+  }
+  const label = getWeekLabel(weekId);
+  plannerWeekHeading.textContent = label || '';
+}
+
+function renderPlannerLessons(plan) {
+  if (!plannerCardsContainer) {
+    return;
+  }
+  const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
+  if (!lessons.length) {
+    renderPlannerMessage('No lessons saved for this week yet.');
+    return;
+  }
+  const markup = lessons
+    .map((lesson) => {
+      const detailItems = Array.isArray(lesson.details)
+        ? lesson.details
+            .map((detail) => {
+              const badge = detail.badge
+                ? `<span class="badge badge-outline badge-sm text-secondary">${escapeCueText(detail.badge)}</span>`
+                : '';
+              return `
+                <li class="flex items-center gap-2">
+                  ${badge}
+                  <span class="text-sm text-base-content/70">${escapeCueText(detail.text)}</span>
+                </li>
+              `;
+            })
+            .join('')
+        : '';
+      const detailsSection = detailItems
+        ? `<ul class="space-y-2 text-sm text-base-content/70">${detailItems}</ul>`
+        : '<p class="text-sm text-base-content/60">No details yet.</p>';
+      const lessonId = typeof lesson.id === 'string' ? lesson.id : '';
+      const summaryMarkup = lesson.summary
+        ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
+        : '';
+      return `
+        <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow">
+          <div class="card-body gap-4">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">${escapeCueText(
+                  lesson.dayLabel || ''
+                )}</p>
+                <h2 class="text-lg font-semibold text-base-content">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</h2>
+                ${summaryMarkup}
+              </div>
+              <div class="flex items-center gap-1">
+                <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-error"
+                  data-planner-action="delete"
+                  data-lesson-id="${lessonId}"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+            ${detailsSection}
+            <div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline"
+                data-planner-action="add-detail"
+                data-lesson-id="${lessonId}"
+              >
+                Add detail
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+  plannerCardsContainer.innerHTML = markup;
+}
+
+async function renderPlannerForWeek(weekId) {
+  if (!plannerCardsContainer) {
+    return;
+  }
+  const targetWeekId = weekId || getPlannerWeekIdFromDate();
+  activePlannerWeekId = targetWeekId;
+  updatePlannerWeekHeading(targetWeekId);
+  renderPlannerMessage('Loading plan…');
+  try {
+    const plan = await loadWeekPlan(targetWeekId);
+    currentPlannerPlan = plan;
+    renderPlannerLessons(plan);
+    updatePlannerDashboardSummary(plan, targetWeekId);
+  } catch (error) {
+    console.error('Failed to load planner week', error);
+    renderPlannerMessage('Unable to load this week\'s planner.', { tone: 'error' });
+  }
+}
+
+function handlePlannerCardAction(event) {
+  const trigger = event.target instanceof Element ? event.target.closest('[data-planner-action]') : null;
+  if (!trigger) {
+    return;
+  }
+  event.preventDefault();
+  const action = trigger.getAttribute('data-planner-action');
+  const lessonId = trigger.getAttribute('data-lesson-id');
+  if (!action) {
+    return;
+  }
+  switch (action) {
+    case 'add-detail':
+      handlePlannerAddDetail(lessonId);
+      break;
+    case 'edit':
+      handlePlannerEditLesson(lessonId);
+      break;
+    case 'delete':
+      handlePlannerDeleteLesson(lessonId);
+      break;
+    default:
+      break;
+  }
+}
+
+async function handlePlannerNewLesson() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const defaultDay = currentPlannerPlan?.lessons?.[0]?.dayLabel || 'Monday';
+  const dayNameInput = window.prompt('Which day is this lesson for?', defaultDay);
+  if (!dayNameInput) {
+    return;
+  }
+  const titleInput = window.prompt('Lesson title', `${dayNameInput.trim()} lesson`);
+  if (!titleInput) {
+    return;
+  }
+  const summaryInput = window.prompt('What is the focus for this lesson?', '');
+  if (summaryInput === null) {
+    return;
+  }
+  try {
+    const plan = await addLessonToWeek(activePlannerWeekId, {
+      dayName: dayNameInput,
+      title: titleInput,
+      summary: summaryInput
+    });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to add planner lesson', error);
+    window.alert('Unable to add a new lesson right now. Please try again.');
+  }
+}
+
+async function handlePlannerDuplicatePlan() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const suggestedWeekId = getWeekIdFromOffset(activePlannerWeekId, 1);
+  const targetWeekId = window.prompt(
+    'Enter the Monday date (YYYY-MM-DD) for the week that should receive this copy.',
+    suggestedWeekId
+  );
+  if (!targetWeekId || targetWeekId === activePlannerWeekId) {
+    return;
+  }
+  try {
+    const plan = await duplicateWeekPlan(activePlannerWeekId, targetWeekId);
+    if (plan) {
+      activePlannerWeekId = targetWeekId;
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerWeekHeading(targetWeekId);
+      updatePlannerDashboardSummary(plan, targetWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to duplicate planner week', error);
+    window.alert('Unable to duplicate that plan right now. Please try again.');
+  }
+}
+
+async function handlePlannerAddDetail(lessonId) {
+  if (!lessonId || typeof window === 'undefined') {
+    return;
+  }
+  const badge = window.prompt('Label for this detail (optional):', '');
+  if (badge === null) {
+    return;
+  }
+  const detailText = window.prompt('What detail would you like to add?', '');
+  if (!detailText || !detailText.trim()) {
+    return;
+  }
+  try {
+    const plan = await addLessonDetail(activePlannerWeekId, lessonId, { badge, text: detailText });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to add planner detail', error);
+    window.alert('Unable to add this detail right now.');
+  }
+}
+
+async function handlePlannerEditLesson(lessonId) {
+  if (!lessonId || typeof window === 'undefined') {
+    return;
+  }
+  const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
+  if (!lesson) {
+    return;
+  }
+  const nextTitle = window.prompt('Lesson title', lesson.title);
+  if (nextTitle === null || !nextTitle.trim()) {
+    return;
+  }
+  const nextSummary = window.prompt('Lesson summary', lesson.summary || '');
+  if (nextSummary === null) {
+    return;
+  }
+  const nextDay = window.prompt('Day of the week', lesson.dayLabel || 'Monday');
+  if (!nextDay) {
+    return;
+  }
+  try {
+    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, {
+      title: nextTitle,
+      summary: nextSummary,
+      dayName: nextDay
+    });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to update planner lesson', error);
+    window.alert('Unable to update that lesson right now.');
+  }
+}
+
+async function handlePlannerDeleteLesson(lessonId) {
+  if (!lessonId || typeof window === 'undefined') {
+    return;
+  }
+  const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
+  const shouldDelete = window.confirm(
+    lesson?.title ? `Delete "${lesson.title}" from this week?` : 'Delete this lesson?'
+  );
+  if (!shouldDelete) {
+    return;
+  }
+  try {
+    const plan = await deleteLessonFromWeek(activePlannerWeekId, lessonId);
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to delete planner lesson', error);
+    window.alert('Unable to delete that lesson right now.');
+  }
+}
+
+function initPlannerView() {
+  if (plannerViewInitialised || !plannerCardsContainer) {
+    if (plannerViewInitialised) {
+      renderPlannerForWeek(activePlannerWeekId);
+    }
+    return;
+  }
+  plannerViewInitialised = true;
+  initPlannerStore({ ensureFirestore: ensureCueFirestore });
+  plannerCardsContainer.addEventListener('click', handlePlannerCardAction);
+  plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
+  plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
+  plannerPrevButton?.addEventListener('click', () => {
+    const previousWeek = getWeekIdFromOffset(activePlannerWeekId, -1);
+    renderPlannerForWeek(previousWeek);
+  });
+  plannerNextButton?.addEventListener('click', () => {
+    const nextWeek = getWeekIdFromOffset(activePlannerWeekId, 1);
+    renderPlannerForWeek(nextWeek);
+  });
+  plannerTodayButton?.addEventListener('click', () => {
+    renderPlannerForWeek(getPlannerWeekIdFromDate());
+  });
+  renderPlannerForWeek(activePlannerWeekId);
+}
+
+function handlePlannerRouteVisibility() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  if (getActiveRouteFromHash() === 'planner') {
+    initPlannerView();
+  }
+}
+
+function handlePlannerUpdated(event) {
+  const plan = event?.detail?.plan;
+  if (!plan) {
+    return;
+  }
+  if (plannerViewInitialised && plan.weekId === activePlannerWeekId) {
+    currentPlannerPlan = plan;
+    renderPlannerLessons(plan);
+    updatePlannerWeekHeading(plan.weekId);
+  }
+  if (plan.weekId === defaultPlannerWeekId) {
+    updatePlannerDashboardSummary(plan, defaultPlannerWeekId);
+  }
+}
+
+updatePlannerDashboardSummary(null, defaultPlannerWeekId);
+
+if (typeof document !== 'undefined') {
+  document.addEventListener(PLANNER_UPDATED_EVENT, handlePlannerUpdated);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', handlePlannerRouteVisibility);
+  window.addEventListener('DOMContentLoaded', handlePlannerRouteVisibility);
+}
 
 const DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
 let firestoreDailyListContextPromise = null;
@@ -1574,7 +1968,7 @@ async function loadDailyList() {
     const localTasks = getLocalDailyTasks(todayId);
     currentDailyTasks = localTasks;
     renderDailyTasks(localTasks);
-    updatePlannerCountDisplay(localTasks);
+    updateDailyTaskCountDisplay(localTasks);
     return Promise.resolve(localTasks);
   }
   if (!dailyListLoadPromise) {
@@ -1591,7 +1985,7 @@ async function loadDailyList() {
         setLocalDailyTasks(todayId, currentDailyTasks);
         shouldUseLocalDailyList = false;
         hideDailyListPermissionNotice();
-        updatePlannerCountDisplay(currentDailyTasks);
+        updateDailyTaskCountDisplay(currentDailyTasks);
         return currentDailyTasks;
       } catch (error) {
         if (isPermissionDeniedError(error)) {
@@ -1601,14 +1995,14 @@ async function loadDailyList() {
           const localTasks = getLocalDailyTasks(todayId);
           currentDailyTasks = localTasks;
           renderDailyTasks(localTasks);
-          updatePlannerCountDisplay(localTasks);
+          updateDailyTaskCountDisplay(localTasks);
           return localTasks;
         }
         console.error('Failed to load daily list', error);
         dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
         currentDailyTasks = [];
         updateClearCompletedButtonState(currentDailyTasks);
-        updatePlannerCountDisplay(currentDailyTasks);
+        updateDailyTaskCountDisplay(currentDailyTasks);
         return currentDailyTasks;
       }
     })().finally(() => {
@@ -1709,7 +2103,7 @@ function showDailyTab() {
   cuesView.classList.add('hidden');
   dailyListView.classList.remove('hidden');
   activateTab(dailyTab);
-  trackPlannerCountFromPromise(loadDailyList());
+  trackDailyTaskCountFromPromise(loadDailyList());
 }
 
 if (cuesTab && dailyTab && cuesView && dailyListView) {
@@ -1889,7 +2283,7 @@ quickAddForm?.addEventListener('submit', async (event) => {
   try {
     await addTaskToDailyList(task);
     const tasksForToday = await loadDailyList();
-    updatePlannerCountDisplay(tasksForToday ?? currentDailyTasks);
+    updateDailyTaskCountDisplay(tasksForToday ?? currentDailyTasks);
   } catch (error) {
     console.error('Failed to add task to the daily list', error);
     quickAddInput.value = value;
@@ -1912,14 +2306,14 @@ dailyTasksContainer?.addEventListener('change', async (event) => {
   );
   currentDailyTasks = updatedTasks;
   renderDailyTasks(updatedTasks);
-  updatePlannerCountDisplay(updatedTasks);
+  updateDailyTaskCountDisplay(updatedTasks);
   try {
     await saveDailyTasks(updatedTasks);
   } catch (error) {
     console.error('Failed to update task completion state', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
-    updatePlannerCountDisplay(previousState);
+    updateDailyTaskCountDisplay(previousState);
   }
 });
 
@@ -1934,20 +2328,20 @@ clearCompletedButton?.addEventListener('click', async () => {
   const previousState = currentDailyTasks.map((task) => ({ ...task }));
   currentDailyTasks = remainingTasks;
   renderDailyTasks(remainingTasks);
-  updatePlannerCountDisplay(remainingTasks);
+  updateDailyTaskCountDisplay(remainingTasks);
   try {
     await saveDailyTasks(remainingTasks);
   } catch (error) {
     console.error('Failed to clear completed tasks', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
-    updatePlannerCountDisplay(previousState);
+    updateDailyTaskCountDisplay(previousState);
   }
 });
 
 updateClearCompletedButtonState(currentDailyTasks);
-updatePlannerCountDisplay(currentDailyTasks);
-trackPlannerCountFromPromise(loadDailyList());
+updateDailyTaskCountDisplay(currentDailyTasks);
+trackDailyTaskCountFromPromise(loadDailyList());
 
 function initDesktopNotes() {
   if (typeof document === 'undefined') {
