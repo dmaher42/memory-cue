@@ -31,7 +31,7 @@
   <meta
     http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
+             connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://hn.algolia.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
              script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com https://apis.google.com;
              style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
              img-src 'self' data:;
@@ -359,27 +359,77 @@
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
-        <section
-          class="desktop-panel desktop-hero dashboard-card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-primary/15 via-base-100 to-base-200/70"
-        >
-          <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" aria-hidden="true"></div>
-          <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true"></div>
-          <div class="dashboard-card-content relative space-y-6">
-            <div class="space-y-6">
-              <div class="space-y-4">
-                <h1 class="dashboard-card-title dashboard-card-title--hero">
-                  Settle into teaching with a focused, organised workspace
-                </h1>
-                <p class="dashboard-card-text max-w-2xl">
-                  Memory Cue keeps reminders, planning, and quick wins together so you can move from intention to action without searching across tools.
-                </p>
+        <section class="desktop-panel grid gap-4 lg:grid-cols-2">
+          <article class="dashboard-card card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-sky-100 via-base-100 to-base-200/70">
+            <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" aria-hidden="true"></div>
+            <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-secondary/30 blur-3xl" aria-hidden="true"></div>
+            <div class="dashboard-card-content relative space-y-5">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="space-y-2">
+                  <p class="dashboard-card-eyebrow">Local weather</p>
+                  <h2 class="dashboard-card-title dashboard-card-title--hero">Plan for the elements</h2>
+                </div>
+                <span id="weatherIcon" class="text-5xl" aria-hidden="true">⛅️</span>
               </div>
-              <div class="flex flex-wrap gap-3">
-                <a href="#planner" class="btn btn-primary btn-sm sm:btn-md">Start planning</a>
-                <a href="#reminders" class="btn btn-outline btn-sm sm:btn-md">Review reminders</a>
+              <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
+                Checking the latest forecast…
+              </p>
+              <div class="flex flex-wrap items-end gap-6">
+                <div>
+                  <p id="weatherTemperature" class="text-5xl font-semibold text-base-content">--°C</p>
+                  <p id="weatherDescription" class="text-base text-base-content/70">Awaiting update</p>
+                </div>
+                <dl class="grid gap-4 text-sm text-base-content/80 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Location</dt>
+                    <dd id="weatherLocation" class="text-base-content">Locating…</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Wind</dt>
+                    <dd id="weatherWind" class="text-base-content">-- km/h</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Humidity</dt>
+                    <dd id="weatherHumidity" class="text-base-content">--%</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Feels like</dt>
+                    <dd id="weatherFeelsLike" class="text-base-content">--°C</dd>
+                  </div>
+                </dl>
               </div>
+              <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
             </div>
-          </div>
+          </article>
+          <article class="dashboard-card card border border-base-300 bg-base-100/90 shadow-sm">
+            <div class="dashboard-card-content card-body gap-5">
+              <div class="space-y-2">
+                <p class="dashboard-card-eyebrow">Top stories</p>
+                <h2 class="dashboard-card-title">Start conversations informed</h2>
+              </div>
+              <p id="newsStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
+                Gathering the latest headlines…
+              </p>
+              <div id="newsContent" class="hidden space-y-4">
+                <a
+                  id="newsPrimaryLink"
+                  href="#"
+                  class="block rounded-2xl border border-base-200 bg-base-200/60 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Lead story</p>
+                  <p id="newsHeadline" class="mt-2 text-lg font-semibold text-base-content"></p>
+                  <p id="newsSource" class="mt-1 text-sm text-base-content/70"></p>
+                </a>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">More to skim</p>
+                  <ul id="newsTopStories" class="mt-3 space-y-3 text-sm text-base-content/80"></ul>
+                </div>
+              </div>
+              <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
+            </div>
+          </article>
         </section>
 
         <section class="dashboard-kpis" aria-labelledby="kpi-heading">
@@ -1212,6 +1262,7 @@
     </div>
   </div>
   <script src="./js/router.js" defer></script>
+  <script type="module" src="./js/dashboard-insights.js" defer></script>
   <script type="module" src="./app.js" defer></script>
   <script src="./js/update-footer-year.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
