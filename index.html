@@ -930,6 +930,12 @@
           <h1 class="text-2xl font-semibold text-base-content">Resources</h1>
           <p class="text-base-content/70">Curated templates, routines, and downloads to keep your planning moving.</p>
         </header>
+        <div
+          id="resourcePlannerStatus"
+          class="alert hidden items-center gap-2 border border-base-300 bg-base-100/80 text-sm text-base-content/80"
+          role="status"
+          aria-live="polite"
+        ></div>
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/70 p-4 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
             <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">All</span>
@@ -940,7 +946,12 @@
           <button type="button" class="btn btn-sm btn-outline" disabled title="Coming soon">Upload resource</button>
         </div>
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <article
+            class="card border border-base-300 bg-base-200/70 shadow-sm"
+            data-resource-card
+            data-resource-title="Project-based learning toolkit"
+            data-resource-link="https://memorycue.app/resources/project-based-learning-toolkit"
+          >
             <div class="card-body gap-4">
               <div class="space-y-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Project-based learning</p>
@@ -948,12 +959,17 @@
                 <p class="text-sm text-base-content/70">Templates, rubrics, and launch ideas for interdisciplinary projects.</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <a class="btn btn-sm btn-outline" href="#">Open</a>
+                <a class="btn btn-sm btn-outline" href="https://memorycue.app/resources/project-based-learning-toolkit">Open</a>
                 <button class="btn btn-sm btn-ghost" type="button" disabled title="Coming soon">Copy link</button>
               </div>
             </div>
           </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <article
+            class="card border border-base-300 bg-base-200/70 shadow-sm"
+            data-resource-card
+            data-resource-title="Wellbeing conversation starters"
+            data-resource-link="https://memorycue.app/resources/wellbeing-conversation-starters"
+          >
             <div class="card-body gap-4">
               <div class="space-y-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Wellbeing</p>
@@ -961,12 +977,19 @@
                 <p class="text-sm text-base-content/70">Prompts and check-in activities to support SEL routines.</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <a class="btn btn-sm btn-outline" href="#">Open</a>
-                <button class="btn btn-sm btn-ghost" type="button" disabled title="Coming soon">Add to planner</button>
+                <a class="btn btn-sm btn-outline" href="https://memorycue.app/resources/wellbeing-conversation-starters">Open</a>
+                <button class="btn btn-sm btn-ghost" type="button" data-resource-planner>
+                  Add to planner
+                </button>
               </div>
             </div>
           </article>
-          <article class="card border border-base-300 bg-base-200/70 shadow-sm">
+          <article
+            class="card border border-base-300 bg-base-200/70 shadow-sm"
+            data-resource-card
+            data-resource-title="Excursion planning checklist"
+            data-resource-link="https://memorycue.app/resources/excursion-planning-checklist"
+          >
             <div class="card-body gap-4">
               <div class="space-y-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Excursions</p>
@@ -974,7 +997,7 @@
                 <p class="text-sm text-base-content/70">Stay on top of permissions, transport, and risk assessments.</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <a class="btn btn-sm btn-outline" href="#">Open</a>
+                <a class="btn btn-sm btn-outline" href="https://memorycue.app/resources/excursion-planning-checklist">Open</a>
                 <button class="btn btn-sm btn-ghost" type="button" disabled title="Coming soon">Duplicate</button>
               </div>
             </div>
