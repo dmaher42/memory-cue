@@ -56,7 +56,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-d34e5906.css" />
+  <link rel="stylesheet" href="./assets/styles-d562a77c.css" />
   <link rel="stylesheet" href="./styles/index.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
@@ -1224,6 +1224,13 @@
           Fill out the details below to save a reminder for later.
         </p>
         <form id="add-reminder-form" class="mt-4 space-y-4">
+          <div
+            id="planner-reminder-context"
+            class="hidden rounded-xl bg-base-200/80 px-4 py-3 text-sm text-base-content/80 dark:bg-base-200/20"
+            aria-live="polite"
+            aria-hidden="true"
+          ></div>
+          <input type="hidden" id="planner-reminder-lesson-id" />
           <label class="block">
             <span class="font-medium text-base-content">Title</span>
             <input
@@ -1355,7 +1362,7 @@
   </div>
   <script src="./assets/router-7FWGRX2U.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-XT5W4JBR.js" defer></script>
+  <script type="module" src="./assets/app-7D5F5MOY.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
