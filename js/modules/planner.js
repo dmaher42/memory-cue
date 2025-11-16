@@ -533,6 +533,18 @@ export const getWeekIdFromOffset = (weekId, offset = 0) => {
   return formatDateKey(next);
 };
 
+export const getWeekDateForDayIndex = (weekId = getWeekIdFromDate(), dayIndex = 0) => {
+  const weekStart = parseWeekId(weekId);
+  if (!weekStart) {
+    return null;
+  }
+  const resolvedIndex = Number.isFinite(dayIndex) ? dayIndex : 0;
+  const clampedIndex = clampDayIndex(resolvedIndex);
+  const date = new Date(weekStart);
+  date.setDate(weekStart.getDate() + clampedIndex);
+  return date;
+};
+
 export const getWeekLabel = (weekId, { short = false } = {}) => {
   const start = parseWeekId(weekId);
   if (!start) {
@@ -694,22 +706,23 @@ export const movePlannerLesson = async (weekId, lessonId, direction) => {
     return plan;
   }
   const currentLesson = lessons[lessonIndex];
-  const dayLessons = sortLessons(lessons).filter((lesson) => lesson.dayIndex === currentLesson.dayIndex);
-  const currentDayIndex = dayLessons.findIndex((lesson) => lesson.id === lessonId);
+  const dayLessons = lessons.filter((lesson) => lesson.dayIndex === currentLesson.dayIndex);
+  if (dayLessons.length <= 1) {
+    return plan;
+  }
+  const orderedDayLessons = sortLessons(dayLessons);
+  const dayOrderIds = orderedDayLessons.map((lesson) => lesson.id);
+  const currentDayIndex = dayOrderIds.indexOf(lessonId);
   if (currentDayIndex === -1) {
     return plan;
   }
   const targetDayIndex = currentDayIndex + offset;
-  if (targetDayIndex < 0 || targetDayIndex >= dayLessons.length) {
+  if (targetDayIndex < 0 || targetDayIndex >= dayOrderIds.length) {
     return plan;
   }
-  const reordered = [...dayLessons];
-  const [movedLesson] = reordered.splice(currentDayIndex, 1);
-  reordered.splice(targetDayIndex, 0, movedLesson);
-  const updatedPositions = new Map();
-  reordered.forEach((lesson, index) => {
-    updatedPositions.set(lesson.id, index);
-  });
+  const [movedLessonId] = dayOrderIds.splice(currentDayIndex, 1);
+  dayOrderIds.splice(targetDayIndex, 0, movedLessonId);
+  const updatedPositions = new Map(dayOrderIds.map((id, index) => [id, index]));
   const nextLessons = lessons.map((lesson) => {
     if (lesson.dayIndex !== currentLesson.dayIndex) {
       return lesson;
@@ -892,6 +905,7 @@ export const applyPlannerTemplate = async (weekId, templateId) => {
   if (!template) {
     return loadWeekPlan(weekId);
   }
+  rememberLastTemplateId(templateId);
   const lessons = Array.isArray(template.lessons)
     ? template.lessons.map((lesson) => ({
         dayIndex: lesson.dayIndex,
