@@ -310,6 +310,7 @@ const initMobileNotes = () => {
   const saveButton = document.getElementById('noteSaveMobile');
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
+  const countElement = document.getElementById('notesCountMobile');
 
   if (!titleInput || !bodyInput || !saveButton) {
     return;
@@ -343,12 +344,34 @@ const initMobileNotes = () => {
         return;
       }
       const isActive = button.getAttribute('data-note-id') === currentNoteId;
-      button.classList.toggle('bg-base-200', isActive);
-      button.classList.toggle('border-base-200', !isActive);
-      button.classList.toggle('border-primary', isActive);
-      button.classList.toggle('font-medium', isActive);
+      if (isActive) {
+        button.setAttribute('data-state', 'active');
+      } else {
+        button.removeAttribute('data-state');
+      }
       button.setAttribute('aria-current', isActive ? 'true' : 'false');
     });
+  };
+
+  const formatNoteTimestamp = (timestamp) => {
+    if (!timestamp) {
+      return '';
+    }
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const now = new Date();
+    const sameDay =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+    const timeString = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (sameDay) {
+      return `Today · ${timeString}`;
+    }
+    const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return `${dateString} · ${timeString}`;
   };
 
   const hasUnsavedChanges = () => {
@@ -454,9 +477,13 @@ const initMobileNotes = () => {
 
     listElement.innerHTML = '';
 
+    if (countElement) {
+      countElement.textContent = `${notes.length} saved`;
+    }
+
     if (!notes.length) {
       const emptyItem = document.createElement('li');
-      emptyItem.className = 'text-sm italic text-base-content/60';
+      emptyItem.className = 'text-xs italic text-base-content/60 px-1';
       emptyItem.textContent = 'No saved notes yet.';
       listElement.appendChild(emptyItem);
       return notes;
@@ -464,13 +491,38 @@ const initMobileNotes = () => {
 
     notes.forEach((note) => {
       const listItem = document.createElement('li');
-      listItem.className = 'flex items-center gap-2';
+      listItem.className = 'note-item-mobile flex items-center gap-2';
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.noteId = note.id;
       button.className =
-        'w-full flex-1 rounded-lg border border-base-200 bg-base-100 px-3 py-2 text-left transition hover:bg-base-200 focus:outline-none focus-visible:ring focus-visible:ring-primary/60';
-      button.textContent = note.title || 'Untitled note';
+        'flex-1 w-full text-left rounded-xl border border-base-200/70 bg-base-100 px-3 py-2.5 flex flex-col gap-0.5 transition-transform';
+
+      const headerRow = document.createElement('div');
+      headerRow.className = 'flex items-center justify-between gap-2';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'text-[0.82rem] font-medium truncate';
+      titleSpan.textContent = note.title || 'Untitled note';
+      headerRow.appendChild(titleSpan);
+
+      const timestampText = formatNoteTimestamp(note.updatedAt || note.createdAt);
+      if (timestampText) {
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'text-[0.7rem] text-base-content/50 whitespace-nowrap';
+        dateSpan.textContent = timestampText;
+        headerRow.appendChild(dateSpan);
+      }
+
+      const preview = document.createElement('p');
+      preview.className = 'text-[0.75rem] text-base-content/60 line-clamp-2';
+      const bodyText =
+        typeof note.body === 'string' ? note.body.replace(/\s+/g, ' ').trim() : '';
+      preview.textContent = bodyText || 'No body text yet.';
+
+      button.appendChild(headerRow);
+      button.appendChild(preview);
+
       button.addEventListener('click', () => {
         setEditorValues(note);
         updateListSelection();
@@ -478,9 +530,9 @@ const initMobileNotes = () => {
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
       deleteButton.className =
-        'btn btn-ghost btn-xs text-error focus-visible:ring focus-visible:ring-error/60';
+        'btn btn-ghost btn-xs text-error focus-visible:ring focus-visible:ring-error/60 flex-none';
       deleteButton.setAttribute('aria-label', `Delete note "${note.title || 'Untitled note'}"`);
-      deleteButton.textContent = 'Delete';
+      deleteButton.innerHTML = '<span aria-hidden="true">✕</span>';
       deleteButton.addEventListener('click', (event) => {
         event.stopPropagation();
         handleDeleteNote(note.id);
