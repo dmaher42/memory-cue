@@ -904,6 +904,7 @@ export const applyPlannerTemplate = async (weekId, templateId) => {
   if (!template) {
     return loadWeekPlan(weekId);
   }
+  rememberLastTemplateId(templateId);
   const lessons = Array.isArray(template.lessons)
     ? template.lessons.map((lesson) => ({
         dayIndex: lesson.dayIndex,

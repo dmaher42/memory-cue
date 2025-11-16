@@ -2171,6 +2171,32 @@ function syncPlannerTemplateSelection(plan) {
   renderPlannerTemplateOptions(preferredTemplateId);
 }
 
+async function maybeApplyPreferredPlannerTemplate(plan, weekId) {
+  const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
+  const hasLessons = lessons.length > 0;
+  const hasTemplateId = typeof plan?.templateId === 'string' && plan.templateId.trim().length > 0;
+  if (hasLessons || hasTemplateId) {
+    return plan;
+  }
+  const preferredTemplateId = getLastUsedTemplateId();
+  if (!preferredTemplateId) {
+    return plan;
+  }
+  if (!plannerTemplates[preferredTemplateId]) {
+    plannerTemplates = loadPlannerTemplates();
+  }
+  if (!plannerTemplates[preferredTemplateId]) {
+    return plan;
+  }
+  try {
+    const updatedPlan = await applyPlannerTemplate(weekId, preferredTemplateId);
+    return updatedPlan || plan;
+  } catch (error) {
+    console.error('Failed to auto apply preferred planner template', error);
+    return plan;
+  }
+}
+
 function renderPlannerLessons(plan) {
   if (!plannerCardsContainer) {
     return;
@@ -2335,7 +2361,8 @@ function renderPlannerForWeek(weekId) {
   renderPlannerMessage('Loading plan…');
   const loadOperation = (async () => {
     try {
-      const plan = await loadWeekPlan(targetWeekId);
+      let plan = await loadWeekPlan(targetWeekId);
+      plan = await maybeApplyPreferredPlannerTemplate(plan, targetWeekId);
       currentPlannerPlan = plan;
       renderPlannerLessons(plan);
       updatePlannerDashboardSummary(plan, targetWeekId);
