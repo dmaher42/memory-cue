@@ -643,6 +643,10 @@
     #reminderList > * .details {
       color: var(--text-secondary);
     }
+    html,
+    body {
+      overflow-x: hidden;
+    }
   </style>
   <meta charset="UTF-8" />
   <meta
@@ -3164,11 +3168,12 @@
 
   <div class="container">
     <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
+      <div class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <header class="px-4 pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow">
+      <header class="px-4 pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow w-full">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-base font-semibold tracking-wide text-base-content">Reminders</h2>
           <button
@@ -3184,8 +3189,8 @@
         <p class="text-xs text-base-content/70">
           Quick add a reminder here, or use the button for more details.
         </p>
-        <div id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
-          <div class="mc-quick-add-inner space-y-1.5">
+        <div id="quickAddBar" class="mc-quick-add-bar w-full" aria-label="Quick add reminder">
+          <div class="mc-quick-add-inner space-y-1.5 w-full">
             <div class="mc-quick-status flex items-center gap-2 text-xs text-base-content/60">
               <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
                 <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
@@ -3193,10 +3198,10 @@
               <p id="sync-status" class="mc-sync-message"></p>
               <span id="mcStatusText" class="mc-status-text">Offline</span>
             </div>
-            <div class="mc-quick-add-row flex items-center gap-2 mt-1">
+            <div class="mc-quick-add-row flex items-center gap-2 mt-1 w-full">
               <input
                 id="quickAddInput"
-                class="mc-quick-input input input-bordered input-sm flex-1 bg-base-200/80 text-base-content placeholder:text-base-content/60"
+                class="mc-quick-input input input-bordered input-sm flex-1 w-full bg-base-200/80 text-base-content placeholder:text-base-content/60"
                 type="text"
                 autocomplete="off"
                 placeholder="Quick reminder…"
@@ -3204,7 +3209,7 @@
               <button
                 id="quickAddSubmit"
                 type="button"
-                class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm"
+                class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm flex-shrink-0"
                 aria-label="Add reminder"
               >
                 Add
@@ -3234,7 +3239,7 @@
             Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
           </p>
           <p class="text-xs text-base-content/50 mb-2 pb-2 px-4 border-b border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
-          <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full reminder-list" aria-describedby="reminderReorderHint"></ul>
+          <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
         </div>
       </section>
     </section>
@@ -3335,6 +3340,7 @@
       </div>
     </section>
     <!-- END GPT CHANGE -->
+      </div>
     </main>
   </div>
 
