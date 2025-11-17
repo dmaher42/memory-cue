@@ -629,33 +629,36 @@
       </section>
 
       <section data-route="reminders" class="space-y-6" style="display: none;">
-        <div class="desktop-panel desktop-panel--reminders">
-          <header class="desktop-panel-header">
-            <div class="mb-6 px-6 pt-6 space-y-2">
-              <h1 class="desktop-panel-title text-2xl font-bold tracking-wide text-base-content">Reminders</h1>
-              <p class="desktop-panel-subtitle text-sm text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
-            </div>
-            <div class="desktop-panel-actions">
-              <button
-                type="button"
-                class="btn btn-primary"
-                data-open-reminder-modal
-                aria-haspopup="dialog"
-                aria-controls="add-reminder-modal"
-              >
-                Add reminder
-              </button>
-            </div>
-          </header>
+        <div class="max-w-6xl mx-auto my-10 bg-base-100/75 border border-base-300 rounded-[2rem] shadow-xl px-8 pt-8 pb-10 space-y-6 backdrop-blur-sm">
+          <div class="desktop-panel desktop-panel--reminders">
+            <header class="desktop-panel-header flex flex-wrap items-start justify-between gap-4">
+              <div class="mb-4">
+                <div class="space-y-1">
+                  <h2 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content">Reminders</h2>
+                  <p class="desktop-panel-subtitle text-sm text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
+                </div>
+              </div>
+              <div class="desktop-panel-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  data-open-reminder-modal
+                  aria-haspopup="dialog"
+                  aria-controls="add-reminder-modal"
+                >
+                  Add reminder
+                </button>
+              </div>
+            </header>
           <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
             <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">All</span>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Today</button>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">This week</button>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Later</button>
           </div>
-          <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-6">
+          <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
           <li
-            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-2xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Submit unit overview"
@@ -682,7 +685,7 @@
             </div>
           </li>
           <li
-            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-2xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Email newsletter blurb"
@@ -713,7 +716,7 @@
             </div>
           </li>
           <li
-            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-2xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Call guardians"
@@ -733,28 +736,32 @@
               </button>
             </div>
           </li>
-        </ul>
+          </ul>
+          </div>
         </div>
       </section>
 
       <section data-route="planner" class="space-y-6" style="display: none;">
-        <div class="desktop-panel desktop-panel--planner">
-          <header class="desktop-panel-header">
-            <div class="mb-6 px-6 pt-6 space-y-2">
-              <h1 class="desktop-panel-title text-2xl font-bold tracking-wide text-base-content">Weekly planner</h1>
-              <p class="desktop-panel-subtitle text-sm text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
+        <div class="max-w-6xl mx-auto my-10 bg-base-100/75 border border-base-300 rounded-[2rem] shadow-xl px-8 pt-8 pb-10 space-y-6 backdrop-blur-sm">
+          <div class="desktop-panel desktop-panel--planner">
+            <header class="desktop-panel-header">
+              <div class="mb-4">
+                <div class="space-y-1">
+                  <h2 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content">Weekly planner</h2>
+                  <p class="desktop-panel-subtitle text-sm text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
+                </div>
+              </div>
+            </header>
+            <div class="flex justify-end gap-2 mb-4">
+              <button type="button" id="planner-duplicate-btn" class="btn btn-sm btn-outline">Duplicate plan</button>
+              <button type="button" id="planner-new-lesson-btn" class="btn btn-sm btn-primary">New lesson</button>
             </div>
-          </header>
-          <div class="flex justify-end gap-2 px-6 mb-4">
-            <button type="button" id="planner-duplicate-btn" class="btn btn-sm btn-outline">Duplicate plan</button>
-            <button type="button" id="planner-new-lesson-btn" class="btn btn-sm btn-primary">New lesson</button>
-          </div>
-          <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <button type="button" id="planner-prev" class="btn btn-xs btn-secondary" aria-label="View previous week">Prev</button>
-            <button type="button" id="planner-today" class="btn btn-xs btn-secondary" aria-label="Jump to current week">Today</button>
-            <button type="button" id="planner-next" class="btn btn-xs btn-secondary" aria-label="View next week">Next</button>
-            <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
-              <span class="hidden sm:inline">Text size</span>
+            <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
+              <button type="button" id="planner-prev" class="btn btn-xs btn-secondary" aria-label="View previous week">Prev</button>
+              <button type="button" id="planner-today" class="btn btn-xs btn-secondary" aria-label="Jump to current week">Today</button>
+              <button type="button" id="planner-next" class="btn btn-xs btn-secondary" aria-label="View next week">Next</button>
+              <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
+                <span class="hidden sm:inline">Text size</span>
               <select
                 class="select select-bordered select-xs w-auto"
                 data-planner-text-size
@@ -796,8 +803,11 @@
               <p class="mt-1 text-xs text-base-content/60">Show lessons by the subjects you teach.</p>
             </label>
           </div>
-          <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
-          <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+            <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
+            <div class="[&_[data-planner-lesson]]:bg-slate-900/80 [&_[data-planner-lesson]]:text-slate-100 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:px-5 [&_[data-planner-lesson]]:pt-5 [&_[data-planner-lesson]]:pb-6 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]]:gap-4 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:justify-start [&_[data-planner-lesson]>div:last-child]:gap-3 [&_[data-planner-lesson]>div:last-child]:mt-4">
+              <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -902,15 +912,18 @@
       </div>
 
       <section data-route="notes" class="space-y-6" style="display: none;">
-        <div class="desktop-panel desktop-panel--notes-intro">
-          <header class="desktop-panel-header">
-            <div class="mb-6 px-6 pt-6 space-y-2">
-              <h1 class="desktop-panel-title text-2xl font-bold tracking-wide text-base-content">Notes</h1>
-              <p class="desktop-panel-subtitle text-sm text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
-            </div>
-          </header>
-        </div>
-        <div class="desktop-notes-grid grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
+        <div class="max-w-6xl mx-auto my-10 bg-base-100/75 border border-base-300 rounded-[2rem] shadow-xl px-8 pt-8 pb-10 space-y-6 backdrop-blur-sm">
+          <div class="desktop-panel desktop-panel--notes-intro">
+            <header class="desktop-panel-header">
+              <div class="mb-4">
+                <div class="space-y-1">
+                  <h2 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content">Notes</h2>
+                  <p class="desktop-panel-subtitle text-sm text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
+                </div>
+              </div>
+            </header>
+          </div>
+          <div class="desktop-notes-grid grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
           <article class="desktop-panel card notes-editor-card rounded-xl border border-base-300 bg-base-100 text-base-content shadow-sm dark:bg-base-200 dark:text-base-content">
             <div class="card-body gap-4 p-6">
               <div class="flex flex-col gap-4">
@@ -949,6 +962,7 @@
             </div>
           </aside>
         </div>
+      </div>
       </section>
 
       <section data-route="resources" class="space-y-6" style="display: none;">
