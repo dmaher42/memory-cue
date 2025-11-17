@@ -924,6 +924,47 @@ const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
 const plannerTemplateSelect = document.getElementById('planner-template-select');
 const plannerTemplateSaveButton = document.getElementById('planner-template-save-btn');
+const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
+const plannerPanelElement = document.querySelector('.desktop-panel--planner');
+
+const PLANNER_TEXT_SIZE_STORAGE_KEY = 'plannerTextSizePreference';
+const PLANNER_TEXT_SIZE_DEFAULT = 'default';
+const PLANNER_TEXT_SIZE_OPTIONS = new Set(['small', 'default', 'large']);
+const PLANNER_TEXT_SIZE_CLASSES = ['planner-text-small', 'planner-text-default', 'planner-text-large'];
+
+function isPlannerTextSizeSelect(element) {
+  return typeof HTMLSelectElement !== 'undefined' && element instanceof HTMLSelectElement;
+}
+
+function readPlannerTextSizePreference() {
+  if (typeof localStorage === 'undefined') {
+    return PLANNER_TEXT_SIZE_DEFAULT;
+  }
+  const stored = localStorage.getItem(PLANNER_TEXT_SIZE_STORAGE_KEY);
+  return stored && PLANNER_TEXT_SIZE_OPTIONS.has(stored) ? stored : PLANNER_TEXT_SIZE_DEFAULT;
+}
+
+function persistPlannerTextSizePreference(size) {
+  if (typeof localStorage === 'undefined' || !PLANNER_TEXT_SIZE_OPTIONS.has(size)) {
+    return;
+  }
+  localStorage.setItem(PLANNER_TEXT_SIZE_STORAGE_KEY, size);
+}
+
+function applyPlannerTextSize(size) {
+  if (!plannerPanelElement) {
+    return;
+  }
+  const normalizedSize = PLANNER_TEXT_SIZE_OPTIONS.has(size) ? size : PLANNER_TEXT_SIZE_DEFAULT;
+  PLANNER_TEXT_SIZE_CLASSES.forEach((className) => plannerPanelElement.classList.remove(className));
+  plannerPanelElement.classList.add(`planner-text-${normalizedSize}`);
+}
+
+const initialPlannerTextSize = readPlannerTextSizePreference();
+applyPlannerTextSize(initialPlannerTextSize);
+if (isPlannerTextSizeSelect(plannerTextSizeSelect)) {
+  plannerTextSizeSelect.value = initialPlannerTextSize;
+}
 const PLANNER_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function resolvePlannerLessonDayIndex(lesson) {
@@ -2422,6 +2463,20 @@ function handlePlannerSelection(event) {
   setSelectedPlannerLesson(lessonId);
 }
 
+function handlePlannerTextSizeChange(event) {
+  const select = isPlannerTextSizeSelect(event?.currentTarget) ? event.currentTarget : plannerTextSizeSelect;
+  if (!isPlannerTextSizeSelect(select)) {
+    return;
+  }
+  const selectedSize = select.value;
+  const normalizedSize = PLANNER_TEXT_SIZE_OPTIONS.has(selectedSize) ? selectedSize : PLANNER_TEXT_SIZE_DEFAULT;
+  applyPlannerTextSize(normalizedSize);
+  persistPlannerTextSizePreference(normalizedSize);
+  if (select.value !== normalizedSize) {
+    select.value = normalizedSize;
+  }
+}
+
 function getPlannerTimeoutScheduler() {
   if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
     return window.setTimeout.bind(window);
@@ -2824,6 +2879,7 @@ function initPlannerView() {
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
   plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);
+  plannerTextSizeSelect?.addEventListener('change', handlePlannerTextSizeChange);
   plannerTemplateSaveButton?.addEventListener('click', handlePlannerSaveTemplate);
   plannerPrevButton?.addEventListener('click', () => {
     const previousWeek = getWeekIdFromOffset(activePlannerWeekId, -1);

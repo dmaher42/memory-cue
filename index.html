@@ -785,6 +785,18 @@
             <button type="button" id="planner-prev" class="btn btn-xs btn-secondary" aria-label="View previous week">Prev</button>
             <button type="button" id="planner-today" class="btn btn-xs btn-secondary" aria-label="Jump to current week">Today</button>
             <button type="button" id="planner-next" class="btn btn-xs btn-secondary" aria-label="View next week">Next</button>
+            <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
+              <span class="hidden sm:inline">Text size</span>
+              <select
+                class="select select-bordered select-xs w-auto"
+                data-planner-text-size
+                aria-label="Planner text size"
+              >
+                <option value="small">Small</option>
+                <option value="default">Default</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
           </div>
           <div class="flex flex-wrap items-end gap-3 text-sm text-base-content/80">
             <label class="form-control w-full max-w-xs md:w-auto">
