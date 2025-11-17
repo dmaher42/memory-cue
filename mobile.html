@@ -3220,13 +3220,13 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <header class="pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow w-full sm:px-4">
-        <div class="flex items-center justify-between gap-3">
-          <h2 class="text-base font-semibold tracking-wide text-base-content">Reminders</h2>
+      <div class="reminders-header-card bg-base-100 border border-base-300 rounded-2xl shadow-sm w-full px-4 py-3 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-semibold tracking-wide text-base-content">Reminders</h2>
           <button
             id="addReminderBtn"
             type="button"
-            class="mc-add-btn mc-add-btn-wide btn btn-primary btn-xs rounded-full shadow-md"
+            class="mc-add-btn mc-add-btn-wide btn btn-primary btn-sm flex-shrink-0 rounded-full shadow-md"
             data-open-add-task
           >
             <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
@@ -3245,10 +3245,10 @@
               <p id="sync-status" class="mc-sync-message"></p>
               <span id="mcStatusText" class="mc-status-text">Offline</span>
             </div>
-            <div class="mc-quick-add-row flex items-center gap-2 mt-1 w-full">
+            <div class="flex items-center gap-2 w-full mt-1">
               <input
                 id="quickAddInput"
-                class="mc-quick-input input input-bordered input-sm flex-1 w-full bg-base-200/80 text-base-content placeholder:text-base-content/60"
+                class="mc-quick-input input input-bordered input-sm flex-1 w-full text-sm text-base-content"
                 type="text"
                 autocomplete="off"
                 placeholder="Quick reminder…"
@@ -3256,26 +3256,24 @@
               <button
                 id="quickAddSubmit"
                 type="button"
-                class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm flex-shrink-0"
+                class="mc-quick-submit btn btn-outline btn-sm flex-shrink-0"
                 aria-label="Add reminder"
               >
                 Add
               </button>
-              <div class="mc-quick-actions flex items-center gap-1">
-                <button
-                  id="quickAddVoice"
-                  type="button"
-                  class="mc-quick-voice btn btn-ghost btn-sm rounded-full flex-shrink-0"
-                  aria-label="Use voice to add reminder"
-                >
-                  <span aria-hidden="true">🎤</span>
-                  <span class="sr-only">Use voice to add reminder</span>
-                </button>
-              </div>
+              <button
+                id="quickAddVoice"
+                type="button"
+                class="mc-quick-voice btn btn-ghost btn-circle btn-sm flex-shrink-0"
+                aria-label="Use voice to add reminder"
+              >
+                <span aria-hidden="true">🎤</span>
+                <span class="sr-only">Use voice to add reminder</span>
+              </button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
       <section
         id="reminderListSection"
         class="w-full relative"
