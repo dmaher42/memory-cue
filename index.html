@@ -357,87 +357,88 @@
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
-        <div class="max-w-6xl mx-auto my-10 space-y-6 px-4">
-        <section class="desktop-panel desktop-hero grid gap-4 lg:grid-cols-[1fr_3fr]">
-          <article class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 flex flex-col gap-4">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
-                <p class="text-sm font-semibold text-base-content/80">Weather</p>
-                <p id="weatherStatus" class="text-xs text-base-content/70" role="status" aria-live="polite">
-                  Checking the latest forecast…
-                </p>
-              </div>
-              <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
-            </div>
-            <div class="flex flex-wrap items-end gap-4">
-              <p id="weatherTemperature" class="text-2xl font-semibold text-base-content">--°C</p>
-              <p id="weatherDescription" class="text-xs text-base-content/70">Awaiting update</p>
-            </div>
-            <dl class="grid gap-3 text-xs text-base-content/70 sm:grid-cols-2">
-              <div>
-                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Location</dt>
-                <dd id="weatherLocation" class="text-base-content/90">Locating…</dd>
-              </div>
-              <div>
-                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Wind</dt>
-                <dd id="weatherWind" class="text-base-content/90">-- km/h</dd>
-              </div>
-              <div>
-                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Humidity</dt>
-                <dd id="weatherHumidity" class="text-base-content/90">--%</dd>
-              </div>
-              <div>
-                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Feels like</dt>
-                <dd id="weatherFeelsLike" class="text-base-content/90">--°C</dd>
-              </div>
-            </dl>
-            <p id="weatherFootnote" class="text-xs text-base-content/70">We use your approximate location to calculate these details.</p>
-            <div class="weather-radar space-y-2 rounded-xl border border-dashed border-base-300/80 bg-base-200/40 p-3" aria-label="Live radar" role="group">
-              <p class="weather-radar__message text-xs text-base-content/70">
-                Live radar opens in a new tab due to browser security settings.
-              </p>
-              <a
-                class="btn btn-sm btn-primary"
-                href="https://www.windy.com/-Weather-radar-radar"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Windy radar
-              </a>
-            </div>
-          </article>
-          <article class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-slate-50 rounded-3xl shadow-xl px-6 py-5 flex flex-col gap-3 border border-slate-700/60 relative overflow-hidden">
-            <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" aria-hidden="true"></div>
-            <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-secondary/30 blur-3xl" aria-hidden="true"></div>
-            <div class="relative flex flex-col gap-4">
-              <div class="space-y-1">
-                <p class="text-sm text-slate-200/80">Top educational news</p>
-                <h2 class="text-xl font-semibold tracking-wide">Start conversations informed</h2>
-              </div>
-              <p id="newsStatus" class="text-sm text-slate-200/80" role="status" aria-live="polite">
-                Gathering the top educational news…
-              </p>
-              <div id="newsContent" class="hidden space-y-4">
-                <a
-                  id="newsPrimaryLink"
-                  href="#"
-                  class="block rounded-2xl border border-slate-700/40 bg-slate-900/60 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Lead story</p>
-                  <p id="newsHeadline" class="mt-2 text-lg font-semibold text-slate-50"></p>
-                  <p id="newsSource" class="mt-1 text-sm text-slate-200/80"></p>
-                </a>
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-200/60">More to skim</p>
-                  <ul id="newsTopStories" class="mt-3 space-y-3 text-sm text-slate-100/90"></ul>
+        <div class="max-w-6xl mx-auto my-10 px-6 space-y-8">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div class="lg:col-span-1">
+              <div class="bg-base-100/90 border border-base-300 rounded-3xl shadow-lg px-5 py-4 space-y-2">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="space-y-1">
+                    <p class="text-sm font-semibold tracking-wide text-base-content/80">Weather</p>
+                    <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
+                      Checking the latest forecast…
+                    </p>
+                  </div>
+                  <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
+                </div>
+                <div class="flex flex-wrap items-end gap-4">
+                  <p id="weatherTemperature" class="text-3xl font-semibold text-base-content">--°C</p>
+                  <p id="weatherDescription" class="text-sm text-base-content/80">Awaiting update</p>
+                </div>
+                <dl class="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
+                    <dd id="weatherLocation" class="text-xs text-base-content/80">Locating…</dd>
+                  </div>
+                  <div>
+                    <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Wind</dt>
+                    <dd id="weatherWind" class="text-xs text-base-content/80">-- km/h</dd>
+                  </div>
+                  <div>
+                    <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Humidity</dt>
+                    <dd id="weatherHumidity" class="text-xs text-base-content/80">--%</dd>
+                  </div>
+                  <div>
+                    <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Feels like</dt>
+                    <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
+                  </div>
+                </dl>
+                <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
+                <div class="weather-radar space-y-2 rounded-xl border border-dashed border-base-300/80 bg-base-200/40 p-3" aria-label="Live radar" role="group">
+                  <p class="weather-radar__message text-xs text-base-content/60">
+                    Live radar opens in a new tab due to browser security settings.
+                  </p>
+                  <a
+                    class="btn btn-primary btn-sm mt-2"
+                    href="https://www.windy.com/-Weather-radar-radar"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open Windy radar
+                  </a>
                 </div>
               </div>
-              <p id="newsFootnote" class="text-xs text-slate-200/70" aria-live="polite"></p>
             </div>
-          </article>
-        </section>
+            <div class="lg:col-span-2">
+              <div class="bg-base-100/90 border border-base-300 rounded-3xl shadow-lg px-5 py-4 space-y-3">
+                <div class="space-y-1">
+                  <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Top educational news</p>
+                  <h2 class="text-lg font-semibold tracking-wide text-base-content">Start conversations informed</h2>
+                </div>
+                <p id="newsStatus" class="text-sm text-base-content/80" role="status" aria-live="polite">
+                  Gathering the top educational news…
+                </p>
+                <div id="newsContent" class="hidden space-y-4">
+                  <a
+                    id="newsPrimaryLink"
+                    href="#"
+                    class="block rounded-2xl border border-base-300 bg-base-100/90 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Lead story</p>
+                    <p id="newsHeadline" class="mt-2 text-sm font-semibold text-primary hover:underline"></p>
+                    <p id="newsSource" class="mt-1 text-sm text-base-content/80"></p>
+                  </a>
+                  <div>
+                    <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">More to skim</p>
+                    <ul id="newsTopStories" class="mt-3 space-y-1 text-sm"></ul>
+                  </div>
+                </div>
+                <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <section class="dashboard-kpis" aria-labelledby="kpi-heading">
           <h2 id="kpi-heading" class="sr-only">Key metrics</h2>
