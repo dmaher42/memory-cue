@@ -819,6 +819,19 @@
             <button type="button" id="planner-template-save-btn" class="btn btn-sm btn-outline">
               Save current week as template
             </button>
+            <label class="form-control w-full max-w-xs md:w-auto">
+              <div class="label py-0">
+                <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Subject filter</span>
+              </div>
+              <select
+                id="planner-subject-filter"
+                class="select select-bordered select-sm w-full md:w-48"
+                aria-label="Filter planner by subject"
+              >
+                <option value="all">All subjects</option>
+              </select>
+              <p class="mt-1 text-xs text-base-content/60">Show lessons by the subjects you teach.</p>
+            </label>
           </div>
           <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
           <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
@@ -880,6 +893,16 @@
                   rows="3"
                   placeholder="What is the focus for this lesson?"
                 ></textarea>
+              </label>
+              <label class="block text-sm font-medium text-base-content">
+                Subject or class (optional)
+                <input
+                  id="planner-lesson-subject"
+                  type="text"
+                  class="input input-bordered mt-1 w-full"
+                  placeholder="e.g. Year 8 Science"
+                />
+                <span class="mt-1 block text-xs text-base-content/60">Use subjects to filter the planner by class.</span>
               </label>
               <div class="grid gap-4 md:grid-cols-2 hidden" data-planner-detail-section aria-hidden="true">
                 <label class="block text-sm font-medium text-base-content">

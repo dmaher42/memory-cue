@@ -207,6 +207,11 @@ const normaliseLesson = (lesson, fallback = {}) => {
     : typeof defaults.notes === 'string'
       ? defaults.notes
       : '';
+  const subject = typeof lesson?.subject === 'string'
+    ? lesson.subject.trim()
+    : typeof defaults.subject === 'string'
+      ? defaults.subject.trim()
+      : '';
   return {
     id,
     dayIndex,
@@ -215,6 +220,7 @@ const normaliseLesson = (lesson, fallback = {}) => {
     summary,
     details,
     notes,
+    subject,
     position: Number.isFinite(rawPosition) ? rawPosition : null
   };
 };
@@ -789,6 +795,7 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
     summary: lesson.summary,
     dayIndex: lesson.dayIndex,
     notes: typeof lesson.notes === 'string' ? lesson.notes : '',
+    subject: typeof lesson.subject === 'string' ? lesson.subject : '',
     details: (lesson.details || []).map((detail) => ({
       badge: detail.badge,
       text: detail.text
@@ -818,6 +825,7 @@ const cloneTemplateLesson = (lesson) => {
   const title = typeof lesson.title === 'string' ? lesson.title : '';
   const summary = typeof lesson.summary === 'string' ? lesson.summary : '';
   const notes = typeof lesson.notes === 'string' ? lesson.notes : '';
+  const subject = typeof lesson.subject === 'string' ? lesson.subject.trim() : '';
   const details = Array.isArray(lesson.details)
     ? lesson.details
         .map((detail) => {
@@ -833,7 +841,7 @@ const cloneTemplateLesson = (lesson) => {
         })
         .filter(Boolean)
     : [];
-  return { dayIndex, title, summary, details, notes };
+  return { dayIndex, title, summary, details, notes, subject };
 };
 
 export const loadPlannerTemplates = () => {
@@ -920,6 +928,7 @@ export const applyPlannerTemplate = async (weekId, templateId) => {
         title: lesson.title,
         summary: lesson.summary,
         notes: typeof lesson.notes === 'string' ? lesson.notes : '',
+        subject: typeof lesson.subject === 'string' ? lesson.subject : '',
         details: Array.isArray(lesson.details)
           ? lesson.details.map((detail) => ({ badge: detail.badge, text: detail.text }))
           : []
