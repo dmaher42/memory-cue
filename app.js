@@ -2229,6 +2229,57 @@ let selectedPlannerLessonId = null;
 let plannerTemplates = loadPlannerTemplates();
 const plannerNotesSaveTimers = new Map();
 const PLANNER_NOTES_SAVE_DELAY = 800;
+const PLANNER_NOTES_OPEN_STATE_STORAGE_KEY = 'plannerNotesOpenState';
+let plannerNotesOpenState = loadPlannerNotesOpenState();
+
+function loadPlannerNotesOpenState() {
+  if (typeof localStorage === 'undefined') {
+    return {};
+  }
+  try {
+    const stored = localStorage.getItem(PLANNER_NOTES_OPEN_STATE_STORAGE_KEY);
+    if (!stored) {
+      return {};
+    }
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    console.warn('Unable to load planner notes state', error);
+    return {};
+  }
+}
+
+function persistPlannerNotesOpenState() {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    localStorage.setItem(PLANNER_NOTES_OPEN_STATE_STORAGE_KEY, JSON.stringify(plannerNotesOpenState));
+  } catch (error) {
+    console.warn('Unable to persist planner notes state', error);
+  }
+}
+
+function isPlannerLessonNotesOpen(lessonId) {
+  if (!lessonId) {
+    return false;
+  }
+  return Boolean(plannerNotesOpenState?.[lessonId]);
+}
+
+function setPlannerLessonNotesOpenState(lessonId, isOpen) {
+  if (!lessonId) {
+    return;
+  }
+  if (isOpen) {
+    plannerNotesOpenState = { ...plannerNotesOpenState, [lessonId]: true };
+  } else if (plannerNotesOpenState?.[lessonId]) {
+    const nextState = { ...plannerNotesOpenState };
+    delete nextState[lessonId];
+    plannerNotesOpenState = nextState;
+  }
+  persistPlannerNotesOpenState();
+}
 
 const updatePlannerCountDisplay = (sourceLessons) => {
   if (!plannerCountElement) {
@@ -2376,23 +2427,35 @@ function renderPlannerLessons(plan) {
         ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
         : '';
       const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
+      const notesOpen = isPlannerLessonNotesOpen(lessonId);
       const notesSection = lessonId
         ? `
-            <label class="form-control w-full gap-1">
-              <div class="label py-1">
+            <details
+              class="planner-notes-collapse"
+              data-planner-notes-collapse="true"
+              data-lesson-id="${lessonId}"
+              ${notesOpen ? 'open' : ''}
+            >
+              <summary class="planner-notes-summary">
                 <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Lesson notes</span>
+                <span class="planner-notes-summary-indicator" aria-hidden="true"></span>
+              </summary>
+              <div class="planner-notes-panel">
+                <label class="form-control w-full gap-1">
+                  <textarea
+                    class="textarea textarea-bordered w-full min-h-[6rem] text-base-content"
+                    data-planner-notes="true"
+                    data-lesson-id="${lessonId}"
+                    placeholder="Write lesson notes"
+                    spellcheck="true"
+                    aria-label="Lesson notes"
+                  >${escapeCueText(notesValue)}</textarea>
+                  <div class="label py-1">
+                    <span class="label-text-alt text-xs text-base-content/60">Notes save automatically.</span>
+                  </div>
+                </label>
               </div>
-              <textarea
-                class="textarea textarea-bordered w-full min-h-[6rem] text-base-content"
-                data-planner-notes="true"
-                data-lesson-id="${lessonId}"
-                placeholder="Write lesson notes"
-                spellcheck="true"
-              >${escapeCueText(notesValue)}</textarea>
-              <div class="label py-1">
-                <span class="label-text-alt text-xs text-base-content/60">Notes save automatically.</span>
-              </div>
-            </label>
+            </details>
           `
         : '';
       const moveControls = lessonId
@@ -2629,6 +2692,19 @@ function handlePlannerNotesFocusOut(event) {
   }
   clearPlannerNotesTimer(lessonId);
   persistPlannerLessonNotes(lessonId, textarea.value, textarea);
+}
+
+function handlePlannerNotesToggle(event) {
+  const details = event.target instanceof HTMLDetailsElement ? event.target : null;
+  if (!details || !details.hasAttribute('data-planner-notes-collapse')) {
+    return;
+  }
+  const lessonId = details.getAttribute('data-lesson-id');
+  if (!lessonId) {
+    return;
+  }
+  const isOpen = details.hasAttribute('open');
+  setPlannerLessonNotesOpenState(lessonId, isOpen);
 }
 
 function renderPlannerForWeek(weekId) {
@@ -2926,6 +3002,7 @@ function initPlannerView() {
   plannerCardsContainer.addEventListener('click', handlePlannerCardAction);
   plannerCardsContainer.addEventListener('input', handlePlannerNotesInput);
   plannerCardsContainer.addEventListener('focusout', handlePlannerNotesFocusOut);
+  plannerCardsContainer.addEventListener('toggle', handlePlannerNotesToggle);
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
   plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);
