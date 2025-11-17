@@ -926,11 +926,22 @@ const plannerTemplateSelect = document.getElementById('planner-template-select')
 const plannerTemplateSaveButton = document.getElementById('planner-template-save-btn');
 const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
 const plannerPanelElement = document.querySelector('.desktop-panel--planner');
+const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
+const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
 
 const PLANNER_TEXT_SIZE_STORAGE_KEY = 'plannerTextSizePreference';
 const PLANNER_TEXT_SIZE_DEFAULT = 'default';
 const PLANNER_TEXT_SIZE_OPTIONS = new Set(['small', 'default', 'large']);
 const PLANNER_TEXT_SIZE_CLASSES = ['planner-text-small', 'planner-text-default', 'planner-text-large'];
+
+const MOBILE_NOTES_TEXT_SIZE_STORAGE_KEY = 'mobileNotesTextSizePreference';
+const MOBILE_NOTES_TEXT_SIZE_DEFAULT = 'default';
+const MOBILE_NOTES_TEXT_SIZE_OPTIONS = new Set(['small', 'default', 'large']);
+const MOBILE_NOTES_TEXT_SIZE_CLASSES = [
+  'mobile-panel--notes-size-small',
+  'mobile-panel--notes-size-default',
+  'mobile-panel--notes-size-large',
+];
 
 function isPlannerTextSizeSelect(element) {
   return typeof HTMLSelectElement !== 'undefined' && element instanceof HTMLSelectElement;
@@ -964,6 +975,45 @@ const initialPlannerTextSize = readPlannerTextSizePreference();
 applyPlannerTextSize(initialPlannerTextSize);
 if (isPlannerTextSizeSelect(plannerTextSizeSelect)) {
   plannerTextSizeSelect.value = initialPlannerTextSize;
+}
+
+function readMobileNotesTextSizePreference() {
+  if (typeof localStorage === 'undefined') {
+    return MOBILE_NOTES_TEXT_SIZE_DEFAULT;
+  }
+  const stored = localStorage.getItem(MOBILE_NOTES_TEXT_SIZE_STORAGE_KEY);
+  return stored && MOBILE_NOTES_TEXT_SIZE_OPTIONS.has(stored) ? stored : MOBILE_NOTES_TEXT_SIZE_DEFAULT;
+}
+
+function persistMobileNotesTextSizePreference(size) {
+  if (typeof localStorage === 'undefined' || !MOBILE_NOTES_TEXT_SIZE_OPTIONS.has(size)) {
+    return;
+  }
+  localStorage.setItem(MOBILE_NOTES_TEXT_SIZE_STORAGE_KEY, size);
+}
+
+function applyMobileNotesTextSize(size) {
+  if (!mobileNotesPanelElement) {
+    return;
+  }
+  const normalizedSize = MOBILE_NOTES_TEXT_SIZE_OPTIONS.has(size) ? size : MOBILE_NOTES_TEXT_SIZE_DEFAULT;
+  MOBILE_NOTES_TEXT_SIZE_CLASSES.forEach((className) => mobileNotesPanelElement.classList.remove(className));
+  mobileNotesPanelElement.classList.add(`mobile-panel--notes-size-${normalizedSize}`);
+}
+
+const initialMobileNotesTextSize = readMobileNotesTextSizePreference();
+applyMobileNotesTextSize(initialMobileNotesTextSize);
+if (mobileNotesTextSizeSelect instanceof HTMLSelectElement) {
+  mobileNotesTextSizeSelect.value = initialMobileNotesTextSize;
+  mobileNotesTextSizeSelect.addEventListener('change', (event) => {
+    const selectedSize = typeof event.target?.value === 'string' ? event.target.value : MOBILE_NOTES_TEXT_SIZE_DEFAULT;
+    if (!MOBILE_NOTES_TEXT_SIZE_OPTIONS.has(selectedSize)) {
+      mobileNotesTextSizeSelect.value = readMobileNotesTextSizePreference();
+      return;
+    }
+    persistMobileNotesTextSizePreference(selectedSize);
+    applyMobileNotesTextSize(selectedSize);
+  });
 }
 const PLANNER_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 

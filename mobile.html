@@ -3180,14 +3180,14 @@
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden">
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes">
       <div class="flex flex-col gap-4">
         <section class="card bg-base-100 border shadow-sm rounded-2xl">
           <div class="card-body gap-4">
             <header class="flex items-center justify-between gap-2">
               <div class="flex flex-col">
                 <h2 class="card-title text-base leading-tight">Scratch Notes</h2>
-                <p class="text-xs text-base-content/60">
+                <p class="text-xs text-base-content/60" data-note-summary>
                   Quick jot pad that syncs with your desktop notebook.
                 </p>
               </div>
@@ -3246,6 +3246,22 @@
                 </div>
               </div>
 
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-200/70 bg-base-100/80 px-3 py-2 text-xs text-base-content/70"
+                data-note-toolbar
+              >
+                <span class="font-semibold text-base-content text-sm">Text size</span>
+                <select
+                  class="select select-bordered select-xs w-full max-w-[160px]"
+                  data-mobile-notes-text-size
+                  aria-label="Select scratch notes text size"
+                >
+                  <option value="small">Small</option>
+                  <option value="default" selected>Default</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+
               <label class="flex flex-col gap-2" for="noteBodyMobile">
                 <span class="text-sm font-medium text-base-content">Body</span>
                 <div class="note-body-wrapper">
@@ -3264,7 +3280,7 @@
                 </div>
               </label>
 
-              <div class="flex items-center justify-between gap-2 text-xs text-base-content/60">
+              <div class="flex items-center justify-between gap-2 text-xs text-base-content/60" data-note-detail-list>
                 <span id="notesStatusText" class="truncate"></span>
                 <span class="flex items-center gap-1 whitespace-nowrap">
                   <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>

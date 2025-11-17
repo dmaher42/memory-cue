@@ -2263,3 +2263,37 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   color: var(--planner-accent);
   font-weight: 600;
 }
+
+.mobile-panel--notes {
+  --mobile-notes-text-scale: 1;
+  --mobile-notes-detail-base: 0.75rem;
+  --mobile-notes-textarea-base: 1rem;
+}
+
+.mobile-panel--notes-size-small {
+  --mobile-notes-text-scale: 0.9;
+}
+
+.mobile-panel--notes-size-default {
+  --mobile-notes-text-scale: 1;
+}
+
+.mobile-panel--notes-size-large {
+  --mobile-notes-text-scale: 1.15;
+}
+
+.mobile-panel--notes [data-note-summary],
+.mobile-panel--notes [data-note-detail-list],
+.mobile-panel--notes [data-note-detail-list] > * {
+  font-size: calc(var(--mobile-notes-detail-base, 0.75rem) * var(--mobile-notes-text-scale, 1));
+  line-height: calc(1.35 * var(--mobile-notes-text-scale, 1));
+}
+
+.mobile-panel--notes .note-body-field textarea {
+  font-size: calc(var(--mobile-notes-textarea-base, 1rem) * var(--mobile-notes-text-scale, 1));
+  line-height: calc(1.45 * var(--mobile-notes-text-scale, 1));
+}
+
+.mobile-panel--notes .note-body-field textarea::placeholder {
+  font-size: inherit;
+}
