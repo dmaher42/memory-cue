@@ -477,6 +477,11 @@ export async function initReminders(sel = {}) {
     }
     if (plannerLessonInput) {
       plannerLessonInput.value = '';
+      if (plannerLessonInput.dataset) {
+        delete plannerLessonInput.dataset.lessonDayLabel;
+        delete plannerLessonInput.dataset.lessonTitle;
+        delete plannerLessonInput.dataset.lessonSummary;
+      }
     }
   };
 
@@ -527,6 +532,11 @@ export async function initReminders(sel = {}) {
     }
     if (plannerLessonInput) {
       plannerLessonInput.value = plannerLessonId;
+      if (plannerLessonInput.dataset) {
+        plannerLessonInput.dataset.lessonDayLabel = dayLabel;
+        plannerLessonInput.dataset.lessonTitle = lessonTitle;
+        plannerLessonInput.dataset.lessonSummary = summary;
+      }
     }
     showPlannerReminderContext(detail);
   };
@@ -3472,7 +3482,31 @@ export async function initReminders(sel = {}) {
     let due=null;
     if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
     else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText, plannerLessonId: plannerLinkId || null });
+    const plannerLessonDetail = plannerLinkId
+      ? {
+          lessonId: plannerLinkId,
+          dayLabel: plannerLessonInput?.dataset?.lessonDayLabel || '',
+          lessonTitle: plannerLessonInput?.dataset?.lessonTitle || '',
+          summary: plannerLessonInput?.dataset?.lessonSummary || '',
+        }
+      : null;
+    const createdItem = addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText, plannerLessonId: plannerLinkId || null });
+    if (createdItem) {
+      if (plannerLessonDetail) {
+        toast('Planner reminder created');
+        dispatchCueEvent('planner:reminderCreated', {
+          lessonId: plannerLessonDetail.lessonId,
+          dayLabel: plannerLessonDetail.dayLabel,
+          lessonTitle: plannerLessonDetail.lessonTitle,
+          summary: plannerLessonDetail.summary,
+          reminderId: createdItem.id,
+          reminderTitle: createdItem.title,
+          reminderDue: createdItem.due || null,
+        });
+      } else {
+        toast('Reminder created');
+      }
+    }
     if(title) title.value='';
     if(time) time.value='';
     if(details) details.value='';
