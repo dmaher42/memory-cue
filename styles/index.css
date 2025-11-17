@@ -2207,6 +2207,87 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   transition: font-size 0.2s ease, line-height 0.2s ease;
 }
 
+.planner-notes-collapse {
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--planner-card-bg, #ffffff) 75%, transparent);
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.planner-notes-collapse:hover,
+.planner-notes-collapse:focus-within {
+  border-color: color-mix(in srgb, var(--planner-card-hover, #4cc3ee) 55%, transparent);
+  box-shadow: 0 8px 20px rgba(59, 175, 218, 0.18);
+}
+
+.planner-notes-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+  user-select: none;
+}
+
+.planner-notes-summary::-webkit-details-marker {
+  display: none;
+}
+
+.planner-notes-summary-indicator {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.planner-notes-summary-indicator::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-left: 0;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.planner-notes-collapse[open] .planner-notes-summary-indicator {
+  transform: rotate(180deg);
+}
+
+.planner-notes-collapse[open] .planner-notes-summary-indicator::before {
+  transform: rotate(-135deg);
+}
+
+.planner-notes-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.planner-notes-collapse[open] .planner-notes-panel {
+  max-height: 800px;
+  opacity: 1;
+  overflow: visible;
+}
+
+.planner-notes-panel textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--planner-card-hover, #4cc3ee) 80%, transparent);
+  outline-offset: 2px;
+}
+
 [data-route="planner"] {
   background: var(--planner-bg);
 }
