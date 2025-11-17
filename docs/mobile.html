@@ -2,24 +2,121 @@
 <html lang="en" data-theme="light">
 <head>
   <base href="/memory-cue/" />
+  <!-- === SUPABASE CONFIG (put before your main JS) === -->
+  <script type="module" src="./assets/init-env-MQHJLMJ2.js" defer></script>
+  <script type="module" src="./assets/config-supabase-MP3TZUE5.js" defer></script>
+  <script defer src="./js/firebase-config.js"></script>
+  <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --primary-color: #5e72e4;
-      --primary-dark: #4c63d2;
-      --secondary-color: #f5365c;
-      --success-color: #2dce89;
-      --warning-color: #fb6340;
-      --info-color: #11cdef;
-      --text-primary: #32325d;
-      --text-secondary: #8898aa;
-      --bg-color: #f4f5f7;
-      --card-bg: #ffffff;
-      --border-color: #e9ecef;
-      --shadow-sm: 0 0 0.5rem rgba(0, 0, 0, 0.075);
-      --shadow-md: 0 0 2rem rgba(136, 152, 170, 0.15);
+      --card-bg: #FFFFFF;
+      --card-border: #CBE6D5;
+      --text-primary: #1F2A24;
+      --text-secondary: #4C6457;
+      --accent-color: #B5A9FF;
+      --success-color: #63C69B;
+      --background-color: #eef2ff;
+      --hover-bg: #DCEFE2;
+      --shadow-color: rgba(31, 42, 36, 0.08);
+      --delete-color: #EF6A6A;
+
+      /* Legacy tokens mapped to Calming Tones palette */
+      --primary-color: var(--accent-color);
+      --primary-dark: #7A6AE0;
+      --secondary-color: #B5A9FF;
+      --warning-color: #F7C56C;
+      --info-color: var(--accent-color);
+      --bg-color: var(--background-color);
+      --border-color: var(--card-border);
+      --priority-high-border: #F4A259; /* Bio Orange */
+      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
+      --priority-medium-border: #6C8AE4; /* Quantum Blue */
+      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 16%, #FFFFFF);
+      --priority-low-border: #6B8F71; /* Digital Sage */
+      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 16%, #FFFFFF);
+      --priority-high-color: #ef4444; /* Tailwind red-500 */
+      --priority-medium-color: #eab308; /* Tailwind yellow-500 */
+      --priority-low-color: #22c55e; /* Tailwind green-500 */
+      --shadow-sm: 0 1px 3px var(--shadow-color);
+      --shadow-md: 0 4px 12px var(--shadow-color);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --reminder-card-padding-y: 0.35rem;
+      --reminder-card-padding-x: 0.6rem;
+      --reminder-card-gap: 0.3rem;
+      --reminder-card-font-size: 0.85rem;
+
+      /* Mobile chrome for refreshed indigo shell */
+      --mobile-header-bg: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(14, 165, 233, 0.1));
+      --mobile-header-border: rgba(99, 102, 241, 0.22);
+      --mobile-header-shadow: 0 18px 32px rgba(79, 70, 229, 0.18);
+      --mobile-header-text: var(--text-primary);
+      --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(79, 70, 229, 0.12));
+      --mobile-header-button-color: color-mix(in srgb, var(--accent-color) 92%, var(--text-primary) 8%);
+      --mobile-header-button-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
+      --mobile-quick-surface: color-mix(in srgb, var(--card-bg) 96%, rgba(79, 70, 229, 0.08));
+      --mobile-quick-shadow: 0 20px 34px rgba(79, 70, 229, 0.16);
+    }
+
+    html[data-theme="dark"],
+    html.dark {
+      --mobile-header-bg: color-mix(in srgb, rgba(15, 23, 42, 0.92) 96%, transparent);
+      --mobile-header-border: rgba(148, 163, 184, 0.35);
+      --mobile-header-shadow: 0 16px 32px rgba(15, 23, 42, 0.55);
+      --mobile-header-text: color-mix(in srgb, var(--card-bg) 94%, transparent);
+      --mobile-header-button-bg: color-mix(in srgb, rgba(148, 163, 184, 0.2) 100%, transparent);
+      --mobile-header-button-color: color-mix(in srgb, var(--card-bg) 92%, transparent);
+      --mobile-header-button-border: rgba(148, 163, 184, 0.45);
+      --mobile-quick-surface: color-mix(in srgb, rgba(15, 23, 42, 0.92) 94%, transparent);
+      --mobile-quick-shadow: 0 18px 30px rgba(15, 23, 42, 0.6);
+    }
+
+    .pt-safe-top {
+      padding-top: env(safe-area-inset-top, 0);
+    }
+
+    /* Mobile reminder cards coloured by priority using existing tokens */
+    .task-item,
+    .cue-task-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-left-width: 3px;
+      border-left-color: var(--card-border);
+      border-radius: 0.75rem;
+    }
+
+    .task-item[data-priority="High"],
+    .task-item.priority-high,
+    .cue-task-card[data-priority="High"],
+    .cue-task-card.priority-high {
+      background-color: var(--priority-high-bg);
+      border-color: var(--priority-high-border);
+      border-left-color: var(--priority-high-border);
+      border-style: solid;
+      border-width: 1px;
+    }
+
+    .task-item[data-priority="Medium"],
+    .task-item.priority-medium,
+    .cue-task-card[data-priority="Medium"],
+    .cue-task-card.priority-medium {
+      background-color: var(--priority-medium-bg);
+      border-color: var(--priority-medium-border);
+      border-left-color: var(--priority-medium-border);
+      border-style: solid;
+      border-width: 1px;
+    }
+
+    .task-item[data-priority="Low"],
+    .task-item.priority-low,
+    .cue-task-card[data-priority="Low"],
+    .cue-task-card.priority-low {
+      background-color: var(--priority-low-bg);
+      border-color: var(--priority-low-border);
+      border-left-color: var(--priority-low-border);
+      border-style: solid;
+      border-width: 1px;
     }
 
   .container {
@@ -28,7 +125,128 @@
     padding: 20px;
   }
 
-  .card {
+  body.mobile-shell .container {
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  body.mobile-shell #main {
+    max-width: none;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  body[data-active-view="notebook"] .container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  body[data-active-view="notebook"] #main {
+    max-width: none;
+    margin: 0;
+    padding-bottom: 0;
+  }
+
+  body[data-active-view="notebook"] #view-notebook {
+    background: var(--card-bg);
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  [data-view="notebook"] .textarea {
+    min-height: 0 !important;
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card-body {
+    padding: clamp(1.25rem, 5vw, 2rem);
+    padding-bottom: clamp(5rem, 10vw, 6rem);
+    min-height: calc(100dvh - 4rem);
+  }
+
+  .mobile-shell #view-notebook .card {
+    border-radius: 1.1rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    padding-inline: 0;
+  }
+
+  .mobile-shell #view-notebook .card-body {
+    padding-inline: 0;
+    padding-bottom: 0.5rem;
+  }
+
+  .mobile-shell #view-notebook .textarea {
+    min-height: 0 !important;
+  }
+
+  .mobile-shell #view-notebook .card-title {
+    font-weight: 600;
+  }
+
+  .mobile-shell #view-notebook .input-sm,
+  .mobile-shell #view-notebook .textarea-sm {
+    font-size: 0.86rem;
+  }
+
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0.75rem);
+  }
+
+  .btm-nav button.active {
+    background-color: color-mix(in srgb, var(--accent-color, #2563eb) 22%, transparent);
+    color: var(--accent-color, #2563eb);
+    font-weight: 600;
+  }
+
+  .mobile-shell #noteBodyMobile {
+    background: radial-gradient(
+        circle at top,
+        rgba(148, 163, 184, 0.06),
+        transparent 55%
+      ),
+      var(--b1);
+  }
+
+  .mobile-shell #noteBodyMobile:focus-visible {
+    outline: 2px solid var(--accent-color, #2563eb);
+    outline-offset: 0;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 25%, transparent);
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper {
+    position: relative;
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper::before,
+  .mobile-shell #view-notebook .note-body-wrapper::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 14px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.08), transparent);
+  }
+
+  .mobile-shell #view-notebook .note-body-wrapper::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.08), transparent);
+  }
+
+  #view-notebook .card {
     background: var(--card-bg);
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
@@ -37,15 +255,118 @@
     transition: var(--transition);
   }
 
-  .card:hover {
+  #view-notebook .card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
   }
 
-  .quick-actions-panel {
-    background: transparent;
+  #savedNotesSheet {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  #savedNotesSheet[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #savedNotesSheet .saved-notes-panel {
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  #savedNotesSheet[data-open="true"] .saved-notes-panel {
+    transform: translateY(0);
+  }
+
+  .note-body-field {
+    position: relative;
+    border-radius: 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .note-body-field:focus-within {
+    border-color: color-mix(in srgb, var(--accent-color) 70%, var(--card-border));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
+  }
+
+  .note-body-field::before {
+    content: attr(data-placeholder);
+    position: absolute;
+    inset: 0;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    opacity: 0.8;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .note-body-field[data-has-content="true"]::before,
+  .note-body-field:focus-within::before {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  .note-body-field textarea {
+    position: relative;
+    z-index: 1;
     border: none;
     box-shadow: none;
+  }
+
+  .note-body-field textarea.bg-base-100 {
+    background-color: var(--b1);
+  }
+
+  .note-body-field textarea::placeholder {
+    color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    opacity: 0.8;
+  }
+
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
+    outline: 2px solid var(--accent-color, #2563eb);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 18%, transparent);
+  }
+
+  .mobile-shell #notesListMobile .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .mobile-shell #savedNotesSheet {
+    transition: opacity 0.25s ease;
+    opacity: 0;
+  }
+
+  .mobile-shell #savedNotesSheet[data-open="true"] {
+    opacity: 1;
+  }
+
+  .mobile-shell #savedNotesSheet .saved-notes-panel {
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .mobile-shell #savedNotesSheet[data-open="true"] .saved-notes-panel {
+    transform: translateY(0);
+  }
+
+  .quick-actions-panel {
+    background: var(--mobile-quick-surface);
+    border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
+    border-radius: 20px;
+    box-shadow: var(--mobile-quick-shadow);
+    padding: 0.6rem;
+    backdrop-filter: blur(18px);
   }
 
   .quick-actions {
@@ -73,34 +394,58 @@
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 9999px;
-    border: none;
-    background: rgba(15, 23, 42, 0.1);
-    color: var(--text-primary, rgba(15, 23, 42, 0.88));
+    border: 1px solid var(--mobile-header-button-border);
+    background: var(--mobile-header-button-bg);
+    color: var(--mobile-header-button-color);
     font-size: 1.2rem;
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18);
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .quick-action-btn:hover,
   .quick-action-btn:focus-visible {
-    background: rgba(15, 23, 42, 0.16);
+    background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+    color: color-mix(in srgb, var(--card-bg) 96%, transparent);
     transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(79, 70, 229, 0.2);
     outline: none;
   }
 
-  html[data-theme="dark"] .quick-action-btn {
-    background: rgba(226, 232, 240, 0.08);
-    color: rgba(226, 232, 240, 0.92);
+  .quick-action-btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+    outline-offset: 2px;
+  }
+
+  html[data-theme="dark"] .quick-action-btn,
+  html.dark .quick-action-btn {
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
   }
 
   html[data-theme="dark"] .quick-action-btn:hover,
-  html[data-theme="dark"] .quick-action-btn:focus-visible {
-    background: rgba(226, 232, 240, 0.16);
+  html[data-theme="dark"] .quick-action-btn:focus-visible,
+  html.dark .quick-action-btn:hover,
+  html.dark .quick-action-btn:focus-visible {
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
   }
 
   .quick-action-icon {
     font-size: 1.25rem;
     line-height: 1;
+  }
+
+  .menu-heading {
+    margin: 0;
+    padding: 0.75rem 1rem 0.25rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.6);
+  }
+
+  html[data-theme="dark"] .menu-heading {
+    color: rgba(226, 232, 240, 0.65);
   }
 
   /* Reminders wrapper spacing on mobile */
@@ -115,38 +460,159 @@
     padding: 0;
   }
 
-    /* Each reminder item: flatten all card styling */
+    /* Each reminder item uses the Calming Tones card styling */
     #reminderList > * {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      gap: 0.75rem;
-      padding: 0.75rem 0.5rem;
-      margin: 0; /* remove gaps between items */
-      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
-      font-size: 0.875rem;
+      gap: var(--reminder-card-gap);
+      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      margin: 0 0 var(--reminder-card-gap) 0;
+      border: 1px solid var(--card-border);
+      font-size: var(--reminder-card-font-size);
       line-height: 1.4;
-
-      /* strip “card” look */
-      background: transparent !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px var(--shadow-color);
+      transition: all 0.2s ease;
     }
 
-    /* If reminders are wrapped in DaisyUI cards, flatten them too */
+    #reminderList > *:hover {
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transform: translateY(-2px);
+      border-color: var(--accent-color);
+    }
+
+    /* --- Priority Tints & Borders --- */
+
+    /* Update the base card to include a default border */
+    .reminder-card {
+      border-left: 3px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+
+    /* High priority: Bio Orange tint + border */
+    .reminder-card.priority-high {
+      background-color: var(--priority-high-bg);
+      border-left-color: var(--priority-high-border);
+    }
+
+    /* Medium priority: Quantum Blue tint + border */
+    .reminder-card.priority-medium {
+      background-color: var(--priority-medium-bg);
+      border-left-color: var(--priority-medium-border);
+    }
+
+    /* Low priority: Digital Sage accent */
+    .reminder-card.priority-low {
+      background-color: var(--priority-low-bg);
+      border-left-color: var(--priority-low-border);
+    }
+
+    /* If reminders are wrapped in DaisyUI cards, ensure they inherit the new look */
     #reminderList > * .card,
     #reminderList > * .card-body {
-      background: transparent !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: none !important;
+      background: transparent;
+      border-radius: inherit;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+      border: none;
     }
 
-  /* Remove divider on last item */
+    @media (max-width: 640px) {
+      #reminderList > .reminder-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0.5rem;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        font-size: var(--reminder-card-font-size);
+        line-height: 1.4;
+      }
+
+      #reminderList > .reminder-card.priority-high {
+        background: var(--priority-high-bg);
+        border-left: 3px solid var(--priority-high-border);
+      }
+
+      #reminderList > .reminder-card.priority-medium {
+        background: var(--priority-medium-bg);
+        border-left: 3px solid var(--priority-medium-border);
+      }
+
+      #reminderList > .reminder-card.priority-low {
+        background: var(--priority-low-bg);
+        border-left: 3px solid var(--priority-low-border);
+      }
+
+      #reminderList > .reminder-card:last-child {
+        margin-bottom: 0;
+      }
+
+      #reminderList > .reminder-card h3,
+      #reminderList > .reminder-card h4,
+      #reminderList > .reminder-card strong,
+      #reminderList > .reminder-card [data-reminder-title] {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      #reminderList > .reminder-card time,
+      #reminderList > .reminder-card .reminder-meta {
+        font-size: 0.825rem;
+        color: #6B7280;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      #reminderList > .reminder-card .priority-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .priority-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      .priority-pill.priority-high {
+        background: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--priority-high-border) 32%, transparent);
+        color: var(--priority-high-border);
+      }
+
+      .priority-pill.priority-medium {
+        background: color-mix(in srgb, var(--priority-medium-border) 18%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--priority-medium-border) 32%, transparent);
+        color: var(--priority-medium-border);
+      }
+
+      .priority-pill.priority-low {
+        background: color-mix(in srgb, var(--priority-low-border) 18%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--priority-low-border) 32%, transparent);
+        color: var(--priority-low-border);
+      }
+    }
+
+  /* Remove extra spacing on the last item */
   #reminderList > *:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
 
     /* Title on the left */
@@ -155,7 +621,10 @@
     #reminderList > * strong,
     #reminderList > * [data-reminder-title] {
       margin: 0;
-      font-weight: 500;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
       grid-column: 1;
       min-width: 0; /* allow text to truncate */
       overflow: hidden;
@@ -169,29 +638,30 @@
     /* Meta info (right side: date/time/status) */
     #reminderList > * time,
     #reminderList > * .reminder-meta {
-      font-size: 0.75rem;
-      opacity: 0.75;
-      margin-left: 0.5rem;
-      grid-column: 2;
-      justify-self: end;
-      text-align: right;
-      align-self: start;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--reminder-card-gap);
+      margin-top: 0.75rem;
+      grid-column: 1 / -1;
     }
 
-    /* Hide extra description/details to keep list minimal */
+    #reminderList > * time {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
     #reminderList > * p,
     #reminderList > * .description,
-    #reminderList > * .details,
-    #reminderList > * .card-actions {
-      display: none !important;
+    #reminderList > * .details {
+      color: var(--text-secondary);
     }
-
-  /* Slight hover feedback on devices with hover */
-  @media (hover: hover) {
-    #reminderList > *:hover {
-      background-color: color-mix(in srgb, var(--text-primary) 3%, transparent);
+    html,
+    body {
+      overflow-x: hidden;
     }
-  }
   </style>
   <meta charset="UTF-8" />
   <meta
@@ -199,8 +669,10 @@
     content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
   />
   <title>Memory Cue (Mobile)</title>
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#10b981" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
@@ -211,6 +683,7 @@
     crossorigin="anonymous"
   />
   <link rel="stylesheet" href="./styles/daisy-themes.css" />
+  <link rel="stylesheet" href="./css/theme-mobile.css" />
   <style>
     /* Accessibility helper */
     .sr-only {
@@ -440,7 +913,34 @@
         font-size: 16px; /* Prevent zoom on iOS */
       }
     }
-    
+
+    .search-input,
+    .filter-select,
+    #searchPanel input,
+    #searchPanel select {
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px var(--shadow-color);
+    }
+
+    .search-input::placeholder,
+    #searchPanel input::placeholder {
+      color: color-mix(in srgb, var(--text-secondary) 70%, transparent);
+    }
+
+    .search-input:focus,
+    .filter-select:focus,
+    #searchPanel input:focus,
+    #searchPanel select:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 25%, transparent);
+      outline: none;
+    }
+
     /* Auto-save status indicator */
     .sync-dot {
       width: 0.5rem;
@@ -474,6 +974,11 @@
       scrollbar-width: none;
       scroll-snap-type: x proximity;
     }
+
+    .section-header h2,
+    .view-panel h2 {
+      color: var(--text-primary);
+    }
     .section-jump::-webkit-scrollbar {
       display: none;
     }
@@ -490,34 +995,33 @@
     /* Enhanced reminder visibility styles */
     .task-item {
       position: relative;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1rem;
-      align-items: start;
-      padding: 1rem;
-      padding-left: 1.25rem;
-      margin-bottom: 0.75rem;
-      background: color-mix(in srgb, var(--card-bg) 95%, transparent);
-      border: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch;
+      padding: 0.75rem 0.875rem;
+      margin-bottom: 0.5rem;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-left-width: 3px;
-      border-left-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
-      border-radius: 0.5rem;
-      box-shadow: var(--shadow-sm);
+      border-left-color: var(--card-border);
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 2px var(--shadow-color);
       transition: var(--transition);
     }
     .task-item:hover {
-      border-left-color: color-mix(in srgb, var(--primary-color) 90%, transparent);
-      box-shadow: var(--shadow-md);
+      border-left-color: color-mix(in srgb, var(--card-border) 45%, transparent);
+      box-shadow: 0 2px 6px var(--shadow-color);
       transform: translateY(-1px);
     }
     .dark .task-item {
-      background: color-mix(in srgb, var(--text-primary) 85%, transparent);
-      border-color: color-mix(in srgb, var(--border-color) 25%, transparent);
-      border-left-color: color-mix(in srgb, var(--primary-color) 70%, var(--card-bg) 30%);
+      background-color: color-mix(in srgb, var(--text-primary) 24%, rgba(15, 23, 42, 0.92) 76%);
+      border-color: color-mix(in srgb, var(--card-border) 55%, transparent);
+      border-left-color: color-mix(in srgb, var(--card-border) 70%, transparent);
       box-shadow: var(--shadow-sm);
     }
     .dark .task-item:hover {
-      border-left-color: color-mix(in srgb, var(--primary-color) 100%, var(--card-bg) 20%);
+      border-left-color: color-mix(in srgb, var(--card-border) 85%, transparent);
       box-shadow: var(--shadow-md);
     }
     .task-item[data-notification-active="true"] {
@@ -541,53 +1045,41 @@
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 50%, transparent),
         0 12px 26px color-mix(in srgb, var(--success-color) 45%, transparent);
     }
-    .task-item[data-priority="High"] {
-      border-left-color: color-mix(in srgb, var(--secondary-color) 70%, transparent);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--secondary-color) 40%, var(--card-bg) 60%),
-        color-mix(in srgb, var(--card-bg) 95%, transparent)
-      );
+    .task-item[data-priority="High"],
+    .task-item.priority-high {
+      background-color: var(--priority-high-bg);
+      border-color: var(--priority-high-border);
+      border-left-color: var(--priority-high-border);
     }
-    .dark .task-item[data-priority="High"] {
-      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--secondary-color) 30%, var(--text-primary) 70%),
-        color-mix(in srgb, var(--text-primary) 85%, transparent)
-      );
+    .dark .task-item[data-priority="High"],
+    .dark .task-item.priority-high {
+      background-color: color-mix(in srgb, var(--priority-high-border) 28%, rgba(15, 23, 42, 0.92) 72%);
+      border-color: color-mix(in srgb, var(--priority-high-border) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--priority-high-border) 85%, rgba(15, 23, 42, 0.92) 15%);
     }
-    .task-item[data-priority="Medium"] {
-      border-left-color: color-mix(in srgb, var(--warning-color) 70%, transparent);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--warning-color) 35%, var(--card-bg) 65%),
-        color-mix(in srgb, var(--card-bg) 95%, transparent)
-      );
+    .task-item[data-priority="Medium"],
+    .task-item.priority-medium {
+      background-color: var(--priority-medium-bg);
+      border-color: var(--priority-medium-border);
+      border-left-color: var(--priority-medium-border);
     }
-    .dark .task-item[data-priority="Medium"] {
-      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--warning-color) 25%, var(--text-primary) 75%),
-        color-mix(in srgb, var(--text-primary) 85%, transparent)
-      );
+    .dark .task-item[data-priority="Medium"],
+    .dark .task-item.priority-medium {
+      background-color: color-mix(in srgb, var(--priority-medium-border) 26%, rgba(15, 23, 42, 0.92) 74%);
+      border-color: color-mix(in srgb, var(--priority-medium-border) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--priority-medium-border) 85%, rgba(15, 23, 42, 0.92) 15%);
     }
-    .task-item[data-priority="Low"] {
-      border-left-color: color-mix(in srgb, var(--success-color) 70%, transparent);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--success-color) 35%, var(--card-bg) 65%),
-        color-mix(in srgb, var(--card-bg) 95%, transparent)
-      );
+    .task-item[data-priority="Low"],
+    .task-item.priority-low {
+      background-color: var(--priority-low-bg);
+      border-color: var(--priority-low-border);
+      border-left-color: var(--priority-low-border);
     }
-    .dark .task-item[data-priority="Low"] {
-      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%);
-      background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--success-color) 25%, var(--text-primary) 75%),
-        color-mix(in srgb, var(--text-primary) 85%, transparent)
-      );
+    .dark .task-item[data-priority="Low"],
+    .dark .task-item.priority-low {
+      background-color: color-mix(in srgb, var(--priority-low-border) 26%, rgba(15, 23, 42, 0.92) 74%);
+      border-color: color-mix(in srgb, var(--priority-low-border) 75%, transparent);
+      border-left-color: color-mix(in srgb, var(--priority-low-border) 85%, rgba(15, 23, 42, 0.92) 15%);
     }
     .task-content {
       min-width: 0;
@@ -600,14 +1092,25 @@
       text-align: left;
     }
     .task-title {
-      font-size: 1.0625rem;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 0.95rem;
       font-weight: 600;
-      line-height: 1.4;
+      line-height: 1.35;
       color: color-mix(in srgb, var(--text-primary) 95%, transparent);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.35rem;
     }
     .dark .task-title {
       color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+    }
+    .task-item:not([data-compact="true"]) .task-title strong {
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+      word-break: break-word;
     }
     .task-meta {
       display: flex;
@@ -615,6 +1118,19 @@
       gap: 0.5rem;
       align-items: center;
       font-size: 0.8125rem;
+      margin-top: 0.3rem;
+    }
+    .task-meta-text {
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      margin: 0;
+    }
+    .task-meta-text + .task-meta {
+      margin-top: 0.25rem;
+    }
+    .dark .task-meta-text {
+      color: color-mix(in srgb, var(--card-bg) 70%, var(--text-secondary) 30%);
     }
     .task-chip {
       display: inline-flex;
@@ -692,9 +1208,9 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: var(--reminder-card-gap);
       flex-wrap: wrap;
-      margin-bottom: 0.75rem;
+      margin-bottom: var(--reminder-card-gap);
     }
     .task-toolbar {
       display: inline-flex;
@@ -731,6 +1247,13 @@
     }
     .task-toolbar-btn .task-toolbar-label {
       display: inline-block;
+    }
+    #reminderList .task-toolbar-btn .task-toolbar-label {
+      display: none;
+    }
+    .task-toolbar-btn.delete span[aria-hidden="true"] {
+      font-size: 1.2rem;
+      line-height: 1;
     }
     .dark .task-toolbar-btn {
       color: color-mix(in srgb, var(--card-bg) 92%, transparent);
@@ -770,7 +1293,7 @@
 
     /* Mobile-first optimizations */
     :root {
-      --mobile-header-height: 120px;
+      --mobile-header-height: calc(45px / 4);
       --mobile-safe-area-top: env(safe-area-inset-top, 0px);
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
@@ -778,7 +1301,7 @@
     /* Enhanced mobile body */
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background-color: var(--bg-color);
+      background-color: var(--background-color);
       color: var(--text-primary);
       line-height: 1.6;
       margin: 0;
@@ -846,7 +1369,7 @@
     #reminderList {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 8px;
+      gap: 0.5rem;
       align-content: start;
       width: 100%;
     }
@@ -865,7 +1388,7 @@
     @media (min-width: 380px) {
       #reminderList.grid-cols-2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
+        gap: 4px;
       }
     }
     
@@ -875,6 +1398,7 @@
       box-sizing: border-box;
       margin-left: 0;
       margin-right: 0;
+      padding: 0.5rem 0.75rem;
     }
     
     /* Remove any inherited margins/padding that might constrain width */
@@ -885,103 +1409,192 @@
 
     /* Compact reminder card styling */
     .task-item[data-compact="true"] {
-      margin-bottom: 0 !important;
-      padding: 12px;
-      padding-left: 14px;
-      min-height: 80px;
-      display: flex;
-      flex-direction: column;
+      margin-bottom: 0.5rem !important;
+      padding: 0.6rem 0.85rem;
+      min-height: 64px;
       border-left-width: 3px;
-      border-radius: 0.5rem;
+      border-radius: 0.75rem;
+      gap: 0.4rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-primary-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-control-slot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.25rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-control-slot--empty {
+      min-width: 1.5rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-title-slot {
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     .task-item[data-compact="true"] .task-title {
-      font-size: 14px;
+      font-size: 0.95rem;
       line-height: 1.3;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
+      margin: 0;
+      white-space: nowrap;
       overflow: hidden;
-      margin-bottom: 8px;
+      text-overflow: ellipsis;
     }
 
-    .task-item[data-compact="true"] .task-notes {
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      font-size: 12px;
-      line-height: 1.3;
-      margin-top: 0.25rem;
-      padding-top: 0.25rem;
+    .task-item[data-compact="true"] .task-title strong {
+      font-weight: 600;
     }
 
-    .task-item[data-compact="true"] .task-meta {
-      font-size: 11px;
-      gap: 4px;
-      margin-top: auto;
+    .task-item[data-compact="true"] .reminder-meta-slot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      min-width: 0;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
+      text-align: right;
     }
 
-    .task-item[data-compact="true"] .task-chip {
-      padding: 2px 6px;
-      font-size: 10px;
-    }
-
-    .task-item[data-compact="true"] .task-chip:not([data-chip="priority"]) {
+    .task-item[data-compact="true"] .reminder-meta-slot--empty {
       display: none;
     }
 
-    .task-item[data-compact="true"] .task-header {
-      gap: 0.5rem;
+    .dark .task-item[data-compact="true"] .reminder-meta-slot {
+      color: color-mix(in srgb, var(--card-bg) 78%, transparent);
+    }
+
+    .task-item[data-compact="true"] .reminder-due {
+      display: inline-block;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      max-width: 10.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-item[data-compact="true"] .priority-chip-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: color-mix(in srgb, var(--text-secondary) 85%, transparent);
+      text-transform: uppercase;
+    }
+
+    .task-item[data-compact="true"] .priority-chip-dot::before {
+      content: '';
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 9999px;
+      background: currentColor;
+    }
+
+    .priority-chip-dot.priority-high::before {
+      background: var(--priority-high-border, #F4A259);
+    }
+
+    .priority-chip-dot.priority-medium::before {
+      background: var(--priority-medium-border, #6C8AE4);
+    }
+
+    .priority-chip-dot.priority-low::before {
+      background: var(--priority-low-border, #6B8F71);
+    }
+
+    .dark .priority-chip-dot {
+      color: color-mix(in srgb, var(--card-bg) 90%, transparent);
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+    }
+
+    .dark .task-item[data-compact="true"] .reminder-secondary-row {
+      color: color-mix(in srgb, var(--card-bg) 75%, transparent);
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row .task-meta-text {
+      font-size: inherit;
+      color: inherit;
+      margin-right: 0.25rem;
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row .task-chip:not(.priority-chip-dot) {
+      padding: 0.2rem 0.45rem;
+      font-size: 0.68rem;
+      border-radius: 9999px;
+    }
+
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 0.35rem;
       align-items: center;
     }
 
-    .task-item[data-compact="true"] .task-toolbar {
-      gap: 0.25rem;
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0;
+      border-radius: 9999px;
+      border: 1px solid color-mix(in srgb, var(--border-color) 35%, transparent);
+      background: transparent;
+      color: color-mix(in srgb, var(--text-secondary) 90%, transparent);
+      font-size: 1rem;
     }
 
-    .task-item[data-compact="true"] .task-toolbar-btn {
-      padding: 0.25rem 0.45rem;
-      font-size: 0.7rem;
+    .dark .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn {
+      border-color: color-mix(in srgb, var(--text-secondary) 45%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 90%, transparent);
     }
 
-    .task-item[data-compact="true"] .task-toolbar-btn .task-toolbar-label {
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn .task-toolbar-label {
       display: none;
     }
 
-    .task-item[data-compact="true"][data-notification-active="true"] {
-      border-color: color-mix(in srgb, var(--success-color) 75%, transparent);
-      border-left-color: color-mix(in srgb, var(--success-color) 95%, transparent);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
-        0 8px 18px color-mix(in srgb, var(--success-color) 25%, transparent);
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn:hover,
+    .task-item[data-compact="true"] .reminder-secondary-row .task-toolbar-btn:focus-visible {
+      color: var(--text-primary);
+      border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+      background: color-mix(in srgb, var(--primary-color) 14%, transparent);
     }
 
-    .dark .task-item[data-compact="true"][data-notification-active="true"] {
-      border-color: color-mix(in srgb, var(--success-color) 85%, var(--card-bg) 15%);
-      border-left-color: color-mix(in srgb, var(--success-color) 95%, var(--card-bg) 5%);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-color) 35%, transparent),
-        0 10px 24px color-mix(in srgb, var(--success-color) 35%, transparent);
+    .task-item[data-compact="true"] .task-notes {
+      flex-basis: 100%;
+      margin: 0;
+      margin-top: 0.25rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid color-mix(in srgb, var(--border-color) 20%, transparent);
+      font-size: 0.8rem;
+      line-height: 1.4;
     }
 
-    /* Single column on narrow phones */
-    @media (max-width: 379px) {
-      #reminderList.grid-cols-2 {
-        grid-template-columns: 1fr;
-      }
-
-      .task-item[data-compact="true"] {
-        padding: 16px;
-        padding-left: 18px;
-        border-left-width: 3px;
-      }
-
-      .task-item[data-compact="true"] .task-title {
-        font-size: 15px;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-      }
+    .dark .task-item[data-compact="true"] .task-notes {
+      border-top-color: color-mix(in srgb, var(--text-secondary) 35%, transparent);
     }
 
   </style>
@@ -1009,115 +1622,196 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* --- Reminder list: force flat list layout, neutralize old card styles --- */
+    /* --- Reminder list: Ocean Blue Professional card styling --- */
 
-    /* Neutralize any card/grid wrapper for reminders */
     #reminderList .task-item,
     #reminderList .task-card,
     #reminderList .card,
     #reminderList .card-body,
     #reminderList .task-grid {
-      background: transparent !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: none !important;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      margin: 0;
+      padding: 0;
     }
 
-    /* Ensure each reminder behaves like a flat row */
+    .cue-item,
     #reminderList [data-reminder] {
-      display: grid !important;
-      grid-template-columns: minmax(0, 1fr) auto !important;
-      align-items: start !important;
-      gap: 0.75rem !important;
-      padding: 0.5rem 0.5rem !important;
-      border-bottom: 1px solid color-mix(in srgb, var(--border-color) 35%, transparent) !important;
-      font-size: 0.875rem !important;
-      line-height: 1.4 !important;
-      background: transparent !important;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: var(--reminder-card-gap);
+      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      margin-bottom: var(--reminder-card-gap);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px var(--shadow-color);
+      transition: all 0.2s ease;
+      font-size: var(--reminder-card-font-size);
+      line-height: 1.4;
     }
 
-    #reminderList [data-reminder][data-priority="High"] {
-      border-left: 3px solid color-mix(in srgb, var(--secondary-color) 70%, transparent) !important;
-      padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: color-mix(in srgb, var(--secondary-color) 6%, var(--card-bg) 94%) !important;
-    }
-
-    .dark #reminderList [data-reminder][data-priority="High"] {
-      border-left-color: color-mix(in srgb, var(--secondary-color) 80%, var(--card-bg) 20%) !important;
-      background-color: color-mix(in srgb, var(--secondary-color) 8%, var(--text-primary) 92%) !important;
-    }
-
-    #reminderList [data-reminder][data-priority="Medium"] {
-      border-left: 3px solid color-mix(in srgb, var(--warning-color) 70%, transparent) !important;
-      padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: color-mix(in srgb, var(--warning-color) 6%, var(--card-bg) 94%) !important;
-    }
-
-    .dark #reminderList [data-reminder][data-priority="Medium"] {
-      border-left-color: color-mix(in srgb, var(--warning-color) 80%, var(--card-bg) 20%) !important;
-      background-color: color-mix(in srgb, var(--warning-color) 8%, var(--text-primary) 92%) !important;
-    }
-
-    #reminderList [data-reminder][data-priority="Low"] {
-      border-left: 3px solid color-mix(in srgb, var(--success-color) 70%, transparent) !important;
-      padding-left: calc(0.5rem - 1.5px) !important;
-      background-color: color-mix(in srgb, var(--success-color) 6%, var(--card-bg) 94%) !important;
-    }
-
-    .dark #reminderList [data-reminder][data-priority="Low"] {
-      border-left-color: color-mix(in srgb, var(--success-color) 80%, var(--card-bg) 20%) !important;
-      background-color: color-mix(in srgb, var(--success-color) 8%, var(--text-primary) 92%) !important;
-    }
-
-    /* Remove divider on the last reminder */
+    .cue-item:last-child,
     #reminderList [data-reminder]:last-child {
-      border-bottom: none !important;
+      margin-bottom: 0;
     }
 
-    /* Title/label on the left */
+    .cue-item:hover,
+    #reminderList [data-reminder]:hover {
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transform: translateY(-2px);
+      border-color: var(--accent-color);
+    }
+
+    .dark .cue-item,
+    .dark #reminderList [data-reminder] {
+      background: color-mix(in srgb, rgba(15, 23, 42, 0.92) 85%, var(--card-bg) 15%);
+      border-color: color-mix(in srgb, var(--card-border) 45%, transparent);
+      box-shadow: none;
+    }
+
+    .dark .cue-item:hover,
+    .dark #reminderList [data-reminder]:hover {
+      border-color: color-mix(in srgb, var(--accent-color) 65%, transparent);
+    }
+
+    .cue-item[data-priority="High"],
+    #reminderList [data-reminder][data-priority="High"] {
+      border-left: 3px solid var(--priority-high-border);
+      background: var(--priority-high-bg);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
+    }
+
+    .cue-item[data-priority="Medium"],
+    #reminderList [data-reminder][data-priority="Medium"] {
+      border-left: 3px solid var(--priority-medium-border);
+      background: var(--priority-medium-bg);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
+    }
+
+    .cue-item[data-priority="Low"],
+    #reminderList [data-reminder][data-priority="Low"] {
+      border-left: 3px solid var(--priority-low-border);
+      background: var(--priority-low-bg);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
+    }
+
+    .dark .cue-item[data-priority="High"],
+    .dark #reminderList [data-reminder][data-priority="High"] {
+      background: color-mix(in srgb, var(--priority-high-border) 28%, rgba(15, 23, 42, 0.92) 72%);
+      border-left-color: color-mix(in srgb, var(--priority-high-border) 80%, transparent);
+    }
+
+    .dark .cue-item[data-priority="Medium"],
+    .dark #reminderList [data-reminder][data-priority="Medium"] {
+      background: color-mix(in srgb, var(--priority-medium-border) 26%, rgba(15, 23, 42, 0.92) 74%);
+      border-left-color: color-mix(in srgb, var(--priority-medium-border) 80%, transparent);
+    }
+
+    .dark .cue-item[data-priority="Low"],
+    .dark #reminderList [data-reminder][data-priority="Low"] {
+      background: color-mix(in srgb, var(--priority-low-border) 26%, rgba(15, 23, 42, 0.92) 74%);
+      border-left-color: color-mix(in srgb, var(--priority-low-border) 80%, transparent);
+    }
+
+    .cue-name,
     #reminderList [data-reminder] h3,
     #reminderList [data-reminder] h4,
     #reminderList [data-reminder] strong,
     #reminderList [data-reminder] [data-reminder-title] {
-      margin: 0 !important;
-      font-weight: 500 !important;
-      grid-column: 1 !important;
-      min-width: 0 !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      display: -webkit-box !important;
+      margin: 0;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      grid-column: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       line-clamp: 2;
     }
 
-    /* Meta info (date/time/status) on the right */
+    .cue-meta,
     #reminderList [data-reminder] time,
     #reminderList [data-reminder] .reminder-meta {
-      font-size: 0.75rem !important;
-      opacity: 0.75 !important;
-      margin-left: 0.5rem !important;
-      grid-column: 2 !important;
-      justify-self: end !important;
-      text-align: right !important;
-      align-self: start !important;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--reminder-card-gap);
+      margin-top: 0.75rem;
+      grid-column: 1 / -1;
     }
 
-    /* Hide extra verbose details to keep list minimal */
+    #reminderList [data-reminder] time {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .cue-content,
     #reminderList [data-reminder] p,
     #reminderList [data-reminder] .description,
-    #reminderList [data-reminder] .details,
-    #reminderList [data-reminder] .card-actions {
-      display: none !important;
+    #reminderList [data-reminder] .details {
+      color: var(--text-secondary);
     }
 
-    /* Subtle hover feedback for pointer devices */
-    @media (hover: hover) {
-      #reminderList [data-reminder]:hover {
-        background-color: color-mix(in srgb, var(--text-primary) 3%, transparent) !important;
-      }
+    .cue-actions,
+    #reminderList [data-reminder] .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      align-items: center;
+      grid-column: 1 / -1;
+      margin-top: 12px;
+    }
+
+    .cue-btn,
+    #reminderList [data-reminder] .card-actions button,
+    #reminderList [data-reminder] button {
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .cue-btn:hover,
+    #reminderList [data-reminder] .card-actions button:hover,
+    #reminderList [data-reminder] button:hover {
+      color: var(--accent-color);
+      background: rgba(14, 165, 233, 0.1);
+    }
+
+    .cue-btn.delete:hover,
+    #reminderList [data-reminder] .card-actions .delete:hover,
+    #reminderList [data-reminder] button.delete:hover,
+    #reminderList [data-reminder] button[data-action="delete"]:hover {
+      color: var(--delete-color);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .cue-audio,
+    #reminderList [data-reminder] audio {
+      width: 100%;
+      margin-top: 12px;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .cue-item audio::-webkit-media-controls-panel,
+    #reminderList [data-reminder] audio::-webkit-media-controls-panel {
+      background-color: var(--hover-bg);
     }
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
@@ -1330,14 +2024,15 @@
       font-size: 1rem;
       font-weight: 600;
       line-height: 1.4;
+      color: var(--text-primary);
     }
     #emptyState .empty-state-compact p {
       font-size: 0.875rem;
       line-height: 1.5;
-      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+      color: var(--text-secondary);
     }
     .dark #emptyState .empty-state-compact p {
-      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 85%, transparent);
     }
     #emptyState .empty-state-actions {
       display: flex;
@@ -1349,14 +2044,179 @@
       flex: 1 1 auto;
     }
   </style>
+  <style id="mobile-reminder-card-refresh">
+    .mobile-shell #reminderList,
+    .mobile-shell .reminder-list {
+      padding: 0;
+      margin-top: 0.8rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 640px) {
+      .mobile-shell #reminderList,
+      .mobile-shell .reminder-list {
+        padding: 0 0.8rem;
+      }
+    }
+
+    .mobile-shell #reminderList {
+      gap: 0.9rem;
+    }
+
+    .mobile-shell #reminderList.grid-cols-2 {
+      gap: 0.9rem;
+    }
+
+    .mobile-shell #reminderList.space-y-3 {
+      gap: 0;
+    }
+
+    .mobile-shell .reminder-card {
+      position: relative;
+      width: 100%;
+      min-height: 48px;
+      line-height: 1.4;
+      touch-action: manipulation;
+    }
+
+    .mobile-shell #reminderList.space-y-3 > .reminder-card:last-child,
+    .mobile-shell #reminderList > .reminder-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .mobile-shell #reminderList > .reminder-card:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent-color) 55%, transparent);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mobile-shell .reminder-card,
+      .mobile-shell .reminder-card:hover,
+      .mobile-shell .reminder-card:active {
+        transition: none !important;
+        transform: none !important;
+      }
+    }
+
+    .mobile-shell #reminderList > .reminder-card.priority-high {
+      border-left-color: var(--priority-high-color, var(--priority-high-border));
+    }
+
+    .mobile-shell #reminderList > .reminder-card.priority-medium {
+      border-left-color: var(--priority-medium-color, var(--priority-medium-border));
+    }
+
+    .mobile-shell #reminderList > .reminder-card.priority-low {
+      border-left-color: var(--priority-low-color, var(--priority-low-border));
+    }
+
+    .mobile-shell #reminderList > .reminder-card .reminder-primary-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .reminder-control-slot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.25rem;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .reminder-title-slot {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .mobile-shell .reminder-card .title,
+    .mobile-shell #reminderList > .reminder-card .reminder-title-slot > *,
+    .mobile-shell #reminderList > .reminder-card [data-reminder-title] {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--desktop-text-main, var(--text-primary));
+      line-height: 1.3;
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      word-break: break-word;
+    }
+
+    .mobile-shell .reminder-card .meta,
+    .mobile-shell #reminderList > .reminder-card .reminder-meta-slot,
+    .mobile-shell #reminderList > .reminder-card .reminder-secondary-row,
+    .mobile-shell #reminderList > .reminder-card .reminder-due,
+    .mobile-shell #reminderList > .reminder-card .task-meta-text,
+    .mobile-shell #reminderList > .reminder-card time {
+      font-size: 0.78rem;
+      color: var(--desktop-text-muted, var(--text-secondary));
+      line-height: 1.35;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      min-width: 0;
+      text-align: right;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .reminder-meta-slot.reminder-meta-slot--empty {
+      display: none;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .reminder-secondary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      width: 100%;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .task-toolbar {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .task-toolbar-btn {
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      border-radius: 999px;
+    }
+
+    .mobile-shell #reminderList > .reminder-card .task-notes {
+      flex-basis: 100%;
+      margin: 0;
+      padding-top: 0.35rem;
+      border-top: 1px solid color-mix(in srgb, var(--card-border) 35%, transparent);
+      font-size: 0.8rem;
+      color: var(--text-secondary, var(--desktop-text-muted));
+    }
+
+    .mobile-shell #reminderList > .reminder-card .priority-pill,
+    .mobile-shell #reminderList > .reminder-card [data-chip="priority"],
+    .mobile-shell #reminderList > .reminder-card .priority-chip-dot {
+      display: none !important;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-base-200 text-base-content show-full">
+<body class="min-h-screen bg-base-200 text-base-content show-full mobile-theme mobile-shell">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
   <style id="mobile-header-compact" aria-hidden="true">
   :root {
-    --mobile-header-height: 120px;
+    --mobile-header-height: calc(45px / 4);
   }
 
   /* Make header visually compact while preserving touch targets and accessibility */
@@ -1645,9 +2505,13 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background-color: color-mix(in srgb, var(--text-primary) 90%, transparent); /* dark background */
-      color: color-mix(in srgb, var(--card-bg) 95%, transparent);            /* light text */
-      box-shadow: 0 1px 4px color-mix(in srgb, var(--text-primary) 70%, transparent);
+      background: var(--mobile-header-bg);
+      color: var(--mobile-header-text);
+      border-bottom: 1px solid var(--mobile-header-border);
+      box-shadow: var(--mobile-header-shadow);
+      min-height: var(--mobile-header-height);
+      padding-block: 0;
+      backdrop-filter: blur(18px);
     }
 
     /* Inner container: single row, spaced out */
@@ -1655,7 +2519,8 @@
       max-width: 28rem;          /* similar to max-w-md */
       margin-left: auto;
       margin-right: auto;
-      padding: 0.75rem 0.75rem;
+      padding: 0 0.75rem;
+      min-height: var(--mobile-header-height);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1674,17 +2539,37 @@
 
     /* Round icon buttons */
     header.sticky button {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
       border-radius: 999px;
-      border: none;
-      background-color: color-mix(in srgb, var(--text-primary) 80%, transparent);
-      color: inherit;
+      border: 1px solid var(--mobile-header-button-border);
+      background-color: var(--mobile-header-button-bg);
+      color: var(--mobile-header-button-color);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       cursor: pointer;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.18);
+      transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    header.sticky button:hover,
+    header.sticky button:focus-visible {
+      background-color: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
+      box-shadow: 0 16px 30px rgba(79, 70, 229, 0.22);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    header.sticky button:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+      outline-offset: 2px;
+    }
+
+    header.sticky .mc-add-btn {
+      padding-block: 0.15rem !important;
     }
 
     header.sticky .header-action-group {
@@ -1700,7 +2585,25 @@
 
     header.sticky button:active {
       transform: scale(0.95);
-      background-color: color-mix(in srgb, var(--primary-dark) 90%, transparent);
+      background-color: color-mix(in srgb, var(--accent-color) 25%, var(--mobile-header-button-bg) 75%);
+      box-shadow: 0 8px 16px rgba(79, 70, 229, 0.18);
+    }
+
+    html[data-theme="dark"] header.sticky button,
+    html.dark header.sticky button {
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
+    }
+
+    html[data-theme="dark"] header.sticky button:hover,
+    html[data-theme="dark"] header.sticky button:focus-visible,
+    html.dark header.sticky button:hover,
+    html.dark header.sticky button:focus-visible {
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
+    }
+
+    html[data-theme="dark"] header.sticky button:active,
+    html.dark header.sticky button:active {
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.55);
     }
 
     .mc-quick-add-bar {
@@ -1710,16 +2613,24 @@
       border-bottom: none;
       backdrop-filter: none;
       margin: 0.25rem 0 0.25rem;
+      width: 100%;
     }
 
     .mc-quick-add-inner {
-      max-width: 28rem;
-      margin: 0 auto;
-      padding: 0.25rem 0.75rem;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
       gap: 0.75rem;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
     }
 
     .mc-quick-status {
@@ -1727,11 +2638,11 @@
       align-items: center;
       gap: 0.25rem;
       font-size: 0.7rem;
-      color: color-mix(in srgb, var(--text-primary, rgba(15, 23, 42, 0.88)) 85%, rgba(15, 23, 42, 0.9));
+      color: color-mix(in srgb, var(--accent-color) 42%, var(--text-secondary) 58%);
     }
 
     .dark .mc-quick-status {
-      color: color-mix(in srgb, rgba(226, 232, 240, 0.92) 90%, transparent);
+      color: color-mix(in srgb, rgba(226, 232, 240, 0.92) 88%, transparent);
     }
 
     .mc-sync-message {
@@ -1786,19 +2697,32 @@
       min-width: 0;
       padding: 0.4rem 0.65rem;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-      background-color: color-mix(in srgb, var(--text-primary) 35%, transparent);
-      color: inherit;
+      border: 1px solid color-mix(in srgb, var(--card-border) 65%, transparent);
+      background-color: var(--card-bg);
+      color: var(--text-primary);
       font-size: 0.8rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
     .mc-quick-input::placeholder {
-      color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+      color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
+    }
+
+    html[data-theme="dark"] .mc-quick-input,
+    html.dark .mc-quick-input {
+      background-color: color-mix(in srgb, rgba(15, 23, 42, 0.92) 85%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 94%, transparent);
+      border-color: color-mix(in srgb, rgba(148, 163, 184, 0.45) 100%, transparent);
+      box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.6);
+    }
+
+    html[data-theme="dark"] .mc-quick-input::placeholder,
+    html.dark .mc-quick-input::placeholder {
+      color: color-mix(in srgb, rgba(226, 232, 240, 0.8) 85%, transparent);
     }
 
     .mc-quick-submit,
-    .mc-quick-voice,
-    .mc-quick-toggle {
+    .mc-quick-voice {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1806,12 +2730,47 @@
       min-height: 2.1rem;
       border-radius: 999px;
       border: none;
-      background: color-mix(in srgb, var(--primary-color) 85%, transparent);
-      color: var(--card-bg);
+      background: linear-gradient(135deg, var(--accent-color), var(--primary-dark));
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
       font-size: 0.8rem;
       font-weight: 500;
       padding: 0 0.75rem;
       cursor: pointer;
+      box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .mc-quick-submit:hover,
+    .mc-quick-submit:focus-visible,
+    .mc-quick-voice:hover,
+    .mc-quick-voice:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(79, 70, 229, 0.22);
+      outline: none;
+    }
+
+    .mc-quick-submit:focus-visible,
+    .mc-quick-voice:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+      outline-offset: 2px;
+    }
+
+    html[data-theme="dark"] .mc-quick-submit,
+    html[data-theme="dark"] .mc-quick-voice,
+    html.dark .mc-quick-submit,
+    html.dark .mc-quick-voice {
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
+    }
+
+    html[data-theme="dark"] .mc-quick-submit:hover,
+    html[data-theme="dark"] .mc-quick-submit:focus-visible,
+    html[data-theme="dark"] .mc-quick-voice:hover,
+    html[data-theme="dark"] .mc-quick-voice:focus-visible,
+    html.dark .mc-quick-submit:hover,
+    html.dark .mc-quick-submit:focus-visible,
+    html.dark .mc-quick-voice:hover,
+    html.dark .mc-quick-voice:focus-visible {
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
     }
 
     .mc-quick-submit {
@@ -1819,32 +2778,15 @@
     }
 
     .mc-quick-voice {
-      background: color-mix(in srgb, var(--text-secondary) 35%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
+      background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
       padding-inline: 0.6rem;
       font-size: 1rem;
     }
 
     .mc-quick-voice.is-listening {
-      background: color-mix(in srgb, var(--primary-color) 95%, transparent);
-      color: var(--card-bg);
-    }
-
-    .mc-quick-toggle {
-      background: color-mix(in srgb, var(--text-secondary) 28%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 95%, transparent);
-      font-size: 0.8rem;
-      padding: 0;
-    }
-
-    .mc-quick-toggle .grid-icon,
-    .mc-quick-toggle .list-icon {
-      line-height: 1;
-    }
-
-    .mc-quick-toggle:focus-visible {
-      outline: 2px solid color-mix(in srgb, var(--primary-color) 80%, transparent);
-      outline-offset: 2px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 45%, transparent), var(--primary-dark));
+      color: color-mix(in srgb, var(--card-bg) 98%, transparent);
     }
 
     @media (max-width: 420px) {
@@ -1889,41 +2831,98 @@
     }
   </style>
 
-  <header class="sticky top-0 z-20 bg-slate-900 text-slate-50 shadow-md">
-    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-2">
-      <!-- Left: Home button -->
-      <button
-        type="button"
-        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-        aria-label="Go to home"
-      >
-        <span class="text-xl leading-none">🏠</span>
-      </button>
+  <style>
+    .notes-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: var(--mobile-quick-surface);
+      border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
+      box-shadow: var(--mobile-quick-shadow);
+      min-height: 3rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
 
-      <!-- Centre: Title -->
-      <button
-        id="addReminderBtn"
-        type="button"
-        class="mc-add-btn mc-add-btn-wide"
-        data-open-add-task
-      >
-        <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-        <span class="mc-add-btn-label">Add reminder</span>
-      </button>
+    .notes-hero-label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
 
-      <!-- Right: Settings button with quick menu -->
-      <div class="relative">
-          <button
-            id="overflowMenuBtn"
-            type="button"
-            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
-            aria-label="Open menu"
-            aria-haspopup="menu"
-            aria-controls="overflowMenu"
-            aria-expanded="false"
-          >
-            <span class="text-xl leading-none">⚙️</span>
-          </button>
+    .notes-hero-label p {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+
+    .notes-hero-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .notes-hero-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .notes-hero-buttons .btn {
+      padding-inline: 0.85rem;
+    }
+
+    @media (min-width: 640px) {
+      .notes-hero {
+        padding-inline: 1rem;
+        min-height: 3.2rem;
+      }
+    }
+
+    /* Header shadow when scrolled */
+    .header-shadow {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+  </style>
+
+  <header class="sticky top-0 z-20 text-black shadow-md bg-white/80 backdrop-blur">
+    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-3">
+      <div class="header-action-group">
+        <button
+          id="btn-open-drawer"
+          type="button"
+          class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-200/70 bg-white/90 text-slate-800 shadow-sm transition"
+          aria-label="Open navigation menu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+        </button>
+      </div>
+
+      <div class="relative header-action-group">
+        <button
+          id="overflowMenuBtn"
+          type="button"
+          class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-200/70 bg-white/90 text-slate-800 shadow-sm transition"
+          aria-label="Open quick settings"
+          aria-haspopup="menu"
+          aria-controls="overflowMenu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+        </button>
 
         <div
           id="overflowMenu"
@@ -1941,26 +2940,13 @@
               </button>
             </li>
             <li role="none">
-              <button
-                id="viewToggleMenu"
-                type="button"
-                class="quick-action-btn"
-                title="Toggle layout"
-                role="menuitem"
-              >
+              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
                 <span class="quick-action-icon" aria-hidden="true">🗂</span>
                 <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
               </button>
             </li>
             <li role="none">
-              <button
-                id="openSettings"
-                type="button"
-                class="quick-action-btn"
-                data-open="settings"
-                title="Open settings"
-                role="menuitem"
-              >
+              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
                 <span class="quick-action-icon" aria-hidden="true">⚙️</span>
                 <span class="sr-only">Open settings</span>
               </button>
@@ -1988,58 +2974,6 @@
       </div>
     </div>
   </header>
-
-  <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
-    <div class="mc-quick-add-inner">
-      <!-- Left: Sync status -->
-      <div class="mc-quick-status">
-        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
-          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
-        </div>
-        <p id="sync-status" class="mc-sync-message">Sign in to sync your reminders.</p>
-        <span id="mcStatusText" class="mc-status-text">Offline</span>
-      </div>
-
-      <!-- Right: Quick add row -->
-      <div class="mc-quick-add-row">
-        <input
-          id="quickAddInput"
-          class="mc-quick-input"
-          type="text"
-          autocomplete="off"
-          placeholder="Quick reminder…"
-        />
-        <button
-          id="quickAddSubmit"
-          type="button"
-          class="mc-quick-submit"
-          aria-label="Add reminder"
-        >
-          Add
-        </button>
-        <div class="mc-quick-actions">
-          <button
-            id="quickAddVoice"
-            type="button"
-            class="mc-quick-voice"
-            aria-label="Use voice to add reminder"
-          >
-            <span aria-hidden="true">🎤</span>
-            <span class="sr-only">Use voice to add reminder</span>
-          </button>
-          <button
-            id="viewToggle"
-            type="button"
-            class="mc-quick-toggle"
-            aria-label="Switch between compact and full reminder layouts"
-          >
-            <span class="grid-icon" aria-hidden="true">⊞</span>
-            <span class="list-icon hidden" aria-hidden="true">☰</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <div
     id="mobile-drawer-scrim"
@@ -2282,148 +3216,255 @@
 
   <div class="container">
     <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
+      <div class="mobile-shell w-full pb-16">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
+      <header class="pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow w-full sm:px-4">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold tracking-wide text-base-content">Reminders</h2>
+          <button
+            id="addReminderBtn"
+            type="button"
+            class="mc-add-btn mc-add-btn-wide btn btn-primary btn-xs rounded-full shadow-md"
+            data-open-add-task
+          >
+            <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+            <span class="mc-add-btn-label">Add reminder</span>
+          </button>
+        </div>
+        <p class="text-xs text-base-content/70">
+          Quick add a reminder here, or use the button for more details.
+        </p>
+        <div id="quickAddBar" class="mc-quick-add-bar w-full" aria-label="Quick add reminder">
+          <div class="mc-quick-add-inner space-y-1.5 w-full">
+            <div class="mc-quick-status flex items-center gap-2 text-xs text-base-content/60">
+              <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
+                <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
+              </div>
+              <p id="sync-status" class="mc-sync-message"></p>
+              <span id="mcStatusText" class="mc-status-text">Offline</span>
+            </div>
+            <div class="mc-quick-add-row flex items-center gap-2 mt-1 w-full">
+              <input
+                id="quickAddInput"
+                class="mc-quick-input input input-bordered input-sm flex-1 w-full bg-base-200/80 text-base-content placeholder:text-base-content/60"
+                type="text"
+                autocomplete="off"
+                placeholder="Quick reminder…"
+              />
+              <button
+                id="quickAddSubmit"
+                type="button"
+                class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm flex-shrink-0"
+                aria-label="Add reminder"
+              >
+                Add
+              </button>
+              <div class="mc-quick-actions flex items-center gap-1">
+                <button
+                  id="quickAddVoice"
+                  type="button"
+                  class="mc-quick-voice btn btn-ghost btn-sm rounded-full"
+                  aria-label="Use voice to add reminder"
+                >
+                  <span aria-hidden="true">🎤</span>
+                  <span class="sr-only">Use voice to add reminder</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
       <section
         id="reminderListSection"
         class="w-full relative"
       >
         <div class="w-full" id="remindersWrapper">
-          <div id="emptyState" class="hidden text-center text-base-content/60 py-8 px-4"></div>
-          <div class="flex items-center gap-2 px-4 pb-3 text-xs text-base-content/70">
-            <span aria-hidden="true" class="text-base">↕️</span>
-            <span>Press, hold, and drag a card to reorder your reminders.</span>
-          </div>
+          <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
           <p id="reminderReorderHint" class="sr-only">
             Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
           </p>
-          <p class="text-xs text-base-content/50 mb-2 pb-2 px-4 border-b border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
-          <ul id="reminderList" class="grid gap-3 w-full" aria-describedby="reminderReorderHint"></ul>
+          <p class="text-xs text-base-content/50 mb-2 pb-2 border-b border-base-200/30 sm:px-4">Total reminders: <span id="totalCount">0</span></p>
+          <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
         </div>
       </section>
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden">
-      <section class="card bg-base-100 border">
-        <div class="card-body gap-3 compact">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="card-title text-base">Scratch Notes</h2>
-            <button type="button" class="btn btn-ghost btn-xs" data-jump-view="reminders">Back to reminders</button>
-          </div>
-          <!-- Enhanced formatting toolbar -->
-          <div
-            id="notesToolbar"
-            class="flex flex-wrap gap-1.5 p-2 bg-base-200/30 rounded-lg"
-            role="toolbar"
-            aria-label="Note formatting options"
-            aria-controls="notes"
-          >
-            <!-- Text formatting -->
-            <div class="flex gap-1 border-r border-base-300 pr-2">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="bold" title="Bold (Ctrl+B)" aria-label="Make text bold">
-                <strong>B</strong>
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="italic" title="Italic (Ctrl+I)" aria-label="Make text italic">
-                <em>I</em>
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="strikethrough" title="Strikethrough" aria-label="Strike through text">
-                <s>S</s>
-              </button>
-            </div>
-            
-            <!-- Lists -->
-            <div class="flex gap-1 border-r border-base-300 pr-2">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="bullets" title="Bullet list">•</button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="numbers" title="Numbered list">1.</button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="checklist" title="Checklist">☐</button>
-            </div>
-            
-            <!-- Structure -->
-            <div class="flex gap-1 border-r border-base-300 pr-2">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="heading" title="Heading">
-                H
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="divider" title="Add divider">
-                ─
-              </button>
-            </div>
-            
-            <!-- Actions -->
-            <div class="flex gap-1">
-              <button type="button" class="btn btn-xs btn-ghost" data-action="link" title="Add link">
-                🔗
-              </button>
-              <button type="button" class="btn btn-xs btn-ghost" data-action="clear" title="Clear formatting">
-                ✕
-              </button>
-            </div>
-          </div>
-          <div
-            id="notes"
-            class="notes-editor enhanced"
-            contenteditable="true"
-            role="textbox"
-            aria-multiline="true"
-            spellcheck="true"
-            data-placeholder="Start typing your notes... (auto-saves)"
-            data-auto-save="true"
-          ></div>
-          
-          <!-- Auto-save status -->
-          <div class="flex items-center justify-between text-xs text-base-content/60">
-            <div id="notesStatus" class="flex items-center gap-1">
-              <span class="sync-dot offline" id="notesSyncStatus"></span>
-              <span id="notesStatusText">Ready</span>
-            </div>
-            <div id="notesWordCount">0 words</div>
-          </div>
-          <!-- Enhanced action buttons -->
-          <div class="flex flex-wrap gap-2">
-            <button id="searchNotes" class="btn btn-outline btn-sm flex-1" type="button">
-              🔍 Search
-            </button>
-            <button id="exportNotes" class="btn btn-outline btn-sm flex-1" type="button">
-              📤 Export
-            </button>
-            <button id="voiceNotes" class="btn btn-outline btn-sm flex-1" type="button">
-              🎤 Voice
-            </button>
-          </div>
-          
-          <!-- Search panel (hidden by default) -->
-          <div id="searchPanel" class="hidden bg-base-200/50 p-3 rounded-lg border">
-            <div class="flex gap-2 mb-2">
-              <input 
-                id="searchInput" 
-                type="text" 
-                placeholder="Search in notes..." 
-                class="input input-sm flex-1"
-              />
-              <button id="searchPrev" class="btn btn-sm btn-ghost" title="Previous">↑</button>
-              <button id="searchNext" class="btn btn-sm btn-ghost" title="Next">↓</button>
-              <button id="closeSearch" class="btn btn-sm btn-ghost" title="Close">✕</button>
-            </div>
-            <div id="searchResults" class="text-xs text-base-content/70"></div>
-          </div>
-        </div>
-      </section>
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes">
+      <div class="flex flex-col gap-4">
+        <section class="card bg-base-100 border shadow-sm rounded-2xl">
+          <div class="card-body gap-4">
+            <header class="notes-hero">
+              <div class="notes-hero-label">
+                <span class="text-xs uppercase tracking-wide text-base-content/50">Scratch Notes</span>
+                <p class="text-xs text-base-content/60" data-note-summary>
+                  Quick jot pad that syncs with your desktop notebook.
+                </p>
+              </div>
+              <div class="notes-hero-actions">
+                <div class="notes-hero-buttons flex flex-wrap items-center gap-2 justify-between w-full">
+                  <button
+                    id="noteSaveMobile"
+                    class="btn btn-primary btn-sm shadow-md shadow-primary/20"
+                    type="button"
+                  >
+                    Save note
+                  </button>
+                  <button
+                    id="noteNewMobile"
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                  >
+                    New note
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    data-action="open-saved-notes"
+                  >
+                    Saved notes
+                  </button>
+                </div>
+              </div>
+            </header>
 
+            <div class="flex flex-col gap-5">
+              <label class="flex flex-col gap-2" for="noteTitleMobile">
+                <span class="text-sm font-medium text-base-content">Title</span>
+                <input
+                  id="noteTitleMobile"
+                  type="text"
+                  class="input input-bordered input-sm w-full rounded-2xl focus-visible:outline-none focus-visible:ring focus-visible:ring-primary/30"
+                  placeholder="e.g. Kids basketball schedule – this weekend"
+                />
+              </label>
+
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-200/70 bg-base-100/80 px-0 md:px-3 py-2 text-xs text-base-content/70"
+                data-note-toolbar
+              >
+                <span class="font-semibold text-base-content text-sm">Text size</span>
+                <select
+                  class="select select-bordered select-xs w-full max-w-[160px]"
+                  data-mobile-notes-text-size
+                  aria-label="Select scratch notes text size"
+                >
+                  <option value="small">Small</option>
+                  <option value="default" selected>Default</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+
+              <label class="flex flex-col gap-2" for="noteBodyMobile">
+                <span class="text-sm font-medium text-base-content">Body</span>
+                <div class="note-body-wrapper">
+                  <div
+                    class="note-body-field"
+                    data-role="note-body-field"
+                    data-placeholder="Start typing your scratch note…"
+                    data-has-content="false"
+                  >
+                    <textarea
+                      id="noteBodyMobile"
+                      class="textarea textarea-sm w-full min-h-[200px] leading-relaxed resize-none p-4 rounded-lg bg-base-100 text-base text-base-content placeholder:text-base-content/80 placeholder:opacity-80 focus-visible:outline-none focus-visible:ring-0"
+                      placeholder="Start typing your scratch note…"
+                    ></textarea>
+                  </div>
+                </div>
+              </label>
+
+              <div class="flex items-center justify-between gap-2 text-xs text-base-content/60" data-note-detail-list>
+                <span id="notesStatusText" class="truncate"></span>
+                <span class="flex items-center gap-1 whitespace-nowrap">
+                  <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </section>
     <!-- END GPT CHANGE -->
+      </div>
     </main>
   </div>
 
-  <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
-    <button type="button" aria-current="page" class="active">
-      <span class="btm-nav-label">Reminders</span>
-    </button>
-    <button type="button">
-      <span class="btm-nav-label">Notebook</span>
-    </button>
-  </nav>
+  <div
+    id="savedNotesSheet"
+    class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
+    aria-hidden="true"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="savedNotesSheetTitle"
+    data-open="false"
+  >
+    <div
+      class="saved-notes-panel fixed bottom-0 left-0 right-0 mx-auto w-full max-w-md bg-base-100 rounded-t-xl shadow-lg p-4 space-y-4 max-h-[80vh] overflow-y-auto transition-transform z-40 flex flex-col"
+    >
+      <header class="flex items-start justify-between gap-3 pb-3 border-b border-base-200/70">
+        <div class="flex flex-col gap-0.5">
+          <h3 id="savedNotesSheetTitle" class="text-base font-semibold">Saved notes</h3>
+          <p class="text-xs text-base-content/60">Tap a note to load it here.</p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-circle"
+          data-action="close-saved-notes"
+          aria-label="Close saved notes"
+        >
+          ✕
+        </button>
+      </header>
+
+      <div class="space-y-3 border-b border-base-200/60 pb-4">
+        <label class="sr-only" for="notesFilterMobile">Filter notes</label>
+        <input
+          id="notesFilterMobile"
+          type="search"
+          class="input input-bordered input-sm w-full text-base-content bg-base-200 placeholder:text-base-content/70 placeholder:opacity-80"
+          placeholder="Search saved notes…"
+        />
+        <div class="flex items-center justify-between text-xs font-semibold text-base-content/70">
+          <span class="text-base-content/50 font-medium">Showing</span>
+          <span id="notesCountMobile" class="text-sm font-semibold whitespace-nowrap"></span>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto pb-2">
+        <ul
+          id="notesListMobile"
+          class="space-y-3 pb-12"
+          aria-label="Saved scratch notes"
+        ></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pb-safe-bottom pointer-events-none">
+    <nav
+      class="btm-nav pointer-events-auto flex items-center justify-between max-w-md mx-auto bg-base-100/90 backdrop-blur-md border border-base-300 rounded-full shadow-lg px-4 py-1.5 gap-1"
+      aria-label="Primary navigation"
+    >
+      <button
+        type="button"
+        aria-current="page"
+        class="active flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[11px] font-medium text-base-content/70 transition"
+      >
+        <span class="text-lg leading-none">⏰</span>
+        <span class="leading-tight">Reminders</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[11px] font-medium text-base-content/70 transition"
+      >
+        <span class="text-lg leading-none">📝</span>
+        <span class="leading-tight">Notebook</span>
+      </button>
+    </nav>
+  </div>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
@@ -2461,10 +3502,11 @@
       target.replaceChildren(wrapper);
     };
 
-    const viewToggle = document.getElementById('viewToggle');
+    const viewToggleMenu = document.getElementById('viewToggleMenu');
+    const viewToggleLabel = document.getElementById('viewToggleLabel');
     const reminderList = document.getElementById('reminderList');
 
-    if (viewToggle && reminderList) {
+    if (viewToggleMenu && reminderList) {
       const getPendingNotificationIds = () => {
         if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
           return new Set();
@@ -2497,8 +3539,19 @@
         });
       };
 
+      const updateViewToggleLabel = (isCompact) => {
+        if (!viewToggleLabel) return;
+        viewToggleLabel.textContent = isCompact ? 'View layout: Compact' : 'View layout: Full';
+      };
+
+      const updateToggleState = (isCompact) => {
+        updateViewToggleLabel(isCompact);
+        viewToggleMenu.setAttribute('aria-pressed', isCompact ? 'true' : 'false');
+      };
+
       const setCompactMode = (compact) => {
-        reminderList.querySelectorAll('.task-item').forEach((item) => {
+        reminderList.querySelectorAll('.task-item, [data-compact]').forEach((item) => {
+          if (!(item instanceof HTMLElement)) return;
           if (compact) {
             item.setAttribute('data-compact', 'true');
           } else {
@@ -2507,29 +3560,19 @@
         });
       };
 
-      const updateToggleIcons = (isGridView) => {
-        const gridIcon = viewToggle.querySelector('.grid-icon');
-        const listIcon = viewToggle.querySelector('.list-icon');
-        if (!gridIcon || !listIcon) return;
-        if (isGridView) {
-          gridIcon.classList.add('hidden');
-          listIcon.classList.remove('hidden');
-        } else {
-          gridIcon.classList.remove('hidden');
-          listIcon.classList.add('hidden');
-        }
-      };
-
       const ensureInitialState = () => {
         let isGridView = reminderList.classList.contains('grid-cols-2');
 
-        if (!isGridView && !reminderList.classList.contains('space-y-3')) {
-          reminderList.classList.add('grid-cols-2');
-          isGridView = true;
+        if (isGridView) {
+          reminderList.classList.remove('grid-cols-2');
+          reminderList.classList.add('space-y-3');
+          isGridView = false;
+        } else if (!reminderList.classList.contains('space-y-3')) {
+          reminderList.classList.add('space-y-3');
         }
 
-        updateToggleIcons(isGridView);
-        setCompactMode(isGridView);
+        updateToggleState(isGridView);
+        setCompactMode(false);
         applyNotificationHighlights();
       };
 
@@ -2537,22 +3580,23 @@
         const isGridView = reminderList.classList.contains('grid-cols-2');
         setCompactMode(isGridView);
         applyNotificationHighlights();
+        updateToggleState(isGridView);
       });
 
-      viewToggle.addEventListener('click', function () {
+      viewToggleMenu.addEventListener('click', function () {
         const isGridView = reminderList.classList.contains('grid-cols-2');
 
         if (isGridView) {
           reminderList.classList.remove('grid-cols-2');
           reminderList.classList.add('space-y-3');
-          updateToggleIcons(false);
-          setCompactMode(false);
         } else {
           reminderList.classList.add('grid-cols-2');
           reminderList.classList.remove('space-y-3');
-          updateToggleIcons(true);
-          setCompactMode(true);
         }
+
+        const isNowGridView = !isGridView;
+        updateToggleState(isNowGridView);
+        setCompactMode(isNowGridView);
 
         applyNotificationHighlights();
       });
@@ -2569,8 +3613,9 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script type="module" src="./assets/mobile-S7M6534W.js?v=2025-10-29-1"></script>
-  <script type="module" src="./assets/mobile-theme-toggle-KTZLCBCC.js"></script>
+  <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
+  <script type="module" src="./assets/mobile-AARWRGNU.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
     <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
@@ -2636,7 +3681,7 @@
                 <option value="Low">Low</option>
               </select>
               <!-- BEGIN GPT CHANGE: priority chips -->
-              <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
+               <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
                 <label><input type="radio" name="priority" value="High"> High</label>
                 <label><input type="radio" name="priority" value="Medium" checked> Medium</label>
                 <label><input type="radio" name="priority" value="Low"> Low</label>
@@ -2745,6 +3790,250 @@
       });
     });
 
+    (function () {
+      const list = document.getElementById('reminderList');
+      if (!list) return;
+
+      const TEXT_NODE = typeof Node !== 'undefined' ? Node.TEXT_NODE : 3;
+      const priorityLabels = {
+        high: 'High priority',
+        medium: 'Medium priority',
+        low: 'Low priority',
+      };
+      const priorityValues = {
+        high: 'High',
+        medium: 'Medium',
+        low: 'Low',
+      };
+      const priorityClassTokens = ['priority-high', 'priority-medium', 'priority-low'];
+      const detectPriorityKey = (value) => {
+        const normalized = (value || '').trim().toLowerCase();
+        if (normalized.startsWith('h')) return 'high';
+        if (normalized.startsWith('m')) return 'medium';
+        if (normalized.startsWith('l')) return 'low';
+        return '';
+      };
+      const removePriorityText = (element) => {
+        if (!(element instanceof HTMLElement)) return;
+        Array.from(element.childNodes).forEach((child) => {
+          if (child.nodeType === TEXT_NODE) {
+            child.remove();
+          } else if (child instanceof HTMLElement) {
+            removePriorityText(child);
+            if (!child.childNodes.length) {
+              child.remove();
+            }
+          }
+        });
+      };
+
+      const applyPriorityPills = (container) => {
+        const pills = container.querySelectorAll('[data-chip="priority"], [data-priority-pill], .priority-pill');
+        let containerPriorityKey = detectPriorityKey(
+          container.dataset.priority || container.getAttribute('data-priority') || ''
+        );
+
+        pills.forEach((pill) => {
+          if (!(pill instanceof HTMLElement)) return;
+
+          const prioritySource =
+            pill.dataset.priority ||
+            pill.dataset.level ||
+            pill.dataset.value ||
+            container.dataset.priority ||
+            container.getAttribute('data-priority') ||
+            '';
+
+          const textPriority = prioritySource || pill.textContent?.trim() || '';
+          const priorityKey = detectPriorityKey(textPriority);
+
+          pill.classList.add('priority-pill');
+          pill.classList.remove(...priorityClassTokens);
+
+          if (priorityKey) {
+            pill.classList.add(`priority-${priorityKey}`);
+            if (!containerPriorityKey) {
+              containerPriorityKey = priorityKey;
+            }
+          }
+
+          const accessibleLabel = textPriority || (priorityKey ? priorityLabels[priorityKey] : '');
+          if (accessibleLabel) {
+            pill.setAttribute('aria-label', accessibleLabel);
+            pill.setAttribute('title', accessibleLabel);
+          }
+
+          removePriorityText(pill);
+        });
+
+        container.classList.remove(...priorityClassTokens);
+
+        if (containerPriorityKey) {
+          const priorityValue = priorityValues[containerPriorityKey];
+          if (priorityValue) {
+            container.dataset.priority = priorityValue;
+          }
+          container.classList.add(`priority-${containerPriorityKey}`);
+        } else if (!detectPriorityKey(container.dataset.priority)) {
+          delete container.dataset.priority;
+        }
+      };
+
+      const restructureReminderCard = (card) => {
+        if (!(card instanceof HTMLElement)) return;
+        if (card.dataset.compactLayout === 'true') return;
+
+        const content = card.querySelector('.task-content') || card;
+        if (!(content instanceof HTMLElement)) return;
+
+        const header = content.querySelector('.task-header');
+        const titleEl = header?.querySelector('.task-title, [data-reminder-title], strong');
+        if (!(titleEl instanceof HTMLElement)) return;
+
+        const toolbar = header?.querySelector('.task-toolbar');
+        const metaTextEl = content.querySelector('.task-meta-text');
+        const metaContainer = content.querySelector('.task-meta');
+        const notesEl = content.querySelector('.task-notes');
+
+        const primaryRow = document.createElement('div');
+        primaryRow.className = 'reminder-primary-row';
+
+        const controlSlot = document.createElement('div');
+        controlSlot.className = 'reminder-control-slot';
+        const control =
+          card.querySelector('[data-action="toggle"]') ||
+          card.querySelector('[data-done]') ||
+          card.querySelector('[data-complete]') ||
+          card.querySelector('input[type="checkbox"]');
+        if (control instanceof HTMLElement) {
+          controlSlot.appendChild(control);
+        } else {
+          controlSlot.classList.add('reminder-control-slot--empty');
+        }
+
+        const titleSlot = document.createElement('div');
+        titleSlot.className = 'reminder-title-slot';
+        titleSlot.appendChild(titleEl);
+
+        const metaSlot = document.createElement('div');
+        metaSlot.className = 'reminder-meta-slot';
+
+        let extraMetaEl = null;
+        if (metaTextEl instanceof HTMLElement) {
+          const segments = (metaTextEl.textContent || '')
+            .split('•')
+            .map((segment) => segment.trim())
+            .filter(Boolean);
+          const dueSegments = [];
+          if (segments.length) {
+            dueSegments.push(segments.shift());
+          }
+          if (segments.length) {
+            dueSegments.push(segments.shift());
+          }
+          if (dueSegments.length) {
+            const dueEl = document.createElement('span');
+            dueEl.className = 'reminder-due';
+            dueEl.textContent = dueSegments.join(' • ');
+            metaSlot.appendChild(dueEl);
+          }
+          if (segments.length) {
+            metaTextEl.textContent = segments.join(' • ');
+            extraMetaEl = metaTextEl;
+          } else {
+            metaTextEl.remove();
+          }
+        }
+
+        let priorityChip = null;
+        const secondaryChips = [];
+        if (metaContainer instanceof HTMLElement) {
+          Array.from(metaContainer.children).forEach((child) => {
+            if (!(child instanceof HTMLElement)) return;
+            if (!priorityChip && child.matches('[data-chip="priority"], [data-priority-pill], .priority-pill')) {
+              priorityChip = child;
+            } else {
+              secondaryChips.push(child);
+            }
+          });
+        }
+
+        if (priorityChip) {
+          priorityChip.remove();
+        }
+        if (metaContainer instanceof HTMLElement) {
+          metaContainer.remove();
+        }
+
+        if (!metaSlot.childElementCount) {
+          metaSlot.classList.add('reminder-meta-slot--empty');
+        }
+
+        primaryRow.append(controlSlot, titleSlot, metaSlot);
+
+        const secondaryRow = document.createElement('div');
+        secondaryRow.className = 'reminder-secondary-row';
+
+        if (extraMetaEl) {
+          secondaryRow.appendChild(extraMetaEl);
+        }
+        secondaryChips.forEach((chip) => secondaryRow.appendChild(chip));
+        if (notesEl instanceof HTMLElement) {
+          secondaryRow.appendChild(notesEl);
+        }
+        if (toolbar instanceof HTMLElement) {
+          secondaryRow.appendChild(toolbar);
+        }
+
+        content.replaceChildren(primaryRow);
+        if (secondaryRow.childElementCount) {
+          content.appendChild(secondaryRow);
+        }
+
+        card.dataset.compactLayout = 'true';
+        if (list.classList.contains('grid-cols-2')) {
+          card.dataset.compact = 'true';
+        } else {
+          card.removeAttribute('data-compact');
+        }
+      };
+
+      const upgrade = (node) => {
+        if (!(node instanceof HTMLElement)) return;
+        if (node.parentElement !== list) return;
+        if (!node.classList.contains('reminder-card')) {
+          if (node.classList.contains('card')) {
+            node.classList.remove('card');
+          }
+          node.classList.add('reminder-card');
+        }
+        applyPriorityPills(node);
+        restructureReminderCard(node);
+      };
+
+      Array.from(list.children).forEach((child) => {
+        upgrade(child);
+      });
+
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof HTMLElement) {
+              upgrade(node);
+            } else if (node instanceof DocumentFragment) {
+              Array.from(node.childNodes).forEach((child) => {
+                if (child instanceof HTMLElement) {
+                  upgrade(child);
+                }
+              });
+            }
+          });
+        });
+      });
+
+      observer.observe(list, { childList: true });
+    })();
+
     // Enhanced add button functionality
     (function () {
       const addBtn = document.getElementById('addReminderBtn');
@@ -2838,6 +4127,19 @@
         : null;
 
       let activeView = order[0];
+      const main = document.getElementById('main') || document.querySelector('main');
+      const body = document.body;
+
+      if (main) {
+        const preset = main.getAttribute('data-active-view');
+        if (preset && order.includes(preset)) {
+          activeView = preset;
+        }
+      }
+
+      if (body && activeView) {
+        body.setAttribute('data-active-view', activeView);
+      }
 
       const setActiveView = (target) => {
         if (!order.includes(target)) return;
@@ -2863,9 +4165,11 @@
         const skipLink =
           document.querySelector('.skip-link') ||
           document.querySelector('a[href$="#main"]');
-        const main = document.getElementById('main') || document.querySelector('main');
         if (main) {
           main.setAttribute('data-active-view', target);
+        }
+        if (body) {
+          body.setAttribute('data-active-view', target);
         }
         if (skipLink && main) {
           const behaviour = reduceMotion?.matches ? 'auto' : 'smooth';
@@ -2906,7 +4210,6 @@
         });
       });
 
-      const main = document.getElementById('main') || document.querySelector('main');
       if (main) {
         const SWIPE_MIN_DISTANCE = 60;
         const SWIPE_MAX_OFF_AXIS = 80;
@@ -3530,32 +4833,355 @@
 
       if (!notesEditor) return;
 
+      let savedSelectionRange = null;
+
+      const focusEditor = () => {
+        try {
+          notesEditor.focus({ preventScroll: true });
+        } catch {
+          notesEditor.focus();
+        }
+      };
+
+      const saveSelectionRange = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const container = range.commonAncestorContainer;
+        const containerElement =
+          container && container.nodeType === 1
+            ? container
+            : container?.parentElement || null;
+
+        if (!containerElement || !notesEditor.contains(containerElement)) {
+          return;
+        }
+
+        savedSelectionRange = range.cloneRange();
+      };
+
+      const restoreSelectionRange = () => {
+        if (!savedSelectionRange) {
+          return false;
+        }
+
+        const selection = window.getSelection();
+        if (!selection) {
+          return false;
+        }
+
+        try {
+          selection.removeAllRanges();
+          selection.addRange(savedSelectionRange);
+          return true;
+        } catch {
+          savedSelectionRange = null;
+          return false;
+        }
+      };
+
+      document.addEventListener('selectionchange', saveSelectionRange);
+      notesEditor.addEventListener('mouseup', saveSelectionRange);
+      notesEditor.addEventListener('keyup', saveSelectionRange);
+      notesEditor.addEventListener('touchend', saveSelectionRange);
+
       let autoSaveTimeout;
       let currentSearchIndex = 0;
       let searchMatches = [];
 
+      const FALLBACK_FIREBASE_CONFIG = Object.freeze({
+        apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
+        authDomain: 'memory-cue-app.firebaseapp.com',
+        projectId: 'memory-cue-app',
+        storageBucket: 'memory-cue-app.firebasestorage.app',
+        messagingSenderId: '751284466633',
+        appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
+        measurementId: 'G-R0V4M7VCE6'
+      });
+
+      let firebaseContextPromise;
+      let firebaseContext;
+      let remoteNotesUnsubscribe = null;
+      let remoteNotesDocRef = null;
+      let remoteSaveTimeout = null;
+      let remoteSyncActive = false;
+      let isApplyingRemoteUpdate = false;
+      let remoteUserId = null;
+      let lastStoredLocalContent = '';
+      let lastRemoteContent = '';
+
+      const getFirebaseContext = () => {
+        if (firebaseContextPromise) {
+          return firebaseContextPromise;
+        }
+
+        firebaseContextPromise = (async () => {
+          try {
+            const [appMod, firestoreMod, authMod] = await Promise.all([
+              import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
+              import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'),
+              import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'),
+            ]);
+
+            const { initializeApp, getApps, getApp } = appMod || {};
+            const { getFirestore, doc, onSnapshot, setDoc, serverTimestamp } = firestoreMod || {};
+            const { getAuth, onAuthStateChanged } = authMod || {};
+
+            if (
+              typeof initializeApp !== 'function' ||
+              typeof getFirestore !== 'function' ||
+              typeof getAuth !== 'function'
+            ) {
+              return null;
+            }
+
+            const api = window?.memoryCueFirebase || {};
+            const configCandidate = typeof api.getFirebaseConfig === 'function'
+              ? api.getFirebaseConfig()
+              : null;
+            const config =
+              (configCandidate && typeof configCandidate === 'object' ? configCandidate : null)
+              || (api.DEFAULT_FIREBASE_CONFIG ? { ...api.DEFAULT_FIREBASE_CONFIG } : null)
+              || FALLBACK_FIREBASE_CONFIG;
+
+            if (!config || !config.projectId) {
+              console.warn('Notes sync: Firebase config unavailable; remote sync disabled.');
+              return null;
+            }
+
+            const app = (typeof getApps === 'function' && getApps().length)
+              ? getApp()
+              : initializeApp(config);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+
+            return {
+              app,
+              db,
+              auth,
+              doc,
+              onSnapshot,
+              setDoc,
+              serverTimestamp,
+              onAuthStateChanged,
+            };
+          } catch (error) {
+            console.warn('Notes sync: Firebase modules unavailable; remote sync disabled.', error);
+            return null;
+          }
+        })();
+
+        return firebaseContextPromise;
+      };
+
+      const stopRemoteNotesSync = () => {
+        remoteSyncActive = false;
+        remoteNotesDocRef = null;
+        remoteUserId = null;
+        if (remoteSaveTimeout) {
+          clearTimeout(remoteSaveTimeout);
+          remoteSaveTimeout = null;
+        }
+        if (typeof remoteNotesUnsubscribe === 'function') {
+          try {
+            remoteNotesUnsubscribe();
+          } catch (error) {
+            console.warn('Notes sync: Unable to clean up listener', error);
+          }
+        }
+        remoteNotesUnsubscribe = null;
+      };
+
+      const scheduleRemoteSave = (content) => {
+        if (!remoteSyncActive || !firebaseContext || !remoteNotesDocRef) {
+          setStatus('saved', 'Saved');
+          setTimeout(() => setStatus('ready', 'Ready'), 1500);
+          return;
+        }
+
+        if (content === lastRemoteContent) {
+          setStatus('saved', 'Synced');
+          setTimeout(() => setStatus('ready', 'Ready'), 1200);
+          return;
+        }
+
+        if (remoteSaveTimeout) {
+          clearTimeout(remoteSaveTimeout);
+        }
+
+        remoteSaveTimeout = setTimeout(async () => {
+          try {
+            const payload = { content };
+            if (remoteUserId) {
+              payload.ownerUid = remoteUserId;
+            }
+            if (typeof firebaseContext.serverTimestamp === 'function') {
+              payload.updatedAt = firebaseContext.serverTimestamp();
+            } else {
+              payload.updatedAt = new Date();
+            }
+            const user = firebaseContext?.auth?.currentUser;
+            console.log(
+              'Notes sync debug:',
+              'user.uid =',
+              user?.uid,
+              'remoteNotesDocRef path =',
+              remoteNotesDocRef.path
+            );
+            await firebaseContext.setDoc(remoteNotesDocRef, payload, { merge: true });
+            lastRemoteContent = content;
+            setStatus('saved', 'Synced');
+            setTimeout(() => setStatus('ready', 'Ready'), 1200);
+          } catch (error) {
+            console.error('Notes sync: Failed to sync notes', error);
+            if (error && error.code === 'permission-denied') {
+              setStatus('error', 'Sync unavailable');
+              stopRemoteNotesSync();
+            } else {
+              setStatus('error', 'Sync failed');
+            }
+          }
+        }, 400);
+      };
+
+      const handleRemoteSnapshot = (snapshot) => {
+        if (!snapshot || typeof snapshot.exists !== 'function') {
+          return;
+        }
+
+        if (!snapshot.exists()) {
+          if (lastStoredLocalContent) {
+            setStatus('saving', 'Syncing...');
+            scheduleRemoteSave(lastStoredLocalContent);
+          }
+          return;
+        }
+
+        const data = snapshot.data();
+        const remoteContent = typeof data?.content === 'string' ? data.content : '';
+        lastRemoteContent = remoteContent;
+
+        if (remoteContent === (notesEditor.innerHTML || '')) {
+          return;
+        }
+
+        isApplyingRemoteUpdate = true;
+        notesEditor.innerHTML = remoteContent;
+        savedSelectionRange = null;
+        updateWordCount();
+        try {
+          localStorage.setItem('memory-cue-notes', remoteContent);
+          lastStoredLocalContent = remoteContent;
+        } catch (error) {
+          console.warn('Notes sync: Unable to persist remote notes locally', error);
+        }
+        setStatus('saved', 'Synced');
+        setTimeout(() => setStatus('ready', 'Ready'), 1200);
+        isApplyingRemoteUpdate = false;
+      };
+
+      const startRemoteNotesSync = (user, context) => {
+        if (!user || !context || !context.db || typeof context.doc !== 'function' || typeof context.onSnapshot !== 'function') {
+          return;
+        }
+
+        stopRemoteNotesSync();
+        firebaseContext = context;
+        remoteSyncActive = true;
+        remoteNotesDocRef = context.doc(context.db, 'users', user.uid, 'notebook', 'scratch');
+        remoteUserId = user.uid;
+
+        const ensureRemoteDoc = typeof context.setDoc === 'function'
+          ? context.setDoc(remoteNotesDocRef, { ownerUid: user.uid }, { merge: true }).catch((error) => {
+              console.error('Notes sync: Unable to prepare remote notebook', error);
+              if (error && error.code === 'permission-denied') {
+                setStatus('error', 'Sync unavailable');
+                stopRemoteNotesSync();
+              }
+              return null;
+            })
+          : Promise.resolve(null);
+
+        ensureRemoteDoc.then(() => {
+          if (!remoteSyncActive) {
+            return;
+          }
+
+          try {
+            remoteNotesUnsubscribe = context.onSnapshot(remoteNotesDocRef, handleRemoteSnapshot, (error) => {
+              console.error('Notes sync: Listener error', error);
+              if (error && error.code === 'permission-denied') {
+                setStatus('error', 'Sync unavailable');
+                stopRemoteNotesSync();
+              } else {
+                setStatus('error', 'Sync error');
+              }
+            });
+          } catch (error) {
+            console.error('Notes sync: Unable to subscribe to updates', error);
+            return;
+          }
+
+          const initialContent = notesEditor.innerHTML || lastStoredLocalContent;
+          if (initialContent && !isApplyingRemoteUpdate) {
+            setStatus('saving', 'Syncing...');
+            scheduleRemoteSave(initialContent);
+          }
+        });
+      };
+
+      const initRemoteNotebookSync = () => {
+        if (initRemoteNotebookSync._started) {
+          return;
+        }
+        initRemoteNotebookSync._started = true;
+
+        getFirebaseContext().then((context) => {
+          if (!context || !context.auth || typeof context.onAuthStateChanged !== 'function') {
+            return;
+          }
+
+          firebaseContext = context;
+          context.onAuthStateChanged(context.auth, (user) => {
+            if (user && user.uid) {
+              startRemoteNotesSync(user, context);
+            } else {
+              stopRemoteNotesSync();
+              setStatus('ready', 'Ready');
+            }
+          });
+        });
+      };
+
       // Auto-save functionality
       const autoSave = () => {
         if (!notesEditor) return;
-        
+
+        const content = notesEditor.innerHTML;
         clearTimeout(autoSaveTimeout);
-        setStatus('saving', 'Saving...');
-        
+        setStatus('saving', remoteSyncActive ? 'Syncing...' : 'Saving...');
+
         autoSaveTimeout = setTimeout(() => {
           try {
-            const content = notesEditor.innerHTML;
-            if (content !== localStorage.getItem('memory-cue-notes')) {
+            if (content !== lastStoredLocalContent) {
               localStorage.setItem('memory-cue-notes', content);
-              setStatus('saved', 'Saved');
-              setTimeout(() => setStatus('ready', 'Ready'), 1500);
-            } else {
-              setStatus('ready', 'Ready');
+              lastStoredLocalContent = content;
             }
           } catch (error) {
             console.error('Failed to save notes:', error);
             setStatus('error', 'Save failed');
-            // Retry after a delay
             setTimeout(autoSave, 3000);
+            return;
+          }
+
+          if (remoteSyncActive && !isApplyingRemoteUpdate) {
+            scheduleRemoteSave(content);
+          } else {
+            setStatus('saved', 'Saved');
+            setTimeout(() => setStatus('ready', 'Ready'), 1500);
           }
         }, 800);
       };
@@ -3580,26 +5206,61 @@
       const loadNotes = () => {
         try {
           const saved = localStorage.getItem('memory-cue-notes');
-          if (saved && notesEditor) {
+          if (typeof saved === 'string' && saved && notesEditor) {
             notesEditor.innerHTML = saved;
-            updateWordCount();
+            savedSelectionRange = null;
+            lastStoredLocalContent = saved;
+            lastRemoteContent = saved;
             setStatus('ready', 'Notes loaded');
+          } else {
+            lastStoredLocalContent = notesEditor.innerHTML || '';
+            lastRemoteContent = lastStoredLocalContent;
           }
         } catch (error) {
           console.error('Failed to load notes:', error);
+          lastStoredLocalContent = notesEditor.innerHTML || '';
+          lastRemoteContent = lastStoredLocalContent;
         }
       };
 
       // Formatting functions
       const formatText = (command, value = null) => {
+        if (typeof document.execCommand !== 'function') {
+          return;
+        }
+
+        focusEditor();
+        if (!restoreSelectionRange()) {
+          const selection = window.getSelection();
+          if (selection) {
+            const fallbackRange = document.createRange();
+            fallbackRange.selectNodeContents(notesEditor);
+            fallbackRange.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(fallbackRange);
+          }
+        }
+
         document.execCommand(command, false, value);
-        notesEditor.focus();
+        saveSelectionRange();
         autoSave();
       };
 
       const insertAtCursor = (html) => {
+        focusEditor();
+        if (!restoreSelectionRange()) {
+          const selection = window.getSelection();
+          if (selection) {
+            const fallbackRange = document.createRange();
+            fallbackRange.selectNodeContents(notesEditor);
+            fallbackRange.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(fallbackRange);
+          }
+        }
+
         const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
+        if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
           range.deleteContents();
           const fragment = range.createContextualFragment(html);
@@ -3607,8 +5268,10 @@
           range.collapse(false);
           selection.removeAllRanges();
           selection.addRange(range);
+          savedSelectionRange = range.cloneRange();
         }
         autoSave();
+        saveSelectionRange();
       };
 
       // Toolbar event handlers
@@ -3674,7 +5337,8 @@
           
           const highlightedContent = content.replace(regex, '<span class="highlight">$1</span>');
           notesEditor.innerHTML = highlightedContent;
-          
+          savedSelectionRange = null;
+
           searchMatches = Array.from(notesEditor.querySelectorAll('.highlight'));
           updateSearchResults(searchMatches.length);
           
@@ -3695,6 +5359,7 @@
           parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
           parent.normalize();
         });
+        savedSelectionRange = null;
       };
 
       const highlightCurrentMatch = () => {
@@ -3808,10 +5473,41 @@
         }
       });
 
+      const manualSaveButton = document.getElementById('noteSaveMobile');
+      if (manualSaveButton) {
+        manualSaveButton.addEventListener('click', () => {
+          if (!notesEditor) return;
+
+          const content = notesEditor.innerHTML;
+          clearTimeout(autoSaveTimeout);
+          setStatus('saving', remoteSyncActive ? 'Syncing...' : 'Saving...');
+
+          try {
+            if (content !== lastStoredLocalContent) {
+              localStorage.setItem('memory-cue-notes', content);
+              lastStoredLocalContent = content;
+            }
+          } catch (error) {
+            console.error('Failed to save notes:', error);
+            setStatus('error', 'Save failed');
+            setTimeout(autoSave, 3000);
+            return;
+          }
+
+          if (remoteSyncActive && !isApplyingRemoteUpdate) {
+            scheduleRemoteSave(content);
+          } else {
+            setStatus('saved', 'Saved');
+            setTimeout(() => setStatus('ready', 'Ready'), 1500);
+          }
+        });
+      }
+
       // Event listeners
       notesEditor.addEventListener('input', () => {
         updateWordCount();
         autoSave();
+        saveSelectionRange();
       });
 
       notesEditor.addEventListener('paste', (e) => {
@@ -3819,6 +5515,7 @@
         setTimeout(() => {
           updateWordCount();
           autoSave();
+          saveSelectionRange();
         }, 100);
       });
 
@@ -3847,11 +5544,13 @@
         if (element && element.textContent) {
           element.textContent = element.textContent === '☐' ? '☑' : '☐';
           autoSave();
+          saveSelectionRange();
         }
       };
       
       // Improve mobile keyboard handling
       notesEditor.addEventListener('focus', () => {
+        restoreSelectionRange();
         // Prevent zoom on iOS
         if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
           const viewport = document.querySelector('meta[name="viewport"]');
@@ -3860,8 +5559,9 @@
           }
         }
       });
-      
+
       notesEditor.addEventListener('blur', () => {
+        saveSelectionRange();
         // Re-enable zoom
         const viewport = document.querySelector('meta[name="viewport"]');
         if (viewport) {
@@ -3873,6 +5573,7 @@
       // Initialize
       loadNotes();
       updateWordCount();
+      initRemoteNotebookSync();
       setStatus('ready', 'Ready');
       
       // Add mobile-friendly touch handling for toolbar
@@ -3881,6 +5582,32 @@
           e.preventDefault(); // Prevent double-tap zoom
         }, { passive: false });
       }
+    })();
+  </script>
+
+  <script>
+    (function() {
+      // Identify reminders view container and header
+      const remindersSection = document.querySelector('section[data-view="reminders"]');
+      if (!remindersSection) return;
+
+      const header = remindersSection.querySelector('header');
+      const scrollContainer =
+        remindersSection.querySelector('.reminders-scroll-container') ||
+        remindersSection.querySelector('#reminders-list') ||
+        remindersSection;
+
+      // SAFETY:
+      // Do NOT rename elements. We check multiple fallbacks.
+      // Whichever scrollable container exists will trigger the shadow.
+
+      scrollContainer.addEventListener('scroll', function() {
+        if (scrollContainer.scrollTop > 2) {
+          header.classList.add('header-shadow');
+        } else {
+          header.classList.remove('header-shadow');
+        }
+      });
     })();
   </script>
 
