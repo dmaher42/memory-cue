@@ -3609,81 +3609,72 @@
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
-    <div class="sheet-panel bg-base-100 border-t border-base-200" data-dialog-content>
-      <header class="sheet-header">
-        <h2 id="createSheetTitle">Create Reminder</h2>
-        <div class="sheet-header-actions">
-          <button
-            id="voiceBtn"
-            type="button"
-            class="btn btn-circle btn-ghost"
-            aria-label="Start voice input"
-            aria-pressed="false"
-            title="Fill reminder using your voice"
-          >
-            <span aria-hidden="true">🎙️</span>
-            <span class="sr-only">Start voice input</span>
-          </button>
-          <button type="button" id="closeCreateSheet" aria-label="Close">✕</button>
-        </div>
-      </header>
-      <form id="createReminderForm" class="inputs-compact">
-        <div class="card-body gap-4 compact">
-          <label class="form-control w-full">
-            <div class="label"><span class="label-text">Reminder</span></div>
+    <div class="sheet-backdrop backdrop fixed inset-0 z-30 bg-black/40" data-close></div>
+    <div
+      class="sheet-panel fixed inset-x-0 bottom-0 z-40 bg-base-100 rounded-t-3xl shadow-xl border-t border-base-300 px-4 pt-3 pb-4 space-y-3"
+      data-dialog-content
+    >
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <h2 id="createSheetTitle" class="text-base font-semibold text-base-content">Create Reminder</h2>
+        <button type="button" id="closeCreateSheet" aria-label="Close" class="btn btn-ghost btn-sm btn-circle flex-shrink-0">✕</button>
+      </div>
+      <form id="createReminderForm" class="space-y-4">
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderText">Reminder</label>
             <input
               id="reminderText"
               type="text"
               placeholder=""
-              class="input input-bordered w-full"
+              class="input input-bordered input-sm w-full text-sm text-base-content"
               autocomplete="off"
             />
-          </label>
+          </div>
 
-          <label class="form-control w-full">
-            <div class="label"><span class="label-text">Notes</span></div>
+          <div class="space-y-1">
+            <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderDetails">Notes</label>
             <textarea
               id="reminderDetails"
-              class="textarea textarea-bordered"
+              class="textarea textarea-bordered w-full min-h-[6rem] text-sm text-base-content"
               rows="3"
               placeholder="Optional context for the reminder"
             ></textarea>
-          </label>
+          </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <label class="form-control">
-              <div class="label"><span class="label-text">Date</span></div>
-              <input id="reminderDate" type="date" class="input input-bordered" />
-            </label>
-            <label class="form-control">
-              <div class="label"><span class="label-text">Time</span></div>
-              <input id="reminderTime" type="time" class="input input-bordered" />
-            </label>
+            <div class="space-y-1">
+              <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderDate">Date</label>
+              <input id="reminderDate" type="date" class="input input-bordered input-sm w-full text-sm text-base-content" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderTime">Time</label>
+              <input id="reminderTime" type="time" class="input input-bordered input-sm w-full text-sm text-base-content" />
+            </div>
           </div>
 
           <div id="dateFeedback" class="text-xs text-info"></div>
 
           <div class="grid grid-cols-2 gap-3">
-            <div class="form-control">
-              <div class="label"><span class="label-text">Priority</span></div>
-              <select id="priority" class="select select-bordered hidden" aria-hidden="true" tabindex="-1">
+            <div class="space-y-1">
+              <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="priority">Priority</label>
+              <select id="priority" class="select select-bordered select-sm w-full text-sm text-base-content hidden" aria-hidden="true" tabindex="-1">
                 <option value="High">High</option>
                 <option value="Medium" selected>Medium</option>
                 <option value="Low">Low</option>
               </select>
               <!-- BEGIN GPT CHANGE: priority chips -->
-               <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
+              <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
                 <label><input type="radio" name="priority" value="High"> High</label>
                 <label><input type="radio" name="priority" value="Medium" checked> Medium</label>
                 <label><input type="radio" name="priority" value="Low"> Low</label>
               </fieldset>
               <!-- END GPT CHANGE: priority chips -->
             </div>
-            <label class="form-control">
-              <div class="label"><span class="label-text">Category</span></div>
+            <div class="space-y-1">
+              <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="category">Category</label>
               <input
                 id="category"
-                class="input input-bordered"
+                class="input input-bordered input-sm w-full text-sm text-base-content"
                 list="categorySuggestions"
                 placeholder="General"
                 value="General"
@@ -3700,23 +3691,38 @@
                 <option value="School – To-Do"></option>
                 <option value="Wellbeing &amp; Support"></option>
               </datalist>
-            </label>
+            </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3">
-            <button id="notifBtn" class="btn btn-ghost" type="button">Enable notifications</button>
+          <div class="space-y-1">
+            <span class="text-xs font-semibold tracking-wide text-base-content/70 uppercase">Notifications</span>
+            <button id="notifBtn" class="btn btn-outline btn-sm w-full justify-center" type="button">Enable notifications</button>
           </div>
 
-          <div class="flex flex-col gap-2">
-            <button
-              id="sheetVoiceBtn"
-              class="btn btn-outline justify-center"
-              type="button"
-              aria-pressed="false"
-              aria-label="Dictate reminder"
-            >
-              🎤 Voice input
-            </button>
+          <div class="space-y-2">
+            <span class="text-xs font-semibold tracking-wide text-base-content/70 uppercase">Voice tools</span>
+            <div class="flex items-center gap-2">
+              <button
+                id="voiceBtn"
+                type="button"
+                class="btn btn-circle btn-ghost"
+                aria-label="Start voice input"
+                aria-pressed="false"
+                title="Fill reminder using your voice"
+              >
+                <span aria-hidden="true">🎙️</span>
+                <span class="sr-only">Start voice input</span>
+              </button>
+              <button
+                id="sheetVoiceBtn"
+                class="btn btn-outline btn-sm flex-1"
+                type="button"
+                aria-pressed="false"
+                aria-label="Dictate reminder"
+              >
+                🎤 Voice input
+              </button>
+            </div>
             <p
               id="sheetVoiceStatus"
               class="text-xs text-base-content/60"
@@ -3727,16 +3733,15 @@
               Tap the microphone to start speaking.
             </p>
           </div>
-
-          <div class="card-actions justify-stretch">
-            <button id="saveReminder" class="btn btn-primary w-full" type="button">Save Reminder</button>
-            <button id="cancelEditBtn" class="btn btn-outline w-full hidden" type="button">Cancel</button>
-          </div>
-          <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
         </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelEditBtn" class="btn btn-outline btn-sm hidden" type="button">Cancel</button>
+          <button id="saveReminder" class="btn btn-primary btn-sm" type="button">Save Reminder</button>
+        </div>
+        <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
       </form>
     </div>
-    <div class="sheet-backdrop backdrop" data-close></div>
   </div>
   <!-- END GPT CHANGE: bottom sheet for Create Reminder -->
 
