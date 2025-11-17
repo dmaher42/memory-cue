@@ -198,6 +198,37 @@
       box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22);
     }
 
+    .planner-layout {
+      min-height: clamp(32rem, 70vh, 56rem);
+    }
+
+    .planner-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: color-mix(in srgb, var(--fallback-b1, #ffffff) 92%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--fallback-b3, #e5e7eb) 80%, transparent);
+      padding-bottom: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .planner-cards-scroll {
+      height: clamp(28rem, 65vh, 48rem);
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .planner-detail-panel {
+      top: 0;
+    }
+
+    @media (min-width: 1024px) {
+      .planner-detail-panel {
+        position: sticky;
+        top: 1rem;
+      }
+    }
+
     #quick-action-toolbar .quick-action-btn {
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
@@ -1119,13 +1150,15 @@
                   <h3 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content" data-primary-heading">Weekly planner</h3>
                   <p class="desktop-panel-subtitle text-sm text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
                 </div>
-                <div class="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-                  <div class="workspace-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
-                    <div class="desktop-panel-body card-body flex h-full flex-col gap-4">
-                      <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2">
+                <div class="workspace-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                  <div class="desktop-panel-body card-body planner-layout">
+                    <div class="planner-toolbar flex flex-wrap items-center gap-3">
+                      <div class="flex flex-wrap items-center gap-2">
                         <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
                         <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">Today</button>
                         <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-2">
                         <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
                           <span class="hidden sm:inline">Text size</span>
                           <select class="select select-bordered select-xs w-auto" data-planner-text-size aria-label="Planner text size">
@@ -1134,13 +1167,11 @@
                             <option value="large">Large</option>
                           </select>
                         </label>
+                        <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
+                        <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
                       </div>
-                      <div class="space-y-3">
-                        <div class="desktop-panel-actions flex flex-wrap items-center gap-2">
-                          <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
-                          <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
-                        </div>
-                        <label class="form-control w-full">
+                      <div class="flex flex-1 flex-wrap gap-3">
+                        <label class="form-control w-full sm:w-auto sm:flex-1">
                           <div class="label py-0">
                             <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Template</span>
                           </div>
@@ -1148,8 +1179,8 @@
                             <option value="">No templates saved</option>
                           </select>
                         </label>
-                        <button type="button" id="planner-template-save-btn" class="btn btn-outline btn-sm">Save current week as template</button>
-                        <label class="form-control w-full">
+                        <button type="button" id="planner-template-save-btn" class="btn btn-outline btn-sm self-end">Save current week as template</button>
+                        <label class="form-control w-full sm:w-auto sm:flex-1">
                           <div class="label py-0">
                             <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Subject filter</span>
                           </div>
@@ -1159,14 +1190,43 @@
                           <p class="mt-1 text-xs text-base-content/60">Show lessons by the subjects you teach.</p>
                         </label>
                       </div>
-                      <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
+                      <p id="planner-week" class="text-sm font-semibold text-base-content/80">Loading…</p>
                     </div>
-                  </div>
-                  <div class="workspace-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
-                    <div class="desktop-panel-body workspace-pane__body h-full overflow-y-auto px-6 py-4">
-                      <div class="[&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:justify-start [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:mt-3">
-                        <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
-                      </div>
+                    <div class="planner-board grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
+                      <section class="rounded-2xl border border-base-200/80 bg-base-100/80 p-4">
+                        <div class="planner-cards-scroll">
+                          <div class="[&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:justify-start [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:mt-3">
+                            <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+                          </div>
+                        </div>
+                      </section>
+                      <aside id="planner-detail-panel" class="planner-detail-panel card h-full border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                        <div class="card-body flex h-full flex-col gap-4">
+                          <div data-planner-detail-empty>
+                            <p class="text-sm text-base-content/70">Select a lesson to see its details and quick actions.</p>
+                          </div>
+                          <div data-planner-detail-content class="hidden flex h-full flex-col gap-4">
+                            <div>
+                              <p id="planner-detail-day" class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60"></p>
+                              <h4 id="planner-detail-title" class="text-xl font-semibold text-base-content"></h4>
+                              <p id="planner-detail-summary" class="mt-2 text-sm text-base-content/80"></p>
+                              <div id="planner-detail-subject" class="mt-3"></div>
+                            </div>
+                            <div>
+                              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Lesson details</p>
+                              <div id="planner-detail-details" class="mt-2 space-y-2 text-sm text-base-content/80"></div>
+                            </div>
+                            <div class="mt-auto">
+                              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Quick actions</p>
+                              <div id="planner-detail-actions" class="mt-2 flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-outline" data-planner-detail-action="duplicate">Duplicate</button>
+                                <button type="button" class="btn btn-sm btn-primary" data-planner-detail-action="reminder">Create reminder</button>
+                                <button type="button" class="btn btn-sm btn-ghost" data-planner-detail-action="resources">Open resources</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </aside>
                     </div>
                   </div>
                 </div>
