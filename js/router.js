@@ -1,15 +1,19 @@
 const groupedRoutes = new Set(['notes', 'resources', 'templates']);
+const workspaceRoutes = new Set(['reminders', 'planner', 'notes']);
 
 function renderRoute() {
-  const route = (window.location.hash || '#dashboard').replace('#', '');
-  const workspace = document.querySelector('[data-workspace]');
-  const routeNodes = workspace ? workspace.querySelectorAll('[data-route]') : document.querySelectorAll('[data-route]');
+  const rawRoute = (window.location.hash || '#dashboard').replace('#', '');
+  const activeRoute = rawRoute === '' ? 'dashboard' : rawRoute;
+  const displayRoute = workspaceRoutes.has(activeRoute) || activeRoute === 'workspace' ? 'workspace' : activeRoute;
+  const routeNodes = document.querySelectorAll('[data-route]');
   routeNodes.forEach((node) => {
-    const isDashboardFallback = route === '' && node.dataset.route === 'dashboard';
-    node.style.display = node.dataset.route === route || isDashboardFallback ? '' : 'none';
+    const isDashboardFallback = rawRoute === '' && node.dataset.route === 'dashboard';
+    const shouldShow = node.dataset.route === displayRoute || isDashboardFallback;
+    node.style.display = shouldShow ? '' : 'none';
   });
 
-  const activeRoute = route === '' ? 'dashboard' : route;
+  syncWorkspacePanels(activeRoute);
+
   document.querySelectorAll('[data-nav]').forEach((link) => {
     const isActive = link.dataset.nav === activeRoute;
     link.classList.toggle('btn-active', isActive);
@@ -43,7 +47,29 @@ function renderRoute() {
     moreSummary.setAttribute('aria-expanded', moreDetails.open ? 'true' : 'false');
     moreSummary.classList.toggle('more-active', moreDetails.open);
   }
+}
 
+function syncWorkspacePanels(route) {
+  const workspace = document.querySelector('[data-workspace-shell]');
+  if (!workspace) {
+    return;
+  }
+
+  const activePanel = workspaceRoutes.has(route) ? route : 'reminders';
+  workspace.dataset.workspaceActive = activePanel;
+
+  workspace.querySelectorAll('[data-workspace-panel]').forEach((panel) => {
+    const isActive = panel.dataset.workspacePanel === activePanel;
+    panel.hidden = !isActive;
+    panel.classList.toggle('hidden', !isActive);
+    panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+  });
+
+  workspace.querySelectorAll('[data-workspace-tab]').forEach((tab) => {
+    const isActive = tab.dataset.workspaceTab === activePanel;
+    tab.classList.toggle('btn-active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
 }
 
 function initGroupedNavHandlers() {
@@ -112,9 +138,33 @@ function initMobileNavHandlers() {
   });
 }
 
+function initWorkspaceTabs() {
+  const workspace = document.querySelector('[data-workspace-shell]');
+  if (!workspace) {
+    return;
+  }
+
+  workspace.querySelectorAll('[data-workspace-tab]').forEach((tab) => {
+    tab.addEventListener('click', (event) => {
+      event.preventDefault();
+      const targetRoute = tab.dataset.workspaceTab;
+      if (!targetRoute) {
+        return;
+      }
+      const targetHash = `#${targetRoute}`;
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
+        return;
+      }
+      renderRoute();
+    });
+  });
+}
+
 function initRouter() {
   initGroupedNavHandlers();
   initMobileNavHandlers();
+  initWorkspaceTabs();
   renderRoute();
 }
 

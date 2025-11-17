@@ -47,13 +47,49 @@ function initReminderModalUI() {
   const form = document.getElementById('add-reminder-form') ?? document.getElementById('reminder-form');
   const titleField = document.getElementById('reminder-title');
 
-  if (!modal || !form || !titleField) {
+  if (!form || !titleField) {
     return;
   }
 
   const openButtons = document.querySelectorAll('[data-open-reminder-modal]');
 
   if (!openButtons.length) {
+    return;
+  }
+
+  if (!modal) {
+    const focusForm = () => {
+      if (!(titleField instanceof HTMLElement) || typeof titleField.focus !== 'function') {
+        return;
+      }
+      try {
+        titleField.focus({ preventScroll: false });
+      } catch {
+        titleField.focus();
+      }
+    };
+
+    openButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (typeof window !== 'undefined') {
+          const targetHash = '#reminders';
+          if (window.location.hash !== targetHash) {
+            window.location.hash = targetHash;
+            if (typeof window.renderRoute === 'function') {
+              window.renderRoute();
+            }
+          } else if (typeof window.renderRoute === 'function') {
+            window.renderRoute();
+          }
+        }
+
+        window.requestAnimationFrame(() => {
+          focusForm();
+        });
+      });
+    });
+
     return;
   }
 
@@ -322,6 +358,23 @@ function safeDispatchDocumentEvent(eventName, detail = {}) {
 }
 
 let routeFocusTimeoutId = null;
+const WORKSPACE_ROUTES = new Set(['reminders', 'planner', 'notes']);
+
+function getSectionForRoute(route) {
+  if (!route || typeof document === 'undefined') {
+    return null;
+  }
+
+  if (WORKSPACE_ROUTES.has(route)) {
+    const workspaceSection = document.querySelector('[data-route="workspace"]');
+    if (!workspaceSection) {
+      return null;
+    }
+    return workspaceSection.querySelector(`[data-workspace-panel="${route}"]`) ?? workspaceSection;
+  }
+
+  return document.querySelector(`[data-route="${route}"]`);
+}
 
 function getActiveRouteFromHash() {
   if (typeof window === 'undefined') {
@@ -341,7 +394,7 @@ function focusPrimaryRouteHeading(route) {
 
   window.clearTimeout(routeFocusTimeoutId);
   routeFocusTimeoutId = window.setTimeout(() => {
-    const section = document.querySelector(`[data-route="${route}"]`);
+    const section = getSectionForRoute(route);
     if (!section) {
       return;
     }
