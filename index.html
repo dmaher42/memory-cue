@@ -631,9 +631,9 @@
       <section data-route="reminders" class="space-y-6" style="display: none;">
         <div class="desktop-panel desktop-panel--reminders">
           <header class="desktop-panel-header">
-            <div class="flex flex-col gap-1">
-              <h1 class="desktop-panel-title">Reminders</h1>
-              <p class="desktop-panel-subtitle">Keep track of tasks, family updates, and prep work in one organised list.</p>
+            <div class="mb-6 px-6 pt-6 space-y-2">
+              <h1 class="desktop-panel-title text-2xl font-bold tracking-wide text-base-content">Reminders</h1>
+              <p class="desktop-panel-subtitle text-sm text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
             </div>
             <div class="desktop-panel-actions">
               <button
@@ -653,48 +653,43 @@
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">This week</button>
             <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Later</button>
           </div>
-          <ul id="reminders-list" class="desktop-reminders-list list-none">
+          <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-6">
           <li
-            class="reminder-item task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Submit unit overview"
           >
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-3">
               <p class="desktop-reminder-title reminder-title text-sm font-semibold leading-snug text-base-content">Submit unit overview</p>
               <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
-                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
-                  <span class="truncate">Due Friday</span>
-                </span>
                 <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="category">
                   <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Curriculum team</span>
                 </span>
               </div>
+              <div class="flex justify-end">
+                <span class="badge badge-outline badge-sm text-xs text-base-content" data-tone="due">Due Friday</span>
+              </div>
             </div>
-            <div class="flex items-start gap-1">
-              <button type="button" class="btn btn-ghost btn-circle btn-xs text-success" aria-label="Mark reminder as done">
+            <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
+              <button type="button" class="btn btn-ghost btn-sm text-success task-toolbar-btn" aria-label="Mark reminder as done">
                 <span aria-hidden="true">✓</span>
               </button>
-              <button type="button" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete reminder">
+              <button type="button" class="btn btn-ghost btn-sm text-error task-toolbar-btn" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
               </button>
             </div>
           </li>
           <li
-            class="reminder-item task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Email newsletter blurb"
           >
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-3">
               <p class="desktop-reminder-title reminder-title text-sm font-semibold leading-snug text-base-content">Email newsletter blurb</p>
               <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
-                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
-                  <span class="truncate">Due next week</span>
-                </span>
                 <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-secondary" data-tone="category">
                   <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
                   <span class="truncate">Communications</span>
@@ -704,36 +699,36 @@
                   <span class="truncate">Scheduled</span>
                 </span>
               </div>
+              <div class="flex justify-end">
+                <span class="badge badge-outline badge-sm text-xs text-base-content" data-tone="due">Due next week</span>
+              </div>
             </div>
-            <div class="flex items-start gap-1">
-              <button type="button" class="btn btn-ghost btn-circle btn-xs text-success" aria-label="Mark reminder as done">
+            <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
+              <button type="button" class="btn btn-ghost btn-sm text-success task-toolbar-btn" aria-label="Mark reminder as done">
                 <span aria-hidden="true">✓</span>
               </button>
-              <button type="button" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete reminder">
+              <button type="button" class="btn btn-ghost btn-sm text-error task-toolbar-btn" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
               </button>
             </div>
           </li>
           <li
-            class="reminder-item task-item desktop-task-card reminder-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             role="button"
             tabindex="0"
             aria-label="Edit reminder: Call guardians"
           >
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-3">
               <p class="desktop-reminder-title reminder-title text-sm font-semibold leading-snug text-base-content">Call guardians</p>
-              <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="due">
-                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
-                  <span class="truncate">Due tomorrow</span>
-                </span>
+              <div class="flex justify-end">
+                <span class="badge badge-outline badge-sm text-xs text-base-content" data-tone="due">Due tomorrow</span>
               </div>
             </div>
-            <div class="flex items-start gap-1">
-              <button type="button" class="btn btn-ghost btn-circle btn-xs text-success" aria-label="Mark reminder as done">
+            <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
+              <button type="button" class="btn btn-ghost btn-sm text-success task-toolbar-btn" aria-label="Mark reminder as done">
                 <span aria-hidden="true">✓</span>
               </button>
-              <button type="button" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete reminder">
+              <button type="button" class="btn btn-ghost btn-sm text-error task-toolbar-btn" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
               </button>
             </div>
@@ -745,15 +740,15 @@
       <section data-route="planner" class="space-y-6" style="display: none;">
         <div class="desktop-panel desktop-panel--planner">
           <header class="desktop-panel-header">
-            <div class="flex flex-col gap-1">
-              <h1 class="desktop-panel-title">Weekly planner</h1>
-              <p class="desktop-panel-subtitle">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
-            </div>
-            <div class="desktop-panel-actions flex flex-wrap items-center gap-2">
-              <button type="button" id="planner-duplicate-btn" class="btn btn-sm btn-outline">Duplicate plan</button>
-              <button type="button" id="planner-new-lesson-btn" class="btn btn-sm btn-primary">New lesson</button>
+            <div class="mb-6 px-6 pt-6 space-y-2">
+              <h1 class="desktop-panel-title text-2xl font-bold tracking-wide text-base-content">Weekly planner</h1>
+              <p class="desktop-panel-subtitle text-sm text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
             </div>
           </header>
+          <div class="flex justify-end gap-2 px-6 mb-4">
+            <button type="button" id="planner-duplicate-btn" class="btn btn-sm btn-outline">Duplicate plan</button>
+            <button type="button" id="planner-new-lesson-btn" class="btn btn-sm btn-primary">New lesson</button>
+          </div>
           <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
             <button type="button" id="planner-prev" class="btn btn-xs btn-secondary" aria-label="View previous week">Prev</button>
             <button type="button" id="planner-today" class="btn btn-xs btn-secondary" aria-label="Jump to current week">Today</button>
@@ -909,9 +904,9 @@
       <section data-route="notes" class="space-y-6" style="display: none;">
         <div class="desktop-panel desktop-panel--notes-intro">
           <header class="desktop-panel-header">
-            <div class="flex flex-col gap-1">
-              <h1 class="desktop-panel-title">Notes</h1>
-              <p class="desktop-panel-subtitle">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
+            <div class="mb-6 px-6 pt-6 space-y-2">
+              <h1 class="desktop-panel-title text-2xl font-bold tracking-wide text-base-content">Notes</h1>
+              <p class="desktop-panel-subtitle text-sm text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
             </div>
           </header>
         </div>
@@ -919,12 +914,12 @@
           <article class="desktop-panel card notes-editor-card rounded-xl border border-base-300 bg-base-100 text-base-content shadow-sm dark:bg-base-200 dark:text-base-content">
             <div class="card-body gap-4 p-6">
               <div class="flex flex-col gap-4">
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2 mb-2">
                   <label for="noteTitle" class="text-sm font-medium">Title</label>
                   <input
                     id="noteTitle"
                     type="text"
-                    class="input input-bordered w-full"
+                    class="input input-bordered w-full text-base"
                     placeholder="e.g. Kids basketball schedule – this weekend"
                   />
                 </div>
@@ -932,7 +927,7 @@
                   <label for="noteBody" class="text-sm font-medium">Body</label>
                   <textarea
                     id="noteBody"
-                    class="textarea w-full resize-y min-h-[12rem] max-h-[32rem] bg-transparent text-base-content outline-none"
+                    class="textarea textarea-bordered w-full min-h-[10rem] resize-y text-base p-3"
                     rows="10"
                     placeholder="Write your note here…"
                   ></textarea>
