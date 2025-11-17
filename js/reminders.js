@@ -3265,8 +3265,18 @@ export async function initReminders(sel = {}) {
       if (summary.done) {
         titleEl.classList.add('line-through', 'text-base-content/60');
       }
+      if (isMobile) {
+        titleEl.dataset.reminderTitle = 'true';
+      }
       titleEl.textContent = reminder.title;
-      content.appendChild(titleEl);
+
+      let titleSlot = titleEl;
+      if (isMobile) {
+        titleSlot = document.createElement('div');
+        titleSlot.className = 'reminder-title-slot';
+        titleSlot.appendChild(titleEl);
+      }
+      content.appendChild(titleSlot);
 
       const metaRow = document.createElement('div');
       metaRow.className = isMobile
