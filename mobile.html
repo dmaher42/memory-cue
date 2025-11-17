@@ -3287,96 +3287,102 @@
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes">
       <div class="flex flex-col gap-4">
-        <section class="card bg-base-100 border shadow-sm rounded-2xl">
-          <div class="card-body gap-4">
-            <header class="notes-hero">
-              <div class="notes-hero-label">
-                <span class="text-xs uppercase tracking-wide text-base-content/50">Scratch Notes</span>
-                <p class="text-xs text-base-content/60" data-note-summary>
-                  Quick jot pad that syncs with your desktop notebook.
-                </p>
-              </div>
-              <div class="notes-hero-actions">
-                <div class="notes-hero-buttons flex flex-wrap items-center gap-2 justify-between w-full">
-                  <button
-                    id="noteSaveMobile"
-                    class="btn btn-primary btn-sm shadow-md shadow-primary/20"
-                    type="button"
-                  >
-                    Save note
-                  </button>
-                  <button
-                    id="noteNewMobile"
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                  >
-                    New note
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    data-action="open-saved-notes"
-                  >
-                    Saved notes
-                  </button>
-                </div>
-              </div>
-            </header>
+        <div
+          id="scratch-notes-card"
+          class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-4 space-y-3"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <span class="text-xs uppercase tracking-wide text-base-content/50">Scratch notes</span>
+              <p class="text-xs text-base-content/60" data-note-summary>
+                Quick jot pad that syncs with your desktop notebook.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              data-action="open-saved-notes"
+            >
+              Saved notes
+            </button>
+          </div>
 
-            <div class="flex flex-col gap-5">
-              <label class="flex flex-col gap-2" for="noteTitleMobile">
-                <span class="text-sm font-medium text-base-content">Title</span>
-                <input
-                  id="noteTitleMobile"
-                  type="text"
-                  class="input input-bordered input-sm w-full rounded-2xl focus-visible:outline-none focus-visible:ring focus-visible:ring-primary/30"
-                  placeholder="e.g. Kids basketball schedule – this weekend"
-                />
-              </label>
-
-              <div
-                class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-200/70 bg-base-100/80 px-0 md:px-3 py-2 text-xs text-base-content/70"
-                data-note-toolbar
+          <div class="space-y-4">
+            <div class="space-y-1">
+              <label
+                for="noteTitleMobile"
+                class="text-xs font-semibold tracking-wide text-base-content/70 uppercase"
               >
-                <span class="font-semibold text-base-content text-sm">Text size</span>
-                <select
-                  class="select select-bordered select-xs w-full max-w-[160px]"
-                  data-mobile-notes-text-size
-                  aria-label="Select scratch notes text size"
-                >
-                  <option value="small">Small</option>
-                  <option value="default" selected>Default</option>
-                  <option value="large">Large</option>
-                </select>
-              </div>
-
-              <label class="flex flex-col gap-2" for="noteBodyMobile">
-                <span class="text-sm font-medium text-base-content">Body</span>
-                <div class="note-body-wrapper">
-                  <div
-                    class="note-body-field"
-                    data-role="note-body-field"
-                    data-placeholder="Start typing your scratch note…"
-                    data-has-content="false"
-                  >
-                    <textarea
-                      id="noteBodyMobile"
-                      class="textarea textarea-sm w-full min-h-[200px] leading-relaxed resize-none p-4 rounded-lg bg-base-100 text-base text-base-content placeholder:text-base-content/80 placeholder:opacity-80 focus-visible:outline-none focus-visible:ring-0"
-                      placeholder="Start typing your scratch note…"
-                    ></textarea>
-                  </div>
-                </div>
+                Title
               </label>
+              <input
+                id="noteTitleMobile"
+                type="text"
+                class="input input-bordered input-sm w-full text-sm text-base-content"
+                placeholder="e.g. Kids basketball schedule – this weekend"
+              />
+            </div>
 
-              <div class="flex items-center justify-between gap-2 text-xs text-base-content/60" data-note-detail-list>
-                <span id="notesStatusText" class="truncate"></span>
-                <span class="flex items-center gap-1 whitespace-nowrap">
-                  <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>
-                </span>
+            <div
+              class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-200/70 bg-base-100/80 px-0 md:px-3 py-2 text-xs text-base-content/70"
+              data-note-toolbar
+            >
+              <span class="font-semibold text-base-content text-sm">Text size</span>
+              <select
+                class="select select-bordered select-xs w-full max-w-[160px]"
+                data-mobile-notes-text-size
+                aria-label="Select scratch notes text size"
+              >
+                <option value="small">Small</option>
+                <option value="default" selected>Default</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label
+                for="noteBodyMobile"
+                class="text-xs font-semibold tracking-wide text-base-content/70 uppercase"
+              >
+                Note
+              </label>
+              <div class="note-body-wrapper">
+                <div
+                  class="note-body-field"
+                  data-role="note-body-field"
+                  data-placeholder="Start typing your scratch note…"
+                  data-has-content="false"
+                >
+                  <textarea
+                    id="noteBodyMobile"
+                    class="textarea textarea-bordered w-full min-h-[8rem] text-sm text-base-content"
+                    placeholder="Start typing your scratch note…"
+                  ></textarea>
+                </div>
               </div>
             </div>
+
+            <div class="flex items-center justify-between gap-2 text-xs text-base-content/60" data-note-detail-list>
+              <span id="notesStatusText" class="truncate"></span>
+              <span class="flex items-center gap-1 whitespace-nowrap">
+                <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>
+              </span>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-1">
+              <button
+                id="noteNewMobile"
+                type="button"
+                class="btn btn-outline btn-sm"
+              >
+                New note
+              </button>
+              <button id="noteSaveMobile" class="btn btn-primary btn-sm" type="button">
+                Save note
+              </button>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
     </section>
     <!-- END GPT CHANGE -->
