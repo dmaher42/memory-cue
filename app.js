@@ -991,7 +991,24 @@ function createPlannerLessonModal() {
   const closeButtons = modal.querySelectorAll('[data-planner-modal-close]');
   const mainContent = document.getElementById('mainContent');
   const primaryNav = document.querySelector('nav[aria-label="Primary"]');
-  const backgroundTargets = [mainContent, primaryNav].filter(Boolean);
+  const backgroundTargets = (() => {
+    const targets = [];
+    if (primaryNav instanceof HTMLElement) {
+      targets.push(primaryNav);
+    }
+    if (mainContent instanceof HTMLElement) {
+      if (mainContent.contains(modal)) {
+        targets.push(
+          ...Array.from(mainContent.children).filter(
+            (child) => child instanceof HTMLElement && child !== modal
+          )
+        );
+      } else {
+        targets.push(mainContent);
+      }
+    }
+    return targets;
+  })();
 
   const focusableSelectors = [
     'a[href]',
@@ -1442,6 +1459,8 @@ function createPlannerLessonModal() {
 }
 
 const remindersCountElement = document.getElementById('remindersCount');
+const plannerLessonModalController =
+  typeof document !== 'undefined' ? createPlannerLessonModal() : null;
 const plannerCountElement = document.getElementById('plannerCount');
 const plannerSubtitleElement = document.getElementById('plannerSubtitle');
 const resourcesCountElement = document.getElementById('resourcesCount');
