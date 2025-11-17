@@ -2806,6 +2806,29 @@
         padding-inline: 0.7rem;
       }
     }
+
+    @media (max-width: 420px) {
+      /* Prevent the add button and quick add area from stretching beyond the viewport */
+      .mc-add-btn-wide {
+        max-width: 84vw !important; /* cap width relative to viewport */
+        min-width: 0 !important;    /* allow flex children to shrink */
+        flex: 0 1 auto !important;
+        margin-inline: auto !important; /* center inside narrow header row */
+      }
+
+      /* Ensure quick-add row children can shrink properly */
+      .mc-quick-add-row .mc-quick-input,
+      .mc-quick-add-row .mc-quick-actions,
+      .mc-quick-add-row .mc-quick-submit {
+        min-width: 0 !important;
+      }
+
+      /* If the button is inside the centered header container, keep spacing reasonable */
+      .mx-auto.max-w-md {
+        padding-left: 0.6rem;
+        padding-right: 0.6rem;
+      }
+    }
   </style>
 
   <style>
