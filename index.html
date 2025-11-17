@@ -438,6 +438,91 @@
               </div>
             </div>
           </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="md:col-span-1">
+              <div class="bg-base-100/90 border border-base-300 rounded-3xl shadow-lg px-5 py-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <h2 class="text-sm font-semibold tracking-wide text-base-content/80 uppercase">
+                    Today’s reminders
+                  </h2>
+                  <span class="text-lg" aria-hidden="true">⏰</span>
+                </div>
+
+                <p class="text-sm text-base-content/80">
+                  A quick snapshot of what you’ve scheduled for today.
+                </p>
+
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-semibold text-base-content" id="dashboard-reminders-today-count">
+                    –
+                  </span>
+                  <span class="text-xs text-base-content/70 uppercase tracking-wide">
+                    reminders today
+                  </span>
+                </div>
+
+                <ul class="space-y-1 text-sm text-base-content/80">
+                  <li class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+                    <span>Use quick-add in Reminders to capture new tasks.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
+                    <span>Mark tasks complete from the Reminders tab when they’re done.</span>
+                  </li>
+                </ul>
+
+                <div class="pt-1">
+                  <button class="btn btn-outline btn-sm" data-route-target="reminders">
+                    Open Reminders
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="md:col-span-1">
+              <div class="bg-base-100/90 border border-base-300 rounded-3xl shadow-lg px-5 py-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <h2 class="text-sm font-semibold tracking-wide text-base-content/80 uppercase">
+                    Next lesson
+                  </h2>
+                  <span class="text-lg" aria-hidden="true">🗓️</span>
+                </div>
+
+                <p class="text-sm text-base-content/80">
+                  Jot down the key focus for your upcoming class so it’s top of mind.
+                </p>
+
+                <div class="space-y-1">
+                  <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-title">
+                    Lesson title
+                  </label>
+                  <input
+                    id="dashboard-next-lesson-title"
+                    type="text"
+                    class="input input-bordered input-sm w-full text-sm text-base-content"
+                    placeholder="e.g. Yr7 English – Two Wolves chapter 5"
+                  >
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-focus">
+                    Focus / key point
+                  </label>
+                  <textarea
+                    id="dashboard-next-lesson-focus"
+                    class="textarea textarea-bordered w-full min-h-[4rem] text-sm text-base-content"
+                    placeholder="Main activity, checkpoint, or behaviour focus for this lesson."
+                  ></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-1">
+                  <button class="btn btn-outline btn-sm">
+                    Copy to planner
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <section class="dashboard-kpis" aria-labelledby="kpi-heading">
