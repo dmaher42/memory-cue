@@ -87,7 +87,7 @@ html[data-theme="professional"] body.desktop-shell {
     radial-gradient(circle at 18% 0%, rgba(99, 102, 241, 0.18), transparent 60%),
     radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
     linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
   font-family: var(--font-body);
   min-height: 100vh;
 }
@@ -105,10 +105,10 @@ html[data-theme="professional"] .desktop-header-bar {
   padding: 0.45rem 1.25rem;
   margin: 0 auto 0.75rem;
   max-width: 1180px;
-  background: color-mix(in srgb, var(--desktop-header-bg) 92%, transparent);
+  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 92%, transparent);
   backdrop-filter: blur(14px);
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 75%, transparent);
   box-shadow: 0 18px 38px rgba(79, 70, 229, 0.16);
 }
 
@@ -147,14 +147,14 @@ html[data-theme="professional"] .desktop-header-brand-link {
   gap: 0.6rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--desktop-header-bg) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 65%, transparent);
-  color: var(--desktop-text-main);
+  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 65%, transparent);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 html[data-theme="professional"] .desktop-header-brand-link:hover {
-  background: color-mix(in srgb, var(--desktop-header-bg) 80%, transparent);
+  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 80%, transparent);
 }
 
 html[data-theme="professional"] .desktop-header-logo {
@@ -166,12 +166,12 @@ html[data-theme="professional"] .desktop-header-title {
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
 }
 
 html[data-theme="professional"] .desktop-header-subtitle {
   font-size: 0.78rem;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 65%, transparent));
 }
 
 html[data-theme="professional"] .desktop-header-right #auth-feedback {
@@ -200,9 +200,9 @@ html[data-theme="professional"] .desktop-account-controls {
 
 html[data-theme="professional"] .desktop-account-toggle {
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 65%, transparent);
-  background: color-mix(in srgb, var(--desktop-header-bg) 72%, transparent);
-  color: var(--desktop-text-main);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 65%, transparent);
+  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 72%, transparent);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -213,13 +213,13 @@ html[data-theme="professional"] .desktop-account-toggle {
 
 html[data-theme="professional"] .desktop-account-toggle:hover,
 html[data-theme="professional"] .desktop-account-toggle:focus-visible {
-  background: color-mix(in srgb, var(--desktop-header-bg) 85%, transparent);
-  color: var(--desktop-nav-text);
+  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 85%, transparent);
+  color: var(--desktop-nav-text, var(--color-base-content, #0f172a));
   box-shadow: 0 10px 18px rgba(15, 23, 42, 0.18);
 }
 
 html[data-theme="professional"] [data-account-panel-container][data-account-collapsed="false"] .desktop-account-toggle {
-  background: color-mix(in srgb, var(--desktop-nav-active) 24%, var(--desktop-header-bg) 70%);
+  background: color-mix(in srgb, var(--desktop-nav-active, var(--color-primary, #4f46e5)) 24%, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 70%);
   color: #ffffff;
   box-shadow: 0 16px 30px rgba(79, 70, 229, 0.28);
 }
@@ -244,8 +244,8 @@ html[data-theme="professional"] [data-account-panel-container][data-account-coll
 html[data-theme="professional"] .desktop-account-panel {
   width: 100%;
   border-radius: 1rem;
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 70%, transparent);
-  background: color-mix(in srgb, var(--desktop-header-bg) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 70%, transparent);
+  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 75%, transparent);
   box-shadow: 0 18px 34px rgba(15, 23, 42, 0.18);
   margin-top: 0.1rem;
   padding: 0.9rem;
@@ -281,7 +281,7 @@ html[data-theme="professional"] .desktop-header-nav-tabs {
   border-radius: 999px;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(14, 165, 233, 0.12));
   box-shadow: 0 16px 32px rgba(79, 70, 229, 0.18);
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 70%, transparent);
 }
 
 html[data-theme="professional"] .desktop-header-nav-tabs .btn {
@@ -291,7 +291,7 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn {
   padding: 0.3rem 0.85rem;
   border-width: 0;
   background: transparent;
-  color: var(--desktop-nav-text-muted);
+  color: var(--desktop-nav-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 60%, transparent));
   box-shadow: none;
 }
 
@@ -303,8 +303,8 @@ html[data-theme="professional"] .desktop-header-nav-tabs .btn.btn-active {
 }
 
 html[data-theme="professional"] .desktop-header-nav-tabs .btn:hover {
-  background: color-mix(in srgb, var(--desktop-nav-active) 18%, transparent);
-  color: var(--desktop-nav-text);
+  background: color-mix(in srgb, var(--desktop-nav-active, var(--color-primary, #4f46e5)) 18%, transparent);
+  color: var(--desktop-nav-text, var(--color-base-content, #0f172a));
 }
 
 @media (min-width: 1024px) {
@@ -388,10 +388,10 @@ html[data-theme="professional"] .desktop-shell .desktop-dashboard-grid {
 
 
 html[data-theme="professional"] .desktop-shell .desktop-panel {
-  background: var(--desktop-surface);
-  border-radius: var(--desktop-radius-card);
-  border: 1px solid var(--desktop-border-subtle);
-  box-shadow: var(--desktop-shadow-card);
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  border-radius: var(--desktop-radius-card, 18px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  box-shadow: var(--desktop-shadow-card, 0 12px 30px rgba(15, 23, 42, 0.12));
   padding: 0.9rem 0.95rem;
   display: flex;
   flex-direction: column;
@@ -400,7 +400,7 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
 
 .desktop-panel.desktop-panel--planner {
   background: var(--planner-panel-bg);
-  border: 1px solid var(--planner-panel-border, var(--desktop-border-subtle));
+  border: 1px solid var(--planner-panel-border, var(--desktop-border-subtle, var(--color-base-300, #d7def1)));
   box-shadow: var(--planner-card-shadow);
 }
 
@@ -408,7 +408,7 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
   background: color-mix(in srgb, var(--planner-panel-bg) 75%, var(--page-bg-accent) 25%);
   border-radius: 999px;
   padding: 0.35rem 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--planner-panel-border, var(--desktop-border-subtle)) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--planner-panel-border, var(--desktop-border-subtle, var(--color-base-300, #d7def1))) 70%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -420,7 +420,7 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
   background: var(--planner-card-bg);
   border-color: var(--planner-card-border);
   box-shadow: var(--planner-card-shadow);
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
 }
 
 .desktop-panel.desktop-panel--planner .card:hover {
@@ -435,7 +435,7 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
 .desktop-panel.desktop-panel--planner textarea[data-planner-notes] {
   background: color-mix(in srgb, var(--planner-card-bg) 85%, #ffffff 15%);
   border-color: color-mix(in srgb, var(--planner-card-border) 80%, transparent);
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
   background-repeat: no-repeat;
   background-position: right 0.85rem center;
   background-size: 1.15rem;
@@ -443,7 +443,7 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
 }
 
 .desktop-panel.desktop-panel--planner textarea[data-planner-notes]:focus {
-  border-color: color-mix(in srgb, var(--desktop-nav-active, #4f46e5) 55%, var(--planner-card-border) 45%);
+  border-color: color-mix(in srgb, var(--desktop-nav-active, var(--color-primary, #4f46e5)) 55%, var(--planner-card-border) 45%);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--planner-card-highlight) 65%, transparent);
 }
 
@@ -467,7 +467,7 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
 
 html[data-theme="professional"] .desktop-shell .desktop-panel-body {
   font-size: 0.85rem;
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-hero {
@@ -476,20 +476,20 @@ html[data-theme="professional"] .desktop-shell .desktop-hero {
   margin: 0 auto;
   padding: clamp(1.4rem, 2vw, 2.5rem);
   box-sizing: border-box;
-  background: var(--desktop-surface);
-  border-radius: var(--desktop-radius-card);
-  border: 1px solid var(--desktop-border-subtle);
-  box-shadow: var(--desktop-shadow-card);
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  border-radius: var(--desktop-radius-card, 18px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  box-shadow: var(--desktop-shadow-card, 0 12px 30px rgba(15, 23, 42, 0.12));
 }
 
 html[data-theme="professional"]
   .desktop-shell
   [data-route="dashboard"]
   .dashboard-card {
-  background: var(--desktop-surface);
-  border-radius: var(--desktop-radius-card);
-  border: 1px solid var(--desktop-border-subtle);
-  box-shadow: var(--desktop-shadow-card);
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  border-radius: var(--desktop-radius-card, 18px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  box-shadow: var(--desktop-shadow-card, 0 12px 30px rgba(15, 23, 42, 0.12));
   overflow: hidden;
 }
 
@@ -505,8 +505,8 @@ html[data-theme="professional"]
   .desktop-shell
   [data-route="dashboard"]
   .dashboard-card--compact {
-  border-radius: calc(var(--desktop-radius-card) - 6px);
-  box-shadow: var(--desktop-shadow-subtle);
+  border-radius: calc(var(--desktop-radius-card, 18px) - 6px);
+  box-shadow: var(--desktop-shadow-subtle, 0 4px 14px rgba(15, 23, 42, 0.08));
 }
 
 html[data-theme="professional"]
@@ -521,10 +521,10 @@ html[data-theme="professional"]
 html[data-theme="professional"]
   .desktop-shell
   :is(.dashboard-kpi-strip, .dashboard-kpis) {
-  background: var(--desktop-surface);
-  border-radius: var(--desktop-radius-card);
-  border: 1px solid var(--desktop-border-subtle);
-  box-shadow: var(--desktop-shadow-card);
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  border-radius: var(--desktop-radius-card, 18px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  box-shadow: var(--desktop-shadow-card, 0 12px 30px rgba(15, 23, 42, 0.12));
   padding: 0.9rem 1rem;
 }
 
@@ -532,10 +532,10 @@ html[data-theme="professional"]
   .desktop-shell
   :is(.dashboard-kpi-strip, .dashboard-kpis)
   :is(.dashboard-kpi-tile, .dashboard-card--compact) {
-  background: var(--desktop-surface);
-  border-radius: calc(var(--desktop-radius-card) - 6px);
-  border: 1px solid var(--desktop-border-subtle);
-  box-shadow: var(--desktop-shadow-subtle);
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  border-radius: calc(var(--desktop-radius-card, 18px) - 6px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  box-shadow: var(--desktop-shadow-subtle, 0 4px 14px rgba(15, 23, 42, 0.08));
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-hero .hero-content {
@@ -571,17 +571,17 @@ html[data-theme="professional"] .desktop-shell #weekAtAGlanceList::before {
   top: 0.7rem;
   bottom: 1.1rem;
   width: 1px;
-  background: color-mix(in srgb, var(--desktop-border-subtle) 70%, transparent);
+  background: color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 70%, transparent);
 }
 
 html[data-theme="professional"]
   .desktop-shell
   :is(#dailySnapshotList, #todaysFocusList, #weekAtAGlanceList, #pinnedNotesList)
   > li:not([data-empty-state]) {
-  border-radius: calc(var(--desktop-radius-card) - 6px);
-  border: 1px solid var(--desktop-border-subtle);
-  background: var(--desktop-surface);
-  box-shadow: var(--desktop-shadow-subtle);
+  border-radius: calc(var(--desktop-radius-card, 18px) - 6px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  box-shadow: var(--desktop-shadow-subtle, 0 4px 14px rgba(15, 23, 42, 0.08));
   padding: 0.85rem 0.95rem;
   gap: 0.25rem;
   display: flex;
@@ -607,35 +607,35 @@ html[data-theme="professional"]
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 999px;
-  background: var(--desktop-nav-active);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--desktop-nav-active) 25%, transparent);
+  background: var(--desktop-nav-active, var(--color-primary, #4f46e5));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--desktop-nav-active, var(--color-primary, #4f46e5)) 25%, transparent);
 }
 
 html[data-theme="professional"] .desktop-shell .dashboard-today-focus dl,
 html[data-theme="professional"] .desktop-shell .dashboard-today-focus dd {
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
 }
 
 html[data-theme="professional"] .desktop-shell .dashboard-pinned-notes li p,
 html[data-theme="professional"] .desktop-shell .dashboard-today-focus li p,
 html[data-theme="professional"] .desktop-shell #dailySnapshotList p {
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
 }
 
 html[data-theme="professional"] .desktop-shell .dashboard-shortcuts .btn {
-  border-radius: calc(var(--desktop-radius-card) - 10px);
-  border: 1px solid var(--desktop-border-subtle);
-  background: color-mix(in srgb, var(--desktop-surface) 86%, transparent);
-  color: var(--desktop-text-main);
-  box-shadow: var(--desktop-shadow-subtle);
+  border-radius: calc(var(--desktop-radius-card, 18px) - 10px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  background: color-mix(in srgb, var(--desktop-surface, var(--color-base-100, #ffffff)) 86%, transparent);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
+  box-shadow: var(--desktop-shadow-subtle, 0 4px 14px rgba(15, 23, 42, 0.08));
   padding: 0.55rem 0.75rem;
   font-weight: 600;
 }
 
 html[data-theme="professional"] .desktop-shell .dashboard-shortcuts .btn:hover,
 html[data-theme="professional"] .desktop-shell .dashboard-shortcuts .btn:focus-visible {
-  background: color-mix(in srgb, var(--desktop-nav-active) 14%, var(--desktop-surface) 80%);
-  color: var(--desktop-text-main);
+  background: color-mix(in srgb, var(--desktop-nav-active, var(--color-primary, #4f46e5)) 14%, var(--desktop-surface, var(--color-base-100, #ffffff)) 80%);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
 }
 
 html[data-theme="professional"]
@@ -651,7 +651,7 @@ html[data-theme="professional"]
   #weekAtAGlanceList
   > li[data-empty-state] {
   font-style: italic;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 65%, transparent));
   margin-top: 0.4rem;
 }
 
@@ -674,19 +674,19 @@ html[data-theme="professional"] .desktop-shell .desktop-panel-title {
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 65%, transparent));
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-panel-subtitle {
   font-size: 0.8rem;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 65%, transparent));
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-panel-toolbar {
-  background: var(--desktop-surface-muted);
-  border-radius: calc(var(--desktop-radius-card) - 6px);
-  border: 1px solid var(--desktop-border-subtle);
-  box-shadow: var(--desktop-shadow-subtle);
+  background: var(--desktop-surface-muted, var(--color-base-200, #e6edff));
+  border-radius: calc(var(--desktop-radius-card, 18px) - 6px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  box-shadow: var(--desktop-shadow-subtle, 0 4px 14px rgba(15, 23, 42, 0.08));
   padding: 0.5rem 0.75rem;
 }
 
@@ -720,8 +720,8 @@ html[data-theme="professional"] .desktop-shell .desktop-reminders-list {
 
 html[data-theme="professional"] .desktop-shell .reminder-item {
   border-radius: 12px;
-  border: 1px solid var(--desktop-border-subtle);
-  background-color: var(--desktop-surface-muted);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  background-color: var(--desktop-surface-muted, var(--color-base-200, #e6edff));
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   padding: 0.6rem 0.75rem;
   display: flex;
@@ -740,7 +740,7 @@ html[data-theme="professional"] .desktop-shell .reminder-item:hover {
 
 html[data-theme="professional"] .desktop-shell .reminder-title {
   font-weight: 600;
-  color: var(--desktop-text-main);
+  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -751,7 +751,7 @@ html[data-theme="professional"] .desktop-shell .reminder-meta {
   justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: var(--desktop-text-muted);
+  color: var(--desktop-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 65%, transparent));
 }
 
 html[data-theme="professional"] .desktop-shell .btn-primary,
@@ -780,7 +780,7 @@ html[data-theme="professional"] .desktop-shell .cue-btn-ghost {
   border-radius: 999px;
   font-size: 0.8rem;
   padding: 0.35rem 0.7rem;
-  color: var(--desktop-nav-text-muted);
+  color: var(--desktop-nav-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 60%, transparent));
 }
 
 html[data-theme="professional"] .desktop-shell .cue-btn-sm {

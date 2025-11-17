@@ -40,6 +40,27 @@
   --border: 2px;
   --depth: 1;
   --noise: 1;
+
+  --background-color: #fff8f1;
+  --card-border: #ead8c8;
+  --accent-color: #b46a55;
+
+  --desktop-bg: #fff8f1;
+  --desktop-surface: #fffdf8;
+  --desktop-surface-muted: #f6ede4;
+  --desktop-border-subtle: #e0cec0;
+  --desktop-header-bg: #f3e6dc;
+  --desktop-header-border: #d9c6b7;
+  --desktop-text-main: #3f2c27;
+  --desktop-text-muted: #8a6d61;
+  --desktop-nav-bg: #f5e9df;
+  --desktop-nav-active: #b46a55;
+  --desktop-nav-text: #3f2c27;
+  --desktop-nav-text-muted: #9d7f71;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 12px 30px rgba(108, 74, 58, 0.2);
+  --desktop-shadow-subtle: 0 4px 14px rgba(108, 74, 58, 0.12);
 }
 
 @plugin "daisyui/theme" {
@@ -75,6 +96,27 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+
+  --background-color: #19172b;
+  --card-border: #3a3459;
+  --accent-color: #ff79c6;
+
+  --desktop-bg: #181527;
+  --desktop-surface: #221f3b;
+  --desktop-surface-muted: #292347;
+  --desktop-border-subtle: #3d3560;
+  --desktop-header-bg: #1f1b33;
+  --desktop-header-border: #413863;
+  --desktop-text-main: #f8f7ff;
+  --desktop-text-muted: #c9c4e7;
+  --desktop-nav-bg: #241f3c;
+  --desktop-nav-active: #ff79c6;
+  --desktop-nav-text: #f8f7ff;
+  --desktop-nav-text-muted: #b5b0d8;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 18px 36px rgba(2, 3, 10, 0.65);
+  --desktop-shadow-subtle: 0 6px 18px rgba(2, 3, 10, 0.4);
 }
 
 @plugin "daisyui/theme" {
@@ -110,6 +152,27 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+
+  --background-color: #080c16;
+  --card-border: #1f2937;
+  --accent-color: #60a5fa;
+
+  --desktop-bg: #080c16;
+  --desktop-surface: #121a2a;
+  --desktop-surface-muted: #1b2435;
+  --desktop-border-subtle: #2a3547;
+  --desktop-header-bg: #101827;
+  --desktop-header-border: #303c52;
+  --desktop-text-main: #e5ecff;
+  --desktop-text-muted: #a1b2d9;
+  --desktop-nav-bg: #141e2f;
+  --desktop-nav-active: #60a5fa;
+  --desktop-nav-text: #e5ecff;
+  --desktop-nav-text-muted: #9ab0d8;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 18px 40px rgba(1, 4, 14, 0.65);
+  --desktop-shadow-subtle: 0 6px 18px rgba(1, 4, 14, 0.45);
 }
 
 :root[data-theme="caramellatte"],
@@ -143,6 +206,27 @@
   --border: 2px;
   --depth: 1;
   --noise: 1;
+
+  --background-color: #fff8f1;
+  --card-border: #ead8c8;
+  --accent-color: #b46a55;
+
+  --desktop-bg: #fff8f1;
+  --desktop-surface: #fffdf8;
+  --desktop-surface-muted: #f6ede4;
+  --desktop-border-subtle: #e0cec0;
+  --desktop-header-bg: #f3e6dc;
+  --desktop-header-border: #d9c6b7;
+  --desktop-text-main: #3f2c27;
+  --desktop-text-muted: #8a6d61;
+  --desktop-nav-bg: #f5e9df;
+  --desktop-nav-active: #b46a55;
+  --desktop-nav-text: #3f2c27;
+  --desktop-nav-text-muted: #9d7f71;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 12px 30px rgba(108, 74, 58, 0.2);
+  --desktop-shadow-subtle: 0 4px 14px rgba(108, 74, 58, 0.12);
 }
 
 :root[data-theme="dracula"],
@@ -176,6 +260,27 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+
+  --background-color: #19172b;
+  --card-border: #3a3459;
+  --accent-color: #ff79c6;
+
+  --desktop-bg: #181527;
+  --desktop-surface: #221f3b;
+  --desktop-surface-muted: #292347;
+  --desktop-border-subtle: #3d3560;
+  --desktop-header-bg: #1f1b33;
+  --desktop-header-border: #413863;
+  --desktop-text-main: #f8f7ff;
+  --desktop-text-muted: #c9c4e7;
+  --desktop-nav-bg: #241f3c;
+  --desktop-nav-active: #ff79c6;
+  --desktop-nav-text: #f8f7ff;
+  --desktop-nav-text-muted: #b5b0d8;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 18px 36px rgba(2, 3, 10, 0.65);
+  --desktop-shadow-subtle: 0 6px 18px rgba(2, 3, 10, 0.4);
 }
 
 :root[data-theme="night"],
@@ -209,4 +314,25 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+
+  --background-color: #080c16;
+  --card-border: #1f2937;
+  --accent-color: #60a5fa;
+
+  --desktop-bg: #080c16;
+  --desktop-surface: #121a2a;
+  --desktop-surface-muted: #1b2435;
+  --desktop-border-subtle: #2a3547;
+  --desktop-header-bg: #101827;
+  --desktop-header-border: #303c52;
+  --desktop-text-main: #e5ecff;
+  --desktop-text-muted: #a1b2d9;
+  --desktop-nav-bg: #141e2f;
+  --desktop-nav-active: #60a5fa;
+  --desktop-nav-text: #e5ecff;
+  --desktop-nav-text-muted: #9ab0d8;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 18px 40px rgba(1, 4, 14, 0.65);
+  --desktop-shadow-subtle: 0 6px 18px rgba(1, 4, 14, 0.45);
 }
