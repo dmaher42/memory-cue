@@ -2791,6 +2791,64 @@
     }
   </style>
 
+  <style>
+    .notes-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: var(--mobile-quick-surface);
+      border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
+      box-shadow: var(--mobile-quick-shadow);
+      min-height: 3rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .notes-hero-label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .notes-hero-label p {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+
+    .notes-hero-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .notes-hero-buttons {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .notes-hero-buttons .btn {
+      padding-inline: 0.85rem;
+    }
+
+    @media (min-width: 640px) {
+      .notes-hero {
+        padding-inline: 1rem;
+        min-height: 3.2rem;
+      }
+    }
+  </style>
+
   <header class="sticky top-0 z-20 text-black shadow-md bg-white/80 backdrop-blur">
     <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-3">
       <div class="header-action-group">
@@ -3184,28 +3242,37 @@
       <div class="flex flex-col gap-4">
         <section class="card bg-base-100 border shadow-sm rounded-2xl">
           <div class="card-body gap-4">
-            <header class="flex items-center justify-between gap-2">
-              <div class="flex flex-col">
-                <h2 class="card-title text-base leading-tight">Scratch Notes</h2>
+            <header class="notes-hero">
+              <div class="notes-hero-label">
+                <span class="text-xs uppercase tracking-wide text-base-content/50">Scratch Notes</span>
                 <p class="text-xs text-base-content/60" data-note-summary>
                   Quick jot pad that syncs with your desktop notebook.
                 </p>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="notes-hero-actions">
                 <button
+                  id="noteSaveMobile"
+                  class="btn btn-primary btn-md shadow-md shadow-primary/20"
                   type="button"
-                  class="btn btn-ghost btn-sm rounded-full px-4"
-                  data-jump-view="reminders"
                 >
-                  Back
+                  Save note
                 </button>
-                <button
-                  type="button"
-                  class="btn btn-outline btn-sm rounded-full px-4"
-                  data-action="open-saved-notes"
-                >
-                  Saved notes
-                </button>
+                <div class="notes-hero-buttons">
+                  <button
+                    id="noteNewMobile"
+                    type="button"
+                    class="btn btn-ghost btn-xs"
+                  >
+                    New note
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs"
+                    data-action="open-saved-notes"
+                  >
+                    Saved notes
+                  </button>
+                </div>
               </div>
             </header>
 
@@ -3219,32 +3286,6 @@
                   placeholder="e.g. Kids basketball schedule – this weekend"
                 />
               </label>
-
-              <div class="flex flex-col gap-2">
-                <button
-                  id="noteSaveMobile"
-                  class="btn btn-primary btn-md w-full shadow-md shadow-primary/20"
-                  type="button"
-                >
-                  Save note
-                </button>
-                <div class="grid grid-cols-2 gap-2 w-full">
-                  <button
-                    id="noteNewMobile"
-                    type="button"
-                    class="btn btn-outline btn-sm col-span-2 sm:col-span-1"
-                  >
-                    New note
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm col-span-2 sm:col-span-1"
-                    data-action="open-saved-notes"
-                  >
-                    Saved notes
-                  </button>
-                </div>
-              </div>
 
               <div
                 class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-200/70 bg-base-100/80 px-3 py-2 text-xs text-base-content/70"
