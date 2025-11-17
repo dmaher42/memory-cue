@@ -2803,6 +2803,9 @@
       border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
       box-shadow: var(--mobile-quick-shadow);
       min-height: 3rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .notes-hero-label {
@@ -2810,6 +2813,7 @@
       flex-direction: column;
       gap: 0.1rem;
       min-width: 0;
+      flex: 1 1 auto;
     }
 
     .notes-hero-label p {
@@ -2823,6 +2827,8 @@
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .notes-hero-buttons {
