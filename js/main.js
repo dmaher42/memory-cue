@@ -10,6 +10,11 @@ initViewportHeight();
 
   const THEME_STORAGE_KEY = 'theme';
   const DEFAULT_THEME = 'professional';
+  const SUPPORTED_THEMES = ['professional', 'night'];
+  const LEGACY_THEME_MAP = {
+    dark: 'night',
+    light: 'professional',
+  };
 
   function safeGetItem(key) {
     try {
@@ -44,33 +49,72 @@ initViewportHeight();
   }
 
   function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
     document.documentElement.setAttribute('data-theme', theme);
   }
 
-  function resolveInitialTheme() {
-    const stored = safeGetItem(THEME_STORAGE_KEY);
-    if (stored) {
-      return stored;
+  function normalizeTheme(theme) {
+    if (!theme) return DEFAULT_THEME;
+    if (SUPPORTED_THEMES.includes(theme)) {
+      return theme;
+    }
+    if (LEGACY_THEME_MAP[theme]) {
+      return LEGACY_THEME_MAP[theme];
     }
     return DEFAULT_THEME;
   }
 
+  function resolveInitialTheme() {
+    const stored = safeGetItem(THEME_STORAGE_KEY);
+    const normalized = normalizeTheme(stored);
+    if (normalized !== stored && stored) {
+      safeSetItem(THEME_STORAGE_KEY, normalized);
+    }
+    return normalized;
+  }
+
+  function getNextTheme(current) {
+    const currentIndex = SUPPORTED_THEMES.indexOf(current);
+    if (currentIndex === -1) {
+      return SUPPORTED_THEMES[0];
+    }
+    return SUPPORTED_THEMES[(currentIndex + 1) % SUPPORTED_THEMES.length];
+  }
+
+  function getThemeIcon(button, theme) {
+    const dataset = button?.dataset || {};
+    switch (theme) {
+      case 'night':
+        return dataset.iconNight || dataset.iconDark || '🌙';
+      case 'professional':
+      default:
+        return dataset.iconProfessional || dataset.iconLight || '💼';
+    }
+  }
+
+  function getThemeLabel(theme) {
+    switch (theme) {
+      case 'night':
+        return 'Theme: Night';
+      case 'professional':
+      default:
+        return 'Theme: Professional';
+    }
+  }
+
   function updateThemeButton(button, theme) {
     if (!button) return;
-    const icon = theme === 'dark'
-      ? button.dataset.iconDark || '🌙'
-      : button.dataset.iconLight || '☀️';
-    button.textContent = icon;
-    const label = theme === 'dark'
-      ? 'Switch to light theme'
-      : 'Switch to dark theme';
-    button.setAttribute('aria-label', label);
-    button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    button.textContent = getThemeIcon(button, theme);
+    button.setAttribute('aria-label', getThemeLabel(theme));
+    button.setAttribute('aria-pressed', theme === DEFAULT_THEME ? 'false' : 'true');
   }
 
   function initThemeToggle() {
     const button = document.getElementById('theme-toggle');
     let theme = resolveInitialTheme();
+    if (!SUPPORTED_THEMES.includes(theme)) {
+      theme = DEFAULT_THEME;
+    }
     applyTheme(theme);
     updateThemeButton(button, theme);
     dispatchThemeChange(theme);
@@ -80,7 +124,7 @@ initViewportHeight();
     }
 
     button.addEventListener('click', () => {
-      theme = theme === 'dark' ? 'light' : 'dark';
+      theme = getNextTheme(theme);
       safeSetItem(THEME_STORAGE_KEY, theme);
       applyTheme(theme);
       updateThemeButton(button, theme);
@@ -91,6 +135,9 @@ initViewportHeight();
       window.addEventListener(THEME_CHANGE_EVENT, (event) => {
         const newTheme = event?.detail?.theme;
         if (!newTheme) {
+          return;
+        }
+        if (!SUPPORTED_THEMES.includes(newTheme)) {
           return;
         }
         if (newTheme !== theme) {
