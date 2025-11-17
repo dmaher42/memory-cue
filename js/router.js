@@ -2,7 +2,9 @@ const groupedRoutes = new Set(['notes', 'resources', 'templates']);
 
 function renderRoute() {
   const route = (window.location.hash || '#dashboard').replace('#', '');
-  document.querySelectorAll('[data-route]').forEach((node) => {
+  const workspace = document.querySelector('[data-workspace]');
+  const routeNodes = workspace ? workspace.querySelectorAll('[data-route]') : document.querySelectorAll('[data-route]');
+  routeNodes.forEach((node) => {
     const isDashboardFallback = route === '' && node.dataset.route === 'dashboard';
     node.style.display = node.dataset.route === route || isDashboardFallback ? '' : 'none';
   });
