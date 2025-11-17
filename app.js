@@ -2459,13 +2459,15 @@ function renderPlannerLessons(plan) {
                     aria-label="Lesson notes"
                   >${escapeCueText(notesValue)}</textarea>
                   <div class="label py-1">
-                    <span
-                      class="label-text-alt text-xs text-base-content/60"
-                      data-notes-status-text
-                      data-status="idle"
-                      role="status"
-                      aria-live="polite"
-                    >${escapeCueText(PLANNER_NOTES_STATUS_TEXT.idle)}</span>
+                    <span class="label-text-alt text-xs text-base-content/60">
+                      Status:
+                      <span
+                        data-notes-status-text
+                        data-status="idle"
+                        role="status"
+                        aria-live="polite"
+                      >${escapeCueText(PLANNER_NOTES_STATUS_TEXT.idle)}</span>
+                    </span>
                   </div>
                 </label>
               </div>
@@ -2649,6 +2651,13 @@ function setPlannerNotesFieldStatus(field, status) {
   } else {
     field.removeAttribute('data-notes-status');
   }
+}
+
+function setPlannerNotesStatusText(field, status) {
+  if (!(field instanceof HTMLTextAreaElement)) {
+    return;
+  }
+  const normalizedStatus = typeof status === 'string' && PLANNER_NOTES_STATUS_VALUES.has(status) ? status : null;
   const statusTextElement =
     field.parentElement instanceof HTMLElement
       ? field.parentElement.querySelector('[data-notes-status-text]')
@@ -2657,7 +2666,7 @@ function setPlannerNotesFieldStatus(field, status) {
     const textKey = normalizedStatus || 'idle';
     const textValue = PLANNER_NOTES_STATUS_TEXT[textKey] || PLANNER_NOTES_STATUS_TEXT.idle;
     statusTextElement.textContent = textValue;
-    statusTextElement.setAttribute('data-status', normalizedStatus || 'idle');
+    statusTextElement.setAttribute('data-status', textKey);
   }
 }
 
@@ -2668,6 +2677,7 @@ async function persistPlannerLessonNotes(lessonId, notesValue, textarea) {
   const field = textarea instanceof HTMLTextAreaElement ? textarea : null;
   if (field) {
     setPlannerNotesFieldStatus(field, 'saving');
+    setPlannerNotesStatusText(field, 'saving');
   }
   try {
     const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, { notes: notesValue });
@@ -2676,21 +2686,25 @@ async function persistPlannerLessonNotes(lessonId, notesValue, textarea) {
     }
     if (field) {
       setPlannerNotesFieldStatus(field, 'saved');
+      setPlannerNotesStatusText(field, 'saved');
       const scheduleClear = getPlannerTimeoutScheduler();
       if (scheduleClear) {
         scheduleClear(() => {
           if (field.getAttribute('data-notes-status') === 'saved') {
             setPlannerNotesFieldStatus(field, null);
+            setPlannerNotesStatusText(field, null);
           }
         }, PLANNER_NOTES_STATUS_CLEAR_DELAY);
       } else {
         setPlannerNotesFieldStatus(field, null);
+        setPlannerNotesStatusText(field, null);
       }
     }
   } catch (error) {
     console.error('Failed to save planner notes', error);
     if (field) {
       setPlannerNotesFieldStatus(field, 'error');
+      setPlannerNotesStatusText(field, 'error');
     }
   }
 }
