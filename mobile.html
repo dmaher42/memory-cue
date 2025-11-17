@@ -184,9 +184,9 @@
   }
 
   .mobile-shell #noteBodyMobile:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 1px var(--accent-color, #2563eb),
-      0 0 0 6px rgba(37, 99, 235, 0.12);
+    outline: 2px solid var(--accent-color, #2563eb);
+    outline-offset: 0;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 25%, transparent);
   }
 
   .mobile-shell #view-notebook .note-body-wrapper {
@@ -269,8 +269,8 @@
     inset: 0;
     padding: 1rem 1.25rem;
     font-size: 0.85rem;
-    color: color-mix(in srgb, var(--text-secondary) 70%, transparent);
-    opacity: 0.9;
+    color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    opacity: 0.8;
     pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
@@ -284,24 +284,29 @@
   .note-body-field textarea {
     position: relative;
     z-index: 1;
-    background: transparent;
     border: none;
     box-shadow: none;
   }
 
+  .note-body-field textarea.bg-base-100 {
+    background-color: var(--b1);
+  }
+
   .note-body-field textarea::placeholder {
-    color: transparent;
+    color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    opacity: 0.8;
   }
 
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="open-note"][data-state="active"] {
     border-color: var(--accent-color);
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(56, 189, 248, 0.05));
-    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
+    background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color) 25%, transparent);
   }
 
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
-    outline: 2px solid var(--delete-color);
+    outline: 2px solid var(--accent-color, #2563eb);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 18%, transparent);
   }
 
   .mobile-shell #notesListMobile .line-clamp-2 {
@@ -2832,9 +2837,12 @@
     }
 
     .notes-hero-buttons {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.5rem;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      width: 100%;
     }
 
     .notes-hero-buttons .btn {
@@ -3250,24 +3258,24 @@
                 </p>
               </div>
               <div class="notes-hero-actions">
-                <button
-                  id="noteSaveMobile"
-                  class="btn btn-primary btn-md shadow-md shadow-primary/20"
-                  type="button"
-                >
-                  Save note
-                </button>
-                <div class="notes-hero-buttons">
+                <div class="notes-hero-buttons flex flex-wrap items-center gap-2 justify-between w-full">
+                  <button
+                    id="noteSaveMobile"
+                    class="btn btn-primary btn-sm shadow-md shadow-primary/20"
+                    type="button"
+                  >
+                    Save note
+                  </button>
                   <button
                     id="noteNewMobile"
                     type="button"
-                    class="btn btn-ghost btn-xs"
+                    class="btn btn-ghost btn-sm"
                   >
                     New note
                   </button>
                   <button
                     type="button"
-                    class="btn btn-ghost btn-xs"
+                    class="btn btn-ghost btn-sm"
                     data-action="open-saved-notes"
                   >
                     Saved notes
@@ -3314,7 +3322,7 @@
                   >
                     <textarea
                       id="noteBodyMobile"
-                      class="textarea textarea-sm w-full min-h-[200px] leading-relaxed resize-none bg-transparent px-4 py-3 text-base-content focus-visible:outline-none focus-visible:ring-0"
+                      class="textarea textarea-sm w-full min-h-[200px] leading-relaxed resize-none p-4 rounded-lg bg-base-100 text-base text-base-content placeholder:text-base-content/80 placeholder:opacity-80 focus-visible:outline-none focus-visible:ring-0"
                       placeholder="Start typing your scratch note…"
                     ></textarea>
                   </div>
