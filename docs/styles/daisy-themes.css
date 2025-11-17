@@ -64,6 +64,62 @@
 }
 
 @plugin "daisyui/theme" {
+  name: "professional";
+  default: false;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: #f5f7ff;
+  --color-base-200: #e6edff;
+  --color-base-300: #d0dcff;
+  --color-base-content: #1f2937;
+  --color-primary: #4f46e5;
+  --color-primary-content: #f8fafc;
+  --color-secondary: #1d4ed8;
+  --color-secondary-content: #f8fafc;
+  --color-accent: #0ea5e9;
+  --color-accent-content: #06263a;
+  --color-neutral: #1f2937;
+  --color-neutral-content: #f5f7ff;
+  --color-info: #2563eb;
+  --color-info-content: #f8fafc;
+  --color-success: #059669;
+  --color-success-content: #f0fdfa;
+  --color-warning: #f59e0b;
+  --color-warning-content: #3b2100;
+  --color-error: #ef4444;
+  --color-error-content: #450a0a;
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+
+  --background-color: #eef2ff;
+  --card-border: #d7def1;
+  --accent-color: #4f46e5;
+
+  --desktop-bg: #eef2ff;
+  --desktop-surface: #ffffff;
+  --desktop-surface-muted: #f6f7ff;
+  --desktop-border-subtle: #d7def1;
+  --desktop-header-bg: #e3e9ff;
+  --desktop-header-border: #c0ccf2;
+  --desktop-text-main: #1f2a44;
+  --desktop-text-muted: #55607a;
+  --desktop-nav-bg: #e6ecff;
+  --desktop-nav-active: #4f46e5;
+  --desktop-nav-text: #1f2a44;
+  --desktop-nav-text-muted: #6b7694;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 12px 30px rgba(79, 70, 229, 0.12);
+  --desktop-shadow-subtle: 0 4px 14px rgba(79, 70, 229, 0.08);
+}
+
+@plugin "daisyui/theme" {
   name: "dracula";
   default: false;
   prefersdark: false;
@@ -227,6 +283,61 @@
   --desktop-radius-chip: 999px;
   --desktop-shadow-card: 0 12px 30px rgba(108, 74, 58, 0.2);
   --desktop-shadow-subtle: 0 4px 14px rgba(108, 74, 58, 0.12);
+}
+
+/* Professional desktop theme */
+:root[data-theme="professional"],
+[data-theme="professional"] {
+  color-scheme: light;
+  --color-base-100: #f5f7ff;
+  --color-base-200: #e6edff;
+  --color-base-300: #d0dcff;
+  --color-base-content: #1f2937;
+  --color-primary: #4f46e5;
+  --color-primary-content: #f8fafc;
+  --color-secondary: #1d4ed8;
+  --color-secondary-content: #f8fafc;
+  --color-accent: #0ea5e9;
+  --color-accent-content: #06263a;
+  --color-neutral: #1f2937;
+  --color-neutral-content: #f5f7ff;
+  --color-info: #2563eb;
+  --color-info-content: #f8fafc;
+  --color-success: #059669;
+  --color-success-content: #f0fdfa;
+  --color-warning: #f59e0b;
+  --color-warning-content: #3b2100;
+  --color-error: #ef4444;
+  --color-error-content: #450a0a;
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+
+  --background-color: #eef2ff;
+  --card-border: #d7def1;
+  --accent-color: #4f46e5;
+
+  --desktop-bg: #eef2ff;
+  --desktop-surface: #ffffff;
+  --desktop-surface-muted: #f6f7ff;
+  --desktop-border-subtle: #d7def1;
+  --desktop-header-bg: #e3e9ff;
+  --desktop-header-border: #c0ccf2;
+  --desktop-text-main: #1f2a44;
+  --desktop-text-muted: #55607a;
+  --desktop-nav-bg: #e6ecff;
+  --desktop-nav-active: #4f46e5;
+  --desktop-nav-text: #1f2a44;
+  --desktop-nav-text-muted: #6b7694;
+  --desktop-radius-card: 18px;
+  --desktop-radius-chip: 999px;
+  --desktop-shadow-card: 0 12px 30px rgba(79, 70, 229, 0.12);
+  --desktop-shadow-subtle: 0 4px 14px rgba(79, 70, 229, 0.08);
 }
 
 :root[data-theme="dracula"],

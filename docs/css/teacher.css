@@ -768,10 +768,11 @@ input::placeholder, textarea::placeholder {
   outline: none;
   line-height: 1.6;
   color: var(--text-primary);
+  background: var(--bg-secondary);
 }
 
 .notes-content:focus {
-  background: var(--bg-primary);
+  background: var(--bg-tertiary);
 }
 
 /* Resource List */
@@ -1406,6 +1407,40 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.01em;
   text-transform: uppercase;
   line-height: 1.4;
+}
+
+.task-item[data-compact="true"] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  padding-left: calc(var(--space-3) + 3px);
+  align-items: flex-start;
+}
+
+.task-item[data-compact="true"] .task-title {
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  margin-bottom: var(--space-1);
+}
+
+.task-item[data-compact="true"] .task-meta {
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.task-item[data-compact="true"] .task-chip {
+  padding: 2px 6px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.task-item[data-compact="true"] .btn.btn-xs {
+  min-height: 1.75rem;
+  height: 1.75rem;
+  width: 1.75rem;
+  padding: 0;
 }
 
 .task-chip[data-chip="priority"] {
