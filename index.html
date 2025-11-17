@@ -74,7 +74,7 @@
       opacity: .85;
     }
 
-    [data-route="reminders"] {
+    [data-workspace-panel="reminders"] {
       --card-bg: #ffffff;
       --card-border: #cbe6d5;
       --border-color: var(--card-border);
@@ -96,7 +96,7 @@
     }
 
     /* Reminders: desktop card styling */
-    [data-route="reminders"] .desktop-task-card {
+    [data-workspace-panel="reminders"] .desktop-task-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-left: 3px solid var(--border-color);
@@ -106,7 +106,7 @@
         background 0.15s ease;
     }
 
-    [data-route="reminders"] .desktop-task-card:hover {
+    [data-workspace-panel="reminders"] .desktop-task-card:hover {
       box-shadow: var(--shadow-md);
       transform: translateY(-1px);
       border-color: var(--accent-color);
@@ -114,76 +114,76 @@
       background: var(--hover-bg);
     }
 
-    [data-route="reminders"] .desktop-task-card[data-priority="High"] {
+    [data-workspace-panel="reminders"] .desktop-task-card[data-priority="High"] {
       background-color: var(--priority-high-bg);
       border-left-color: var(--priority-high-border);
     }
 
-    [data-route="reminders"] .desktop-task-card[data-priority="Medium"] {
+    [data-workspace-panel="reminders"] .desktop-task-card[data-priority="Medium"] {
       background-color: var(--priority-medium-bg);
       border-left-color: var(--priority-medium-border);
     }
 
-    [data-route="reminders"] .desktop-task-card[data-priority="Low"] {
+    [data-workspace-panel="reminders"] .desktop-task-card[data-priority="Low"] {
       background-color: var(--priority-low-bg);
       border-left-color: var(--priority-low-border);
     }
 
-    [data-route="reminders"] .desktop-reminder-title {
+    [data-workspace-panel="reminders"] .desktop-reminder-title {
       color: var(--text-primary);
     }
 
-    [data-route="reminders"] .desktop-reminder-meta {
+    [data-workspace-panel="reminders"] .desktop-reminder-meta {
       color: var(--text-secondary);
     }
 
-    [data-route="reminders"] .desktop-reminder-chip {
+    [data-workspace-panel="reminders"] .desktop-reminder-chip {
       border-color: color-mix(in srgb, var(--card-border) 75%, transparent 25%);
       background: color-mix(in srgb, var(--hover-bg) 28%, var(--card-bg) 72%);
       color: var(--text-secondary);
       transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    [data-route="reminders"] .desktop-reminder-chip:hover {
+    [data-workspace-panel="reminders"] .desktop-reminder-chip:hover {
       background: color-mix(in srgb, var(--hover-bg) 40%, var(--card-bg) 60%);
       border-color: var(--accent-color);
     }
 
-    [data-route="reminders"] .desktop-reminder-chip__dot {
+    [data-workspace-panel="reminders"] .desktop-reminder-chip__dot {
       background: rgba(31, 42, 36, 0.35);
     }
 
-    [data-route="reminders"] .desktop-reminder-chip[data-tone="category"] .desktop-reminder-chip__dot {
+    [data-workspace-panel="reminders"] .desktop-reminder-chip[data-tone="category"] .desktop-reminder-chip__dot {
       background: var(--accent-color);
     }
 
-    [data-route="reminders"] .desktop-reminder-chip[data-tone="due"] .desktop-reminder-chip__dot {
+    [data-workspace-panel="reminders"] .desktop-reminder-chip[data-tone="due"] .desktop-reminder-chip__dot {
       background: rgba(31, 42, 36, 0.45);
     }
 
-    [data-route="reminders"] .desktop-task-card .btn.text-success {
+    [data-workspace-panel="reminders"] .desktop-task-card .btn.text-success {
       color: var(--success-color);
     }
 
-    [data-route="reminders"] .desktop-task-card .btn.text-error {
+    [data-workspace-panel="reminders"] .desktop-task-card .btn.text-error {
       color: var(--delete-color);
     }
 
-    #add-reminder-modal #reminder-notes {
+    #add-reminder-form #reminder-notes {
       background-color: #ffffff;
       color: #1f2a24;
     }
 
-    [data-route="notes"] .notes-editor-card .card-body {
+    [data-workspace-panel="notes"] .notes-editor-card .card-body {
       padding: clamp(1.5rem, 4vw, 2.25rem);
     }
 
     @media (max-width: 639px) {
-      [data-route="notes"] .notes-editor-card {
+      [data-workspace-panel="notes"] .notes-editor-card {
         border-radius: 1.5rem;
       }
 
-      [data-route="notes"] .notes-editor-card .card-body {
+      [data-workspace-panel="notes"] .notes-editor-card .card-body {
         gap: 1.75rem;
         min-height: 70vh;
       }
@@ -200,6 +200,26 @@
 
     #quick-action-toolbar .quick-action-btn {
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
+    .workspace-pane {
+      min-height: 24rem;
+      height: min(34rem, calc(var(--vh, 1vh) * 70));
+    }
+
+    .workspace-pane__body {
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 1023px) {
+      .workspace-pane {
+        height: auto;
+      }
+
+      .workspace-pane__body {
+        max-height: 28rem;
+      }
     }
 
     .google-user-chip {
@@ -741,7 +761,7 @@
                           type="button"
                           data-open-reminder-modal
                           aria-haspopup="dialog"
-                          aria-controls="add-reminder-modal"
+                          aria-controls="add-reminder-form"
                         >
                           Add reminder
                         </button>
@@ -829,183 +849,6 @@
             </section>
           </div>
         </div>
-        </div>
-      </section>
-
-      <section data-route="reminders" class="space-y-6" style="display: none;">
-        <div class="max-w-6xl mx-auto my-10 bg-base-100/75 border border-base-300 rounded-[2rem] shadow-xl px-6 py-6 md:px-8 md:py-7 space-y-6 backdrop-blur-sm">
-          <div class="desktop-panel desktop-panel--reminders">
-            <header class="desktop-panel-header">
-              <div class="flex items-center justify-between gap-3 mb-2">
-                <div class="space-y-1">
-                  <h2 class="text-2xl font-semibold tracking-wide text-base-content">Reminders</h2>
-                </div>
-                <div class="desktop-panel-actions">
-                  <button
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    data-open-reminder-modal
-                    aria-haspopup="dialog"
-                    aria-controls="add-reminder-modal"
-                  >
-                    Add reminder
-                  </button>
-                </div>
-              </div>
-              <p class="text-sm text-base-content/70 mb-4">Keep track of tasks, family updates, and prep work in one organised list.</p>
-            </header>
-          <div class="flex flex-wrap items-center gap-2 mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="btn btn-ghost btn-xs cursor-default" title="Filtering not available yet">All</span>
-            <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Today</button>
-            <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">This week</button>
-            <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Later</button>
-          </div>
-          <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6 space-y-2">
-          <li
-            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-2xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-            role="button"
-            tabindex="0"
-            aria-label="Edit reminder: Submit unit overview"
-          >
-            <div class="flex min-w-0 flex-col gap-3">
-              <p class="desktop-reminder-title reminder-title text-sm font-medium leading-snug text-base-content">Submit unit overview</p>
-              <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="category">
-                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
-                  <span class="truncate">Curriculum team</span>
-                </span>
-              </div>
-              <div class="flex justify-end">
-                <span class="badge badge-outline badge-sm text-[11px] text-base-content/80" data-tone="due">Due Friday</span>
-              </div>
-            </div>
-            <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
-              <button type="button" class="btn btn-outline btn-xs text-success task-toolbar-btn" aria-label="Mark reminder as done">
-                <span aria-hidden="true">✓</span>
-              </button>
-              <button type="button" class="btn btn-ghost btn-xs text-error task-toolbar-btn" aria-label="Delete reminder">
-                <span aria-hidden="true">🗑️</span>
-              </button>
-            </div>
-          </li>
-          <li
-            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-2xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-            role="button"
-            tabindex="0"
-            aria-label="Edit reminder: Email newsletter blurb"
-          >
-            <div class="flex min-w-0 flex-col gap-3">
-              <p class="desktop-reminder-title reminder-title text-sm font-medium leading-snug text-base-content">Email newsletter blurb</p>
-              <div class="desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70">
-                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70" data-tone="category">
-                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
-                  <span class="truncate">Communications</span>
-                </span>
-                <span class="desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70">
-                  <span class="desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full"></span>
-                  <span class="truncate">Scheduled</span>
-                </span>
-              </div>
-              <div class="flex justify-end">
-                <span class="badge badge-outline badge-sm text-[11px] text-base-content/80" data-tone="due">Due next week</span>
-              </div>
-            </div>
-            <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
-              <button type="button" class="btn btn-outline btn-xs text-success task-toolbar-btn" aria-label="Mark reminder as done">
-                <span aria-hidden="true">✓</span>
-              </button>
-              <button type="button" class="btn btn-ghost btn-xs text-error task-toolbar-btn" aria-label="Delete reminder">
-                <span aria-hidden="true">🗑️</span>
-              </button>
-            </div>
-          </li>
-          <li
-            class="reminder-item task-item desktop-task-card reminder-card bg-base-100 border border-base-300 rounded-2xl shadow-sm p-4 flex flex-col justify-between gap-3 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-            role="button"
-            tabindex="0"
-            aria-label="Edit reminder: Call guardians"
-          >
-            <div class="flex min-w-0 flex-col gap-3">
-              <p class="desktop-reminder-title reminder-title text-sm font-medium leading-snug text-base-content">Call guardians</p>
-              <div class="flex justify-end">
-                <span class="badge badge-outline badge-sm text-[11px] text-base-content/80" data-tone="due">Due tomorrow</span>
-              </div>
-            </div>
-            <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
-              <button type="button" class="btn btn-outline btn-xs text-success task-toolbar-btn" aria-label="Mark reminder as done">
-                <span aria-hidden="true">✓</span>
-              </button>
-              <button type="button" class="btn btn-ghost btn-xs text-error task-toolbar-btn" aria-label="Delete reminder">
-                <span aria-hidden="true">🗑️</span>
-              </button>
-            </div>
-          </li>
-          </ul>
-          </div>
-        </div>
-      </section>
-
-      <section data-route="planner" class="space-y-6" style="display: none;">
-        <div class="max-w-6xl mx-auto my-10 bg-base-100/75 border border-base-300 rounded-[2rem] shadow-xl px-6 py-6 md:px-8 md:py-7 space-y-6 backdrop-blur-sm">
-          <div class="desktop-panel desktop-panel--planner">
-            <div class="space-y-1 mb-4">
-              <h2 class="text-2xl font-semibold tracking-wide text-base-content">Weekly planner</h2>
-              <p class="text-sm text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
-            </div>
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div class="flex items-center gap-2">
-                <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
-                <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">Today</button>
-                <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
-                <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
-                  <span class="hidden sm:inline">Text size</span>
-                  <select
-                    class="select select-bordered select-xs w-auto"
-                    data-planner-text-size
-                    aria-label="Planner text size"
-                  >
-                    <option value="small">Small</option>
-                    <option value="default">Default</option>
-                    <option value="large">Large</option>
-                  </select>
-                </label>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
-                <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
-                <label class="form-control w-full max-w-xs md:w-auto">
-                  <div class="label py-0">
-                    <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Template</span>
-                  </div>
-                  <select
-                    id="planner-template-select"
-                    class="select select-bordered select-sm w-full md:w-56"
-                    aria-label="Choose a planner template"
-                  >
-                    <option value="">No templates saved</option>
-                  </select>
-                </label>
-                <button type="button" id="planner-template-save-btn" class="btn btn-outline btn-sm">Save current week as template</button>
-                <label class="form-control w-full max-w-xs md:w-auto">
-                  <div class="label py-0">
-                    <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Subject filter</span>
-                  </div>
-                  <select
-                    id="planner-subject-filter"
-                    class="select select-bordered select-sm w-full md:w-48"
-                    aria-label="Filter planner by subject"
-                  >
-                    <option value="all">All subjects</option>
-                  </select>
-                  <p class="mt-1 text-xs text-base-content/60">Show lessons by the subjects you teach.</p>
-                </label>
-              </div>
-            </div>
-            <p id="planner-week" class="text-sm font-semibold text-base-content/80 mb-3"></p>
-            <div class="[&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:justify-start [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:mt-3">
-              <div id="plannerCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1109,54 +952,243 @@
         </div>
       </div>
 
-      <section data-route="notes" class="space-y-6" style="display: none;">
+      <section data-route="workspace" class="space-y-6" style="display: none;">
         <div class="max-w-6xl mx-auto my-10 bg-base-100/75 border border-base-300 rounded-[2rem] shadow-xl px-6 py-6 md:px-8 md:py-7 space-y-6 backdrop-blur-sm">
-          <div class="space-y-1 mb-4">
-            <h2 class="text-2xl font-semibold tracking-wide text-base-content">Notes</h2>
-            <p class="text-sm text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
+          <div class="space-y-1">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Workspace</p>
+            <h2 class="text-2xl font-semibold tracking-wide text-base-content">Reminders, planner, and notes</h2>
+            <p class="text-sm text-base-content/70">Stay in one focused surface while you triage tasks, prepare lessons, and capture reflections.</p>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <article class="desktop-panel card notes-editor-card rounded-xl border border-base-300 bg-base-100 text-base-content shadow-sm dark:bg-base-200 dark:text-base-content">
-              <div class="card-body gap-4 p-6">
-                <div class="space-y-4">
-                  <div class="space-y-1 mb-3">
-                    <label for="noteTitle" class="text-xs font-semibold uppercase text-base-content/70">Title</label>
-                    <input
-                      id="noteTitle"
-                      type="text"
-                      class="input input-bordered w-full text-base text-base-content placeholder:text-base-content/60"
-                      placeholder="e.g. Kids basketball schedule – this weekend"
-                    />
+          <div class="flex flex-col gap-6 lg:flex-row" data-workspace-shell data-workspace-active="reminders">
+            <div class="flex flex-row gap-2 overflow-x-auto rounded-2xl border border-base-300/70 bg-base-100/80 p-4 lg:flex-col lg:w-56" role="tablist" aria-label="Workspace panels">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm w-full justify-start workspace-tab"
+                id="workspace-tab-reminders"
+                data-workspace-tab="reminders"
+                aria-controls="workspace-panel-reminders"
+                role="tab"
+                aria-selected="true"
+              >
+                <span aria-hidden="true">🔔</span>
+                <span class="ml-2">Reminders</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm w-full justify-start workspace-tab"
+                id="workspace-tab-planner"
+                data-workspace-tab="planner"
+                aria-controls="workspace-panel-planner"
+                role="tab"
+                aria-selected="false"
+              >
+                <span aria-hidden="true">🗓️</span>
+                <span class="ml-2">Planner</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm w-full justify-start workspace-tab"
+                id="workspace-tab-notes"
+                data-workspace-tab="notes"
+                aria-controls="workspace-panel-notes"
+                role="tab"
+                aria-selected="false"
+              >
+                <span aria-hidden="true">📝</span>
+                <span class="ml-2">Notes</span>
+              </button>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div
+                id="workspace-panel-reminders"
+                data-workspace-panel="reminders"
+                role="tabpanel"
+                aria-labelledby="workspace-tab-reminders"
+                class="space-y-4"
+              >
+                <div class="space-y-1">
+                  <h3 class="text-2xl font-semibold tracking-wide text-base-content" data-primary-heading">Reminders</h3>
+                  <p class="text-sm text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
+                </div>
+                <div class="grid gap-6 lg:grid-cols-2">
+                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                    <div class="card-body h-full flex flex-col gap-3">
+                      <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
+                        <span class="btn btn-ghost btn-xs cursor-default" title="Filtering not available yet">All</span>
+                        <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Today</button>
+                        <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">This week</button>
+                        <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Later</button>
+                      </div>
+                      <div class="workspace-pane__body flex-1 pr-1">
+                        <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 gap-4"></ul>
+                      </div>
+                    </div>
                   </div>
-                  <div class="space-y-1 mb-3">
-                    <label for="noteBody" class="text-xs font-semibold uppercase text-base-content/70">Body</label>
-                    <textarea
-                      id="noteBody"
-                      class="textarea textarea-bordered w-full min-h-[10rem] resize-y text-sm text-base-content p-3 placeholder:text-base-content/60"
-                      rows="10"
-                      placeholder="Write your note here…"
-                    ></textarea>
-                  </div>
-                  <div class="flex justify-end gap-2 mt-2">
-                    <button id="noteSaveBtn" type="button" class="btn btn-primary btn-sm">Save</button>
-                    <button id="noteNewBtn" type="button" class="btn btn-outline btn-sm">New note</button>
+                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                    <div class="card-body flex h-full flex-col gap-4">
+                      <div class="space-y-1">
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Quick add</p>
+                        <p class="text-sm text-base-content/80">Capture a reminder without leaving the workspace.</p>
+                      </div>
+                      <div class="workspace-pane__body flex-1 overflow-y-auto pr-1">
+                        <form id="add-reminder-form" class="space-y-4">
+                          <div
+                            id="planner-reminder-context"
+                            class="hidden rounded-xl bg-base-200/80 px-4 py-3 text-sm text-base-content/80 dark:bg-base-200/20"
+                            aria-live="polite"
+                            aria-hidden="true"
+                          ></div>
+                          <input type="hidden" id="planner-reminder-lesson-id" />
+                          <label class="block">
+                            <span class="font-medium text-base-content">Title</span>
+                            <input id="reminder-title" type="text" class="input input-bordered mt-1 w-full" required />
+                          </label>
+                          <label class="block">
+                            <span class="font-medium text-base-content">Due date</span>
+                            <input id="reminder-date" type="date" class="input input-bordered mt-1 w-full" />
+                          </label>
+                          <label class="block">
+                            <span class="font-medium text-base-content">Priority</span>
+                            <select id="reminder-priority" class="select select-bordered mt-1 w-full">
+                              <option>Low</option>
+                              <option>Medium</option>
+                              <option>High</option>
+                            </select>
+                          </label>
+                          <label class="block">
+                            <span class="font-medium text-base-content">Notes</span>
+                            <textarea id="reminder-notes" class="textarea textarea-bordered mt-1 w-full" rows="3"></textarea>
+                          </label>
+                          <div class="flex justify-end gap-3 pt-2">
+                            <button type="reset" class="btn btn-ghost btn-sm">Clear</button>
+                            <button type="button" id="saveReminder" class="btn btn-primary btn-sm">Save</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </article>
-            <aside class="desktop-panel card border border-base-300 bg-base-200/70 shadow-sm">
-              <div class="card-body gap-4">
-                <div class="space-y-1 mb-3">
-                  <h3 class="text-sm font-semibold text-base-content/80">Saved notes</h3>
-                  <p class="text-xs text-base-content/60">Select a note to load it in the editor.</p>
+              <div
+                id="workspace-panel-planner"
+                data-workspace-panel="planner"
+                role="tabpanel"
+                aria-labelledby="workspace-tab-planner"
+                class="space-y-4 hidden"
+                hidden
+              >
+                <div class="space-y-1">
+                  <h3 class="text-2xl font-semibold tracking-wide text-base-content" data-primary-heading">Weekly planner</h3>
+                  <p class="text-sm text-base-content/70">Draft the key lessons, checkpoints, and resources your classes need this week.</p>
                 </div>
-                <ul id="notesList" class="space-y-1 text-sm text-base-content max-h-80 overflow-y-auto"></ul>
+                <div class="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                    <div class="card-body flex h-full flex-col gap-4">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
+                        <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">Today</button>
+                        <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
+                        <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
+                          <span class="hidden sm:inline">Text size</span>
+                          <select class="select select-bordered select-xs w-auto" data-planner-text-size aria-label="Planner text size">
+                            <option value="small">Small</option>
+                            <option value="default">Default</option>
+                            <option value="large">Large</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div class="space-y-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
+                          <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
+                        </div>
+                        <label class="form-control w-full">
+                          <div class="label py-0">
+                            <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Template</span>
+                          </div>
+                          <select id="planner-template-select" class="select select-bordered select-sm w-full" aria-label="Choose a planner template">
+                            <option value="">No templates saved</option>
+                          </select>
+                        </label>
+                        <button type="button" id="planner-template-save-btn" class="btn btn-outline btn-sm">Save current week as template</button>
+                        <label class="form-control w-full">
+                          <div class="label py-0">
+                            <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Subject filter</span>
+                          </div>
+                          <select id="planner-subject-filter" class="select select-bordered select-sm w-full" aria-label="Filter planner by subject">
+                            <option value="all">All subjects</option>
+                          </select>
+                          <p class="mt-1 text-xs text-base-content/60">Show lessons by the subjects you teach.</p>
+                        </label>
+                      </div>
+                      <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
+                    </div>
+                  </div>
+                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                    <div class="workspace-pane__body h-full overflow-y-auto px-6 py-4">
+                      <div class="[&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:justify-start [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:mt-3">
+                        <div id="plannerCards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </aside>
+              <div
+                id="workspace-panel-notes"
+                data-workspace-panel="notes"
+                role="tabpanel"
+                aria-labelledby="workspace-tab-notes"
+                class="space-y-4 hidden"
+                hidden
+              >
+                <div class="space-y-1">
+                  <h3 class="text-2xl font-semibold tracking-wide text-base-content" data-primary-heading">Notes</h3>
+                  <p class="text-sm text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
+                </div>
+                <div class="grid gap-6 lg:grid-cols-2">
+                  <article class="workspace-pane card notes-editor-card border border-base-300 bg-base-100 text-base-content shadow-sm">
+                    <div class="workspace-pane__body card-body flex h-full flex-col gap-4">
+                      <div class="space-y-1">
+                        <label for="noteTitle" class="text-xs font-semibold uppercase text-base-content/70">Title</label>
+                        <input
+                          id="noteTitle"
+                          type="text"
+                          class="input input-bordered w-full text-base text-base-content placeholder:text-base-content/60"
+                          placeholder="e.g. Kids basketball schedule – this weekend"
+                        />
+                      </div>
+                      <div class="space-y-1">
+                        <label for="noteBody" class="text-xs font-semibold uppercase text-base-content/70">Body</label>
+                        <textarea
+                          id="noteBody"
+                          class="textarea textarea-bordered w-full min-h-[10rem] resize-none text-sm text-base-content p-3 placeholder:text-base-content/60"
+                          rows="10"
+                          placeholder="Write your note here…"
+                        ></textarea>
+                      </div>
+                      <div class="flex justify-end gap-2">
+                        <button id="noteSaveBtn" type="button" class="btn btn-primary btn-sm">Save</button>
+                        <button id="noteNewBtn" type="button" class="btn btn-outline btn-sm">New note</button>
+                      </div>
+                    </div>
+                  </article>
+                  <aside class="workspace-pane card border border-base-300 bg-base-200/70 text-base-content shadow-sm">
+                    <div class="card-body flex h-full flex-col gap-3">
+                      <div>
+                        <h3 class="text-sm font-semibold text-base-content/80">Saved notes</h3>
+                        <p class="text-xs text-base-content/60">Select an entry to continue editing.</p>
+                      </div>
+                      <div class="workspace-pane__body flex-1 overflow-y-auto pr-1">
+                        <ul id="notesList" class="space-y-1 text-sm text-base-content"></ul>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
-
       <section data-route="resources" class="space-y-6" style="display: none;">
         <header class="space-y-2">
           <h1 class="text-2xl font-semibold text-base-content">Resources</h1>
@@ -1414,72 +1446,6 @@
       </div>
     </div>
   </footer>
-  <div id="add-reminder-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
-    <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center px-4" data-reminder-modal-backdrop>
-      <div
-        class="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-900"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reminder-modal-title"
-        aria-describedby="reminder-modal-description"
-        tabindex="-1"
-      >
-        <div class="flex items-center justify-between gap-4">
-          <h3 id="reminder-modal-title" class="text-lg font-semibold text-base-content">Add new reminder</h3>
-          <button
-            type="button"
-            id="closeReminderModal"
-            data-close-modal
-            class="rounded px-2 py-1 text-gray-600 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 dark:text-gray-400 dark:hover:bg-gray-800"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-        <p id="reminder-modal-description" class="mt-2 text-sm text-base-content/70">
-          Fill out the details below to save a reminder for later.
-        </p>
-        <form id="add-reminder-form" class="mt-4 space-y-4">
-          <div
-            id="planner-reminder-context"
-            class="hidden rounded-xl bg-base-200/80 px-4 py-3 text-sm text-base-content/80 dark:bg-base-200/20"
-            aria-live="polite"
-            aria-hidden="true"
-          ></div>
-          <input type="hidden" id="planner-reminder-lesson-id" />
-          <label class="block">
-            <span class="font-medium text-base-content">Title</span>
-            <input
-              id="reminder-title"
-              type="text"
-              class="input input-bordered mt-1 w-full"
-              required
-            />
-          </label>
-          <label class="block">
-            <span class="font-medium text-base-content">Due date</span>
-            <input id="reminder-date" type="date" class="input input-bordered mt-1 w-full" />
-          </label>
-          <label class="block">
-            <span class="font-medium text-base-content">Priority</span>
-            <select id="reminder-priority" class="select select-bordered mt-1 w-full">
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-          </label>
-          <label class="block">
-            <span class="font-medium text-base-content">Notes</span>
-            <textarea id="reminder-notes" class="textarea textarea-bordered mt-1 w-full" rows="3"></textarea>
-          </label>
-          <div class="flex justify-end gap-3 pt-2">
-            <button type="button" class="btn" data-close-modal>Cancel</button>
-            <button type="button" id="saveReminder" class="btn btn-primary">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
   <div id="activity-ideas-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
     <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center">
       <div
@@ -1567,9 +1533,9 @@
       </div>
     </div>
   </div>
-  <script src="./assets/router-BQ6L3TYU.js" defer></script>
+  <script src="./assets/router-UTETKMVM.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-YCXLVSY6.js" defer></script>
+  <script type="module" src="./assets/app-I24HXWSS.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
