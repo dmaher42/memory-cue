@@ -989,6 +989,15 @@ const plannerTemplateSaveButton = document.getElementById('planner-template-save
 const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
 const plannerSubjectFilterSelect = document.getElementById('planner-subject-filter');
 const plannerPanelElement = document.querySelector('.desktop-panel--planner');
+const plannerDetailPanel = document.getElementById('planner-detail-panel');
+const plannerDetailEmptyState = plannerDetailPanel?.querySelector('[data-planner-detail-empty]');
+const plannerDetailContent = plannerDetailPanel?.querySelector('[data-planner-detail-content]');
+const plannerDetailDayElement = document.getElementById('planner-detail-day');
+const plannerDetailTitleElement = document.getElementById('planner-detail-title');
+const plannerDetailSummaryElement = document.getElementById('planner-detail-summary');
+const plannerDetailSubjectElement = document.getElementById('planner-detail-subject');
+const plannerDetailDetailsElement = document.getElementById('planner-detail-details');
+const plannerDetailActionsContainer = document.getElementById('planner-detail-actions');
 const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
 const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
 
@@ -2397,6 +2406,8 @@ function renderPlannerMessage(message, { tone = 'muted' } = {}) {
   if (!plannerCardsContainer) {
     return;
   }
+  selectedPlannerLessonId = null;
+  renderPlannerDetail(null);
   const classes = [
     'rounded-xl',
     'border',
@@ -2506,6 +2517,91 @@ function handlePlannerSubjectFilterChange(event) {
   renderPlannerLessons(currentPlannerPlan);
 }
 
+function renderPlannerDetail(lesson) {
+  if (!plannerDetailPanel) {
+    return;
+  }
+  if (!lesson) {
+    plannerDetailPanel.removeAttribute('data-lesson-id');
+    if (plannerDetailDayElement) {
+      plannerDetailDayElement.textContent = '';
+    }
+    if (plannerDetailTitleElement) {
+      plannerDetailTitleElement.textContent = '';
+    }
+    if (plannerDetailSummaryElement) {
+      plannerDetailSummaryElement.textContent = '';
+    }
+    if (plannerDetailSubjectElement) {
+      plannerDetailSubjectElement.innerHTML = '';
+    }
+    if (plannerDetailDetailsElement) {
+      plannerDetailDetailsElement.innerHTML = '';
+    }
+    if (plannerDetailEmptyState instanceof HTMLElement) {
+      plannerDetailEmptyState.classList.remove('hidden');
+    }
+    if (plannerDetailContent instanceof HTMLElement) {
+      plannerDetailContent.classList.add('hidden');
+    }
+    return;
+  }
+  const lessonId = typeof lesson.id === 'string' ? lesson.id : '';
+  plannerDetailPanel.setAttribute('data-lesson-id', lessonId);
+  const dayLabel =
+    typeof lesson.dayLabel === 'string' && lesson.dayLabel.trim()
+      ? lesson.dayLabel.trim()
+      : typeof lesson.dayName === 'string' && lesson.dayName.trim()
+        ? lesson.dayName.trim()
+        : '';
+  if (plannerDetailDayElement) {
+    plannerDetailDayElement.textContent = dayLabel;
+  }
+  if (plannerDetailTitleElement) {
+    plannerDetailTitleElement.textContent = lesson.title || dayLabel || 'Lesson';
+  }
+  if (plannerDetailSummaryElement) {
+    const summaryText = typeof lesson.summary === 'string' && lesson.summary.trim()
+      ? lesson.summary.trim()
+      : 'No summary added yet.';
+    plannerDetailSummaryElement.textContent = summaryText;
+  }
+  if (plannerDetailSubjectElement) {
+    const subjectLabel = getLessonSubjectLabel(lesson);
+    plannerDetailSubjectElement.innerHTML = subjectLabel
+      ? `<span class="badge badge-outline badge-sm text-base-content/80">${escapeCueText(subjectLabel)}</span>`
+      : '<p class="text-xs text-base-content/60">No subject tagged.</p>';
+  }
+  if (plannerDetailDetailsElement) {
+    const detailItems = Array.isArray(lesson.details)
+      ? lesson.details
+          .filter((detail) => typeof detail?.text === 'string' && detail.text.trim().length > 0)
+          .map((detail) => {
+            const badge = detail?.badge
+              ? `<span class="badge badge-outline badge-xs text-base-content/70">${escapeCueText(detail.badge)}</span>`
+              : '';
+            return `
+              <div class="rounded-xl border border-base-200/80 bg-base-100/80 p-3">
+                <div class="flex flex-wrap items-start gap-2">
+                  ${badge}
+                  <p class="text-sm text-base-content/80">${escapeCueText(detail.text)}</p>
+                </div>
+              </div>
+            `;
+          })
+          .join('')
+      : '';
+    plannerDetailDetailsElement.innerHTML = detailItems ||
+      '<p class="text-sm text-base-content/60">No lesson details yet.</p>';
+  }
+  if (plannerDetailEmptyState instanceof HTMLElement) {
+    plannerDetailEmptyState.classList.add('hidden');
+  }
+  if (plannerDetailContent instanceof HTMLElement) {
+    plannerDetailContent.classList.remove('hidden');
+  }
+}
+
 async function maybeApplyPreferredPlannerTemplate(plan, weekId) {
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
   const hasLessons = lessons.length > 0;
@@ -2540,13 +2636,11 @@ function renderPlannerLessons(plan) {
   renderPlannerSubjectFilterOptions(lessons);
   if (!lessons.length) {
     renderPlannerMessage('No lessons saved for this week yet.');
-    selectedPlannerLessonId = null;
     return;
   }
   const lessonsToRender = filterPlannerLessonsBySubject(lessons);
   if (!lessonsToRender.length) {
     renderPlannerMessage('No lessons saved for this subject yet.');
-    selectedPlannerLessonId = null;
     return;
   }
   const lessonIds = lessonsToRender
@@ -2704,27 +2798,25 @@ function renderPlannerLessons(plan) {
     })
     .join('');
   plannerCardsContainer.innerHTML = markup;
-  if (selectedPlannerLessonId) {
-    setSelectedPlannerLesson(selectedPlannerLessonId);
-  } else {
-    setSelectedPlannerLesson(null);
-  }
+  setSelectedPlannerLesson(selectedPlannerLessonId);
 }
 
 function setSelectedPlannerLesson(lessonId) {
   selectedPlannerLessonId = lessonId || null;
-  if (!plannerCardsContainer) {
-    return;
+  if (plannerCardsContainer) {
+    const cards = plannerCardsContainer.querySelectorAll('[data-planner-lesson]');
+    cards.forEach((card) => {
+      const matches = Boolean(lessonId) && card.getAttribute('data-lesson-id') === lessonId;
+      if (matches) {
+        card.setAttribute('data-planner-selected', 'true');
+      } else {
+        card.removeAttribute('data-planner-selected');
+      }
+    });
   }
-  const cards = plannerCardsContainer.querySelectorAll('[data-planner-lesson]');
-  cards.forEach((card) => {
-    const matches = Boolean(lessonId) && card.getAttribute('data-lesson-id') === lessonId;
-    if (matches) {
-      card.setAttribute('data-planner-selected', 'true');
-    } else {
-      card.removeAttribute('data-planner-selected');
-    }
-  });
+  const lessons = Array.isArray(currentPlannerPlan?.lessons) ? currentPlannerPlan.lessons : [];
+  const lesson = lessons.find((entry) => entry.id === selectedPlannerLessonId) || null;
+  renderPlannerDetail(lesson);
 }
 
 function getSelectedPlannerLessonId() {
@@ -3005,6 +3097,75 @@ async function handlePlannerCreateReminder(lessonId, triggerElement) {
   safeDispatchDocumentEvent('cue:open', { trigger: triggerElement, source: 'planner' });
 }
 
+async function handlePlannerDuplicateLesson(lessonId, triggerElement) {
+  if (!lessonId) {
+    return;
+  }
+  await ensurePlannerPlanAvailable();
+  const lessons = Array.isArray(currentPlannerPlan?.lessons) ? currentPlannerPlan.lessons : [];
+  const lesson = lessons.find((entry) => entry?.id === lessonId);
+  if (!lesson) {
+    return;
+  }
+  const trigger = triggerElement instanceof HTMLElement ? triggerElement : null;
+  if (trigger) {
+    trigger.setAttribute('disabled', 'true');
+  }
+  const duplicateId = generateClientId('lesson');
+  const lessonCopy = {
+    id: duplicateId,
+    dayIndex: lesson.dayIndex,
+    dayLabel: lesson.dayLabel,
+    dayName: lesson.dayName,
+    title: lesson.title,
+    summary: lesson.summary,
+    subject: lesson.subject,
+    notes: lesson.notes,
+    details: Array.isArray(lesson.details)
+      ? lesson.details.map((detail) => ({ badge: detail?.badge || '', text: detail?.text || '' }))
+      : [],
+  };
+  try {
+    const plan = await addLessonToWeek(activePlannerWeekId, lessonCopy);
+    if (plan) {
+      currentPlannerPlan = plan;
+      selectedPlannerLessonId = duplicateId;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      syncPlannerTemplateSelection(plan);
+      if (liveStatusRegion) {
+        liveStatusRegion.textContent = `Duplicated ${lesson.title || 'lesson'} into this week.`;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to duplicate planner lesson', error);
+    if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+      window.alert('Unable to duplicate that lesson right now.');
+    }
+  } finally {
+    if (trigger) {
+      trigger.removeAttribute('disabled');
+    }
+  }
+}
+
+function handlePlannerOpenResources() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const targetHash = '#resources';
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  }
+  if (typeof window.renderRoute === 'function') {
+    window.renderRoute();
+  }
+  scheduleRouteFocus('resources');
+  if (liveStatusRegion) {
+    liveStatusRegion.textContent = 'Opening resources to add new materials.';
+  }
+}
+
 async function handlePlannerCardAction(event) {
   const trigger = event.target instanceof Element ? event.target.closest('[data-planner-action]') : null;
   if (!trigger) {
@@ -3034,6 +3195,36 @@ async function handlePlannerCardAction(event) {
       break;
     case 'create-reminder':
       await handlePlannerCreateReminder(lessonId, trigger);
+      break;
+    default:
+      break;
+  }
+}
+
+async function handlePlannerDetailAction(event) {
+  const trigger = event.target instanceof Element ? event.target.closest('[data-planner-detail-action]') : null;
+  if (!trigger) {
+    return;
+  }
+  event.preventDefault();
+  const action = trigger.getAttribute('data-planner-detail-action');
+  if (!action) {
+    return;
+  }
+  const lessonId = plannerDetailPanel?.getAttribute('data-lesson-id');
+  switch (action) {
+    case 'duplicate':
+      if (lessonId) {
+        await handlePlannerDuplicateLesson(lessonId, trigger);
+      }
+      break;
+    case 'reminder':
+      if (lessonId) {
+        await handlePlannerCreateReminder(lessonId, trigger);
+      }
+      break;
+    case 'resources':
+      handlePlannerOpenResources();
       break;
     default:
       break;
@@ -3208,6 +3399,7 @@ function initPlannerView() {
   plannerCardsContainer.addEventListener('input', handlePlannerNotesInput);
   plannerCardsContainer.addEventListener('focusout', handlePlannerNotesFocusOut);
   plannerCardsContainer.addEventListener('toggle', handlePlannerNotesToggle);
+  plannerDetailActionsContainer?.addEventListener('click', handlePlannerDetailAction);
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
   plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);
