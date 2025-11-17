@@ -445,6 +445,7 @@
                   <h2 class="text-sm font-semibold tracking-wide text-base-content/80 uppercase">
                     Today’s reminders
                   </h2>
+                  <!-- Optional simple icon -->
                   <span class="text-lg" aria-hidden="true">⏰</span>
                 </div>
 
@@ -453,7 +454,7 @@
                 </p>
 
                 <div class="flex items-baseline gap-2">
-                  <span class="text-3xl font-semibold text-base-content" id="dashboard-reminders-today-count">
+                  <span class="text-3xl font-semibold text-base-content" id="dashboard-reminders-today-count" aria-live="polite">
                     –
                   </span>
                   <span class="text-xs text-base-content/70 uppercase tracking-wide">
@@ -473,7 +474,7 @@
                 </ul>
 
                 <div class="pt-1">
-                  <button class="btn btn-outline btn-sm" data-route-target="reminders">
+                  <button class="btn btn-outline btn-sm" type="button" data-route-target="reminders">
                     Open Reminders
                   </button>
                 </div>
@@ -516,7 +517,7 @@
                 </div>
 
                 <div class="flex justify-end gap-2 pt-1">
-                  <button class="btn btn-outline btn-sm">
+                  <button class="btn btn-outline btn-sm" type="button">
                     Copy to planner
                   </button>
                 </div>
