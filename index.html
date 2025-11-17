@@ -190,18 +190,6 @@
       padding: clamp(1.5rem, 4vw, 2.25rem);
     }
 
-    [data-route="notes"] .notes-editor-card textarea {
-      min-height: 22rem;
-      color: #1f2a24;
-      border-color: #e5dec9;
-      background-color: #fffcf5;
-    }
-
-    [data-route="notes"] .notes-editor-card {
-      border-color: #e8e0cc;
-      background-color: #fbf9f2;
-    }
-
     @media (max-width: 639px) {
       [data-route="notes"] .notes-editor-card {
         border-radius: 1.5rem;
@@ -210,22 +198,6 @@
       [data-route="notes"] .notes-editor-card .card-body {
         gap: 1.75rem;
         min-height: 70vh;
-      }
-
-      [data-route="notes"] .notes-editor-card textarea {
-        min-height: min(70vh, 26rem);
-      }
-    }
-
-    @media (min-width: 640px) {
-      [data-route="notes"] .notes-editor-card textarea {
-        min-height: 24rem;
-      }
-    }
-
-    @media (min-width: 1024px) {
-      [data-route="notes"] .notes-editor-card textarea {
-        min-height: 28rem;
       }
     }
 
@@ -956,7 +928,7 @@
           </header>
         </div>
         <div class="desktop-notes-grid grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
-          <article class="desktop-panel card notes-editor-card border border-base-300 bg-base-200/70 shadow-sm">
+          <article class="desktop-panel card notes-editor-card border border-base-300 bg-base-100 text-base-content shadow-sm dark:bg-base-200 dark:text-base-content">
             <div class="card-body gap-4">
               <div class="flex flex-col gap-3">
                 <div class="flex flex-col gap-2 mb-3">
@@ -968,15 +940,15 @@
                     placeholder="e.g. Kids basketball schedule – this weekend"
                   />
                 </div>
-                <div class="flex items-center gap-2 mb-3">
-                  <button id="noteSaveBtn" type="button" class="btn btn-primary btn-sm">Save</button>
-                  <button id="noteNewBtn" type="button" class="btn btn-ghost btn-sm">New note</button>
+                <div class="flex justify-end gap-2 mb-3">
+                  <button id="noteSaveBtn" type="button" class="btn btn-primary">Save</button>
+                  <button id="noteNewBtn" type="button" class="btn btn-outline">New note</button>
                 </div>
                 <div class="flex flex-col gap-2">
                   <label for="noteBody" class="text-sm font-medium">Body</label>
                   <textarea
                     id="noteBody"
-                    class="textarea textarea-bordered w-full"
+                    class="textarea textarea-bordered w-full resize-y min-h-[12rem] max-h-[32rem] px-4 py-2 text-base-content bg-base-100 dark:bg-base-200 dark:text-base-content"
                     rows="10"
                     placeholder="Write your note here…"
                   ></textarea>
