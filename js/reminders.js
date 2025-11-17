@@ -3291,14 +3291,16 @@ export async function initReminders(sel = {}) {
       itemEl.appendChild(content);
 
       const controls = document.createElement('div');
-      controls.className = 'flex items-start gap-1';
+      controls.className = 'task-toolbar flex items-start gap-1';
+      controls.setAttribute('role', 'toolbar');
+      controls.setAttribute('aria-label', 'Reminder actions');
       if (isMobile) {
         controls.classList.add('flex-shrink-0');
       }
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs';
+      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn';
       if (summary.done) {
         toggleBtn.classList.add('text-base-content/60');
         toggleBtn.innerHTML = '<span aria-hidden="true">↺</span>';
@@ -3319,7 +3321,7 @@ export async function initReminders(sel = {}) {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error';
+      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn';
       deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
       deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
       deleteBtn.setAttribute('data-reminder-control', 'delete');
