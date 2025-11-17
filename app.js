@@ -993,14 +993,21 @@ function createPlannerLessonModal() {
   const primaryNav = document.querySelector('nav[aria-label="Primary"]');
   const backgroundTargets = (() => {
     const targets = [];
+    const modalParent = modal.parentElement;
     if (primaryNav instanceof HTMLElement) {
       targets.push(primaryNav);
     }
-    if (mainContent instanceof HTMLElement) {
+    if (modalParent instanceof HTMLElement) {
+      targets.push(
+        ...Array.from(modalParent.children).filter(
+          (child) => child instanceof HTMLElement && child !== modal
+        )
+      );
+    } else if (mainContent instanceof HTMLElement) {
       if (mainContent.contains(modal)) {
         targets.push(
           ...Array.from(mainContent.children).filter(
-            (child) => child instanceof HTMLElement && child !== modal
+            (child) => child instanceof HTMLElement && !child.contains(modal)
           )
         );
       } else {
