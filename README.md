@@ -72,3 +72,13 @@ Keep your real Supabase URL and anon key out of version control—set them throu
 ## Privacy & Data
 
 Memory Cue stores notes and reminders in Firebase services (e.g., Firestore or Realtime Database). Review your Firebase security rules to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. As with any Firebase-backed app, do not commit private API keys or service credentials to the repository.
+
+## Desktop theme architecture
+
+The desktop experience relies on a bespoke theme toggle and layout hooks. Keep the following guardrails in mind whenever you touch `index.html`, `styles/daisy-themes.css`, or `js/main.js`:
+
+- **Theme persistence rules.** `js/main.js` hard-codes the theme rotation to `['professional', 'night']` and assumes that the desktop styles always run under `data-theme="professional"` when the “light” option is active. Toggling calls `applyTheme`, `updateThemeButton`, and `dispatchThemeChange`, persisting the current value in `localStorage` under the `theme` key. If you add or rename a theme, make sure `professional` stays in the list so the selectors that scope to `[data-theme="professional"]` continue to match.
+- **Desktop design tokens.** The professional DaisyUI theme in `styles/daisy-themes.css` is the only place that currently defines the `--desktop-*` custom properties (`--desktop-bg`, `--desktop-surface`, `--desktop-surface-muted`, `--desktop-border-subtle`, `--desktop-header-bg`, `--desktop-header-border`, `--desktop-text-main`, `--desktop-text-muted`, `--desktop-nav-bg`, `--desktop-nav-active`, `--desktop-nav-text`, `--desktop-nav-text-muted`, `--desktop-radius-card`, `--desktop-radius-chip`, `--desktop-shadow-card`, `--desktop-shadow-subtle`). Copy or override this block whenever you ship a new DaisyUI theme so the desktop palette, radii, and shadows stay in sync.
+- **Required markup hooks.** Custom layout utilities such as `.desktop-hero`, `.desktop-dashboard-grid`, `.dashboard-card`, and `.desktop-panel` are baked into `index.html`. These wrappers power the authored CSS; swapping them for ad-hoc Tailwind utility grids (e.g., `max-w-6xl`, `grid grid-cols-1 lg:grid-cols-3`) prevents the desktop rules from applying. When editing the dashboard section, keep these class hooks around so the selectors in `index.html` continue to trigger.
+
+Following these rules keeps the professional theme in the toggle rotation, ensures each new theme exposes the desktop token surface, and preserves the layout hooks that the desktop CSS expects.
