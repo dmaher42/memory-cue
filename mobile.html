@@ -125,6 +125,19 @@
     padding: 20px;
   }
 
+  body.mobile-shell .container {
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  body.mobile-shell #main {
+    max-width: none;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   body[data-active-view="notebook"] .container {
     max-width: none;
     margin: 0;
@@ -2591,21 +2604,24 @@
       border-bottom: none;
       backdrop-filter: none;
       margin: 0.25rem 0 0.25rem;
+      width: 100%;
     }
 
     .mc-quick-add-inner {
-      max-width: 28rem;
-      margin: 0 auto;
-      padding: 0.4rem 0.85rem;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
       gap: 0.75rem;
-      border-radius: 999px;
-      background: var(--mobile-quick-surface);
-      border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent);
-      box-shadow: var(--mobile-quick-shadow);
-      backdrop-filter: blur(14px);
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
     }
 
     .mc-quick-status {
@@ -3168,7 +3184,7 @@
 
   <div class="container">
     <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
-      <div class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
+      <div class="mobile-shell w-full pb-16">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
