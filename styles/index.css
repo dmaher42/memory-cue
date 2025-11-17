@@ -2177,6 +2177,36 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   display: none !important;
 }
 
+.desktop-panel--planner {
+  --planner-text-scale: 1;
+}
+
+.desktop-panel--planner.planner-text-small {
+  --planner-text-scale: 0.9;
+}
+
+.desktop-panel--planner.planner-text-default {
+  --planner-text-scale: 1;
+}
+
+.desktop-panel--planner.planner-text-large {
+  --planner-text-scale: 1.15;
+}
+
+.desktop-panel--planner [data-planner-lesson] p.text-sm,
+.desktop-panel--planner [data-planner-lesson] ul.text-sm,
+.desktop-panel--planner [data-planner-lesson] ul .text-sm {
+  font-size: calc(0.875rem * var(--planner-text-scale));
+  line-height: calc(1.25rem * var(--planner-text-scale));
+  transition: font-size 0.2s ease, line-height 0.2s ease;
+}
+
+.desktop-panel--planner textarea[data-planner-notes] {
+  font-size: calc(1rem * var(--planner-text-scale));
+  line-height: calc(1.5rem * var(--planner-text-scale));
+  transition: font-size 0.2s ease, line-height 0.2s ease;
+}
+
 [data-route="planner"] {
   background: var(--planner-bg);
 }
