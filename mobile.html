@@ -72,6 +72,10 @@
       --mobile-quick-shadow: 0 18px 30px rgba(15, 23, 42, 0.6);
     }
 
+    .pt-safe-top {
+      padding-top: env(safe-area-inset-top, 0);
+    }
+
     /* Mobile reminder cards coloured by priority using existing tokens */
     .task-item,
     .cue-task-card {
@@ -2840,13 +2844,6 @@
         </button>
       </div>
 
-      <div class="flex-1 flex justify-center">
-        <button id="addReminderBtn" type="button" class="mc-add-btn mc-add-btn-wide" data-open-add-task>
-          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-          <span class="mc-add-btn-label">Add reminder</span>
-        </button>
-      </div>
-
       <div class="relative header-action-group">
         <button
           id="overflowMenuBtn"
@@ -2910,49 +2907,6 @@
       </div>
     </div>
   </header>
-
-  <section id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
-    <div class="mc-quick-add-inner">
-      <!-- Left: Sync status -->
-      <div class="mc-quick-status">
-        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
-          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
-        </div>
-        <p id="sync-status" class="mc-sync-message"></p>
-        <span id="mcStatusText" class="mc-status-text">Offline</span>
-      </div>
-
-      <!-- Right: Quick add row -->
-      <div class="mc-quick-add-row">
-        <input
-          id="quickAddInput"
-          class="mc-quick-input"
-          type="text"
-          autocomplete="off"
-          placeholder="Quick reminder…"
-        />
-        <button
-          id="quickAddSubmit"
-          type="button"
-          class="mc-quick-submit"
-          aria-label="Add reminder"
-        >
-          Add
-        </button>
-        <div class="mc-quick-actions">
-          <button
-            id="quickAddVoice"
-            type="button"
-            class="mc-quick-voice"
-            aria-label="Use voice to add reminder"
-          >
-            <span aria-hidden="true">🎤</span>
-            <span class="sr-only">Use voice to add reminder</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <div
     id="mobile-drawer-scrim"
@@ -3199,6 +3153,62 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
+      <header class="px-4 pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold tracking-wide text-base-content">Reminders</h2>
+          <button
+            id="addReminderBtn"
+            type="button"
+            class="mc-add-btn mc-add-btn-wide btn btn-primary btn-xs rounded-full shadow-md"
+            data-open-add-task
+          >
+            <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+            <span class="mc-add-btn-label">Add reminder</span>
+          </button>
+        </div>
+        <p class="text-xs text-base-content/70">
+          Quick add a reminder here, or use the button for more details.
+        </p>
+        <div id="quickAddBar" class="mc-quick-add-bar" aria-label="Quick add reminder">
+          <div class="mc-quick-add-inner space-y-1.5">
+            <div class="mc-quick-status flex items-center gap-2 text-xs text-base-content/60">
+              <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
+                <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
+              </div>
+              <p id="sync-status" class="mc-sync-message"></p>
+              <span id="mcStatusText" class="mc-status-text">Offline</span>
+            </div>
+            <div class="mc-quick-add-row flex items-center gap-2 mt-1">
+              <input
+                id="quickAddInput"
+                class="mc-quick-input input input-bordered input-sm flex-1 bg-base-200/80 text-base-content placeholder:text-base-content/60"
+                type="text"
+                autocomplete="off"
+                placeholder="Quick reminder…"
+              />
+              <button
+                id="quickAddSubmit"
+                type="button"
+                class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm"
+                aria-label="Add reminder"
+              >
+                Add
+              </button>
+              <div class="mc-quick-actions flex items-center gap-1">
+                <button
+                  id="quickAddVoice"
+                  type="button"
+                  class="mc-quick-voice btn btn-ghost btn-sm rounded-full"
+                  aria-label="Use voice to add reminder"
+                >
+                  <span aria-hidden="true">🎤</span>
+                  <span class="sr-only">Use voice to add reminder</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
       <section
         id="reminderListSection"
         class="w-full relative"
