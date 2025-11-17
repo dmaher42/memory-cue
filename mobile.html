@@ -2047,10 +2047,17 @@
   <style id="mobile-reminder-card-refresh">
     .mobile-shell #reminderList,
     .mobile-shell .reminder-list {
-      padding: 0 0.8rem;
+      padding: 0;
       margin-top: 0.8rem;
       width: 100%;
       box-sizing: border-box;
+    }
+
+    @media (min-width: 640px) {
+      .mobile-shell #reminderList,
+      .mobile-shell .reminder-list {
+        padding: 0 0.8rem;
+      }
     }
 
     .mobile-shell #reminderList {
@@ -3191,7 +3198,7 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <header class="px-4 pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow w-full">
+      <header class="pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow w-full sm:px-4">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-base font-semibold tracking-wide text-base-content">Reminders</h2>
           <button
@@ -3252,11 +3259,11 @@
         class="w-full relative"
       >
         <div class="w-full" id="remindersWrapper">
-          <div id="emptyState" class="hidden text-center text-base-content/60 py-8 px-4"></div>
+          <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
           <p id="reminderReorderHint" class="sr-only">
             Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
           </p>
-          <p class="text-xs text-base-content/50 mb-2 pb-2 px-4 border-b border-base-200/30">Total reminders: <span id="totalCount">0</span></p>
+          <p class="text-xs text-base-content/50 mb-2 pb-2 border-b border-base-200/30 sm:px-4">Total reminders: <span id="totalCount">0</span></p>
           <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
         </div>
       </section>
