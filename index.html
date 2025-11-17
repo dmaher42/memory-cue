@@ -357,11 +357,11 @@
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
-        <div class="max-w-6xl mx-auto my-10 px-6 py-6 md:px-8 md:py-7 space-y-6">
+        <div class="max-w-6xl mx-auto space-y-6">
           <section class="desktop-hero">
-            <div class="hero-content">
-              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div class="lg:col-span-1">
+            <div class="hero-content max-w-none w-full">
+              <div class="desktop-dashboard-grid">
+                <div class="space-y-6">
                   <article class="dashboard-card dashboard-card--hero h-full">
                     <div class="dashboard-card-content">
                       <div class="flex items-start justify-between gap-3">
@@ -411,8 +411,47 @@
                       </div>
                     </div>
                   </article>
+
+                  <article class="dashboard-card dashboard-card--compact h-full">
+                    <div class="dashboard-card-content">
+                      <div class="flex items-center justify-between gap-2">
+                        <p class="dashboard-card-eyebrow">Today’s reminders</p>
+                        <span class="text-lg" aria-hidden="true">⏰</span>
+                      </div>
+
+                      <p class="dashboard-card-text">
+                        A quick snapshot of what you’ve scheduled for today.
+                      </p>
+
+                      <div class="flex items-baseline gap-2">
+                        <span class="dashboard-card-metric" id="dashboard-reminders-today-count" aria-live="polite">
+                          –
+                        </span>
+                        <span class="text-xs text-base-content/70 uppercase tracking-wide">
+                          reminders today
+                        </span>
+                      </div>
+
+                      <ul class="space-y-1 text-sm text-base-content/80">
+                        <li class="flex items-center gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+                          <span>Use quick-add in Reminders to capture new tasks.</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
+                          <span>Mark tasks complete from the Reminders tab when they’re done.</span>
+                        </li>
+                      </ul>
+
+                      <div class="pt-1">
+                        <button class="btn btn-outline btn-sm" type="button" data-route-target="reminders">
+                          Open Reminders
+                        </button>
+                      </div>
+                    </div>
+                  </article>
                 </div>
-                <div class="lg:col-span-2">
+                <div class="space-y-6">
                   <article class="dashboard-card dashboard-card--hero h-full">
                     <div class="dashboard-card-content">
                       <div class="space-y-1">
@@ -442,207 +481,282 @@
                       <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
                     </div>
                   </article>
+
+                  <article class="dashboard-card dashboard-card--compact h-full">
+                    <div class="dashboard-card-content">
+                      <div class="flex items-center justify-between gap-2">
+                        <p class="dashboard-card-eyebrow">Next lesson</p>
+                        <span class="text-lg" aria-hidden="true">🗓️</span>
+                      </div>
+
+                      <p class="dashboard-card-text">
+                        Jot down the key focus for your upcoming class so it’s top of mind.
+                      </p>
+
+                      <div class="space-y-1">
+                        <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-title">
+                          Lesson title
+                        </label>
+                        <input
+                          id="dashboard-next-lesson-title"
+                          type="text"
+                          class="input input-bordered input-sm w-full text-sm text-base-content"
+                          placeholder="e.g. Yr7 English – Two Wolves chapter 5"
+                        >
+                      </div>
+
+                      <div class="space-y-1">
+                        <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-focus">
+                          Focus / key point
+                        </label>
+                        <textarea
+                          id="dashboard-next-lesson-focus"
+                          class="textarea textarea-bordered w-full min-h-[4rem] text-sm text-base-content"
+                          placeholder="Main activity, checkpoint, or behaviour focus for this lesson."
+                        ></textarea>
+                      </div>
+
+                      <div class="flex justify-end gap-2 pt-1">
+                        <button class="btn btn-outline btn-sm" type="button">
+                          Copy to planner
+                        </button>
+                      </div>
+                    </div>
+                  </article>
                 </div>
               </div>
             </div>
           </section>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div class="md:col-span-1 h-full">
-              <article class="dashboard-card dashboard-card--compact h-full">
-                <div class="dashboard-card-content">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="dashboard-card-eyebrow">Today’s reminders</p>
-                    <span class="text-lg" aria-hidden="true">⏰</span>
-                  </div>
-
-                  <p class="dashboard-card-text">
-                    A quick snapshot of what you’ve scheduled for today.
-                  </p>
-
-                  <div class="flex items-baseline gap-2">
-                    <span class="dashboard-card-metric" id="dashboard-reminders-today-count" aria-live="polite">
-                      –
-                    </span>
-                    <span class="text-xs text-base-content/70 uppercase tracking-wide">
-                      reminders today
-                    </span>
-                  </div>
-
-                  <ul class="space-y-1 text-sm text-base-content/80">
-                    <li class="flex items-center gap-2">
-                      <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
-                      <span>Use quick-add in Reminders to capture new tasks.</span>
-                    </li>
-                    <li class="flex items-center gap-2">
-                      <span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
-                      <span>Mark tasks complete from the Reminders tab when they’re done.</span>
-                    </li>
-                  </ul>
-
-                  <div class="pt-1">
-                    <button class="btn btn-outline btn-sm" type="button" data-route-target="reminders">
-                      Open Reminders
-                    </button>
-                  </div>
-                </div>
-              </article>
-            </div>
-            <div class="md:col-span-1 h-full">
-              <article class="dashboard-card dashboard-card--compact h-full">
-                <div class="dashboard-card-content">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="dashboard-card-eyebrow">Next lesson</p>
-                    <span class="text-lg" aria-hidden="true">🗓️</span>
-                  </div>
-
-                  <p class="dashboard-card-text">
-                    Jot down the key focus for your upcoming class so it’s top of mind.
-                  </p>
-
-                  <div class="space-y-1">
-                    <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-title">
-                      Lesson title
-                    </label>
-                    <input
-                      id="dashboard-next-lesson-title"
-                      type="text"
-                      class="input input-bordered input-sm w-full text-sm text-base-content"
-                      placeholder="e.g. Yr7 English – Two Wolves chapter 5"
-                    >
-                  </div>
-
-                  <div class="space-y-1">
-                    <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-focus">
-                      Focus / key point
-                    </label>
-                    <textarea
-                      id="dashboard-next-lesson-focus"
-                      class="textarea textarea-bordered w-full min-h-[4rem] text-sm text-base-content"
-                      placeholder="Main activity, checkpoint, or behaviour focus for this lesson."
-                    ></textarea>
-                  </div>
-
-                  <div class="flex justify-end gap-2 pt-1">
-                    <button class="btn btn-outline btn-sm" type="button">
-                      Copy to planner
-                    </button>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </div>
         </div>
 
         <div class="desktop-dashboard-grid">
-          <section class="dashboard-kpis" aria-labelledby="kpi-heading">
-          <h2 id="kpi-heading" class="sr-only">Key metrics</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <article class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Reminders</p>
-                <span aria-hidden="true">🔔</span>
+          <section
+            class="dashboard-card card dashboard-card--compact"
+            aria-labelledby="kpi-heading"
+            data-dashboard-tab-group="kpi"
+          >
+            <div class="dashboard-card-content space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="kpi-heading" class="dashboard-card-title">Key metrics</h2>
+                <div role="tablist" aria-label="Key metrics" class="tabs tabs-boxed tabs-sm">
+                  <button
+                    id="kpi-tab-reminders"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="kpi-panel-reminders"
+                    class="tab tab-sm tab-active"
+                    data-dashboard-tab="reminders"
+                  >
+                    Reminders
+                  </button>
+                  <button
+                    id="kpi-tab-planner"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="kpi-panel-planner"
+                    class="tab tab-sm"
+                    data-dashboard-tab="planner"
+                  >
+                    Planner
+                  </button>
+                  <button
+                    id="kpi-tab-resources"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="kpi-panel-resources"
+                    class="tab tab-sm"
+                    data-dashboard-tab="resources"
+                  >
+                    Resources
+                  </button>
+                  <button
+                    id="kpi-tab-templates"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="kpi-panel-templates"
+                    class="tab tab-sm"
+                    data-dashboard-tab="templates"
+                  >
+                    Templates
+                  </button>
+                </div>
               </div>
-              <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
-              <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
-            </article>
-            <article class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Planner</p>
-                <span aria-hidden="true">🗂️</span>
+              <div class="space-y-3">
+                <article
+                  id="kpi-panel-reminders"
+                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5"
+                  role="tabpanel"
+                  aria-labelledby="kpi-tab-reminders"
+                  data-dashboard-panel="reminders"
+                >
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Reminders</p>
+                    <span aria-hidden="true">🔔</span>
+                  </div>
+                  <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
+                  <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
+                </article>
+                <article
+                  id="kpi-panel-planner"
+                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                  role="tabpanel"
+                  aria-labelledby="kpi-tab-planner"
+                  aria-hidden="true"
+                  data-dashboard-panel="planner"
+                >
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Planner</p>
+                    <span aria-hidden="true">🗂️</span>
+                  </div>
+                  <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
+                  <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
+                </article>
+                <article
+                  id="kpi-panel-resources"
+                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                  role="tabpanel"
+                  aria-labelledby="kpi-tab-resources"
+                  aria-hidden="true"
+                  data-dashboard-panel="resources"
+                >
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Resources</p>
+                    <span aria-hidden="true">📁</span>
+                  </div>
+                  <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
+                  <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
+                </article>
+                <article
+                  id="kpi-panel-templates"
+                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                  role="tabpanel"
+                  aria-labelledby="kpi-tab-templates"
+                  aria-hidden="true"
+                  data-dashboard-panel="templates"
+                >
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Templates</p>
+                    <span aria-hidden="true">🧩</span>
+                  </div>
+                  <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
+                  <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
+                </article>
               </div>
-              <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
-              <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
-            </article>
-            <article class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Resources</p>
-                <span aria-hidden="true">📁</span>
-              </div>
-              <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
-              <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
-            </article>
-            <article class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Templates</p>
-                <span aria-hidden="true">🧩</span>
-              </div>
-              <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
-              <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
-            </article>
-          </div>
+            </div>
           </section>
 
-          <div class="flex flex-col gap-6">
-            <section class="dashboard-card relative backdrop-blur">
-              <div class="dashboard-card-content">
-                <h2
-                  id="daily-snapshot-heading"
-                  class="dashboard-card-title"
+          <section
+            class="dashboard-card card dashboard-card--compact"
+            data-dashboard-tab-group="daily-focus"
+            aria-labelledby="daily-overview-heading"
+          >
+            <div class="dashboard-card-content space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="daily-overview-heading" class="dashboard-card-title">Daily overview</h2>
+                <div role="tablist" aria-label="Daily overview" class="tabs tabs-boxed tabs-sm">
+                  <button
+                    id="daily-tab-snapshot"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="daily-snapshot-panel"
+                    class="tab tab-sm tab-active"
+                    data-dashboard-tab="snapshot"
+                  >
+                    Daily snapshot
+                  </button>
+                  <button
+                    id="daily-tab-focus"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="todays-focus-panel"
+                    class="tab tab-sm"
+                    data-dashboard-tab="focus"
+                  >
+                    Today's focus
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div
+                  id="daily-snapshot-panel"
+                  role="tabpanel"
+                  aria-labelledby="daily-tab-snapshot"
+                  data-dashboard-panel="snapshot"
                 >
-                  Daily snapshot
-                </h2>
-                <ul
-                  id="dailySnapshotList"
-                  class="mt-5 space-y-4 dashboard-card-text"
-                  role="list"
-                  aria-labelledby="daily-snapshot-heading"
-                ></ul>
-                <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
-                  <p class="dashboard-card-eyebrow">Shortcut</p>
-                  <p class="dashboard-card-text mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
-                </div>
-              </div>
-            </section>
-
-            <section class="dashboard-card card dashboard-card--compact flex flex-col gap-2">
-              <div class="dashboard-card-content">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                  <div class="space-y-3">
-                    <h2 id="todays-focus-heading" class="dashboard-card-title">Today's focus</h2>
-                    <p class="dashboard-card-text">
-                      Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
-                    </p>
-                    <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
-                      <div class="flex items-center gap-2">
-                        <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
-                        <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
-                        <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
-                        <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-2">
-                      <button
-                        class="btn btn-primary btn-sm sm:btn-md"
-                        type="button"
-                        data-open-reminder-modal
-                        aria-haspopup="dialog"
-                        aria-controls="add-reminder-modal"
-                      >
-                        Add reminder
-                      </button>
-                      <div class="join hidden sm:inline-flex">
-                        <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
-                        <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
-                        <button class="btn btn-sm join-item btn-outline" type="button">High</button>
-                      </div>
+                  <h3 id="daily-snapshot-heading" class="dashboard-card-title">Daily snapshot</h3>
+                  <ul
+                    id="dailySnapshotList"
+                    class="mt-5 space-y-4 dashboard-card-text"
+                    role="list"
+                    aria-labelledby="daily-snapshot-heading"
+                  ></ul>
+                  <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
+                    <p class="dashboard-card-eyebrow">Shortcut</p>
+                    <p class="dashboard-card-text mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
                   </div>
                 </div>
-                <ol
-                  id="todaysFocusList"
-                  class="space-y-3"
-                  role="list"
-                  aria-labelledby="todays-focus-heading"
-                ></ol>
+                <div
+                  id="todays-focus-panel"
+                  role="tabpanel"
+                  aria-labelledby="daily-tab-focus"
+                  data-dashboard-panel="focus"
+                  class="hidden"
+                  aria-hidden="true"
+                >
+                  <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div class="space-y-3">
+                      <h3 id="todays-focus-heading" class="dashboard-card-title">Today's focus</h3>
+                      <p class="dashboard-card-text">
+                        Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
+                      </p>
+                      <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
+                        <div class="flex items-center gap-2">
+                          <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
+                          <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
+                          <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
+                          <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
+                        </div>
+                      </dl>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button
+                          class="btn btn-primary btn-sm sm:btn-md"
+                          type="button"
+                          data-open-reminder-modal
+                          aria-haspopup="dialog"
+                          aria-controls="add-reminder-modal"
+                        >
+                          Add reminder
+                        </button>
+                        <div class="join hidden sm:inline-flex">
+                          <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
+                          <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
+                          <button class="btn btn-sm join-item btn-outline" type="button">High</button>
+                        </div>
+                    </div>
+                  </div>
+                  <ol
+                    id="todaysFocusList"
+                    class="space-y-3"
+                    role="list"
+                    aria-labelledby="todays-focus-heading"
+                  ></ol>
+                </div>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
 
         <div class="desktop-dashboard-grid">
