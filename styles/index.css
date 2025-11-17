@@ -55,6 +55,15 @@ html[data-theme="caramellatte"] {
   --page-bg-highlight: rgba(188, 108, 37, 0.2);
 }
 
+html[data-theme="professional"] {
+  --planner-accent: #3bafda;
+  --planner-accent-muted: #b6e4f3;
+  --planner-bg: #f0faff;
+  --planner-card-bg: #ffffff;
+  --planner-card-border: #b6e4f3;
+  --planner-card-hover: #4cc3ee;
+}
+
 html[data-theme="professional"] body.desktop-shell {
   background:
     radial-gradient(circle at 18% 0%, rgba(99, 102, 241, 0.18), transparent 60%),
@@ -2166,4 +2175,36 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 [data-priority-pill],
 .priority-pill {
   display: none !important;
+}
+
+[data-route="planner"] {
+  background: var(--planner-bg);
+}
+
+[data-route="planner"] .lesson-card,
+[data-route="planner"] .planner-lesson {
+  background: var(--planner-card-bg);
+  border: 1px solid var(--planner-card-border);
+  border-radius: 12px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+[data-route="planner"] .lesson-card:hover,
+[data-route="planner"] .planner-lesson:hover {
+  border-color: var(--planner-card-hover);
+  background: color-mix(in srgb, var(--planner-card-hover) 8%, #ffffff);
+}
+
+[data-route="planner"] .day-column-header {
+  background: var(--planner-accent);
+  color: white;
+  font-weight: 600;
+}
+
+[data-route="planner"] .timeline-marker,
+[data-route="planner"] .lesson-chip,
+[data-route="planner"] .planner-badge {
+  background: var(--planner-accent);
+  color: #ffffff;
+  border-radius: 999px;
 }
