@@ -3879,12 +3879,73 @@ function initDesktopNotes() {
   const saveButton = document.getElementById('noteSaveBtn');
   const newButton = document.getElementById('noteNewBtn');
   const notesListElement = document.getElementById('notesList');
+  const notesLayout = document.querySelector('[data-notes-layout]');
+  const notesShelfToggleButtons = document.querySelectorAll('[data-notes-shelf-toggle]');
 
   if (!titleInput || !bodyInput || !saveButton || !newButton) {
     return;
   }
 
   let currentNoteId = null;
+
+  const focusEditorField = () => {
+    if (typeof titleInput.focus !== 'function') {
+      return;
+    }
+    try {
+      titleInput.focus({ preventScroll: true });
+    } catch {
+      titleInput.focus();
+    }
+  };
+
+  const getNotesShelfState = () => {
+    if (!notesLayout) {
+      return 'expanded';
+    }
+    return notesLayout.dataset.notesShelfState === 'collapsed' ? 'collapsed' : 'expanded';
+  };
+
+  const syncNotesShelfControls = (state) => {
+    const isCollapsed = state === 'collapsed';
+    notesShelfToggleButtons.forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      button.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+      const variant = button.dataset.notesShelfToggleVariant;
+      if (variant === 'primary') {
+        button.textContent = isCollapsed ? 'Show saved notes' : 'Hide saved notes';
+      } else if (variant === 'close') {
+        button.textContent = isCollapsed ? 'Show' : 'Close';
+      }
+    });
+  };
+
+  const setNotesShelfState = (state) => {
+    if (notesLayout) {
+      notesLayout.dataset.notesShelfState = state === 'collapsed' ? 'collapsed' : 'expanded';
+    }
+    syncNotesShelfControls(getNotesShelfState());
+  };
+
+  const toggleNotesShelfState = () => {
+    const nextState = getNotesShelfState() === 'collapsed' ? 'expanded' : 'collapsed';
+    setNotesShelfState(nextState);
+    if (nextState === 'collapsed') {
+      focusEditorField();
+    }
+  };
+
+  if (notesShelfToggleButtons.length) {
+    notesShelfToggleButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        toggleNotesShelfState();
+      });
+    });
+    setNotesShelfState(getNotesShelfState());
+  }
 
   const setEditorValues = (note) => {
     if (!note) {
@@ -3988,6 +4049,7 @@ function initDesktopNotes() {
       button.addEventListener('click', () => {
         setEditorValues(note);
         updateListSelection();
+        focusEditorField();
       });
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
@@ -4061,9 +4123,7 @@ function initDesktopNotes() {
     titleInput.value = '';
     bodyInput.value = '';
     updateListSelection();
-    if (typeof titleInput.focus === 'function') {
-      titleInput.focus();
-    }
+    focusEditorField();
   });
 
   applyInitialSelection();

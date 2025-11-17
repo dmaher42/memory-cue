@@ -189,6 +189,43 @@
       }
     }
 
+    [data-workspace-panel="notes"] .workspace-notes-layout {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1rem, 2.5vw, 1.75rem);
+    }
+
+    [data-workspace-panel="notes"] .workspace-notes-shelf {
+      min-height: 0;
+      height: 100%;
+    }
+
+    [data-workspace-panel="notes"] .workspace-notes-shelf__body {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    [data-workspace-panel="notes"] [data-notes-layout][data-notes-shelf-state='collapsed'] .workspace-notes-shelf {
+      display: none;
+    }
+
+    @media (min-width: 1024px) {
+      [data-workspace-panel="notes"] .workspace-notes-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+        align-items: stretch;
+      }
+
+      [data-workspace-panel="notes"] [data-notes-layout][data-notes-shelf-state='collapsed'] {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      [data-workspace-panel="notes"] .workspace-notes-shelf {
+        height: min(34rem, calc(var(--vh, 1vh) * 70));
+      }
+    }
+
     #quick-action-toolbar {
       opacity: 0.95;
       backdrop-filter: blur(14px);
@@ -1179,11 +1216,33 @@
                 class="space-y-4 hidden"
                 hidden
               >
-                <div class="desktop-panel-header space-y-1">
-                  <h3 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content" data-primary-heading">Notes</h3>
-                  <p class="desktop-panel-subtitle text-sm text-base-content/70">Capture observations, behaviour wins, and quick reflections to revisit later.</p>
+                <div class="desktop-panel-header flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div class="space-y-1">
+                    <h3
+                      class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content"
+                      data-primary-heading
+                    >
+                      Notes
+                    </h3>
+                    <p class="desktop-panel-subtitle text-sm text-base-content/70">
+                      Capture observations, behaviour wins, and quick reflections to revisit later.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em]"
+                    data-notes-shelf-toggle
+                    data-notes-shelf-toggle-variant="primary"
+                    aria-expanded="true"
+                  >
+                    Hide saved notes
+                  </button>
                 </div>
-                <div class="grid gap-6 lg:grid-cols-2">
+                <div
+                  class="workspace-notes-layout flex flex-col gap-6"
+                  data-notes-layout
+                  data-notes-shelf-state="expanded"
+                >
                   <article class="workspace-pane desktop-panel card notes-editor-card border border-base-300 bg-base-100 text-base-content shadow-sm">
                     <div class="desktop-panel-body workspace-pane__body card-body flex h-full flex-col gap-4">
                       <div class="space-y-1">
@@ -1210,13 +1269,27 @@
                       </div>
                     </div>
                   </article>
-                  <aside class="workspace-pane desktop-panel card border border-base-300 bg-base-200/70 text-base-content shadow-sm">
+                  <aside
+                    class="workspace-pane desktop-panel card border border-base-300 bg-base-200/70 text-base-content shadow-sm workspace-notes-shelf"
+                    data-notes-shelf
+                  >
                     <div class="desktop-panel-body card-body flex h-full flex-col gap-3">
-                      <div>
-                        <h3 class="text-sm font-semibold text-base-content/80">Saved notes</h3>
-                        <p class="text-xs text-base-content/60">Select an entry to continue editing.</p>
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 class="text-sm font-semibold text-base-content/80">Saved notes</h3>
+                          <p class="text-xs text-base-content/60">Select an entry to continue editing.</p>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs lg:hidden"
+                          data-notes-shelf-toggle
+                          data-notes-shelf-toggle-variant="close"
+                          aria-expanded="true"
+                        >
+                          Close
+                        </button>
                       </div>
-                      <div class="desktop-panel-body workspace-pane__body flex-1 overflow-y-auto pr-1">
+                      <div class="desktop-panel-body workspace-pane__body workspace-notes-shelf__body flex-1 overflow-y-auto pr-1">
                         <ul id="notesList" class="space-y-1 text-sm text-base-content"></ul>
                       </div>
                     </div>
