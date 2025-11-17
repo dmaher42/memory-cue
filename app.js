@@ -2229,6 +2229,14 @@ let selectedPlannerLessonId = null;
 let plannerTemplates = loadPlannerTemplates();
 const plannerNotesSaveTimers = new Map();
 const PLANNER_NOTES_SAVE_DELAY = 800;
+const PLANNER_NOTES_STATUS_CLEAR_DELAY = 1500;
+const PLANNER_NOTES_STATUS_TEXT = {
+  idle: 'Notes save automatically.',
+  saving: 'Saving…',
+  saved: 'Saved',
+  error: 'Unable to save',
+};
+const PLANNER_NOTES_STATUS_VALUES = new Set(['saving', 'saved', 'error']);
 const PLANNER_NOTES_OPEN_STATE_STORAGE_KEY = 'plannerNotesOpenState';
 let plannerNotesOpenState = loadPlannerNotesOpenState();
 
@@ -2451,7 +2459,13 @@ function renderPlannerLessons(plan) {
                     aria-label="Lesson notes"
                   >${escapeCueText(notesValue)}</textarea>
                   <div class="label py-1">
-                    <span class="label-text-alt text-xs text-base-content/60">Notes save automatically.</span>
+                    <span
+                      class="label-text-alt text-xs text-base-content/60"
+                      data-notes-status-text
+                      data-status="idle"
+                      role="status"
+                      aria-live="polite"
+                    >${escapeCueText(PLANNER_NOTES_STATUS_TEXT.idle)}</span>
                   </div>
                 </label>
               </div>
@@ -2625,13 +2639,35 @@ function clearPlannerNotesTimer(lessonId) {
   plannerNotesSaveTimers.delete(lessonId);
 }
 
+function setPlannerNotesFieldStatus(field, status) {
+  if (!(field instanceof HTMLTextAreaElement)) {
+    return;
+  }
+  const normalizedStatus = typeof status === 'string' && PLANNER_NOTES_STATUS_VALUES.has(status) ? status : null;
+  if (normalizedStatus) {
+    field.setAttribute('data-notes-status', normalizedStatus);
+  } else {
+    field.removeAttribute('data-notes-status');
+  }
+  const statusTextElement =
+    field.parentElement instanceof HTMLElement
+      ? field.parentElement.querySelector('[data-notes-status-text]')
+      : null;
+  if (statusTextElement instanceof HTMLElement) {
+    const textKey = normalizedStatus || 'idle';
+    const textValue = PLANNER_NOTES_STATUS_TEXT[textKey] || PLANNER_NOTES_STATUS_TEXT.idle;
+    statusTextElement.textContent = textValue;
+    statusTextElement.setAttribute('data-status', normalizedStatus || 'idle');
+  }
+}
+
 async function persistPlannerLessonNotes(lessonId, notesValue, textarea) {
   if (!lessonId || !activePlannerWeekId) {
     return;
   }
   const field = textarea instanceof HTMLTextAreaElement ? textarea : null;
   if (field) {
-    field.setAttribute('data-notes-status', 'saving');
+    setPlannerNotesFieldStatus(field, 'saving');
   }
   try {
     const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, { notes: notesValue });
@@ -2639,22 +2675,22 @@ async function persistPlannerLessonNotes(lessonId, notesValue, textarea) {
       currentPlannerPlan = plan;
     }
     if (field) {
-      field.setAttribute('data-notes-status', 'saved');
+      setPlannerNotesFieldStatus(field, 'saved');
       const scheduleClear = getPlannerTimeoutScheduler();
       if (scheduleClear) {
         scheduleClear(() => {
           if (field.getAttribute('data-notes-status') === 'saved') {
-            field.removeAttribute('data-notes-status');
+            setPlannerNotesFieldStatus(field, null);
           }
-        }, 1500);
+        }, PLANNER_NOTES_STATUS_CLEAR_DELAY);
       } else {
-        field.removeAttribute('data-notes-status');
+        setPlannerNotesFieldStatus(field, null);
       }
     }
   } catch (error) {
     console.error('Failed to save planner notes', error);
     if (field) {
-      field.setAttribute('data-notes-status', 'error');
+      setPlannerNotesFieldStatus(field, 'error');
     }
   }
 }
