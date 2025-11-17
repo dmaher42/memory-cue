@@ -413,7 +413,21 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
 }
 
 .desktop-panel.desktop-panel--planner #plannerCards {
+  display: grid;
   gap: clamp(1rem, 2.5vw, 1.5rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .desktop-panel.desktop-panel--planner #plannerCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktop-panel.desktop-panel--planner #plannerCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .desktop-panel.desktop-panel--planner .card {
