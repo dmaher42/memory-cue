@@ -58,12 +58,15 @@ function renderRoute() {
   const rawRoute = (window.location.hash || '#dashboard').replace('#', '');
   const activeRoute = rawRoute === '' ? 'dashboard' : rawRoute;
   const isWorkspaceView = workspaceRoutes.has(activeRoute) || activeRoute === 'workspace';
-  const activeSectionRoute = isWorkspaceView ? 'workspace' : activeRoute;
   const routeNodes = document.querySelectorAll('[data-route]');
   routeNodes.forEach((node) => {
     const nodeRoute = node.dataset.route;
     const isDashboardFallback = rawRoute === '' && nodeRoute === 'dashboard';
-    const shouldShow = nodeRoute === activeSectionRoute || isDashboardFallback;
+    const isWorkspaceSection = nodeRoute === 'workspace';
+    const shouldShow =
+      isDashboardFallback ||
+      (!isWorkspaceView && nodeRoute === activeRoute) ||
+      (isWorkspaceView && isWorkspaceSection);
 
     node.style.display = shouldShow ? '' : 'none';
     node.hidden = !shouldShow;
