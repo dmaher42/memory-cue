@@ -316,6 +316,7 @@ const initMobileNotes = () => {
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.querySelector('[data-action="open-saved-notes"]');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
+  const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
   if (!titleInput || !bodyInput || !saveButton) {
     return;
@@ -459,6 +460,11 @@ const initMobileNotes = () => {
       } else {
         button.removeAttribute('data-state');
       }
+      button.classList.toggle('active', isActive);
+      button.classList.toggle('outline', isActive);
+      button.classList.toggle('outline-2', isActive);
+      button.classList.toggle('outline-accent', isActive);
+      button.classList.toggle(ACTIVE_NOTE_SHADOW_CLASS, isActive);
       button.setAttribute('aria-current', isActive ? 'true' : 'false');
     });
   };
@@ -621,14 +627,15 @@ const initMobileNotes = () => {
       listItem.className = 'note-item-mobile w-full';
 
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-2';
+      row.className =
+        'saved-note-row flex items-center justify-between gap-3 rounded-lg bg-base-200 p-3 text-sm text-base-content hover:bg-base-300 transition-colors';
 
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.noteId = note.id;
       button.dataset.role = 'open-note';
       button.className =
-        'note-card group flex-1 text-left rounded-2xl border border-base-200/70 bg-base-100 px-4 py-3 flex flex-col gap-1 shadow-sm transition-all duration-200 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
+        'open-note-btn flex-1 text-left flex flex-col gap-1 text-sm text-base-content focus-visible:outline-none active:scale-[0.99] transition-transform duration-200';
 
       const headerRow = document.createElement('div');
       headerRow.className = 'flex items-center justify-between gap-2';
@@ -641,13 +648,13 @@ const initMobileNotes = () => {
       const timestampText = formatNoteTimestamp(note.updatedAt || note.createdAt);
       if (timestampText) {
         const dateSpan = document.createElement('span');
-        dateSpan.className = 'text-[0.7rem] text-base-content/50 whitespace-nowrap font-medium';
+        dateSpan.className = 'text-xs text-base-content/60 whitespace-nowrap font-medium';
         dateSpan.textContent = timestampText;
         headerRow.appendChild(dateSpan);
       }
 
       const preview = document.createElement('p');
-      preview.className = 'text-xs text-base-content/70 line-clamp-2 leading-snug';
+      preview.className = 'text-sm text-base-content/70 line-clamp-2 leading-snug';
       const bodyText =
         typeof note.body === 'string' ? note.body.replace(/\s+/g, ' ').trim() : '';
       preview.textContent = bodyText || 'No body text yet.';
@@ -660,7 +667,7 @@ const initMobileNotes = () => {
       deleteButton.dataset.noteId = note.id;
       deleteButton.dataset.role = 'delete-note';
       deleteButton.className =
-        'btn btn-ghost btn-circle btn-sm shrink-0 text-error/70 hover:text-error focus-visible:outline-none focus-visible:ring focus-visible:ring-error/30';
+        'delete-note-btn btn btn-ghost btn-xs text-error shrink-0 focus-visible:outline-none focus-visible:ring-0';
       deleteButton.setAttribute('aria-label', 'Delete note');
       deleteButton.textContent = '✕';
 
