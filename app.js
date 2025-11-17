@@ -878,7 +878,16 @@ const initialiseReminders = () => {
     variant: 'desktop',
     autoWireAuthButtons: true,
     plannerContextSel: '#planner-reminder-context',
-    plannerLessonInputSel: '#planner-reminder-lesson-id'
+    plannerLessonInputSel: '#planner-reminder-lesson-id',
+    detailPanelSel: '#reminder-detail-panel',
+    detailEmptySel: '#reminder-detail-empty',
+    detailContentSel: '#reminder-detail-content',
+    detailTitleSel: '#reminder-detail-title',
+    detailDueSel: '#reminder-detail-due',
+    detailPrioritySel: '#reminder-detail-priority',
+    detailCategorySel: '#reminder-detail-category',
+    detailNotesSel: '#reminder-detail-notes',
+    detailClearSel: '#reminder-detail-clear'
   };
 
   if (!hasDesktopForm) {

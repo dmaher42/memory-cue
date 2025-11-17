@@ -995,8 +995,8 @@
                   <h3 class="text-2xl font-semibold tracking-wide text-base-content" data-primary-heading">Reminders</h3>
                   <p class="text-sm text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
                 </div>
-                <div class="grid gap-6 lg:grid-cols-2">
-                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+                <div class="desktop-reminders-layout gap-6">
+                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm desktop-reminders-column">
                     <div class="card-body h-full flex flex-col gap-3">
                       <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
                         <span class="btn btn-ghost btn-xs cursor-default" title="Filtering not available yet">All</span>
@@ -1004,17 +1004,60 @@
                         <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">This week</button>
                         <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Later</button>
                       </div>
-                      <div class="workspace-pane__body flex-1 pr-1">
-                        <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 gap-4"></ul>
+                      <div class="workspace-pane__body desktop-reminders-scroll">
+                        <ul id="reminders-list" class="desktop-reminders-list list-none"></ul>
                       </div>
                     </div>
                   </div>
-                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
-                    <div class="card-body flex h-full flex-col gap-4">
-                      <div class="space-y-1">
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Quick add</p>
-                        <p class="text-sm text-base-content/80">Capture a reminder without leaving the workspace.</p>
+                  <div class="workspace-pane card border border-base-300/80 bg-base-100 text-base-content shadow-sm desktop-reminders-detail">
+                    <div class="card-body flex h-full flex-col gap-5">
+                      <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="space-y-1">
+                          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Quick add</p>
+                          <p class="text-sm text-base-content/80">Capture a reminder without leaving the workspace.</p>
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-xs" data-open-reminder-modal>
+                          Open add reminder modal
+                        </button>
                       </div>
+                      <section
+                        id="reminder-detail-panel"
+                        class="desktop-reminder-detail-panel"
+                        aria-live="polite"
+                        aria-atomic="true"
+                      >
+                        <div id="reminder-detail-empty" class="desktop-reminder-detail-empty text-sm text-base-content/70">
+                          Select a reminder from the list to view its details and edit it here.
+                        </div>
+                        <div id="reminder-detail-content" class="desktop-reminder-detail-content hidden" aria-hidden="true">
+                          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Editing reminder</p>
+                          <div>
+                            <p id="reminder-detail-title" class="text-lg font-semibold text-base-content"></p>
+                            <p class="text-sm text-base-content/70" id="reminder-detail-due"></p>
+                          </div>
+                          <dl class="desktop-reminder-detail-meta text-sm">
+                            <div>
+                              <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Priority</dt>
+                              <dd id="reminder-detail-priority" class="text-base-content"></dd>
+                            </div>
+                            <div>
+                              <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Category</dt>
+                              <dd id="reminder-detail-category" class="text-base-content"></dd>
+                            </div>
+                          </dl>
+                          <p
+                            id="reminder-detail-notes"
+                            class="text-sm text-base-content/80"
+                            data-placeholder="No notes added yet."
+                          ></p>
+                          <div class="flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-ghost btn-xs" id="reminder-detail-clear">Clear selection</button>
+                            <button type="button" class="btn btn-outline btn-xs" data-open-reminder-modal>
+                              Use full editor
+                            </button>
+                          </div>
+                        </div>
+                      </section>
                       <div class="workspace-pane__body flex-1 overflow-y-auto pr-1">
                         <form id="add-reminder-form" class="space-y-4">
                           <div

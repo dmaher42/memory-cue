@@ -343,6 +343,16 @@ export async function initReminders(sel = {}) {
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
+  const detailPanel = $(sel.detailPanelSel);
+  const detailEmptyState = $(sel.detailEmptySel);
+  const detailContent = $(sel.detailContentSel);
+  const detailTitle = $(sel.detailTitleSel);
+  const detailDue = $(sel.detailDueSel);
+  const detailPriority = $(sel.detailPrioritySel);
+  const detailCategory = $(sel.detailCategorySel);
+  const detailNotes = $(sel.detailNotesSel);
+  const detailNotesPlaceholder = detailNotes?.dataset?.placeholder || 'No notes added yet.';
+  const detailClearBtn = $(sel.detailClearSel);
   const googleSignInBtns = $$(sel.googleSignInBtnSel);
   const googleSignOutBtns = $$(sel.googleSignOutBtnSel);
   const statusEl = $(sel.statusSel);
@@ -353,6 +363,7 @@ export async function initReminders(sel = {}) {
   };
   const UNDO_DELETE_TIMEOUT_MS = 6000;
   let deleteUndoState = null;
+  let detailSelectionId = null;
 
   function clearUndoDeleteState(tokenId, { clearMessage = true } = {}) {
     if (!deleteUndoState) {
@@ -398,6 +409,79 @@ export async function initReminders(sel = {}) {
     statusEl.dataset.statusKind = 'undo';
     statusEl.dataset.undoToken = state.tokenId;
   }
+
+  function renderDetailPanel(reminder) {
+    if (!detailPanel) {
+      return;
+    }
+    const hasSelection = Boolean(reminder);
+    detailPanel.dataset.state = hasSelection ? 'active' : 'empty';
+    detailPanel.dataset.selectedId = hasSelection && reminder?.id ? reminder.id : '';
+
+    if (detailEmptyState) {
+      detailEmptyState.classList.toggle('hidden', hasSelection);
+      detailEmptyState.setAttribute('aria-hidden', hasSelection ? 'true' : 'false');
+    }
+    if (detailContent) {
+      detailContent.classList.toggle('hidden', !hasSelection);
+      detailContent.setAttribute('aria-hidden', hasSelection ? 'false' : 'true');
+    }
+
+    if (!hasSelection) {
+      if (detailTitle) detailTitle.textContent = '';
+      if (detailDue) detailDue.textContent = '';
+      if (detailPriority) detailPriority.textContent = '';
+      if (detailCategory) detailCategory.textContent = '';
+      if (detailNotes) {
+        detailNotes.textContent = detailNotesPlaceholder;
+        detailNotes.dataset.empty = 'true';
+      }
+      return;
+    }
+
+    if (detailTitle) detailTitle.textContent = reminder.title || 'Untitled reminder';
+    if (detailDue) detailDue.textContent = formatDesktopDue(reminder);
+    if (detailPriority) detailPriority.textContent = reminder.priority || 'Medium';
+    if (detailCategory) detailCategory.textContent = reminder.category || DEFAULT_CATEGORY;
+    if (detailNotes) {
+      const noteText = typeof reminder.notes === 'string' ? reminder.notes.trim() : '';
+      if (noteText) {
+        detailNotes.textContent = noteText;
+        detailNotes.dataset.empty = 'false';
+      } else {
+        detailNotes.textContent = detailNotesPlaceholder;
+        detailNotes.dataset.empty = 'true';
+      }
+    }
+  }
+
+  function clearDetailSelection() {
+    detailSelectionId = null;
+    renderDetailPanel(null);
+  }
+
+  function applyDetailSelection(reminder) {
+    detailSelectionId = reminder?.id || null;
+    renderDetailPanel(reminder || null);
+  }
+
+  function syncDetailSelection() {
+    if (!detailPanel) {
+      return;
+    }
+    if (!detailSelectionId) {
+      renderDetailPanel(null);
+      return;
+    }
+    const current = items.find((entry) => entry?.id === detailSelectionId);
+    if (current) {
+      renderDetailPanel(current);
+      return;
+    }
+    clearDetailSelection();
+  }
+
+  renderDetailPanel(null);
 
   function renderSyncIndicator(state, message) {
     if (!syncStatus) return;
@@ -2501,7 +2585,7 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){
+  function resetForm({ preserveDetail = false } = {}){
     if(title) title.value='';
     if(date) date.value='';
     if(time) time.value='';
@@ -2513,6 +2597,9 @@ export async function initReminders(sel = {}) {
     if(saveBtn) saveBtn.textContent='Save';
     cancelEditBtn?.classList.add('hidden');
     clearPlannerReminderContext();
+    if (!preserveDetail) {
+      clearDetailSelection();
+    }
   }
   function loadForEdit(id){
     const it = items.find(x=>x.id===id);
@@ -2524,6 +2611,7 @@ export async function initReminders(sel = {}) {
     if(details) details.value = typeof it.notes === 'string' ? it.notes : '';
     if(plannerLessonInput) plannerLessonInput.value = typeof it.plannerLessonId === 'string' ? it.plannerLessonId : '';
     clearPlannerReminderContext();
+    applyDetailSelection(it);
     editingId=id;
     if(saveBtn) saveBtn.textContent='Update';
     cancelEditBtn?.classList.remove('hidden');
@@ -2654,6 +2742,9 @@ export async function initReminders(sel = {}) {
   function removeItem(id){
     const index = items.findIndex(x=>x.id===id);
     const removed = index >= 0 ? items.splice(index,1)[0] : null;
+    if (removed && editingId === id) {
+      resetForm();
+    }
     render();
     persistItems();
     deleteFromFirebase(id);
@@ -3437,6 +3528,7 @@ export async function initReminders(sel = {}) {
       firstGroup = false;
     });
     list.appendChild(frag);
+    syncDetailSelection();
   }
 
   function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
@@ -3543,6 +3635,7 @@ export async function initReminders(sel = {}) {
 
   title?.addEventListener('input', debounce(updateDateFeedback,300));
   cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); dispatchCueEvent('cue:close', { reason: 'edit-cancelled' }); });
+  detailClearBtn?.addEventListener('click', () => { resetForm(); });
   document.addEventListener('cue:cancelled', () => { resetForm(); });
   document.addEventListener('cue:prepare', () => { resetForm(); });
   document.addEventListener('planner:prefillReminder', (event) => {
