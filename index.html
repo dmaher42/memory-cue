@@ -357,132 +357,122 @@
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
+        <div class="max-w-6xl mx-auto my-10 space-y-6 px-4">
         <section class="desktop-panel desktop-hero grid gap-4 lg:grid-cols-[1fr_3fr]">
-          <article class="dashboard-card card dashboard-card--hero relative overflow-hidden bg-gradient-to-br from-sky-100 via-base-100 to-base-200/70">
-            <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" aria-hidden="true"></div>
-            <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-secondary/30 blur-3xl" aria-hidden="true"></div>
-            <div class="dashboard-card-content hero-content relative space-y-5">
-              <div class="flex justify-end">
-                <span id="weatherIcon" class="text-5xl" aria-hidden="true">⛅️</span>
-              </div>
-              <div class="weather-status-row">
-                <p id="weatherStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
+          <article class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 flex flex-col gap-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <p class="text-sm font-semibold text-base-content/80">Weather</p>
+                <p id="weatherStatus" class="text-xs text-base-content/70" role="status" aria-live="polite">
                   Checking the latest forecast…
                 </p>
               </div>
-              <div class="flex flex-wrap items-end gap-6">
-                <div>
-                  <p id="weatherTemperature" class="text-5xl font-semibold text-base-content">--°C</p>
-                  <p id="weatherDescription" class="text-base text-base-content/70">Awaiting update</p>
-                </div>
-                <dl class="grid gap-4 text-sm text-base-content/80 sm:grid-cols-2">
-                  <div>
-                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Location</dt>
-                    <dd id="weatherLocation" class="text-base-content">Locating…</dd>
-                  </div>
-                  <div>
-                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Wind</dt>
-                    <dd id="weatherWind" class="text-base-content">-- km/h</dd>
-                  </div>
-                  <div>
-                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Humidity</dt>
-                    <dd id="weatherHumidity" class="text-base-content">--%</dd>
-                  </div>
-                  <div>
-                    <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">Feels like</dt>
-                    <dd id="weatherFeelsLike" class="text-base-content">--°C</dd>
-                  </div>
-                </dl>
+              <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
+            </div>
+            <div class="flex flex-wrap items-end gap-4">
+              <p id="weatherTemperature" class="text-2xl font-semibold text-base-content">--°C</p>
+              <p id="weatherDescription" class="text-xs text-base-content/70">Awaiting update</p>
+            </div>
+            <dl class="grid gap-3 text-xs text-base-content/70 sm:grid-cols-2">
+              <div>
+                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Location</dt>
+                <dd id="weatherLocation" class="text-base-content/90">Locating…</dd>
               </div>
-              <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
-              <div class="weather-radar" aria-label="Live radar" role="group">
-                <p class="weather-radar__message text-sm text-base-content/70">
-                  Live radar opens in a new tab due to browser security settings.
-                </p>
-                <a
-                  class="btn btn-sm btn-primary"
-                  href="https://www.windy.com/-Weather-radar-radar"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open Windy radar
-                </a>
+              <div>
+                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Wind</dt>
+                <dd id="weatherWind" class="text-base-content/90">-- km/h</dd>
               </div>
+              <div>
+                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Humidity</dt>
+                <dd id="weatherHumidity" class="text-base-content/90">--%</dd>
+              </div>
+              <div>
+                <dt class="font-semibold uppercase tracking-[0.3em] text-base-content/60">Feels like</dt>
+                <dd id="weatherFeelsLike" class="text-base-content/90">--°C</dd>
+              </div>
+            </dl>
+            <p id="weatherFootnote" class="text-xs text-base-content/70">We use your approximate location to calculate these details.</p>
+            <div class="weather-radar space-y-2 rounded-xl border border-dashed border-base-300/80 bg-base-200/40 p-3" aria-label="Live radar" role="group">
+              <p class="weather-radar__message text-xs text-base-content/70">
+                Live radar opens in a new tab due to browser security settings.
+              </p>
+              <a
+                class="btn btn-sm btn-primary"
+                href="https://www.windy.com/-Weather-radar-radar"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Windy radar
+              </a>
             </div>
           </article>
-          <article class="dashboard-card card border border-base-300 bg-base-100/90 shadow-sm">
-            <div class="dashboard-card-content card-body gap-5">
-              <div class="space-y-2">
-                <p class="dashboard-card-eyebrow">Top educational news</p>
-                <h2 class="dashboard-card-title">Start conversations informed</h2>
+          <article class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-slate-50 rounded-3xl shadow-xl px-6 py-5 flex flex-col gap-3 border border-slate-700/60 relative overflow-hidden">
+            <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" aria-hidden="true"></div>
+            <div class="pointer-events-none absolute bottom-[-6rem] right-[-4rem] h-72 w-72 rounded-full bg-secondary/30 blur-3xl" aria-hidden="true"></div>
+            <div class="relative flex flex-col gap-4">
+              <div class="space-y-1">
+                <p class="text-sm text-slate-200/80">Top educational news</p>
+                <h2 class="text-xl font-semibold tracking-wide">Start conversations informed</h2>
               </div>
-              <p id="newsStatus" class="dashboard-card-text text-sm text-base-content/70" role="status" aria-live="polite">
+              <p id="newsStatus" class="text-sm text-slate-200/80" role="status" aria-live="polite">
                 Gathering the top educational news…
               </p>
               <div id="newsContent" class="hidden space-y-4">
                 <a
                   id="newsPrimaryLink"
                   href="#"
-                  class="block rounded-2xl border border-base-200 bg-base-200/60 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  class="block rounded-2xl border border-slate-700/40 bg-slate-900/60 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   target="_blank"
                   rel="noreferrer"
                 >
                   <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Lead story</p>
-                  <p id="newsHeadline" class="mt-2 text-lg font-semibold text-base-content"></p>
-                  <p id="newsSource" class="mt-1 text-sm text-base-content/70"></p>
+                  <p id="newsHeadline" class="mt-2 text-lg font-semibold text-slate-50"></p>
+                  <p id="newsSource" class="mt-1 text-sm text-slate-200/80"></p>
                 </a>
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50">More to skim</p>
-                  <ul id="newsTopStories" class="mt-3 space-y-3 text-sm text-base-content/80"></ul>
+                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-200/60">More to skim</p>
+                  <ul id="newsTopStories" class="mt-3 space-y-3 text-sm text-slate-100/90"></ul>
                 </div>
               </div>
-              <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
+              <p id="newsFootnote" class="text-xs text-slate-200/70" aria-live="polite"></p>
             </div>
           </article>
         </section>
 
         <section class="dashboard-kpis" aria-labelledby="kpi-heading">
           <h2 id="kpi-heading" class="sr-only">Key metrics</h2>
-          <div class="dashboard-kpis__grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <article class="dashboard-card dashboard-card--compact card transition">
-              <div class="card-body dashboard-card-body gap-3">
-                <div class="flex items-center justify-between">
-                  <h3 class="dashboard-card-eyebrow">Reminders</h3>
-                  <span aria-hidden="true">🔔</span>
-                </div>
-                <p class="dashboard-card-metric"><span id="remindersCount">0</span></p>
-                <p class="dashboard-card-support"><span id="remindersSubtitle"></span></p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <article class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Reminders</p>
+                <span aria-hidden="true">🔔</span>
               </div>
+              <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
+              <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
             </article>
-            <article class="dashboard-card dashboard-card--compact card transition">
-              <div class="card-body dashboard-card-body gap-3">
-                <div class="flex items-center justify-between">
-                  <h3 class="dashboard-card-eyebrow">Planner</h3>
-                  <span aria-hidden="true">🗂️</span>
-                </div>
-                <p class="dashboard-card-metric"><span id="plannerCount">0</span></p>
-                <p class="dashboard-card-support"><span id="plannerSubtitle"></span></p>
+            <article class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Planner</p>
+                <span aria-hidden="true">🗂️</span>
               </div>
+              <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
+              <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
             </article>
-            <article class="dashboard-card dashboard-card--compact card transition">
-              <div class="card-body dashboard-card-body gap-3">
-                <div class="flex items-center justify-between">
-                  <h3 class="dashboard-card-eyebrow">Resources</h3>
-                  <span aria-hidden="true">📁</span>
-                </div>
-                <p class="dashboard-card-metric"><span id="resourcesCount">0</span></p>
-                <p class="dashboard-card-support"><span id="resourcesSubtitle"></span></p>
+            <article class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Resources</p>
+                <span aria-hidden="true">📁</span>
               </div>
+              <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
+              <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
             </article>
-            <article class="dashboard-card dashboard-card--compact card transition">
-              <div class="card-body dashboard-card-body gap-3">
-                <div class="flex items-center justify-between">
-                  <h3 class="dashboard-card-eyebrow">Templates</h3>
-                  <span aria-hidden="true">🧩</span>
-                </div>
-                <p class="dashboard-card-metric"><span id="templatesCount">0</span></p>
-                <p class="dashboard-card-support"><span id="templatesSubtitle"></span></p>
+            <article class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Templates</p>
+                <span aria-hidden="true">🧩</span>
               </div>
+              <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
+              <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
             </article>
           </div>
         </section>
@@ -509,30 +499,29 @@
             </div>
           </section>
 
-          <section class="dashboard-card card dashboard-today-focus">
-            <div class="card-body dashboard-card-body gap-6">
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="space-y-3">
-                  <h2 id="todays-focus-heading" class="dashboard-card-title">Today's focus</h2>
-                  <p class="dashboard-card-text">
-                    Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
-                  </p>
-                  <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
-                    <div class="flex items-center gap-2">
-                      <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
-                      <dd class="rounded-full bg-base-100 px-3 py-1 text-base-content/80">Literacy workshops</dd>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
-                      <dd class="rounded-full bg-base-100 px-3 py-1 text-base-content/80">Period 2 · 45 mins</dd>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
-                      <dd class="rounded-full bg-base-100 px-3 py-1 text-base-content/80">Co-teach with Mia</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
+          <section class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-4 flex flex-col gap-2">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-3">
+                <h2 id="todays-focus-heading" class="text-sm font-semibold text-base-content/80">Today's focus</h2>
+                <p class="text-sm text-base-content/90">
+                  Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
+                </p>
+                <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
+                  <div class="flex items-center gap-2">
+                    <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
+                    <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
+                    <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
+                    <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
+                  </div>
+                </dl>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
                   <button
                     class="btn btn-primary btn-sm sm:btn-md"
                     type="button"
@@ -547,15 +536,14 @@
                     <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
                     <button class="btn btn-sm join-item btn-outline" type="button">High</button>
                   </div>
-                </div>
               </div>
-              <ol
-                id="todaysFocusList"
-                class="space-y-3"
-                role="list"
-                aria-labelledby="todays-focus-heading"
-              ></ol>
             </div>
+            <ol
+              id="todaysFocusList"
+              class="space-y-3"
+              role="list"
+              aria-labelledby="todays-focus-heading"
+            ></ol>
           </section>
         </div>
 
@@ -581,50 +569,47 @@
 
           <div class="flex flex-col gap-6">
             <div id="pinnedNotesCard" class="h-full">
-              <section class="dashboard-card card dashboard-pinned-notes">
-                <div class="card-body dashboard-card-body gap-4">
-                  <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2 class="dashboard-card-title">Pinned notes</h2>
-                    <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
-                  </div>
-                  <ul id="pinnedNotesList" class="space-y-3 dashboard-card-text"></ul>
+              <section class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-4 flex flex-col gap-2">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <h2 class="text-sm font-semibold text-base-content/80">Pinned notes</h2>
+                  <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
                 </div>
+                <ul id="pinnedNotesList" class="space-y-3 text-sm text-base-content/90"></ul>
               </section>
             </div>
 
-            <section class="dashboard-card card dashboard-shortcuts">
-              <div class="card-body dashboard-card-body gap-5">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <h2 class="dashboard-card-title">Action shortcuts</h2>
-                  <span class="dashboard-card-eyebrow">Jump back in</span>
-                </div>
-                <div class="grid gap-2 sm:grid-cols-2">
-                  <a href="#reminders" class="btn btn-sm btn-outline justify-start gap-2" data-nav="reminders">
-                    <span aria-hidden="true">🔔</span>
-                    Open reminders
-                  </a>
-                  <a href="#planner" class="btn btn-sm btn-outline justify-start gap-2" data-nav="planner">
-                    <span aria-hidden="true">🗓️</span>
-                    Weekly planner
-                  </a>
-                  <a href="#notes" class="btn btn-sm btn-outline justify-start gap-2" data-nav="notes">
-                    <span aria-hidden="true">📝</span>
-                    Daily notes
-                  </a>
-                  <a href="#resources" class="btn btn-sm btn-outline justify-start gap-2" data-nav="resources">
-                    <span aria-hidden="true">📚</span>
-                    Resource library
-                  </a>
-                </div>
-                <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
-                  <p class="dashboard-card-text font-semibold">Need inspiration?</p>
-                  <p class="dashboard-card-text mt-1">
-                    Open the activity ideas modal from the quick action toolbar to gather ready-to-run activities tailored to your class context.
-                  </p>
-                </div>
+            <section class="bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-4 flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-sm font-semibold text-base-content/80">Action shortcuts</h2>
+                <span class="text-xs font-medium text-base-content/70">Jump back in</span>
+              </div>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <a href="#reminders" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="reminders">
+                  <span aria-hidden="true">🔔</span>
+                  Open reminders
+                </a>
+                <a href="#planner" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="planner">
+                  <span aria-hidden="true">🗓️</span>
+                  Weekly planner
+                </a>
+                <a href="#notes" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="notes">
+                  <span aria-hidden="true">📝</span>
+                  Daily notes
+                </a>
+                <a href="#resources" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="resources">
+                  <span aria-hidden="true">📚</span>
+                  Resource library
+                </a>
+              </div>
+              <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
+                <p class="text-sm font-semibold text-base-content/90">Need inspiration?</p>
+                <p class="text-sm text-base-content/70 mt-1">
+                  Open the activity ideas modal from the quick action toolbar to gather ready-to-run activities tailored to your class context.
+                </p>
               </div>
             </section>
           </div>
+        </div>
         </div>
       </section>
 
