@@ -1,5 +1,58 @@
 const groupedRoutes = new Set(['notes', 'resources', 'templates']);
 const workspaceRoutes = new Set(['reminders', 'planner', 'notes']);
+const staticBreadcrumbs = new Map([
+  ['dashboard', [{ label: 'Dashboard', href: '#dashboard' }]],
+  ['workspace', [{ label: 'Workspace', href: '#workspace' }]],
+  ['resources', [{ label: 'Resources', href: '#resources' }]],
+  ['templates', [{ label: 'Templates', href: '#templates' }]],
+]);
+
+function getBreadcrumbsForRoute(route) {
+  if (workspaceRoutes.has(route)) {
+    const capitalised = route.charAt(0).toUpperCase() + route.slice(1);
+    return [
+      { label: 'Workspace', href: '#workspace' },
+      { label: capitalised, href: `#${route}` },
+    ];
+  }
+  if (staticBreadcrumbs.has(route)) {
+    return staticBreadcrumbs.get(route);
+  }
+  if (groupedRoutes.has(route)) {
+    const capitalised = route.charAt(0).toUpperCase() + route.slice(1);
+    return [{ label: capitalised, href: `#${route}` }];
+  }
+  return [{ label: 'Dashboard', href: '#dashboard' }];
+}
+
+function updateWorkspaceBreadcrumbs(route) {
+  const breadcrumbList = document.querySelector('[data-breadcrumb-list]');
+  if (!breadcrumbList) {
+    return;
+  }
+
+  breadcrumbList.innerHTML = '';
+  const crumbs = getBreadcrumbsForRoute(route);
+  crumbs.forEach((crumb, index) => {
+    const listItem = document.createElement('li');
+    listItem.className = 'workspace-breadcrumb';
+    const isCurrent = index === crumbs.length - 1;
+    if (isCurrent) {
+      const current = document.createElement('span');
+      current.className = 'badge workspace-breadcrumb__current';
+      current.textContent = crumb.label;
+      current.setAttribute('aria-current', 'page');
+      listItem.appendChild(current);
+    } else {
+      const link = document.createElement('a');
+      link.className = 'badge workspace-breadcrumb__link';
+      link.textContent = crumb.label;
+      link.href = crumb.href || '#';
+      listItem.appendChild(link);
+    }
+    breadcrumbList.appendChild(listItem);
+  });
+}
 
 function renderRoute() {
   const rawRoute = (window.location.hash || '#dashboard').replace('#', '');
@@ -59,6 +112,8 @@ function renderRoute() {
     moreSummary.setAttribute('aria-expanded', moreDetails.open ? 'true' : 'false');
     moreSummary.classList.toggle('more-active', moreDetails.open);
   }
+
+  updateWorkspaceBreadcrumbs(activeRoute);
 }
 
 function syncWorkspacePanels(route) {

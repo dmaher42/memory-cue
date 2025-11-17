@@ -288,21 +288,6 @@
         </div>
       </div>
       <div class="desktop-header-right">
-        <p id="sync-status" class="sync-status hidden text-xs text-base-content" data-compact="true"></p>
-        <div
-          id="user-badge"
-          class="hidden items-center gap-3 rounded-full border border-base-200 bg-base-100/80 px-3 py-1.5 text-sm shadow-sm backdrop-blur"
-        >
-          <span
-            id="user-badge-initial"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-content text-base font-semibold"
-            aria-hidden="true"
-          >T</span>
-          <div class="text-left leading-tight">
-            <p id="user-badge-email" class="text-sm font-semibold text-base-content"></p>
-            <p class="text-xs text-base-content/60">Reminders syncing</p>
-          </div>
-        </div>
         <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
       </div>
     </header>
@@ -1370,48 +1355,49 @@
         </form>
       </section>
         </div>
+        </div>
       </div>
     </main>
+    <nav
+      id="quick-action-toolbar"
+      aria-label="Quick actions"
+      class="flex flex-col items-end gap-2"
+    >
+      <button
+        type="button"
+        data-quick-action="reminder"
+        class="quick-action-btn bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-300"
+        title="Add reminder"
+        aria-label="Add reminder"
+      >
+        <span aria-hidden="true">🔔</span>
+        <span class="sr-only">Add reminder</span>
+      </button>
+      <button
+        type="button"
+        data-quick-action="note"
+        class="quick-action-btn bg-white/90 text-xl text-gray-900 dark:text-gray-100 shadow-md backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 hover:bg-white dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:focus-visible:outline-gray-500 border border-white/60 dark:border-gray-700/60"
+        title="Create note"
+        aria-label="Create note"
+      >
+        <span aria-hidden="true">📝</span>
+        <span class="sr-only">Create note</span>
+      </button>
+      <button
+        type="button"
+        data-quick-action="planner"
+        class="quick-action-btn bg-emerald-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600"
+        title="New lesson plan"
+        aria-label="New lesson plan"
+      >
+        <span aria-hidden="true">🗓️</span>
+        <span class="sr-only">New lesson plan</span>
+      </button>
+    </nav>
   </div>
   <!-- BEGIN GPT CHANGE: live region -->
   <div id="live-status" class="sr-only" aria-live="polite" role="status"></div>
   <!-- END GPT CHANGE -->
-  <nav
-    id="quick-action-toolbar"
-    aria-label="Quick actions"
-    class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 max-sm:bottom-3 max-sm:right-3"
-  >
-    <button
-      type="button"
-      data-quick-action="reminder"
-      class="quick-action-btn bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-300"
-      title="Add reminder"
-      aria-label="Add reminder"
-    >
-      <span aria-hidden="true">🔔</span>
-      <span class="sr-only">Add reminder</span>
-    </button>
-    <button
-      type="button"
-      data-quick-action="note"
-      class="quick-action-btn bg-white/90 text-xl text-gray-900 dark:text-gray-100 shadow-md backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 hover:bg-white dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:focus-visible:outline-gray-500 border border-white/60 dark:border-gray-700/60"
-      title="Create note"
-      aria-label="Create note"
-    >
-      <span aria-hidden="true">📝</span>
-      <span class="sr-only">Create note</span>
-    </button>
-    <button
-      type="button"
-      data-quick-action="planner"
-      class="quick-action-btn bg-emerald-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600"
-      title="New lesson plan"
-      aria-label="New lesson plan"
-    >
-      <span aria-hidden="true">🗓️</span>
-      <span class="sr-only">New lesson plan</span>
-    </button>
-  </nav>
   <footer class="border-t border-base-300 bg-base-200/80 py-6 sm:py-8">
     <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 text-sm text-base-content/80 sm:px-6 lg:px-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
