@@ -177,6 +177,16 @@
     font-size: 0.86rem;
   }
 
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0.75rem);
+  }
+
+  .btm-nav button.active {
+    background-color: color-mix(in srgb, var(--accent-color, #2563eb) 22%, transparent);
+    color: var(--accent-color, #2563eb);
+    font-weight: 600;
+  }
+
   .mobile-shell #noteBodyMobile {
     background: radial-gradient(
         circle at top,
@@ -3364,14 +3374,28 @@
     </div>
   </div>
 
-  <nav class="btm-nav fixed bottom-0 left-0 right-0 bg-base-100 border-t" aria-label="Primary navigation">
-    <button type="button" aria-current="page" class="active">
-      <span class="btm-nav-label text-lg font-extrabold" style="font-size: var(--text-lg); font-weight: 800;">Reminders</span>
-    </button>
-    <button type="button">
-      <span class="btm-nav-label">Notebook</span>
-    </button>
-  </nav>
+  <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pb-safe-bottom pointer-events-none">
+    <nav
+      class="btm-nav pointer-events-auto flex items-center justify-between max-w-md mx-auto bg-base-100/90 backdrop-blur-md border border-base-300 rounded-full shadow-lg px-4 py-1.5 gap-1"
+      aria-label="Primary navigation"
+    >
+      <button
+        type="button"
+        aria-current="page"
+        class="active flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[11px] font-medium text-base-content/70 transition"
+      >
+        <span class="text-lg leading-none">⏰</span>
+        <span class="leading-tight">Reminders</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[11px] font-medium text-base-content/70 transition"
+      >
+        <span class="text-lg leading-none">📝</span>
+        <span class="leading-tight">Notebook</span>
+      </button>
+    </nav>
+  </div>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
