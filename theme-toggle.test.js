@@ -53,9 +53,10 @@ test('toggle persists theme', () => {
   const btn = document.getElementById('theme-toggle');
   // Default should be professional and not stored until the user changes it
   expect(document.documentElement.getAttribute('data-theme')).toBe('professional');
+  expect(document.documentElement.dataset.theme).toBe('professional');
   expect(localStorage.getItem('theme')).toBeNull();
   btn.click();
-  expect(localStorage.getItem('theme')).toBe('dark');
+  expect(localStorage.getItem('theme')).toBe('night');
   btn.click();
-  expect(localStorage.getItem('theme')).toBe('light');
+  expect(localStorage.getItem('theme')).toBe('professional');
 });
