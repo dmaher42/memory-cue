@@ -3198,12 +3198,13 @@ export async function initReminders(sel = {}) {
         done: Boolean(reminder.done),
       };
 
+      const desktopCardClasses =
+        'reminder-item task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
+      const mobileCardClasses =
+        'reminder-item task-item reminder-card w-full bg-base-100 rounded-xl border border-base-200 border-l-4 shadow-sm p-4 mb-3 flex items-start justify-between gap-2 text-sm text-base-content transition hover:border-base-300 hover:bg-base-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[.98]';
+
       const itemEl = document.createElement(elementTag);
-      itemEl.className =
-        'task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
-      if (isMobile) {
-        itemEl.classList.add('w-full');
-      }
+      itemEl.className = isMobile ? mobileCardClasses : desktopCardClasses;
       itemEl.dataset.id = summary.id;
       itemEl.dataset.category = summary.category;
       itemEl.dataset.title = summary.title;
@@ -3248,10 +3249,15 @@ export async function initReminders(sel = {}) {
       }
 
       const content = document.createElement('div');
-      content.className = 'flex min-w-0 flex-col gap-2';
+      content.className = 'flex min-w-0 flex-1 flex-col gap-2';
+      if (isMobile) {
+        content.classList.add('text-sm', 'text-base-content');
+      }
 
       const titleEl = document.createElement('p');
-      titleEl.className = 'text-lg font-bold leading-snug text-base-content';
+      titleEl.className = isMobile
+        ? 'text-base font-semibold leading-tight text-base-content'
+        : 'text-lg font-bold leading-snug text-base-content';
       titleEl.classList.add('desktop-reminder-title');
       if (!isMobile) {
         titleEl.classList.add('sm:text-[0.95rem]');
@@ -3263,7 +3269,9 @@ export async function initReminders(sel = {}) {
       content.appendChild(titleEl);
 
       const metaRow = document.createElement('div');
-      metaRow.className = 'desktop-reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70';
+      metaRow.className = isMobile
+        ? 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-sm text-base-content/70'
+        : 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70';
 
       const dueLabelRaw = formatDesktopDue(reminder);
       const dueLabel = dueLabelRaw && dueLabelRaw !== 'No due date' ? dueLabelRaw : '';
@@ -3284,6 +3292,9 @@ export async function initReminders(sel = {}) {
 
       const controls = document.createElement('div');
       controls.className = 'flex items-start gap-1';
+      if (isMobile) {
+        controls.classList.add('flex-shrink-0');
+      }
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
