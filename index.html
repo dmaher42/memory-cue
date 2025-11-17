@@ -626,7 +626,7 @@
               <div class="desktop-panel-actions">
                 <button
                   type="button"
-                  class="btn btn-primary"
+                  class="btn btn-primary btn-sm"
                   data-open-reminder-modal
                   aria-haspopup="dialog"
                   aria-controls="add-reminder-modal"
@@ -636,10 +636,10 @@
               </div>
             </header>
           <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-            <span class="btn btn-xs btn-secondary cursor-default" title="Filtering not available yet">All</span>
-            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Today</button>
-            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">This week</button>
-            <button type="button" class="btn btn-xs btn-secondary" disabled title="Filtering not available yet">Later</button>
+            <span class="btn btn-ghost btn-xs cursor-default" title="Filtering not available yet">All</span>
+            <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Today</button>
+            <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">This week</button>
+            <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Later</button>
           </div>
           <ul id="reminders-list" class="desktop-reminders-list list-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
           <li
@@ -661,10 +661,10 @@
               </div>
             </div>
             <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
-              <button type="button" class="btn btn-ghost btn-sm text-success task-toolbar-btn" aria-label="Mark reminder as done">
+              <button type="button" class="btn btn-outline btn-xs text-success task-toolbar-btn" aria-label="Mark reminder as done">
                 <span aria-hidden="true">✓</span>
               </button>
-              <button type="button" class="btn btn-ghost btn-sm text-error task-toolbar-btn" aria-label="Delete reminder">
+              <button type="button" class="btn btn-ghost btn-xs text-error task-toolbar-btn" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
               </button>
             </div>
@@ -692,10 +692,10 @@
               </div>
             </div>
             <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
-              <button type="button" class="btn btn-ghost btn-sm text-success task-toolbar-btn" aria-label="Mark reminder as done">
+              <button type="button" class="btn btn-outline btn-xs text-success task-toolbar-btn" aria-label="Mark reminder as done">
                 <span aria-hidden="true">✓</span>
               </button>
-              <button type="button" class="btn btn-ghost btn-sm text-error task-toolbar-btn" aria-label="Delete reminder">
+              <button type="button" class="btn btn-ghost btn-xs text-error task-toolbar-btn" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
               </button>
             </div>
@@ -713,10 +713,10 @@
               </div>
             </div>
             <div class="task-toolbar flex justify-end gap-2 mt-2" role="toolbar" aria-label="Reminder actions">
-              <button type="button" class="btn btn-ghost btn-sm text-success task-toolbar-btn" aria-label="Mark reminder as done">
+              <button type="button" class="btn btn-outline btn-xs text-success task-toolbar-btn" aria-label="Mark reminder as done">
                 <span aria-hidden="true">✓</span>
               </button>
-              <button type="button" class="btn btn-ghost btn-sm text-error task-toolbar-btn" aria-label="Delete reminder">
+              <button type="button" class="btn btn-ghost btn-xs text-error task-toolbar-btn" aria-label="Delete reminder">
                 <span aria-hidden="true">🗑️</span>
               </button>
             </div>
@@ -738,13 +738,13 @@
               </div>
             </header>
             <div class="flex justify-end gap-2 mb-4">
-              <button type="button" id="planner-duplicate-btn" class="btn btn-sm btn-outline">Duplicate plan</button>
-              <button type="button" id="planner-new-lesson-btn" class="btn btn-sm btn-primary">New lesson</button>
+              <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
+              <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
             </div>
             <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-              <button type="button" id="planner-prev" class="btn btn-xs btn-secondary" aria-label="View previous week">Prev</button>
-              <button type="button" id="planner-today" class="btn btn-xs btn-secondary" aria-label="Jump to current week">Today</button>
-              <button type="button" id="planner-next" class="btn btn-xs btn-secondary" aria-label="View next week">Next</button>
+              <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
+              <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">Today</button>
+              <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
               <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
                 <span class="hidden sm:inline">Text size</span>
               <select
@@ -771,7 +771,7 @@
                 <option value="">No templates saved</option>
               </select>
             </label>
-            <button type="button" id="planner-template-save-btn" class="btn btn-sm btn-outline">
+            <button type="button" id="planner-template-save-btn" class="btn btn-outline btn-sm">
               Save current week as template
             </button>
             <label class="form-control w-full max-w-xs md:w-auto">
@@ -931,8 +931,8 @@
                   ></textarea>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                  <button id="noteSaveBtn" type="button" class="btn btn-primary">Save</button>
-                  <button id="noteNewBtn" type="button" class="btn btn-outline">New note</button>
+                  <button id="noteSaveBtn" type="button" class="btn btn-primary btn-sm">Save</button>
+                  <button id="noteNewBtn" type="button" class="btn btn-outline btn-sm">New note</button>
                 </div>
               </div>
             </div>
