@@ -3528,6 +3528,54 @@ function showDailyTab() {
   loadDailyList();
 }
 
+function initDashboardTabGroups() {
+  const tabGroups = document.querySelectorAll('[data-dashboard-tab-group]');
+  tabGroups.forEach((group) => {
+    const tabs = Array.from(group.querySelectorAll('[data-dashboard-tab]'));
+    const panels = Array.from(group.querySelectorAll('[data-dashboard-panel]'));
+    if (!tabs.length || !panels.length) {
+      return;
+    }
+
+    const setActive = (value) => {
+      tabs.forEach((tab) => {
+        if (!tab) {
+          return;
+        }
+        const isActive = tab.getAttribute('data-dashboard-tab') === value;
+        tab.classList.toggle('tab-active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      panels.forEach((panel) => {
+        if (!panel) {
+          return;
+        }
+        const matches = panel.getAttribute('data-dashboard-panel') === value;
+        panel.classList.toggle('hidden', !matches);
+        panel.setAttribute('aria-hidden', matches ? 'false' : 'true');
+      });
+    };
+
+    const defaultTab = tabs.find((tab) => tab.classList.contains('tab-active')) || tabs[0];
+    const defaultValue = defaultTab?.getAttribute('data-dashboard-tab');
+    if (defaultValue) {
+      setActive(defaultValue);
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const value = tab.getAttribute('data-dashboard-tab');
+        if (value) {
+          setActive(value);
+        }
+      });
+    });
+  });
+}
+
+window.addEventListener('DOMContentLoaded', initDashboardTabGroups);
+
 if (cuesTab && dailyTab && cuesView && dailyListView) {
   cuesTab.addEventListener('click', (event) => {
     event.preventDefault();
