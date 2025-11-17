@@ -2095,6 +2095,8 @@ let currentPlannerPlan = null;
 let plannerRenderPromise = null;
 let selectedPlannerLessonId = null;
 let plannerTemplates = loadPlannerTemplates();
+const plannerNotesSaveTimers = new Map();
+const PLANNER_NOTES_SAVE_DELAY = 800;
 
 const updatePlannerCountDisplay = (sourceLessons) => {
   if (!plannerCountElement) {
@@ -2241,6 +2243,26 @@ function renderPlannerLessons(plan) {
       const summaryMarkup = lesson.summary
         ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
         : '';
+      const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
+      const notesSection = lessonId
+        ? `
+            <label class="form-control w-full gap-1">
+              <div class="label py-1">
+                <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Lesson notes</span>
+              </div>
+              <textarea
+                class="textarea textarea-bordered w-full min-h-[6rem] text-base-content"
+                data-planner-notes="true"
+                data-lesson-id="${lessonId}"
+                placeholder="Write lesson notes"
+                spellcheck="true"
+              >${escapeCueText(notesValue)}</textarea>
+              <div class="label py-1">
+                <span class="label-text-alt text-xs text-base-content/60">Notes save automatically.</span>
+              </div>
+            </label>
+          `
+        : '';
       const moveControls = lessonId
         ? `
             <div class="flex items-center gap-1" role="group" aria-label="Reorder lesson">
@@ -2287,12 +2309,13 @@ function renderPlannerLessons(plan) {
                 >
                   Delete
                 </button>
-              </div>
             </div>
-            ${detailsSection}
-            <div class="flex flex-wrap gap-2">
-              <button
-                type="button"
+          </div>
+          ${detailsSection}
+          ${notesSection}
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
                 class="btn btn-sm btn-primary"
                 data-planner-action="create-reminder"
                 data-lesson-id="${lessonId}"
@@ -2355,6 +2378,110 @@ function handlePlannerSelection(event) {
     return;
   }
   setSelectedPlannerLesson(lessonId);
+}
+
+function getPlannerTimeoutScheduler() {
+  if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
+    return window.setTimeout.bind(window);
+  }
+  if (typeof setTimeout === 'function') {
+    return setTimeout;
+  }
+  return null;
+}
+
+function getPlannerTimeoutClearer() {
+  if (typeof window !== 'undefined' && typeof window.clearTimeout === 'function') {
+    return window.clearTimeout.bind(window);
+  }
+  if (typeof clearTimeout === 'function') {
+    return clearTimeout;
+  }
+  return null;
+}
+
+function clearPlannerNotesTimer(lessonId) {
+  if (!lessonId) {
+    return;
+  }
+  const timer = plannerNotesSaveTimers.get(lessonId);
+  if (!timer) {
+    return;
+  }
+  const clearFn = getPlannerTimeoutClearer();
+  if (clearFn) {
+    clearFn(timer);
+  }
+  plannerNotesSaveTimers.delete(lessonId);
+}
+
+async function persistPlannerLessonNotes(lessonId, notesValue, textarea) {
+  if (!lessonId || !activePlannerWeekId) {
+    return;
+  }
+  const field = textarea instanceof HTMLTextAreaElement ? textarea : null;
+  if (field) {
+    field.setAttribute('data-notes-status', 'saving');
+  }
+  try {
+    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, { notes: notesValue });
+    if (plan) {
+      currentPlannerPlan = plan;
+    }
+    if (field) {
+      field.setAttribute('data-notes-status', 'saved');
+      const scheduleClear = getPlannerTimeoutScheduler();
+      if (scheduleClear) {
+        scheduleClear(() => {
+          if (field.getAttribute('data-notes-status') === 'saved') {
+            field.removeAttribute('data-notes-status');
+          }
+        }, 1500);
+      } else {
+        field.removeAttribute('data-notes-status');
+      }
+    }
+  } catch (error) {
+    console.error('Failed to save planner notes', error);
+    if (field) {
+      field.setAttribute('data-notes-status', 'error');
+    }
+  }
+}
+
+function handlePlannerNotesInput(event) {
+  const textarea = event.target instanceof HTMLTextAreaElement ? event.target : null;
+  if (!textarea || !textarea.hasAttribute('data-planner-notes')) {
+    return;
+  }
+  const lessonId = textarea.getAttribute('data-lesson-id');
+  if (!lessonId) {
+    return;
+  }
+  clearPlannerNotesTimer(lessonId);
+  const scheduler = getPlannerTimeoutScheduler();
+  if (!scheduler) {
+    persistPlannerLessonNotes(lessonId, textarea.value, textarea);
+    return;
+  }
+  const timerId = scheduler(() => {
+    plannerNotesSaveTimers.delete(lessonId);
+    persistPlannerLessonNotes(lessonId, textarea.value, textarea);
+  }, PLANNER_NOTES_SAVE_DELAY);
+  plannerNotesSaveTimers.set(lessonId, timerId);
+}
+
+function handlePlannerNotesFocusOut(event) {
+  const textarea = event.target instanceof HTMLTextAreaElement ? event.target : null;
+  if (!textarea || !textarea.hasAttribute('data-planner-notes')) {
+    return;
+  }
+  const lessonId = textarea.getAttribute('data-lesson-id');
+  if (!lessonId) {
+    return;
+  }
+  clearPlannerNotesTimer(lessonId);
+  persistPlannerLessonNotes(lessonId, textarea.value, textarea);
 }
 
 function renderPlannerForWeek(weekId) {
@@ -2650,6 +2777,8 @@ function initPlannerView() {
   initPlannerStore({ ensureFirestore: ensureCueFirestore });
   plannerCardsContainer.addEventListener('click', handlePlannerSelection);
   plannerCardsContainer.addEventListener('click', handlePlannerCardAction);
+  plannerCardsContainer.addEventListener('input', handlePlannerNotesInput);
+  plannerCardsContainer.addEventListener('focusout', handlePlannerNotesFocusOut);
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
   plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);

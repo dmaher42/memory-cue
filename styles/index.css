@@ -16,24 +16,70 @@ html {
   --font-heading-weight: 600;
   --font-body: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body-weight: 400;
+  --font-body-size: clamp(1rem, 0.97rem + 0.2vw, 1.1rem);
+  --font-heading-size: clamp(1.35rem, 1rem + 1vw, 2.5rem);
+  --page-bg-base: #f7f8fb;
+  --page-bg-muted: #eef2ff;
+  --page-bg-accent: rgba(79, 70, 229, 0.16);
+  --page-bg-highlight: rgba(14, 165, 233, 0.12);
   --dashboard-section-spacing: clamp(2.25rem, 4vw, 3.5rem);
+  --planner-panel-bg: color-mix(in srgb, #ffffff 96%, var(--page-bg-muted) 4%);
+  --planner-panel-border: color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 82%, transparent);
+  --planner-card-bg: color-mix(in srgb, #ffffff 90%, var(--page-bg-accent) 10%);
+  --planner-card-border: color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 70%, transparent);
+  --planner-card-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  --planner-card-highlight: rgba(79, 70, 229, 0.18);
 }
 
 body {
   font-family: var(--font-body);
   font-weight: var(--font-body-weight);
-  line-height: 1.6;
+  line-height: 1.65;
+  font-size: var(--font-body-size);
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(circle at 12% 20%, var(--page-bg-accent), transparent 60%),
+    radial-gradient(circle at 85% 0%, var(--page-bg-highlight), transparent 55%),
+    linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
+  background-attachment: fixed;
+  color: var(--desktop-text-main, #0f172a);
+}
+
+html[data-theme="night"],
+html[data-theme="dracula"] {
+  --page-bg-base: #050812;
+  --page-bg-muted: #0b1220;
+  --page-bg-accent: rgba(56, 189, 248, 0.14);
+  --page-bg-highlight: rgba(99, 102, 241, 0.12);
+  --planner-panel-bg: color-mix(in srgb, #0b1220 75%, #111827 25%);
+  --planner-panel-border: color-mix(in srgb, #334155 60%, transparent);
+  --planner-card-bg: color-mix(in srgb, #111827 80%, #2e2a63 20%);
+  --planner-card-border: color-mix(in srgb, #475569 55%, transparent);
+  --planner-card-shadow: 0 25px 45px rgba(5, 8, 18, 0.65);
+  --planner-card-highlight: rgba(129, 140, 248, 0.4);
+}
+
+html[data-theme="caramellatte"] {
+  --page-bg-base: #fff9f2;
+  --page-bg-muted: #fde4cf;
+  --page-bg-accent: rgba(242, 166, 90, 0.25);
+  --page-bg-highlight: rgba(188, 108, 37, 0.2);
+  --planner-panel-bg: color-mix(in srgb, #fffdf8 90%, #fde4cf 10%);
+  --planner-panel-border: color-mix(in srgb, #f2b880 60%, transparent);
+  --planner-card-bg: color-mix(in srgb, #ffffff 92%, #fde4cf 8%);
+  --planner-card-border: color-mix(in srgb, #f2b880 60%, transparent);
+  --planner-card-shadow: 0 20px 40px rgba(188, 108, 37, 0.16);
+  --planner-card-highlight: rgba(188, 108, 37, 0.3);
 }
 
 html[data-theme="professional"] body.desktop-shell {
-  background: radial-gradient(
-      circle at top,
-      rgba(99, 102, 241, 0.14),
-      rgba(14, 165, 233, 0.08) 55%
-    ),
-    var(--desktop-bg);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(99, 102, 241, 0.18), transparent 60%),
+    radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
+    linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
   color: var(--desktop-text-main);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   min-height: 100vh;
 }
 
@@ -341,6 +387,51 @@ html[data-theme="professional"] .desktop-shell .desktop-panel {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+.desktop-panel.desktop-panel--planner {
+  background: var(--planner-panel-bg);
+  border: 1px solid var(--planner-panel-border, var(--desktop-border-subtle));
+  box-shadow: var(--planner-card-shadow);
+}
+
+.desktop-panel.desktop-panel--planner .desktop-panel-toolbar {
+  background: color-mix(in srgb, var(--planner-panel-bg) 75%, var(--page-bg-accent) 25%);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--planner-panel-border, var(--desktop-border-subtle)) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.desktop-panel.desktop-panel--planner #plannerCards {
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.desktop-panel.desktop-panel--planner .card {
+  background: var(--planner-card-bg);
+  border-color: var(--planner-card-border);
+  box-shadow: var(--planner-card-shadow);
+  color: var(--desktop-text-main);
+}
+
+.desktop-panel.desktop-panel--planner .card:hover {
+  box-shadow: 0 25px 50px color-mix(in srgb, var(--planner-card-highlight) 70%, transparent);
+}
+
+.desktop-panel.desktop-panel--planner [data-planner-lesson][data-planner-selected="true"] {
+  outline: 2px solid var(--planner-card-highlight);
+  outline-offset: 0;
+}
+
+.desktop-panel.desktop-panel--planner textarea[data-planner-notes] {
+  background: color-mix(in srgb, var(--planner-card-bg) 85%, #ffffff 15%);
+  border-color: color-mix(in srgb, var(--planner-card-border) 80%, transparent);
+  color: var(--desktop-text-main);
+}
+
+.desktop-panel.desktop-panel--planner textarea[data-planner-notes]:focus {
+  border-color: color-mix(in srgb, var(--desktop-nav-active, #4f46e5) 55%, var(--planner-card-border) 45%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--planner-card-highlight) 65%, transparent);
 }
 
 html[data-theme="professional"] .desktop-shell .desktop-panel-body {
@@ -675,6 +766,12 @@ h5,
 h6 {
   font-family: var(--font-heading);
   font-weight: var(--font-heading-weight);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--font-heading-size);
 }
 
 button,
