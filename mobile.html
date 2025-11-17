@@ -2838,6 +2838,11 @@
         min-height: 3.2rem;
       }
     }
+
+    /* Header shadow when scrolled */
+    .header-shadow {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
   </style>
 
   <header class="sticky top-0 z-20 text-black shadow-md bg-white/80 backdrop-blur">
@@ -3163,7 +3168,7 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <header class="px-4 pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300">
+      <header class="px-4 pt-safe-top pb-3 space-y-2 bg-base-100/90 backdrop-blur-md border-b border-base-300 transition-shadow">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-base font-semibold tracking-wide text-base-content">Reminders</h2>
           <button
@@ -5523,6 +5528,32 @@
           e.preventDefault(); // Prevent double-tap zoom
         }, { passive: false });
       }
+    })();
+  </script>
+
+  <script>
+    (function() {
+      // Identify reminders view container and header
+      const remindersSection = document.querySelector('section[data-view="reminders"]');
+      if (!remindersSection) return;
+
+      const header = remindersSection.querySelector('header');
+      const scrollContainer =
+        remindersSection.querySelector('.reminders-scroll-container') ||
+        remindersSection.querySelector('#reminders-list') ||
+        remindersSection;
+
+      // SAFETY:
+      // Do NOT rename elements. We check multiple fallbacks.
+      // Whichever scrollable container exists will trigger the shadow.
+
+      scrollContainer.addEventListener('scroll', function() {
+        if (scrollContainer.scrollTop > 2) {
+          header.classList.add('header-shadow');
+        } else {
+          header.classList.remove('header-shadow');
+        }
+      });
     })();
   </script>
 
