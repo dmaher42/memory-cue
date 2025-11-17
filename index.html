@@ -189,6 +189,43 @@
       }
     }
 
+    [data-workspace-panel="notes"] .workspace-notes-layout {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1rem, 2.5vw, 1.75rem);
+    }
+
+    [data-workspace-panel="notes"] .workspace-notes-shelf {
+      min-height: 0;
+      height: 100%;
+    }
+
+    [data-workspace-panel="notes"] .workspace-notes-shelf__body {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    [data-workspace-panel="notes"] [data-notes-layout][data-notes-shelf-state='collapsed'] .workspace-notes-shelf {
+      display: none;
+    }
+
+    @media (min-width: 1024px) {
+      [data-workspace-panel="notes"] .workspace-notes-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+        align-items: stretch;
+      }
+
+      [data-workspace-panel="notes"] [data-notes-layout][data-notes-shelf-state='collapsed'] {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      [data-workspace-panel="notes"] .workspace-notes-shelf {
+        height: min(34rem, calc(var(--vh, 1vh) * 70));
+      }
+    }
+
     #quick-action-toolbar {
       opacity: 0.95;
       backdrop-filter: blur(14px);
@@ -196,6 +233,37 @@
       border-radius: 1.25rem;
       padding: 0.5rem;
       box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22);
+    }
+
+    .planner-layout {
+      min-height: clamp(32rem, 70vh, 56rem);
+    }
+
+    .planner-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: color-mix(in srgb, var(--fallback-b1, #ffffff) 92%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--fallback-b3, #e5e7eb) 80%, transparent);
+      padding-bottom: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .planner-cards-scroll {
+      height: clamp(28rem, 65vh, 48rem);
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .planner-detail-panel {
+      top: 0;
+    }
+
+    @media (min-width: 1024px) {
+      .planner-detail-panel {
+        position: sticky;
+        top: 1rem;
+      }
     }
 
     #quick-action-toolbar .quick-action-btn {

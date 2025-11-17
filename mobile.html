@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" class="h-full">
 <head>
   <base href="/memory-cue/" />
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
@@ -2210,7 +2210,7 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-base-200 text-base-content show-full mobile-theme mobile-shell">
+<body class="min-h-full bg-base-200 text-base-content show-full mobile-theme mobile-shell overflow-x-hidden">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
@@ -3214,9 +3214,8 @@
     })();
   </script>
 
-  <div class="container">
+  <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
     <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
-      <div class="mobile-shell w-full pb-16">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -3266,7 +3265,7 @@
                 <button
                   id="quickAddVoice"
                   type="button"
-                  class="mc-quick-voice btn btn-ghost btn-sm rounded-full"
+                  class="mc-quick-voice btn btn-ghost btn-sm rounded-full flex-shrink-0"
                   aria-label="Use voice to add reminder"
                 >
                   <span aria-hidden="true">🎤</span>
@@ -3388,7 +3387,6 @@
       </div>
     </section>
     <!-- END GPT CHANGE -->
-      </div>
     </main>
   </div>
 
