@@ -2476,7 +2476,7 @@ function renderPlannerLessons(plan) {
         : '';
       const moveControls = lessonId
         ? `
-            <div class="flex items-center gap-1" role="group" aria-label="Reorder lesson">
+            <div class="flex flex-wrap items-center gap-1 justify-end sm:flex-nowrap" role="group" aria-label="Reorder lesson">
               <button
                 type="button"
                 class="btn btn-ghost btn-xs"
@@ -2507,7 +2507,7 @@ function renderPlannerLessons(plan) {
                 <h2 class="text-lg font-semibold text-base-content">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</h2>
                 ${summaryMarkup}
               </div>
-              <div class="flex items-center gap-1">
+              <div class="flex flex-wrap items-center justify-end gap-1">
                 ${moveControls}
                 <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
                   Edit
