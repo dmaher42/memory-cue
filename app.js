@@ -925,6 +925,7 @@ const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn')
 const plannerTemplateSelect = document.getElementById('planner-template-select');
 const plannerTemplateSaveButton = document.getElementById('planner-template-save-btn');
 const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
+const plannerSubjectFilterSelect = document.getElementById('planner-subject-filter');
 const plannerPanelElement = document.querySelector('.desktop-panel--planner');
 const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
 const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
@@ -1058,6 +1059,7 @@ function createPlannerLessonModal() {
   const dayField = document.getElementById('planner-lesson-day');
   const titleField = document.getElementById('planner-lesson-title');
   const summaryField = document.getElementById('planner-lesson-summary');
+  const subjectField = document.getElementById('planner-lesson-subject');
   const detailBadgeField = document.getElementById('planner-detail-badge');
   const detailTextField = document.getElementById('planner-detail-text');
   const duplicateWeekInput = document.getElementById('planner-duplicate-week');
@@ -1245,7 +1247,7 @@ function createPlannerLessonModal() {
   };
 
   const setLessonFieldsDisabled = (isDisabled) => {
-    [dayField, titleField, summaryField].forEach((field) => {
+    [dayField, titleField, summaryField, subjectField].forEach((field) => {
       if (field instanceof HTMLElement) {
         field.disabled = Boolean(isDisabled);
         field.classList.toggle('opacity-60', Boolean(isDisabled));
@@ -1259,6 +1261,9 @@ function createPlannerLessonModal() {
     clearError();
     setPreferredFocus(null);
     setLessonFieldsDisabled(false);
+    if (subjectField instanceof HTMLInputElement) {
+      subjectField.value = '';
+    }
     if (detailBadgeField instanceof HTMLInputElement) {
       detailBadgeField.value = '';
     }
@@ -1330,6 +1335,9 @@ function createPlannerLessonModal() {
     }
     titleField.value = resolvedDay ? `${resolvedDay} lesson` : '';
     summaryField.value = '';
+    if (subjectField instanceof HTMLInputElement) {
+      subjectField.value = '';
+    }
     updateModalCopy({
       title: 'Add lesson',
       description: 'Pick a day and capture the lesson focus for this week.',
@@ -1358,6 +1366,9 @@ function createPlannerLessonModal() {
     }
     titleField.value = lesson.title || '';
     summaryField.value = lesson.summary || '';
+    if (subjectField instanceof HTMLInputElement) {
+      subjectField.value = lesson.subject || '';
+    }
     updateModalCopy({
       title: 'Edit lesson',
       description: 'Update the lesson information for this week.',
@@ -1386,6 +1397,9 @@ function createPlannerLessonModal() {
     }
     titleField.value = lesson.title || '';
     summaryField.value = lesson.summary || '';
+    if (subjectField instanceof HTMLInputElement) {
+      subjectField.value = lesson.subject || '';
+    }
     if (detailBadgeField instanceof HTMLInputElement) {
       detailBadgeField.value = '';
     }
@@ -1476,6 +1490,7 @@ function createPlannerLessonModal() {
       const dayName = dayField.value.trim();
       const title = titleField.value.trim();
       const summary = summaryField.value.trim();
+      const subject = subjectField?.value?.trim() || '';
 
       if (!dayName) {
         showError('Choose a day for this lesson.');
@@ -1494,7 +1509,8 @@ function createPlannerLessonModal() {
         const plan = await updateLessonInWeek(activePlannerWeekId, state.lessonId, {
           dayName,
           title,
-          summary
+          summary,
+          subject
         });
         if (plan) {
           currentPlannerPlan = plan;
@@ -1509,7 +1525,8 @@ function createPlannerLessonModal() {
       const plan = await addLessonToWeek(activePlannerWeekId, {
         dayName,
         title,
-        summary
+        summary,
+        subject
       });
       if (plan) {
         currentPlannerPlan = plan;
@@ -1561,6 +1578,8 @@ const plannerLessonModalController =
   typeof document !== 'undefined' ? createPlannerLessonModal() : null;
 const plannerCountElement = document.getElementById('plannerCount');
 const plannerSubtitleElement = document.getElementById('plannerSubtitle');
+const SUBJECT_FILTER_ALL_VALUE = 'all';
+let activePlannerSubjectFilter = SUBJECT_FILTER_ALL_VALUE;
 const resourcesCountElement = document.getElementById('resourcesCount');
 const templatesCountElement = document.getElementById('templatesCount');
 const dailySnapshotList = document.getElementById('dailySnapshotList');
@@ -2364,6 +2383,67 @@ function syncPlannerTemplateSelection(plan) {
   renderPlannerTemplateOptions(preferredTemplateId);
 }
 
+function getLessonSubjectLabel(lesson) {
+  if (!lesson || typeof lesson !== 'object') {
+    return '';
+  }
+  return typeof lesson.subject === 'string' ? lesson.subject.trim() : '';
+}
+
+function getLessonSubjectKey(lesson) {
+  const label = getLessonSubjectLabel(lesson);
+  return label ? label.toLowerCase() : '';
+}
+
+function renderPlannerSubjectFilterOptions(lessons) {
+  if (!plannerSubjectFilterSelect) {
+    return;
+  }
+  const subjectMap = new Map();
+  lessons.forEach((lesson) => {
+    const label = getLessonSubjectLabel(lesson);
+    if (!label) {
+      return;
+    }
+    const key = label.toLowerCase();
+    if (!subjectMap.has(key)) {
+      subjectMap.set(key, label);
+    }
+  });
+  if (subjectMap.size === 0) {
+    activePlannerSubjectFilter = SUBJECT_FILTER_ALL_VALUE;
+  } else if (
+    activePlannerSubjectFilter !== SUBJECT_FILTER_ALL_VALUE &&
+    !subjectMap.has(activePlannerSubjectFilter)
+  ) {
+    activePlannerSubjectFilter = SUBJECT_FILTER_ALL_VALUE;
+  }
+  const options = [`<option value="${SUBJECT_FILTER_ALL_VALUE}">All subjects</option>`];
+  subjectMap.forEach((label, key) => {
+    options.push(`<option value="${escapeCueText(key)}">${escapeCueText(label)}</option>`);
+  });
+  plannerSubjectFilterSelect.innerHTML = options.join('');
+  plannerSubjectFilterSelect.value = activePlannerSubjectFilter;
+  plannerSubjectFilterSelect.disabled = subjectMap.size === 0;
+}
+
+function filterPlannerLessonsBySubject(lessons) {
+  if (!Array.isArray(lessons)) {
+    return [];
+  }
+  if (activePlannerSubjectFilter === SUBJECT_FILTER_ALL_VALUE) {
+    return lessons;
+  }
+  return lessons.filter((lesson) => getLessonSubjectKey(lesson) === activePlannerSubjectFilter);
+}
+
+function handlePlannerSubjectFilterChange(event) {
+  const value =
+    typeof event?.target?.value === 'string' ? event.target.value : SUBJECT_FILTER_ALL_VALUE;
+  activePlannerSubjectFilter = value;
+  renderPlannerLessons(currentPlannerPlan);
+}
+
 async function maybeApplyPreferredPlannerTemplate(plan, weekId) {
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
   const hasLessons = lessons.length > 0;
@@ -2395,18 +2475,25 @@ function renderPlannerLessons(plan) {
     return;
   }
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
+  renderPlannerSubjectFilterOptions(lessons);
   if (!lessons.length) {
     renderPlannerMessage('No lessons saved for this week yet.');
     selectedPlannerLessonId = null;
     return;
   }
-  const lessonIds = lessons
+  const lessonsToRender = filterPlannerLessonsBySubject(lessons);
+  if (!lessonsToRender.length) {
+    renderPlannerMessage('No lessons saved for this subject yet.');
+    selectedPlannerLessonId = null;
+    return;
+  }
+  const lessonIds = lessonsToRender
     .map((lesson) => (typeof lesson.id === 'string' && lesson.id ? lesson.id : ''))
     .filter((id) => Boolean(id));
   if (selectedPlannerLessonId && !lessonIds.includes(selectedPlannerLessonId)) {
     selectedPlannerLessonId = null;
   }
-  const markup = lessons
+  const markup = lessonsToRender
     .map((lesson) => {
       const detailItems = Array.isArray(lesson.details)
         ? lesson.details
@@ -2434,6 +2521,11 @@ function renderPlannerLessons(plan) {
       const summaryMarkup = lesson.summary
         ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
         : '';
+      const subjectLabel = getLessonSubjectLabel(lesson);
+      const subjectBadge = subjectLabel
+        ? `<span class="badge badge-outline badge-sm text-base-content/70">${escapeCueText(subjectLabel)}</span>`
+        : '';
+      const subjectMarkup = subjectBadge ? `<div class="mt-2 flex flex-wrap gap-1">${subjectBadge}</div>` : '';
       const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
       const notesOpen = isPlannerLessonNotesOpen(lessonId);
       const notesSection = lessonId
@@ -2506,6 +2598,7 @@ function renderPlannerLessons(plan) {
                 )}</p>
                 <h2 class="text-lg font-semibold text-base-content">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</h2>
                 ${summaryMarkup}
+                ${subjectMarkup}
               </div>
               <div class="flex items-center gap-1">
                 ${moveControls}
@@ -3056,6 +3149,7 @@ function initPlannerView() {
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
   plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);
+  plannerSubjectFilterSelect?.addEventListener('change', handlePlannerSubjectFilterChange);
   plannerTextSizeSelect?.addEventListener('change', handlePlannerTextSizeChange);
   plannerTemplateSaveButton?.addEventListener('click', handlePlannerSaveTemplate);
   plannerPrevButton?.addEventListener('click', () => {
