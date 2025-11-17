@@ -57,12 +57,24 @@ function updateWorkspaceBreadcrumbs(route) {
 function renderRoute() {
   const rawRoute = (window.location.hash || '#dashboard').replace('#', '');
   const activeRoute = rawRoute === '' ? 'dashboard' : rawRoute;
-  const displayRoute = workspaceRoutes.has(activeRoute) || activeRoute === 'workspace' ? 'workspace' : activeRoute;
+  const isWorkspaceRoute = workspaceRoutes.has(activeRoute) || activeRoute === 'workspace';
   const routeNodes = document.querySelectorAll('[data-route]');
   routeNodes.forEach((node) => {
-    const isDashboardFallback = rawRoute === '' && node.dataset.route === 'dashboard';
-    const shouldShow = node.dataset.route === displayRoute || isDashboardFallback;
+    const nodeRoute = node.dataset.route;
+    const isDashboardFallback = rawRoute === '' && nodeRoute === 'dashboard';
+    let shouldShow = false;
+
+    if (nodeRoute === 'workspace') {
+      shouldShow = isWorkspaceRoute;
+    } else if (!isWorkspaceRoute) {
+      shouldShow = nodeRoute === activeRoute || isDashboardFallback;
+    } else if (isDashboardFallback) {
+      shouldShow = true;
+    }
+
     node.style.display = shouldShow ? '' : 'none';
+    node.hidden = !shouldShow;
+    node.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
   });
 
   syncWorkspacePanels(activeRoute);
@@ -105,7 +117,7 @@ function renderRoute() {
 }
 
 function syncWorkspacePanels(route) {
-  const workspace = document.querySelector('[data-workspace-shell]');
+  const workspace = document.querySelector('[data-workspace]');
   if (!workspace) {
     return;
   }
@@ -194,7 +206,7 @@ function initMobileNavHandlers() {
 }
 
 function initWorkspaceTabs() {
-  const workspace = document.querySelector('[data-workspace-shell]');
+  const workspace = document.querySelector('[data-workspace]');
   if (!workspace) {
     return;
   }
