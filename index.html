@@ -1371,37 +1371,50 @@
   <!-- BEGIN GPT CHANGE: live region -->
   <div id="live-status" class="sr-only" aria-live="polite" role="status"></div>
   <!-- END GPT CHANGE -->
-  <footer class="border-t border-base-300 bg-base-200 py-[18px] sm:py-6">
-    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 text-sm text-base-content/80 sm:px-6 lg:px-8">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div class="max-w-lg space-y-2">
-          <p class="text-base font-semibold text-base-content">Memory Cue</p>
-          <p>Designed to help teachers stay organised, communicate clearly, and celebrate daily wins.</p>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__content">
+        <div class="site-footer__brand">
+          <a class="site-footer__brand-mark" href="./index.html">
+            <span class="site-footer__logo" aria-hidden="true">MC</span>
+            <div>
+              <p class="site-footer__brand-name">Memory Cue</p>
+              <p class="site-footer__brand-tagline">Clarity for busy classrooms</p>
+            </div>
+          </a>
+          <p class="site-footer__description">
+            Designed to help teachers stay organised, communicate clearly, and celebrate daily wins.
+          </p>
+          <a class="site-footer__cta" href="mailto:hello@memorycue.app">Get updates</a>
         </div>
-        <div class="grid gap-4 text-sm sm:grid-cols-3">
-          <div class="space-y-2">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Product</p>
-            <a href="#dashboard" class="block hover:text-base-content">Dashboard</a>
-            <a href="#planner" class="block hover:text-base-content">Planner</a>
-            <a href="#resources" class="block hover:text-base-content">Resources</a>
+        <div class="site-footer__links">
+          <div class="site-footer__column">
+            <p class="site-footer__heading">Product</p>
+            <a href="./index.html">Web dashboard</a>
+            <a href="./mobile.html">Mobile companion</a>
+            <a href="./docs/index.html">Product tour</a>
           </div>
-          <div class="space-y-2">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Support</p>
-            <a href="#notes" class="block hover:text-base-content">Guides</a>
-            <a href="#templates" class="block hover:text-base-content">Templates</a>
-            <a href="#" class="block hover:text-base-content">Contact</a>
+          <div class="site-footer__column">
+            <p class="site-footer__heading">Resources</p>
+            <a href="./docs/mobile.html">Mobile guide</a>
+            <a href="./docs/index.html#planner">Planner handbook</a>
+            <a href="https://github.com/dmaher42/memory-cue">Open source repo</a>
           </div>
-          <div class="space-y-2">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Company</p>
-            <a href="#" class="block hover:text-base-content">Privacy</a>
-            <a href="#" class="block hover:text-base-content">Terms</a>
-            <a href="#" class="block hover:text-base-content">Support</a>
+          <div class="site-footer__column">
+            <p class="site-footer__heading">Company</p>
+            <a href="./docs/index.html#about">About Memory Cue</a>
+            <a href="https://memorycue.app/">Press kit</a>
+            <a href="mailto:hello@memorycue.app">Contact</a>
           </div>
         </div>
       </div>
-      <div class="flex flex-col gap-2 border-t border-base-300/60 pt-[9px] text-xs text-base-content/60 sm:flex-row sm:items-center sm:justify-between">
+      <div class="site-footer__bottom">
         <p>© <span id="year"></span> Memory Cue. All rights reserved.</p>
-        <p>Crafted with care for classrooms everywhere.</p>
+        <div class="site-footer__social">
+          <a href="mailto:hello@memorycue.app">hello@memorycue.app</a>
+          <a href="https://github.com/dmaher42/memory-cue" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://memorycue.app/" target="_blank" rel="noreferrer">Website</a>
+        </div>
       </div>
     </div>
   </footer>
