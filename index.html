@@ -1075,20 +1075,21 @@
                   aria-labelledby="workspace-tab-reminders"
                   class="space-y-4"
                 >
-                  <div class="desktop-panel-header space-y-1">
-                    <h3 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content" data-primary-heading>Reminders</h3>
+                  <div class="desktop-panel-header space-y-2">
+                    <div class="reminders-header flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300/60 bg-base-200/60 px-4 py-2">
+                      <h3 class="desktop-panel-title text-2xl font-semibold tracking-wide text-base-content" data-primary-heading>Reminders</h3>
+                      <div class="reminders-filters flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/70">
+                        <span class="btn btn-ghost btn-xs cursor-default" title="Filtering not available yet">All</span>
+                        <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Today</button>
+                      </div>
+                    </div>
                     <p class="desktop-panel-subtitle text-sm text-base-content/70">Keep track of tasks, family updates, and prep work in one organised list.</p>
+                    <span id="sync-status" class="hidden text-xs text-base-content/70" role="status" aria-live="polite"></span>
                   </div>
                   <div class="desktop-reminders-layout workspace-columns">
                     <div class="workspace-column column-primary">
                       <div class="desktop-reminders-column workspace-pane desktop-panel card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
-                        <div class="desktop-panel-body card-body flex h-full flex-col gap-3">
-                        <div class="desktop-panel-toolbar flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
-                          <span class="btn btn-ghost btn-xs cursor-default" title="Filtering not available yet">All</span>
-                          <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Today</button>
-                          <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">This week</button>
-                          <button type="button" class="btn btn-ghost btn-xs" disabled title="Filtering not available yet">Later</button>
-                        </div>
+                        <div class="desktop-panel-body card-body flex h-full flex-col gap-2">
                         <div class="desktop-panel-body workspace-pane__body desktop-reminders-scroll">
                           <ul id="reminders-list" class="desktop-reminders-list list-none"></ul>
                         </div>
