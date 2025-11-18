@@ -554,6 +554,32 @@ export async function initReminders(sel = {}) {
   let mobileRemindersFilterMode = 'all';
   let mobileRemindersCache = [];
 
+  // Returns a short, user-facing label for "today", e.g. "Tue 18 Nov"
+  function getTodayLabelForHeader() {
+    const now = new Date();
+    return now.toLocaleDateString(undefined, {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+  }
+
+  function updateMobileRemindersHeaderSubtitle() {
+    if (variant !== 'mobile' || typeof document === 'undefined') {
+      return;
+    }
+    const subtitleEl = document.getElementById('mobileRemindersHeaderSubtitle');
+    if (!subtitleEl) {
+      return;
+    }
+    const todayLabel = getTodayLabelForHeader();
+    if (mobileRemindersFilterMode === 'today') {
+      subtitleEl.textContent = `Today\u2019s reminders \u2022 ${todayLabel}`;
+    } else {
+      subtitleEl.textContent = `All reminders \u2022 ${todayLabel}`;
+    }
+  }
+
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
 
   const clearPlannerReminderContext = () => {
@@ -2535,6 +2561,7 @@ export async function initReminders(sel = {}) {
     if(!userId){
       hydrateOfflineReminders();
       render();
+      updateMobileRemindersHeaderSubtitle();
       persistItems();
       rescheduleAllReminders();
       return;
@@ -2567,6 +2594,7 @@ export async function initReminders(sel = {}) {
       });
       items = ensureOrderIndicesInitialized(remoteItems);
       render();
+      updateMobileRemindersHeaderSubtitle();
       persistItems();
       rescheduleAllReminders();
     }, (error)=>{
@@ -3277,6 +3305,7 @@ export async function initReminders(sel = {}) {
     };
 
     syncTabUiState();
+    updateMobileRemindersHeaderSubtitle();
 
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => {
@@ -3289,6 +3318,7 @@ export async function initReminders(sel = {}) {
         if (Array.isArray(mobileRemindersCache)) {
           render();
         }
+        updateMobileRemindersHeaderSubtitle();
       });
     });
   }
@@ -3364,6 +3394,7 @@ export async function initReminders(sel = {}) {
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
       rows = filterMobileReminderRows(mobileRemindersCache, mobileRemindersFilterMode, todayRange);
+      updateMobileRemindersHeaderSubtitle();
     }
 
     const highlightToday = true;
