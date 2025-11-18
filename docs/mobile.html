@@ -3071,6 +3071,9 @@
           type="button"
           class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
           data-open-add-task
+          data-open-quick-add
+          aria-controls="quickAddBar"
+          aria-expanded="false"
         >
           <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
           <span class="mc-add-btn-label">Add reminder</span>
@@ -3198,11 +3201,15 @@
       const drawer = document.getElementById('mobile-drawer');
       const scrim = document.getElementById('mobile-drawer-scrim');
       const scrollTopBtn = document.getElementById('btn-scroll-top');
-      const quickAddBtn = document.getElementById('addReminderBtn');
       const searchBtn = document.getElementById('btn-search');
       const themeBtn = document.getElementById('btn-theme');
       const drawerSyncStatus = document.getElementById('mcStatusText');
       const drawerSyncDot = document.getElementById('mcStatus');
+      const quickAddPanel = document.getElementById('quickAddBar');
+      const quickAddInputField = document.getElementById('quickAddInput');
+      const quickAddCloseBtn = document.getElementById('quickAddClose');
+      const quickAddSelector = '[data-open-quick-add]';
+      let activeQuickAddTrigger = null;
 
       const toggleClass = (el, className, force) => {
         if (!el) return;
@@ -3277,27 +3284,90 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
-      quickAddBtn?.addEventListener('click', () => {
-        const tryCall = (fn) => {
-          try {
-            return typeof fn === 'function' ? fn() : undefined;
-          } catch (error) {
-            console.warn('Quick add hook failed', error);
-            return undefined;
-          }
-        };
-        const result =
-          tryCall(window.quickAdd) ??
-          tryCall(window.openAddModal) ??
-          (function () {
-            const fallback = document.querySelector('[data-open-add-task]') || document.getElementById('addReminderBtn');
-            if (fallback instanceof HTMLElement) {
-              fallback.click();
-              return true;
+      const isQuickAddVisible = () => quickAddPanel?.dataset.visible === 'true';
+
+      const showQuickAddPanel = (trigger) => {
+        if (!(quickAddPanel instanceof HTMLElement)) {
+          return false;
+        }
+        activeQuickAddTrigger = trigger instanceof HTMLElement ? trigger : null;
+        quickAddPanel.hidden = false;
+        quickAddPanel.dataset.visible = 'true';
+        quickAddPanel.setAttribute('aria-hidden', 'false');
+        activeQuickAddTrigger?.setAttribute('aria-expanded', 'true');
+        if (quickAddInputField instanceof HTMLElement) {
+          window.requestAnimationFrame(() => {
+            try {
+              quickAddInputField.focus({ preventScroll: true });
+            } catch {
+              quickAddInputField.focus();
             }
-            return document.getElementById('quickAddInput')?.focus();
-          })();
-        return result;
+          });
+        }
+        return true;
+      };
+
+      const hideQuickAddPanel = () => {
+        if (!(quickAddPanel instanceof HTMLElement)) {
+          return false;
+        }
+        if (quickAddPanel.dataset.visible !== 'true') {
+          return false;
+        }
+        quickAddPanel.hidden = true;
+        quickAddPanel.dataset.visible = 'false';
+        quickAddPanel.setAttribute('aria-hidden', 'true');
+        if (
+          activeQuickAddTrigger instanceof HTMLElement &&
+          document.body.contains(activeQuickAddTrigger)
+        ) {
+          activeQuickAddTrigger.setAttribute('aria-expanded', 'false');
+          try {
+            activeQuickAddTrigger.focus({ preventScroll: true });
+          } catch {
+            activeQuickAddTrigger.focus();
+          }
+        }
+        activeQuickAddTrigger = null;
+        return true;
+      };
+
+      document.addEventListener(
+        'click',
+        (event) => {
+          if (!(quickAddPanel instanceof HTMLElement)) {
+            return;
+          }
+          const trigger =
+            event.target instanceof Element ? event.target.closest(quickAddSelector) : null;
+          if (!trigger) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+          if (isQuickAddVisible()) {
+            hideQuickAddPanel();
+          } else {
+            showQuickAddPanel(trigger);
+          }
+        },
+        true,
+      );
+
+      quickAddCloseBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        hideQuickAddPanel();
+      });
+
+      document.addEventListener('reminder:quick-add:complete', hideQuickAddPanel);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isQuickAddVisible()) {
+          hideQuickAddPanel();
+        }
       });
 
       searchBtn?.addEventListener('click', () => {
@@ -3405,11 +3475,29 @@
           </div>
         </div>
 
-        <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2" aria-label="Quick add reminder">
-          <div class="mc-quick-add-inner space-y-1.5 w-full">
-            <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
-              <div class="mc-quick-input-group w-full">
-                <input
+        <div
+          id="quickAddBar"
+          class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2"
+          aria-label="Quick add reminder"
+          hidden
+          data-visible="false"
+          aria-hidden="true"
+        >
+          <div class="w-full flex flex-col gap-2">
+            <div class="flex justify-end">
+              <button
+                id="quickAddClose"
+                type="button"
+                class="mc-quick-close btn btn-ghost btn-circle btn-sm"
+                aria-label="Close quick add"
+              >
+                <span aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="mc-quick-add-inner space-y-1.5 w-full">
+              <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
+                <div class="mc-quick-input-group w-full">
+                  <input
                   id="quickAddInput"
                   class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
                   type="text"
@@ -3438,6 +3526,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
 
         <div id="remindersListMobile" class="space-y-2">

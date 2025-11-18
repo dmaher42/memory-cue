@@ -881,6 +881,16 @@ export async function initReminders(sel = {}) {
     emitActivity({ action: 'created', label: `Reminder added · ${entry.title}` });
 
     quickInput.value = '';
+
+    if (typeof document !== 'undefined') {
+      try {
+        document.dispatchEvent(
+          new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
+        );
+      } catch {
+        // Ignore dispatch issues so the add flow can finish silently.
+      }
+    }
   }
 
   if (typeof window !== 'undefined') {
