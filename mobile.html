@@ -284,12 +284,20 @@
   }
 
   #savedNotesSheet .saved-notes-panel {
-    transform: translateY(100%);
-    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(92vw, 28rem);
+    transform: translate(-50%, calc(-50% + 24px)) scale(0.96);
+    opacity: 0;
+    transition:
+      transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+      opacity 0.25s ease;
   }
 
   #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translateY(0);
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
   }
 
   .note-body-field {
@@ -399,12 +407,20 @@
   }
 
   .mobile-shell #savedNotesSheet .saved-notes-panel {
-    transform: translateY(100%);
-    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(92vw, 28rem);
+    transform: translate(-50%, calc(-50% + 24px)) scale(0.96);
+    opacity: 0;
+    transition:
+      transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+      opacity 0.25s ease;
   }
 
   .mobile-shell #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translateY(0);
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
   }
 
   .quick-actions-panel {
@@ -3666,7 +3682,7 @@
         >
           <div
             id="saved-notes-panel"
-            class="saved-notes-panel mt-4 bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 space-y-2 fixed inset-x-0 bottom-0 z-40 max-w-md mx-auto rounded-t-3xl shadow-xl border-t border-base-300 pt-3 pb-4 transition-transform flex flex-col max-h-[80vh]"
+            class="saved-notes-panel fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] max-w-md flex-col space-y-2 rounded-3xl border border-base-300 bg-base-100 px-4 py-3 shadow-xl transition-transform"
           >
             <div class="flex flex-col max-h-[70vh]">
               <div class="flex justify-center pt-2 pb-1">
