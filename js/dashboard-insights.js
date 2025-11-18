@@ -1,3 +1,5 @@
+import { addLessonToWeek, getWeekIdFromDate } from './modules/planner.js';
+
 const WEATHER_FALLBACK = {
   latitude: -33.8688,
   longitude: 151.2093,
@@ -52,6 +54,169 @@ const newsElements = {
   primaryLink: document.getElementById('newsPrimaryLink'),
   footnote: document.getElementById('newsFootnote')
 };
+
+const NEXT_LESSON_TITLE_KEY = 'memoryCue:dashboardNextLessonTitle';
+const NEXT_LESSON_FOCUS_KEY = 'memoryCue:dashboardNextLessonFocus';
+
+const nextLessonElements = {
+  title: document.getElementById('dashboard-next-lesson-title'),
+  focus: document.getElementById('dashboard-next-lesson-focus'),
+  button: document.querySelector('[data-copy-next-lesson]'),
+  feedback: document.querySelector('[data-next-lesson-feedback]')
+};
+
+const hasStorageSupport = () => {
+  try {
+    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+  } catch {
+    return false;
+  }
+};
+
+const readNextLessonValue = (key) => {
+  if (!hasStorageSupport() || !key) {
+    return '';
+  }
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+};
+
+const writeNextLessonValue = (key, value) => {
+  if (!hasStorageSupport() || !key) {
+    return;
+  }
+  try {
+    if (typeof value === 'string' && value.trim().length) {
+      window.localStorage.setItem(key, value);
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    /* noop */
+  }
+};
+
+const clearNextLessonFeedback = () => {
+  if (!nextLessonElements.feedback) {
+    return;
+  }
+  nextLessonElements.feedback.textContent = '';
+  nextLessonElements.feedback.classList.remove('text-error', 'text-success');
+};
+
+const setNextLessonFeedback = (message, tone = 'neutral') => {
+  if (!nextLessonElements.feedback) {
+    return;
+  }
+  if (!message) {
+    clearNextLessonFeedback();
+    return;
+  }
+  nextLessonElements.feedback.textContent = message;
+  nextLessonElements.feedback.classList.remove('text-error', 'text-success');
+  if (tone === 'error') {
+    nextLessonElements.feedback.classList.add('text-error');
+  } else if (tone === 'success') {
+    nextLessonElements.feedback.classList.add('text-success');
+  }
+};
+
+const canUsePlannerShortcut = () =>
+  typeof addLessonToWeek === 'function' && typeof getWeekIdFromDate === 'function';
+
+async function handleNextLessonCopy(event) {
+  event.preventDefault();
+  if (!nextLessonElements.title || !nextLessonElements.focus) {
+    return;
+  }
+
+  const title = nextLessonElements.title.value.trim();
+  const focus = nextLessonElements.focus.value.trim();
+
+  if (!title || !focus) {
+    setNextLessonFeedback('Add a lesson title and focus first.', 'error');
+    if (!title) {
+      nextLessonElements.title.focus();
+    } else {
+      nextLessonElements.focus.focus();
+    }
+    return;
+  }
+
+  const button = nextLessonElements.button;
+  if (button) {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+  }
+
+  try {
+    const weekId = getWeekIdFromDate();
+    const dayIndex = new Date().getDay();
+    await addLessonToWeek(weekId, {
+      dayIndex,
+      title,
+      summary: focus
+    });
+    nextLessonElements.title.value = '';
+    nextLessonElements.focus.value = '';
+    writeNextLessonValue(NEXT_LESSON_TITLE_KEY, '');
+    writeNextLessonValue(NEXT_LESSON_FOCUS_KEY, '');
+    setNextLessonFeedback('Lesson copied to your planner.', 'success');
+  } catch (error) {
+    console.error('Memory Cue next lesson planner shortcut', error);
+    setNextLessonFeedback('Unable to copy to planner right now. Try again soon.', 'error');
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+    }
+  }
+}
+
+function initNextLessonPlannerShortcut() {
+  if (!nextLessonElements.title || !nextLessonElements.focus) {
+    return;
+  }
+
+  const storedTitle = readNextLessonValue(NEXT_LESSON_TITLE_KEY);
+  const storedFocus = readNextLessonValue(NEXT_LESSON_FOCUS_KEY);
+  if (storedTitle && !nextLessonElements.title.value) {
+    nextLessonElements.title.value = storedTitle;
+  }
+  if (storedFocus && !nextLessonElements.focus.value) {
+    nextLessonElements.focus.value = storedFocus;
+  }
+
+  const handleInput = (field, key) => {
+    if (!field) {
+      return;
+    }
+    field.addEventListener('input', () => {
+      writeNextLessonValue(key, field.value);
+      clearNextLessonFeedback();
+    });
+  };
+
+  handleInput(nextLessonElements.title, NEXT_LESSON_TITLE_KEY);
+  handleInput(nextLessonElements.focus, NEXT_LESSON_FOCUS_KEY);
+
+  const button = nextLessonElements.button;
+  if (!button) {
+    return;
+  }
+
+  if (!canUsePlannerShortcut()) {
+    button.disabled = true;
+    button.setAttribute('title', 'Planner tools are unavailable right now.');
+    setNextLessonFeedback('Planner tools are unavailable right now.', 'error');
+    return;
+  }
+
+  button.addEventListener('click', handleNextLessonCopy);
+}
 
 function safeText(target, value) {
   if (target) {
@@ -266,6 +431,8 @@ function initDashboardInsights() {
   if (typeof document === 'undefined') {
     return;
   }
+
+  initNextLessonPlannerShortcut();
 
   if (weatherElements.status) {
     requestWeather();
