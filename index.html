@@ -803,19 +803,20 @@
               </div>
             </section>
 
-            <section class="dashboard-card card dashboard-card--compact flex flex-col gap-3">
+            <section class="dashboard-card card dashboard-card--compact flex flex-col gap-3 dashboard-shortcuts">
               <div class="card-body dashboard-card-body gap-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <h2 class="dashboard-card-title">Action shortcuts</h2>
                   <span class="text-xs font-medium text-base-content/70">Jump back in</span>
                 </div>
-                <p class="text-sm text-base-content/70">
-                  Use the top navigation bar to jump between Reminders, Planner, and Notes.
+                <p class="text-sm text-base-content/70" data-action-shortcuts-fallback>
+                  Use the quick actions toolbar to capture reminders, jot notes, or brainstorm activities.
                 </p>
+                <div class="flex flex-wrap gap-2" data-action-shortcuts-target></div>
                 <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
                   <p class="text-sm font-semibold text-base-content/90">Need inspiration?</p>
                   <p class="text-sm text-base-content/70 mt-1">
-                    Open the activity ideas modal from the quick action toolbar to gather ready-to-run activities tailored to your class context.
+                    Use the Activity ideas quick action to gather ready-to-run activities tailored to your class context.
                   </p>
                 </div>
               </div>
@@ -1397,7 +1398,7 @@
     </div>
   </footer>
   <div id="activity-ideas-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" inert>
-    <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center">
+    <div class="min-h-dvh w-full bg-black/50 flex items-center justify-center" data-activity-ideas-backdrop>
       <div
         class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-900"
         role="dialog"
@@ -1484,6 +1485,7 @@
     </div>
   </div>
   <script src="./js/router.js" defer></script>
+  <script type="module" src="./js/quick-actions.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
   <script type="module" src="./app.js" defer></script>
   <script src="./js/update-footer-year.js" defer></script>
