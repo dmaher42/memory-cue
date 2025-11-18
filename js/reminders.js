@@ -343,12 +343,8 @@ export async function initReminders(sel = {}) {
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
-  const PIN_TOGGLE_PINNED_CLASS = 'pin-to-today-btn--pinned';
-  const PIN_TOGGLE_UNPINNED_CLASS = 'pin-to-today-btn--unpinned';
-  if (list) {
-    list.addEventListener('change', handlePinToggleChange);
-    list.addEventListener('click', handlePinToggleChange);
-  }
+  const PIN_TOGGLE_PINNED_CLASS = 'reminder-title-pinned';
+  const PIN_TOGGLE_UNPINNED_CLASS = 'reminder-title-unpinned';
   const detailPanel = $(sel.detailPanelSel);
   const detailEmptyState = $(sel.detailEmptySel);
   const detailContent = $(sel.detailContentSel);
@@ -2848,42 +2844,6 @@ export async function initReminders(sel = {}) {
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
   }
 
-  function handlePinToggleChange(event) {
-    const rawTarget = event?.target;
-    if (!(rawTarget instanceof HTMLElement)) {
-      return;
-    }
-    const toggle = rawTarget.closest('[data-role="reminder-today-toggle"]');
-    if (!(toggle instanceof HTMLElement)) {
-      return;
-    }
-    if (event?.type === 'click' && toggle instanceof HTMLInputElement) {
-      return;
-    }
-    if (event?.type === 'change' && !(toggle instanceof HTMLInputElement)) {
-      return;
-    }
-    event.stopPropagation();
-    if (typeof event?.preventDefault === 'function' && !(toggle instanceof HTMLInputElement)) {
-      event.preventDefault();
-    }
-    const card = typeof toggle.closest === 'function' ? toggle.closest('[data-reminder-item]') : null;
-    const reminderId = card?.dataset?.id;
-    if (!reminderId) {
-      if (!(toggle instanceof HTMLInputElement)) {
-        updatePinToggleVisualState(toggle, false);
-      }
-      return;
-    }
-    let nextValue;
-    if (toggle instanceof HTMLInputElement) {
-      nextValue = toggle.checked;
-    } else {
-      nextValue = !toggle.classList.contains(PIN_TOGGLE_PINNED_CLASS);
-      updatePinToggleVisualState(toggle, nextValue);
-    }
-    setReminderPinnedState(reminderId, nextValue);
-  }
   function undoDelete(tokenId){
     if(!deleteUndoState || deleteUndoState.tokenId !== tokenId) return;
     const { item, index } = deleteUndoState;
@@ -3288,25 +3248,32 @@ export async function initReminders(sel = {}) {
     if (!(toggle instanceof HTMLElement)) {
       return;
     }
+    toggle.classList.add('reminder-title-toggle');
     toggle.classList.toggle(PIN_TOGGLE_PINNED_CLASS, pinned);
     toggle.classList.toggle(PIN_TOGGLE_UNPINNED_CLASS, !pinned);
     toggle.setAttribute('aria-pressed', pinned ? 'true' : 'false');
   }
 
-  function bindTodayToggleListener(input) {
-    if (!(input instanceof HTMLElement)) {
+  function bindTodayToggleListener(element) {
+    if (!(element instanceof HTMLElement)) {
       return;
     }
-    if (input[PIN_TOGGLE_HANDLER_PROP]) {
+    if (element[PIN_TOGGLE_HANDLER_PROP]) {
       return;
     }
-    const eventName = input instanceof HTMLInputElement ? 'change' : 'click';
-    const handler = (event) => {
+    if (!element.hasAttribute('role')) {
+      element.setAttribute('role', 'button');
+    }
+    if (!element.hasAttribute('tabindex')) {
+      element.tabIndex = 0;
+    }
+    element.classList.add('cursor-pointer');
+    const handleToggle = async (event) => {
       if (event?.defaultPrevented) {
         return;
       }
       event.stopPropagation();
-      if (eventName === 'click' && typeof event?.preventDefault === 'function') {
+      if (typeof event?.preventDefault === 'function') {
         event.preventDefault();
       }
       const target = event.currentTarget;
@@ -3316,24 +3283,25 @@ export async function initReminders(sel = {}) {
       const card = typeof target.closest === 'function' ? target.closest('[data-reminder-item]') : null;
       const reminderId = card?.dataset?.id;
       if (!reminderId) {
-        if (target instanceof HTMLInputElement) {
-          target.checked = false;
-          target.setAttribute('aria-pressed', 'false');
-        } else {
-          updatePinToggleVisualState(target, false);
-        }
+        updatePinToggleVisualState(target, false);
         return;
       }
-      const nextValue = target instanceof HTMLInputElement
-        ? target.checked
-        : !target.classList.contains(PIN_TOGGLE_PINNED_CLASS);
-      if (!(target instanceof HTMLInputElement)) {
-        updatePinToggleVisualState(target, nextValue);
-      }
-      setReminderPinnedState(reminderId, nextValue);
+      const nextValue = !target.classList.contains(PIN_TOGGLE_PINNED_CLASS);
+      await Promise.resolve(setReminderPinnedState(reminderId, nextValue));
+      updatePinToggleVisualState(target, nextValue);
     };
-    input.addEventListener(eventName, handler);
-    input[PIN_TOGGLE_HANDLER_PROP] = handler;
+    const handleKeyDown = (event) => {
+      if (event?.defaultPrevented) {
+        return;
+      }
+      if (event?.key === 'Enter' || event?.key === ' ') {
+        event.preventDefault();
+        handleToggle(event);
+      }
+    };
+    element.addEventListener('click', handleToggle);
+    element.addEventListener('keydown', handleKeyDown);
+    element[PIN_TOGGLE_HANDLER_PROP] = { click: handleToggle, keydown: handleKeyDown };
   }
 
   function syncPinToggleStates() {
@@ -3351,23 +3319,13 @@ export async function initReminders(sel = {}) {
       const card = typeof toggle.closest === 'function' ? toggle.closest('[data-reminder-item]') : null;
       const reminderId = card?.dataset?.id;
       if (!reminderId) {
-        if (toggle instanceof HTMLInputElement) {
-          toggle.checked = false;
-          toggle.setAttribute('aria-pressed', 'false');
-        } else {
-          updatePinToggleVisualState(toggle, false);
-        }
+        updatePinToggleVisualState(toggle, false);
         bindTodayToggleListener(toggle);
         return;
       }
       const reminder = items.find((entry) => entry?.id === reminderId);
       const pinned = !!reminder?.pinToToday;
-      if (toggle instanceof HTMLInputElement) {
-        toggle.checked = pinned;
-        toggle.setAttribute('aria-pressed', pinned ? 'true' : 'false');
-      } else {
-        updatePinToggleVisualState(toggle, pinned);
-      }
+      updatePinToggleVisualState(toggle, pinned);
       bindTodayToggleListener(toggle);
     });
   }
@@ -3727,8 +3685,18 @@ export async function initReminders(sel = {}) {
       }
       if (isMobile) {
         titleEl.dataset.reminderTitle = 'true';
+        titleEl.textContent = '';
+        const titleToggle = document.createElement('span');
+        titleToggle.dataset.role = 'reminder-today-toggle';
+        titleToggle.className = 'reminder-title-toggle cursor-pointer';
+        titleToggle.setAttribute('role', 'button');
+        titleToggle.tabIndex = 0;
+        titleToggle.textContent = reminder.title;
+        updatePinToggleVisualState(titleToggle, summary.pinToToday);
+        titleEl.appendChild(titleToggle);
+      } else {
+        titleEl.textContent = reminder.title;
       }
-      titleEl.textContent = reminder.title;
 
       let titleSlot = titleEl;
       if (isMobile) {

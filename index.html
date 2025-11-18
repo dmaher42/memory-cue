@@ -389,44 +389,25 @@
           <section class="desktop-hero desktop-dashboard-grid dashboard-grid">
             <!-- Left/main column: ensure cards stack with consistent spacing -->
             <div class="space-y-4 desktop-hero-column">
-                  <article class="dashboard-hero-card h-full rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4">
-                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
-                      <h2 class="text-sm font-semibold tracking-tight">Weather</h2>
-                      <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
-            </div>
-            <div class="space-y-4">
-                      <div class="space-y-2">
-                        <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
-                          Checking the latest forecast…
-                        </p>
-                        <div class="flex flex-wrap items-end gap-3">
-                          <p id="weatherTemperature" class="text-4xl font-semibold text-base-content">--°C</p>
-                          <p id="weatherDescription" class="text-sm text-base-content/80">Awaiting update</p>
+                  <div class="dashboard-weather-quick-card">
+                    <article class="dashboard-weather-card" aria-label="Local weather update">
+                      <div class="weather-card-header">
+                        <div>
+                          <p class="dashboard-card-eyebrow">Weather</p>
+                          <p id="weatherStatus" role="status" aria-live="polite">Checking the latest forecast…</p>
+                          <p id="weatherLocation">Locating…</p>
                         </div>
+                        <span id="weatherIcon" aria-hidden="true">⛅️</span>
                       </div>
-                      <p id="weatherFootnote" class="hidden text-xs text-base-content/60 weather-card-footnote">
+                      <div class="weather-card-main">
+                        <p id="weatherTemperature">--°C</p>
+                        <p id="weatherDescription">Awaiting update</p>
+                      </div>
+                      <p id="weatherFootnote" class="weather-card-footnote hidden">
                         We use your approximate location to calculate these details.
                       </p>
-                      <dl class="grid gap-3 sm:grid-cols-2 text-xs text-base-content/80">
-                        <div class="space-y-1">
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
-                          <dd id="weatherLocation">Locating…</dd>
-                        </div>
-                        <div class="space-y-1">
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Wind</dt>
-                          <dd id="weatherWind">-- km/h</dd>
-                        </div>
-                        <div class="space-y-1">
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Humidity</dt>
-                          <dd id="weatherHumidity">--%</dd>
-                        </div>
-                        <div class="space-y-1">
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Feels like</dt>
-                          <dd id="weatherFeelsLike">--°C</dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </article>
+                    </article>
+                  </div>
 
                   <article class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
