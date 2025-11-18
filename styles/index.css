@@ -82,7 +82,7 @@ html[data-theme="professional"] {
   --planner-card-hover: #4cc3ee;
 }
 
- body.desktop-shell {
+.desktop-shell {
   background:
     radial-gradient(circle at 18% 0%, rgba(99, 102, 241, 0.18), transparent 60%),
     radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
