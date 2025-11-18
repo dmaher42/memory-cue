@@ -323,7 +323,7 @@ html[data-theme="professional"] {
   --desktop-shell-gutter: clamp(1rem, 4vw, 2rem);
 }
 
- .desktop-shell .desktop-main-inner {
+.desktop-shell .desktop-main-inner {
   display: flex;
   flex-direction: column;
   gap: var(--dashboard-section-spacing);
@@ -331,6 +331,20 @@ html[data-theme="professional"] {
   padding: 0 var(--desktop-shell-gutter) 2.5rem;
   width: 100%;
   min-height: 0;
+}
+
+.desktop-shell .dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: stretch;
+}
+
+.desktop-shell .dashboard-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
 }
 
  .desktop-shell .desktop-workspace-region {
@@ -422,6 +436,25 @@ html[data-theme="professional"] {
 
    .desktop-shell .desktop-main-inner > * {
     min-width: 0;
+  }
+
+  .desktop-shell .dashboard-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: clamp(1.75rem, 2.5vw, 2.75rem);
+    row-gap: clamp(1.5rem, 2vw, 2.25rem);
+  }
+
+  .desktop-shell .dashboard-grid > .dashboard-card {
+    grid-column: span 6;
+  }
+
+  .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--hero,
+  .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--wide {
+    grid-column: span 12;
+  }
+
+  .desktop-shell .dashboard-grid > .dashboard-card-stack {
+    grid-column: span 6;
   }
 }
 
