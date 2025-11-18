@@ -659,6 +659,23 @@ html[data-theme="professional"] {
 
  .desktop-shell .desktop-hero h1 {
   font-size: clamp(1.8rem, 3vw, 2.3rem);
+ }
+
+ .desktop-shell .desktop-hero-column {
+  min-width: 0;
+ }
+
+ .desktop-shell .dashboard-hero-card {
+  border-radius: var(--desktop-radius-card, 18px);
+  border: 1px solid var(--desktop-border-subtle, var(--color-base-300, #d7def1));
+  background: var(--desktop-surface, var(--color-base-100, #ffffff));
+  box-shadow: var(--desktop-shadow-card, 0 12px 30px rgba(15, 23, 42, 0.12));
+ }
+
+@media (min-width: 1024px) {
+   .desktop-shell .desktop-hero-column {
+    grid-column: span 6;
+  }
 }
 
  .desktop-shell #dailySnapshotList,

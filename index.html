@@ -386,10 +386,10 @@
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div class="space-y-6">
           <!-- Hero section: use equal columns on large screens to prevent narrow side panel -->
-          <section class="desktop-hero grid gap-4 lg:grid-cols-2">
+          <section class="desktop-hero desktop-dashboard-grid dashboard-grid">
             <!-- Left/main column: ensure cards stack with consistent spacing -->
-            <div class="space-y-4">
-                  <article class="h-full rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4">
+            <div class="space-y-4 desktop-hero-column">
+                  <article class="dashboard-hero-card h-full rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
                       <h2 class="text-sm font-semibold tracking-tight">Weather</h2>
                       <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
@@ -428,7 +428,7 @@
                     </div>
                   </article>
 
-                  <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
+                  <article class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
                       <h2 class="text-sm font-semibold tracking-tight">Today’s reminders</h2>
                       <span class="text-lg" aria-hidden="true">⏰</span>
@@ -463,7 +463,7 @@
                     </div>
                   </article>
 
-                  <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
+                  <article class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
                       <h2 class="text-sm font-semibold tracking-tight">Next lesson</h2>
                       <span class="text-lg" aria-hidden="true">🗓️</span>
@@ -510,8 +510,8 @@
                 </div>
 
                 <!-- Right/side column: same spacing as main column -->
-                <div class="space-y-4">
-                  <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
+                <div class="space-y-4 desktop-hero-column">
+                  <article class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
                       <h2 class="text-sm font-semibold tracking-tight">Top educational news</h2>
                     </div>
@@ -542,7 +542,7 @@
                   </article>
 
                   <section
-                    class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
+                    class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
                     aria-labelledby="kpi-heading"
                     data-dashboard-tab-group="kpi"
                   >
@@ -659,7 +659,7 @@
                   </section>
 
                   <section
-                    class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
+                    class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
                     data-dashboard-tab-group="daily-focus"
                     aria-labelledby="daily-overview-heading"
                   >
