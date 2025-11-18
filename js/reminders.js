@@ -343,6 +343,9 @@ export async function initReminders(sel = {}) {
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
+  if (list) {
+    list.addEventListener('change', handlePinToggleChange);
+  }
   const detailPanel = $(sel.detailPanelSel);
   const detailEmptyState = $(sel.detailEmptySel);
   const detailContent = $(sel.detailContentSel);
@@ -727,6 +730,7 @@ export async function initReminders(sel = {}) {
       updatedAt: now,
       due: dueIso,
       pendingSync: !userId,
+      pinToToday: false,
     };
   }
 
@@ -1945,6 +1949,7 @@ export async function initReminders(sel = {}) {
               typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
                 ? entry.plannerLessonId.trim()
                 : null,
+            pinToToday: entry.pinToToday === true,
           };
         })
         .filter(Boolean);
@@ -1979,6 +1984,7 @@ export async function initReminders(sel = {}) {
             typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
               ? entry.plannerLessonId.trim()
               : null,
+          pinToToday: !!entry.pinToToday,
         }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
@@ -2538,6 +2544,7 @@ export async function initReminders(sel = {}) {
         const data = d.data();
         const orderValue = Number(data.orderIndex);
         const plannerLessonId = typeof data.plannerLessonId === 'string' && data.plannerLessonId ? data.plannerLessonId : null;
+        const pinToToday = data.pinToToday === true;
         remoteItems.push({
           id: d.id,
           title: data.title,
@@ -2551,6 +2558,7 @@ export async function initReminders(sel = {}) {
           pendingSync: false,
           orderIndex: Number.isFinite(orderValue) ? orderValue : null,
           plannerLessonId,
+          pinToToday,
         });
       });
       items = ensureOrderIndicesInitialized(remoteItems);
@@ -2574,6 +2582,7 @@ export async function initReminders(sel = {}) {
         category: item.category || DEFAULT_CATEGORY,
         orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
         plannerLessonId: typeof item.plannerLessonId === 'string' && item.plannerLessonId ? item.plannerLessonId : null,
+        pinToToday: !!item.pinToToday,
         createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -2639,6 +2648,7 @@ export async function initReminders(sel = {}) {
         typeof obj.plannerLessonId === 'string' && obj.plannerLessonId.trim()
           ? obj.plannerLessonId.trim()
           : null,
+      pinToToday: !!obj.pinToToday,
     };
     assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
@@ -2706,6 +2716,38 @@ export async function initReminders(sel = {}) {
         label: `Reminder reopened · ${it.title}`,
       });
     }
+  }
+
+  function setReminderPinnedState(id, pinned) {
+    const reminder = items.find((entry) => entry?.id === id);
+    if (!reminder) {
+      return;
+    }
+    const nextValue = !!pinned;
+    if (reminder.pinToToday === nextValue) {
+      return;
+    }
+    reminder.pinToToday = nextValue;
+    reminder.updatedAt = Date.now();
+    saveToFirebase(reminder);
+    render();
+    persistItems();
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+  }
+
+  function handlePinToggleChange(event) {
+    const target = event?.target;
+    if (!(target instanceof HTMLInputElement) || target.dataset.role !== 'reminder-today-toggle') {
+      return;
+    }
+    event.stopPropagation();
+    const card = typeof target.closest === 'function' ? target.closest('[data-reminder-item]') : null;
+    const reminderId = card?.dataset?.id;
+    if (!reminderId) {
+      return;
+    }
+    setReminderPinnedState(reminderId, target.checked);
   }
   function undoDelete(tokenId){
     if(!deleteUndoState || deleteUndoState.tokenId !== tokenId) return;
@@ -3104,6 +3146,48 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  let pinToggleSyncScheduled = false;
+  function syncPinToggleStates() {
+    if (!list) {
+      return;
+    }
+    const toggles = list.querySelectorAll('[data-role="reminder-today-toggle"]');
+    if (!toggles.length) {
+      return;
+    }
+    toggles.forEach((input) => {
+      if (!(input instanceof HTMLInputElement)) {
+        return;
+      }
+      const card = typeof input.closest === 'function' ? input.closest('[data-reminder-item]') : null;
+      const reminderId = card?.dataset?.id;
+      if (!reminderId) {
+        input.checked = false;
+        return;
+      }
+      const reminder = items.find((entry) => entry?.id === reminderId);
+      const checked = !!reminder?.pinToToday;
+      input.checked = checked;
+      input.setAttribute('aria-pressed', checked ? 'true' : 'false');
+    });
+  }
+
+  function schedulePinToggleSync() {
+    if (!list || pinToggleSyncScheduled) {
+      return;
+    }
+    pinToggleSyncScheduled = true;
+    const runner = () => {
+      pinToggleSyncScheduled = false;
+      syncPinToggleStates();
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(runner);
+    } else {
+      setTimeout(runner, 16);
+    }
+  }
+
   function render(){
     const now = new Date();
     const localNow = new Date(now);
@@ -3221,6 +3305,7 @@ export async function initReminders(sel = {}) {
         list.innerHTML = '<div class="text-muted">No reminders found.</div>';
         list.classList.remove('hidden');
       }
+      schedulePinToggleSync();
       return;
     }
 
@@ -3287,6 +3372,7 @@ export async function initReminders(sel = {}) {
         priority: reminder.priority || 'Medium',
         category: catName,
         done: Boolean(reminder.done),
+        pinToToday: reminder.pinToToday === true,
       };
 
       const desktopCardClasses =
@@ -3310,6 +3396,11 @@ export async function initReminders(sel = {}) {
         itemEl.dataset.due = summary.dueIso;
       } else {
         delete itemEl.dataset.due;
+      }
+      if (summary.pinToToday) {
+        itemEl.dataset.pinToToday = 'true';
+      } else {
+        delete itemEl.dataset.pinToToday;
       }
       itemEl.dataset.reminder = JSON.stringify(summary);
       itemEl.dataset.orderIndex = Number.isFinite(reminder.orderIndex) ? String(reminder.orderIndex) : '';
@@ -3529,6 +3620,7 @@ export async function initReminders(sel = {}) {
     });
     list.appendChild(frag);
     syncDetailSelection();
+    schedulePinToggleSync();
   }
 
   function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
