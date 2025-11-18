@@ -458,6 +458,11 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    grid-auto-rows: auto;
   }
 
     /* Each reminder item uses the Calming Tones card styling */
@@ -467,7 +472,7 @@
       align-items: start;
       gap: var(--reminder-card-gap);
       padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
-      margin: 0 0 var(--reminder-card-gap) 0;
+      margin: 0;
       border: 1px solid var(--card-border);
       font-size: var(--reminder-card-font-size);
       line-height: 1.4;
@@ -475,6 +480,10 @@
       border-radius: 12px;
       box-shadow: 0 1px 3px var(--shadow-color);
       transition: all 0.2s ease;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      position: static;
     }
 
     #reminderList > *:hover {
