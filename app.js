@@ -4023,18 +4023,34 @@ dailyTasksContainer?.addEventListener('change', async (event) => {
   if (!Array.isArray(currentDailyTasks) || Number.isNaN(index) || !currentDailyTasks[index]) {
     return;
   }
+  const wasTargetFocused = document.activeElement === target;
+  const refocusCheckbox = () => {
+    if (!wasTargetFocused) {
+      return;
+    }
+    const nextCheckbox = dailyTasksContainer?.querySelector(`input[data-task-index="${index}"]`);
+    if (nextCheckbox instanceof HTMLInputElement) {
+      try {
+        nextCheckbox.focus({ preventScroll: true });
+      } catch {
+        nextCheckbox.focus();
+      }
+    }
+  };
   const previousState = currentDailyTasks.map((task) => ({ ...task }));
   const updatedTasks = previousState.map((task, taskIndex) =>
     taskIndex === index ? { ...task, completed: target.checked } : task
   );
   currentDailyTasks = updatedTasks;
   renderDailyTasks(updatedTasks);
+  refocusCheckbox();
   try {
     await saveDailyTasks(updatedTasks);
   } catch (error) {
     console.error('Failed to update task completion state', error);
     currentDailyTasks = previousState;
     renderDailyTasks(previousState);
+    refocusCheckbox();
   }
 });
 
