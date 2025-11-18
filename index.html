@@ -387,69 +387,65 @@
         <div class="space-y-6">
           <section class="desktop-hero">
             <div class="hero-content max-w-none w-full">
-              <div class="desktop-dashboard-grid dashboard-grid">
-                <article class="dashboard-card dashboard-card--compact dashboard-card--weather h-full">
-                    <div class="dashboard-card-content">
-                      <div class="weather-card-body">
-                        <div class="flex items-center justify-between gap-3 weather-card-header">
-                          <div class="space-y-1">
-                            <p class="dashboard-card-eyebrow">Weather</p>
-                            <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
-                              Checking the latest forecast…
-                            </p>
-                          </div>
-                          <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
-                        </div>
-                        <div class="flex flex-wrap items-end gap-3 weather-card-main">
-                          <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
-                          <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
-                        </div>
-                        <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
-                          We use your approximate location to calculate these details.
+              <div class="desktop-dashboard-grid dashboard-grid grid gap-4 lg:grid-cols-[2fr,1.1fr]">
+                <div class="space-y-4">
+                  <article class="h-full rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4">
+                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
+                      <h2 class="text-sm font-semibold tracking-tight">Weather</h2>
+                      <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
+                    </div>
+                    <div class="space-y-4">
+                      <div class="space-y-2">
+                        <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
+                          Checking the latest forecast…
                         </p>
+                        <div class="flex flex-wrap items-end gap-3">
+                          <p id="weatherTemperature" class="text-4xl font-semibold text-base-content">--°C</p>
+                          <p id="weatherDescription" class="text-sm text-base-content/80">Awaiting update</p>
+                        </div>
                       </div>
-                      <dl class="grid gap-3 sm:grid-cols-2 weather-card-stats">
-                        <div>
+                      <p id="weatherFootnote" class="hidden text-xs text-base-content/60 weather-card-footnote">
+                        We use your approximate location to calculate these details.
+                      </p>
+                      <dl class="grid gap-3 sm:grid-cols-2 text-xs text-base-content/80">
+                        <div class="space-y-1">
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
-                          <dd id="weatherLocation" class="text-xs text-base-content/80">Locating…</dd>
+                          <dd id="weatherLocation">Locating…</dd>
                         </div>
-                        <div>
+                        <div class="space-y-1">
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Wind</dt>
-                          <dd id="weatherWind" class="text-xs text-base-content/80">-- km/h</dd>
+                          <dd id="weatherWind">-- km/h</dd>
                         </div>
-                        <div>
+                        <div class="space-y-1">
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Humidity</dt>
-                          <dd id="weatherHumidity" class="text-xs text-base-content/80">--%</dd>
+                          <dd id="weatherHumidity">--%</dd>
                         </div>
-                        <div>
+                        <div class="space-y-1">
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Feels like</dt>
-                          <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
+                          <dd id="weatherFeelsLike">--°C</dd>
                         </div>
                       </dl>
                     </div>
                   </article>
 
-                <article class="dashboard-card dashboard-card--compact h-full">
-                    <div class="dashboard-card-content">
-                      <div class="flex items-center justify-between gap-2">
-                        <p class="dashboard-card-eyebrow">Today’s reminders</p>
-                        <span class="text-lg" aria-hidden="true">⏰</span>
-                      </div>
-
-                      <p class="dashboard-card-text">
+                  <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
+                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
+                      <h2 class="text-sm font-semibold tracking-tight">Today’s reminders</h2>
+                      <span class="text-lg" aria-hidden="true">⏰</span>
+                    </div>
+                    <div class="space-y-4">
+                      <p class="text-sm text-base-content/80">
                         A quick snapshot of what you’ve scheduled for today.
                       </p>
-
                       <div class="flex items-baseline gap-2">
-                        <span class="dashboard-card-metric" id="dashboard-reminders-today-count" aria-live="polite">
+                        <span class="text-4xl font-semibold text-base-content" id="dashboard-reminders-today-count" aria-live="polite">
                           –
                         </span>
                         <span class="text-xs text-base-content/70 uppercase tracking-wide">
                           reminders today
                         </span>
                       </div>
-
-                      <ul class="space-y-1 text-sm text-base-content/80">
+                      <ul class="space-y-2 text-xs text-base-content/70">
                         <li class="flex items-center gap-2">
                           <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
                           <span>Use quick-add in Reminders to capture new tasks.</span>
@@ -459,7 +455,6 @@
                           <span>Mark tasks complete from the Reminders tab when they’re done.</span>
                         </li>
                       </ul>
-
                       <div class="pt-1">
                         <button class="btn btn-outline btn-sm" type="button" data-route-target="reminders">
                           Open Reminders
@@ -467,48 +462,18 @@
                       </div>
                     </div>
                   </article>
-                <article class="dashboard-card dashboard-card--hero h-full">
-                    <div class="dashboard-card-content">
-                      <div class="space-y-1">
-                        <p class="dashboard-card-eyebrow">Top educational news</p>
-                        <h2 class="dashboard-card-title dashboard-card-title--hero">Start conversations informed</h2>
-                      </div>
-                      <p id="newsStatus" class="dashboard-card-text" role="status" aria-live="polite">
-                        Gathering the top educational news…
-                      </p>
-                      <div id="newsContent" class="hidden space-y-4">
-                        <a
-                          id="newsPrimaryLink"
-                          href="#"
-                          class="block rounded-2xl border border-base-300 bg-base-100/90 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Lead story</p>
-                          <p id="newsHeadline" class="mt-2 text-sm font-semibold text-primary hover:underline"></p>
-                          <p id="newsSource" class="mt-1 text-sm text-base-content/80"></p>
-                        </a>
-                        <div>
-                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">More to skim</p>
-                          <ul id="newsTopStories" class="mt-3 space-y-1 text-sm"></ul>
-                        </div>
-                      </div>
-                      <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
-                    </div>
-                  </article>
-                <article class="dashboard-card dashboard-card--compact h-full">
-                    <div class="dashboard-card-content">
-                      <div class="flex items-center justify-between gap-2">
-                        <p class="dashboard-card-eyebrow">Next lesson</p>
-                        <span class="text-lg" aria-hidden="true">🗓️</span>
-                      </div>
 
-                      <p class="dashboard-card-text">
+                  <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
+                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
+                      <h2 class="text-sm font-semibold tracking-tight">Next lesson</h2>
+                      <span class="text-lg" aria-hidden="true">🗓️</span>
+                    </div>
+                    <div class="space-y-4">
+                      <p class="text-sm text-base-content/80">
                         Jot down the key focus for your upcoming class so it’s top of mind.
                       </p>
-
-                      <div class="space-y-1">
-                        <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-title">
+                      <div class="space-y-2">
+                        <label class="text-xs font-medium text-base-content/70" for="dashboard-next-lesson-title">
                           Lesson title
                         </label>
                         <input
@@ -518,9 +483,8 @@
                           placeholder="e.g. Yr7 English – Two Wolves chapter 5"
                         >
                       </div>
-
-                      <div class="space-y-1">
-                        <label class="text-xs font-semibold tracking-wide text-base-content/60 uppercase" for="dashboard-next-lesson-focus">
+                      <div class="space-y-2">
+                        <label class="text-xs font-medium text-base-content/70" for="dashboard-next-lesson-focus">
                           Focus / key point
                         </label>
                         <textarea
@@ -529,8 +493,7 @@
                           placeholder="Main activity, checkpoint, or behaviour focus for this lesson."
                         ></textarea>
                       </div>
-
-                      <div class="space-y-1 pt-1">
+                      <div class="space-y-2">
                         <div class="flex justify-end gap-2">
                           <button class="btn btn-outline btn-sm" type="button" data-copy-next-lesson>
                             Copy to planner
@@ -543,235 +506,263 @@
                         ></p>
                       </div>
                     </div>
-                    </article>
-              </div>
-          </section>
-        </div>
+                  </article>
+                </div>
 
-        <div class="desktop-dashboard-grid dashboard-grid">
-          <section
-            class="dashboard-card card dashboard-card--compact"
-            aria-labelledby="kpi-heading"
-            data-dashboard-tab-group="kpi"
-          >
-            <div class="dashboard-card-content space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="kpi-heading" class="dashboard-card-title">Key metrics</h2>
-                <div role="tablist" aria-label="Key metrics" class="tabs tabs-boxed tabs-sm">
-                  <button
-                    id="kpi-tab-reminders"
-                    type="button"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="kpi-panel-reminders"
-                    class="tab tab-sm tab-active"
-                    data-dashboard-tab="reminders"
-                  >
-                    Reminders
-                  </button>
-                  <button
-                    id="kpi-tab-planner"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="kpi-panel-planner"
-                    class="tab tab-sm"
-                    data-dashboard-tab="planner"
-                  >
-                    Planner
-                  </button>
-                  <button
-                    id="kpi-tab-resources"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="kpi-panel-resources"
-                    class="tab tab-sm"
-                    data-dashboard-tab="resources"
-                  >
-                    Resources
-                  </button>
-                  <button
-                    id="kpi-tab-templates"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="kpi-panel-templates"
-                    class="tab tab-sm"
-                    data-dashboard-tab="templates"
-                  >
-                    Templates
-                  </button>
-                </div>
-              </div>
-              <div class="space-y-3">
-                <article
-                  id="kpi-panel-reminders"
-                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5"
-                  role="tabpanel"
-                  aria-labelledby="kpi-tab-reminders"
-                  data-dashboard-panel="reminders"
-                >
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Reminders</p>
-                    <span aria-hidden="true">🔔</span>
-                  </div>
-                  <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
-                  <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
-                </article>
-                <article
-                  id="kpi-panel-planner"
-                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
-                  role="tabpanel"
-                  aria-labelledby="kpi-tab-planner"
-                  aria-hidden="true"
-                  data-dashboard-panel="planner"
-                >
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Planner</p>
-                    <span aria-hidden="true">🗂️</span>
-                  </div>
-                  <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
-                  <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
-                </article>
-                <article
-                  id="kpi-panel-resources"
-                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
-                  role="tabpanel"
-                  aria-labelledby="kpi-tab-resources"
-                  aria-hidden="true"
-                  data-dashboard-panel="resources"
-                >
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Resources</p>
-                    <span aria-hidden="true">📁</span>
-                  </div>
-                  <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
-                  <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
-                </article>
-                <article
-                  id="kpi-panel-templates"
-                  class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
-                  role="tabpanel"
-                  aria-labelledby="kpi-tab-templates"
-                  aria-hidden="true"
-                  data-dashboard-panel="templates"
-                >
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs font-medium tracking-wide text-base-content/70 uppercase">Templates</p>
-                    <span aria-hidden="true">🧩</span>
-                  </div>
-                  <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
-                  <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
-                </article>
-              </div>
-            </div>
-          </section>
-
-          <section
-            class="dashboard-card card dashboard-card--compact"
-            data-dashboard-tab-group="daily-focus"
-            aria-labelledby="daily-overview-heading"
-          >
-            <div class="dashboard-card-content space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="daily-overview-heading" class="dashboard-card-title">Daily overview</h2>
-                <div role="tablist" aria-label="Daily overview" class="tabs tabs-boxed tabs-sm">
-                  <button
-                    id="daily-tab-snapshot"
-                    type="button"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="daily-snapshot-panel"
-                    class="tab tab-sm tab-active"
-                    data-dashboard-tab="snapshot"
-                  >
-                    Daily snapshot
-                  </button>
-                  <button
-                    id="daily-tab-focus"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="todays-focus-panel"
-                    class="tab tab-sm"
-                    data-dashboard-tab="focus"
-                  >
-                    Today's focus
-                  </button>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <div
-                  id="daily-snapshot-panel"
-                  role="tabpanel"
-                  aria-labelledby="daily-tab-snapshot"
-                  data-dashboard-panel="snapshot"
-                >
-                  <h3 id="daily-snapshot-heading" class="dashboard-card-title">Daily snapshot</h3>
-                  <ul
-                    id="dailySnapshotList"
-                    class="mt-5 space-y-4 dashboard-card-text"
-                    role="list"
-                    aria-labelledby="daily-snapshot-heading"
-                  ></ul>
-                  <div class="mt-6 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
-                    <p class="dashboard-card-eyebrow">Shortcut</p>
-                    <p class="dashboard-card-text mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
-                  </div>
-                </div>
-                <div
-                  id="todays-focus-panel"
-                  role="tabpanel"
-                  aria-labelledby="daily-tab-focus"
-                  data-dashboard-panel="focus"
-                  class="hidden"
-                  aria-hidden="true"
-                >
-                  <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div class="space-y-3">
-                      <h3 id="todays-focus-heading" class="dashboard-card-title">Today's focus</h3>
-                      <p class="dashboard-card-text">
-                        Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
+                <div class="space-y-4">
+                  <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
+                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
+                      <h2 class="text-sm font-semibold tracking-tight">Top educational news</h2>
+                    </div>
+                    <div class="space-y-4">
+                      <p class="text-xs text-base-content/70">Start conversations informed.</p>
+                      <p id="newsStatus" class="text-sm text-base-content/80" role="status" aria-live="polite">
+                        Gathering the top educational news…
                       </p>
-                      <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
-                        <div class="flex items-center gap-2">
-                          <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
-                          <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
-                        </div>
-                        <div class="flex items-center gap-2">
-                          <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
-                          <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
-                        </div>
-                        <div class="flex items-center gap-2">
-                          <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
-                          <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
-                        </div>
-                      </dl>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button
-                          class="btn btn-primary btn-sm sm:btn-md"
-                          type="button"
-                          data-open-reminder-modal
-                          aria-haspopup="dialog"
-                          aria-controls="add-reminder-form"
+                      <div id="newsContent" class="hidden space-y-4">
+                        <a
+                          id="newsPrimaryLink"
+                          href="#"
+                          class="block rounded-2xl border border-base-200 bg-base-100/90 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          target="_blank"
+                          rel="noreferrer"
                         >
-                          Add reminder
-                        </button>
-                        <div class="join hidden sm:inline-flex">
-                          <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
-                          <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
-                          <button class="btn btn-sm join-item btn-outline" type="button">High</button>
+                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Lead story</p>
+                          <p id="newsHeadline" class="mt-2 text-sm font-semibold text-primary hover:underline"></p>
+                          <p id="newsSource" class="mt-1 text-xs text-base-content/70"></p>
+                        </a>
+                        <div class="space-y-3">
+                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">More to skim</p>
+                          <ul id="newsTopStories" class="space-y-2 text-sm"></ul>
                         </div>
+                      </div>
+                      <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
                     </div>
-                  </div>
-                  <ol
-                    id="todaysFocusList"
-                    class="space-y-3"
-                    role="list"
-                    aria-labelledby="todays-focus-heading"
-                  ></ol>
+                  </article>
+
+                  <section
+                    class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
+                    aria-labelledby="kpi-heading"
+                    data-dashboard-tab-group="kpi"
+                  >
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-200/60">
+                      <h2 id="kpi-heading" class="text-sm font-semibold tracking-tight">Key metrics</h2>
+                      <div role="tablist" aria-label="Key metrics" class="tabs tabs-boxed tabs-sm">
+                        <button
+                          id="kpi-tab-reminders"
+                          type="button"
+                          role="tab"
+                          aria-selected="true"
+                          aria-controls="kpi-panel-reminders"
+                          class="tab tab-sm tab-active"
+                          data-dashboard-tab="reminders"
+                        >
+                          Reminders
+                        </button>
+                        <button
+                          id="kpi-tab-planner"
+                          type="button"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="kpi-panel-planner"
+                          class="tab tab-sm"
+                          data-dashboard-tab="planner"
+                        >
+                          Planner
+                        </button>
+                        <button
+                          id="kpi-tab-resources"
+                          type="button"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="kpi-panel-resources"
+                          class="tab tab-sm"
+                          data-dashboard-tab="resources"
+                        >
+                          Resources
+                        </button>
+                        <button
+                          id="kpi-tab-templates"
+                          type="button"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="kpi-panel-templates"
+                          class="tab tab-sm"
+                          data-dashboard-tab="templates"
+                        >
+                          Templates
+                        </button>
+                      </div>
+                    </div>
+                    <div class="space-y-3">
+                      <article
+                        id="kpi-panel-reminders"
+                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5"
+                        role="tabpanel"
+                        aria-labelledby="kpi-tab-reminders"
+                        data-dashboard-panel="reminders"
+                      >
+                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                          <p class="font-medium tracking-wide">Reminders</p>
+                          <span aria-hidden="true">🔔</span>
+                        </div>
+                        <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
+                        <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
+                      </article>
+                      <article
+                        id="kpi-panel-planner"
+                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                        role="tabpanel"
+                        aria-labelledby="kpi-tab-planner"
+                        aria-hidden="true"
+                        data-dashboard-panel="planner"
+                      >
+                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                          <p class="font-medium tracking-wide">Planner</p>
+                          <span aria-hidden="true">🗂️</span>
+                        </div>
+                        <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
+                        <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
+                      </article>
+                      <article
+                        id="kpi-panel-resources"
+                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                        role="tabpanel"
+                        aria-labelledby="kpi-tab-resources"
+                        aria-hidden="true"
+                        data-dashboard-panel="resources"
+                      >
+                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                          <p class="font-medium tracking-wide">Resources</p>
+                          <span aria-hidden="true">📁</span>
+                        </div>
+                        <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
+                        <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
+                      </article>
+                      <article
+                        id="kpi-panel-templates"
+                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                        role="tabpanel"
+                        aria-labelledby="kpi-tab-templates"
+                        aria-hidden="true"
+                        data-dashboard-panel="templates"
+                      >
+                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                          <p class="font-medium tracking-wide">Templates</p>
+                          <span aria-hidden="true">🧩</span>
+                        </div>
+                        <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
+                        <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
+                      </article>
+                    </div>
+                  </section>
+
+                  <section
+                    class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
+                    data-dashboard-tab-group="daily-focus"
+                    aria-labelledby="daily-overview-heading"
+                  >
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-200/60">
+                      <h2 id="daily-overview-heading" class="text-sm font-semibold tracking-tight">Daily overview</h2>
+                      <div role="tablist" aria-label="Daily overview" class="tabs tabs-boxed tabs-sm">
+                        <button
+                          id="daily-tab-snapshot"
+                          type="button"
+                          role="tab"
+                          aria-selected="true"
+                          aria-controls="daily-snapshot-panel"
+                          class="tab tab-sm tab-active"
+                          data-dashboard-tab="snapshot"
+                        >
+                          Daily snapshot
+                        </button>
+                        <button
+                          id="daily-tab-focus"
+                          type="button"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="todays-focus-panel"
+                          class="tab tab-sm"
+                          data-dashboard-tab="focus"
+                        >
+                          Today's focus
+                        </button>
+                      </div>
+                    </div>
+                    <div class="space-y-4">
+                      <div
+                        id="daily-snapshot-panel"
+                        role="tabpanel"
+                        aria-labelledby="daily-tab-snapshot"
+                        data-dashboard-panel="snapshot"
+                      >
+                        <h3 id="daily-snapshot-heading" class="text-sm font-semibold text-base-content">Daily snapshot</h3>
+                        <ul
+                          id="dailySnapshotList"
+                          class="mt-3 space-y-3 text-sm text-base-content/80"
+                          role="list"
+                          aria-labelledby="daily-snapshot-heading"
+                        ></ul>
+                        <div class="mt-3 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
+                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Shortcut</p>
+                          <p class="text-sm text-base-content/70 mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
+                        </div>
+                      </div>
+                      <div
+                        id="todays-focus-panel"
+                        role="tabpanel"
+                        aria-labelledby="daily-tab-focus"
+                        data-dashboard-panel="focus"
+                        class="hidden"
+                        aria-hidden="true"
+                      >
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                          <div class="space-y-3">
+                            <h3 id="todays-focus-heading" class="text-sm font-semibold text-base-content">Today's focus</h3>
+                            <p class="text-sm text-base-content/70">
+                              Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
+                            </p>
+                            <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
+                              <div class="flex items-center gap-2">
+                                <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
+                                <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
+                                <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
+                                <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
+                              </div>
+                            </dl>
+                          </div>
+                          <div class="flex flex-wrap items-center gap-2">
+                              <button
+                                class="btn btn-primary btn-sm sm:btn-md"
+                                type="button"
+                                data-open-reminder-modal
+                                aria-haspopup="dialog"
+                                aria-controls="add-reminder-form"
+                              >
+                                Add reminder
+                              </button>
+                              <div class="join hidden sm:inline-flex">
+                                <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
+                                <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
+                                <button class="btn btn-sm join-item btn-outline" type="button">High</button>
+                              </div>
+                          </div>
+                        </div>
+                        <ol
+                          id="todaysFocusList"
+                          class="space-y-2"
+                          role="list"
+                          aria-labelledby="todays-focus-heading"
+                        ></ol>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               </div>
             </div>
