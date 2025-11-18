@@ -306,32 +306,80 @@ const initMobileNotes = () => {
   }
 
   const titleInput = document.getElementById('noteTitleMobile');
-  const bodyInput = document.getElementById('noteBodyMobile');
-  const bodyInputWrapper = bodyInput?.closest('[data-role="note-body-field"]');
+  const scratchNotesEditorElement = document.getElementById('scratchNotesEditor');
   const saveButton = document.getElementById('noteSaveMobile');
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notesFilterMobile');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
-  const openSavedNotesButton = document.querySelector('[data-action="open-saved-notes"]');
+  const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
-  if (!titleInput || !bodyInput || !saveButton) {
+  const createScratchNotesEditor = () => {
+    if (!scratchNotesEditorElement) {
+      return null;
+    }
+
+    const NotesEditorClass =
+      (typeof window !== 'undefined' && typeof window.NotesEditor === 'function'
+        ? window.NotesEditor
+        : null);
+
+    if (NotesEditorClass) {
+      return new NotesEditorClass('#scratchNotesEditor', {
+        toolbar: true,
+        placeholder: 'Start typing your note...',
+      });
+    }
+
+    scratchNotesEditorElement.setAttribute('contenteditable', 'true');
+    scratchNotesEditorElement.setAttribute('role', 'textbox');
+    scratchNotesEditorElement.setAttribute('aria-multiline', 'true');
+    scratchNotesEditorElement.dataset.placeholder = 'Start typing your note...';
+
+    return {
+      element: scratchNotesEditorElement,
+      setContent(value = '') {
+        scratchNotesEditorElement.textContent = value || '';
+      },
+      getHTML() {
+        return scratchNotesEditorElement.innerHTML || '';
+      },
+      getText() {
+        return scratchNotesEditorElement.textContent || '';
+      },
+      focus() {
+        try {
+          scratchNotesEditorElement.focus();
+        } catch {
+          /* ignore focus errors */
+        }
+      },
+    };
+  };
+
+  const scratchNotesEditor = createScratchNotesEditor();
+
+  if (!titleInput || !scratchNotesEditor || !scratchNotesEditorElement || !saveButton) {
     return;
   }
 
-  const syncBodyPlaceholderState = () => {
-    if (!bodyInputWrapper || !bodyInput) {
+  const setEditorContent = (value = '') => {
+    if (scratchNotesEditor && typeof scratchNotesEditor.setContent === 'function') {
+      scratchNotesEditor.setContent(value || '');
       return;
     }
-    const hasContent = typeof bodyInput.value === 'string' && bodyInput.value.trim().length > 0;
-    bodyInputWrapper.setAttribute('data-has-content', hasContent ? 'true' : 'false');
+    scratchNotesEditorElement.textContent = value || '';
   };
 
-  syncBodyPlaceholderState();
-  bodyInput.addEventListener('input', syncBodyPlaceholderState);
+  const getEditorText = () => {
+    if (scratchNotesEditor && typeof scratchNotesEditor.getText === 'function') {
+      return scratchNotesEditor.getText() || '';
+    }
+    return scratchNotesEditorElement.textContent || '';
+  };
 
   const debounce = (fn, delay = 200) => {
     let timeoutId;
@@ -429,19 +477,24 @@ const initMobileNotes = () => {
     if (!note) {
       currentNoteId = null;
       titleInput.value = '';
-      bodyInput.value = '';
+      setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
-      delete bodyInput.dataset.noteOriginalBody;
-      syncBodyPlaceholderState();
+      delete scratchNotesEditorElement.dataset.noteOriginalBody;
       return;
     }
     currentNoteId = note.id;
-    titleInput.value = note.title || '';
-    bodyInput.value = note.body || '';
-    titleInput.dataset.noteOriginalTitle = note.title || '';
-    bodyInput.dataset.noteOriginalBody = note.body || '';
-    syncBodyPlaceholderState();
+    const nextTitle = note.title || '';
+    const nextBody = note.body || '';
+    titleInput.value = nextTitle;
+    setEditorContent(nextBody);
+    titleInput.dataset.noteOriginalTitle = nextTitle;
+    scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
   };
+
+  const getEditorValues = () => ({
+    title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
+    body: getEditorText(),
+  });
 
   const updateListSelection = () => {
     if (!listElement) {
@@ -492,9 +545,9 @@ const initMobileNotes = () => {
 
   const hasUnsavedChanges = () => {
     const currentTitle = typeof titleInput.value === 'string' ? titleInput.value : '';
-    const currentBody = typeof bodyInput.value === 'string' ? bodyInput.value : '';
+    const currentBody = getEditorText();
     const originalTitle = titleInput.dataset.noteOriginalTitle ?? '';
-    const originalBody = bodyInput.dataset.noteOriginalBody ?? '';
+    const originalBody = scratchNotesEditorElement.dataset.noteOriginalBody ?? '';
     return currentTitle !== originalTitle || currentBody !== originalBody;
   };
 
@@ -748,8 +801,7 @@ const initMobileNotes = () => {
   saveButton.addEventListener('click', () => {
     const existingNotes = loadAllNotes();
     const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
-    const title = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
-    const body = typeof bodyInput.value === 'string' ? bodyInput.value : '';
+    const { title, body } = getEditorValues();
     const sanitizedTitle = title || 'Untitled note';
     const timestamp = new Date().toISOString();
 
