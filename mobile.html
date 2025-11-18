@@ -3060,7 +3060,31 @@
         </svg>
       </button>
     </div>
-    
+
+    <section
+      class="drawer-sync-panel rounded-2xl border border-neutral-200 bg-white/80 p-4 text-sm shadow-sm dark:border-neutral-700 dark:bg-neutral-900/60"
+      aria-labelledby="drawerSyncHeading"
+    >
+      <div class="flex items-center gap-3">
+        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
+          <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
+        </div>
+        <div class="min-w-0">
+          <p
+            id="drawerSyncHeading"
+            class="text-[11px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500"
+          >
+            Sync status
+          </p>
+          <span id="mcStatusText" class="mc-status-text block text-base-content dark:text-neutral-100">Offline</span>
+        </div>
+      </div>
+      <p
+        id="sync-status"
+        class="mc-sync-message mt-3 text-xs text-neutral-500 dark:text-neutral-400"
+      ></p>
+    </section>
+
     </div>
   </aside>
 
@@ -3073,10 +3097,8 @@
       const quickAddBtn = document.getElementById('addReminderBtn');
       const searchBtn = document.getElementById('btn-search');
       const themeBtn = document.getElementById('btn-theme');
-      const drawerSyncStatus = document.getElementById('drawerSyncStatus');
-      const headerSyncStatus = document.getElementById('mcStatusText');
-      const headerSyncDot = document.getElementById('mcStatus');
-      const drawerSyncDot = drawer?.querySelector('.sync-dot');
+      const drawerSyncStatus = document.getElementById('mcStatusText');
+      const drawerSyncDot = document.getElementById('mcStatus');
 
       const toggleClass = (el, className, force) => {
         if (!el) return;
@@ -3239,39 +3261,6 @@
           drawerSyncDot.classList.toggle('offline', !isOnline);
         }
       });
-
-      if (typeof MutationObserver === 'function') {
-        const syncStatusObserver = new MutationObserver(() => {
-          if (headerSyncStatus && drawerSyncStatus) {
-            drawerSyncStatus.textContent = headerSyncStatus.textContent || '';
-          }
-        });
-
-        if (headerSyncStatus) {
-          syncStatusObserver.observe(headerSyncStatus, { childList: true });
-        }
-
-        const syncDotObserver = new MutationObserver(() => {
-          if (headerSyncDot && drawerSyncDot) {
-            const isOnline = headerSyncDot.classList.contains('online');
-            drawerSyncDot.classList.toggle('online', isOnline);
-            drawerSyncDot.classList.toggle('offline', !isOnline);
-          }
-        });
-
-        if (headerSyncDot) {
-          syncDotObserver.observe(headerSyncDot, { attributes: true, attributeFilter: ['class'] });
-        }
-      }
-
-      if (headerSyncStatus && drawerSyncStatus) {
-        drawerSyncStatus.textContent = headerSyncStatus.textContent || drawerSyncStatus.textContent || '';
-      }
-      if (headerSyncDot && drawerSyncDot) {
-        const isOnline = headerSyncDot.classList.contains('online');
-        drawerSyncDot.classList.toggle('online', isOnline);
-        drawerSyncDot.classList.toggle('offline', !isOnline);
-      }
     })();
   </script>
 
@@ -3305,13 +3294,6 @@
           </div>
                 <div id="quickAddBar" class="mc-quick-add-bar w-full" aria-label="Quick add reminder">
           <div class="mc-quick-add-inner space-y-1.5 w-full">
-            <div class="mc-quick-status flex items-center gap-2 text-xs text-base-content/60">
-              <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
-                <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
-              </div>
-              <p id="sync-status" class="mc-sync-message"></p>
-              <span id="mcStatusText" class="mc-status-text">Offline</span>
-            </div>
             <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full mt-1">
               <div class="mc-quick-input-group w-full">
                 <input
