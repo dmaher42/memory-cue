@@ -122,45 +122,27 @@
       border-width: 1px;
     }
 
-    .pin-to-today-btn {
+    .reminder-title-toggle {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      padding: 0;
-      border: none;
-      border-radius: 9999px;
-      background: transparent;
-      color: var(--text-secondary);
+      gap: 0.15rem;
+      border-radius: 0.35rem;
       transition: var(--transition);
-      cursor: pointer;
     }
 
-    .pin-to-today-btn:focus-visible {
+    .reminder-title-toggle:focus-visible {
       outline: 2px solid var(--accent-color);
       outline-offset: 2px;
     }
 
-    .pin-to-today-btn .pin-icon::before {
-      content: '☆';
-      font-size: 1rem;
-      line-height: 1;
-      display: block;
-    }
-
-    .pin-to-today-btn--pinned {
+    .reminder-title-pinned {
+      font-weight: 700;
       color: var(--accent-color);
     }
 
-    .pin-to-today-btn--pinned .pin-icon::before {
-      content: '★';
-    }
-
-    .pin-to-today-btn--unpinned:hover,
-    .pin-to-today-btn--unpinned:focus-visible {
-      color: var(--text-primary);
-      background-color: color-mix(in srgb, var(--accent-color) 12%, transparent);
+    .reminder-title-unpinned {
+      font-weight: 500;
+      color: var(--text-secondary);
     }
 
   .container {
@@ -4154,7 +4136,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-CV7DRSRA.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-2OIGANQG.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -4424,54 +4406,46 @@
         }
       };
 
-      const createTodayToggle = () => {
-        const wrapper = document.createElement('div');
-        wrapper.className =
-          'reminder-today-toggle flex items-start justify-end self-start ml-auto mt-1 select-none';
-        wrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
-
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'pin-to-today-btn pin-to-today-btn--unpinned';
-        button.setAttribute('data-role', 'reminder-today-toggle');
-        button.setAttribute('aria-label', 'Pin to Today');
-        button.setAttribute('aria-pressed', 'false');
-
-        const icon = document.createElement('span');
-        icon.className = 'pin-icon';
-        icon.setAttribute('aria-hidden', 'true');
-        button.appendChild(icon);
-
-        wrapper.append(button);
-        return wrapper;
-      };
-
       const ensureTodayToggleInCard = (card) => {
         if (!(card instanceof HTMLElement)) return;
-        if (card.querySelector('[data-role="reminder-today-toggle-wrapper"]')) {
+        const titleTarget =
+          card.querySelector('.reminder-title-slot [data-reminder-title]') ||
+          card.querySelector('.reminder-title-slot .task-title') ||
+          card.querySelector('[data-reminder-title]') ||
+          card.querySelector('.task-title') ||
+          card.querySelector('h3, h4, strong');
+        if (!(titleTarget instanceof HTMLElement)) {
           return;
         }
-
-        const toolbar = card.querySelector('.task-toolbar');
-        if (toolbar instanceof HTMLElement) {
-          toolbar.classList.add('flex', 'items-center', 'gap-2');
-          toolbar.appendChild(createTodayToggle());
-          return;
-        }
-
-        const metaSlot = card.querySelector('.reminder-meta-slot');
-        if (metaSlot instanceof HTMLElement) {
-          let metaActions = metaSlot.querySelector('.reminder-meta-actions');
-          if (!(metaActions instanceof HTMLElement)) {
-            metaActions = document.createElement('div');
-            metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
-            metaSlot.appendChild(metaActions);
+        let toggle = titleTarget.querySelector('[data-role="reminder-today-toggle"]');
+        if (toggle instanceof HTMLElement) {
+          toggle.classList.add('reminder-title-toggle', 'cursor-pointer');
+          if (!toggle.hasAttribute('role')) {
+            toggle.setAttribute('role', 'button');
           }
-          metaActions.appendChild(createTodayToggle());
+          if (!toggle.hasAttribute('tabindex')) {
+            toggle.tabIndex = 0;
+          }
+          if (!toggle.classList.contains('reminder-title-pinned') && !toggle.classList.contains('reminder-title-unpinned')) {
+            toggle.classList.add('reminder-title-unpinned');
+          }
           return;
         }
-
-        card.appendChild(createTodayToggle());
+        toggle = document.createElement('span');
+        toggle.dataset.role = 'reminder-today-toggle';
+        toggle.className = 'reminder-title-toggle cursor-pointer reminder-title-unpinned';
+        toggle.setAttribute('role', 'button');
+        toggle.setAttribute('aria-pressed', 'false');
+        toggle.tabIndex = 0;
+        const fragment = document.createDocumentFragment();
+        while (titleTarget.firstChild) {
+          fragment.appendChild(titleTarget.firstChild);
+        }
+        if (!fragment.childNodes.length && card.dataset.title) {
+          fragment.appendChild(document.createTextNode(card.dataset.title));
+        }
+        toggle.appendChild(fragment);
+        titleTarget.appendChild(toggle);
       };
 
       const restructureReminderCard = (card) => {
@@ -4512,7 +4486,6 @@
           metaSlot.className = 'reminder-meta-slot flex items-center gap-2 shrink-0';
           const metaActions = document.createElement('div');
           metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
-          metaActions.appendChild(createTodayToggle());
           metaSlot.appendChild(metaActions);
 
           primaryRow.append(titleCol, metaSlot);
@@ -4612,8 +4585,6 @@
           }
         }
 
-        metaActions.appendChild(createTodayToggle());
-
         let priorityChip = null;
         const secondaryChips = [];
         if (metaContainer instanceof HTMLElement) {
@@ -4704,14 +4675,7 @@
           headerRow.appendChild(headerActions);
         }
 
-        let todayToggleWrapper = headerActions.querySelector('[data-role="reminder-today-toggle-wrapper"]');
-        if (!todayToggleWrapper) {
-          todayToggleWrapper = createTodayToggle();
-        }
-
-        if (!headerActions.contains(todayToggleWrapper)) {
-          headerActions.appendChild(todayToggleWrapper);
-        }
+        ensureTodayToggleInCard(card);
       };
 
       const upgrade = (node) => {
