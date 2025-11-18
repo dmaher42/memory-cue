@@ -2951,9 +2951,130 @@
     .header-shadow {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
+
+    /* NEW: Slim sticky header for reminders */
+    #reminders-slim-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      width: 100%;
+      background: var(--mobile-header-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--mobile-header-border);
+      box-shadow: var(--mobile-header-shadow);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 3rem;
+    }
+
+    #reminders-slim-header .header-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--mobile-header-text);
+      margin: 0;
+      flex-shrink: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #reminders-slim-header .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    #reminders-slim-header .header-btn {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--mobile-header-button-border);
+      background: var(--mobile-header-button-bg);
+      color: var(--mobile-header-button-color);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+    }
+
+    #reminders-slim-header .header-btn:hover,
+    #reminders-slim-header .header-btn:focus-visible {
+      background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
+      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+      outline: none;
+    }
+
+    #reminders-slim-header .header-btn:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+      outline-offset: 2px;
+    }
+
+    #reminders-slim-header .header-btn:active {
+      transform: translateY(0);
+    }
+
+    #reminders-slim-header .header-btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    /* Hide legacy mobile headers */
+    .mobile-header,
+    .app-header,
+    .masthead,
+    .header-bar {
+      display: none !important;
+    }
+
+    /* Adjust main content to account for sticky header */
+    #view-reminders {
+      padding-top: 0 !important;
+    }
+
+    /* Responsive adjustments for narrow screens */
+    @media (max-width: 380px) {
+      #reminders-slim-header {
+        padding: 0.4rem 0.75rem;
+        gap: 0.5rem;
+      }
+
+      #reminders-slim-header .header-title {
+        font-size: 1rem;
+      }
+
+      #reminders-slim-header .header-btn {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+      }
+
+      #reminders-slim-header .header-btn-text {
+        display: none;
+      }
+    }
   </style>
 
-  <header class="sticky top-0 z-40 w-full">
+  <!-- Legacy header: hidden per requirements -->
+  <header class="sticky top-0 z-40 w-full" style="display: none !important;" aria-hidden="true">
     <div
       class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
       style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
@@ -3272,6 +3393,14 @@
       });
     })();
   </script>
+
+  <!-- NEW: Slim sticky header for reminders -->
+  <div id="reminders-slim-header" role="banner">
+    <h1 class="header-title">Reminders</h1>
+    <div class="header-actions">
+      <!-- Buttons will be populated by JavaScript -->
+    </div>
+  </div>
 
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
     <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
@@ -5838,6 +5967,167 @@
         }
       });
     })();
+  </script>
+
+  <script>
+    // Resilient helper to populate slim header with reminders title and action buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      const slimHeader = document.getElementById('reminders-slim-header');
+      if (!slimHeader) return;
+
+      const headerActions = slimHeader.querySelector('.header-actions');
+      if (!headerActions) return;
+
+      // Find and clone/move action buttons from the old header or page
+      // Priority order: look by ID, aria-label, title, then text content
+      
+      // 1. Find Add Reminder button (multiple possible sources)
+      const addReminderSources = [
+        document.getElementById('addReminderBtn'),
+        document.querySelector('[data-open-add-task]'),
+        document.querySelector('[aria-label*="Add"]'),
+        document.querySelector('button[title*="Add"]')
+      ].filter(Boolean);
+
+      let addBtn = null;
+      for (const source of addReminderSources) {
+        if (source && !source.closest('#reminders-slim-header')) {
+          addBtn = source.cloneNode(true);
+          // Preserve all attributes and event listeners will be rebound
+          addBtn.classList.add('header-btn');
+          addBtn.classList.remove('btn-primary', 'btn-sm'); // Remove old classes
+          break;
+        }
+      }
+
+      // If no button found, create a fallback
+      if (!addBtn) {
+        addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'header-btn';
+        addBtn.setAttribute('data-open-add-task', '');
+        addBtn.setAttribute('aria-label', 'Add reminder');
+        addBtn.innerHTML = '<span class="header-btn-text">Add</span><span aria-hidden="true">+</span>';
+      }
+
+      // 2. Find Overflow/More menu button
+      const overflowSources = [
+        document.getElementById('overflowMenuBtn'),
+        document.querySelector('[aria-label*="settings"]'),
+        document.querySelector('[aria-label*="menu"]'),
+        document.querySelector('[aria-controls="overflowMenu"]')
+      ].filter(Boolean);
+
+      let overflowBtn = null;
+      for (const source of overflowSources) {
+        if (source && !source.closest('#reminders-slim-header')) {
+          overflowBtn = source.cloneNode(true);
+          overflowBtn.classList.add('header-btn', 'header-btn-icon');
+          break;
+        }
+      }
+
+      // If no button found, create a fallback
+      if (!overflowBtn) {
+        overflowBtn = document.createElement('button');
+        overflowBtn.type = 'button';
+        overflowBtn.className = 'header-btn header-btn-icon';
+        overflowBtn.setAttribute('id', 'overflowMenuBtnClone');
+        overflowBtn.setAttribute('aria-label', 'Open menu');
+        overflowBtn.setAttribute('aria-haspopup', 'menu');
+        overflowBtn.innerHTML = '<span aria-hidden="true">⋮</span>';
+      }
+
+      // 3. Find Home button
+      const homeSources = [
+        document.getElementById('btn-open-drawer'),
+        document.querySelector('[aria-label*="home"]'),
+        document.querySelector('[aria-label*="Home"]'),
+        document.querySelector('[aria-label*="navigation"]')
+      ].filter(Boolean);
+
+      let homeBtn = null;
+      for (const source of homeSources) {
+        if (source && !source.closest('#reminders-slim-header')) {
+          homeBtn = source.cloneNode(true);
+          homeBtn.classList.add('header-btn', 'header-btn-icon');
+          break;
+        }
+      }
+
+      // If no button found, create a fallback
+      if (!homeBtn) {
+        homeBtn = document.createElement('button');
+        homeBtn.type = 'button';
+        homeBtn.className = 'header-btn header-btn-icon';
+        homeBtn.setAttribute('id', 'btn-home-clone');
+        homeBtn.setAttribute('aria-label', 'Go to home');
+        homeBtn.innerHTML = '<span aria-hidden="true">🏠</span>';
+      }
+
+      // Add buttons to header in order: Add, Overflow, Home
+      headerActions.appendChild(addBtn);
+      headerActions.appendChild(overflowBtn);
+      headerActions.appendChild(homeBtn);
+
+      // Rebind event listeners for cloned buttons
+      const newAddBtn = headerActions.querySelector('[data-open-add-task]');
+      if (newAddBtn) {
+        newAddBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Trigger the same event that other add buttons use
+          const event = new CustomEvent('cue:open', { 
+            detail: { mode: 'create', trigger: newAddBtn }
+          });
+          document.dispatchEvent(event);
+        });
+      }
+
+      // Overflow menu button
+      const newOverflowBtn = headerActions.querySelector('[aria-label*="menu"], [aria-controls="overflowMenu"]');
+      if (newOverflowBtn) {
+        newOverflowBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Find and toggle the overflow menu
+          const menu = document.getElementById('overflowMenu');
+          if (menu) {
+            const isHidden = menu.classList.contains('hidden');
+            if (isHidden) {
+              menu.classList.remove('hidden');
+              newOverflowBtn.setAttribute('aria-expanded', 'true');
+            } else {
+              menu.classList.add('hidden');
+              newOverflowBtn.setAttribute('aria-expanded', 'false');
+            }
+          }
+        });
+      }
+
+      // Home button - scroll to top
+      const newHomeBtn = headerActions.querySelector('[aria-label*="home"], [aria-label*="Home"], #btn-home-clone');
+      if (newHomeBtn) {
+        newHomeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+
+      // Update the title dynamically if needed (look for existing reminder title)
+      const titleEl = slimHeader.querySelector('.header-title');
+      if (titleEl) {
+        // Try to find a better title from the page
+        const possibleTitles = [
+          document.querySelector('#view-reminders h1'),
+          document.querySelector('[data-section="reminders"] h1'),
+          document.querySelector('.mobile-header h1')
+        ].filter(Boolean);
+
+        if (possibleTitles.length > 0 && possibleTitles[0].textContent.trim()) {
+          titleEl.textContent = possibleTitles[0].textContent.trim();
+        }
+      }
+    });
   </script>
 
 </body>
