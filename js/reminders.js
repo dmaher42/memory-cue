@@ -553,6 +553,7 @@ export async function initReminders(sel = {}) {
   // Mobile reminders filter state and cache
   let mobileRemindersFilterMode = 'all';
   let mobileRemindersCache = [];
+  let mobileRemindersTemperatureLabel = '';
 
   // Returns a short, user-facing label for "today", e.g. "Tue 18 Nov"
   function getTodayLabelForHeader() {
@@ -573,11 +574,77 @@ export async function initReminders(sel = {}) {
       return;
     }
     const todayLabel = getTodayLabelForHeader();
+
+    let baseText;
     if (mobileRemindersFilterMode === 'today') {
-      subtitleEl.textContent = `Today\u2019s reminders \u2022 ${todayLabel}`;
+      baseText = `Today\u2019s reminders \u2022 ${todayLabel}`;
     } else {
-      subtitleEl.textContent = `All reminders \u2022 ${todayLabel}`;
+      baseText = `All reminders \u2022 ${todayLabel}`;
     }
+
+    if (mobileRemindersTemperatureLabel) {
+      baseText += ` \u2022 ${mobileRemindersTemperatureLabel}`;
+    }
+
+    subtitleEl.textContent = baseText;
+  }
+
+  // Fetch current temperature using browser geolocation and Open-Meteo API.
+  // If anything fails (no geolocation, permission denied, network error),
+  // the function fails silently and leaves the subtitle without temperature.
+  function fetchAndUpdateMobileTemperature() {
+    if (variant !== 'mobile') {
+      return;
+    }
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      // Geolocation not available; nothing to do.
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+
+          const url =
+            'https://api.open-meteo.com/v1/forecast' +
+            `?latitude=${encodeURIComponent(latitude)}` +
+            `&longitude=${encodeURIComponent(longitude)}` +
+            '&current_weather=true';
+
+          fetch(url)
+            .then((res) => {
+              if (!res.ok) throw new Error('Weather request failed');
+              return res.json();
+            })
+            .then((data) => {
+              if (
+                data &&
+                data.current_weather &&
+                typeof data.current_weather.temperature === 'number'
+              ) {
+                const temp = Math.round(data.current_weather.temperature);
+                mobileRemindersTemperatureLabel = `${temp}\u00B0C`; // e.g. "25°C"
+                updateMobileRemindersHeaderSubtitle();
+              }
+            })
+            .catch((err) => {
+              console.warn('Failed to fetch current temperature', err);
+            });
+        } catch (err) {
+          console.warn('Failed to process geolocation weather data', err);
+        }
+      },
+      (error) => {
+        // Geolocation permission denied or failed; do not surface to user.
+        console.warn('Geolocation error for weather', error);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 5 * 60 * 1000, // up to 5 minutes old is fine
+      }
+    );
   }
 
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
@@ -3976,6 +4043,9 @@ export async function initReminders(sel = {}) {
   });
 
   setupMobileReminderTabs();
+  if (variant === 'mobile') {
+    fetchAndUpdateMobileTemperature();
+  }
   setupDragAndDrop();
   rescheduleAllReminders();
   render();
