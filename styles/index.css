@@ -108,8 +108,8 @@ html[data-theme="professional"] {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.45rem 1.25rem;
+  width: 100%;
   margin: 0 auto 0.75rem;
-  max-width: 1180px;
   background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 92%, transparent);
   backdrop-filter: blur(14px);
   border-radius: 999px;
@@ -355,6 +355,13 @@ html[data-theme="professional"] {
   align-items: stretch;
 }
 
+.desktop-shell .dashboard-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
 @media (min-width: 1024px) {
   .desktop-shell .dashboard-grid {
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -369,6 +376,10 @@ html[data-theme="professional"] {
   .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--hero,
   .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--wide {
     grid-column: span 12;
+  }
+
+  .desktop-shell .dashboard-grid > .dashboard-card-stack {
+    grid-column: span 6;
   }
 }
 
