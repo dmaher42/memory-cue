@@ -3281,19 +3281,15 @@
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-3">
         <header class="mobile-header flex flex-col gap-1">
-          <div class="reminders-header-card bg-base-100 border border-base-300 rounded-2xl shadow-sm w-full px-4 py-3 space-y-3">
-            <div class="space-y-1">
-              <p
-                id="mobileRemindersHeaderSubtitle"
-                class="mt-1 text-xs text-base-content/70"
-              >
-                All reminders • Today
-              </p>
-            </div>
+          <div class="flex items-center justify-between">
+            <h1 class="text-lg font-semibold">Reminders</h1>
           </div>
+          <p id="mobileRemindersHeaderSubtitle" class="text-xs text-base-content/70">
+            <!-- placeholder, JS will update with date & temperature -->
+          </p>
         </header>
 
-        <div class="reminders-tabs-wrapper pt-1">
+        <div class="reminders-tabs-wrapper">
           <div class="tabs tabs-boxed w-full text-sm">
             <button
               type="button"
@@ -3316,7 +3312,7 @@
 
         <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2" aria-label="Quick add reminder">
           <div class="mc-quick-add-inner space-y-1.5 w-full">
-            <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full mt-1">
+            <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
               <div class="mc-quick-input-group w-full">
                 <input
                   id="quickAddInput"
@@ -3359,7 +3355,6 @@
               <p id="reminderReorderHint" class="sr-only">
                 Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
               </p>
-              <p class="text-xs text-base-content/50 mb-2 pb-2 border-b border-base-200/30 sm:px-4">Total reminders: <span id="totalCount">0</span></p>
               <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
             </div>
           </section>
@@ -3374,9 +3369,6 @@
           <div id="notebook-view-header" class="space-y-1">
             <div class="flex items-baseline justify-between gap-2">
               <h1 class="text-base font-semibold text-base-content">Notebook</h1>
-              <span class="text-[11px] text-base-content/60">
-                Scratch ideas first, then refine later.
-              </span>
             </div>
           </div>
         </header>
@@ -3384,13 +3376,8 @@
           id="scratch-notes-card"
           class="scratch-notes-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-3 space-y-2"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <span class="text-xs uppercase tracking-wide text-base-content/50">Scratch notes</span>
-              <p class="text-xs text-base-content/60" data-note-summary>
-                Quick jot pad that syncs with your desktop notebook.
-              </p>
-            </div>
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-base-content">Scratch notes</h2>
             <button
               type="button"
               class="btn btn-ghost btn-sm"
@@ -3416,22 +3403,6 @@
               />
             </div>
 
-            <div
-              class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-200/70 bg-base-100/80 px-0 md:px-3 py-2 text-xs text-base-content/70"
-              data-note-toolbar
-            >
-              <span class="font-semibold text-base-content text-sm">Text size</span>
-              <select
-                class="select select-bordered select-xs w-full max-w-[160px]"
-                data-mobile-notes-text-size
-                aria-label="Select scratch notes text size"
-              >
-                <option value="small">Small</option>
-                <option value="default" selected>Default</option>
-                <option value="large">Large</option>
-              </select>
-            </div>
-
             <div class="space-y-1">
               <label
                 for="noteBodyMobile"
@@ -3448,14 +3419,14 @@
                 >
                   <textarea
                     id="noteBodyMobile"
-                    class="textarea textarea-bordered w-full min-h-[8rem] text-sm text-base-content"
+                    class="textarea textarea-bordered w-full h-48 text-sm text-base-content"
                     placeholder="Start typing your scratch note…"
                   ></textarea>
                 </div>
               </div>
             </div>
 
-            <div id="scratch-notes-actions" class="flex justify-end gap-2 pt-1">
+            <div id="scratch-notes-actions" class="flex justify-end gap-2">
               <button
                 id="noteNewMobile"
                 type="button"
