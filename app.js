@@ -751,7 +751,7 @@ const initialiseReminders = () => {
     saveBtnSel: '#saveReminder',
     cancelEditBtnSel: null,
     listSel: '#reminders-list',
-    statusSel: '#auth-feedback',
+    statusSel: '#auth-feedback-header',
     syncStatusSel: '#sync-status',
     voiceBtnSel: null,
     categoryOptionsSel: null,
@@ -818,7 +818,7 @@ const supabaseAuthController = initSupabaseAuth({
     userBadgeInitial: '#user-badge-initial',
     userName: '#googleUserName',
     syncStatus: ['#sync-status'],
-    feedback: '#auth-feedback',
+    feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
   },
   disableButtonBinding: true,
   onSessionChange: (user) => {

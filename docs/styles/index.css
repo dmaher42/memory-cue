@@ -179,7 +179,7 @@ html[data-theme="professional"] {
   color: var(--desktop-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 65%, transparent));
 }
 
- .desktop-header-right #auth-feedback {
+ .desktop-header-right #auth-feedback-header {
   width: 100%;
   text-align: right;
 }

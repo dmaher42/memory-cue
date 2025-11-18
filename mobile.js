@@ -829,7 +829,7 @@ const supabaseAuthController = initSupabaseAuth({
     syncStatus: ['#sync-status'],
     syncStatusText: ['#mcStatusText'],
     statusIndicator: ['#mcStatus'],
-    feedback: '#auth-feedback',
+    feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
   },
   disableButtonBinding: true,
   onSessionChange: (user) => {

@@ -114,7 +114,7 @@ const DEFAULT_SELECTORS = {
   syncStatus: '#sync-status',
   syncStatusText: null,
   statusIndicator: null,
-  feedback: '#auth-feedback',
+  feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
 };
 
 const DEFAULT_MESSAGES = {
