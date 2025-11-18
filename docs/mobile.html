@@ -2678,18 +2678,20 @@
 
     .mc-quick-add-row {
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex: 1;
-      min-width: 0;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
     }
 
     .mc-quick-actions {
       display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
       align-items: center;
-      flex-shrink: 0;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      flex-wrap: wrap;
     }
 
     .mc-quick-input {
@@ -3246,23 +3248,23 @@
               <p id="sync-status" class="mc-sync-message"></p>
               <span id="mcStatusText" class="mc-status-text">Offline</span>
             </div>
-            <div class="mc-quick-add-row flex items-center gap-2 mt-1 w-full">
+            <div class="mc-quick-add-row flex flex-col items-center gap-2 mt-1 w-full">
               <input
                 id="quickAddInput"
-                class="mc-quick-input input input-bordered input-sm flex-1 w-full bg-base-200/80 text-base-content placeholder:text-base-content/60"
+                class="mc-quick-input input input-bordered input-sm w-full bg-base-200/80 text-base-content placeholder:text-base-content/60"
                 type="text"
                 autocomplete="off"
                 placeholder="Quick reminder…"
               />
-              <button
-                id="quickAddSubmit"
-                type="button"
-                class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm flex-shrink-0"
-                aria-label="Add reminder"
-              >
-                Add
-              </button>
-              <div class="mc-quick-actions flex items-center gap-1">
+              <div class="mc-quick-actions flex items-center justify-center gap-2 w-full">
+                <button
+                  id="quickAddSubmit"
+                  type="button"
+                  class="mc-quick-submit btn btn-primary btn-sm rounded-full shadow-sm"
+                  aria-label="Add reminder"
+                >
+                  Add
+                </button>
                 <button
                   id="quickAddVoice"
                   type="button"
