@@ -267,10 +267,11 @@ html[data-theme="professional"] {
 
 
  .desktop-shell .dashboard-root {
-  max-width: 1320px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
   padding: 1.25rem 2.25rem 2.5rem;
-}
+ }
 
  .desktop-shell .desktop-layout {
   display: grid;
@@ -303,10 +304,10 @@ html[data-theme="professional"] {
  .desktop-shell .desktop-panel,
  .desktop-shell .desktop-dashboard-grid {
   width: 100%;
-  max-width: 1320px;
+  max-width: none;
   margin-left: auto;
   margin-right: auto;
-}
+ }
 
  .desktop-shell .desktop-main {
   grid-area: main;
@@ -574,7 +575,7 @@ html[data-theme="professional"] {
 
  .desktop-shell .desktop-hero {
   width: 100%;
-  max-width: 1320px;
+  max-width: none;
   margin: 0 auto;
   padding: clamp(1.4rem, 2vw, 2.5rem);
   box-sizing: border-box;
