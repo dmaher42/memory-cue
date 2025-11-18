@@ -640,8 +640,8 @@ html[data-theme="professional"] {
   box-shadow: var(--desktop-shadow-subtle, 0 4px 14px rgba(15, 23, 42, 0.08));
 }
 
- .desktop-shell .desktop-hero .hero-content {
-  max-width: 65ch;
+.desktop-shell .desktop-hero .hero-content {
+  max-width: none;
   margin: 0 auto;
 }
 
