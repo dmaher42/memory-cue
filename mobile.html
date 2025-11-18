@@ -1573,6 +1573,46 @@
       font-weight: 600;
     }
 
+    /* Reminders tabs */
+    .mobile-shell .reminders-tabs-wrapper .tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      padding: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    .mobile-shell .reminders-tabs-wrapper .tab {
+      border-radius: 9999px;
+      border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+      background-color: color-mix(in srgb, var(--card-bg) 92%, transparent);
+      color: var(--text-secondary);
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .mobile-shell .reminders-tabs-wrapper .tab.reminders-tab-active {
+      background-color: var(--accent-color);
+      border-color: color-mix(in srgb, var(--accent-color) 70%, transparent);
+      color: #fff;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-color) 35%, transparent);
+    }
+
+    html[data-theme="dark"] .mobile-shell .reminders-tabs-wrapper .tab {
+      border-color: rgba(148, 163, 184, 0.4);
+      background-color: color-mix(in srgb, rgba(15, 23, 42, 0.9) 80%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 85%, transparent);
+    }
+
+    html[data-theme="dark"] .mobile-shell .reminders-tabs-wrapper .tab.reminders-tab-active {
+      background-color: color-mix(in srgb, var(--accent-color) 70%, rgba(15, 23, 42, 0.3));
+      border-color: color-mix(in srgb, var(--accent-color) 70%, transparent);
+      color: #fff;
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--accent-color) 45%, transparent);
+    }
+
     /* Responsive reminder grid - default grid layout */
     #reminderList {
       display: grid;
