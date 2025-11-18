@@ -1495,47 +1495,12 @@
         </div>
       </div>
     </main>
-    <nav
-      id="quick-action-toolbar"
-      aria-label="Quick actions"
-      class="flex flex-col items-end gap-2"
-    >
-      <button
-        type="button"
-        data-quick-action="reminder"
-        class="quick-action-btn bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-300"
-        title="Add reminder"
-        aria-label="Add reminder"
-      >
-        <span aria-hidden="true">🔔</span>
-        <span class="sr-only">Add reminder</span>
-      </button>
-      <button
-        type="button"
-        data-quick-action="note"
-        class="quick-action-btn bg-white/90 text-xl text-gray-900 dark:text-gray-100 shadow-md backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 hover:bg-white dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:focus-visible:outline-gray-500 border border-white/60 dark:border-gray-700/60"
-        title="Create note"
-        aria-label="Create note"
-      >
-        <span aria-hidden="true">📝</span>
-        <span class="sr-only">Create note</span>
-      </button>
-      <button
-        type="button"
-        data-quick-action="planner"
-        class="quick-action-btn bg-emerald-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600"
-        title="New lesson plan"
-        aria-label="New lesson plan"
-      >
-        <span aria-hidden="true">🗓️</span>
-        <span class="sr-only">New lesson plan</span>
-      </button>
-    </nav>
+    <nav id="quick-action-toolbar" aria-label="Quick actions" hidden></nav>
   </div>
   <!-- BEGIN GPT CHANGE: live region -->
   <div id="live-status" class="sr-only" aria-live="polite" role="status"></div>
   <!-- END GPT CHANGE -->
-  <footer class="border-t border-base-300 bg-base-200/80 py-6 sm:py-8">
+  <footer class="border-t border-base-300 bg-base-200 py-[18px] sm:py-6">
     <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 text-sm text-base-content/80 sm:px-6 lg:px-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div class="max-w-lg space-y-2">
@@ -1563,7 +1528,7 @@
           </div>
         </div>
       </div>
-      <div class="flex flex-col gap-2 border-t border-base-300/60 pt-3 text-xs text-base-content/60 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-2 border-t border-base-300/60 pt-[9px] text-xs text-base-content/60 sm:flex-row sm:items-center sm:justify-between">
         <p>© <span id="year"></span> Memory Cue. All rights reserved.</p>
         <p>Crafted with care for classrooms everywhere.</p>
       </div>
