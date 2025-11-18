@@ -701,32 +701,14 @@ const initMobileNotes = () => {
       button.dataset.noteId = note.id;
       button.dataset.role = 'open-note';
       button.className =
-        'open-note-btn flex-1 text-left flex flex-col gap-1 text-sm text-base-content focus-visible:outline-none active:scale-[0.99] transition-transform duration-200';
-
-      const headerRow = document.createElement('div');
-      headerRow.className = 'flex items-center justify-between gap-2';
+        'open-note-btn flex-1 text-left text-sm text-base-content font-semibold focus-visible:outline-none active:scale-[0.99] transition-transform duration-200';
 
       const titleSpan = document.createElement('span');
-      titleSpan.className = 'text-sm font-semibold truncate text-base-content';
-      titleSpan.textContent = note.title || 'Untitled note';
-      headerRow.appendChild(titleSpan);
-
-      const timestampText = formatNoteTimestamp(note.updatedAt || note.createdAt);
-      if (timestampText) {
-        const dateSpan = document.createElement('span');
-        dateSpan.className = 'text-xs text-base-content/60 whitespace-nowrap font-medium';
-        dateSpan.textContent = timestampText;
-        headerRow.appendChild(dateSpan);
-      }
-
-      const preview = document.createElement('p');
-      preview.className = 'text-sm text-base-content/70 line-clamp-2 leading-snug';
-      const bodyText =
-        typeof note.body === 'string' ? note.body.replace(/\s+/g, ' ').trim() : '';
-      preview.textContent = bodyText || 'No body text yet.';
-
-      button.appendChild(headerRow);
-      button.appendChild(preview);
+      titleSpan.className = 'block truncate text-base-content';
+      const noteTitle = note.title || 'Untitled note';
+      titleSpan.textContent = noteTitle;
+      titleSpan.setAttribute('title', noteTitle);
+      button.appendChild(titleSpan);
 
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
