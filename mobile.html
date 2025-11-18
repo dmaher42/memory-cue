@@ -3954,9 +3954,40 @@
         return wrapper;
       };
 
+      const ensureTodayToggleInCard = (card) => {
+        if (!(card instanceof HTMLElement)) return;
+        if (card.querySelector('[data-role="reminder-today-toggle-wrapper"]')) {
+          return;
+        }
+
+        const toolbar = card.querySelector('.task-toolbar');
+        if (toolbar instanceof HTMLElement) {
+          toolbar.classList.add('flex', 'items-center', 'gap-2');
+          toolbar.appendChild(createTodayToggle());
+          return;
+        }
+
+        const metaSlot = card.querySelector('.reminder-meta-slot');
+        if (metaSlot instanceof HTMLElement) {
+          let metaActions = metaSlot.querySelector('.reminder-meta-actions');
+          if (!(metaActions instanceof HTMLElement)) {
+            metaActions = document.createElement('div');
+            metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
+            metaSlot.appendChild(metaActions);
+          }
+          metaActions.appendChild(createTodayToggle());
+          return;
+        }
+
+        card.appendChild(createTodayToggle());
+      };
+
       const restructureReminderCard = (card) => {
         if (!(card instanceof HTMLElement)) return;
-        if (card.dataset.compactLayout === 'true') return;
+        if (card.dataset.compactLayout === 'true') {
+          ensureTodayToggleInCard(card);
+          return;
+        }
 
         const modernTitleSlot = card.querySelector('.reminder-title-slot');
         if (modernTitleSlot instanceof HTMLElement) {
@@ -4018,11 +4049,17 @@
         }
 
         const content = card.querySelector('.task-content') || card;
-        if (!(content instanceof HTMLElement)) return;
+        if (!(content instanceof HTMLElement)) {
+          ensureTodayToggleInCard(card);
+          return;
+        }
 
         const header = content.querySelector('.task-header');
         const titleEl = header?.querySelector('.task-title, [data-reminder-title], strong');
-        if (!(titleEl instanceof HTMLElement)) return;
+        if (!(titleEl instanceof HTMLElement)) {
+          ensureTodayToggleInCard(card);
+          return;
+        }
 
         const toolbar = header?.querySelector('.task-toolbar');
         const metaTextEl = content.querySelector('.task-meta-text');
@@ -4030,7 +4067,7 @@
         const notesEl = content.querySelector('.task-notes');
 
         const primaryRow = document.createElement('div');
-        primaryRow.className = 'reminder-primary-row';
+        primaryRow.className = 'reminder-primary-row flex w-full items-start justify-between gap-2 flex-wrap';
 
         const controlSlot = document.createElement('div');
         controlSlot.className = 'reminder-control-slot';
@@ -4046,11 +4083,11 @@
         }
 
         const titleSlot = document.createElement('div');
-        titleSlot.className = 'reminder-title-slot';
+        titleSlot.className = 'reminder-title-slot flex-1 min-w-0';
         titleSlot.appendChild(titleEl);
 
         const metaSlot = document.createElement('div');
-        metaSlot.className = 'reminder-meta-slot';
+        metaSlot.className = 'reminder-meta-slot flex items-center gap-2 shrink-0';
 
         const metaActions = document.createElement('div');
         metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
@@ -4136,6 +4173,7 @@
         } else {
           card.removeAttribute('data-compact');
         }
+        ensureTodayToggleInCard(card);
       };
 
       const ensureMobileReminderHeader = (card) => {
