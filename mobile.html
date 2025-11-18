@@ -4075,6 +4075,65 @@
         }
       };
 
+      const ensureMobileReminderHeader = (card) => {
+        if (!(card instanceof HTMLElement)) return;
+        if (!card.classList.contains('reminder-card')) return;
+        if (card.querySelector('.reminder-primary-row')) return;
+
+        const titleSlot = card.querySelector('.reminder-title-slot');
+        if (!(titleSlot instanceof HTMLElement)) return;
+
+        const content = card.querySelector('.reminder-header-row')?.parentElement || titleSlot.closest('.flex') || titleSlot.parentElement;
+        if (!(content instanceof HTMLElement)) return;
+
+        let headerRow = content.querySelector('.reminder-header-row');
+        if (!headerRow) {
+          headerRow = document.createElement('div');
+          headerRow.className = 'reminder-header-row flex items-center justify-between gap-2 flex-wrap';
+          content.insertBefore(headerRow, content.firstChild || null);
+        }
+
+        let headerMain = headerRow.querySelector('.reminder-header-main');
+        if (!headerMain) {
+          headerMain = document.createElement('div');
+          headerMain.className = 'reminder-header-main flex-1 min-w-0';
+          headerRow.insertBefore(headerMain, headerRow.firstChild || null);
+        }
+
+        if (!headerMain.contains(titleSlot)) {
+          headerMain.appendChild(titleSlot);
+        }
+
+        let headerActions = headerRow.querySelector('.reminder-header-actions');
+        if (!headerActions) {
+          headerActions = document.createElement('div');
+          headerActions.className = 'reminder-header-actions flex items-center gap-2 flex-shrink-0';
+          headerRow.appendChild(headerActions);
+        }
+
+        let todayToggleWrapper = headerActions.querySelector('[data-role="reminder-today-toggle-wrapper"]');
+        if (!todayToggleWrapper) {
+          todayToggleWrapper = document.createElement('label');
+          todayToggleWrapper.className =
+            'reminder-today-toggle flex items-center gap-1 text-[11px] text-base-content/70 select-none whitespace-nowrap';
+          todayToggleWrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
+
+          const todayToggle = document.createElement('input');
+          todayToggle.type = 'checkbox';
+          todayToggle.className = 'checkbox checkbox-xs align-middle';
+          todayToggle.setAttribute('data-role', 'reminder-today-toggle');
+
+          const todayToggleText = document.createElement('span');
+          todayToggleText.textContent = 'Today';
+
+          todayToggleWrapper.append(todayToggle, todayToggleText);
+        }
+
+        if (!headerActions.contains(todayToggleWrapper)) {
+          headerActions.appendChild(todayToggleWrapper);
+        }
+      };
+
       const upgrade = (node) => {
         if (!(node instanceof HTMLElement)) return;
         if (node.parentElement !== list) return;
@@ -4086,6 +4145,7 @@
         }
         applyPriorityPills(node);
         restructureReminderCard(node);
+        ensureMobileReminderHeader(node);
       };
 
       Array.from(list.children).forEach((child) => {
