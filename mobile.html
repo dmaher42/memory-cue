@@ -121,6 +121,47 @@
       border-width: 1px;
     }
 
+    .pin-to-today-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border: none;
+      border-radius: 9999px;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .pin-to-today-btn:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+    }
+
+    .pin-to-today-btn .pin-icon::before {
+      content: '☆';
+      font-size: 1rem;
+      line-height: 1;
+      display: block;
+    }
+
+    .pin-to-today-btn--pinned {
+      color: var(--accent-color);
+    }
+
+    .pin-to-today-btn--pinned .pin-icon::before {
+      content: '★';
+    }
+
+    .pin-to-today-btn--unpinned:hover,
+    .pin-to-today-btn--unpinned:focus-visible {
+      color: var(--text-primary);
+      background-color: color-mix(in srgb, var(--accent-color) 12%, transparent);
+    }
+
   .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -4374,17 +4415,24 @@
       };
 
       const createTodayToggle = () => {
-        const wrapper = document.createElement('label');
+        const wrapper = document.createElement('div');
         wrapper.className =
-          'reminder-today-toggle flex items-start justify-end self-start ml-auto mt-1 text-base-content/70 select-none';
+          'reminder-today-toggle flex items-start justify-end self-start ml-auto mt-1 select-none';
         wrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'checkbox checkbox-xs align-middle';
-        checkbox.setAttribute('data-role', 'reminder-today-toggle');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pin-to-today-btn pin-to-today-btn--unpinned';
+        button.setAttribute('data-role', 'reminder-today-toggle');
+        button.setAttribute('aria-label', 'Pin to Today');
+        button.setAttribute('aria-pressed', 'false');
 
-        wrapper.append(checkbox);
+        const icon = document.createElement('span');
+        icon.className = 'pin-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
+
+        wrapper.append(button);
         return wrapper;
       };
 
