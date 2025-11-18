@@ -387,26 +387,22 @@
               <div class="desktop-dashboard-grid">
                 <div class="space-y-6">
                 <div class="dashboard-weather-quick-card">
-                  <article class="dashboard-card dashboard-card--compact dashboard-card--weather dashboard-weather-card h-full">
-                      <div class="dashboard-card-content space-y-4">
-                        <div class="flex items-start justify-between gap-3 weather-card-header">
-                          <div class="space-y-1">
-                            <p class="dashboard-card-eyebrow">Weather</p>
-                            <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
-                              Checking the latest forecast…
-                            </p>
-                            <p id="weatherLocation" class="text-xs font-medium text-base-content/70">Locating…</p>
-                          </div>
-                          <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
+                  <article class="dashboard-weather-card" aria-label="Local weather update">
+                      <div class="weather-card-header">
+                        <div>
+                          <p class="dashboard-card-eyebrow">Weather</p>
+                          <p id="weatherStatus" role="status" aria-live="polite">Checking the latest forecast…</p>
+                          <p id="weatherLocation">Locating…</p>
                         </div>
-                        <div class="flex flex-wrap items-end gap-3 weather-card-main">
-                          <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
-                          <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
-                        </div>
-                        <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
-                          We use your approximate location to calculate these details.
-                        </p>
+                        <span id="weatherIcon" aria-hidden="true">⛅️</span>
                       </div>
+                      <div class="weather-card-main">
+                        <p id="weatherTemperature">--°C</p>
+                        <p id="weatherDescription">Awaiting update</p>
+                      </div>
+                      <p id="weatherFootnote" class="weather-card-footnote">
+                        We use your approximate location to calculate these details.
+                      </p>
                     </article>
                 </div>
 
