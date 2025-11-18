@@ -1,79 +1,18 @@
 const groupedRoutes = new Set(['notes', 'resources', 'templates']);
-const workspaceRoutes = new Set(['reminders', 'planner', 'notes']);
-const staticBreadcrumbs = new Map([
-  ['dashboard', [{ label: 'Dashboard', href: '#dashboard' }]],
-  ['workspace', [{ label: 'Workspace', href: '#workspace' }]],
-  ['resources', [{ label: 'Resources', href: '#resources' }]],
-  ['templates', [{ label: 'Templates', href: '#templates' }]],
-]);
-
-function getBreadcrumbsForRoute(route) {
-  if (workspaceRoutes.has(route)) {
-    const capitalised = route.charAt(0).toUpperCase() + route.slice(1);
-    return [
-      { label: 'Workspace', href: '#workspace' },
-      { label: capitalised, href: `#${route}` },
-    ];
-  }
-  if (staticBreadcrumbs.has(route)) {
-    return staticBreadcrumbs.get(route);
-  }
-  if (groupedRoutes.has(route)) {
-    const capitalised = route.charAt(0).toUpperCase() + route.slice(1);
-    return [{ label: capitalised, href: `#${route}` }];
-  }
-  return [{ label: 'Dashboard', href: '#dashboard' }];
-}
-
-function updateWorkspaceBreadcrumbs(route) {
-  const breadcrumbList = document.querySelector('[data-breadcrumb-list]');
-  if (!breadcrumbList) {
-    return;
-  }
-
-  breadcrumbList.innerHTML = '';
-  const crumbs = getBreadcrumbsForRoute(route);
-  crumbs.forEach((crumb, index) => {
-    const listItem = document.createElement('li');
-    listItem.className = 'workspace-breadcrumb';
-    const isCurrent = index === crumbs.length - 1;
-    if (isCurrent) {
-      const current = document.createElement('span');
-      current.className = 'badge workspace-breadcrumb__current';
-      current.textContent = crumb.label;
-      current.setAttribute('aria-current', 'page');
-      listItem.appendChild(current);
-    } else {
-      const link = document.createElement('a');
-      link.className = 'badge workspace-breadcrumb__link';
-      link.textContent = crumb.label;
-      link.href = crumb.href || '#';
-      listItem.appendChild(link);
-    }
-    breadcrumbList.appendChild(listItem);
-  });
-}
 
 function renderRoute() {
   const rawRoute = (window.location.hash || '#dashboard').replace('#', '');
   const activeRoute = rawRoute === '' ? 'dashboard' : rawRoute;
-  const isWorkspaceView = workspaceRoutes.has(activeRoute) || activeRoute === 'workspace';
   const routeNodes = document.querySelectorAll('[data-route]');
   routeNodes.forEach((node) => {
     const nodeRoute = node.dataset.route;
     const isDashboardFallback = rawRoute === '' && nodeRoute === 'dashboard';
-    const isWorkspaceSection = nodeRoute === 'workspace';
-    const shouldShow =
-      isDashboardFallback ||
-      (!isWorkspaceView && nodeRoute === activeRoute) ||
-      (isWorkspaceView && isWorkspaceSection);
+    const shouldShow = isDashboardFallback || nodeRoute === activeRoute;
 
     node.style.display = shouldShow ? '' : 'none';
     node.hidden = !shouldShow;
     node.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
   });
-
-  syncWorkspacePanels(activeRoute);
 
   document.querySelectorAll('[data-nav]').forEach((link) => {
     const isActive = link.dataset.nav === activeRoute;
@@ -109,30 +48,6 @@ function renderRoute() {
     moreSummary.classList.toggle('more-active', moreDetails.open);
   }
 
-  updateWorkspaceBreadcrumbs(activeRoute);
-}
-
-function syncWorkspacePanels(route) {
-  const workspace = document.querySelector('[data-workspace]');
-  if (!workspace) {
-    return;
-  }
-
-  const activePanel = workspaceRoutes.has(route) ? route : 'reminders';
-  workspace.dataset.workspaceActive = activePanel;
-
-  workspace.querySelectorAll('[data-workspace-panel]').forEach((panel) => {
-    const isActive = panel.dataset.workspacePanel === activePanel;
-    panel.hidden = !isActive;
-    panel.classList.toggle('hidden', !isActive);
-    panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
-  });
-
-  workspace.querySelectorAll('[data-workspace-tab]').forEach((tab) => {
-    const isActive = tab.dataset.workspaceTab === activePanel;
-    tab.classList.toggle('btn-active', isActive);
-    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
-  });
 }
 
 function initGroupedNavHandlers() {
@@ -201,33 +116,9 @@ function initMobileNavHandlers() {
   });
 }
 
-function initWorkspaceTabs() {
-  const workspace = document.querySelector('[data-workspace]');
-  if (!workspace) {
-    return;
-  }
-
-  workspace.querySelectorAll('[data-workspace-tab]').forEach((tab) => {
-    tab.addEventListener('click', (event) => {
-      event.preventDefault();
-      const targetRoute = tab.dataset.workspaceTab;
-      if (!targetRoute) {
-        return;
-      }
-      const targetHash = `#${targetRoute}`;
-      if (window.location.hash !== targetHash) {
-        window.location.hash = targetHash;
-        return;
-      }
-      renderRoute();
-    });
-  });
-}
-
 function initRouter() {
   initGroupedNavHandlers();
   initMobileNavHandlers();
-  initWorkspaceTabs();
   renderRoute();
 }
 
