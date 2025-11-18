@@ -29,6 +29,7 @@ html {
   --planner-card-border: color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 70%, transparent);
   --planner-card-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   --planner-card-highlight: rgba(79, 70, 229, 0.18);
+  --desktop-header-height: 4.5rem;
   /* Stacking context tokens (overlays only) */
   --z-dropdown: 40;
   --z-quick-toolbar: 50;
@@ -269,9 +270,38 @@ html[data-theme="professional"] {
   max-width: 1320px;
   margin: 0 auto;
   padding: 1.25rem 2.25rem 2.5rem;
+}
+
+ .desktop-shell .desktop-layout {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 1rem;
+  gap: clamp(1rem, 3vw, 1.75rem);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "header"
+    "sidebar"
+    "main";
+}
+
+@media (min-width: 1024px) {
+  .desktop-shell .desktop-layout {
+    grid-template-columns: var(--desktop-rail-width) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "header header"
+      "sidebar main";
+  }
+}
+
+ .desktop-shell .desktop-header {
+  grid-area: header;
+}
+
+ .desktop-shell .desktop-sidebar {
+  grid-area: sidebar;
+}
+
+ .desktop-shell .desktop-workspace {
+  grid-area: main;
 }
 
  .desktop-shell .desktop-hero,
@@ -402,16 +432,7 @@ html[data-theme="professional"] {
 }
 
  .desktop-shell .desktop-dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr);
-  gap: 1rem;
   align-items: flex-start;
-}
-
-@media (max-width: 1024px) {
-   .desktop-shell .desktop-dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 
@@ -733,16 +754,7 @@ html[data-theme="professional"] {
 }
 
  .desktop-shell .desktop-reminders-layout {
-  display: flex;
-  flex-direction: column;
-}
-
-@media (min-width: 1024px) {
-   .desktop-shell .desktop-reminders-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
-    align-items: stretch;
-  }
+  width: 100%;
 }
 
  .desktop-shell .desktop-reminders-column {
@@ -752,15 +764,9 @@ html[data-theme="professional"] {
  .desktop-shell .desktop-reminders-scroll {
   flex: 1;
   min-height: 0;
-}
-
-@media (min-width: 1024px) {
-   .desktop-shell .desktop-reminders-scroll {
-    height: clamp(24rem, 60vh, 32rem);
-    overflow-y: auto;
-    padding-right: 0.25rem;
-    scrollbar-gutter: stable both-edges;
-  }
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable both-edges;
 }
 
  .desktop-shell .desktop-reminders-list {
@@ -1644,11 +1650,6 @@ section[data-route="dashboard"] .dashboard-card--hero .dashboard-card-eyebrow {
   letter-spacing: 0.24em;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherIcon,
-section[data-route="dashboard"] .dashboard-card--hero #weatherTemperature {
-  font-size: 2.25rem;
-}
-
 section[data-route="dashboard"] .weather-status-row {
   display: flex;
   align-items: center;
@@ -1662,51 +1663,71 @@ section[data-route="dashboard"] .weather-status-row #weatherStatus {
   min-width: 220px;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherStatus {
-  font-size: 0.65625rem;
-}
-
-section[data-route="dashboard"] .dashboard-card--hero #weatherDescription {
-  font-size: 0.75rem;
-}
-
-section[data-route="dashboard"] .dashboard-card--hero dl {
+section[data-route="dashboard"] .dashboard-card--weather .dashboard-card-content {
+  padding: clamp(1rem, 1.5vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero dt {
-  font-size: 0.5625rem;
+section[data-route="dashboard"] .dashboard-card--weather .dashboard-card-eyebrow {
+  font-size: 0.5rem;
   letter-spacing: 0.24em;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherLocation,
-section[data-route="dashboard"] .dashboard-card--hero #weatherWind,
-section[data-route="dashboard"] .dashboard-card--hero #weatherHumidity,
-section[data-route="dashboard"] .dashboard-card--hero #weatherFeelsLike {
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-header {
+  align-items: center;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherIcon,
+section[data-route="dashboard"] .dashboard-card--weather #weatherTemperature {
+  font-size: 1.5rem;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherDescription {
   font-size: 0.75rem;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherFootnote {
+section[data-route="dashboard"] .dashboard-card--weather #weatherStatus {
   font-size: 0.5625rem;
+  max-width: 260px;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero .weather-radar {
-  margin-top: 1rem;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 10px 25px hsl(var(--bc) / 0.08);
-  border: 1px solid hsl(var(--b2) / 0.3);
-  background: hsl(var(--b2) / 0.25);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-main {
   align-items: center;
-  justify-content: space-between;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero .weather-radar .weather-radar__message {
-  margin: 0;
-  flex: 1 1 220px;
+@media (min-width: 640px) {
+  section[data-route="dashboard"] .dashboard-card--weather .weather-card-main {
+    flex-wrap: nowrap;
+  }
+}
+
+section[data-route="dashboard"] .dashboard-card--weather dl {
+  gap: 0.5rem;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-stats {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+section[data-route="dashboard"] .dashboard-card--weather dt {
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherLocation,
+section[data-route="dashboard"] .dashboard-card--weather #weatherWind,
+section[data-route="dashboard"] .dashboard-card--weather #weatherHumidity,
+section[data-route="dashboard"] .dashboard-card--weather #weatherFeelsLike {
+  font-size: 0.6875rem;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherFootnote,
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-footnote {
+  font-size: 0.5rem;
+  margin-top: 0.25rem;
+  color: hsl(var(--bc) / 0.6);
 }
 
 section[data-route="dashboard"] .dashboard-card-text {
