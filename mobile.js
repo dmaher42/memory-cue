@@ -311,7 +311,7 @@ const initMobileNotes = () => {
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
-  const filterInput = document.getElementById('notesFilterMobile');
+  const filterInput = document.getElementById('notesSearchMobile');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
@@ -436,6 +436,19 @@ const initMobileNotes = () => {
     openSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       showSavedNotesSheet();
+
+      const notesSearchMobile = document.getElementById('notesSearchMobile');
+      const notesListMobileEl = document.getElementById('notesListMobile');
+
+      if (notesListMobileEl) {
+        notesListMobileEl.scrollTop = 0;
+      }
+
+      if (notesSearchMobile) {
+        setTimeout(() => {
+          notesSearchMobile.focus();
+        }, 150);
+      }
     });
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
