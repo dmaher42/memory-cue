@@ -358,19 +358,10 @@ function safeDispatchDocumentEvent(eventName, detail = {}) {
 }
 
 let routeFocusTimeoutId = null;
-const WORKSPACE_ROUTES = new Set(['reminders', 'planner', 'notes']);
 
 function getSectionForRoute(route) {
   if (!route || typeof document === 'undefined') {
     return null;
-  }
-
-  if (WORKSPACE_ROUTES.has(route)) {
-    const workspaceSection = document.querySelector('[data-route="workspace"]');
-    if (!workspaceSection) {
-      return null;
-    }
-    return workspaceSection.querySelector(`[data-workspace-panel="${route}"]`) ?? workspaceSection;
   }
 
   return document.querySelector(`[data-route="${route}"]`);
