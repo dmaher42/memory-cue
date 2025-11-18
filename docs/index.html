@@ -383,21 +383,27 @@
         <div class="max-w-6xl mx-auto space-y-6">
           <section class="desktop-hero">
             <div class="hero-content max-w-none w-full">
-              <div class="desktop-dashboard-grid dashboard-grid">
-                <article class="dashboard-card dashboard-card--hero h-full">
+              <div class="desktop-dashboard-grid">
+                <div class="space-y-6">
+                <article class="dashboard-card dashboard-card--compact dashboard-card--weather h-full">
                     <div class="dashboard-card-content">
-                      <div class="flex items-center justify-between gap-3 weather-card-header">
-                        <div class="space-y-1">
-                          <p class="dashboard-card-eyebrow">Weather</p>
-                          <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
-                            Checking the latest forecast…
-                          </p>
+                      <div class="weather-card-body">
+                        <div class="flex items-center justify-between gap-3 weather-card-header">
+                          <div class="space-y-1">
+                            <p class="dashboard-card-eyebrow">Weather</p>
+                            <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
+                              Checking the latest forecast…
+                            </p>
+                          </div>
+                          <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
                         </div>
-                        <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
-                      </div>
-                      <div class="flex flex-wrap items-end gap-3 weather-card-main">
-                        <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
-                        <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
+                        <div class="flex flex-wrap items-end gap-3 weather-card-main">
+                          <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
+                          <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
+                        </div>
+                        <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
+                          We use your approximate location to calculate these details.
+                        </p>
                       </div>
                       <dl class="grid gap-3 sm:grid-cols-2 weather-card-stats">
                         <div>
@@ -417,9 +423,6 @@
                           <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
                         </div>
                       </dl>
-                      <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
-                        We use your approximate location to calculate these details.
-                      </p>
                     </div>
                   </article>
 
