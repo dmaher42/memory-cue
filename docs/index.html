@@ -386,15 +386,16 @@
             <div class="hero-content max-w-none w-full">
               <div class="desktop-dashboard-grid">
                 <div class="space-y-6">
-                <article class="dashboard-card dashboard-card--compact dashboard-card--weather h-full">
-                    <div class="dashboard-card-content">
-                      <div class="weather-card-body">
-                        <div class="flex items-center justify-between gap-3 weather-card-header">
+                <div class="dashboard-weather-quick-card">
+                  <article class="dashboard-card dashboard-card--compact dashboard-card--weather dashboard-weather-card h-full">
+                      <div class="dashboard-card-content space-y-4">
+                        <div class="flex items-start justify-between gap-3 weather-card-header">
                           <div class="space-y-1">
                             <p class="dashboard-card-eyebrow">Weather</p>
                             <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
                               Checking the latest forecast…
                             </p>
+                            <p id="weatherLocation" class="text-xs font-medium text-base-content/70">Locating…</p>
                           </div>
                           <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
                         </div>
@@ -406,26 +407,8 @@
                           We use your approximate location to calculate these details.
                         </p>
                       </div>
-                      <dl class="grid gap-3 sm:grid-cols-2 weather-card-stats">
-                        <div>
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
-                          <dd id="weatherLocation" class="text-xs text-base-content/80">Locating…</dd>
-                        </div>
-                        <div>
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Wind</dt>
-                          <dd id="weatherWind" class="text-xs text-base-content/80">-- km/h</dd>
-                        </div>
-                        <div>
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Humidity</dt>
-                          <dd id="weatherHumidity" class="text-xs text-base-content/80">--%</dd>
-                        </div>
-                        <div>
-                          <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Feels like</dt>
-                          <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </article>
+                    </article>
+                </div>
 
                 <article class="dashboard-card dashboard-card--compact h-full">
                     <div class="dashboard-card-content">
