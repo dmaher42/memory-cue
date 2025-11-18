@@ -808,7 +808,7 @@ export async function initReminders(sel = {}) {
   const quickBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
   const quickVoiceBtn =
-    typeof document !== 'undefined' ? document.getElementById('quickAddVoiceBtn') : null;
+    typeof document !== 'undefined' ? document.getElementById('quickAddVoice') : null;
   let stopQuickAddVoiceListening = null;
 
   function buildQuickReminder(titleText, dueOverride) {
