@@ -3547,8 +3547,8 @@
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes">
-      <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-3">
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
+      <div class="mobile-view-inner mx-auto w-full max-w-md px-3 pt-3 pb-3 space-y-2">
         <header class="mobile-header flex flex-col gap-1">
           <div id="notebook-view-header" class="space-y-1">
             <div class="flex items-baseline justify-between gap-2">
@@ -3558,13 +3558,13 @@
         </header>
         <div
           id="scratch-notes-card"
-          class="scratch-notes-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-3 space-y-3"
+          class="scratch-notes-card bg-base-100 border border-base-300 rounded-lg shadow-sm p-3 space-y-3"
         >
           <div class="flex items-center justify-between gap-3">
             <h2 class="text-sm font-semibold text-base-content">Scratch notes</h2>
             <button
               type="button"
-              class="btn btn-ghost btn-sm"
+              class="btn btn-ghost btn-xs"
               data-action="open-saved-notes"
             >
               Saved notes
@@ -3603,7 +3603,7 @@
                 >
                   <textarea
                     id="noteBodyMobile"
-                    class="textarea textarea-bordered w-full h-48 text-sm text-base-content"
+                    class="textarea textarea-bordered w-full text-sm text-base-content"
                     placeholder="Start typing your scratch note…"
                   ></textarea>
                 </div>

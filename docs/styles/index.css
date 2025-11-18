@@ -2684,6 +2684,35 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   --mobile-notes-text-scale: 1;
   --mobile-notes-detail-base: 0.75rem;
   --mobile-notes-textarea-base: 1rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-panel--notes .mobile-view-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: clamp(0.5rem, 2vh, 1.5rem);
+}
+
+.mobile-panel--notes header.mobile-header {
+  flex-shrink: 0;
+}
+
+.mobile-panel--notes #scratch-notes-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem 1rem;
+  border-radius: 0.85rem;
+}
+
+.mobile-panel--notes #scratch-notes-card #scratch-notes-actions {
+  margin-top: auto;
+  padding-top: 0.5rem;
 }
 
 .mobile-panel--notes-size-small {
@@ -2708,6 +2737,9 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .mobile-panel--notes .note-body-field textarea {
   font-size: calc(var(--mobile-notes-textarea-base, 1rem) * var(--mobile-notes-text-scale, 1));
   line-height: calc(1.45 * var(--mobile-notes-text-scale, 1));
+  min-height: clamp(9rem, 32vh, 18rem);
+  max-height: clamp(12rem, 40vh, 22rem);
+  overflow-y: auto;
 }
 
 .mobile-panel--notes .note-body-field textarea::placeholder {

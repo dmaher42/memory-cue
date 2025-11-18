@@ -184,6 +184,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 0.75rem;
+    padding-bottom: clamp(0.5rem, 2vh, 1.5rem);
   }
 
   .mobile-panel--notes header.mobile-header {
@@ -194,16 +196,21 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 0.85rem 1rem;
+    border-radius: 0.85rem;
   }
 
   .mobile-panel--notes #scratch-notes-card .notes-editor {
     flex: 1;
-    min-height: clamp(14rem, 55vh, 36rem);
+    min-height: clamp(9rem, 32vh, 18rem);
+    max-height: clamp(12rem, 40vh, 22rem);
+    overflow-y: auto;
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions {
     margin-top: auto;
-    padding-top: 1rem;
+    padding-top: 0.5rem;
   }
 
   .mobile-shell #view-notebook .card {
@@ -3812,8 +3819,8 @@
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes">
-      <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-3">
+    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
+      <div class="mobile-view-inner mx-auto w-full max-w-md px-3 pt-3 pb-3 space-y-2">
         <header class="mobile-header flex flex-col gap-1">
           <div id="notebook-view-header" class="space-y-1">
             <div class="flex items-baseline justify-between gap-2">
@@ -3824,7 +3831,7 @@
         <!-- Enhanced Notebook Card -->
         <div
           id="scratch-notes-card"
-          class="scratch-notes-card rounded-xl bg-base-100 shadow-sm p-4 space-y-4"
+          class="scratch-notes-card rounded-lg bg-base-100 shadow-sm p-3 space-y-3"
         >
           <!-- Header Row -->
           <div class="flex items-center justify-between">
@@ -3832,7 +3839,7 @@
             <button
               id="openSavedNotesSheet"
               type="button"
-              class="btn btn-sm btn-ghost text-sm font-medium"
+              class="btn btn-xs btn-ghost text-sm font-medium"
             >
               Saved notes
             </button>
