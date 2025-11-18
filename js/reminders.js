@@ -3146,7 +3146,38 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  const PIN_TOGGLE_HANDLER_PROP = '__mcPinToggleHandler';
   let pinToggleSyncScheduled = false;
+
+  function bindTodayToggleListener(input) {
+    if (!(input instanceof HTMLInputElement)) {
+      return;
+    }
+    if (input[PIN_TOGGLE_HANDLER_PROP]) {
+      return;
+    }
+    const handler = (event) => {
+      if (event?.defaultPrevented) {
+        return;
+      }
+      event.stopPropagation();
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLInputElement)) {
+        return;
+      }
+      const card = typeof target.closest === 'function' ? target.closest('[data-reminder-item]') : null;
+      const reminderId = card?.dataset?.id;
+      if (!reminderId) {
+        target.checked = false;
+        target.setAttribute('aria-pressed', 'false');
+        return;
+      }
+      setReminderPinnedState(reminderId, target.checked);
+    };
+    input.addEventListener('change', handler);
+    input[PIN_TOGGLE_HANDLER_PROP] = handler;
+  }
+
   function syncPinToggleStates() {
     if (!list) {
       return;
@@ -3169,6 +3200,7 @@ export async function initReminders(sel = {}) {
       const checked = !!reminder?.pinToToday;
       input.checked = checked;
       input.setAttribute('aria-pressed', checked ? 'true' : 'false');
+      bindTodayToggleListener(input);
     });
   }
 
