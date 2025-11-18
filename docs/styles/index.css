@@ -29,6 +29,11 @@ html {
   --planner-card-border: color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 70%, transparent);
   --planner-card-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   --planner-card-highlight: rgba(79, 70, 229, 0.18);
+  /* Stacking context tokens (overlays only) */
+  --z-dropdown: 40;
+  --z-quick-toolbar: 50;
+  --z-tooltip: 60;
+  --z-skip-link: 1000;
 }
 
 body {
@@ -97,7 +102,6 @@ html[data-theme="professional"] {
  .desktop-header-bar {
   position: static;
   top: auto;
-  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1049,7 +1053,7 @@ textarea {
   pointer-events: none;
   white-space: nowrap;
   transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 60;
+  z-index: var(--z-tooltip);
 }
 
 .tooltip::after {
@@ -1073,7 +1077,7 @@ textarea {
   opacity: 0;
   transition: opacity 0.15s ease, transform 0.15s ease;
   pointer-events: none;
-  z-index: 59;
+  z-index: calc(var(--z-tooltip) - 1);
 }
 
 .tooltip:focus-visible::after,
@@ -1294,7 +1298,7 @@ textarea {
   transform: translateY(-0.25rem);
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;
-  z-index: 55;
+  z-index: var(--z-dropdown);
 }
 
 .nav-mobile-menu {
@@ -1927,7 +1931,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   position: fixed;
   right: clamp(0.75rem, 2vw, 1.5rem);
   bottom: clamp(0.75rem, 2vw, 1.5rem);
-  z-index: 60;
+  z-index: var(--z-quick-toolbar);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
