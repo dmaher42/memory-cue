@@ -1767,11 +1767,6 @@ section[data-route="dashboard"] .dashboard-card--hero .dashboard-card-eyebrow {
   letter-spacing: 0.24em;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherIcon,
-section[data-route="dashboard"] .dashboard-card--hero #weatherTemperature {
-  font-size: 2.25rem;
-}
-
 section[data-route="dashboard"] .weather-status-row {
   display: flex;
   align-items: center;
@@ -1785,51 +1780,71 @@ section[data-route="dashboard"] .weather-status-row #weatherStatus {
   min-width: 220px;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherStatus {
-  font-size: 0.65625rem;
-}
-
-section[data-route="dashboard"] .dashboard-card--hero #weatherDescription {
-  font-size: 0.75rem;
-}
-
-section[data-route="dashboard"] .dashboard-card--hero dl {
+section[data-route="dashboard"] .dashboard-card--weather .dashboard-card-content {
+  padding: clamp(1rem, 1.5vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero dt {
-  font-size: 0.5625rem;
+section[data-route="dashboard"] .dashboard-card--weather .dashboard-card-eyebrow {
+  font-size: 0.5rem;
   letter-spacing: 0.24em;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherLocation,
-section[data-route="dashboard"] .dashboard-card--hero #weatherWind,
-section[data-route="dashboard"] .dashboard-card--hero #weatherHumidity,
-section[data-route="dashboard"] .dashboard-card--hero #weatherFeelsLike {
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-header {
+  align-items: center;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherIcon,
+section[data-route="dashboard"] .dashboard-card--weather #weatherTemperature {
+  font-size: 1.5rem;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherDescription {
   font-size: 0.75rem;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero #weatherFootnote {
+section[data-route="dashboard"] .dashboard-card--weather #weatherStatus {
   font-size: 0.5625rem;
+  max-width: 260px;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero .weather-radar {
-  margin-top: 1rem;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 10px 25px hsl(var(--bc) / 0.08);
-  border: 1px solid hsl(var(--b2) / 0.3);
-  background: hsl(var(--b2) / 0.25);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-main {
   align-items: center;
-  justify-content: space-between;
 }
 
-section[data-route="dashboard"] .dashboard-card--hero .weather-radar .weather-radar__message {
-  margin: 0;
-  flex: 1 1 220px;
+@media (min-width: 640px) {
+  section[data-route="dashboard"] .dashboard-card--weather .weather-card-main {
+    flex-wrap: nowrap;
+  }
+}
+
+section[data-route="dashboard"] .dashboard-card--weather dl {
+  gap: 0.5rem;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-stats {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+section[data-route="dashboard"] .dashboard-card--weather dt {
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherLocation,
+section[data-route="dashboard"] .dashboard-card--weather #weatherWind,
+section[data-route="dashboard"] .dashboard-card--weather #weatherHumidity,
+section[data-route="dashboard"] .dashboard-card--weather #weatherFeelsLike {
+  font-size: 0.6875rem;
+}
+
+section[data-route="dashboard"] .dashboard-card--weather #weatherFootnote,
+section[data-route="dashboard"] .dashboard-card--weather .weather-card-footnote {
+  font-size: 0.5rem;
+  margin-top: 0.25rem;
+  color: hsl(var(--bc) / 0.6);
 }
 
 section[data-route="dashboard"] .dashboard-card-text {

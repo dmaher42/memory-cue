@@ -440,9 +440,9 @@
           <section class="desktop-hero">
             <div class="hero-content max-w-none w-full">
               <div class="desktop-dashboard-grid dashboard-grid">
-                <article class="dashboard-card dashboard-card--hero h-full">
+                <article class="dashboard-card dashboard-card--compact dashboard-card--weather h-full">
                     <div class="dashboard-card-content">
-                      <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center justify-between gap-3 weather-card-header">
                         <div class="space-y-1">
                           <p class="dashboard-card-eyebrow">Weather</p>
                           <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
@@ -451,11 +451,11 @@
                         </div>
                         <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
                       </div>
-                      <div class="flex flex-wrap items-end gap-4">
+                      <div class="flex flex-wrap items-end gap-3 weather-card-main">
                         <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
                         <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
                       </div>
-                      <dl class="grid gap-3 sm:grid-cols-2">
+                      <dl class="grid gap-3 sm:grid-cols-2 weather-card-stats">
                         <div>
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
                           <dd id="weatherLocation" class="text-xs text-base-content/80">Locating…</dd>
@@ -473,20 +473,9 @@
                           <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
                         </div>
                       </dl>
-                      <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
-                      <div class="weather-radar" aria-label="Live radar" role="group">
-                        <p class="weather-radar__message text-xs text-base-content/60">
-                          Live radar opens in a new tab due to browser security settings.
-                        </p>
-                        <a
-                          class="btn btn-primary btn-sm mt-2"
-                          href="https://www.windy.com/-Weather-radar-radar"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Open Windy radar
-                        </a>
-                      </div>
+                      <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
+                        We use your approximate location to calculate these details.
+                      </p>
                     </div>
                   </article>
 
