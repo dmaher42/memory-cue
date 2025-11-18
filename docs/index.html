@@ -260,16 +260,6 @@
       }
     }
 
-    .google-user-chip {
-      display: none;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .google-user-chip:not(:empty) {
-      display: inline-flex;
-    }
-
     #auth-feedback:empty {
       display: none;
     }
@@ -343,84 +333,22 @@
           >
             Add reminder
           </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary">Sign in</button>
+            <button
+              id="googleSignOutBtn"
+              type="button"
+              class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content"
+            >
+              Sign out
+            </button>
+          </div>
           <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
       </div>
     </header>
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner">
-        <aside class="desktop-rail" aria-label="Workspace navigation">
-          <div class="desktop-rail-sticky">
-            <nav class="desktop-rail-nav" aria-label="Primary">
-              <ul class="menu menu-vertical gap-1 nav-pill-glass text-sm">
-                <li>
-                  <a href="#dashboard" data-nav="dashboard" id="nav-dashboard" class="btn btn-sm btn-ghost">Dashboard</a>
-                </li>
-                <li>
-                  <a href="#reminders" data-nav="reminders" id="nav-reminders" class="btn btn-sm btn-ghost">Reminders</a>
-                </li>
-                <li>
-                  <a href="#planner" data-nav="planner" id="nav-planner" class="btn btn-sm btn-ghost">Planner</a>
-                </li>
-                <li>
-                  <a href="#notes" data-nav="notes" id="nav-notes" class="btn btn-sm btn-ghost">Notes</a>
-                </li>
-              </ul>
-            </nav>
-            <div class="desktop-rail-controls">
-              <button
-                id="theme-toggle"
-                type="button"
-                class="btn btn-sm btn-ghost text-base-content"
-                data-icon-dark="🌙"
-                data-icon-light="☀️"
-              ></button>
-              <div
-                class="desktop-account-controls w-full sm:w-auto"
-                data-account-panel-container
-                data-account-collapsed="true"
-              >
-                <button
-                  id="desktopAccountToggle"
-                  type="button"
-                  class="desktop-account-toggle btn btn-sm btn-ghost"
-                  aria-expanded="false"
-                  aria-controls="desktopAccountPanel"
-                  data-collapsed-label="Account"
-                  data-expanded-label="Account"
-                  data-collapsed-aria="Show account controls"
-                  data-expanded-aria="Hide account controls"
-                >
-                  <span class="desktop-account-toggle__label" data-account-toggle-label aria-hidden="true">Account</span>
-                  <span class="sr-only" data-account-toggle-a11y>Show account controls</span>
-                  <span class="desktop-account-toggle__chevron" aria-hidden="true"></span>
-                </button>
-                <div
-                  id="desktopAccountPanel"
-                  class="desktop-account-panel"
-                  aria-hidden="true"
-                  data-account-panel
-                  inert
-                >
-                  <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
-                    <div
-                      id="googleUserName"
-                      class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
-                    ></div>
-                    <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
-                    <button
-                      id="googleSignOutBtn"
-                      type="button"
-                      class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
         <div class="desktop-workspace desktop-workspace-region space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div class="max-w-6xl mx-auto space-y-6">
