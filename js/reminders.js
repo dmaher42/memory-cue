@@ -808,7 +808,7 @@ export async function initReminders(sel = {}) {
   const quickBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
   const quickVoiceBtn =
-    typeof document !== 'undefined' ? document.getElementById('quickAddVoiceBtn') : null;
+    typeof document !== 'undefined' ? document.getElementById('quickAddVoice') : null;
   let stopQuickAddVoiceListening = null;
 
   function buildQuickReminder(titleText, dueOverride) {
@@ -881,6 +881,16 @@ export async function initReminders(sel = {}) {
     emitActivity({ action: 'created', label: `Reminder added · ${entry.title}` });
 
     quickInput.value = '';
+
+    if (typeof document !== 'undefined') {
+      try {
+        document.dispatchEvent(
+          new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
+        );
+      } catch {
+        // Ignore dispatch issues so the add flow can finish silently.
+      }
+    }
   }
 
   if (typeof window !== 'undefined') {
