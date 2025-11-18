@@ -2,36 +2,20 @@
 > memory-cue@1.0.0 build
 > node scripts/build.mjs
 
-Browserslist: caniuse-lite is outdated. Please run:
-  npx update-browserslist-db@latest
-  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+node:internal/modules/esm/resolve:873
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
 
-Rebuilding...
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'esbuild' imported from /home/runner/work/memory-cue/memory-cue/scripts/build.mjs
+    at packageResolve (node:internal/modules/esm/resolve:873:9)
+    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
 
-🌼   daisyUI 4.12.24
-├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
-╰─ ★ Star daisyUI on GitHub	https://github.com/saadeghi/daisyui
-
-
-warn - Your `content` configuration includes a pattern which looks like it's accidentally matching all of `node_modules` and can cause serious performance issues.
-warn - Pattern: `./**/*.html`
-warn - See our documentation for recommendations:
-warn - https://tailwindcss.com/docs/content-configuration#pattern-recommendations
-
-Done in 2078ms.
-
-  dist/assets/chunk-BF2RMRYD.js                42.7kb
-  dist/assets/app-GKI2EGNX.js                  17.8kb
-  dist/assets/mobile-D7CLP2NM.js               12.4kb
-  dist/assets/main-NYXLDB75.js                  2.8kb
-  dist/assets/mobile-theme-toggle-VQPS5JOX.js   382b 
-  dist/assets/config-supabase-NJI5WPHR.js       344b 
-  dist/assets/chunk-RCZ4YZVR.js                 120b 
-
-⚡ Done in 42ms
-
-  dist/assets/register-service-worker-VJMOHPCS.js  350b 
-  dist/assets/update-footer-year-EFMYO4DK.js       175b 
-  dist/assets/runtime-env-shim-TYQCA2C5.js         123b 
-
-⚡ Done in 9ms
+Node.js v20.19.5
