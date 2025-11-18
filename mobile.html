@@ -3143,6 +3143,13 @@
       border-radius: 50%;
     }
 
+    #reminders-slim-header .header-overflow-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     /* Hide legacy mobile headers */
     .mobile-header,
     .app-header,
@@ -6092,6 +6099,7 @@
       }
 
       // 2. Find Overflow/More menu button
+      const overflowMenu = document.getElementById('overflowMenu');
       const overflowSources = [
         document.getElementById('overflowMenuBtn'),
         document.querySelector('[aria-label*="settings"]'),
@@ -6100,9 +6108,15 @@
       ].filter(Boolean);
 
       let overflowBtn = null;
+      let overflowBtnUsesBuiltInHandler = false;
       for (const source of overflowSources) {
         if (source && !source.closest('#reminders-slim-header')) {
-          overflowBtn = source.cloneNode(true);
+          if (source.id === 'overflowMenuBtn') {
+            overflowBtn = source;
+            overflowBtnUsesBuiltInHandler = true;
+          } else {
+            overflowBtn = source.cloneNode(true);
+          }
           overflowBtn.classList.add('header-btn', 'header-btn-icon');
           break;
         }
@@ -6116,7 +6130,15 @@
         overflowBtn.setAttribute('id', 'overflowMenuBtnClone');
         overflowBtn.setAttribute('aria-label', 'Open menu');
         overflowBtn.setAttribute('aria-haspopup', 'menu');
+        overflowBtn.setAttribute('aria-controls', 'overflowMenu');
         overflowBtn.innerHTML = '<span aria-hidden="true">⋮</span>';
+      }
+
+      const overflowWrapper = document.createElement('div');
+      overflowWrapper.className = 'header-overflow-wrapper';
+      overflowWrapper.appendChild(overflowBtn);
+      if (overflowMenu) {
+        overflowWrapper.appendChild(overflowMenu);
       }
 
       // 3. Find Home button
@@ -6148,7 +6170,7 @@
 
       // Add buttons to header in order: Add, Overflow, Home
       headerActions.appendChild(addBtn);
-      headerActions.appendChild(overflowBtn);
+      headerActions.appendChild(overflowWrapper);
       headerActions.appendChild(homeBtn);
 
       // Rebind event listeners for cloned buttons
@@ -6165,22 +6187,21 @@
       }
 
       // Overflow menu button
-      const newOverflowBtn = headerActions.querySelector('[aria-label*="menu"], [aria-controls="overflowMenu"]');
-      if (newOverflowBtn) {
+      const newOverflowBtn = overflowBtn;
+      if (newOverflowBtn && !overflowBtnUsesBuiltInHandler) {
         newOverflowBtn.addEventListener('click', function(e) {
           e.preventDefault();
           e.stopPropagation();
-          // Find and toggle the overflow menu
-          const menu = document.getElementById('overflowMenu');
-          if (menu) {
-            const isHidden = menu.classList.contains('hidden');
-            if (isHidden) {
-              menu.classList.remove('hidden');
-              newOverflowBtn.setAttribute('aria-expanded', 'true');
-            } else {
-              menu.classList.add('hidden');
-              newOverflowBtn.setAttribute('aria-expanded', 'false');
-            }
+          if (!overflowMenu) {
+            return;
+          }
+          const isHidden = overflowMenu.classList.contains('hidden');
+          if (isHidden) {
+            overflowMenu.classList.remove('hidden');
+            newOverflowBtn.setAttribute('aria-expanded', 'true');
+          } else {
+            overflowMenu.classList.add('hidden');
+            newOverflowBtn.setAttribute('aria-expanded', 'false');
           }
         });
       }
