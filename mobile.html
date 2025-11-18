@@ -3250,7 +3250,7 @@
   </script>
 
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
-    <main id="main" class="mx-auto pt-0 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
+    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -3475,9 +3475,9 @@
     </main>
   </div>
 
-  <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pb-safe-bottom pointer-events-none">
+  <div id="mobile-nav-shell" class="fixed inset-x-0 bottom-3 z-50 flex justify-center pointer-events-none">
     <nav
-      class="btm-nav pointer-events-auto flex items-center justify-between max-w-md mx-auto bg-base-100/90 backdrop-blur-md border border-base-300 rounded-full shadow-lg px-4 py-1.5 gap-1"
+      class="btm-nav bg-base-100/90 border border-base-300 rounded-full shadow-lg px-4 py-1.5 flex items-center justify-around gap-2 max-w-md w-full mx-auto pointer-events-auto backdrop-blur-md"
       aria-label="Primary navigation"
     >
       <button
