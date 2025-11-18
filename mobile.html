@@ -3946,7 +3946,7 @@
       const createTodayToggle = () => {
         const wrapper = document.createElement('label');
         wrapper.className =
-          'reminder-today-toggle flex items-center gap-1 text-[11px] text-base-content/70 select-none whitespace-nowrap';
+          'reminder-today-toggle flex items-start justify-end self-start ml-auto mt-1 text-base-content/70 select-none';
         wrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
 
         const checkbox = document.createElement('input');
@@ -3954,10 +3954,7 @@
         checkbox.className = 'checkbox checkbox-xs align-middle';
         checkbox.setAttribute('data-role', 'reminder-today-toggle');
 
-        const labelText = document.createElement('span');
-        labelText.textContent = 'Today';
-
-        wrapper.append(checkbox, labelText);
+        wrapper.append(checkbox);
         return wrapper;
       };
 
@@ -4221,20 +4218,7 @@
 
         let todayToggleWrapper = headerActions.querySelector('[data-role="reminder-today-toggle-wrapper"]');
         if (!todayToggleWrapper) {
-          todayToggleWrapper = document.createElement('label');
-          todayToggleWrapper.className =
-            'reminder-today-toggle flex items-center gap-1 text-[11px] text-base-content/70 select-none whitespace-nowrap';
-          todayToggleWrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
-
-          const todayToggle = document.createElement('input');
-          todayToggle.type = 'checkbox';
-          todayToggle.className = 'checkbox checkbox-xs align-middle';
-          todayToggle.setAttribute('data-role', 'reminder-today-toggle');
-
-          const todayToggleText = document.createElement('span');
-          todayToggleText.textContent = 'Today';
-
-          todayToggleWrapper.append(todayToggle, todayToggleText);
+          todayToggleWrapper = createTodayToggle();
         }
 
         if (!headerActions.contains(todayToggleWrapper)) {
