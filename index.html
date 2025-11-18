@@ -289,16 +289,6 @@
       }
     }
 
-    .google-user-chip {
-      display: none;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .google-user-chip:not(:empty) {
-      display: inline-flex;
-    }
-
     #auth-feedback:empty {
       display: none;
     }
@@ -372,28 +362,22 @@
           >
             Add reminder
           </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary">Sign in</button>
+            <button
+              id="googleSignOutBtn"
+              type="button"
+              class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content"
+            >
+              Sign out
+            </button>
+          </div>
           <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
       </div>
     </header>
-    <aside class="desktop-rail desktop-sidebar" aria-label="Workspace navigation">
+    <aside class="desktop-rail desktop-sidebar" aria-label="Workspace controls">
       <div class="desktop-rail-sticky">
-        <nav class="desktop-rail-nav" aria-label="Primary">
-          <ul class="menu menu-vertical gap-1 nav-pill-glass text-sm">
-            <li>
-              <a href="#dashboard" data-nav="dashboard" id="nav-dashboard" class="btn btn-sm btn-ghost">Dashboard</a>
-            </li>
-            <li>
-              <a href="#reminders" data-nav="reminders" id="nav-reminders" class="btn btn-sm btn-ghost">Reminders</a>
-            </li>
-            <li>
-              <a href="#planner" data-nav="planner" id="nav-planner" class="btn btn-sm btn-ghost">Planner</a>
-            </li>
-            <li>
-              <a href="#notes" data-nav="notes" id="nav-notes" class="btn btn-sm btn-ghost">Notes</a>
-            </li>
-          </ul>
-        </nav>
         <div class="desktop-rail-controls">
           <button
             id="theme-toggle"
@@ -402,49 +386,6 @@
             data-icon-dark="🌙"
             data-icon-light="☀️"
           ></button>
-          <div
-            class="desktop-account-controls w-full sm:w-auto"
-            data-account-panel-container
-            data-account-collapsed="true"
-          >
-            <button
-              id="desktopAccountToggle"
-              type="button"
-              class="desktop-account-toggle btn btn-sm btn-ghost"
-              aria-expanded="false"
-              aria-controls="desktopAccountPanel"
-              data-collapsed-label="Account"
-              data-expanded-label="Account"
-              data-collapsed-aria="Show account controls"
-              data-expanded-aria="Hide account controls"
-            >
-              <span class="desktop-account-toggle__label" data-account-toggle-label aria-hidden="true">Account</span>
-              <span class="sr-only" data-account-toggle-a11y>Show account controls</span>
-              <span class="desktop-account-toggle__chevron" aria-hidden="true"></span>
-            </button>
-            <div
-              id="desktopAccountPanel"
-              class="desktop-account-panel"
-              aria-hidden="true"
-              data-account-panel
-              inert
-            >
-              <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
-                <div
-                  id="googleUserName"
-                  class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
-                ></div>
-                <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
-                <button
-                  id="googleSignOutBtn"
-                  type="button"
-                  class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
-                >
-                  Sign out
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </aside>
@@ -456,9 +397,9 @@
           <section class="desktop-hero">
             <div class="hero-content max-w-none w-full">
               <div class="desktop-dashboard-grid dashboard-grid">
-                <article class="dashboard-card dashboard-card--hero h-full">
+                <article class="dashboard-card dashboard-card--compact dashboard-card--weather h-full">
                     <div class="dashboard-card-content">
-                      <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center justify-between gap-3 weather-card-header">
                         <div class="space-y-1">
                           <p class="dashboard-card-eyebrow">Weather</p>
                           <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
@@ -467,11 +408,11 @@
                         </div>
                         <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
                       </div>
-                      <div class="flex flex-wrap items-end gap-4">
+                      <div class="flex flex-wrap items-end gap-3 weather-card-main">
                         <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
                         <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
                       </div>
-                      <dl class="grid gap-3 sm:grid-cols-2">
+                      <dl class="grid gap-3 sm:grid-cols-2 weather-card-stats">
                         <div>
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
                           <dd id="weatherLocation" class="text-xs text-base-content/80">Locating…</dd>
@@ -489,20 +430,9 @@
                           <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
                         </div>
                       </dl>
-                      <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
-                      <div class="weather-radar" aria-label="Live radar" role="group">
-                        <p class="weather-radar__message text-xs text-base-content/60">
-                          Live radar opens in a new tab due to browser security settings.
-                        </p>
-                        <a
-                          class="btn btn-primary btn-sm mt-2"
-                          href="https://www.windy.com/-Weather-radar-radar"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Open Windy radar
-                        </a>
-                      </div>
+                      <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
+                        We use your approximate location to calculate these details.
+                      </p>
                     </div>
                   </article>
 
@@ -885,24 +815,9 @@
                   <h2 class="dashboard-card-title">Action shortcuts</h2>
                   <span class="text-xs font-medium text-base-content/70">Jump back in</span>
                 </div>
-                <div class="grid gap-2 sm:grid-cols-2">
-                  <a href="#reminders" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="reminders">
-                    <span aria-hidden="true">🔔</span>
-                    Open reminders
-                  </a>
-                  <a href="#planner" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="planner">
-                    <span aria-hidden="true">🗓️</span>
-                    Weekly planner
-                  </a>
-                  <a href="#notes" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="notes">
-                    <span aria-hidden="true">📝</span>
-                    Daily notes
-                  </a>
-                  <a href="#resources" class="btn btn-ghost btn-sm justify-start gap-2 text-sm text-base-content/80" data-nav="resources">
-                    <span aria-hidden="true">📚</span>
-                    Resource library
-                  </a>
-                </div>
+                <p class="text-sm text-base-content/70">
+                  Use the top navigation bar to jump between Reminders, Planner, and Notes.
+                </p>
                 <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
                   <p class="text-sm font-semibold text-base-content/90">Need inspiration?</p>
                   <p class="text-sm text-base-content/70 mt-1">
