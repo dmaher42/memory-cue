@@ -531,10 +531,17 @@
                         ></textarea>
                       </div>
 
-                      <div class="flex justify-end gap-2 pt-1">
-                        <button class="btn btn-outline btn-sm" type="button">
-                          Copy to planner
-                        </button>
+                      <div class="space-y-1 pt-1">
+                        <div class="flex justify-end gap-2">
+                          <button class="btn btn-outline btn-sm" type="button" data-copy-next-lesson>
+                            Copy to planner
+                          </button>
+                        </div>
+                        <p
+                          class="text-xs text-base-content/60"
+                          data-next-lesson-feedback
+                          aria-live="polite"
+                        ></p>
                       </div>
                     </div>
                     </article>
