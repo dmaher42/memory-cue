@@ -1646,15 +1646,28 @@ textarea {
 section[data-route="dashboard"] .dashboard-card {
   position: relative;
   border-radius: 1.25rem;
-  border: 1px solid hsla(var(--b3) / 0.35);
-  background-color: hsla(var(--b1) / 0.85);
+  border: 1px solid color-mix(
+    in srgb,
+    var(--desktop-border-subtle, color-mix(in srgb, var(--b3) 80%, transparent)) 70%,
+    transparent
+  );
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ffffff 88%, var(--page-bg-accent, rgba(79, 70, 229, 0.18)) 12%),
+    color-mix(in srgb, #f8fafc 80%, var(--page-bg-highlight, rgba(14, 165, 233, 0.12)) 20%)
+  );
+  background-color: transparent;
   box-shadow: 0 26px 60px -36px rgba(15, 23, 42, 0.22);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 [data-theme="dark"] section[data-route="dashboard"] .dashboard-card {
-  border-color: hsla(var(--b3) / 0.5);
-  background-color: hsla(var(--b2) / 0.4);
+  border-color: color-mix(in srgb, #1e293b 55%, transparent);
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, #111827 78%, var(--page-bg-accent, rgba(56, 189, 248, 0.18)) 22%),
+    color-mix(in srgb, #0f172a 70%, var(--page-bg-highlight, rgba(99, 102, 241, 0.18)) 30%)
+  );
   box-shadow: 0 28px 64px -36px rgba(2, 6, 23, 0.7);
 }
 
