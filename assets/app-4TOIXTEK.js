@@ -108,13 +108,13 @@ import{a as $n,b as ko,c as Qe,d as Do,f as $t,g as Ze,h as qt,i as Co,j as qn,k
                 >
                   Delete
                 </button>
+              </div>
             </div>
-          </div>
-          ${s}
-          ${P}
-          <div class="flex flex-wrap gap-2">
-            <button
-              type="button"
+            ${s}
+            ${P}
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
                 class="btn btn-sm btn-primary"
                 data-planner-action="create-reminder"
                 data-open-reminder-modal="true"
