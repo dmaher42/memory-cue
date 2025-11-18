@@ -960,27 +960,47 @@
       background: color-mix(in srgb, var(--success-color) 90%, transparent);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-color) 18%, transparent);
     }
+    .note-title-field {
+      border: 1.5px solid var(--card-border-strong);
+      border-radius: 1rem;
+      background-color: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .dark .note-title-field {
+      background-color: color-mix(in srgb, var(--text-primary) 75%, transparent);
+    }
+
+    .note-title-field:focus,
+    .note-title-field:focus-visible {
+      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--card-border-strong));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
+      background-color: color-mix(in srgb, var(--card-bg) 98%, rgba(148, 163, 184, 0.05));
+    }
+
     .notes-editor {
       min-height: 10rem;
       width: 100%;
-      border-radius: 0.75rem;
-      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+      border-radius: 1rem;
+      border: 1.5px solid var(--card-border-strong);
       padding: 0.75rem 1rem;
-      background-color: color-mix(in srgb, var(--card-bg) 90%, transparent);
+      background-color: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
       color: inherit;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       line-height: 1.5;
       outline: none;
-      transition: var(--transition);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
     .dark .notes-editor {
-      border-color: color-mix(in srgb, var(--border-color) 35%, transparent);
-      background-color: color-mix(in srgb, var(--text-primary) 65%, transparent);
+      border-color: var(--card-border-strong);
+      background-color: color-mix(in srgb, var(--text-primary) 70%, transparent);
     }
     .notes-editor:focus-visible {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
+      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--card-border-strong));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 22%, transparent);
     }
     .notes-editor:empty::before {
       content: attr(data-placeholder);
@@ -3823,7 +3843,7 @@
             id="noteTitleMobile"
             type="text"
             placeholder="Title"
-            class="input input-sm w-full"
+            class="input input-sm w-full note-title-field"
             autocomplete="off"
           />
 
