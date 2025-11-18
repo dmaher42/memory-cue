@@ -29,6 +29,7 @@ html {
   --planner-card-border: color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 70%, transparent);
   --planner-card-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   --planner-card-highlight: rgba(79, 70, 229, 0.18);
+  --desktop-header-height: 4.5rem;
   /* Stacking context tokens (overlays only) */
   --z-dropdown: 40;
   --z-quick-toolbar: 50;
@@ -269,9 +270,38 @@ html[data-theme="professional"] {
   max-width: 1320px;
   margin: 0 auto;
   padding: 1.25rem 2.25rem 2.5rem;
+}
+
+ .desktop-shell .desktop-layout {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 1rem;
+  gap: clamp(1rem, 3vw, 1.75rem);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "header"
+    "sidebar"
+    "main";
+}
+
+@media (min-width: 1024px) {
+  .desktop-shell .desktop-layout {
+    grid-template-columns: var(--desktop-rail-width) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "header header"
+      "sidebar main";
+  }
+}
+
+ .desktop-shell .desktop-header {
+  grid-area: header;
+}
+
+ .desktop-shell .desktop-sidebar {
+  grid-area: sidebar;
+}
+
+ .desktop-shell .desktop-workspace {
+  grid-area: main;
 }
 
  .desktop-shell .desktop-hero,
@@ -295,12 +325,91 @@ html[data-theme="professional"] {
 }
 
  .desktop-shell .desktop-main-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--desktop-shell-gutter);
-  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dashboard-section-spacing);
+  align-items: stretch;
   padding: 0 var(--desktop-shell-gutter) 2.5rem;
   width: 100%;
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .desktop-shell .desktop-main-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: clamp(2rem, 3vw, 3rem);
+    align-items: start;
+  }
+
+  .desktop-shell .desktop-main-inner > * {
+    min-width: 0;
+  }
+}
+
+ .desktop-shell .dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .desktop-shell .dashboard-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: clamp(1.75rem, 2.5vw, 2.75rem);
+    row-gap: clamp(1.5rem, 2vw, 2.25rem);
+  }
+
+  .desktop-shell .dashboard-grid > .dashboard-card {
+    grid-column: span 6;
+  }
+
+  .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--hero,
+  .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--wide {
+    grid-column: span 12;
+  }
+}
+
+ .desktop-shell .dashboard-grid > * {
+  min-width: 0;
+}
+
+ .desktop-shell :is(.desktop-task-card, .insight-card, .dashboard-card, .workspace-pane, .desktop-panel) {
+  box-sizing: border-box;
+}
+
+ .desktop-shell :is(.desktop-task-card, .insight-card) {
+  width: 100%;
+  padding: clamp(0.9rem, 1.8vw, 1.35rem);
+  border-radius: var(--desktop-radius-card, 18px);
+}
+
+ .desktop-shell .workspace-columns {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+@media (min-width: 1024px) {
+  .desktop-shell .workspace-columns {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+ .desktop-shell .workspace-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dashboard-section-spacing);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .desktop-shell .workspace-column {
+    max-height: calc(100vh - var(--desktop-header-height) - 2rem);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    scrollbar-gutter: stable both-edges;
+  }
 }
 
  .desktop-shell .desktop-workspace-region {
@@ -382,12 +491,6 @@ html[data-theme="professional"] {
   }
 }
 
-@media (min-width: 1024px) {
-   .desktop-shell .desktop-main-inner {
-    grid-template-columns: var(--desktop-rail-width) minmax(0, 1fr);
-  }
-}
-
  .desktop-shell .desktop-rail {
   align-self: flex-start;
 }
@@ -425,10 +528,6 @@ html[data-theme="professional"] {
 }
 
 @media (max-width: 1023px) {
-   .desktop-shell .desktop-main-inner {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
    .desktop-shell .desktop-rail-sticky {
     position: static;
     padding: 0;
@@ -444,16 +543,7 @@ html[data-theme="professional"] {
 }
 
  .desktop-shell .desktop-dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr);
-  gap: 1rem;
   align-items: flex-start;
-}
-
-@media (max-width: 1024px) {
-   .desktop-shell .desktop-dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 
@@ -775,16 +865,7 @@ html[data-theme="professional"] {
 }
 
  .desktop-shell .desktop-reminders-layout {
-  display: flex;
-  flex-direction: column;
-}
-
-@media (min-width: 1024px) {
-   .desktop-shell .desktop-reminders-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
-    align-items: stretch;
-  }
+  width: 100%;
 }
 
  .desktop-shell .desktop-reminders-column {
@@ -794,15 +875,9 @@ html[data-theme="professional"] {
  .desktop-shell .desktop-reminders-scroll {
   flex: 1;
   min-height: 0;
-}
-
-@media (min-width: 1024px) {
-   .desktop-shell .desktop-reminders-scroll {
-    height: clamp(24rem, 60vh, 32rem);
-    overflow-y: auto;
-    padding-right: 0.25rem;
-    scrollbar-gutter: stable both-edges;
-  }
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable both-edges;
 }
 
  .desktop-shell .desktop-reminders-list {
