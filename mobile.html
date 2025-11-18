@@ -3596,72 +3596,51 @@
             </div>
           </div>
         </header>
+        <!-- Enhanced Notebook Card -->
         <div
           id="scratch-notes-card"
-          class="scratch-notes-card bg-base-100 border border-base-300 rounded-xl shadow-sm p-3 space-y-3"
+          class="scratch-notes-card rounded-xl bg-base-100 shadow-sm p-4 space-y-4"
         >
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-sm font-semibold text-base-content">Scratch notes</h2>
+          <!-- Header Row -->
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Notebook</h2>
             <button
+              id="openSavedNotesSheet"
               type="button"
-              class="btn btn-ghost btn-sm"
-              data-action="open-saved-notes"
+              class="btn btn-sm btn-ghost text-sm font-medium"
             >
               Saved notes
             </button>
           </div>
 
-          <div class="space-y-3">
-            <div class="space-y-1">
-              <label
-                for="noteTitleMobile"
-                class="text-xs font-semibold tracking-wide text-base-content/70 uppercase"
-              >
-                Title
-              </label>
-              <input
-                id="noteTitleMobile"
-                type="text"
-                class="input input-bordered input-sm w-full text-sm text-base-content"
-                placeholder="e.g. Kids basketball schedule – this weekend"
-              />
-            </div>
+          <!-- Title input -->
+          <input
+            id="noteTitleMobile"
+            type="text"
+            placeholder="Title"
+            class="input input-sm w-full"
+            autocomplete="off"
+          />
 
-            <div class="space-y-1">
-              <label
-                for="noteBodyMobile"
-                class="text-xs font-semibold tracking-wide text-base-content/70 uppercase"
-              >
-                Note
-              </label>
-              <div class="note-body-wrapper">
-                <div
-                  class="note-body-field"
-                  data-role="note-body-field"
-                  data-placeholder="Start typing your scratch note…"
-                  data-has-content="false"
-                >
-                  <textarea
-                    id="noteBodyMobile"
-                    class="textarea textarea-bordered w-full h-48 text-sm text-base-content"
-                    placeholder="Start typing your scratch note…"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+          <!-- Rich Text Editor -->
+          <div id="scratchNotesEditor" class="notes-editor h-48"></div>
 
-            <div id="scratch-notes-actions" class="flex justify-end gap-2">
-              <button
-                id="noteNewMobile"
-                type="button"
-                class="btn btn-outline btn-sm"
-              >
-                New note
-              </button>
-              <button id="noteSaveMobile" class="btn btn-primary btn-sm" type="button">
-                Save note
-              </button>
-            </div>
+          <!-- Action Bar -->
+          <div class="flex justify-end gap-2">
+            <button
+              id="noteNewMobile"
+              type="button"
+              class="btn btn-sm btn-secondary"
+            >
+              New
+            </button>
+            <button
+              id="noteSaveMobile"
+              type="button"
+              class="btn btn-sm btn-primary"
+            >
+              Save
+            </button>
           </div>
         </div>
         <div
