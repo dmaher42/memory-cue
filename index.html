@@ -385,9 +385,11 @@
         <div class="desktop-main-region space-y-8">
       <section data-route="dashboard" class="space-y-6 lg:space-y-12">
         <div class="space-y-6">
-          <section class="desktop-hero">
+          <!-- Hero section: use equal columns on large screens to prevent narrow side panel -->
+          <section class="desktop-hero grid gap-4 lg:grid-cols-2">
             <div class="hero-content max-w-none w-full">
-              <div class="desktop-dashboard-grid dashboard-grid grid gap-4 lg:grid-cols-[2fr,1.1fr]">
+              <div class="desktop-dashboard-grid dashboard-grid grid gap-4 lg:grid-cols-2">
+                <!-- Left/main column: ensure cards stack with consistent spacing -->
                 <div class="space-y-4">
                   <article class="h-full rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
@@ -509,6 +511,7 @@
                   </article>
                 </div>
 
+                <!-- Right/side column: same spacing as main column -->
                 <div class="space-y-4">
                   <article class="rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
                     <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
