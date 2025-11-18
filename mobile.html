@@ -2573,7 +2573,7 @@
     }
 
     /* Round icon buttons */
-    header.sticky button {
+    header.sticky .header-icon-btn {
       width: 1.5rem;
       height: 1.5rem;
       border-radius: 999px;
@@ -2589,8 +2589,8 @@
       transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    header.sticky button:hover,
-    header.sticky button:focus-visible {
+    header.sticky .header-icon-btn:hover,
+    header.sticky .header-icon-btn:focus-visible {
       background-color: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
       color: color-mix(in srgb, var(--card-bg) 96%, transparent);
       box-shadow: 0 16px 30px rgba(79, 70, 229, 0.22);
@@ -2598,13 +2598,9 @@
       outline: none;
     }
 
-    header.sticky button:focus-visible {
+    header.sticky .header-icon-btn:focus-visible {
       outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
       outline-offset: 2px;
-    }
-
-    header.sticky .mc-add-btn {
-      padding-block: 0.15rem !important;
     }
 
     header.sticky .header-action-group {
@@ -2613,31 +2609,31 @@
       gap: 0.5rem;
     }
 
-    header.sticky button span {
+    header.sticky .header-icon-btn span {
       font-size: 1.2rem;
       line-height: 1;
     }
 
-    header.sticky button:active {
+    header.sticky .header-icon-btn:active {
       transform: scale(0.95);
       background-color: color-mix(in srgb, var(--accent-color) 25%, var(--mobile-header-button-bg) 75%);
       box-shadow: 0 8px 16px rgba(79, 70, 229, 0.18);
     }
 
-    html[data-theme="dark"] header.sticky button,
-    html.dark header.sticky button {
+    html[data-theme="dark"] header.sticky .header-icon-btn,
+    html.dark header.sticky .header-icon-btn {
       box-shadow: 0 12px 26px rgba(15, 23, 42, 0.55);
     }
 
-    html[data-theme="dark"] header.sticky button:hover,
-    html[data-theme="dark"] header.sticky button:focus-visible,
-    html.dark header.sticky button:hover,
-    html.dark header.sticky button:focus-visible {
+    html[data-theme="dark"] header.sticky .header-icon-btn:hover,
+    html[data-theme="dark"] header.sticky .header-icon-btn:focus-visible,
+    html.dark header.sticky .header-icon-btn:hover,
+    html.dark header.sticky .header-icon-btn:focus-visible {
       box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
     }
 
-    html[data-theme="dark"] header.sticky button:active,
-    html.dark header.sticky button:active {
+    html[data-theme="dark"] header.sticky .header-icon-btn:active,
+    html.dark header.sticky .header-icon-btn:active {
       box-shadow: 0 10px 22px rgba(15, 23, 42, 0.55);
     }
 
@@ -2948,79 +2944,94 @@
     }
   </style>
 
-  <header class="sticky top-0 z-20 text-black shadow-md bg-white/80 backdrop-blur">
-    <div class="mx-auto max-w-md px-3 py-3 flex items-center justify-between gap-3">
-      <div class="header-action-group">
+  <header class="sticky top-0 z-40 w-full">
+    <div class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 bg-base-100/95 border-b border-base-200 shadow-sm backdrop-blur">
+      <div class="flex items-center gap-3 min-w-0">
         <button
           id="btn-open-drawer"
           type="button"
-          class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-200/70 bg-white/90 text-slate-800 shadow-sm transition"
+          class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full border border-base-200/70 bg-base-100 text-base-content shadow-sm transition"
           aria-label="Open navigation menu"
           aria-expanded="false"
         >
           <span class="text-xl leading-none" aria-hidden="true">🏠</span>
         </button>
+        <div class="flex flex-col min-w-0">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">Memory Cue</p>
+          <p class="text-base font-semibold text-base-content truncate">Reminders</p>
+        </div>
       </div>
 
-      <div class="relative header-action-group">
+      <div class="flex items-center gap-2 flex-shrink-0">
         <button
-          id="overflowMenuBtn"
+          id="addReminderBtn"
           type="button"
-          class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-200/70 bg-white/90 text-slate-800 shadow-sm transition"
-          aria-label="Open quick settings"
-          aria-haspopup="menu"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
+          class="mc-add-btn btn btn-primary btn-sm gap-1"
+          data-open-add-task
         >
-          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+          <span class="mc-add-btn-label">Add reminder</span>
         </button>
+        <div class="relative">
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full border border-base-200/70 bg-base-100 text-base-content shadow-sm transition"
+            aria-label="Open quick settings"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+          </button>
 
-        <div
-          id="overflowMenu"
-          class="hidden quick-actions-panel absolute right-0 mt-2"
-          role="menu"
-          aria-hidden="true"
-          aria-labelledby="overflowMenuHeading"
-        >
-          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-          <ul class="quick-actions" role="presentation">
-            <li role="none">
-              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                <span class="sr-only">Dictate reminder</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                <span class="sr-only">Open settings</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                <span class="sr-only">Toggle theme</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                <span class="sr-only">Sign in</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                <span class="sr-only">Sign out</span>
-              </button>
-            </li>
-          </ul>
+          <div
+            id="overflowMenu"
+            class="hidden quick-actions-panel absolute right-0 mt-2"
+            role="menu"
+            aria-hidden="true"
+            aria-labelledby="overflowMenuHeading"
+          >
+            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+            <ul class="quick-actions" role="presentation">
+              <li role="none">
+                <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                  <span class="sr-only">Dictate reminder</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                  <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                  <span class="sr-only">Open settings</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                  <span class="sr-only">Toggle theme</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                  <span class="sr-only">Sign in</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                  <span class="sr-only">Sign out</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -3271,19 +3282,14 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <div class="reminders-header-card bg-base-100 border border-base-300 rounded-2xl shadow-sm w-full px-4 py-3 space-y-2">
-        <div class="flex items-center justify-center gap-2">
-                <button
-            id="addReminderBtn"
-            type="button"
-            class="mc-add-btn mc-add-btn-wide btn btn-primary btn-sm flex-shrink-0 rounded-full shadow-md"
-            data-open-add-task
-          >
-            <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-            <span class="mc-add-btn-label">Add reminder</span>
-          </button>
+      <div class="reminders-header-card bg-base-100 border border-base-300 rounded-2xl shadow-sm w-full px-4 py-3 space-y-3">
+        <div class="space-y-1">
+          <div class="flex items-baseline justify-between gap-2">
+            <h2 class="text-lg font-semibold text-base-content">Reminders</h2>
+          </div>
+          <p class="text-sm text-base-content/70">Quick capture with text or voice — everything syncs here.</p>
         </div>
-             <div id="quickAddBar" class="mc-quick-add-bar w-full" aria-label="Quick add reminder">
+        <div id="quickAddBar" class="mc-quick-add-bar w-full" aria-label="Quick add reminder">
           <div class="mc-quick-add-inner space-y-1.5 w-full">
             <div class="mc-quick-status flex items-center gap-2 text-xs text-base-content/60">
               <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
