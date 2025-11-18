@@ -289,16 +289,6 @@
       }
     }
 
-    .google-user-chip {
-      display: none;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .google-user-chip:not(:empty) {
-      display: inline-flex;
-    }
-
     #auth-feedback:empty {
       display: none;
     }
@@ -392,43 +382,14 @@
             data-account-collapsed="true"
           >
             <button
-              id="desktopAccountToggle"
+              id="googleSignOutBtn"
               type="button"
-              class="desktop-account-toggle btn btn-sm btn-ghost"
-              aria-expanded="false"
-              aria-controls="desktopAccountPanel"
-              data-collapsed-label="Account"
-              data-expanded-label="Account"
-              data-collapsed-aria="Show account controls"
-              data-expanded-aria="Hide account controls"
+              class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content"
             >
-              <span class="desktop-account-toggle__label" data-account-toggle-label aria-hidden="true">Account</span>
-              <span class="sr-only" data-account-toggle-a11y>Show account controls</span>
-              <span class="desktop-account-toggle__chevron" aria-hidden="true"></span>
+              Sign out
             </button>
-            <div
-              id="desktopAccountPanel"
-              class="desktop-account-panel"
-              aria-hidden="true"
-              data-account-panel
-              inert
-            >
-              <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
-                <div
-                  id="googleUserName"
-                  class="google-user-chip text-xs sm:text-sm font-medium text-base-content/80 rounded-full border border-base-200 bg-base-100/80 px-3 py-1"
-                ></div>
-                <button id="googleSignInBtn" type="button" class="btn btn-sm btn-primary w-full sm:w-auto">Sign in</button>
-                <button
-                  id="googleSignOutBtn"
-                  type="button"
-                  class="hidden btn btn-sm btn-outline border-base-300 bg-base-100/80 text-base-content w-full sm:w-auto"
-                >
-                  Sign out
-                </button>
-              </div>
-            </div>
           </div>
+          <div id="auth-feedback" class="text-xs text-base-content/70" role="status" aria-live="polite"></div>
         </div>
       </div>
     </aside>
@@ -440,9 +401,9 @@
           <section class="desktop-hero">
             <div class="hero-content max-w-none w-full">
               <div class="desktop-dashboard-grid dashboard-grid">
-                <article class="dashboard-card dashboard-card--hero h-full">
+                <article class="dashboard-card dashboard-card--compact dashboard-card--weather h-full">
                     <div class="dashboard-card-content">
-                      <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center justify-between gap-3 weather-card-header">
                         <div class="space-y-1">
                           <p class="dashboard-card-eyebrow">Weather</p>
                           <p id="weatherStatus" class="text-xs text-base-content/60" role="status" aria-live="polite">
@@ -451,11 +412,11 @@
                         </div>
                         <span id="weatherIcon" class="text-3xl" aria-hidden="true">⛅️</span>
                       </div>
-                      <div class="flex flex-wrap items-end gap-4">
+                      <div class="flex flex-wrap items-end gap-3 weather-card-main">
                         <p id="weatherTemperature" class="dashboard-card-metric">--°C</p>
                         <p id="weatherDescription" class="dashboard-card-text">Awaiting update</p>
                       </div>
-                      <dl class="grid gap-3 sm:grid-cols-2">
+                      <dl class="grid gap-3 sm:grid-cols-2 weather-card-stats">
                         <div>
                           <dt class="text-[11px] font-semibold tracking-wide uppercase text-base-content/60">Location</dt>
                           <dd id="weatherLocation" class="text-xs text-base-content/80">Locating…</dd>
@@ -473,20 +434,9 @@
                           <dd id="weatherFeelsLike" class="text-xs text-base-content/80">--°C</dd>
                         </div>
                       </dl>
-                      <p id="weatherFootnote" class="text-xs text-base-content/60">We use your approximate location to calculate these details.</p>
-                      <div class="weather-radar" aria-label="Live radar" role="group">
-                        <p class="weather-radar__message text-xs text-base-content/60">
-                          Live radar opens in a new tab due to browser security settings.
-                        </p>
-                        <a
-                          class="btn btn-primary btn-sm mt-2"
-                          href="https://www.windy.com/-Weather-radar-radar"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Open Windy radar
-                        </a>
-                      </div>
+                      <p id="weatherFootnote" class="text-xs text-base-content/60 weather-card-footnote">
+                        We use your approximate location to calculate these details.
+                      </p>
                     </div>
                   </article>
 
