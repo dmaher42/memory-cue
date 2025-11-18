@@ -3656,48 +3656,43 @@
             id="saved-notes-panel"
             class="saved-notes-panel mt-4 bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 space-y-2 fixed inset-x-0 bottom-0 z-40 max-w-md mx-auto rounded-t-3xl shadow-xl border-t border-base-300 pt-3 pb-4 transition-transform flex flex-col max-h-[80vh]"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div id="saved-notes-header" class="space-y-1 mb-1">
-                <h3 id="savedNotesSheetTitle" class="text-sm font-semibold text-base-content/90">Saved notes</h3>
-                <p class="text-xs text-base-content/70">Tap a note to load it here.</p>
+            <div class="flex flex-col max-h-[70vh]">
+              <div class="flex justify-center pt-2 pb-1">
+                <div class="h-1.5 w-10 rounded-full bg-base-300"></div>
               </div>
-              <button
-                type="button"
-                class="btn btn-ghost btn-circle"
-                data-action="close-saved-notes"
-                aria-label="Close saved notes"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div class="flex items-center justify-between gap-2 text-[11px] text-base-content/60" data-note-detail-list>
-              <p id="notesStatusText" class="text-[11px] text-base-content/60 truncate"></p>
-              <span class="flex items-center gap-1 whitespace-nowrap">
-                <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>
-              </span>
-            </div>
-
-            <div class="space-y-2 border border-base-200/70 rounded-2xl bg-base-100/80 px-3 py-3">
-              <label class="sr-only" for="notesFilterMobile">Filter notes</label>
-              <input
-                id="notesFilterMobile"
-                type="search"
-                class="input input-bordered input-sm w-full text-sm text-base-content bg-base-200/80 placeholder:text-base-content/70 placeholder:opacity-80"
-                placeholder="Search saved notes…"
-              />
-              <div class="flex items-center justify-between text-xs font-semibold text-base-content/70">
-                <span class="text-base-content/60 font-medium">Showing</span>
-                <span id="notesCountMobile" class="text-sm font-semibold whitespace-nowrap"></span>
+              <div class="flex items-center justify-between px-4 pb-2">
+                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Saved notes</h3>
+                <button
+                  id="closeSavedNotesSheet"
+                  class="btn btn-xs btn-ghost"
+                  type="button"
+                  data-action="close-saved-notes"
+                  aria-label="Close saved notes"
+                >
+                  Close
+                </button>
               </div>
-            </div>
 
-            <div class="mt-1 max-h-56 overflow-y-auto flex-1 w-full">
-              <ul
-                id="notesListMobile"
-                class="space-y-2 text-sm"
-                aria-label="Saved scratch notes"
-              ></ul>
+              <div class="px-4 pb-2">
+                <input
+                  id="notesSearchMobile"
+                  type="text"
+                  class="input input-sm w-full"
+                  placeholder="Search notes"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="px-2 pb-3 overflow-y-auto">
+                <div
+                  id="notesListMobile"
+                  class="space-y-2 text-sm"
+                  aria-label="Saved scratch notes"
+                >
+                  <!-- Note items are rendered here by JS -->
+                </div>
+              </div>
             </div>
           </div>
         </div>
