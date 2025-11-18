@@ -550,6 +550,10 @@ export async function initReminders(sel = {}) {
   const autoWireAuthButtons =
     typeof sel.autoWireAuthButtons === 'boolean' ? sel.autoWireAuthButtons : variant !== 'desktop';
 
+  // Mobile reminders filter state and cache
+  let mobileRemindersFilterMode = 'all';
+  let mobileRemindersCache = [];
+
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
 
   const clearPlannerReminderContext = () => {
@@ -3220,11 +3224,81 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  function isReminderForTodayMobile(reminder, todayRange) {
+    if (!reminder || typeof reminder !== 'object') {
+      return false;
+    }
+    if (reminder.pinToToday === true) {
+      return true;
+    }
+    if (!reminder.due || !todayRange || !todayRange.start || !todayRange.end) {
+      return false;
+    }
+    const dueDate = new Date(reminder.due);
+    if (Number.isNaN(dueDate.getTime())) {
+      return false;
+    }
+    return dueDate >= todayRange.start && dueDate <= todayRange.end;
+  }
+
+  function filterMobileReminderRows(rows, filterMode, todayRange) {
+    if (filterMode !== 'today') {
+      return rows;
+    }
+    return Array.isArray(rows)
+      ? rows.filter((entry) => isReminderForTodayMobile(entry, todayRange))
+      : [];
+  }
+
+  function setupMobileReminderTabs() {
+    if (variant !== 'mobile' || typeof document === 'undefined') {
+      return;
+    }
+    if (setupMobileReminderTabs._wired) {
+      return;
+    }
+    const tabButtons = document.querySelectorAll('#view-reminders [data-reminders-tab]');
+    if (!tabButtons.length) {
+      return;
+    }
+    setupMobileReminderTabs._wired = true;
+
+    const syncTabUiState = () => {
+      tabButtons.forEach((button) => {
+        const mode = button.getAttribute('data-reminders-tab');
+        const isActive = mode === mobileRemindersFilterMode;
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (isActive) {
+          button.classList.add('reminders-tab-active');
+        } else {
+          button.classList.remove('reminders-tab-active');
+        }
+      });
+    };
+
+    syncTabUiState();
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.getAttribute('data-reminders-tab');
+        if (!mode || mode === mobileRemindersFilterMode) {
+          return;
+        }
+        mobileRemindersFilterMode = mode;
+        syncTabUiState();
+        if (Array.isArray(mobileRemindersCache)) {
+          render();
+        }
+      });
+    });
+  }
+
   function render(){
     const now = new Date();
     const localNow = new Date(now);
     const t0 = new Date(localNow); t0.setHours(0,0,0,0);
     const t1 = new Date(localNow); t1.setHours(23,59,59,999);
+    const todayRange = { start: t0, end: t1 };
 
     clearDragHighlights();
     sortItemsByOrder(items);
@@ -3286,6 +3360,11 @@ export async function initReminders(sel = {}) {
     let rows = items.slice();
 
     sortItemsByOrder(rows);
+
+    if (variant === 'mobile') {
+      mobileRemindersCache = rows.slice();
+      rows = filterMobileReminderRows(mobileRemindersCache, mobileRemindersFilterMode, todayRange);
+    }
 
     const highlightToday = true;
 
@@ -3865,6 +3944,7 @@ export async function initReminders(sel = {}) {
     }
   });
 
+  setupMobileReminderTabs();
   setupDragAndDrop();
   rescheduleAllReminders();
   render();
