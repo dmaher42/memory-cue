@@ -2769,13 +2769,13 @@ function renderPlannerLessons(plan) {
                 >
                   Delete
                 </button>
+              </div>
             </div>
-          </div>
-          ${detailsSection}
-          ${notesSection}
-          <div class="flex flex-wrap gap-2">
-            <button
-              type="button"
+            ${detailsSection}
+            ${notesSection}
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
                 class="btn btn-sm btn-primary"
                 data-planner-action="create-reminder"
                 data-open-reminder-modal="true"
