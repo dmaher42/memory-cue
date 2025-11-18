@@ -3508,15 +3508,16 @@ function renderDailyTasks(tasks) {
     .map((task, index) => {
       const safeText = escapeCueText(task?.text || '');
       const completed = Boolean(task?.completed);
+      const checkboxId = `daily-task-${index}`;
       const textClasses = ['ml-3', 'flex-1', 'text-sm', 'sm:text-base', 'text-base-content'];
       if (completed) {
         textClasses.push('line-through', 'text-opacity-50');
       }
       return `
-        <div class="flex items-center p-3 border-b border-base-200" data-task-index="${index}">
-          <input type="checkbox" class="checkbox checkbox-sm" data-task-index="${index}" data-task-text="${safeText}" ${completed ? 'checked' : ''} />
+        <label class="flex items-center p-3 border-b border-base-200" data-task-index="${index}" for="${checkboxId}">
+          <input id="${checkboxId}" type="checkbox" class="checkbox checkbox-sm" data-task-index="${index}" ${completed ? 'checked' : ''} />
           <span class="${textClasses.join(' ')}">${safeText}</span>
-        </div>
+        </label>
       `;
     })
     .join('');
