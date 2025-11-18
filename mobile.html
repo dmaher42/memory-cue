@@ -3959,6 +3959,10 @@
         const metaSlot = document.createElement('div');
         metaSlot.className = 'reminder-meta-slot';
 
+        const metaActions = document.createElement('div');
+        metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
+        metaSlot.appendChild(metaActions);
+
         let extraMetaEl = null;
         if (metaTextEl instanceof HTMLElement) {
           const segments = (metaTextEl.textContent || '')
@@ -3976,7 +3980,7 @@
             const dueEl = document.createElement('span');
             dueEl.className = 'reminder-due';
             dueEl.textContent = dueSegments.join(' • ');
-            metaSlot.appendChild(dueEl);
+            metaActions.appendChild(dueEl);
           }
           if (segments.length) {
             metaTextEl.textContent = segments.join(' • ');
@@ -3985,6 +3989,22 @@
             metaTextEl.remove();
           }
         }
+
+        const todayToggleWrapper = document.createElement('label');
+        todayToggleWrapper.className =
+          'reminder-today-toggle flex items-center gap-1 text-[11px] text-base-content/70 select-none whitespace-nowrap';
+        todayToggleWrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
+
+        const todayToggle = document.createElement('input');
+        todayToggle.type = 'checkbox';
+        todayToggle.className = 'checkbox checkbox-xs align-middle';
+        todayToggle.setAttribute('data-role', 'reminder-today-toggle');
+
+        const todayToggleText = document.createElement('span');
+        todayToggleText.textContent = 'Today';
+
+        todayToggleWrapper.append(todayToggle, todayToggleText);
+        metaActions.appendChild(todayToggleWrapper);
 
         let priorityChip = null;
         const secondaryChips = [];
