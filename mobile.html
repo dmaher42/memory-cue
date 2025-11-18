@@ -3936,9 +3936,86 @@
         }
       };
 
+      const createTodayToggle = () => {
+        const wrapper = document.createElement('label');
+        wrapper.className =
+          'reminder-today-toggle flex items-center gap-1 text-[11px] text-base-content/70 select-none whitespace-nowrap';
+        wrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'checkbox checkbox-xs align-middle';
+        checkbox.setAttribute('data-role', 'reminder-today-toggle');
+
+        const labelText = document.createElement('span');
+        labelText.textContent = 'Today';
+
+        wrapper.append(checkbox, labelText);
+        return wrapper;
+      };
+
       const restructureReminderCard = (card) => {
         if (!(card instanceof HTMLElement)) return;
         if (card.dataset.compactLayout === 'true') return;
+
+        const modernTitleSlot = card.querySelector('.reminder-title-slot');
+        if (modernTitleSlot instanceof HTMLElement) {
+          const contentColumn = modernTitleSlot.parentElement;
+          if (!(contentColumn instanceof HTMLElement)) return;
+
+          const existingToggle = card.querySelector('[data-role="reminder-today-toggle-wrapper"]');
+          if (existingToggle) {
+            card.dataset.compactLayout = 'true';
+            if (list.classList.contains('grid-cols-2')) {
+              card.dataset.compact = 'true';
+            } else {
+              card.removeAttribute('data-compact');
+            }
+            return;
+          }
+
+          const trailingChildren = Array.from(contentColumn.children).filter(
+            (child) => child instanceof HTMLElement && child !== modernTitleSlot
+          );
+
+          const primaryRow = document.createElement('div');
+          primaryRow.className = 'reminder-primary-row flex w-full items-start justify-between gap-2 flex-wrap';
+
+          const titleCol = document.createElement('div');
+          titleCol.className = 'flex-1 min-w-0';
+          titleCol.appendChild(modernTitleSlot);
+
+          const metaSlot = document.createElement('div');
+          metaSlot.className = 'reminder-meta-slot flex items-center gap-2 shrink-0';
+          const metaActions = document.createElement('div');
+          metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
+          metaActions.appendChild(createTodayToggle());
+          metaSlot.appendChild(metaActions);
+
+          primaryRow.append(titleCol, metaSlot);
+          contentColumn.replaceChildren(primaryRow);
+
+          if (trailingChildren.length) {
+            const secondaryRow = document.createElement('div');
+            secondaryRow.className = 'reminder-secondary-row flex flex-wrap gap-2 items-center w-full text-xs text-base-content/70';
+            trailingChildren.forEach((child) => {
+              if (child instanceof HTMLElement) {
+                secondaryRow.appendChild(child);
+              }
+            });
+            if (secondaryRow.childElementCount) {
+              contentColumn.appendChild(secondaryRow);
+            }
+          }
+
+          card.dataset.compactLayout = 'true';
+          if (list.classList.contains('grid-cols-2')) {
+            card.dataset.compact = 'true';
+          } else {
+            card.removeAttribute('data-compact');
+          }
+          return;
+        }
 
         const content = card.querySelector('.task-content') || card;
         if (!(content instanceof HTMLElement)) return;
@@ -4006,21 +4083,7 @@
           }
         }
 
-        const todayToggleWrapper = document.createElement('label');
-        todayToggleWrapper.className =
-          'reminder-today-toggle flex items-center gap-1 text-[11px] text-base-content/70 select-none whitespace-nowrap';
-        todayToggleWrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
-
-        const todayToggle = document.createElement('input');
-        todayToggle.type = 'checkbox';
-        todayToggle.className = 'checkbox checkbox-xs align-middle';
-        todayToggle.setAttribute('data-role', 'reminder-today-toggle');
-
-        const todayToggleText = document.createElement('span');
-        todayToggleText.textContent = 'Today';
-
-        todayToggleWrapper.append(todayToggle, todayToggleText);
-        metaActions.appendChild(todayToggleWrapper);
+        metaActions.appendChild(createTodayToggle());
 
         let priorityChip = null;
         const secondaryChips = [];
