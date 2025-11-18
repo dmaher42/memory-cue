@@ -3643,16 +3643,19 @@ async function loadDailyList() {
   const todayId = getTodayDateId();
   const formatted = formatDateForHeader(todayId);
   dailyListHeader.textContent = formatted ? `Today's List - ${formatted}` : "Today's List";
+  let renderedLocalFallback = false;
   if (shouldUseLocalDailyList) {
     showDailyListPermissionNotice();
     const localTasks = getLocalDailyTasks(todayId);
     currentDailyTasks = localTasks;
     renderDailyTasks(localTasks);
-    return Promise.resolve(localTasks);
+    renderedLocalFallback = true;
   }
   if (!dailyListLoadPromise) {
-    dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60">Loading tasks…</p>';
-    updateClearCompletedButtonState([]);
+    if (!renderedLocalFallback) {
+      dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60">Loading tasks…</p>';
+      updateClearCompletedButtonState([]);
+    }
     dailyListLoadPromise = (async () => {
       try {
         const firestore = await ensureDailyListFirestore();
@@ -3666,19 +3669,23 @@ async function loadDailyList() {
         hideDailyListPermissionNotice();
         return currentDailyTasks;
       } catch (error) {
-        if (isPermissionDeniedError(error)) {
+        const permissionError = isPermissionDeniedError(error);
+        if (permissionError) {
           console.warn('Falling back to local daily tasks due to permission issue', error);
           shouldUseLocalDailyList = true;
           showDailyListPermissionNotice();
-          const localTasks = getLocalDailyTasks(todayId);
-          currentDailyTasks = localTasks;
-          renderDailyTasks(localTasks);
-          return localTasks;
+        } else {
+          console.error('Failed to load daily list', error);
         }
-        console.error('Failed to load daily list', error);
-        dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
-        currentDailyTasks = [];
-        updateClearCompletedButtonState(currentDailyTasks);
+        const localTasks = getLocalDailyTasks(todayId);
+        currentDailyTasks = localTasks;
+        if (localTasks.length || renderedLocalFallback) {
+          renderDailyTasks(localTasks);
+        } else {
+          dailyTasksContainer.innerHTML = '<p class="text-sm text-error">Unable to load daily tasks right now.</p>';
+          currentDailyTasks = [];
+          updateClearCompletedButtonState(currentDailyTasks);
+        }
         return currentDailyTasks;
       }
     })().finally(() => {
@@ -3691,10 +3698,6 @@ async function loadDailyList() {
 async function addTaskToDailyList(task) {
   const todayId = getTodayDateId();
   const normalisedTask = normaliseDailyTask(task);
-  if (shouldUseLocalDailyList) {
-    appendLocalDailyTask(todayId, normalisedTask);
-    return;
-  }
   try {
     const firestore = await ensureDailyListFirestore();
     const ref = getDailyListDocRef(firestore, todayId);
@@ -3712,6 +3715,8 @@ async function addTaskToDailyList(task) {
       }
     }
     appendLocalDailyTask(todayId, normalisedTask);
+    shouldUseLocalDailyList = false;
+    hideDailyListPermissionNotice();
   } catch (error) {
     if (isPermissionDeniedError(error)) {
       console.warn('Saving task locally because cloud sync is unavailable', error);
@@ -3727,10 +3732,6 @@ async function addTaskToDailyList(task) {
 async function saveDailyTasks(tasks) {
   const todayId = getTodayDateId();
   const payload = normaliseDailyTaskArray(tasks);
-  if (shouldUseLocalDailyList) {
-    setLocalDailyTasks(todayId, payload);
-    return;
-  }
   try {
     const firestore = await ensureDailyListFirestore();
     const ref = getDailyListDocRef(firestore, todayId);
@@ -3740,6 +3741,8 @@ async function saveDailyTasks(tasks) {
       await firestore.updateDoc(ref, { tasks: payload });
     }
     setLocalDailyTasks(todayId, payload);
+    shouldUseLocalDailyList = false;
+    hideDailyListPermissionNotice();
   } catch (error) {
     if (isPermissionDeniedError(error)) {
       console.warn('Persisting daily tasks locally because cloud sync is unavailable', error);
