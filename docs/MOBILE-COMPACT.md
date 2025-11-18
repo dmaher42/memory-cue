@@ -13,7 +13,7 @@ import './styles/mobile-compact.css';
 2) If your app is a static site with `public/index.html` or `public/mobile.html`, add a link tag inside the `<head>`:
 
 ```html
-<link rel="stylesheet" href="./src/styles/mobile-compact.css" />
+<link rel="stylesheet" href="./styles/mobile-compact.css" />
 ```
 
 Notes:
