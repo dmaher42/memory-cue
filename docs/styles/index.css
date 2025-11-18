@@ -320,8 +320,6 @@ html[data-theme="professional"] {
 
  .desktop-shell {
   --desktop-shell-gutter: clamp(1rem, 4vw, 2rem);
-  --desktop-rail-width: clamp(230px, 18vw, 280px);
-  --desktop-rail-sticky-offset: 1.25rem;
 }
 
  .desktop-shell .desktop-main-inner {
@@ -332,84 +330,6 @@ html[data-theme="professional"] {
   padding: 0 var(--desktop-shell-gutter) 2.5rem;
   width: 100%;
   min-height: 0;
-}
-
-@media (min-width: 1024px) {
-  .desktop-shell .desktop-main-inner {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: clamp(2rem, 3vw, 3rem);
-    align-items: start;
-  }
-
-  .desktop-shell .desktop-main-inner > * {
-    min-width: 0;
-  }
-}
-
- .desktop-shell .dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: clamp(1rem, 2vw, 1.5rem);
-  align-items: stretch;
-}
-
-@media (min-width: 1024px) {
-  .desktop-shell .dashboard-grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: clamp(1.75rem, 2.5vw, 2.75rem);
-    row-gap: clamp(1.5rem, 2vw, 2.25rem);
-  }
-
-  .desktop-shell .dashboard-grid > .dashboard-card {
-    grid-column: span 6;
-  }
-
-  .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--hero,
-  .desktop-shell .dashboard-grid > .dashboard-card.dashboard-card--wide {
-    grid-column: span 12;
-  }
-}
-
- .desktop-shell .dashboard-grid > * {
-  min-width: 0;
-}
-
- .desktop-shell :is(.desktop-task-card, .insight-card, .dashboard-card, .workspace-pane, .desktop-panel) {
-  box-sizing: border-box;
-}
-
- .desktop-shell :is(.desktop-task-card, .insight-card) {
-  width: 100%;
-  padding: clamp(0.9rem, 1.8vw, 1.35rem);
-  border-radius: var(--desktop-radius-card, 18px);
-}
-
- .desktop-shell .workspace-columns {
-  display: grid;
-  gap: clamp(1rem, 2vw, 1.5rem);
-}
-
-@media (min-width: 1024px) {
-  .desktop-shell .workspace-columns {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  }
-}
-
- .desktop-shell .workspace-column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--dashboard-section-spacing);
-  min-width: 0;
-}
-
-@media (min-width: 1024px) {
-  .desktop-shell .workspace-column {
-    max-height: calc(100vh - var(--desktop-header-height) - 2rem);
-    overflow-y: auto;
-    padding-right: 0.25rem;
-    scrollbar-gutter: stable both-edges;
-  }
 }
 
  .desktop-shell .desktop-workspace-region {
@@ -491,54 +411,23 @@ html[data-theme="professional"] {
   }
 }
 
- .desktop-shell .desktop-rail {
-  align-self: flex-start;
-}
+@media (min-width: 1024px) {
+   .desktop-shell .desktop-main-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: clamp(2rem, 3vw, 3rem);
+    align-items: start;
+  }
 
- .desktop-shell .desktop-rail-sticky {
-  position: sticky;
-  top: var(--desktop-rail-sticky-offset);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  padding: 1.25rem;
-  border-radius: 1.5rem;
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 70%, transparent);
-  background: color-mix(in srgb, var(--desktop-header-bg, #e6edff) 65%, transparent);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-}
-
- .desktop-shell .desktop-rail-nav .menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
- .desktop-shell .desktop-rail-nav .btn {
-  width: 100%;
-  justify-content: flex-start;
-}
-
- .desktop-shell .desktop-rail-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 70%, transparent);
+   .desktop-shell .desktop-main-inner > * {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 1023px) {
-   .desktop-shell .desktop-rail-sticky {
-    position: static;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-   .desktop-shell .desktop-rail-controls {
-    border-top: 0;
-    padding-top: 0.5rem;
+   .desktop-shell .desktop-main-inner {
+    display: flex;
+    flex-direction: column;
   }
 }
 
