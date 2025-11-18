@@ -38,9 +38,6 @@ const weatherElements = {
   temperature: document.getElementById('weatherTemperature'),
   description: document.getElementById('weatherDescription'),
   location: document.getElementById('weatherLocation'),
-  wind: document.getElementById('weatherWind'),
-  humidity: document.getElementById('weatherHumidity'),
-  feelsLike: document.getElementById('weatherFeelsLike'),
   footnote: document.getElementById('weatherFootnote'),
   icon: document.getElementById('weatherIcon')
 };
@@ -290,9 +287,6 @@ async function updateWeatherSummary(coords) {
     safeText(weatherElements.temperature, `${Math.round(current.temperature_2m ?? 0)}°C`);
     safeText(weatherElements.description, description.label);
     safeText(weatherElements.location, prettyLocation || coords.label || 'Your area');
-    safeText(weatherElements.wind, `${Math.round(current.wind_speed_10m ?? 0)} km/h`);
-    safeText(weatherElements.humidity, `${Math.round(current.relative_humidity_2m ?? 0)}%`);
-    safeText(weatherElements.feelsLike, `${Math.round(current.apparent_temperature ?? current.temperature_2m ?? 0)}°C`);
     safeText(weatherElements.status, `Updated at ${formatTimeLabel(current.time)}.`);
     safeText(weatherElements.footnote, 'Powered by Open-Meteo');
 
@@ -306,7 +300,15 @@ async function updateWeatherSummary(coords) {
 }
 
 function requestWeather() {
-  if (!weatherElements.status) {
+  const hasWeatherCard =
+    weatherElements.status ||
+    weatherElements.temperature ||
+    weatherElements.description ||
+    weatherElements.location ||
+    weatherElements.footnote ||
+    weatherElements.icon;
+
+  if (!hasWeatherCard) {
     return;
   }
 
