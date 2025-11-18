@@ -20,6 +20,7 @@
       --background-color: #eef2ff;
       --hover-bg: #DCEFE2;
       --shadow-color: rgba(31, 42, 36, 0.08);
+      --true-blue: #0073cf;
       --delete-color: #EF6A6A;
 
       /* Legacy tokens mapped to Calming Tones palette */
@@ -3329,6 +3330,13 @@
       padding-top: 0 !important;
     }
 
+    .reminders-content-shell {
+      background-color: var(--true-blue);
+      border-radius: 1.25rem;
+      padding: 1rem;
+      width: 100%;
+    }
+
     /* Responsive adjustments for narrow screens */
     @media (max-width: 380px) {
       #reminders-slim-header {
@@ -3789,73 +3797,75 @@
           </div>
         </div>
 
-        <div
-          id="quickAddBar"
-          class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2"
-          aria-label="Quick add reminder"
-          hidden
-          data-visible="false"
-          aria-hidden="true"
-        >
-          <div class="w-full flex flex-col gap-2">
-            <div class="flex justify-end">
-              <button
-                id="quickAddClose"
-                type="button"
-                class="mc-quick-close btn btn-ghost btn-circle btn-sm"
-                aria-label="Close quick add"
-              >
-                <span aria-hidden="true">✕</span>
-              </button>
-            </div>
-            <div class="mc-quick-add-inner space-y-1.5 w-full">
-              <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
-                <div class="mc-quick-input-group w-full">
-                  <input
-                  id="quickAddInput"
-                  class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
-                  type="text"
-                  autocomplete="off"
-                  placeholder="Quick reminder…"
-                />
-                <div class="mc-quick-actions flex items-center gap-2">
-                  <button
-                    id="quickAddSubmit"
-                    type="button"
-                    class="mc-quick-submit btn btn-outline btn-sm"
-                    aria-label="Add reminder"
-                  >
-                    Add
-                  </button>
-                  <button
-                    id="quickAddVoice"
-                    type="button"
-                    class="mc-quick-voice btn btn-ghost btn-circle btn-sm"
-                    aria-label="Use voice to add reminder"
-                  >
-                    <span aria-hidden="true">🎤</span>
-                    <span class="sr-only">Use voice to add reminder</span>
-                  </button>
+        <div class="reminders-content-shell space-y-2">
+          <div
+            id="quickAddBar"
+            class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2"
+            aria-label="Quick add reminder"
+            hidden
+            data-visible="false"
+            aria-hidden="true"
+          >
+            <div class="w-full flex flex-col gap-2">
+              <div class="flex justify-end">
+                <button
+                  id="quickAddClose"
+                  type="button"
+                  class="mc-quick-close btn btn-ghost btn-circle btn-sm"
+                  aria-label="Close quick add"
+                >
+                  <span aria-hidden="true">✕</span>
+                </button>
+              </div>
+              <div class="mc-quick-add-inner space-y-1.5 w-full">
+                <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
+                  <div class="mc-quick-input-group w-full">
+                    <input
+                      id="quickAddInput"
+                      class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
+                      type="text"
+                      autocomplete="off"
+                      placeholder="Quick reminder…"
+                    />
+                    <div class="mc-quick-actions flex items-center gap-2">
+                      <button
+                        id="quickAddSubmit"
+                        type="button"
+                        class="mc-quick-submit btn btn-outline btn-sm"
+                        aria-label="Add reminder"
+                      >
+                        Add
+                      </button>
+                      <button
+                        id="quickAddVoice"
+                        type="button"
+                        class="mc-quick-voice btn btn-ghost btn-circle btn-sm"
+                        aria-label="Use voice to add reminder"
+                      >
+                        <span aria-hidden="true">🎤</span>
+                        <span class="sr-only">Use voice to add reminder</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        </div>
 
-        <div id="remindersListMobile" class="space-y-2">
-          <section
-            id="reminderListSection"
-            class="w-full relative"
-          >
-            <div class="w-full" id="remindersWrapper">
-              <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
-              <p id="reminderReorderHint" class="sr-only">
-                Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
-              </p>
-              <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
-            </div>
-          </section>
+          <div id="remindersListMobile" class="space-y-2">
+            <section
+              id="reminderListSection"
+              class="w-full relative"
+            >
+              <div class="w-full" id="remindersWrapper">
+                <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
+                <p id="reminderReorderHint" class="sr-only">
+                  Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
+                </p>
+                <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </section>
