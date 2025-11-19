@@ -871,6 +871,11 @@ const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
 const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
 const plannerPanelElement = document.querySelector('[data-planner-card-panel]');
+const plannerSummaryCountElement = document.getElementById('plannerSummaryCount');
+const plannerSummaryRangeElement = document.getElementById('plannerSummaryRange');
+const plannerInsightsLessonsElement = document.getElementById('plannerInsightsLessons');
+const plannerInsightsSubjectsElement = document.getElementById('plannerInsightsSubjects');
+const plannerInsightsNotesElement = document.getElementById('plannerInsightsNotes');
 const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
 const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
 
@@ -2245,27 +2250,63 @@ function setPlannerLessonNotesOpenState(lessonId, isOpen) {
   persistPlannerNotesOpenState();
 }
 
-const updatePlannerCountDisplay = (sourceLessons) => {
+function resolvePlannerLessons(sourceLessons, fallbackWeekId = defaultPlannerWeekId) {
+  if (Array.isArray(sourceLessons)) {
+    return sourceLessons;
+  }
+  if (sourceLessons && typeof sourceLessons === 'object' && Array.isArray(sourceLessons.lessons)) {
+    return sourceLessons.lessons;
+  }
+  if (typeof fallbackWeekId === 'string' && fallbackWeekId) {
+    return getPlannerLessonsForWeek(fallbackWeekId);
+  }
+  return [];
+}
+
+const updatePlannerCountDisplay = (lessons = []) => {
   if (!plannerCountElement) {
     return;
   }
-  let lessons = [];
-  if (Array.isArray(sourceLessons)) {
-    lessons = sourceLessons;
-  } else if (sourceLessons && typeof sourceLessons === 'object' && Array.isArray(sourceLessons.lessons)) {
-    lessons = sourceLessons.lessons;
-  } else {
-    lessons = getPlannerLessonsForWeek(defaultPlannerWeekId);
-  }
-  plannerCountElement.textContent = String(lessons.length);
+  const total = Array.isArray(lessons) ? lessons.length : 0;
+  plannerCountElement.textContent = String(total);
 };
 
+function updatePlannerInsights(lessons = []) {
+  const lessonList = Array.isArray(lessons) ? lessons : [];
+  if (plannerInsightsLessonsElement) {
+    plannerInsightsLessonsElement.textContent = String(lessonList.length);
+  }
+  if (plannerInsightsSubjectsElement) {
+    const subjectSet = new Set();
+    lessonList.forEach((lesson) => {
+      const label = getLessonSubjectLabel(lesson);
+      if (label) {
+        subjectSet.add(label.toLowerCase());
+      }
+    });
+    plannerInsightsSubjectsElement.textContent = String(subjectSet.size);
+  }
+  if (plannerInsightsNotesElement) {
+    const notesCount = lessonList.filter((lesson) => typeof lesson.notes === 'string' && lesson.notes.trim().length > 0).length;
+    plannerInsightsNotesElement.textContent = String(notesCount);
+  }
+}
+
 function updatePlannerDashboardSummary(plan, fallbackWeekId) {
-  updatePlannerCountDisplay(plan);
+  const lessons = resolvePlannerLessons(plan, fallbackWeekId);
+  updatePlannerCountDisplay(lessons);
+  const targetWeekId = plan?.weekId || fallbackWeekId || defaultPlannerWeekId;
+  const label = getWeekLabel(targetWeekId, { short: true });
   if (plannerSubtitleElement) {
-    const label = getWeekLabel(plan?.weekId || fallbackWeekId, { short: true });
     plannerSubtitleElement.textContent = label || '';
   }
+  if (plannerSummaryCountElement) {
+    plannerSummaryCountElement.textContent = String(lessons.length);
+  }
+  if (plannerSummaryRangeElement) {
+    plannerSummaryRangeElement.textContent = label || '';
+  }
+  updatePlannerInsights(lessons);
 }
 
 function renderPlannerMessage(message, { tone = 'muted' } = {}) {
@@ -2292,6 +2333,9 @@ function updatePlannerWeekRange(weekId) {
   }
   const label = getWeekLabel(weekId);
   plannerWeekRangeElement.textContent = label || '';
+  if (plannerSummaryRangeElement) {
+    plannerSummaryRangeElement.textContent = label || '';
+  }
 }
 
 function getLessonSubjectLabel(lesson) {
@@ -3088,8 +3132,8 @@ function handlePlannerUpdated(event) {
     currentPlannerPlan = plan;
     renderPlannerLessons(plan);
     updatePlannerWeekRange(plan.weekId);
-  }
-  if (plan.weekId === defaultPlannerWeekId) {
+    updatePlannerDashboardSummary(plan, plan.weekId);
+  } else if (plan.weekId === defaultPlannerWeekId) {
     updatePlannerDashboardSummary(plan, defaultPlannerWeekId);
   }
 }
