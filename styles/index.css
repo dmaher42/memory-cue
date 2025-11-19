@@ -2938,6 +2938,10 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   gap: clamp(0.5rem, 1.25vw, 1rem);
 }
 
+.site-footer__inner--compact {
+  padding: clamp(0.5rem, 1.5vw, 0.9rem) clamp(0.75rem, 2vw, 1.25rem);
+}
+
 .site-footer__content {
   display: flex;
   flex-direction: column;
@@ -3046,6 +3050,23 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 0.85rem;
   color: rgba(248, 250, 252, 0.65);
+}
+
+.site-footer__bottom--compact {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-footer__quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.site-footer__quick-links a {
+  text-decoration: none;
+  font-weight: 600;
+  color: rgba(248, 250, 252, 0.85);
 }
 
 .site-footer__social {
