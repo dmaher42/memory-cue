@@ -2843,6 +2843,47 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   font-weight: 600;
 }
 
+[data-route="planner"] .planner-detail-card {
+  border-radius: 1.5rem;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--planner-panel-border, var(--desktop-border-subtle, var(--color-base-300, #d7def1))) 80%,
+    transparent
+  );
+  background: color-mix(in srgb, var(--planner-panel-bg, #ffffff) 85%, transparent);
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+[data-route="planner"] .planner-detail-card--empty {
+  border-style: dashed;
+  text-align: center;
+  color: var(
+    --desktop-text-muted,
+    color-mix(in srgb, var(--color-base-content, #0f172a) 60%, transparent)
+  );
+  background: color-mix(in srgb, var(--planner-panel-bg, #ffffff) 55%, transparent);
+}
+
+[data-route="planner"] .planner-detail-card--content {
+  box-shadow: 0 20px 40px color-mix(
+      in srgb,
+      var(--planner-card-shadow, rgba(15, 23, 42, 0.08)) 60%,
+      transparent
+    ),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+[data-route="planner"] .planner-detail-actions {
+  border-top: 1px solid color-mix(
+    in srgb,
+    var(--planner-panel-border, var(--desktop-border-subtle, var(--color-base-300, #d7def1))) 65%,
+    transparent
+  );
+  padding-top: 1rem;
+  margin-top: 1.25rem;
+}
+
 .mobile-panel--notes {
   --mobile-notes-text-scale: 1;
   --mobile-notes-detail-base: 0.75rem;
