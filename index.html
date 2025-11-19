@@ -1045,7 +1045,48 @@
                         </label>
                       </div>
                     </div>
-                    <div class="planner-detail-panel space-y-6">
+                    <div id="planner-detail-panel" class="planner-detail-panel space-y-6">
+                      <div
+                        class="planner-detail-card planner-detail-card--empty"
+                        data-planner-detail-empty
+                      >
+                        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-base-content/50">Lesson details</p>
+                        <p class="mt-3 text-base text-base-content/70">
+                          Select a lesson card from your weekly plan to view the schedule, summary, and lesson details here.
+                        </p>
+                      </div>
+                      <div
+                        class="planner-detail-card planner-detail-card--content hidden"
+                        data-planner-detail-content
+                        aria-live="polite"
+                      >
+                        <div class="flex flex-wrap items-start justify-between gap-6">
+                          <div class="space-y-2">
+                            <p id="planner-detail-day" class="text-xs font-semibold uppercase tracking-[0.35em] text-base-content/60"></p>
+                            <h4 id="planner-detail-title" class="text-2xl font-semibold text-base-content"></h4>
+                            <p id="planner-detail-summary" class="text-sm text-base-content/80"></p>
+                          </div>
+                          <div class="min-w-[160px] flex flex-col items-end gap-1 text-right">
+                            <span class="text-[0.65rem] uppercase tracking-[0.3em] text-base-content/50">Subject</span>
+                            <div id="planner-detail-subject"></div>
+                          </div>
+                        </div>
+                        <div class="mt-6 space-y-3">
+                          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-base-content/50">Lesson details</p>
+                          <div id="planner-detail-details" class="space-y-3"></div>
+                        </div>
+                        <div id="planner-detail-actions" class="planner-detail-actions flex flex-wrap items-center gap-2">
+                          <button type="button" class="btn btn-outline btn-sm" data-planner-detail-action="duplicate">
+                            Duplicate lesson
+                          </button>
+                          <button type="button" class="btn btn-ghost btn-sm" data-planner-detail-action="reminder">
+                            Create reminder
+                          </button>
+                          <button type="button" class="btn btn-primary btn-sm" data-planner-detail-action="resources">
+                            Add resources
+                          </button>
+                        </div>
+                      </div>
                       <div class="planner-week-grid" data-planner-grid></div>
                     </div>
                   </div>
