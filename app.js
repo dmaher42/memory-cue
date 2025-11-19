@@ -875,7 +875,7 @@ const plannerTemplateSelect = document.getElementById('planner-template-select')
 const plannerTemplateSaveButton = document.getElementById('planner-template-save-btn');
 const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
 const plannerSubjectFilterSelect = document.getElementById('planner-subject-filter');
-const plannerPanelElement = document.querySelector('.desktop-panel--planner');
+const plannerPanelElement = document.querySelector('[data-planner-card-panel]');
 const plannerDetailPanel = document.getElementById('planner-detail-panel');
 const plannerDetailEmptyState = plannerDetailPanel?.querySelector('[data-planner-detail-empty]');
 const plannerDetailContent = plannerDetailPanel?.querySelector('[data-planner-detail-content]');
@@ -885,6 +885,159 @@ const plannerDetailSummaryElement = document.getElementById('planner-detail-summ
 const plannerDetailSubjectElement = document.getElementById('planner-detail-subject');
 const plannerDetailDetailsElement = document.getElementById('planner-detail-details');
 const plannerDetailActionsContainer = document.getElementById('planner-detail-actions');
+const plannerSection = document.querySelector('section[data-route="planner"]');
+const plannerSupportPanels = plannerSection ? Array.from(plannerSection.querySelectorAll('[data-planner-panel]')) : [];
+const plannerPanelToggleButtons = plannerSection ? Array.from(plannerSection.querySelectorAll('[data-planner-panel-toggle]')) : [];
+const plannerPanelCloseButtons = plannerSection ? Array.from(plannerSection.querySelectorAll('[data-planner-panel-close]')) : [];
+const plannerSupportCollapseButton = plannerSection?.querySelector('[data-planner-support-collapse]');
+
+function initPlannerLayoutControls() {
+  if (!plannerSection || !plannerSupportPanels.length) {
+    return;
+  }
+
+  const desktopMediaQuery =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(min-width: 1024px)')
+      : null;
+
+  const getPlannerPanelByName = (name) =>
+    plannerSupportPanels.find((panel) => panel.getAttribute('data-planner-panel') === name) || null;
+
+  const scrollPlannerPanelIntoView = (panel) => {
+    if (!panel) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      if (typeof panel.scrollIntoView === 'function') {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  };
+
+  const updatePlannerSupportToggleLabel = (state) => {
+    if (!plannerSupportCollapseButton) {
+      return;
+    }
+
+    const expandedLabel = plannerSupportCollapseButton.getAttribute('data-expanded-label') || 'Hide panels';
+    const collapsedLabel = plannerSupportCollapseButton.getAttribute('data-collapsed-label') || 'Show panels';
+    const isExpanded = state !== 'collapsed';
+    plannerSupportCollapseButton.textContent = isExpanded ? expandedLabel : collapsedLabel;
+    plannerSupportCollapseButton.setAttribute('aria-expanded', String(isExpanded));
+  };
+
+  const setPlannerSupportState = (state) => {
+    plannerSection.dataset.plannerSupportState = state;
+    updatePlannerSupportToggleLabel(state);
+    if (desktopMediaQuery?.matches) {
+      const isCollapsed = state === 'collapsed';
+      plannerSupportPanels.forEach((panel) => {
+        panel.hidden = isCollapsed;
+      });
+    }
+  };
+
+  const togglePlannerSupportState = () => {
+    const nextState = plannerSection.dataset.plannerSupportState === 'collapsed' ? 'expanded' : 'collapsed';
+    setPlannerSupportState(nextState);
+  };
+
+  const syncPlannerPanelsForViewport = (isDesktop) => {
+    if (isDesktop) {
+      const state = plannerSection.dataset.plannerSupportState || 'expanded';
+      plannerSection.dataset.plannerSupportState = state;
+      updatePlannerSupportToggleLabel(state);
+      plannerSupportPanels.forEach((panel) => {
+        panel.hidden = state === 'collapsed';
+      });
+      return;
+    }
+
+    plannerSection.dataset.plannerSupportState = 'collapsed';
+    updatePlannerSupportToggleLabel('collapsed');
+    plannerSupportPanels.forEach((panel) => {
+      panel.hidden = true;
+    });
+  };
+
+  const togglePlannerPanelVisibility = (panelName) => {
+    if (!panelName) {
+      return;
+    }
+
+    const targetPanel = getPlannerPanelByName(panelName);
+    if (!targetPanel) {
+      return;
+    }
+
+    if (desktopMediaQuery?.matches) {
+      if (plannerSection.dataset.plannerSupportState === 'collapsed') {
+        setPlannerSupportState('expanded');
+      }
+      targetPanel.hidden = false;
+      scrollPlannerPanelIntoView(targetPanel);
+      return;
+    }
+
+    const shouldOpen = targetPanel.hidden;
+    if (shouldOpen) {
+      plannerSupportPanels.forEach((panel) => {
+        panel.hidden = panel !== targetPanel;
+      });
+      targetPanel.hidden = false;
+      scrollPlannerPanelIntoView(targetPanel);
+      return;
+    }
+
+    targetPanel.hidden = true;
+  };
+
+  const handlePlannerPanelClose = (panelName) => {
+    if (!panelName) {
+      return;
+    }
+    const targetPanel = getPlannerPanelByName(panelName);
+    if (!targetPanel) {
+      return;
+    }
+    targetPanel.hidden = true;
+  };
+
+  plannerPanelToggleButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      togglePlannerPanelVisibility(button.getAttribute('data-planner-panel-toggle'));
+    });
+  });
+
+  plannerPanelCloseButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      handlePlannerPanelClose(button.getAttribute('data-planner-panel-close'));
+    });
+  });
+
+  plannerSupportCollapseButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    togglePlannerSupportState();
+  });
+
+  if (desktopMediaQuery) {
+    syncPlannerPanelsForViewport(desktopMediaQuery.matches);
+    const handleMediaChange = (event) => {
+      syncPlannerPanelsForViewport(event.matches);
+    };
+    if (typeof desktopMediaQuery.addEventListener === 'function') {
+      desktopMediaQuery.addEventListener('change', handleMediaChange);
+    } else if (typeof desktopMediaQuery.addListener === 'function') {
+      desktopMediaQuery.addListener(handleMediaChange);
+    }
+  }
+}
+
+initPlannerLayoutControls();
 const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
 const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
 
