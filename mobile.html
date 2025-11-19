@@ -2803,6 +2803,7 @@
       min-height: var(--mobile-header-height);
       padding-block: 0;
       backdrop-filter: blur(18px);
+      border-radius: 0 0 0.85rem 0.85rem;
     }
 
     /* Inner container: single row, spaced out */
@@ -3640,11 +3641,13 @@
   </script>
 
   <!-- Slim sticky header (restored) -->
-  <header id="reminders-slim-header" class="sticky top-0 z-40 w-full" role="banner">
-    <div
-      class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
-      style="background: #556F7A; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: none; color: #ffffff;"
-    >
+  <header
+    id="reminders-slim-header"
+    class="sticky top-0 z-40 w-full"
+    role="banner"
+    style="background: #556F7A; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: none; color: #ffffff;"
+  >
+    <div class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur">
       <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
         <button
           id="addReminderBtn"
