@@ -3658,7 +3658,18 @@
           <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
           <span class="mc-add-btn-label">Add reminder</span>
         </button>
-        <div class="relative">
+        <div class="header-overflow-wrapper">
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="header-btn header-btn-icon"
+            aria-label="Open quick settings"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+          </button>
           <div
             id="overflowMenu"
             class="hidden quick-actions-panel absolute right-0 mt-2"
@@ -3707,6 +3718,16 @@
             </ul>
           </div>
         </div>
+        <button
+          id="remindersHomeBtn"
+          type="button"
+          class="header-btn header-btn-icon"
+          aria-label="Go to home"
+          data-scroll-home
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+          <span class="sr-only">Go to home</span>
+        </button>
       </div>
     </div>
   </header>
@@ -3720,78 +3741,6 @@
         </div>
         <div class="mc-quick-actions">
                </div>
-    </div>
-  </div>
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="header-btn header-btn-icon"
-          aria-label="Open quick settings"
-          aria-haspopup="menu"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
-        </button>
-
-        <div
-          id="overflowMenu"
-          class="hidden quick-actions-panel absolute right-0 mt-2"
-          role="menu"
-          aria-hidden="true"
-          aria-labelledby="overflowMenuHeading"
-        >
-          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-          <ul class="quick-actions" role="presentation">
-            <li role="none">
-              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                <span class="sr-only">Dictate reminder</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                <span class="sr-only">Open settings</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                <span class="sr-only">Toggle theme</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                <span class="sr-only">Sign in</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                <span class="sr-only">Sign out</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <button
-        id="remindersHomeBtn"
-        type="button"
-        class="header-btn header-btn-icon"
-        aria-label="Go to home"
-        data-scroll-home
-      >
-        <span class="text-xl leading-none" aria-hidden="true">🏠</span>
-        <span class="sr-only">Go to home</span>
-      </button>
     </div>
   </div>
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
