@@ -203,6 +203,7 @@
     section[data-route="planner"] .planner-columns {
       display: grid;
       gap: clamp(1rem, 2vw, 1.5rem);
+      grid-template-columns: minmax(0, 1fr);
     }
 
     section[data-route="planner"] .planner-column-support {
@@ -233,38 +234,14 @@
 
     @media (min-width: 1024px) {
       section[data-route="planner"] .planner-columns {
-        grid-template-columns: minmax(600px, 2.3fr) minmax(260px, 0.7fr);
+        grid-template-columns: minmax(0, 1fr);
         align-items: flex-start;
-      }
-
-      section[data-route="planner"][data-planner-support-state="collapsed"] .planner-column-support {
-        display: none;
-      }
-
-      section[data-route="planner"][data-planner-support-state="collapsed"] .planner-column-primary {
-        grid-column: 1 / -1;
       }
     }
 
     @media (max-width: 1023px) {
       section[data-route="planner"] .planner-columns {
         grid-template-columns: minmax(0, 1fr);
-      }
-
-      section[data-route="planner"] .planner-column-primary {
-        order: 1;
-      }
-
-      section[data-route="planner"] .planner-column-support {
-        order: 2;
-      }
-
-      section[data-route="planner"] .planner-support-panel {
-        border-radius: 1.25rem;
-      }
-
-      section[data-route="planner"] .planner-support-panel[hidden] {
-        display: none;
       }
     }
 
