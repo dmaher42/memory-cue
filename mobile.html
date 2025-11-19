@@ -3848,13 +3848,7 @@
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
       <div class="mobile-view-inner mx-auto w-full max-w-md px-3 pt-3 pb-3 space-y-2">
-        <header class="mobile-header flex flex-col gap-1">
-          <div id="notebook-view-header" class="space-y-1">
-            <div class="flex items-baseline justify-between gap-2">
-              <h1 class="text-base font-semibold text-base-content">Notebook</h1>
-            </div>
-          </div>
-        </header>
+        <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
         <div
           id="scratch-notes-card"
@@ -3862,7 +3856,7 @@
         >
           <!-- Header Row -->
           <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold">Notebook</h2>
+            <h2 class="text-lg font-semibold"><span class="sr-only">Notebook</span></h2>
             <button
               id="openSavedNotesSheet"
               type="button"
@@ -3977,7 +3971,7 @@
         type="button"
         class="flex flex-col items-center justify-center gap-0.5 px-1 py-0.5 rounded-full text-[11px] font-medium text-base-content/70 transition"
       >
-        <span class="leading-tight">Notebook</span>
+        <span class="sr-only">Notebook</span>
       </button>
     </nav>
   </div>
