@@ -3743,33 +3743,6 @@
           <div class="flex items-center justify-between">
             <h1 class="text-lg font-semibold">Reminders</h1>
           </div>
-          <p id="mobileRemindersHeaderSubtitle" class="text-xs text-base-content/70">
-            <!-- placeholder, JS will update with date & temperature -->
-          </p>
-        </header>
-
-        <div class="reminders-tabs-wrapper">
-          <div class="tabs tabs-boxed w-full text-sm">
-            <button
-              type="button"
-              class="tab flex-1 reminders-tab-active"
-              data-reminders-tab="all"
-              aria-pressed="true"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              class="tab flex-1"
-              data-reminders-tab="today"
-              aria-pressed="false"
-            >
-              Today
-            </button>
-          </div>
-        </div>
-
-        <div class="reminders-content-shell space-y-2">
           <div
             id="quickAddBar"
             class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2"
@@ -3803,26 +3776,60 @@
                       <button
                         id="quickAddSubmit"
                         type="button"
-                        class="mc-quick-submit btn btn-outline btn-sm"
-                        aria-label="Add reminder"
+                        class="mc-quick-submit btn btn-primary btn-sm"
+                        data-quick-add-submit
                       >
                         Add
                       </button>
                       <button
-                        id="quickAddVoice"
+                        id="quickAddReminderOptions"
                         type="button"
-                        class="mc-quick-voice btn btn-ghost btn-circle btn-sm"
-                        aria-label="Use voice to add reminder"
+                        class="mc-quick-options btn btn-ghost btn-sm"
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                        data-quick-add-options
                       >
-                        <span aria-hidden="true">🎤</span>
-                        <span class="sr-only">Use voice to add reminder</span>
+                        Options
                       </button>
                     </div>
                   </div>
+                  <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
+                    <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
+                    <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
+                  </div>
+                </div>
+                <div class="mc-quick-chips flex flex-wrap gap-2 text-sm">
+                  <button type="button" class="mc-quick-chip" data-chip-due-today>Today</button>
+                  <button type="button" class="mc-quick-chip" data-chip-due-tomorrow>Tomorrow</button>
+                  <button type="button" class="mc-quick-chip" data-chip-due-weekend>Weekend</button>
                 </div>
               </div>
             </div>
           </div>
+        </header>
+
+        <div class="reminders-tabs-wrapper">
+          <div class="tabs tabs-boxed w-full text-sm">
+            <button
+              type="button"
+              class="tab flex-1 reminders-tab-active"
+              data-reminders-tab="all"
+              aria-pressed="true"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="tab flex-1"
+              data-reminders-tab="today"
+              aria-pressed="false"
+            >
+              Today
+            </button>
+          </div>
+        </div>
+
+        <div class="reminders-content-shell space-y-2">
 
           <div id="remindersListMobile" class="space-y-2">
             <section
