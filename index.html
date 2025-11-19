@@ -1075,6 +1075,20 @@
               </div>
             </div>
           </div>
+          <div class="rounded-2xl border border-base-200/80 bg-base-200/50 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">This week</p>
+                <p class="text-3xl font-semibold text-base-content tabular-nums" id="plannerSummaryCount">0</p>
+                <p class="text-xs text-base-content/60">Lessons scheduled</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Week range</p>
+                <p class="text-sm font-semibold text-base-content" id="plannerSummaryRange">—</p>
+                <p class="text-xs text-base-content/60">Use Today to jump back to the current week.</p>
+              </div>
+            </div>
+          </div>
           <div class="section-columns planner-columns">
             <div class="section-column column-primary planner-column-primary">
               <div class="section-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm" data-planner-card-panel>
@@ -1097,6 +1111,23 @@
                           </select>
                         </label>
                       </div>
+                    </div>
+                    <div class="grid gap-3 text-sm text-base-content/70 md:grid-cols-3">
+                      <article class="rounded-2xl border border-base-200/80 bg-base-200/40 p-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-base-content/60">Lessons planned</p>
+                        <p class="mt-1 text-2xl font-semibold text-base-content tabular-nums" id="plannerInsightsLessons">0</p>
+                        <p class="text-xs text-base-content/60">Total lessons scheduled in this view.</p>
+                      </article>
+                      <article class="rounded-2xl border border-base-200/80 bg-base-200/40 p-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-base-content/60">Subjects covered</p>
+                        <p class="mt-1 text-2xl font-semibold text-base-content tabular-nums" id="plannerInsightsSubjects">0</p>
+                        <p class="text-xs text-base-content/60">Unique subjects tagged across the week.</p>
+                      </article>
+                      <article class="rounded-2xl border border-base-200/80 bg-base-200/40 p-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-base-content/60">Notes added</p>
+                        <p class="mt-1 text-2xl font-semibold text-base-content tabular-nums" id="plannerInsightsNotes">0</p>
+                        <p class="text-xs text-base-content/60">Lessons that include saved notes.</p>
+                      </article>
                     </div>
                     <div class="planner-cards-scroll">
                       <div class="[&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-3 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start">
@@ -1450,7 +1481,7 @@
   <script src="./assets/router-OOUMFDE4.js" defer></script>
   <script type="module" src="./js/quick-actions.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-KNDVIO53.js" defer></script>
+  <script type="module" src="./assets/app-XJREHPEJ.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
