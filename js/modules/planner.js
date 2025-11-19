@@ -815,6 +815,24 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
   return persisted;
 };
 
+export const clearWeekPlan = async (weekId) => {
+  if (!weekId) {
+    return null;
+  }
+  const plan = await loadWeekPlan(weekId);
+  if (!plan) {
+    return null;
+  }
+  const nextPlan = {
+    ...plan,
+    lessons: [],
+    updatedAt: new Date().toISOString()
+  };
+  const persisted = await persistPlan(nextPlan);
+  dispatchPlannerUpdated(persisted);
+  return persisted;
+};
+
 const cloneTemplateLesson = (lesson) => {
   if (!lesson || typeof lesson !== 'object') {
     return null;
