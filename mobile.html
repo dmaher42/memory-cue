@@ -3645,59 +3645,6 @@
       class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
       style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
     >
-      <div class="flex items-center gap-3 min-w-0 flex-nowrap">
-        <button
-          id="btn-open-drawer"
-          type="button"
-          class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
-          aria-label="Open navigation menu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
-        </button>
-      </div>
-
-      <div class="header-quick-add">
-        <div
-          id="quickAddBar"
-          class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2"
-          aria-label="Quick add reminder"
-          data-visible="true"
-          data-persistent="true"
-        >
-          <div class="mc-quick-add-inner space-y-1.5 w-full">
-            <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
-              <div class="mc-quick-input-group w-full">
-                <input
-                  id="quickAddInput"
-                  class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
-                  type="text"
-                  autocomplete="off"
-                  placeholder="Quick reminder…"
-                />
-                <div class="mc-quick-actions flex items-center gap-2">
-                  <button
-                    id="quickAddReminderOptions"
-                    type="button"
-                    class="mc-quick-options btn btn-ghost btn-sm"
-                    aria-haspopup="menu"
-                    aria-expanded="false"
-                    data-quick-add-options
-                  >
-                    Options
-                  </button>
-                </div>
-              </div>
-              <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
-                <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
-                <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
-              </div>
-              <!-- quick add chips removed to keep header minimal -->
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
         <button
           id="addReminderBtn"
@@ -3712,18 +3659,6 @@
           <span class="mc-add-btn-label">Add reminder</span>
         </button>
         <div class="relative">
-          <button
-            id="overflowMenuBtn"
-            type="button"
-            class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
-            aria-label="Open quick settings"
-            aria-haspopup="menu"
-            aria-controls="overflowMenu"
-            aria-expanded="false"
-          >
-            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
-          </button>
-
           <div
             id="overflowMenu"
             class="hidden quick-actions-panel absolute right-0 mt-2"
@@ -3775,6 +3710,20 @@
       </div>
     </div>
   </header>
+
+  <!-- relocated quick add (directly below header) -->
+  <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true">
+    <div class="mc-quick-add-inner space-y-1.5 w-full">
+      <div class="mc-quick-add-row flex items-center gap-2 w-full">
+        <div class="mc-quick-input-group w-full">
+          <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" />
+        </div>
+        <div class="mc-quick-actions">
+          <button id="quickAddReminderOptions" type="button" class="mc-quick-options btn btn-ghost btn-sm" aria-haspopup="menu" aria-expanded="false" data-quick-add-options>Options</button>
+        </div>
+      </div>
+    </div>
+  </div>
         <button
           id="overflowMenuBtn"
           type="button"
