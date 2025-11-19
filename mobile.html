@@ -808,15 +808,6 @@
       overflow-x: hidden;
     }
 
-    /* Hide legacy blue header */
-    .mobile-header.legacy-header,
-    .app-header,
-    .masthead,
-    .header-bar,
-    header.sticky.top-0.z-40.w-full {
-      display: none !important;
-    }
-
     /* Slim sticky header from reminders wrapper */
     #slimMobileHeader {
       position: sticky;
@@ -3214,12 +3205,12 @@
       top: 0;
       z-index: 50;
       width: 100%;
-      background: #0d6efd;
+      background: #98c1d9;
       color: #fff;
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border-bottom: 1px solid #0b5ed7;
-      box-shadow: 0 6px 20px rgba(13, 110, 253, 0.25);
+      border-bottom: 1px solid #7aaac2;
+      box-shadow: 0 6px 20px rgba(152, 193, 217, 0.25);
       padding: 0.5rem 1rem;
       display: flex;
       align-items: center;
@@ -3238,6 +3229,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    #reminders-slim-header .header-leading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 0;
     }
 
     #reminders-slim-header .header-actions {
@@ -3300,14 +3299,6 @@
       justify-content: center;
     }
 
-    /* Hide legacy mobile headers */
-    .mobile-header,
-    .app-header,
-    .masthead,
-    .header-bar {
-      display: none !important;
-    }
-
     /* Adjust main content to account for sticky header */
     #view-reminders {
       padding-top: 0 !important;
@@ -3343,102 +3334,6 @@
       }
     }
   </style>
-
-  <!-- Legacy header: hidden per requirements -->
-  <header class="sticky top-0 z-40 w-full" style="display: none !important;" aria-hidden="true">
-    <div
-      class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
-      style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
-    >
-      <div class="flex items-center gap-3 min-w-0 flex-nowrap">
-        <button
-          id="btn-open-drawer"
-          type="button"
-          class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
-          aria-label="Open navigation menu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
-        </button>
-           </div>
-
-      <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
-        <button
-          id="addReminderBtn"
-          type="button"
-          class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
-          data-open-add-task
-          data-open-quick-add
-          aria-controls="quickAddBar"
-          aria-expanded="false"
-        >
-          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-          <span class="mc-add-btn-label">Add reminder</span>
-        </button>
-        <div class="relative">
-          <button
-            id="overflowMenuBtn"
-            type="button"
-            class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
-            aria-label="Open quick settings"
-            aria-haspopup="menu"
-            aria-controls="overflowMenu"
-            aria-expanded="false"
-          >
-            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
-          </button>
-
-          <div
-            id="overflowMenu"
-            class="hidden quick-actions-panel absolute right-0 mt-2"
-            role="menu"
-            aria-hidden="true"
-            aria-labelledby="overflowMenuHeading"
-          >
-            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-            <ul class="quick-actions" role="presentation">
-              <li role="none">
-                <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                  <span class="sr-only">Dictate reminder</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                  <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                  <span class="sr-only">Open settings</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                  <span class="sr-only">Toggle theme</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                  <span class="sr-only">Sign in</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                  <span class="sr-only">Sign out</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
 
   <div
     id="mobile-drawer-scrim"
@@ -3737,9 +3632,103 @@
 
   <!-- NEW: Slim sticky header for reminders -->
   <div id="reminders-slim-header" role="banner">
-    <h1 class="header-title">Reminders</h1>
+    <div class="header-leading">
+      <button
+        id="btn-open-drawer"
+        type="button"
+        class="header-btn header-btn-icon"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+      >
+        <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+        <span class="sr-only">Open navigation menu</span>
+      </button>
+      <h1 class="header-title">Reminders</h1>
+    </div>
     <div class="header-actions">
-      <!-- Buttons will be populated by JavaScript -->
+      <button
+        id="addReminderBtn"
+        type="button"
+        class="header-btn mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
+        data-open-add-task
+        data-open-quick-add
+        aria-controls="quickAddBar"
+        aria-expanded="false"
+      >
+        <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+        <span class="mc-add-btn-label">Add reminder</span>
+      </button>
+      <div class="header-overflow-wrapper">
+        <button
+          id="overflowMenuBtn"
+          type="button"
+          class="header-btn header-btn-icon"
+          aria-label="Open quick settings"
+          aria-haspopup="menu"
+          aria-controls="overflowMenu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+        </button>
+
+        <div
+          id="overflowMenu"
+          class="hidden quick-actions-panel absolute right-0 mt-2"
+          role="menu"
+          aria-hidden="true"
+          aria-labelledby="overflowMenuHeading"
+        >
+          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+          <ul class="quick-actions" role="presentation">
+            <li role="none">
+              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                <span class="sr-only">Dictate reminder</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                <span class="sr-only">Open settings</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                <span class="sr-only">Toggle theme</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                <span class="sr-only">Sign in</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                <span class="sr-only">Sign out</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <button
+        id="remindersHomeBtn"
+        type="button"
+        class="header-btn header-btn-icon"
+        aria-label="Go to home"
+        data-scroll-home
+      >
+        <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+        <span class="sr-only">Go to home</span>
+      </button>
     </div>
   </div>
 
@@ -3754,33 +3743,6 @@
           <div class="flex items-center justify-between">
             <h1 class="text-lg font-semibold">Reminders</h1>
           </div>
-          <p id="mobileRemindersHeaderSubtitle" class="text-xs text-base-content/70">
-            <!-- placeholder, JS will update with date & temperature -->
-          </p>
-        </header>
-
-        <div class="reminders-tabs-wrapper">
-          <div class="tabs tabs-boxed w-full text-sm">
-            <button
-              type="button"
-              class="tab flex-1 reminders-tab-active"
-              data-reminders-tab="all"
-              aria-pressed="true"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              class="tab flex-1"
-              data-reminders-tab="today"
-              aria-pressed="false"
-            >
-              Today
-            </button>
-          </div>
-        </div>
-
-        <div class="reminders-content-shell space-y-2">
           <div
             id="quickAddBar"
             class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2 flex items-center gap-2"
@@ -3814,26 +3776,60 @@
                       <button
                         id="quickAddSubmit"
                         type="button"
-                        class="mc-quick-submit btn btn-outline btn-sm"
-                        aria-label="Add reminder"
+                        class="mc-quick-submit btn btn-primary btn-sm"
+                        data-quick-add-submit
                       >
                         Add
                       </button>
                       <button
-                        id="quickAddVoice"
+                        id="quickAddReminderOptions"
                         type="button"
-                        class="mc-quick-voice btn btn-ghost btn-circle btn-sm"
-                        aria-label="Use voice to add reminder"
+                        class="mc-quick-options btn btn-ghost btn-sm"
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                        data-quick-add-options
                       >
-                        <span aria-hidden="true">🎤</span>
-                        <span class="sr-only">Use voice to add reminder</span>
+                        Options
                       </button>
                     </div>
                   </div>
+                  <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
+                    <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
+                    <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
+                  </div>
+                </div>
+                <div class="mc-quick-chips flex flex-wrap gap-2 text-sm">
+                  <button type="button" class="mc-quick-chip" data-chip-due-today>Today</button>
+                  <button type="button" class="mc-quick-chip" data-chip-due-tomorrow>Tomorrow</button>
+                  <button type="button" class="mc-quick-chip" data-chip-due-weekend>Weekend</button>
                 </div>
               </div>
             </div>
           </div>
+        </header>
+
+        <div class="reminders-tabs-wrapper">
+          <div class="tabs tabs-boxed w-full text-sm">
+            <button
+              type="button"
+              class="tab flex-1 reminders-tab-active"
+              data-reminders-tab="all"
+              aria-pressed="true"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="tab flex-1"
+              data-reminders-tab="today"
+              aria-pressed="false"
+            >
+              Today
+            </button>
+          </div>
+        </div>
+
+        <div class="reminders-content-shell space-y-2">
 
           <div id="remindersListMobile" class="space-y-2">
             <section
@@ -5482,25 +5478,6 @@
     })();
   </script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const homeBtn = document.querySelector('header.sticky [aria-label="Go to home"]');
-
-      // Locate reminders section or fall back to the document body
-      const remindersSection =
-        document.getElementById('remindersWrapper') ||
-        document.querySelector('[data-section="reminders"]') ||
-        document.getElementById('reminders') ||
-        document.body;
-
-      if (homeBtn && remindersSection) {
-        homeBtn.addEventListener('click', () => {
-          remindersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      }
-    });
-  </script>
-
   <!-- Enhanced Notes Functionality -->
   <script>
     (function() {
@@ -6295,7 +6272,7 @@
   </script>
 
   <script>
-    // Resilient helper to populate slim header with reminders title and action buttons
+    // Wire up slim header buttons now that they live inline
     document.addEventListener('DOMContentLoaded', function() {
       const slimHeader = document.getElementById('reminders-slim-header');
       if (!slimHeader) return;
@@ -6303,159 +6280,67 @@
       const headerActions = slimHeader.querySelector('.header-actions');
       if (!headerActions) return;
 
-      // Find and clone/move action buttons from the old header or page
-      // Priority order: look by ID, aria-label, title, then text content
-      
-      // 1. Find Add Reminder button (multiple possible sources)
-      const addReminderSources = [
-        document.getElementById('addReminderBtn'),
-        document.querySelector('[data-open-add-task]'),
-        document.querySelector('[aria-label*="Add"]'),
-        document.querySelector('button[title*="Add"]')
-      ].filter(Boolean);
+      const addBtn = headerActions.querySelector('#addReminderBtn');
+      const overflowBtn = headerActions.querySelector('#overflowMenuBtn');
+      const overflowMenu = headerActions.querySelector('#overflowMenu');
+      const homeBtn = headerActions.querySelector('[data-scroll-home]');
 
-      let addBtn = null;
-      for (const source of addReminderSources) {
-        if (source && !source.closest('#reminders-slim-header')) {
-          addBtn = source.cloneNode(true);
-          // Preserve all attributes and event listeners will be rebound
-          addBtn.classList.add('header-btn');
-          addBtn.classList.remove('btn-primary', 'btn-sm'); // Remove old classes
-          break;
-        }
-      }
-
-      // If no button found, create a fallback
-      if (!addBtn) {
-        addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'header-btn';
-        addBtn.setAttribute('data-open-add-task', '');
-        addBtn.setAttribute('aria-label', 'Add reminder');
-        addBtn.innerHTML = '<span class="header-btn-text">Add</span><span aria-hidden="true">+</span>';
-      }
-
-      // 2. Find Overflow/More menu button
-      const overflowMenu = document.getElementById('overflowMenu');
-      const overflowSources = [
-        document.getElementById('overflowMenuBtn'),
-        document.querySelector('[aria-label*="settings"]'),
-        document.querySelector('[aria-label*="menu"]'),
-        document.querySelector('[aria-controls="overflowMenu"]')
-      ].filter(Boolean);
-
-      let overflowBtn = null;
-      let overflowBtnUsesBuiltInHandler = false;
-      for (const source of overflowSources) {
-        if (source && !source.closest('#reminders-slim-header')) {
-          if (source.id === 'overflowMenuBtn') {
-            overflowBtn = source;
-            overflowBtnUsesBuiltInHandler = true;
-          } else {
-            overflowBtn = source.cloneNode(true);
-          }
-          overflowBtn.classList.add('header-btn', 'header-btn-icon');
-          break;
-        }
-      }
-
-      // If no button found, create a fallback
-      if (!overflowBtn) {
-        overflowBtn = document.createElement('button');
-        overflowBtn.type = 'button';
-        overflowBtn.className = 'header-btn header-btn-icon';
-        overflowBtn.setAttribute('id', 'overflowMenuBtnClone');
-        overflowBtn.setAttribute('aria-label', 'Open menu');
-        overflowBtn.setAttribute('aria-haspopup', 'menu');
-        overflowBtn.setAttribute('aria-controls', 'overflowMenu');
-        overflowBtn.innerHTML = '<span aria-hidden="true">⋮</span>';
-      }
-
-      const overflowWrapper = document.createElement('div');
-      overflowWrapper.className = 'header-overflow-wrapper';
-      overflowWrapper.appendChild(overflowBtn);
-      if (overflowMenu) {
-        overflowWrapper.appendChild(overflowMenu);
-      }
-
-      // 3. Find Home button
-      const homeSources = [
-        document.getElementById('btn-open-drawer'),
-        document.querySelector('[aria-label*="home"]'),
-        document.querySelector('[aria-label*="Home"]'),
-        document.querySelector('[aria-label*="navigation"]')
-      ].filter(Boolean);
-
-      let homeBtn = null;
-      for (const source of homeSources) {
-        if (source && !source.closest('#reminders-slim-header')) {
-          homeBtn = source.cloneNode(true);
-          homeBtn.classList.add('header-btn', 'header-btn-icon');
-          break;
-        }
-      }
-
-      // If no button found, create a fallback
-      if (!homeBtn) {
-        homeBtn = document.createElement('button');
-        homeBtn.type = 'button';
-        homeBtn.className = 'header-btn header-btn-icon';
-        homeBtn.setAttribute('id', 'btn-home-clone');
-        homeBtn.setAttribute('aria-label', 'Go to home');
-        homeBtn.innerHTML = '<span aria-hidden="true">🏠</span>';
-      }
-
-      // Add buttons to header in order: Add, Overflow, Home
-      headerActions.appendChild(addBtn);
-      headerActions.appendChild(overflowWrapper);
-      headerActions.appendChild(homeBtn);
-
-      // Rebind event listeners for cloned buttons
-      const newAddBtn = headerActions.querySelector('[data-open-add-task]');
-      if (newAddBtn) {
-        newAddBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          // Trigger the same event that other add buttons use
-          const event = new CustomEvent('cue:open', { 
-            detail: { mode: 'create', trigger: newAddBtn }
+      if (addBtn) {
+        addBtn.addEventListener('click', function(event) {
+          event.preventDefault();
+          const cueEvent = new CustomEvent('cue:open', {
+            detail: { mode: 'create', trigger: addBtn }
           });
-          document.dispatchEvent(event);
+          document.dispatchEvent(cueEvent);
         });
       }
 
-      // Overflow menu button
-      const newOverflowBtn = overflowBtn;
-      if (newOverflowBtn && !overflowBtnUsesBuiltInHandler) {
-        newOverflowBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!overflowMenu) {
-            return;
-          }
+      if (overflowBtn && overflowMenu) {
+        const toggleMenu = (forceOpen) => {
           const isHidden = overflowMenu.classList.contains('hidden');
-          if (isHidden) {
-            overflowMenu.classList.remove('hidden');
-            newOverflowBtn.setAttribute('aria-expanded', 'true');
-          } else {
-            overflowMenu.classList.add('hidden');
-            newOverflowBtn.setAttribute('aria-expanded', 'false');
+          const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
+          overflowMenu.classList.toggle('hidden', !shouldOpen);
+          overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+          overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        };
+
+        overflowBtn.addEventListener('click', function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleMenu();
+        });
+
+        document.addEventListener('click', (event) => {
+          if (overflowMenu.classList.contains('hidden')) return;
+          const wrapper = event.target instanceof Element ? event.target.closest('.header-overflow-wrapper') : null;
+          if (!wrapper) {
+            toggleMenu(false);
           }
         });
       }
 
-      // Home button - scroll to top
-      const newHomeBtn = headerActions.querySelector('[aria-label*="home"], [aria-label*="Home"], #btn-home-clone');
-      if (newHomeBtn) {
-        newHomeBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (homeBtn) {
+        const scrollTargets = [
+          document.getElementById('view-reminders'),
+          document.getElementById('remindersWrapper'),
+          document.querySelector('[data-section="reminders"]'),
+          document.getElementById('reminders'),
+          document.body
+        ].filter(Boolean);
+
+        const target = scrollTargets[0];
+        homeBtn.addEventListener('click', function(event) {
+          event.preventDefault();
+          if (target && 'scrollIntoView' in target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         });
       }
 
-      // Update the title dynamically if needed (look for existing reminder title)
       const titleEl = slimHeader.querySelector('.header-title');
       if (titleEl) {
-        // Try to find a better title from the page
         const possibleTitles = [
           document.querySelector('#view-reminders h1'),
           document.querySelector('[data-section="reminders"] h1'),
