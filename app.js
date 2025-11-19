@@ -27,6 +27,7 @@ import {
   movePlannerLesson,
   addLessonDetail,
   duplicateWeekPlan,
+  clearWeekPlan,
   PLANNER_UPDATED_EVENT,
   getPlannerLessonsForWeek,
   loadPlannerTemplates,
@@ -869,6 +870,8 @@ const plannerWeekHeading = document.getElementById('planner-week');
 const plannerPrevButton = document.getElementById('planner-prev');
 const plannerNextButton = document.getElementById('planner-next');
 const plannerTodayButton = document.getElementById('planner-today');
+const plannerCopyWeekButton = document.getElementById('planner-copy-week');
+const plannerClearWeekButton = document.getElementById('planner-clear-week');
 const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
 const plannerTemplateSelect = document.getElementById('planner-template-select');
@@ -3291,6 +3294,83 @@ async function handlePlannerDuplicatePlan(event) {
   plannerLessonModalController.openDuplicatePlan({ suggestedWeekId, trigger: triggerElement });
 }
 
+async function handlePlannerCopyPreviousWeek(event) {
+  if (!activePlannerWeekId) {
+    return;
+  }
+  event?.preventDefault?.();
+  const trigger = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  const sourceWeekId = getWeekIdFromOffset(activePlannerWeekId, -1);
+  if (!sourceWeekId) {
+    return;
+  }
+  if (trigger) {
+    trigger.setAttribute('disabled', 'true');
+  }
+  try {
+    const plan = await duplicateWeekPlan(sourceWeekId, activePlannerWeekId);
+    if (plan) {
+      currentPlannerPlan = plan;
+      selectedPlannerLessonId = null;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      syncPlannerTemplateSelection(plan);
+      if (liveStatusRegion) {
+        liveStatusRegion.textContent = 'Copied last week into this plan.';
+      }
+    }
+  } catch (error) {
+    console.error('Failed to copy previous planner week', error);
+    if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+      window.alert('Unable to copy last week right now.');
+    }
+  } finally {
+    if (trigger) {
+      trigger.removeAttribute('disabled');
+    }
+  }
+}
+
+async function handlePlannerClearWeek(event) {
+  if (!activePlannerWeekId) {
+    return;
+  }
+  event?.preventDefault?.();
+  let shouldClear = true;
+  if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+    shouldClear = window.confirm('Clear all lessons for this week?');
+  }
+  if (!shouldClear) {
+    return;
+  }
+  const trigger = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  if (trigger) {
+    trigger.setAttribute('disabled', 'true');
+  }
+  try {
+    const plan = await clearWeekPlan(activePlannerWeekId);
+    if (plan) {
+      currentPlannerPlan = plan;
+      selectedPlannerLessonId = null;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      syncPlannerTemplateSelection(plan);
+      if (liveStatusRegion) {
+        liveStatusRegion.textContent = 'Cleared this week\'s plan.';
+      }
+    }
+  } catch (error) {
+    console.error('Failed to clear planner week', error);
+    if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+      window.alert('Unable to clear this week right now.');
+    }
+  } finally {
+    if (trigger) {
+      trigger.removeAttribute('disabled');
+    }
+  }
+}
+
 async function handlePlannerTemplateChange(event) {
   if (!plannerTemplateSelect) {
     return;
@@ -3442,6 +3522,8 @@ function initPlannerView() {
   plannerDetailActionsContainer?.addEventListener('click', handlePlannerDetailAction);
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
+  plannerCopyWeekButton?.addEventListener('click', handlePlannerCopyPreviousWeek);
+  plannerClearWeekButton?.addEventListener('click', handlePlannerClearWeek);
   plannerTemplateSelect?.addEventListener('change', handlePlannerTemplateChange);
   plannerSubjectFilterSelect?.addEventListener('change', handlePlannerSubjectFilterChange);
   plannerTextSizeSelect?.addEventListener('change', handlePlannerTextSizeChange);
