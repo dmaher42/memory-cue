@@ -3638,86 +3638,154 @@
     })();
   </script>
 
-  <!-- NEW: Slim sticky header for reminders -->
-  <div id="reminders-slim-header" role="banner">
-    <div class="header-leading">
-      <button
-        id="btn-open-drawer"
-        type="button"
-        class="header-btn header-btn-icon"
-        aria-label="Open navigation menu"
-        aria-expanded="false"
-      >
-        <span class="text-xl leading-none" aria-hidden="true">☰</span>
-        <span class="sr-only">Open navigation menu</span>
-      </button>
-      <button
-        id="addReminderBtn"
-        type="button"
-        class="header-btn header-btn-icon"
-        data-open-add-task
-        aria-label="Open detailed reminder form"
-        aria-controls="createReminderModal"
-        aria-expanded="false"
-      >
-        <span class="text-lg leading-none" aria-hidden="true">＋</span>
-        <span class="sr-only">Open detailed reminder form</span>
-      </button>
-    </div>
-    <div class="header-quick-add">
-      <div
-        id="quickAddBar"
-        class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2"
-        aria-label="Quick add reminder"
-        data-visible="true"
-        data-persistent="true"
-      >
-        <div class="mc-quick-add-inner space-y-1.5 w-full">
-          <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
-            <div class="mc-quick-input-group w-full">
-              <input
-                id="quickAddInput"
-                class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
-                type="text"
-                autocomplete="off"
-                placeholder="Quick reminder…"
-              />
-              <div class="mc-quick-actions flex items-center gap-2">
-                <button
-                  id="quickAddSubmit"
-                  type="button"
-                  class="mc-quick-submit btn btn-primary btn-sm"
-                  data-quick-add-submit
-                >
-                  Add
-                </button>
-                <button
-                  id="quickAddReminderOptions"
-                  type="button"
-                  class="mc-quick-options btn btn-ghost btn-sm"
-                  aria-haspopup="menu"
-                  aria-expanded="false"
-                  data-quick-add-options
-                >
-                  Options
-                </button>
+  <!-- Slim sticky header (restored) -->
+  <header id="reminders-slim-header" class="sticky top-0 z-40 w-full" role="banner">
+    <div
+      class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
+      style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
+    >
+      <div class="flex items-center gap-3 min-w-0 flex-nowrap">
+        <button
+          id="btn-open-drawer"
+          type="button"
+          class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
+          aria-label="Open navigation menu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+        </button>
+      </div>
+
+      <div class="header-quick-add">
+        <div
+          id="quickAddBar"
+          class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2"
+          aria-label="Quick add reminder"
+          data-visible="true"
+          data-persistent="true"
+        >
+          <div class="mc-quick-add-inner space-y-1.5 w-full">
+            <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
+              <div class="mc-quick-input-group w-full">
+                <input
+                  id="quickAddInput"
+                  class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Quick reminder…"
+                />
+                <div class="mc-quick-actions flex items-center gap-2">
+                  <button
+                    id="quickAddSubmit"
+                    type="button"
+                    class="mc-quick-submit btn btn-primary btn-sm"
+                    data-quick-add-submit
+                  >
+                    Add
+                  </button>
+                  <button
+                    id="quickAddReminderOptions"
+                    type="button"
+                    class="mc-quick-options btn btn-ghost btn-sm"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    data-quick-add-options
+                  >
+                    Options
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
-              <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
-              <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
-            </div>
-            <div class="mc-quick-chips flex flex-wrap gap-2 text-sm">
-              <button type="button" class="mc-quick-chip" data-chip-due-today>Today</button>
-              <button type="button" class="mc-quick-chip" data-chip-due-tomorrow>Tomorrow</button>
-              <button type="button" class="mc-quick-chip" data-chip-due-weekend>Weekend</button>
+              <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
+                <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
+                <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
+              </div>
+              <div class="mc-quick-chips flex flex-wrap gap-2 text-sm">
+                <button type="button" class="mc-quick-chip" data-chip-due-today>Today</button>
+                <button type="button" class="mc-quick-chip" data-chip-due-tomorrow>Tomorrow</button>
+                <button type="button" class="mc-quick-chip" data-chip-due-weekend>Weekend</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
+        <button
+          id="addReminderBtn"
+          type="button"
+          class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
+          data-open-add-task
+          data-open-quick-add
+          aria-controls="quickAddBar"
+          aria-expanded="false"
+        >
+          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+          <span class="mc-add-btn-label">Add reminder</span>
+        </button>
+        <div class="relative">
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
+            aria-label="Open quick settings"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+          </button>
+
+          <div
+            id="overflowMenu"
+            class="hidden quick-actions-panel absolute right-0 mt-2"
+            role="menu"
+            aria-hidden="true"
+            aria-labelledby="overflowMenuHeading"
+          >
+            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+            <ul class="quick-actions" role="presentation">
+              <li role="none">
+                <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                  <span class="sr-only">Dictate reminder</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                  <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                  <span class="sr-only">Open settings</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                  <span class="sr-only">Toggle theme</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                  <span class="sr-only">Sign in</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                  <span class="sr-only">Sign out</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="header-actions">
-      <div class="header-overflow-wrapper">
+  </header>
         <button
           id="overflowMenuBtn"
           type="button"
