@@ -3214,11 +3214,12 @@
       top: 0;
       z-index: 50;
       width: 100%;
-      background: var(--mobile-header-bg);
+      background: #0d6efd;
+      color: #fff;
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border-bottom: 1px solid var(--mobile-header-border);
-      box-shadow: var(--mobile-header-shadow);
+      border-bottom: 1px solid #0b5ed7;
+      box-shadow: 0 6px 20px rgba(13, 110, 253, 0.25);
       padding: 0.5rem 1rem;
       display: flex;
       align-items: center;
@@ -3230,7 +3231,7 @@
     #reminders-slim-header .header-title {
       font-size: 1.125rem;
       font-weight: 600;
-      color: var(--mobile-header-text);
+      color: inherit;
       margin: 0;
       flex-shrink: 1;
       min-width: 0;
@@ -3251,9 +3252,9 @@
       min-width: 44px;
       padding: 0.5rem 0.75rem;
       border-radius: 0.5rem;
-      border: 1px solid var(--mobile-header-button-border);
-      background: var(--mobile-header-button-bg);
-      color: var(--mobile-header-button-color);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
@@ -3266,15 +3267,15 @@
 
     #reminders-slim-header .header-btn:hover,
     #reminders-slim-header .header-btn:focus-visible {
-      background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
-      color: color-mix(in srgb, var(--card-bg) 96%, transparent);
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       outline: none;
     }
 
     #reminders-slim-header .header-btn:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
+      outline: 3px solid rgba(255, 255, 255, 0.45);
       outline-offset: 2px;
     }
 
