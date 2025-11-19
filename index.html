@@ -1107,6 +1107,8 @@
                       <div class="flex flex-wrap items-center gap-3 text-sm text-base-content/80">
                         <button type="button" class="btn btn-outline btn-sm" id="planner-copy-week">Copy previous week</button>
                         <button type="button" class="btn btn-ghost btn-sm" id="planner-clear-week">Clear week</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="planner-new-lesson-btn">New lesson</button>
+                        <button type="button" class="btn btn-outline btn-sm" id="planner-duplicate-btn">Duplicate plan</button>
                       </div>
                       <div class="flex items-center gap-3">
                         <label class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-base-content/70" aria-label="Choose planner text size">
@@ -1117,21 +1119,7 @@
                             <option value="large">Large</option>
                           </select>
                         </label>
-                        <button
-                          type="button"
-                          class="btn btn-ghost btn-xs hidden lg:inline-flex"
-                          data-planner-support-collapse
-                          aria-expanded="true"
-                          data-expanded-label="Hide panels"
-                          data-collapsed-label="Show panels"
-                        >
-                          Hide panels
-                        </button>
                       </div>
-                    </div>
-                    <div class="planner-mobile-toggles flex flex-wrap gap-2 sm:hidden" aria-label="Planner panels">
-                      <button type="button" class="btn btn-outline btn-xs" data-planner-panel-toggle="overview">Week overview</button>
-                      <button type="button" class="btn btn-outline btn-xs" data-planner-panel-toggle="tools">Templates &amp; filters</button>
                     </div>
                     <div class="planner-cards-scroll">
                       <div class="[&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-3 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start">
@@ -1142,93 +1130,6 @@
                 </div>
               </div>
             </div>
-            <div class="section-column column-secondary planner-column-support">
-              <div class="planner-support" data-planner-support>
-                <section class="planner-support-panel" data-planner-panel="overview" id="planner-panel-overview">
-                  <div class="section-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
-                    <div class="planner-panel-header px-6 pt-4">
-                      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Week overview</p>
-                      <button type="button" class="btn btn-ghost btn-xs lg:hidden" data-planner-panel-close="overview">Close</button>
-                    </div>
-                    <div class="desktop-panel-body section-pane__body px-6 pb-4">
-                      <div id="planner-detail-panel" class="planner-detail-panel space-y-6">
-                        <div class="planner-detail-card planner-detail-card--empty" data-planner-detail-empty>
-                          <p class="text-sm font-semibold uppercase tracking-[0.3em] text-base-content/50">Lesson details</p>
-                          <p class="mt-3 text-base text-base-content/70">
-                            Select a lesson card from your weekly plan to view the schedule, summary, and lesson details here.
-                          </p>
-                        </div>
-                        <div class="planner-detail-card planner-detail-card--content hidden" data-planner-detail-content aria-live="polite">
-                          <div class="flex flex-wrap items-start justify-between gap-6">
-                            <div class="space-y-2">
-                              <p id="planner-detail-day" class="text-xs font-semibold uppercase tracking-[0.35em] text-base-content/60"></p>
-                              <h4 id="planner-detail-title" class="text-2xl font-semibold text-base-content"></h4>
-                              <p id="planner-detail-summary" class="text-sm text-base-content/80"></p>
-                            </div>
-                            <div class="min-w-[160px] flex flex-col items-end gap-1 text-right">
-                              <span class="text-[0.65rem] uppercase tracking-[0.3em] text-base-content/50">Subject</span>
-                              <div id="planner-detail-subject"></div>
-                            </div>
-                          </div>
-                          <div class="mt-6 space-y-3">
-                            <p class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-base-content/50">Lesson details</p>
-                            <div id="planner-detail-details" class="space-y-3"></div>
-                          </div>
-                          <div id="planner-detail-actions" class="planner-detail-actions flex flex-wrap items-center gap-2">
-                            <button type="button" class="btn btn-outline btn-sm" data-planner-detail-action="duplicate">
-                              Duplicate lesson
-                            </button>
-                            <button type="button" class="btn btn-ghost btn-sm" data-planner-detail-action="reminder">
-                              Create reminder
-                            </button>
-                            <button type="button" class="btn btn-primary btn-sm" data-planner-detail-action="resources">
-                              Add resources
-                            </button>
-                          </div>
-                        </div>
-                        <div class="planner-week-grid" data-planner-grid></div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-                <section class="planner-support-panel" data-planner-panel="tools" id="planner-panel-tools">
-                  <div class="section-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
-                    <div class="planner-panel-header px-6 pt-4">
-                      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Templates &amp; filters</p>
-                      <button type="button" class="btn btn-ghost btn-xs lg:hidden" data-planner-panel-close="tools">Close</button>
-                    </div>
-                    <div class="desktop-panel-body section-pane__body h-full overflow-y-auto px-6 pb-4">
-                      <div class="space-y-3">
-                        <div class="desktop-panel-actions flex flex-wrap items-center gap-2">
-                          <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
-                          <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
-                        </div>
-                        <label class="form-control w-full">
-                          <div class="label py-0">
-                            <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Template</span>
-                          </div>
-                          <select id="planner-template-select" class="select select-bordered select-sm w-full" aria-label="Choose a planner template">
-                            <option value="">No templates saved</option>
-                          </select>
-                        </label>
-                        <button type="button" id="planner-template-save-btn" class="btn btn-outline btn-sm">Save current week as template</button>
-                        <label class="form-control w-full">
-                          <div class="label py-0">
-                            <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Subject filter</span>
-                          </div>
-                          <select id="planner-subject-filter" class="select select-bordered select-sm w-full" aria-label="Filter planner by subject">
-                            <option value="all">All subjects</option>
-                          </select>
-                          <p class="mt-1 text-xs text-base-content/60">Show lessons by the subjects you teach.</p>
-                        </label>
-                      </div>
-                      <p id="planner-week" class="text-sm font-semibold text-base-content/80"></p>
-                    </div>
-                  </div>
-                </section>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
       <section data-route="notes" class="space-y-6" style="display: none;">
@@ -1572,7 +1473,7 @@
   <script src="./assets/router-OOUMFDE4.js" defer></script>
   <script type="module" src="./js/quick-actions.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-4LHROTLH.js" defer></script>
+  <script type="module" src="./assets/app-KNDVIO53.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
