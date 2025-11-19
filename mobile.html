@@ -3646,6 +3646,18 @@
       style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
     >
       <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
+        <button
+          id="addReminderBtn"
+          type="button"
+          class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
+          data-open-add-task
+          data-open-quick-add
+          aria-controls="quickAddBar"
+          aria-expanded="false"
+        >
+          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+          <span class="mc-add-btn-label">Add reminder</span>
+        </button>
         <div class="relative">
           <div
             id="overflowMenu"
