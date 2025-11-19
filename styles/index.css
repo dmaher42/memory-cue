@@ -267,10 +267,11 @@ html[data-theme="professional"] {
 
 
  .desktop-shell .dashboard-root {
+  --dashboard-horizontal-padding: 2.25rem;
   width: 100%;
   max-width: none;
   margin: 0 auto;
-  padding: 1.25rem 2.25rem 2.5rem;
+  padding: 1.25rem var(--dashboard-horizontal-padding) 2.5rem;
  }
 
  .desktop-shell .desktop-layout {
@@ -294,7 +295,14 @@ html[data-theme="professional"] {
 
  .desktop-shell .desktop-header {
   grid-area: header;
-}
+ }
+
+ .desktop-shell .desktop-header.desktop-header-bar {
+  margin-left: calc(-1 * var(--dashboard-horizontal-padding, 0px));
+  margin-right: calc(-1 * var(--dashboard-horizontal-padding, 0px));
+  width: calc(100% + (var(--dashboard-horizontal-padding, 0px) * 2));
+  border-radius: 0;
+ }
 
  .desktop-shell .desktop-sidebar {
   grid-area: sidebar;
