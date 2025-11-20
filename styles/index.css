@@ -141,8 +141,8 @@ html[data-theme="professional"] {
 
 /* Soft focus ring for editor container */
 .notes-editor-container:focus-within {
-  border-color: var(--fallback-bc, #a5b4fc);
-  box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.3);
+  border-color: var(--mobile-header-button-color, var(--fallback-bc, #a5b4fc));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mobile-header-button-color, #6495ed) 30%, transparent);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
