@@ -161,6 +161,18 @@ html[data-theme="professional"] {
   box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.25);
 }
 
+/* Saved notes list item helpers */
+.saved-note-item {
+  text-decoration: none;
+}
+
+.saved-note-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
  .desktop-header-right {
   display: flex;
   align-items: center;
