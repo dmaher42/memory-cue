@@ -6426,7 +6426,6 @@
       const addBtn = slimHeader.querySelector('#addReminderBtn');
       const overflowBtn = slimHeader.querySelector('#overflowMenuBtn');
       const overflowMenu = slimHeader.querySelector('#overflowMenu');
-      const homeBtn = slimHeader.querySelector('[data-scroll-home]');
 
       if (addBtn) {
         addBtn.addEventListener('click', function(event) {
@@ -6462,25 +6461,7 @@
         });
       }
 
-      if (homeBtn) {
-        const scrollTargets = [
-          document.getElementById('view-reminders'),
-          document.getElementById('remindersWrapper'),
-          document.querySelector('[data-section="reminders"]'),
-          document.getElementById('reminders'),
-          document.body
-        ].filter(Boolean);
-
-        const target = scrollTargets[0];
-        homeBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          if (target && 'scrollIntoView' in target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        });
-      }
+      /* home button removed: no scroll-home handler needed */
 
     });
   </script>

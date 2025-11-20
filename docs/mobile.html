@@ -5307,20 +5307,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const homeBtn = document.querySelector('header.sticky [aria-label="Go to home"]');
-
-      // Locate reminders section or fall back to the document body
-      const remindersSection =
-        document.getElementById('remindersWrapper') ||
-        document.querySelector('[data-section="reminders"]') ||
-        document.getElementById('reminders') ||
-        document.body;
-
-      if (homeBtn && remindersSection) {
-        homeBtn.addEventListener('click', () => {
-          remindersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      }
+      /* home button removed: no scroll-home handler needed */
     });
   </script>
 
