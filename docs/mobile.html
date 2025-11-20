@@ -48,26 +48,28 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome for refreshed indigo shell */
-      --mobile-header-bg: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(14, 165, 233, 0.1));
+      --mobile-header-bg: #E1F5FE; /* updated header token */
       --mobile-header-border: rgba(99, 102, 241, 0.22);
       --mobile-header-shadow: 0 18px 32px rgba(79, 70, 229, 0.18);
       --mobile-header-text: var(--text-primary);
       --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(79, 70, 229, 0.12));
       --mobile-header-button-color: color-mix(in srgb, var(--accent-color) 92%, var(--text-primary) 8%);
       --mobile-header-button-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
-      --mobile-quick-surface: color-mix(in srgb, var(--card-bg) 96%, rgba(79, 70, 229, 0.08));
+      --mobile-quick-surface: #E1F5FE; /* updated quick surface token to match header */
+      --mobile-header-text: #0f172a; /* ensure readable header text */
       --mobile-quick-shadow: 0 20px 34px rgba(79, 70, 229, 0.16);
     }
 
     html[data-theme="dark"],
-    html.dark {
+        --mobile-header-bg: #E1F5FE; /* updated header token */
       --mobile-header-bg: color-mix(in srgb, rgba(15, 23, 42, 0.92) 96%, transparent);
       --mobile-header-border: rgba(148, 163, 184, 0.35);
       --mobile-header-shadow: 0 16px 32px rgba(15, 23, 42, 0.55);
       --mobile-header-text: color-mix(in srgb, var(--card-bg) 94%, transparent);
       --mobile-header-button-bg: color-mix(in srgb, rgba(148, 163, 184, 0.2) 100%, transparent);
       --mobile-header-button-color: color-mix(in srgb, var(--card-bg) 92%, transparent);
-      --mobile-header-button-border: rgba(148, 163, 184, 0.45);
+        --mobile-quick-surface: #E1F5FE; /* updated quick surface token to match header */
+        --mobile-header-text: #0f172a; /* ensure readable header text */
       --mobile-quick-surface: color-mix(in srgb, rgba(15, 23, 42, 0.92) 94%, transparent);
       --mobile-quick-shadow: 0 18px 30px rgba(15, 23, 42, 0.6);
     }
@@ -3711,7 +3713,6 @@
             </div>
 
             <div id="scratch-notes-actions" class="flex justify-end gap-2 notebook-actions-row">
-              <button id="noteNewMobile" type="button" class="notebook-action-btn new" aria-label="New note">New</button>
               <button id="noteSaveMobile" class="notebook-action-btn save" type="button" aria-label="Save note">Save</button>
               <button id="openSavedNotesSheet" type="button" class="notebook-action-btn saved" data-action="open-saved-notes" aria-label="Open Notebook">Notebook</button>
             </div>
