@@ -3317,97 +3317,101 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
-    /* NEW: Slim sticky header for reminders */
+    /* NEW: Premium multi-layered header */
     #reminders-slim-header {
       position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 60;
       width: 100%;
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 0.25rem;
-      padding: 0.24rem 0.5rem;
-      background: #E1F5FE; /* custom header background */
-      color: var(--text-primary);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-bottom: 1px solid color-mix(in srgb, var(--card-border) 60%, transparent);
-      box-shadow: none;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.5rem;
+      background: var(--mobile-header-bg, #E1F5FE);
+      color: var(--mobile-header-text, #0f172a);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+      position: relative;
+    }
+
+    /* Top accent band */
+    #reminders-slim-header::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 4px;
+      background: #00BCD4;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+      z-index: 61;
     }
 
     #reminders-slim-header .header-leading,
     #reminders-slim-header .header-actions {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      flex-wrap: nowrap;
-    }
-
-    #reminders-slim-header .header-leading {
-      justify-content: flex-start;
-    }
-
-    #reminders-slim-header .header-actions {
-      justify-content: flex-end;
-      justify-self: end;
+      gap: 0.5rem;
+      z-index: 65;
     }
 
     #reminders-slim-header .header-quick-add {
-      width: 100%;
-      min-width: 0;
-      align-self: center;
       display: flex;
       justify-content: center;
-      flex: 1 1 auto;
+      align-items: center;
+      padding: 0 0.5rem;
+      z-index: 62;
     }
 
-    #reminders-slim-header .header-btn {
-      min-height: 32px;
-      min-width: 32px;
-      padding: 0.18rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--mobile-header-button-border);
-      background: var(--mobile-header-button-bg);
-      color: var(--mobile-header-button-color);
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.12s ease;
+    .reminders-quick-add {
+      width: 100%;
+      max-width: 640px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.06), 0 6px 14px rgba(2,6,23,0.03);
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #111827;
+    }
+
+    .reminders-quick-add input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 0.95rem;
+      color: #111827;
+      padding: 0;
+    }
+
+    #reminders-slim-header .header-actions .icon-btn {
+      width: 36px;
+      height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.15rem;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: #374151;
+      cursor: pointer;
     }
 
-    #reminders-slim-header .header-btn:hover,
-    #reminders-slim-header .header-btn:focus-visible {
-      background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
-      color: var(--mobile-header-button-color);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-      outline: none;
-    }
-
-    #reminders-slim-header .header-btn:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--accent-color) 35%, transparent);
+    #reminders-slim-header .header-actions .icon-btn:focus-visible {
+      outline: 3px solid color-mix(in srgb, #00BCD4 18%, transparent);
       outline-offset: 2px;
     }
 
-    #reminders-slim-header .header-btn:active {
-      transform: translateY(0);
-    }
-
-    #reminders-slim-header .header-btn-icon {
-      padding: 0;
-      width: 2rem;
-      height: 2rem;
-    }
-
-    #reminders-slim-header .header-overflow-wrapper {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+    /* Hide inline Save/Notebook actions in notebook row */
+    .notebook-actions-row .notebook-action-btn.save,
+    .notebook-actions-row .notebook-action-btn.saved {
+      display: none !important;
     }
 
     /* Make the notebook Save icon clearly visible in the header */
@@ -3833,7 +3837,7 @@
   </script>
 
   <!-- Slim sticky header (restored) -->
-  <header id="reminders-slim-header" class="sticky top-0 z-40 w-full" role="banner" style="background: #E1F5FE; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: none; color: #0f172a;">
+  <header id="reminders-slim-header" class="sticky top-0 z-40 w-full" role="banner">
     <div class="header-leading flex items-center gap-2 flex-shrink-0 px-3 py-2">
       <!-- MC logo left -->
       <a href="/" class="mc-logo-link" aria-label="Memory Cue Home">
@@ -3855,41 +3859,52 @@
       </div>
     </div>
 
-    <!-- Right-aligned overflow actions (now a direct header child so it hugs the right edge) -->
+    <!-- Right-aligned actions: bell, settings, overflow -->
     <div class="header-actions flex items-center gap-2 px-3 py-2 justify-end">
+      <button id="headerBellBtn" class="icon-btn" aria-label="Set reminder">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.5 14.5V11c0-3.038-1.64-5.64-5-6.32V4a2 2 0 10-4 0v0.68C6.64 5.36 5 7.962 5 11v3.5c0 .538-.214 1.055-.595 1.445L3 17h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button id="headerSettingsBtn" class="icon-btn" aria-label="Open settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19.4 15a7 7 0 000-6l2.1-1.6-2-3.5L17 3.9a7 7 0 00-4-1.5l-1 .3L11 3l-1 .1-1 .3a7 7 0 00-4 1.5L1.5 3.9l-2 3.5L1.6 9.1a7 7 0 000 6L-.5 17.6l2 3.5L5 20.1a7 7 0 004 1.5l1-.3 1-.1 1-.1 1-.3a7 7 0 004-1.5l3.6 1.7 2-3.5L19.4 15z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
       <div class="header-overflow-wrapper">
         <button id="overflowMenuBtn" type="button" class="header-btn header-btn-icon" aria-label="Open quick settings" aria-haspopup="menu" aria-controls="overflowMenu" aria-expanded="false">
-          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+          <span class="text-xl leading-none" aria-hidden="true">⋯</span>
         </button>
         <div id="overflowMenu" class="hidden quick-actions-panel absolute right-0 mt-2" role="menu" aria-hidden="true" aria-labelledby="overflowMenuHeading">
           <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
           <ul class="quick-actions" role="presentation">
-            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-            <ul class="quick-actions" role="presentation">
-              <li role="none">
-                <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                  <span class="sr-only">Dictate reminder</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                  <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                  <span class="sr-only">Open settings</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                  <span class="sr-only">Toggle theme</span>
-                </button>
-              </li>
+            <li role="none">
+              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                <span class="sr-only">Dictate reminder</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                <span class="sr-only">Open settings</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                <span class="sr-only">Toggle theme</span>
+              </button>
+            </li>
               <li role="none">
                 <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
                   <span class="quick-action-icon" aria-hidden="true">🔐</span>
@@ -3905,6 +3920,12 @@
             </ul>
           </div>
         </div>
+        <!-- Save button in header (checkmark) -->
+        <button id="noteSaveMobile" type="button" class="icon-btn" aria-label="Save note">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
+          </svg>
+        </button>
         <!-- home button removed: replaced by MC logo on the left -->
       </div>
     </div>
@@ -4407,12 +4428,7 @@
           <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
-      <!-- Save (check) button moved into header for quick access -->
-      <button id="noteSaveMobile" type="button" class="header-btn header-btn-icon" aria-label="Save note">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
-        </svg>
-      </button>
+      
     </div>
     <div class="modal-backdrop" data-close></div>
   </div>
