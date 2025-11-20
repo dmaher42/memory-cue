@@ -3881,22 +3881,10 @@
           <div id="scratchNotesEditor" class="notes-editor"></div>
 
           <!-- Action Bar -->
-          <div class="note-actions flex justify-end gap-0 items-center">
-            <button
-              id="noteNewMobile"
-              type="button"
-              class="btn btn-sm btn-secondary mr-2"
-            >
-              New
-            </button>
-            <button
-              id="noteSaveMobile"
-              type="button"
-              class="btn btn-sm btn-primary"
-            >
-              Save
-            </button>
-            <button id="openSavedNotesSheet" class="btn btn-xs btn-ghost ml-2" type="button">Saved notes</button>
+          <div class="note-actions flex justify-end gap-0 items-center notebook-actions-row">
+            <button id="noteNewMobile" type="button" class="notebook-action-btn new mr-2" aria-label="New note">New</button>
+            <button id="noteSaveMobile" type="button" class="notebook-action-btn save" aria-label="Save note">Save</button>
+            <button id="openSavedNotesSheet" class="notebook-action-btn saved ml-2" type="button" aria-label="Open Notebook">Notebook</button>
           </div>
         </div>
         <div
@@ -3918,7 +3906,7 @@
               </div>
 
               <div class="flex items-center justify-between px-4 pb-2">
-                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Saved notes</h3>
+                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
                 <button
                   id="closeSavedNotesSheet"
                   class="btn btn-xs btn-ghost"

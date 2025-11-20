@@ -3719,29 +3719,14 @@
               </div>
             </div>
 
-            <div id="scratch-notes-actions" class="flex justify-end gap-2">
-              <button
-                id="noteNewMobile"
-                type="button"
-                class="btn btn-outline btn-sm"
-              >
-                New note
-              </button>
-              <button id="noteSaveMobile" class="btn btn-primary btn-sm" type="button">
-                Save note
-              </button>
-              <button
-                id="openSavedNotesSheet"
-                type="button"
-                class="btn btn-ghost btn-sm"
-                data-action="open-saved-notes"
-              >
-                Saved notes
-              </button>
+            <div id="scratch-notes-actions" class="flex justify-end gap-2 notebook-actions-row">
+              <button id="noteNewMobile" type="button" class="notebook-action-btn new" aria-label="New note">New</button>
+              <button id="noteSaveMobile" class="notebook-action-btn save" type="button" aria-label="Save note">Save</button>
+              <button id="openSavedNotesSheet" type="button" class="notebook-action-btn saved" data-action="open-saved-notes" aria-label="Open Notebook">Notebook</button>
             </div>
           </div>
         </div>
-        <div
+          <div
           id="savedNotesSheet"
           class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
           aria-hidden="true"
