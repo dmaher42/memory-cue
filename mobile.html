@@ -248,7 +248,8 @@
     position: fixed;
     left: 0.5rem;
     right: 0.5rem;
-    bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 0.25rem);
+    /* Position above the bottom navigation bar so buttons don't overlap the footer */
+    bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.25rem);
     display: flex;
     justify-content: space-between;
     gap: 0.5rem;
@@ -288,7 +289,8 @@
       position: fixed;
       left: 0.5rem;
       right: 0.5rem;
-      bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 0.25rem);
+      /* Position above the bottom navigation bar so buttons don't overlap the footer */
+      bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.25rem);
       display: flex;
       justify-content: space-between;
       gap: 0.5rem;
