@@ -173,6 +173,14 @@ html[data-theme="professional"] {
   overflow: hidden;
 }
 
+/* Notebook header subtitle helper */
+.notebook-header-subtitle {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
  .desktop-header-right {
   display: flex;
   align-items: center;
