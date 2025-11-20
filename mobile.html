@@ -3926,7 +3926,7 @@
           </div>
 
           <!-- Unified notebook sub-header -->
-          <div class="flex items-center gap-2 px-2 py-1 rounded-lg bg-base-200/60 border border-base-300/40">
+          <div class="flex items-center gap-2 px-2 py-1 rounded-md notebook-actions-row border border-base-300/40">
             <input
               id="noteTitleMobile"
               type="text"
@@ -3935,29 +3935,11 @@
               class="input input-sm flex-1 bg-base-100"
             />
 
-            <button
-              id="noteNewMobile"
-              type="button"
-              class="btn btn-ghost btn-xs"
-            >
-              New
-            </button>
+            <button id="noteNewMobile" type="button" class="notebook-action-btn new" aria-label="New note">New</button>
 
-            <button
-              id="noteSaveMobile"
-              type="button"
-              class="btn btn-primary btn-xs"
-            >
-              Save
-            </button>
+            <button id="noteSaveMobile" type="button" class="notebook-action-btn save" aria-label="Save note">Save</button>
             
-            <button
-              id="openSavedNotesSheet"
-              type="button"
-              class="btn btn-ghost btn-xs ml-1"
-            >
-              Saved notes
-            </button>
+            <button id="openSavedNotesSheet" type="button" class="notebook-action-btn saved ml-1" aria-label="Open Notebook">Notebook</button>
           </div>
 
           <!-- Formatting toolbar -->
@@ -4022,13 +4004,13 @@
               </div>
 
               <div class="flex items-center justify-between px-4 pb-2">
-                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Saved notes</h3>
+                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
                 <button
                   id="closeSavedNotesSheet"
                   class="btn btn-xs btn-ghost"
                   type="button"
                   data-action="close-saved-notes"
-                  aria-label="Close saved notes"
+                  aria-label="Close Notebook"
                 >
                   Close
                 </button>

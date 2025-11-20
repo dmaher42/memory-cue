@@ -161,6 +161,56 @@ html[data-theme="professional"] {
   box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.25);
 }
 
+/* Notebook action buttons: New, Save, Saved Notes */
+.notebook-actions-row {
+  background: #ffffff; /* white surrounding background */
+  padding: 0.35rem; /* slight padding for breathing room */
+  border-radius: 8px;
+}
+
+.notebook-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px; /* fixed width to keep uniform */
+  height: 40px; /* fixed height to keep uniform */
+  border-radius: 8px; /* slightly rounded corners */
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+  border: 0;
+  cursor: pointer;
+  box-shadow: none;
+  padding: 0 0.6rem;
+}
+
+.notebook-action-btn:focus {
+  outline: 3px solid color-mix(in srgb, #2E6171 18%, transparent);
+  outline-offset: 2px;
+}
+
+.notebook-action-btn.save {
+  background: #2E6171; /* Save button color */
+  color: #ffffff;
+}
+
+.notebook-action-btn.new {
+  background: #D4AFCD; /* New button color */
+  color: #102027; /* darker text for contrast on light background */
+}
+
+.notebook-action-btn.saved {
+  background: #798086; /* Saved Notes button color */
+  color: #ffffff;
+}
+
+/* Ensure any framework btn classes don't override our sizing */
+.notebook-action-btn,
+.notebook-action-btn * {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
 /* Saved notes list item helpers */
 .saved-note-item {
   text-decoration: none;
