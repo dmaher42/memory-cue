@@ -4939,6 +4939,25 @@
         }
       };
 
+      // Listen for global navigation events and delegate to setActiveView
+      window.addEventListener('app:navigate', (ev) => {
+        try {
+          const view = ev?.detail?.view;
+          if (!view) return;
+          // Map 'new' to a UI action (trigger new note) if present
+          if (view === 'new') {
+            const newBtn = document.getElementById('noteNewMobile');
+            if (newBtn) newBtn.click();
+            return;
+          }
+          if (order.includes(view)) {
+            setActiveView(view);
+          }
+        } catch (e) {
+          console.error('Failed to handle app:navigate', e);
+        }
+      });
+
       buttons.forEach((button, index) => {
         button.addEventListener('click', () => {
           setActiveView(order[index]);
