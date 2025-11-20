@@ -3676,13 +3676,8 @@
                   <span class="sr-only">Notebook</span>
                 </div>
 
-            <button
-              type="button"
-              class="btn btn-ghost btn-xs"
-              data-action="open-saved-notes"
-            >
-              Saved notes
-            </button>
+            <!-- moved Saved notes button into sub-header for compact mobile layout -->
+          </div>
           </div>
 
           <div class="space-y-3">
@@ -3734,6 +3729,14 @@
               </button>
               <button id="noteSaveMobile" class="btn btn-primary btn-sm" type="button">
                 Save note
+              </button>
+              <button
+                id="openSavedNotesSheet"
+                type="button"
+                class="btn btn-ghost btn-sm"
+                data-action="open-saved-notes"
+              >
+                Saved notes
               </button>
             </div>
           </div>

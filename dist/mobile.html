@@ -3865,13 +3865,7 @@
               <span class="sr-only">Notebook</span>
             </div>
 
-            <button
-              id="openSavedNotesSheet"
-              type="button"
-              class="btn btn-xs btn-ghost text-sm font-medium"
-            >
-              Saved notes
-            </button>
+            <!-- saved notes button moved into the action row for compact layout -->
           </div>
 
           <!-- Title input -->
@@ -3887,11 +3881,11 @@
           <div id="scratchNotesEditor" class="notes-editor"></div>
 
           <!-- Action Bar -->
-          <div class="note-actions flex justify-end gap-0">
+          <div class="note-actions flex justify-end gap-0 items-center">
             <button
               id="noteNewMobile"
               type="button"
-              class="btn btn-sm btn-secondary"
+              class="btn btn-sm btn-secondary mr-2"
             >
               New
             </button>
@@ -3902,6 +3896,7 @@
             >
               Save
             </button>
+            <button id="openSavedNotesSheet" class="btn btn-xs btn-ghost ml-2" type="button">Saved notes</button>
           </div>
         </div>
         <div
