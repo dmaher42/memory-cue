@@ -3533,15 +3533,7 @@
     </div>
     <div class="header-actions">
       <div class="header-overflow-wrapper">
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="header-btn header-btn-icon"
-          aria-label="Open quick settings"
-          aria-haspopup="menu"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
+        <button id="overflowMenuBtn" type="button" class="header-btn header-btn-icon" aria-label="Open quick settings" aria-haspopup="menu" aria-controls="overflowMenu" aria-expanded="false">
           <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
         </button>
 
@@ -3593,6 +3585,10 @@
           </ul>
         </div>
       </div>
+      <!-- Save (check) button moved into header for quick access -->
+      <button id="noteSaveMobile" type="button" class="header-btn header-btn-icon" aria-label="Save note">
+        <span aria-hidden="true" class="text-lg">✓</span>
+      </button>
       <!-- home button removed: replaced by MC logo on the left -->
     </div>
   </div>
@@ -3713,7 +3709,7 @@
             </div>
 
             <div id="scratch-notes-actions" class="flex justify-end gap-2 notebook-actions-row">
-              <button id="noteSaveMobile" class="notebook-action-btn save" type="button" aria-label="Save note">Save</button>
+              <!-- Save moved to header -->
               <button id="openSavedNotesSheet" type="button" class="notebook-action-btn saved" data-action="open-saved-notes" aria-label="Open Notebook">Notebook</button>
             </div>
           </div>
