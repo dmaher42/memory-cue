@@ -181,6 +181,15 @@ html[data-theme="professional"] {
   text-overflow: ellipsis;
 }
 
+/* Header divider + subtitle color polish for mobile notebook */
+#scratch-notes-card > .flex.items-center {
+  border-bottom-color: color-mix(in srgb, var(--mobile-header-border, rgba(99,102,241,0.22)) 40%, var(--color-base-200, #eef2ff) 60%);
+}
+
+.notebook-header-subtitle {
+  color: color-mix(in srgb, var(--mobile-header-button-color, #556F7A) 12%, var(--color-base-content, #0f172a) 88%);
+}
+
  .desktop-header-right {
   display: flex;
   align-items: center;
