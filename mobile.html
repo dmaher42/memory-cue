@@ -238,6 +238,31 @@
     padding-bottom: env(safe-area-inset-bottom, 0.75rem);
   }
 
+  /* Keep note action buttons fixed and accessible without scrolling on all viewports */
+  .mobile-panel--notes #scratch-notes-card {
+    /* make room for the fixed action bar so content isn't hidden */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3.5rem);
+  }
+
+  .mobile-panel--notes #scratch-notes-card .note-actions {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 0.25rem);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.02), transparent);
+    box-shadow: 0 -6px 18px rgba(0,0,0,0.06);
+    border-radius: 0.6rem;
+    z-index: 60;
+  }
+
+  .mobile-panel--notes #scratch-notes-card .note-actions .btn {
+    min-width: 3.25rem;
+  }
+
   @media (max-width: 640px) {
     .mobile-panel--notes #scratch-notes-card {
       /* make room for the fixed action bar so content isn't hidden */
