@@ -720,24 +720,43 @@ const initMobileNotes = () => {
       const listItem = document.createElement('li');
       listItem.className = 'note-item-mobile w-full';
 
-      const row = document.createElement('div');
-      row.className =
-        'saved-note-row flex items-center justify-between gap-3 rounded-lg bg-base-200 p-3 text-sm text-base-content hover:bg-base-300 transition-colors';
+      // Create tappable card button that opens the note
+      const itemButton = document.createElement('button');
+      itemButton.type = 'button';
+      itemButton.dataset.noteId = note.id;
+      itemButton.dataset.role = 'open-note';
+      itemButton.className =
+        'saved-note-item w-full text-left rounded-xl bg-base-100 border border-base-300 px-3 py-2 flex flex-col gap-1 active:scale-[0.99] transition-transform';
 
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.dataset.noteId = note.id;
-      button.dataset.role = 'open-note';
-      button.className =
-        'open-note-btn flex-1 text-left text-sm text-base-content font-semibold focus-visible:outline-none active:scale-[0.99] transition-transform duration-200';
+      // Top row: title and optional meta (timestamp)
+      const topRow = document.createElement('div');
+      topRow.className = 'flex items-center justify-between gap-2';
 
-      const titleSpan = document.createElement('span');
-      titleSpan.className = 'block truncate text-base-content';
-      const noteTitle = note.title || 'Untitled note';
-      titleSpan.textContent = noteTitle;
-      titleSpan.setAttribute('title', noteTitle);
-      button.appendChild(titleSpan);
+      const titleEl = document.createElement('span');
+      titleEl.className = 'saved-note-title text-sm font-semibold truncate';
+      const noteTitle = note.title || 'Untitled';
+      titleEl.textContent = noteTitle;
+      titleEl.setAttribute('title', noteTitle);
 
+      const metaEl = document.createElement('span');
+      metaEl.className = 'saved-note-meta text-[11px] text-base-content/60';
+      const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
+      metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
+
+      topRow.appendChild(titleEl);
+      topRow.appendChild(metaEl);
+
+      // Body preview (strip HTML and clamp to two lines)
+      const previewEl = document.createElement('p');
+      previewEl.className = 'saved-note-preview text-xs text-base-content/70 line-clamp-2';
+      const rawBody = note.body || '';
+      const plainBody = String(rawBody).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      previewEl.textContent = plainBody || 'No content yet.';
+
+      itemButton.appendChild(topRow);
+      itemButton.appendChild(previewEl);
+
+      // Delete button (preserve attributes used by existing handlers)
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
       deleteButton.dataset.noteId = note.id;
@@ -747,8 +766,12 @@ const initMobileNotes = () => {
       deleteButton.setAttribute('aria-label', 'Delete note');
       deleteButton.textContent = '✕';
 
-      row.appendChild(button);
+      // Row wrapper to keep delete button aligned to the right
+      const row = document.createElement('div');
+      row.className = 'flex items-start justify-between gap-3';
+      row.appendChild(itemButton);
       row.appendChild(deleteButton);
+
       listItem.appendChild(row);
       listElement.appendChild(listItem);
     });
