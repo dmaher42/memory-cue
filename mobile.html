@@ -4969,6 +4969,22 @@
 
         activeView = target;
 
+        // Sync any bottom-tab buttons we added so they reflect the active view
+        try {
+          document.querySelectorAll('.bottom-tab').forEach((b) => {
+            const tabName = b.dataset.tab;
+            const isActiveTab = tabName === target;
+            b.classList.toggle('active', Boolean(isActiveTab));
+            if (isActiveTab) {
+              b.setAttribute('aria-current', 'page');
+            } else {
+              b.removeAttribute('aria-current');
+            }
+          });
+        } catch (e) {
+          // ignore if bottom-tabs not present
+        }
+
         const skipLink =
           document.querySelector('.skip-link') ||
           document.querySelector('a[href$="#main"]');
