@@ -3816,19 +3816,29 @@
     style="background: #556F7A; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: none; color: #ffffff;"
   >
     <div class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur">
-      <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
-        <button
-          id="addReminderBtn"
-          type="button"
-          class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
-          data-open-add-task
-          data-open-quick-add
-          aria-controls="quickAddBar"
-          aria-expanded="false"
-        >
-          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-          <span class="mc-add-btn-label">Add reminder</span>
-        </button>
+      <div class="header-leading flex items-center gap-2 flex-shrink-0">
+        <!-- MC logo left -->
+        <a href="/" class="mc-logo-link" aria-label="Memory Cue Home">
+          <img src="/icons/mc-logo-32.png" alt="MC" width="32" height="32" style="display:block;border-radius:6px;" />
+        </a>
+      </div>
+
+      <!-- Center: quick add placed inline inside the header -->
+      <div class="header-quick-add w-full px-2">
+        <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true">
+          <div class="mc-quick-add-inner space-y-1.5 w-full">
+            <div class="mc-quick-add-row flex items-center gap-2 w-full">
+              <div class="mc-quick-input-group w-full">
+                <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" />
+              </div>
+              <div class="mc-quick-actions">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions flex items-center gap-2">
         <div class="header-overflow-wrapper">
           <button
             id="overflowMenuBtn"
@@ -3903,17 +3913,7 @@
     </div>
   </header>
 
-  <!-- relocated quick add (directly below header) -->
-  <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true">
-    <div class="mc-quick-add-inner space-y-1.5 w-full">
-      <div class="mc-quick-add-row flex items-center gap-2 w-full">
-        <div class="mc-quick-input-group w-full">
-          <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" />
-        </div>
-        <div class="mc-quick-actions">
-               </div>
-    </div>
-  </div>
+  <!-- quickAddBar is now integrated in the header -->
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
     <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
