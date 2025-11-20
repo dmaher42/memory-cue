@@ -3591,6 +3591,26 @@
           <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
         </svg>
       </button>
+
+      <style>
+        /* Make the notebook Save icon clearly visible in the header */
+        #reminders-slim-header #noteSaveMobile {
+          background: transparent;
+          border: none;
+          color: var(--mobile-header-text);
+          padding: 0.15rem;
+          min-width: 36px;
+          min-height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        #reminders-slim-header #noteSaveMobile:focus-visible {
+          outline: 3px solid color-mix(in srgb, var(--accent-color) 24%, transparent);
+          outline-offset: 2px;
+        }
+      </style>
       <!-- home button removed: replaced by MC logo on the left -->
     </div>
   </div>

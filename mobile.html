@@ -3410,6 +3410,24 @@
       justify-content: center;
     }
 
+    /* Make the notebook Save icon clearly visible in the header */
+    #reminders-slim-header #noteSaveMobile {
+      background: transparent;
+      border: none;
+      color: var(--mobile-header-text);
+      padding: 0.15rem;
+      min-width: 36px;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #reminders-slim-header #noteSaveMobile:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 24%, transparent);
+      outline-offset: 2px;
+    }
+
     /* Adjust main content to account for sticky header */
     #view-reminders {
       padding-top: 0 !important;
