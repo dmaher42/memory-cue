@@ -3767,7 +3767,9 @@
       const order = ['reminders', 'new', 'notebook'];
 
       function showViewFor(name) {
-        const target = name === 'new' ? 'notebook' : name;
+        // When navigating to 'new', we display the reminders view but keep the
+        // body/main active view set to 'new' so the bottom-tab can be highlighted.
+        const target = name === 'new' ? 'reminders' : name;
         Object.keys(views).forEach((k) => {
           const el = views[k];
           if (!el) return;
@@ -3780,14 +3782,16 @@
         if (main) main.setAttribute('data-active-view', name);
         if (document.body) document.body.setAttribute('data-active-view', name);
 
-        // If this is the 'new' view, trigger the new-note action so editor is ready
+        // If this is the 'new' view, trigger the add reminder action so the
+        // quick-add UI is ready.
         if (name === 'new') {
-          const newBtn = document.getElementById('noteNewMobile');
-          if (newBtn) {
-            try { newBtn.click(); } catch (e) { console.warn('Failed to trigger new note', e); }
+          const addBtn = document.getElementById('addReminderBtn');
+          if (addBtn) {
+            try { addBtn.click(); } catch (e) { console.warn('Failed to trigger add reminder', e); }
           } else {
-            const editor = document.getElementById('scratchNotesEditor');
-            if (editor && typeof editor.focus === 'function') editor.focus();
+            // fallback: focus quick add input if present
+            const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+            if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
           }
         }
       }
@@ -4991,10 +4995,16 @@
         try {
           const view = ev?.detail?.view;
           if (!view) return;
-          // Map 'new' to a UI action (trigger new note) if present
+          // Map 'new' to the add reminder action (trigger addReminderBtn)
           if (view === 'new') {
-            const newBtn = document.getElementById('noteNewMobile');
-            if (newBtn) newBtn.click();
+            const addBtn = document.getElementById('addReminderBtn');
+            if (addBtn) {
+              addBtn.click();
+            }
+            // still set active state so the middle tab highlights
+            if (order.includes(view)) {
+              setActiveView(view);
+            }
             return;
           }
           if (order.includes(view)) {
