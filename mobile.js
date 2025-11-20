@@ -886,6 +886,53 @@ const initMobileNotes = () => {
     });
   }
 
+  // Autosave: debounce saving when user edits title or body
+  const AUTOSAVE_DELAY = 1500; // ms
+  const debouncedAutoSave = debounce(() => {
+    try {
+      if (!hasUnsavedChanges()) return;
+      if (saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
+        saveButton.click();
+      }
+    } catch (e) {
+      /* ignore autosave errors */
+    }
+  }, AUTOSAVE_DELAY);
+
+  // Listen for input changes on title and editor
+  try {
+    titleInput.addEventListener('input', debouncedAutoSave);
+  } catch (e) {
+    /* ignore */
+  }
+
+  try {
+    // contenteditable should emit input events
+    scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
+    // also save on blur (user leaving editor)
+    scratchNotesEditorElement.addEventListener('blur', () => {
+      // flush any pending autosave immediately
+      debouncedAutoSave();
+    });
+    titleInput.addEventListener('blur', () => debouncedAutoSave());
+  } catch (e) {
+    /* ignore */
+  }
+
+  // Save when the page is about to unload
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', (evt) => {
+      try {
+        if (hasUnsavedChanges() && saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
+          // attempt to synchronously save by invoking click
+          saveButton.click();
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    });
+  }
+
   applyInitialSelection();
 
   if (typeof window !== 'undefined') {
