@@ -261,10 +261,11 @@
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions .btn {
-    /* keep New and Save visually consistent: same minimum width */
-    min-width: 3.6rem;
-    padding-left: 0.6rem;
-    padding-right: 0.6rem;
+    /* keep New and Save visually identical: fixed width */
+    width: 3.2rem;
+    box-sizing: border-box;
+    padding: 0.35rem 0;
+    text-align: center;
   }
 
   /* Shrink the mobile Save button by 75% (reduce to 25% scale) */
@@ -273,11 +274,12 @@
     align-items: center;
     justify-content: center;
     transform: none;
-    padding: 0.4rem 0.9rem;
-    font-size: 0.95rem;
+    padding: 0.35rem 0;
+    font-size: 0.9rem;
     font-weight: 600;
-    min-width: 3.6rem;
-    border-radius: 0.5rem;
+    width: 3.2rem;
+    box-sizing: border-box;
+    border-radius: 0.45rem;
     line-height: 1;
     z-index: 70;
   }
@@ -305,7 +307,9 @@
     }
 
     .mobile-panel--notes #scratch-notes-card .note-actions .btn {
-      min-width: auto;
+      width: 3.2rem;
+      box-sizing: border-box;
+      padding: 0.35rem 0;
     }
   }
 
