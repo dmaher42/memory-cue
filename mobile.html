@@ -3755,6 +3755,55 @@
     })();
   </script>
 
+  <script>
+    // Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
+    // prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
+    (function() {
+      const views = {
+        reminders: document.querySelector('[data-view="reminders"]'),
+        notebook: document.querySelector('[data-view="notebook"]')
+      };
+
+      const order = ['reminders', 'new', 'notebook'];
+
+      function showViewFor(name) {
+        const target = name === 'new' ? 'notebook' : name;
+        Object.keys(views).forEach((k) => {
+          const el = views[k];
+          if (!el) return;
+          const isActive = k === target;
+          el.classList.toggle('hidden', !isActive);
+          el.setAttribute('aria-hidden', String(!isActive));
+        });
+
+        const main = document.getElementById('main') || document.querySelector('main');
+        if (main) main.setAttribute('data-active-view', name);
+        if (document.body) document.body.setAttribute('data-active-view', name);
+
+        // If this is the 'new' view, trigger the new-note action so editor is ready
+        if (name === 'new') {
+          const newBtn = document.getElementById('noteNewMobile');
+          if (newBtn) {
+            try { newBtn.click(); } catch (e) { console.warn('Failed to trigger new note', e); }
+          } else {
+            const editor = document.getElementById('scratchNotesEditor');
+            if (editor && typeof editor.focus === 'function') editor.focus();
+          }
+        }
+      }
+
+      window.addEventListener('app:navigate', (ev) => {
+        try {
+          const view = ev?.detail?.view;
+          if (!view || !order.includes(view)) return;
+          showViewFor(view);
+        } catch (e) {
+          console.error('Error handling app:navigate', e);
+        }
+      });
+    })();
+  </script>
+
   <!-- Slim sticky header (restored) -->
   <header
     id="reminders-slim-header"
