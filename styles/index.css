@@ -124,6 +124,13 @@ html[data-theme="professional"] {
   min-width: 0;
 }
 
+/* Toolbar icon sizing for mobile notebook */
+.toolbar-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
  .desktop-header-right {
   display: flex;
   align-items: center;
