@@ -342,12 +342,14 @@ const initMobileNotes = () => {
     return {
       element: scratchNotesEditorElement,
       setContent(value = '') {
-        scratchNotesEditorElement.textContent = value || '';
+        // preserve HTML markup (paragraphs, formatting)
+        scratchNotesEditorElement.innerHTML = value || '';
       },
       getHTML() {
         return scratchNotesEditorElement.innerHTML || '';
       },
       getText() {
+        // plain text fallback if required
         return scratchNotesEditorElement.textContent || '';
       },
       focus() {
@@ -366,19 +368,51 @@ const initMobileNotes = () => {
     return;
   }
 
+  // Wire up formatting toolbar (bold, italic, h2, ul) for the rich text editor
+  const toolbarEl = document.getElementById('scratchNotesToolbar');
+  if (toolbarEl && scratchNotesEditorElement) {
+    toolbarEl.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-format]');
+      if (!button) return;
+      const format = button.getAttribute('data-format');
+      try {
+        // focus editor before applying formatting
+        scratchNotesEditorElement.focus();
+      } catch {
+        /* ignore */
+      }
+      switch (format) {
+        case 'bold':
+          document.execCommand('bold', false, null);
+          break;
+        case 'italic':
+          document.execCommand('italic', false, null);
+          break;
+        case 'h2':
+          document.execCommand('formatBlock', false, 'h2');
+          break;
+        case 'ul':
+          document.execCommand('insertUnorderedList', false, null);
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
   const setEditorContent = (value = '') => {
     if (scratchNotesEditor && typeof scratchNotesEditor.setContent === 'function') {
       scratchNotesEditor.setContent(value || '');
       return;
     }
-    scratchNotesEditorElement.textContent = value || '';
+    scratchNotesEditorElement.innerHTML = value || '';
   };
 
-  const getEditorText = () => {
-    if (scratchNotesEditor && typeof scratchNotesEditor.getText === 'function') {
-      return scratchNotesEditor.getText() || '';
+  const getEditorHTML = () => {
+    if (scratchNotesEditor && typeof scratchNotesEditor.getHTML === 'function') {
+      return scratchNotesEditor.getHTML() || '';
     }
-    return scratchNotesEditorElement.textContent || '';
+    return scratchNotesEditorElement.innerHTML || '';
   };
 
   const debounce = (fn, delay = 200) => {
@@ -499,7 +533,8 @@ const initMobileNotes = () => {
 
   const getEditorValues = () => ({
     title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
-    body: getEditorText(),
+    // preserve HTML (paragraphs, inline formatting)
+    body: getEditorHTML(),
   });
 
   const updateListSelection = () => {

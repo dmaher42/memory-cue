@@ -3941,6 +3941,13 @@
               autocomplete="off"
             />
 
+            <div id="scratchNotesToolbar" class="flex items-center gap-2 text-xs text-base-content/80 mt-2">
+              <button type="button" class="btn btn-ghost btn-xs font-semibold" data-format="bold">B</button>
+              <button type="button" class="btn btn-ghost btn-xs italic" data-format="italic">I</button>
+              <button type="button" class="btn btn-ghost btn-xs" data-format="h2">H2</button>
+              <button type="button" class="btn btn-ghost btn-xs" data-format="ul">• List</button>
+            </div>
+
             <div class="note-actions-top" aria-hidden="false">
               <button
                 id="noteNewMobile"
@@ -3962,7 +3969,12 @@
           </div>
 
           <!-- Rich Text Editor -->
-          <div id="scratchNotesEditor" class="notes-editor"></div>
+          <div
+            id="scratchNotesEditor"
+            class="notes-editor h-48 rounded-xl border border-base-300 px-3 py-2 text-sm overflow-y-auto"
+            contenteditable="true"
+            data-placeholder="Start typing your note..."
+          ></div>
 
           <!-- Action Bar removed (buttons moved to top-right) -->
         </div>
