@@ -263,6 +263,18 @@
     min-width: 3.25rem;
   }
 
+  /* Shrink the mobile Save button by 75% (reduce to 25% scale) */
+  #noteSaveMobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(0.25);
+    transform-origin: center;
+    padding: 0.25rem 0.35rem;
+    line-height: 1;
+    z-index: 70;
+  }
+
   @media (max-width: 640px) {
     .mobile-panel--notes #scratch-notes-card {
       /* make room for the fixed action bar so content isn't hidden */
