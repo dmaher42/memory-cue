@@ -262,7 +262,7 @@
 
   .mobile-panel--notes #scratch-notes-card .note-actions .btn {
     /* keep New and Save visually identical: fixed width */
-    width: 3.2rem;
+    width: 3rem;
     box-sizing: border-box;
     padding: 0.35rem 0;
     text-align: center;
@@ -344,8 +344,8 @@
   #mobile-nav-shell .btm-nav {
     min-height: 2rem;
     padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    align-items: center;
+      padding-bottom: env(safe-area-inset-bottom, 0.75rem);
+      margin-top: auto;
   }
 
   #mobile-nav-shell .btm-nav button {
