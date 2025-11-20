@@ -331,14 +331,29 @@
 
   #mobile-nav-shell .btm-nav {
     min-height: 2rem;
-    padding-top: 0.15rem;
-    padding-bottom: 0.15rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    align-items: center;
   }
 
   #mobile-nav-shell .btm-nav button {
     min-height: auto;
-    padding-top: 0.15rem;
-    padding-bottom: 0.15rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+  }
+
+  /* Center labels and adjust spacing for footer nav buttons */
+  #mobile-nav-shell .btm-nav button span {
+    display: block;
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1;
+    padding: 0;
   }
 
   .btm-nav button.active {
