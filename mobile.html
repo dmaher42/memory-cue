@@ -3967,8 +3967,6 @@
               class="input input-sm flex-1 bg-base-100"
             />
 
-            <button id="noteSaveMobile" type="button" class="notebook-action-btn save" aria-label="Save note">Save</button>
-            
             <button id="openSavedNotesSheet" type="button" class="notebook-action-btn saved ml-1" aria-label="Open Notebook">Notebook</button>
           </div>
 
@@ -4391,6 +4389,10 @@
           <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
+      <!-- Save (check) button moved into header for quick access -->
+      <button id="noteSaveMobile" type="button" class="header-btn header-btn-icon" aria-label="Save note">
+        <span aria-hidden="true" class="text-lg">✓</span>
+      </button>
     </div>
     <div class="modal-backdrop" data-close></div>
   </div>
