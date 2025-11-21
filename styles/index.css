@@ -3360,3 +3360,22 @@ section[data-route="dashboard"] .dashboard-shortcuts {
     justify-content: space-between;
   }
 }
+
+.mobile-header {
+  z-index: 30;
+}
+
+.mobile-footer {
+  z-index: 30;
+}
+
+/* Ensure footer items have subtle active feedback */
+.mobile-footer-item:active {
+  transform: scale(0.96);
+}
+
+/* Optional: mark the active tab (Reminders / Notebook) */
+.mobile-footer-item--active span {
+  color: #f9fafb;
+  font-weight: 600;
+}
