@@ -11,15 +11,16 @@
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --card-bg: #F9F9F9; /* very soft off-white/light grey for input fields */
-      --card-border: #CBE6D5;
-      --text-primary: #424242; /* Soft Charcoal Black */
-      --text-secondary: #424242; /* Soft Charcoal Black */
-      --accent-color: #512663; /* Deep Violet Primary Accent */
-      --success-color: #689F38;
-      --background-color: #274b50; /* deep aqua background */
-      --hover-bg: #DCEFE2;
-      --shadow-color: rgba(51, 51, 51, 0.08);
+      --card-bg: #232d61; /* soft indigo card surface */
+      --card-border: #5e6fd8;
+      --text-primary: #f2f5ff; /* Light text for dark gradient */
+      --text-secondary: #d8defa; /* Muted lavender text */
+      --accent-color: #a9beff; /* Soft periwinkle accent */
+      --success-color: #8ed6c1;
+      --background-color: #131a3d; /* deep indigo fallback */
+      --background-gradient: linear-gradient(135deg, #3a2c8e 0%, #273a8c 45%, #111b44 100%);
+      --hover-bg: rgba(255, 255, 255, 0.08);
+      --shadow-color: rgba(8, 12, 34, 0.28);
       --true-blue: #0073cf;
       --delete-color: #EF6A6A;
 
@@ -50,28 +51,29 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: #F7F7FA; /* Soft Pale Lilac/Blue Tint */
-      --mobile-header-border: rgba(0, 121, 107, 0.15);
-      --mobile-header-shadow: 0 18px 32px rgba(0, 121, 107, 0.12);
-      --mobile-header-text: #424242; /* Soft Charcoal Black */
-      --mobile-header-button-bg: #F0F0F0; /* soft off-white/light grey elements */
-      --mobile-header-button-color: #00796B; /* deep teal accent */
-      --mobile-header-button-border: color-mix(in srgb, #00796B 38%, transparent);
-      --mobile-quick-surface: #274b50; /* deep aqua background */
-      --mobile-footer-bg: #F7F7FA; /* Soft Pale Lilac/Blue Tint */
-      --mobile-quick-shadow: 0 20px 34px rgba(0, 121, 107, 0.10);
+      --mobile-header-bg: var(--background-gradient);
+      --mobile-header-border: rgba(169, 190, 255, 0.35);
+      --mobile-header-shadow: 0 18px 32px rgba(58, 44, 142, 0.25);
+      --mobile-header-text: var(--text-primary);
+      --mobile-header-button-bg: rgba(255, 255, 255, 0.14); /* soft translucent buttons */
+      --mobile-header-button-color: var(--text-primary);
+      --mobile-header-button-border: rgba(169, 190, 255, 0.45);
+      --mobile-quick-surface: #1f285a; /* complementary indigo surface */
+      --mobile-footer-bg: var(--background-gradient);
+      --mobile-quick-shadow: 0 20px 34px rgba(34, 27, 96, 0.45);
     }
 
     /* Force Soft Pale Lilac/Blue backgrounds with high specificity */
     .header-inner,
     .header-quick-add,
     #quickAddBar {
-      background: #F7F7FA !important;
+      background: var(--mobile-header-bg) !important;
+      color: var(--mobile-header-text) !important;
     }
-    
+
     .mobile-view-inner,
     #scratch-notes-card {
-      background: #F7F7FA !important;
+      background: var(--mobile-quick-surface) !important;
     }
 
     html[data-theme="dark"],
@@ -203,15 +205,15 @@
 
   /* Distraction-free writing environment background */
   .mobile-panel--notes {
-    background: #F7F7FA;
+    background: var(--mobile-quick-surface);
   }
 
   .mobile-panel--notes .mobile-view-inner {
-    background: #F7F7FA;
+    background: var(--mobile-quick-surface);
   }
 
   .mobile-panel--notes #scratch-notes-card {
-    background: #F7F7FA;
+    background: var(--mobile-quick-surface);
   }
 
   [data-view="notebook"] .textarea {
@@ -1785,26 +1787,28 @@
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* Comprehensive deep aqua background application */
-    body {
-      background-color: #274b50 !important;
-    }
+  /* Comprehensive deep aqua background application */
+  body {
+    background: var(--background-gradient) !important;
+    color: var(--text-primary);
+  }
 
-    /* Footer navigation with deep aqua background */
-    #mobile-nav-shell {
-      background: #F7F7FA !important;
-    }
+  /* Footer navigation with deep aqua background */
+  #mobile-nav-shell {
+    background: var(--mobile-footer-bg) !important;
+  }
 
-    #mobile-nav-shell .btm-nav {
-      background: #F7F7FA !important;
-      border-top: 1px solid rgba(0, 121, 107, 0.1);
-    }
+  #mobile-nav-shell .btm-nav {
+    background: var(--mobile-footer-bg) !important;
+    border-top: 1px solid rgba(169, 190, 255, 0.25);
+  }
 
-    /* Enhanced mobile body */
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background-color: var(--background-color);
-      color: var(--text-primary);
+  /* Enhanced mobile body */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--background-gradient);
+    background-color: var(--background-color);
+    color: var(--text-primary);
       line-height: 1.6;
       margin: 0;
       padding: 0;
@@ -4064,7 +4068,7 @@
 
     <!-- Center: quick add placed as the middle grid column and centered -->
     <div class="header-quick-add flex items-center justify-center px-2 py-2">
-      <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true" style="background: #F7F7FA !important;">
+      <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true" style="background: var(--mobile-header-bg) !important; color: var(--mobile-header-text);">
         <div class="mc-quick-add-inner space-y-1.5 w-full">
           <div class="mc-quick-add-row flex items-center gap-2 w-full">
             <div class="mc-quick-input-group w-full">
@@ -4194,10 +4198,10 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-      <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: #00796B;">
+        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-primary);">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl shadow-sm p-1 space-y-0 pb-1" style="background: #F7F7FA !important; /* Soft Pale Lilac/Blue Tint */">
+        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl shadow-sm p-1 space-y-0 pb-1" style="background: var(--mobile-quick-surface) !important; color: var(--text-primary);">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
             <div class="flex flex-col">
