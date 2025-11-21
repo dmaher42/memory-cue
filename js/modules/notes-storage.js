@@ -22,13 +22,15 @@ const decodeLegacyBody = (body) => {
   }
 
   const trimmed = body.trim();
-  if (!trimmed.length) {
     return '';
   }
 
   if (!/[<>]/.test(trimmed)) {
     return body;
   }
+    if (!trimmed.length) {
+      return '';
+    }
 
   try {
     if (typeof document !== 'undefined') {
@@ -84,9 +86,14 @@ const normalizeNotes = (value) => {
         const body = typeof note.body === 'string' ? decodeLegacyBody(note.body) : '';
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
-        if (!title && !body) {
+          if (!title && !body && !note.body) {
           return null;
         }
+          // If decodeLegacyBody stripped all text but the original raw body contained
+          // HTML, preserve the original HTML so notes with only markup aren't lost.
+          if (!body && note.body && /<[^>]+>/.test(note.body)) {
+            body = note.body;
+          }
         return {
           id,
           title: title || 'Untitled note',
@@ -100,6 +107,11 @@ const normalizeNotes = (value) => {
   if (value && typeof value === 'object') {
     const title = typeof value.title === 'string' ? value.title : '';
     const body = typeof value.body === 'string' ? decodeLegacyBody(value.body) : '';
+      const rawBody = typeof value.body === 'string' ? value.body : '';
+      let body = rawBody ? decodeLegacyBody(rawBody) : '';
+      if (!body && rawBody && /<[^>]+>/.test(rawBody)) {
+        body = rawBody;
+      }
     if (!title && !body) {
       return [];
     }
@@ -112,6 +124,7 @@ const normalizeNotes = (value) => {
   }
 
   if (typeof value === 'string' && value.trim().length) {
+    // For legacy plain-string notes, decode and preserve markup if present.
     return [createNote('Notebook (legacy)', decodeLegacyBody(value))];
   }
 
