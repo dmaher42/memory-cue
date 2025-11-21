@@ -50,15 +50,15 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: #FBFBFB; /* soft warm grey header */
+      --mobile-header-bg: #FBFBFB; /* very light, soft warm grey */
       --mobile-header-border: rgba(0, 121, 107, 0.15);
       --mobile-header-shadow: 0 18px 32px rgba(0, 121, 107, 0.12);
-      --mobile-header-text: #333333; /* charcoal text */
-      --mobile-header-button-bg: #FFFFFF; /* crisp white for quick add */
-      --mobile-header-button-color: var(--accent-color);
-      --mobile-header-button-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
-      --mobile-quick-surface: #FBFBFB; /* match warm grey header */
-      --mobile-footer-bg: #FBFBFB; /* warm grey footer */
+      --mobile-header-text: #333333; /* soft charcoal black */
+      --mobile-header-button-bg: #FFFFFF; /* crisp white elements */
+      --mobile-header-button-color: #00796B; /* deep teal accent */
+      --mobile-header-button-border: color-mix(in srgb, #00796B 38%, transparent);
+      --mobile-quick-surface: #FBFBFB; /* very light, soft warm grey */
+      --mobile-footer-bg: #FBFBFB; /* very light, soft warm grey */
       --mobile-quick-shadow: 0 20px 34px rgba(0, 121, 107, 0.10);
     }
 
@@ -558,9 +558,9 @@
   }
 
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
-    outline: 2px solid var(--accent-color, #2563eb);
+    outline: 2px solid var(--accent-color, #00796B);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 18%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #00796B) 18%, transparent);
   }
 
   .mobile-shell #notesListMobile .line-clamp-2 {
