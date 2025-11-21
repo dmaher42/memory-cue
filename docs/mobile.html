@@ -3585,6 +3585,13 @@
           </ul>
         </div>
       </div>
+      <!-- Notebook opener + Save (check) button moved into header for quick access -->
+      <button id="openSavedNotesSheet" type="button" class="header-btn header-btn-icon" aria-label="Open Notebook" title="Open Notebook">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
+        </svg>
+      </button>
+
       <!-- Save (check) button moved into header for quick access -->
       <button id="noteSaveMobile" type="button" class="header-btn header-btn-icon" aria-label="Save note">
         <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -3732,7 +3739,6 @@
 
             <div id="scratch-notes-actions" class="flex justify-end gap-2 notebook-actions-row">
               <!-- Save moved to header -->
-              <button id="openSavedNotesSheet" type="button" class="notebook-action-btn saved" data-action="open-saved-notes" aria-label="Open Notebook">Notebook</button>
             </div>
           </div>
         </div>
