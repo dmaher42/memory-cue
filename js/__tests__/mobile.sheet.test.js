@@ -21,6 +21,14 @@ function runMobileModule(window) {
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
     'const initSupabaseAuth = window.__initSupabaseAuth;',
   );
+  source = source.replace(
+    "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
+    'const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__notesModule;',
+  );
+  source = source.replace(
+    "import { initNotesSync } from './js/modules/notes-sync.js';",
+    'const initNotesSync = window.__initNotesSync;',
+  );
 
   const context = vm.createContext({});
   context.window = window;
@@ -36,6 +44,16 @@ function runMobileModule(window) {
   context.navigator = window.navigator;
   context.globalThis = context;
   context.self = window;
+
+  context.window.__notesModule =
+    context.window.__notesModule || {
+      loadAllNotes: () => [],
+      saveAllNotes: () => {},
+      createNote: (note) => note || {},
+      NOTES_STORAGE_KEY: 'memoryCue:notes',
+    };
+  context.window.__initNotesSync =
+    context.window.__initNotesSync || (() => ({ handleSessionChange() {}, setSupabaseClient() {} }));
 
   vm.runInContext(source, context, { filename: filePath });
 }

@@ -1,0 +1,119 @@
+:root {
+  --mc-grad-from: #4f46e5;  /* indigo */
+  --mc-grad-mid:  #a855f7;  /* purple */
+  --mc-grad-to:   #ec4899;  /* pink */
+
+  /* Glass surface + text colours */
+  --mc-surface: rgba(15, 23, 42, 0.65);
+  --mc-surface-soft: rgba(15, 23, 42, 0.45);
+  --mc-border-soft: rgba(255, 255, 255, 0.12);
+  --mc-text-main: #f9fafb;
+  --mc-text-soft: rgba(249, 250, 251, 0.86);
+}
+
+/* Full-page gradient background, applied to main shells / body */
+.memory-page-gradient {
+  background: radial-gradient(circle at top, #60a5fa 0, #4f46e5 30%, #111827 100%);
+  color: var(--mc-text-main);
+}
+
+/* Optional: subtle inner gradient for view panels */
+.memory-panel {
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.95),
+    rgba(30, 64, 175, 0.9),
+    rgba(88, 28, 135, 0.9)
+  );
+}
+
+/* Shared glass card style used across app */
+.memory-glass-card {
+  background: linear-gradient(
+    140deg,
+    rgba(96, 165, 250, 0.96),
+    rgba(168, 85, 247, 0.95),
+    rgba(236, 72, 153, 0.9)
+  );
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.09);
+  border-radius: 1.25rem;
+  color: var(--mc-text-main);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Variant for smaller / secondary cards */
+.memory-glass-card-soft {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.92),
+    rgba(168, 85, 247, 0.9)
+  );
+  box-shadow:
+    0 14px 30px rgba(15, 23, 42, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  border-radius: 1.1rem;
+  color: var(--mc-text-soft);
+}
+
+/* Upgrade generic cards (DaisyUI/Tailwind .card) to glass theme */
+.card {
+  background: var(--mc-surface-soft);
+  border-radius: 1.1rem;
+  border: 1px solid var(--mc-border-soft);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.6);
+  color: var(--mc-text-soft);
+}
+
+.card-body {
+  color: var(--mc-text-soft);
+}
+
+/* Reminder and dashboard specific cards, if present */
+.reminder-card,
+.dashboard-card {
+  background: var(--mc-surface-soft);
+  border-radius: 1.1rem;
+  border: 1px solid var(--mc-border-soft);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.6);
+  color: var(--mc-text-soft);
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #f9fafb;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-ghost {
+  color: var(--mc-text-soft);
+}
+
+/* Text colours */
+.text-base-content {
+  color: var(--mc-text-soft);
+}
+
+.mobile-header {
+  z-index: 30;
+}
+
+.mobile-footer {
+  z-index: 30;
+}
+
+.mobile-footer-item:active {
+  transform: scale(0.96);
+}
+
+.mobile-footer-item--active span {
+  color: #f9fafb;
+  font-weight: 600;
+}
