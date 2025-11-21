@@ -49,16 +49,16 @@
       --reminder-card-gap: 0.3rem;
       --reminder-card-font-size: 0.85rem;
 
-      /* Mobile chrome with warm grey background */
+      /* Mobile chrome with comprehensive warm grey background */
       --mobile-header-bg: #FBFBFB; /* soft warm grey header */
       --mobile-header-border: rgba(0, 121, 107, 0.15);
       --mobile-header-shadow: 0 18px 32px rgba(0, 121, 107, 0.12);
-      --mobile-header-text: var(--text-primary);
-      --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(0, 121, 107, 0.12));
+      --mobile-header-text: #333333; /* charcoal text */
+      --mobile-header-button-bg: #FFFFFF; /* crisp white for quick add */
       --mobile-header-button-color: var(--accent-color);
       --mobile-header-button-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
       --mobile-quick-surface: #FBFBFB; /* match warm grey header */
-      --mobile-header-text: #333333; /* charcoal text */
+      --mobile-footer-bg: #FBFBFB; /* warm grey footer */
       --mobile-quick-shadow: 0 20px 34px rgba(0, 121, 107, 0.10);
     }
 
@@ -408,9 +408,17 @@
   }
 
   .btm-nav button.active {
-    background-color: color-mix(in srgb, var(--accent-color, #00796B) 22%, transparent);
-    color: var(--accent-color, #00796B);
+    background-color: var(--accent-color, #00796B);
+    color: #FFFFFF;
     font-weight: 600;
+    border-radius: 12px;
+  }
+
+  .btm-nav button:not(.active) {
+    background-color: #FFFFFF;
+    color: #333333;
+    border-radius: 12px;
+    margin: 2px;
   }
 
   .mobile-shell #noteBodyMobile {
@@ -1349,8 +1357,13 @@
       transition: all 0.2s ease;
     }
     
+    .seamless-title-input {
+      background-color: #FFFFFF !important;
+      border-radius: 6px;
+    }
+    
     .seamless-title-input:focus {
-      background-color: rgba(255, 255, 255, 0.8);
+      background-color: #FFFFFF !important;
       border-radius: 6px;
       box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.15);
     }
@@ -1377,7 +1390,7 @@
     
     .minimal-editor:empty::before {
       content: attr(data-placeholder);
-      color: #9CA3AF;
+      color: #424242;
       font-style: italic;
     }
     
@@ -1758,6 +1771,21 @@
       --mobile-header-height: calc(35px / 4);
       --mobile-safe-area-top: env(safe-area-inset-top, 0px);
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Comprehensive warm grey background application */
+    body {
+      background-color: #FBFBFB !important;
+    }
+
+    /* Footer navigation with warm grey background */
+    #mobile-nav-shell {
+      background: #FBFBFB;
+    }
+
+    #mobile-nav-shell .btm-nav {
+      background: #FBFBFB;
+      border-top: 1px solid rgba(0, 121, 107, 0.1);
     }
 
     /* Enhanced mobile body */
@@ -4024,11 +4052,11 @@
 
     <!-- Center: quick add placed as the middle grid column and centered -->
     <div class="header-quick-add flex items-center justify-center px-2 py-2">
-      <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl bg-base-100 shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true">
+      <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl bg-white shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true">
         <div class="mc-quick-add-inner space-y-1.5 w-full">
           <div class="mc-quick-add-row flex items-center gap-2 w-full">
             <div class="mc-quick-input-group w-full">
-              <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" />
+              <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content bg-white" type="text" autocomplete="off" placeholder="Quick reminder…" />
             </div>
             <div class="mc-quick-actions"></div>
           </div>
@@ -4103,13 +4131,13 @@
   </script>
 
   <!-- quickAddBar is now integrated in the header -->
-  <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
-    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
+  <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16" style="background: #FBFBFB;">
+    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders" style="background: #FBFBFB;">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel">
-      <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2">
+    <section data-view="reminders" id="view-reminders" class="view-panel" style="background: #FBFBFB;">
+      <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2" style="background: #FBFBFB;">
         <!-- header removed to keep view minimal -->
         <div class="reminders-tabs-wrapper">
           <div class="tabs tabs-boxed w-full text-sm">
@@ -4174,7 +4202,8 @@
               type="text"
               placeholder="Title"
               autocomplete="off"
-              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-gray-400 text-gray-800"
+              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 bg-white border-0 focus:outline-none focus:ring-0 placeholder:text-gray-400 text-gray-800"
+              style="background: #FFFFFF !important;"
             />
           </div>
 
@@ -4216,6 +4245,7 @@
             <div
               id="scratchNotesEditor"
               class="minimal-editor px-6 py-5 text-base leading-relaxed focus:outline-none bg-white rounded-lg"
+              style="background: #FFFFFF !important;"
               contenteditable="true"
               data-placeholder="Start typing your note..."
             ></div>
