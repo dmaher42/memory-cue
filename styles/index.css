@@ -3195,7 +3195,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .bottom-nav {
   display: flex;
   gap: 8px;
-  background: #FBFBFB; /* very light, soft warm grey */
+  background: #274b50; /* deep aqua background */
   border-radius: 14px;
   padding: 8px;
   box-shadow: 0 8px 20px rgba(16,24,40,0.08), 0 2px 6px rgba(16,24,40,0.04);
