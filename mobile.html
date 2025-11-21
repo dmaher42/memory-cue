@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --card-bg: #FFFFFF;
+      --card-bg: #F0F0F0; /* soft off-white/light grey for input fields */
       --card-border: #CBE6D5;
       --text-primary: #333333; /* soft charcoal black */
       --text-secondary: #333333; /* soft charcoal black */
@@ -54,7 +54,7 @@
       --mobile-header-border: rgba(0, 121, 107, 0.15);
       --mobile-header-shadow: 0 18px 32px rgba(0, 121, 107, 0.12);
       --mobile-header-text: #333333; /* soft charcoal black */
-      --mobile-header-button-bg: #FFFFFF; /* crisp white elements */
+      --mobile-header-button-bg: #F0F0F0; /* soft off-white/light grey elements */
       --mobile-header-button-color: #00796B; /* deep teal accent */
       --mobile-header-button-border: color-mix(in srgb, #00796B 38%, transparent);
       --mobile-quick-surface: #FBFBFB; /* very light, soft warm grey */
@@ -4056,7 +4056,7 @@
         <div class="mc-quick-add-inner space-y-1.5 w-full">
           <div class="mc-quick-add-row flex items-center gap-2 w-full">
             <div class="mc-quick-input-group w-full">
-              <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content bg-white" type="text" autocomplete="off" placeholder="Quick reminder…" />
+              <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" style="background: #F0F0F0 !important;" />
             </div>
             <div class="mc-quick-actions"></div>
           </div>
@@ -4202,8 +4202,8 @@
               type="text"
               placeholder="Title"
               autocomplete="off"
-              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 bg-white border-0 focus:outline-none focus:ring-0 placeholder:text-[#333333] text-[#333333]"
-              style="background: #FFFFFF !important;"
+              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 border-0 focus:outline-none focus:ring-0 placeholder:text-[#333333] text-[#333333]"
+              style="background: #F0F0F0 !important;"
             />
           </div>
 
@@ -4244,8 +4244,8 @@
           <div class="distraction-free-editor-container">
             <div
               id="scratchNotesEditor"
-              class="minimal-editor px-6 py-5 text-base leading-relaxed focus:outline-none bg-white rounded-lg"
-              style="background: #FFFFFF !important;"
+              class="minimal-editor px-6 py-5 text-base leading-relaxed focus:outline-none rounded-lg"
+              style="background: #F0F0F0 !important;"
               contenteditable="true"
               data-placeholder="Start typing your note..."
             ></div>
