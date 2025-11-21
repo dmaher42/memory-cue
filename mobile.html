@@ -6559,9 +6559,25 @@
           setActive('notebook');
           // dispatch navigate to notebook for other listeners
           window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebook' } }));
-          // programmatically click the New Note button if present
-          const newNoteBtn = document.getElementById('noteNewMobile');
-          if (newNoteBtn) newNoteBtn.click();
+          // Prepare a fresh note: clear title and editor, then focus title
+          try {
+            const titleEl = document.getElementById('noteTitleMobile');
+            const editorEl = document.getElementById('scratchNotesEditor');
+            if (titleEl) {
+              if (typeof titleEl.value !== 'undefined') titleEl.value = '';
+              titleEl.removeAttribute('data-note-original');
+            }
+            if (editorEl) {
+              if (editorEl.isContentEditable) {
+                editorEl.innerHTML = '';
+              } else if (typeof editorEl.value !== 'undefined') {
+                editorEl.value = '';
+              }
+            }
+            if (titleEl && typeof titleEl.focus === 'function') titleEl.focus();
+          } catch (err) {
+            console.warn('Failed to prepare new note UI', err);
+          }
           return;
         }
 
