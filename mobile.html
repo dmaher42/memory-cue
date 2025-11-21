@@ -3978,198 +3978,63 @@
   <!-- Slim sticky header (restored) -->
   <header
     id="reminders-slim-header"
-    class="mobile-header sticky top-0 z-40 w-full flex items-center justify-between gap-2 px-3 py-2 bg-slate-700 text-base-100 shadow-md"
+    class="mobile-header sticky top-0 flex items-center justify-between gap-2 px-3 py-2 bg-slate-700 text-base-100 shadow-md"
     role="banner"
   >
-    <style>
-      /* Header inner shell: floating pill effect */
-      #reminders-slim-header {
-        background: transparent;
-        padding: 6px 0; /* give space for the inner pill */
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      #reminders-slim-header .header-inner {
-        margin: 0 12px;
-        border-radius: 14px;
-        padding: 6px 10px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--mobile-header-bg, #E1F5FE);
-        color: var(--mobile-header-text, #0f172a);
-        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14), 0 6px 18px rgba(15,23,42,0.06);
-        backdrop-filter: blur(6px);
-      }
-
-      /* Keep the leading / center / actions layout inside the pill */
-      #reminders-slim-header .header-leading,
-      #reminders-slim-header .header-quick-add,
-      #reminders-slim-header .header-actions {
-        display: flex;
-        align-items: center;
-      }
-
-      /* Leading compact, actions minimal width; quick-add expands significantly */
-      #reminders-slim-header .header-leading { flex: 0 0 auto; }
-      #reminders-slim-header .header-actions { flex: 0 0 auto; gap: 8px; }
-      #reminders-slim-header .header-quick-add { flex: 1 1 auto; justify-content: stretch; margin: 0 8px; }
-
-      /* Quick add: expanded warm grey surface for premium feel */
-      #reminders-slim-header #quickAddBar {
-        background: #FBFBFB; /* very light, soft warm grey */
-        padding: 10px 14px;
-        border-radius: 12px;
-        box-shadow: inset 0 2px 4px rgba(15,23,42,0.04), 0 6px 18px rgba(15,23,42,0.06);
-        width: 100%;
-        border: 1px solid rgba(226, 232, 240, 0.8);
-      }
-
-      /* Ensure input sits cleanly on the white surface */
-      #reminders-slim-header #quickAddInput {
-        background: transparent;
-        border: 0;
-        padding: 0;
-        margin: 0;
-        box-shadow: none;
-      }
-
-      /* Refined icon buttons with premium styling */
-      #reminders-slim-header .icon-btn,
-      #reminders-slim-header .header-btn {
-        background: transparent;
-        border: none;
-        color: #374151; /* Default dark grey */
-        padding: 8px;
-        min-width: 40px;
-        min-height: 40px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        transition: all 0.2s ease;
-      }
-      
-      #reminders-slim-header .icon-btn:hover,
-      #reminders-slim-header .header-btn:hover {
-        background: rgba(8, 145, 178, 0.1);
-        color: #0891b2;
-      }
-      
-      /* Show/hide save button based on editing state */
-      .editing-mode #headerSaveBtn[data-editing-only="true"] {
-        display: inline-flex !important;
-      }
-    </style>
-
-    <div class="header-inner w-full">
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <!-- MC logo left with vibrant cyan/teal accent -->
-          <a
-            href="/"
-            class="mc-logo-link"
-            aria-label="Memory Cue Home"
-            style="padding: 4px; border-radius: 8px; transition: all 0.2s ease;"
-            onmouseover="this.style.background='rgba(8, 145, 178, 0.1)'"
-            onmouseout="this.style.background='transparent'"
-          >
-            <img
-              src="icons/mc-logo-32.png"
-              alt="Memory Cue"
-              width="28"
-              height="28"
-              style="display:block;border-radius:6px; filter: hue-rotate(180deg) saturate(1.2);"
-            />
-          </a>
-          <div class="flex items-center">
-            <button
-              id="addReminderBtn"
-              type="button"
-              class="btn btn-primary btn-sm rounded-full px-4"
-              aria-label="Add reminder"
-            >
-              + Add reminder
-            </button>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            id="headerBellBtn"
-            type="button"
-            class="btn btn-ghost btn-sm rounded-full"
-            aria-label="Set reminder"
-          >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.5 14.5V11c0-3.038-1.64-5.64-5-6.32V4a2 2 0 10-4 0v0.68C6.64 5.36 5 7.962 5 11v3.5c0 .538-.214 1.055-.595 1.445L3 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+    <div class="flex items-center">
+      <button
+        id="addReminderBtn"
+        type="button"
+        class="btn btn-primary btn-sm rounded-full px-4"
+      >
+        + Add reminder
       </button>
+    </div>
 
-          <button
-            id="headerSaveBtn"
-            type="button"
-            class="btn btn-ghost btn-sm rounded-full hidden"
-            aria-label="Save"
-            data-editing-only="true"
-          >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-        </div>
-      </div>
-
-      <!-- Center: quick add placed as the middle grid column and centered -->
-      <div class="header-quick-add flex items-center justify-center px-2 py-2">
-        <div
-          id="quickAddBar"
-          class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl shadow-sm px-3 py-2"
-          aria-label="Quick add reminder"
-          data-visible="true"
-          data-persistent="true"
-          style="background: var(--mobile-header-bg) !important; color: var(--mobile-header-text);"
+    <div class="flex items-center gap-2">
+      <button
+        id="openSettings"
+        type="button"
+        class="btn btn-ghost btn-sm rounded-full"
+        data-open="settings"
+        aria-label="Open settings"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          class="w-4 h-4"
         >
-          <div class="mc-quick-add-inner space-y-1.5 w-full">
-            <div class="mc-quick-add-row flex items-center gap-2 w-full">
-              <div class="mc-quick-input-group w-full">
-                <input
-                  id="quickAddInput"
-                  class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
-                  type="text"
-                  autocomplete="off"
-                  placeholder="Quick reminder…"
-                  style="background: #F9F9F9 !important;"
-                />
-              </div>
-              <div class="mc-quick-actions"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5zM19.4 15.6a1 1 0 00.25 1.09l.06.06a1 1 0 010 1.41l-1.09 1.09a1 1 0 01-1.41 0l-.06-.06a1 1 0 00-1.09-.25 1 1 0 01-1.3-.65 1 1 0 00-.97-.7h-1.54a1 1 0 00-.97.7 1 1 0 01-1.3.65 1 1 0 00-1.09.25l-.06.06a1 1 0 01-1.41 0L4.3 18.16a1 1 0 010-1.41l.06-.06a1 1 0 00.25-1.09 1 1 0 01-.65-1.3 1 1 0 00-.7-.97V11.8a1 1 0 00.7-.97 1 1 0 01-.65-1.3 1 1 0 00-.25-1.09l-.06-.06a1 1 0 010-1.41l1.09-1.09a1 1 0 011.41 0l.06.06a1 1 0 001.09.25 1 1 0 011.3.65 1 1 0 00.97.7h1.54a1 1 0 00.97-.7 1 1 0 011.3-.65 1 1 0 001.09-.25l.06-.06a1 1 0 011.41 0l1.09 1.09a1 1 0 010 1.41l-.06.06a1 1 0 00-.25 1.09 1 1 0 01.65 1.3 1 1 0 00.7.97v1.54a1 1 0 00-.7.97 1 1 0 01-.65 1.3z"
+          />
+        </svg>
+      </button>
+
+      <button
+        id="goHome"
+        type="button"
+        class="btn btn-ghost btn-sm rounded-full"
+        aria-label="Go home"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          class="w-4 h-4"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 11l8-6 8 6" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 10.5V20h14v-9.5" />
+        </svg>
+      </button>
     </div>
   </header>
-
-  <script>
-  // Header editing state management
-  (function() {
-    const quickAddInput = document.getElementById('quickAddInput');
-    const headerSaveBtn = document.getElementById('headerSaveBtn');
-    const headerElement = document.getElementById('reminders-slim-header');
-    
-    // Show save button when user starts typing
-    if (quickAddInput && headerSaveBtn && headerElement) {
-      quickAddInput.addEventListener('input', function() {
-        const hasContent = this.value.trim().length > 0;
-        if (hasContent) {
-          headerElement.classList.add('editing-mode');
-          headerSaveBtn.style.display = 'inline-flex';
-        } else {
-          headerElement.classList.remove('editing-mode');
-          headerSaveBtn.style.display = 'none';
-        }
-      });
-      
-      // Handle save button click
       headerSaveBtn.addEventListener('click', function() {
         // Trigger existing save functionality
         const event = new Event('submit');
@@ -6769,13 +6634,16 @@
 
   </script>
 
+  <!-- Mobile bottom navigation (white rounded pill) -->
   <nav
     class="mobile-footer fixed inset-x-0 bottom-0 flex items-center justify-around bg-slate-900/90 text-base-100 h-14 backdrop-blur-md border-t border-slate-700"
     role="navigation"
     aria-label="Primary navigation"
   >
     <button
-      class="mobile-footer-item bottom-tab flex flex-col items-center justify-center gap-0.5 text-[11px]"
+      id="mobileNewNoteTab"
+      type="button"
+      class="bottom-tab mobile-footer-item flex flex-col items-center justify-center gap-0.5 text-[11px]"
       data-tab="new"
       aria-label="New Reminder"
     >
@@ -6785,7 +6653,9 @@
     </button>
 
     <button
-      class="mobile-footer-item bottom-tab flex flex-col items-center justify-center gap-0.5 text-[11px] text-base-content/70"
+      id="mobileRemindersTab"
+      type="button"
+      class="bottom-tab mobile-footer-item flex flex-col items-center justify-center gap-0.5 text-[11px] text-base-content/70"
       data-tab="reminders"
       aria-label="Reminders"
     >
@@ -6793,10 +6663,11 @@
     </button>
 
     <button
-      class="mobile-footer-item bottom-tab flex flex-col items-center justify-center gap-0.5 text-[11px] text-base-content/70"
+      id="mobileNotebookTab"
+      type="button"
+      class="bottom-tab mobile-footer-item flex flex-col items-center justify-center gap-0.5 text-[11px] text-base-content/70"
       data-tab="notebook"
       aria-label="Notebook"
-      aria-current="page"
     >
       <span class="text-xs">Notebook</span>
     </button>
