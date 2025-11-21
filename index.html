@@ -182,6 +182,30 @@
       padding: clamp(1.5rem, 4vw, 2.25rem);
     }
 
+    section[data-route="notes"] #noteTitle {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    section[data-route="notes"] #noteTitle::placeholder {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    section[data-route="notes"] #noteBody {
+      background: rgba(255, 255, 255, 0.28);
+      color: #1a1a1a;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    section[data-route="notes"] #noteBody::placeholder {
+      color: color-mix(in srgb, #1a1a1a 70%, #ffffff 30%);
+    }
+
     @media (max-width: 639px) {
       section[data-route="notes"] .notes-editor-card {
         border-radius: 1.5rem;
