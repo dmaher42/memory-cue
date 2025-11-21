@@ -1382,7 +1382,7 @@
     }
     
     .formatting-toolbar-strip {
-      margin: 1rem 0;
+      margin: 0.25rem 0;
       backdrop-filter: blur(8px);
       min-height: auto;
     }
@@ -1422,7 +1422,7 @@
     #scratch-notes-card {
       border: none !important;
       box-shadow: none !important;
-      padding: 1.5rem !important;
+      padding: 0.5rem !important;
     }
     .view-panel {
       display: grid;
@@ -4154,10 +4154,10 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-      <div class="mobile-view-inner mx-auto w-full max-w-md px-3 pt-3 pb-3 space-y-2">
+      <div class="mobile-view-inner mx-auto w-full max-w-md px-1 pt-3 pb-3 space-y-1">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl bg-base-100 shadow-sm p-4 space-y-3 pb-2">
+        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl bg-base-100 shadow-sm p-2 space-y-1 pb-1">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-1 border-b border-base-200/70">
             <div class="flex flex-col">
@@ -4178,10 +4178,10 @@
             />
           </div>
 
-          <!-- Single-row formatting toolbar with vibrant cyan/teal accent -->
+          <!-- Single-row formatting toolbar with reduced spacing -->
           <div
             id="scratchNotesToolbar"
-            class="formatting-toolbar-strip flex items-center gap-3 px-6 py-3 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
+            class="formatting-toolbar-strip flex items-center gap-3 px-2 py-2 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
           >
             <button type="button" class="formatting-btn" data-format="bold" aria-label="Bold">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
