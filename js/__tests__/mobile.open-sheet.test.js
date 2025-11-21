@@ -22,6 +22,14 @@ function loadMobileModule() {
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
     'const { initSupabaseAuth } = window.__mobileMocks;'
   );
+  source = source.replace(
+    "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
+    'const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__mobileMocks;',
+  );
+  source = source.replace(
+    "import { initNotesSync } from './js/modules/notes-sync.js';",
+    'const { initNotesSync } = window.__mobileMocks;',
+  );
   const context = vm.createContext({
     window,
     document,
@@ -75,6 +83,11 @@ describe('mobile sheet opener events', () => {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
       initSupabaseAuth: jest.fn(),
+      loadAllNotes: () => [],
+      saveAllNotes: () => {},
+      createNote: () => ({}),
+      NOTES_STORAGE_KEY: 'memoryCue:notes',
+      initNotesSync: () => ({ handleSessionChange() {}, setSupabaseClient() {} }),
     };
 
     loadMobileModule();
