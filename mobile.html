@@ -1020,6 +1020,7 @@
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <!-- Ensure this file exists; keep as-is or change to your actual icon -->
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
@@ -3867,19 +3868,19 @@
         align-items: center;
       }
 
-      /* Leading and actions keep natural width; quick-add grows */
+      /* Leading compact, actions minimal width; quick-add expands significantly */
       #reminders-slim-header .header-leading { flex: 0 0 auto; }
-      #reminders-slim-header .header-actions { flex: 0 0 auto; }
-      #reminders-slim-header .header-quick-add { flex: 1 1 auto; justify-content: center; }
+      #reminders-slim-header .header-actions { flex: 0 0 auto; gap: 8px; }
+      #reminders-slim-header .header-quick-add { flex: 1 1 auto; justify-content: stretch; margin: 0 8px; }
 
-      /* Quick add: white surface for contrast */
+      /* Quick add: expanded white surface for premium feel */
       #reminders-slim-header #quickAddBar {
         background: #ffffff;
-        padding: 8px 10px;
+        padding: 10px 14px;
         border-radius: 12px;
-        box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+        box-shadow: inset 0 2px 4px rgba(15,23,42,0.04), 0 6px 18px rgba(15,23,42,0.06);
         width: 100%;
-        max-width: 720px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
       }
 
       /* Ensure input sits cleanly on the white surface */
@@ -3891,27 +3892,39 @@
         box-shadow: none;
       }
 
-      /* Tweak icon button contrast inside the pill */
+      /* Refined icon buttons with premium styling */
       #reminders-slim-header .icon-btn,
       #reminders-slim-header .header-btn {
         background: transparent;
         border: none;
-        color: inherit;
-        padding: 6px;
-        min-width: 36px;
-        min-height: 36px;
+        color: #374151; /* Default dark grey */
+        padding: 8px;
+        min-width: 40px;
+        min-height: 40px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+      }
+      
+      #reminders-slim-header .icon-btn:hover,
+      #reminders-slim-header .header-btn:hover {
+        background: rgba(8, 145, 178, 0.1);
+        color: #0891b2;
+      }
+      
+      /* Show/hide save button based on editing state */
+      .editing-mode #headerSaveBtn[data-editing-only="true"] {
+        display: inline-flex !important;
       }
     </style>
 
     <div class="header-inner">
-    <div class="header-leading flex items-center gap-2 flex-shrink-0 px-3 py-2">
-      <!-- MC logo left -->
-      <a href="/" class="mc-logo-link" aria-label="Memory Cue Home">
-          <img src="icons/mc-logo-32.png" alt="Memory Cue" width="32" height="32" style="display:block;border-radius:6px;" />
+    <div class="header-leading flex items-center gap-2 flex-shrink-0 px-2 py-2">
+      <!-- MC logo left with vibrant cyan/teal accent -->
+      <a href="/" class="mc-logo-link" aria-label="Memory Cue Home" style="padding: 4px; border-radius: 8px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(8, 145, 178, 0.1)'" onmouseout="this.style.background='transparent'">
+          <img src="icons/mc-logo-32.png" alt="Memory Cue" width="28" height="28" style="display:block;border-radius:6px; filter: hue-rotate(180deg) saturate(1.2);" />
       </a>
     </div>
 
@@ -3929,84 +3942,71 @@
       </div>
     </div>
 
-    <!-- Right-aligned actions: bell, settings, overflow -->
-    <div class="header-actions flex items-center gap-2 px-3 py-2 justify-end">
-      <button id="headerBellBtn" class="icon-btn" aria-label="Set reminder">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.5 14.5V11c0-3.038-1.64-5.64-5-6.32V4a2 2 0 10-4 0v0.68C6.64 5.36 5 7.962 5 11v3.5c0 .538-.214 1.055-.595 1.445L3 17h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Right-aligned actions: simplified to Bell and Save (when editing) -->
+    <div class="header-actions flex items-center gap-1 px-2 py-2 justify-end">
+      <button id="headerBellBtn" class="icon-btn" aria-label="Set reminder" style="color: #0891b2;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.5 14.5V11c0-3.038-1.64-5.64-5-6.32V4a2 2 0 10-4 0v0.68C6.64 5.36 5 7.962 5 11v3.5c0 .538-.214 1.055-.595 1.445L3 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
 
-      <button id="headerSettingsBtn" class="icon-btn" aria-label="Open settings">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M19.4 15a7 7 0 000-6l2.1-1.6-2-3.5L17 3.9a7 7 0 00-4-1.5l-1 .3L11 3l-1 .1-1 .3a7 7 0 00-4 1.5L1.5 3.9l-2 3.5L1.6 9.1a7 7 0 000 6L-.5 17.6l2 3.5L5 20.1a7 7 0 004 1.5l1-.3 1-.1 1-.1 1-.3a7 7 0 004-1.5l3.6 1.7 2-3.5L19.4 15z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+      <button id="headerSaveBtn" class="icon-btn" aria-label="Save" style="color: #0891b2; display: none;" data-editing-only="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
 
-      <div class="header-overflow-wrapper">
-        <button id="overflowMenuBtn" type="button" class="header-btn header-btn-icon" aria-label="Open quick settings" aria-haspopup="menu" aria-controls="overflowMenu" aria-expanded="false">
-          <span class="text-xl leading-none" aria-hidden="true">⋯</span>
-        </button>
-        <div id="overflowMenu" class="hidden quick-actions-panel absolute right-0 mt-2" role="menu" aria-hidden="true" aria-labelledby="overflowMenuHeading">
-          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-          <ul class="quick-actions" role="presentation">
-            <li role="none">
-              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                <span class="sr-only">Dictate reminder</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                <span class="sr-only">Open settings</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                <span class="sr-only">Toggle theme</span>
-              </button>
-            </li>
-              <li role="none">
-                <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                  <span class="sr-only">Sign in</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                  <span class="sr-only">Sign out</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <!-- Notebook button in header -->
-        <button id="openSavedNotesSheet" type="button" class="icon-btn" aria-label="Open Notebook" title="Open Notebook">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
-          </svg>
-        </button>
-
-        <!-- Save button in header (checkmark) -->
-        <button id="noteSaveMobile" type="button" class="icon-btn" aria-label="Save note">
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
-          </svg>
-        </button>
-        <!-- home button removed: replaced by MC logo on the left -->
-      </div>
     </div>
   </header>
+
+  <script>
+  // Header editing state management
+  (function() {
+    const quickAddInput = document.getElementById('quickAddInput');
+    const headerSaveBtn = document.getElementById('headerSaveBtn');
+    const headerElement = document.getElementById('reminders-slim-header');
+    
+    // Show save button when user starts typing
+    if (quickAddInput && headerSaveBtn && headerElement) {
+      quickAddInput.addEventListener('input', function() {
+        const hasContent = this.value.trim().length > 0;
+        if (hasContent) {
+          headerElement.classList.add('editing-mode');
+          headerSaveBtn.style.display = 'inline-flex';
+        } else {
+          headerElement.classList.remove('editing-mode');
+          headerSaveBtn.style.display = 'none';
+        }
+      });
+      
+      // Handle save button click
+      headerSaveBtn.addEventListener('click', function() {
+        // Trigger existing save functionality
+        const event = new Event('submit');
+        if (quickAddInput.form) {
+          quickAddInput.form.dispatchEvent(event);
+        } else {
+          // Fallback: trigger enter key on input
+          const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13 });
+          quickAddInput.dispatchEvent(enterEvent);
+        }
+        
+        // Reset editing state
+        headerElement.classList.remove('editing-mode');
+        headerSaveBtn.style.display = 'none';
+        quickAddInput.value = '';
+      });
+      
+      // Handle focus/blur for refined UX
+      quickAddInput.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+          headerElement.classList.add('editing-mode');
+          headerSaveBtn.style.display = 'inline-flex';
+        }
+      });
+    }
+  })();
+  </script>
 
   <!-- quickAddBar is now integrated in the header -->
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">

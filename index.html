@@ -53,6 +53,7 @@
   <!-- BEGIN GPT CHANGE: apple icon -->
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <!-- END GPT CHANGE -->
+  <!-- Ensure this file exists; keep as-is or change to your actual icon -->
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
@@ -64,6 +65,9 @@
       --reminder-quantum-blue: #7a9acd;
       --reminder-bio-orange: #f2a65a;
     }
+
+    /* Safe area helper used by header (Tailwind doesn't ship this) */
+    .pt-safe-top { padding-top: env(safe-area-inset-top); }
 
     body,
     .min-h-screen {
