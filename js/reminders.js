@@ -3242,7 +3242,7 @@ export async function initReminders(sel = {}) {
   }
 
   const PIN_TOGGLE_HANDLER_PROP = '__mcPinToggleHandler';
-  let pinToggleSyncScheduled = false;
+  var pinToggleSyncScheduled = false;
 
   function updatePinToggleVisualState(toggle, pinned) {
     if (!(toggle instanceof HTMLElement)) {
@@ -3762,6 +3762,7 @@ export async function initReminders(sel = {}) {
       deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn';
       deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
       deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
+      deleteBtn.setAttribute('data-action', 'delete');
       deleteBtn.setAttribute('data-reminder-control', 'delete');
       deleteBtn.setAttribute('data-no-swipe', 'true');
       deleteBtn.addEventListener('click', (event) => {
