@@ -178,7 +178,7 @@
   }
 
   body[data-active-view="notebook"] #view-notebook {
-    background: var(--card-bg);
+    background: #FAFAFA;
   }
 
   body[data-active-view="notebook"] #view-notebook .card {
@@ -187,6 +187,19 @@
     border-radius: 0;
     box-shadow: none;
     background: transparent;
+  }
+
+  /* Distraction-free writing environment background */
+  .mobile-panel--notes {
+    background: #FAFAFA;
+  }
+
+  .mobile-panel--notes .mobile-view-inner {
+    background: #FAFAFA;
+  }
+
+  .mobile-panel--notes #scratch-notes-card {
+    background: #FAFAFA;
   }
 
   [data-view="notebook"] .textarea {
@@ -1329,6 +1342,82 @@
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
+    }
+
+    /* Distraction-free writing environment styles */
+    .seamless-title-input {
+      transition: all 0.2s ease;
+    }
+    
+    .seamless-title-input:focus {
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 6px;
+      box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.15);
+    }
+    
+    .distraction-free-editor-container {
+      margin-top: 0.75rem;
+    }
+    
+    .minimal-editor {
+      border: 1px solid #E5E7EB;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      line-height: 1.7;
+    }
+    
+    .minimal-editor:focus {
+      border-color: #D1D5DB;
+      box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      outline: none;
+    }
+    
+    .minimal-editor:empty::before {
+      content: attr(data-placeholder);
+      color: #9CA3AF;
+      font-style: italic;
+    }
+    
+    .formatting-toolbar-strip {
+      margin: 1rem 0;
+      backdrop-filter: blur(8px);
+    }
+    
+    .formatting-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #00BCD4;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .formatting-btn:hover {
+      background: rgba(0, 188, 212, 0.1);
+      color: #00ACC1;
+      transform: translateY(-1px);
+    }
+    
+    .formatting-btn:active {
+      transform: translateY(0);
+      background: rgba(0, 188, 212, 0.15);
+    }
+    
+    .formatting-btn:focus-visible {
+      outline: 2px solid #00BCD4;
+      outline-offset: 2px;
+    }
+    
+    /* Enhance the overall scratch notes card for seamless flow */
+    #scratch-notes-card {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 1.5rem !important;
     }
     .view-panel {
       display: grid;
@@ -4073,42 +4162,42 @@
             <!-- saved notes button moved into the sub-header for compact layout -->
           </div>
 
-          <!-- Unified notebook sub-header -->
-          <div class="flex items-center gap-2 px-2 py-1 rounded-md notebook-actions-row border border-base-300/40">
+          <!-- Seamless title field -->
+          <div class="flex items-center gap-2 px-1 py-1 rounded-md notebook-actions-row">
             <input
               id="noteTitleMobile"
               type="text"
               placeholder="Title"
               autocomplete="off"
-              class="input input-sm flex-1 bg-base-100"
+              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-gray-400 text-gray-800"
             />
           </div>
 
-          <!-- Formatting toolbar -->
+          <!-- Clean formatting toolbar with vibrant cyan/teal accent -->
           <div
             id="scratchNotesToolbar"
-            class="flex items-center gap-1 text-[11px] text-base-content/70 pt-1 pb-1 border-t border-base-300/40"
+            class="formatting-toolbar-strip flex items-center gap-3 px-4 py-2 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
           >
-            <button type="button" class="btn btn-ghost btn-xxs px-2" data-format="bold" aria-label="Bold">
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <button type="button" class="formatting-btn" data-format="bold" aria-label="Bold">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
               </svg>
             </button>
 
-            <button type="button" class="btn btn-ghost btn-xxs px-2 italic" data-format="italic" aria-label="Italic">
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <button type="button" class="formatting-btn" data-format="italic" aria-label="Italic">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M10 4h9v2h-3.6l-3.8 12H16v2H7v-2h3.6l3.8-12H10V4z" fill="currentColor" />
               </svg>
             </button>
 
-            <button type="button" class="btn btn-ghost btn-xxs px-2" data-format="h2" aria-label="Heading">
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <button type="button" class="formatting-btn" data-format="h2" aria-label="Heading">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 5h2v6h6V5h2v14h-2v-6H7v6H5V5zm11.5 10.5c0-1.9 1.5-2.8 2.7-3.4.9-.4 1.3-.7 1.3-1.3 0-.6-.5-1-1.2-1-.7 0-1.3.4-1.6 1l-1.7-.8C16.4 9.9 17.5 9 19.3 9c1.8 0 3.1 1.1 3.1 2.8 0 1.7-1.4 2.4-2.4 2.9-.8.4-1.4.7-1.4 1.5v.2h-1.6v-.4z" fill="currentColor" />
               </svg>
             </button>
 
-            <button type="button" class="btn btn-ghost btn-xxs px-2" data-format="ul" aria-label="Bullet list">
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <button type="button" class="formatting-btn" data-format="ul" aria-label="Bullet list">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 6h13v2H7V6zm0 5h13v2H7v-2zm0 5h13v2H7v-2z" fill="currentColor" />
                 <circle cx="4" cy="7" r="1.25" fill="currentColor" />
                 <circle cx="4" cy="12" r="1.25" fill="currentColor" />
@@ -4117,11 +4206,11 @@
             </button>
           </div>
 
-          <!-- Rich Text Editor (wrapped for polish) -->
-          <div class="notes-editor-container rounded-xl border border-base-300 bg-base-100 overflow-hidden">
+          <!-- Minimal main editor with soft styling -->
+          <div class="distraction-free-editor-container">
             <div
               id="scratchNotesEditor"
-              class="notes-editor px-3 py-3 text-[15px] leading-relaxed focus:outline-none min-h-[14rem]"
+              class="minimal-editor px-6 py-5 text-base leading-relaxed focus:outline-none min-h-[16rem] bg-white rounded-lg"
               contenteditable="true"
               data-placeholder="Start typing your note..."
             ></div>
