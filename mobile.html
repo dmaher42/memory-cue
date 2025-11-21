@@ -1381,20 +1381,23 @@
     .formatting-toolbar-strip {
       margin: 1rem 0;
       backdrop-filter: blur(8px);
+      min-height: 80px;
+      align-content: flex-start;
     }
     
     .formatting-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       border: none;
       background: transparent;
       color: #00BCD4;
       cursor: pointer;
       transition: all 0.2s ease;
+      margin: 2px;
     }
     
     .formatting-btn:hover {
@@ -4173,11 +4176,12 @@
             />
           </div>
 
-          <!-- Clean formatting toolbar with vibrant cyan/teal accent -->
+          <!-- Multi-row formatting toolbar with vibrant cyan/teal accent -->
           <div
             id="scratchNotesToolbar"
-            class="formatting-toolbar-strip flex items-center gap-3 px-4 py-2 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
+            class="formatting-toolbar-strip flex flex-wrap gap-4 px-6 py-4 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
           >
+            <!-- First Row: Bold & Italic -->
             <button type="button" class="formatting-btn" data-format="bold" aria-label="Bold">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
@@ -4190,6 +4194,10 @@
               </svg>
             </button>
 
+            <!-- Force line break for second row -->
+            <div class="w-full"></div>
+
+            <!-- Second Row: Heading & List -->
             <button type="button" class="formatting-btn" data-format="h2" aria-label="Heading">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 5h2v6h6V5h2v14h-2v-6H7v6H5V5zm11.5 10.5c0-1.9 1.5-2.8 2.7-3.4.9-.4 1.3-.7 1.3-1.3 0-.6-.5-1-1.2-1-.7 0-1.3.4-1.6 1l-1.7-.8C16.4 9.9 17.5 9 19.3 9c1.8 0 3.1 1.1 3.1 2.8 0 1.7-1.4 2.4-2.4 2.9-.8.4-1.4.7-1.4 1.5v.2h-1.6v-.4z" fill="currentColor" />
