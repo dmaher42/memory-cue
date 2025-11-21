@@ -223,6 +223,7 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem 0.85rem calc(1rem + env(safe-area-inset-bottom, 0.75rem));
+    position: relative;
     border-radius: 0.85rem;
   }
 
@@ -233,10 +234,107 @@
     overflow-y: auto;
   }
 
-  .mobile-panel--notes #scratch-notes-card .note-actions {
+  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
     margin-top: auto;
     padding-top: 0.5rem;
     padding-bottom: env(safe-area-inset-bottom, 0.75rem);
+  }
+
+  /* Keep note action buttons fixed and accessible without scrolling on all viewports */
+  .mobile-panel--notes #scratch-notes-card {
+    /* make room for the fixed action bar so content isn't hidden */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3.5rem);
+  }
+
+  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    /* Position above the bottom navigation bar so buttons don't overlap the footer */
+    bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.25rem);
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.02), transparent);
+    box-shadow: 0 -6px 18px rgba(0,0,0,0.06);
+    border-radius: 0.6rem;
+    z-index: 60;
+  }
+
+  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom .btn {
+    /* keep New and Save visually identical: fixed width */
+    width: 3.6rem;
+    box-sizing: border-box;
+    padding: 0.35rem 0;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* Top-right compact actions (aligned with Title input) */
+  .mobile-panel--notes #scratch-notes-card .note-actions-top {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.85rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    z-index: 70;
+  }
+
+  .mobile-panel--notes #scratch-notes-card .note-actions-top .btn {
+    min-width: 2.6rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  /* Shrink the mobile Save button by 75% (reduce to 25% scale) */
+  #noteSaveMobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: none;
+    padding: 0.35rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    width: 3.6rem;
+    box-sizing: border-box;
+    border-radius: 0.45rem;
+    line-height: 1;
+    z-index: 70;
+  }
+
+  @media (max-width: 640px) {
+    .mobile-panel--notes #scratch-notes-card {
+      /* make room for the fixed action bar so content isn't hidden */
+      padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3.5rem);
+    }
+
+    .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
+      position: fixed;
+      left: 0.5rem;
+      right: 0.5rem;
+      /* Position above the bottom navigation bar so buttons don't overlap the footer */
+      bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.25rem);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.5rem 0.6rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.02), transparent);
+      box-shadow: 0 -6px 18px rgba(0,0,0,0.06);
+      border-radius: 0.6rem;
+      z-index: 60;
+    }
+
+    .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom .btn {
+      width: 3.6rem;
+      box-sizing: border-box;
+      padding: 0.35rem 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
   }
 
   .mobile-shell #view-notebook .card {
@@ -269,14 +367,31 @@
 
   #mobile-nav-shell .btm-nav {
     min-height: 2rem;
-    padding-top: 0.15rem;
-    padding-bottom: 0.15rem;
+    padding-top: 0.25rem;
+      padding-bottom: env(safe-area-inset-bottom, 0.75rem);
+      margin-top: auto;
   }
 
   #mobile-nav-shell .btm-nav button {
     min-height: auto;
-    padding-top: 0.15rem;
-    padding-bottom: 0.15rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  /* Center labels and adjust spacing for footer nav buttons */
+  #mobile-nav-shell .btm-nav button span {
+    display: block;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0;
   }
 
   .btm-nav button.active {
@@ -905,6 +1020,7 @@
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <!-- Ensure this file exists; keep as-is or change to your actual icon -->
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
@@ -2804,6 +2920,7 @@
       min-height: var(--mobile-header-height);
       padding-block: 0;
       backdrop-filter: blur(18px);
+      border-radius: 0 0 0.85rem 0.85rem;
     }
 
     /* Inner container: single row, spaced out */
@@ -2902,6 +3019,7 @@
       backdrop-filter: none;
       margin: 0.25rem 0 0.25rem;
       width: 100%;
+      max-width: none; /* allow quick-add to use the available header space */
     }
 
     .mc-quick-add-inner {
@@ -3200,92 +3318,119 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
-    /* NEW: Slim sticky header for reminders */
+    /* NEW: Premium multi-layered header */
     #reminders-slim-header {
       position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 60;
       width: 100%;
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 0.75rem;
-      padding: 0.6rem 1rem;
-      background: var(--mobile-quick-surface);
-      color: var(--text-primary);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-bottom: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
-      box-shadow: var(--mobile-header-shadow);
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.5rem;
+      background: var(--mobile-header-bg, #E1F5FE);
+      color: var(--mobile-header-text, #0f172a);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+      position: relative;
+    }
+
+    /* Top accent band */
+    #reminders-slim-header::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 4px;
+      background: #00BCD4;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+      z-index: 61;
     }
 
     #reminders-slim-header .header-leading,
     #reminders-slim-header .header-actions {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      flex-wrap: nowrap;
-    }
-
-    #reminders-slim-header .header-leading {
-      justify-content: flex-start;
-    }
-
-    #reminders-slim-header .header-actions {
-      justify-content: flex-end;
+      gap: 0.5rem;
+      z-index: 65;
     }
 
     #reminders-slim-header .header-quick-add {
-      width: 100%;
-      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 0.5rem;
+      z-index: 62;
     }
 
-    #reminders-slim-header .header-btn {
-      min-height: 40px;
-      min-width: 40px;
-      padding: 0.35rem;
-      border-radius: 999px;
-      border: 1px solid var(--mobile-header-button-border);
-      background: var(--mobile-header-button-bg);
-      color: var(--mobile-header-button-color);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
+    .reminders-quick-add {
+      width: 100%;
+      max-width: 640px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.06), 0 6px 14px rgba(2,6,23,0.03);
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #111827;
+    }
+
+    .reminders-quick-add input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 0.95rem;
+      color: #111827;
+      padding: 0;
+    }
+
+    #reminders-slim-header .header-actions .icon-btn {
+      width: 36px;
+      height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.25rem;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: #374151;
+      cursor: pointer;
     }
 
-    #reminders-slim-header .header-btn:hover,
-    #reminders-slim-header .header-btn:focus-visible {
-      background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
-      color: var(--mobile-header-button-color);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-      outline: none;
-    }
-
-    #reminders-slim-header .header-btn:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--accent-color) 35%, transparent);
+    #reminders-slim-header .header-actions .icon-btn:focus-visible {
+      outline: 3px solid color-mix(in srgb, #00BCD4 18%, transparent);
       outline-offset: 2px;
     }
 
-    #reminders-slim-header .header-btn:active {
-      transform: translateY(0);
+    /* Hide inline Save/Notebook actions in notebook row */
+    .notebook-actions-row .notebook-action-btn.save,
+    .notebook-actions-row .notebook-action-btn.saved {
+      display: none !important;
     }
 
-    #reminders-slim-header .header-btn-icon {
-      padding: 0;
-      width: 2.25rem;
-      height: 2.25rem;
-    }
-
-    #reminders-slim-header .header-overflow-wrapper {
-      position: relative;
+    /* Make the notebook Save icon clearly visible in the header */
+    #reminders-slim-header #noteSaveMobile {
+      background: transparent;
+      border: none;
+      color: var(--mobile-header-text);
+      padding: 0.15rem;
+      min-width: 36px;
+      min-height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+    }
+
+    #reminders-slim-header #noteSaveMobile:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-color) 24%, transparent);
+      outline-offset: 2px;
     }
 
     /* Adjust main content to account for sticky header */
@@ -3303,8 +3448,8 @@
     /* Responsive adjustments for narrow screens */
     @media (max-width: 380px) {
       #reminders-slim-header {
-        padding: 0.4rem 0.75rem;
-        gap: 0.5rem;
+        padding: 0.18rem 0.4rem;
+        gap: 0.25rem;
         grid-template-columns: minmax(0, 1fr);
       }
 
@@ -3323,10 +3468,10 @@
       }
 
       #reminders-slim-header .header-btn {
-        min-width: 40px;
-        min-height: 40px;
-        padding: 0.4rem 0.6rem;
-        font-size: 0.8rem;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 0.18rem 0.28rem;
+        font-size: 0.75rem;
       }
     }
   </style>
@@ -3639,149 +3784,231 @@
     })();
   </script>
 
-  <!-- NEW: Slim sticky header for reminders -->
-  <div id="reminders-slim-header" role="banner" style="background: #E1F5FE; color: #0f172a;">
-    <div class="header-leading">
-      <button
-        id="btn-open-drawer"
-        type="button"
-        class="header-btn header-btn-icon"
-        aria-label="Open navigation menu"
-        aria-expanded="false"
-      >
-        <span class="text-xl leading-none" aria-hidden="true">☰</span>
-        <span class="sr-only">Open navigation menu</span>
-      </button>
-      <button
-        id="addReminderBtn"
-        type="button"
-        class="header-btn header-btn-icon"
-        data-open-add-task
-        aria-label="Open detailed reminder form"
-        aria-controls="createReminderModal"
-        aria-expanded="false"
-      >
-        <span class="text-lg leading-none" aria-hidden="true">＋</span>
-        <span class="sr-only">Open detailed reminder form</span>
-      </button>
+  <script>
+    // Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
+    // prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
+    (function() {
+      const views = {
+        reminders: document.querySelector('[data-view="reminders"]'),
+        notebook: document.querySelector('[data-view="notebook"]')
+      };
+
+      const order = ['reminders', 'new', 'notebook'];
+
+      function showViewFor(name) {
+        // When navigating to 'new', we display the reminders view but keep the
+        // body/main active view set to 'new' so the bottom-tab can be highlighted.
+        const target = name === 'new' ? 'reminders' : name;
+        Object.keys(views).forEach((k) => {
+          const el = views[k];
+          if (!el) return;
+          const isActive = k === target;
+          el.classList.toggle('hidden', !isActive);
+          el.setAttribute('aria-hidden', String(!isActive));
+        });
+
+        const main = document.getElementById('main') || document.querySelector('main');
+        if (main) main.setAttribute('data-active-view', name);
+        if (document.body) document.body.setAttribute('data-active-view', name);
+
+        // If this is the 'new' view, trigger the add reminder action so the
+        // quick-add UI is ready.
+        if (name === 'new') {
+          const addBtn = document.getElementById('addReminderBtn');
+          if (addBtn) {
+            try { addBtn.click(); } catch (e) { console.warn('Failed to trigger add reminder', e); }
+          } else {
+            // fallback: focus quick add input if present
+            const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+            if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
+          }
+        }
+      }
+
+      window.addEventListener('app:navigate', (ev) => {
+        try {
+          const view = ev?.detail?.view;
+          if (!view || !order.includes(view)) return;
+          showViewFor(view);
+        } catch (e) {
+          console.error('Error handling app:navigate', e);
+        }
+      });
+    })();
+  </script>
+
+  <!-- Slim sticky header (restored) -->
+  <header id="reminders-slim-header" class="sticky top-0 z-40 w-full" role="banner">
+    <style>
+      /* Header inner shell: floating pill effect */
+      #reminders-slim-header {
+        background: transparent;
+        padding: 6px 0; /* give space for the inner pill */
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      #reminders-slim-header .header-inner {
+        margin: 0 12px;
+        border-radius: 14px;
+        padding: 6px 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--mobile-header-bg, #E1F5FE);
+        color: var(--mobile-header-text, #0f172a);
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14), 0 6px 18px rgba(15,23,42,0.06);
+        backdrop-filter: blur(6px);
+      }
+
+      /* Keep the leading / center / actions layout inside the pill */
+      #reminders-slim-header .header-leading,
+      #reminders-slim-header .header-quick-add,
+      #reminders-slim-header .header-actions {
+        display: flex;
+        align-items: center;
+      }
+
+      /* Leading compact, actions minimal width; quick-add expands significantly */
+      #reminders-slim-header .header-leading { flex: 0 0 auto; }
+      #reminders-slim-header .header-actions { flex: 0 0 auto; gap: 8px; }
+      #reminders-slim-header .header-quick-add { flex: 1 1 auto; justify-content: stretch; margin: 0 8px; }
+
+      /* Quick add: expanded white surface for premium feel */
+      #reminders-slim-header #quickAddBar {
+        background: #ffffff;
+        padding: 10px 14px;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 4px rgba(15,23,42,0.04), 0 6px 18px rgba(15,23,42,0.06);
+        width: 100%;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+      }
+
+      /* Ensure input sits cleanly on the white surface */
+      #reminders-slim-header #quickAddInput {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+      }
+
+      /* Refined icon buttons with premium styling */
+      #reminders-slim-header .icon-btn,
+      #reminders-slim-header .header-btn {
+        background: transparent;
+        border: none;
+        color: #374151; /* Default dark grey */
+        padding: 8px;
+        min-width: 40px;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+      }
+      
+      #reminders-slim-header .icon-btn:hover,
+      #reminders-slim-header .header-btn:hover {
+        background: rgba(8, 145, 178, 0.1);
+        color: #0891b2;
+      }
+      
+      /* Show/hide save button based on editing state */
+      .editing-mode #headerSaveBtn[data-editing-only="true"] {
+        display: inline-flex !important;
+      }
+    </style>
+
+    <div class="header-inner">
+    <div class="header-leading flex items-center gap-2 flex-shrink-0 px-2 py-2">
+      <!-- MC logo left with vibrant cyan/teal accent -->
+      <a href="/" class="mc-logo-link" aria-label="Memory Cue Home" style="padding: 4px; border-radius: 8px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(8, 145, 178, 0.1)'" onmouseout="this.style.background='transparent'">
+          <img src="icons/mc-logo-32.png" alt="Memory Cue" width="28" height="28" style="display:block;border-radius:6px; filter: hue-rotate(180deg) saturate(1.2);" />
+      </a>
     </div>
-    <div class="header-quick-add">
-      <div
-        id="quickAddBar"
-        class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2"
-        aria-label="Quick add reminder"
-        data-visible="true"
-        data-persistent="true"
-      >
+
+    <!-- Center: quick add placed as the middle grid column and centered -->
+    <div class="header-quick-add flex items-center justify-center px-2 py-2">
+      <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl bg-base-100 shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true">
         <div class="mc-quick-add-inner space-y-1.5 w-full">
-          <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
+          <div class="mc-quick-add-row flex items-center gap-2 w-full">
             <div class="mc-quick-input-group w-full">
-              <input
-                id="quickAddInput"
-                class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
-                type="text"
-                autocomplete="off"
-                placeholder="Quick reminder…"
-              />
-              <div class="mc-quick-actions flex items-center gap-2">
-                <button
-                  id="quickAddSubmit"
-                  type="button"
-                  class="mc-quick-submit btn btn-primary btn-sm"
-                  data-quick-add-submit
-                >
-                  Add
-                </button>
-                <button
-                  id="quickAddReminderOptions"
-                  type="button"
-                  class="mc-quick-options btn btn-ghost btn-sm"
-                  aria-haspopup="menu"
-                  aria-expanded="false"
-                  data-quick-add-options
-                >
-                  Options
-                </button>
-              </div>
+              <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" />
             </div>
-            <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
-              <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
-              <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
-            </div>
-            <div class="mc-quick-chips flex flex-wrap gap-2 text-sm">
-              <button type="button" class="mc-quick-chip" data-chip-due-today>Today</button>
-              <button type="button" class="mc-quick-chip" data-chip-due-tomorrow>Tomorrow</button>
-              <button type="button" class="mc-quick-chip" data-chip-due-weekend>Weekend</button>
-            </div>
+            <div class="mc-quick-actions"></div>
           </div>
         </div>
       </div>
     </div>
-    <div class="header-actions">
-      <div class="header-overflow-wrapper">
-        <button
-          id="overflowMenuBtn"
-          type="button"
-          class="header-btn header-btn-icon"
-          aria-label="Open quick settings"
-          aria-haspopup="menu"
-          aria-controls="overflowMenu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
-        </button>
 
-        <div
-          id="overflowMenu"
-          class="hidden quick-actions-panel absolute right-0 mt-2"
-          role="menu"
-          aria-hidden="true"
-          aria-labelledby="overflowMenuHeading"
-        >
-          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-          <ul class="quick-actions" role="presentation">
-            <li role="none">
-              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                <span class="sr-only">Dictate reminder</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                <span class="sr-only">Open settings</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                <span class="sr-only">Toggle theme</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                <span class="sr-only">Sign in</span>
-              </button>
-            </li>
-            <li role="none">
-              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                <span class="sr-only">Sign out</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <!-- home button removed: replaced by MC logo on the left -->
+    <!-- Right-aligned actions: simplified to Bell and Save (when editing) -->
+    <div class="header-actions flex items-center gap-1 px-2 py-2 justify-end">
+      <button id="headerBellBtn" class="icon-btn" aria-label="Set reminder" style="color: #0891b2;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.5 14.5V11c0-3.038-1.64-5.64-5-6.32V4a2 2 0 10-4 0v0.68C6.64 5.36 5 7.962 5 11v3.5c0 .538-.214 1.055-.595 1.445L3 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button id="headerSaveBtn" class="icon-btn" aria-label="Save" style="color: #0891b2; display: none;" data-editing-only="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
     </div>
-  </div>
+  </header>
+
+  <script>
+  // Header editing state management
+  (function() {
+    const quickAddInput = document.getElementById('quickAddInput');
+    const headerSaveBtn = document.getElementById('headerSaveBtn');
+    const headerElement = document.getElementById('reminders-slim-header');
+    
+    // Show save button when user starts typing
+    if (quickAddInput && headerSaveBtn && headerElement) {
+      quickAddInput.addEventListener('input', function() {
+        const hasContent = this.value.trim().length > 0;
+        if (hasContent) {
+          headerElement.classList.add('editing-mode');
+          headerSaveBtn.style.display = 'inline-flex';
+        } else {
+          headerElement.classList.remove('editing-mode');
+          headerSaveBtn.style.display = 'none';
+        }
+      });
+      
+      // Handle save button click
+      headerSaveBtn.addEventListener('click', function() {
+        // Trigger existing save functionality
+        const event = new Event('submit');
+        if (quickAddInput.form) {
+          quickAddInput.form.dispatchEvent(event);
+        } else {
+          // Fallback: trigger enter key on input
+          const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13 });
+          quickAddInput.dispatchEvent(enterEvent);
+        }
+        
+        // Reset editing state
+        headerElement.classList.remove('editing-mode');
+        headerSaveBtn.style.display = 'none';
+        quickAddInput.value = '';
+      });
+      
+      // Handle focus/blur for refined UX
+      quickAddInput.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+          headerElement.classList.add('editing-mode');
+          headerSaveBtn.style.display = 'inline-flex';
+        }
+      });
+    }
+  })();
+  </script>
+
+  <!-- quickAddBar is now integrated in the header -->
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
     <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
@@ -3789,12 +4016,7 @@
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2">
-        <header class="mobile-header flex flex-col gap-1">
-          <div class="flex items-center justify-between">
-            <h1 class="text-lg font-semibold">Reminders</h1>
-          </div>
-        </header>
-
+        <!-- header removed to keep view minimal -->
         <div class="reminders-tabs-wrapper">
           <div class="tabs tabs-boxed w-full text-sm">
             <button
@@ -3839,44 +4061,70 @@
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
       <div class="mobile-view-inner mx-auto w-full max-w-md px-3 pt-3 pb-3 space-y-2">
-        <header class="mobile-header flex flex-col gap-1">
-          <div id="notebook-view-header" class="space-y-1">
-            <div class="flex items-baseline justify-between gap-2">
-              <h1 class="text-base font-semibold text-base-content">Notebook</h1>
-            </div>
-          </div>
-        </header>
+        <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div
-          id="scratch-notes-card"
-          class="scratch-notes-card rounded-lg bg-base-100 shadow-sm p-3 space-y-2"
-        >
+        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl bg-base-100 shadow-sm p-4 space-y-3 pb-2">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-1 border-b border-base-200/70">
             <div class="flex flex-col">
               <span class="sr-only">Notebook</span>
             </div>
 
-            <!-- saved notes button moved into the action row for compact layout -->
+            <!-- saved notes button moved into the sub-header for compact layout -->
           </div>
 
-          <!-- Title input -->
-          <input
-            id="noteTitleMobile"
-            type="text"
-            placeholder="Title"
-            class="input input-sm w-full note-title-field"
-            autocomplete="off"
-          />
+          <!-- Unified notebook sub-header -->
+          <div class="flex items-center gap-2 px-2 py-1 rounded-md notebook-actions-row border border-base-300/40">
+            <input
+              id="noteTitleMobile"
+              type="text"
+              placeholder="Title"
+              autocomplete="off"
+              class="input input-sm flex-1 bg-base-100"
+            />
+          </div>
 
-          <!-- Rich Text Editor -->
-          <div id="scratchNotesEditor" class="notes-editor"></div>
+          <!-- Formatting toolbar -->
+          <div
+            id="scratchNotesToolbar"
+            class="flex items-center gap-1 text-[11px] text-base-content/70 pt-1 pb-1 border-t border-base-300/40"
+          >
+            <button type="button" class="btn btn-ghost btn-xxs px-2" data-format="bold" aria-label="Bold">
+              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
+              </svg>
+            </button>
 
-          <!-- Action Bar -->
-          <div class="note-actions flex justify-end gap-0 items-center notebook-actions-row">
-            <button id="noteNewMobile" type="button" class="notebook-action-btn new mr-2" aria-label="New note">New</button>
-            <button id="noteSaveMobile" type="button" class="notebook-action-btn save" aria-label="Save note">Save</button>
-            <button id="openSavedNotesSheet" class="notebook-action-btn saved ml-2" type="button" aria-label="Open Notebook">Notebook</button>
+            <button type="button" class="btn btn-ghost btn-xxs px-2 italic" data-format="italic" aria-label="Italic">
+              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 4h9v2h-3.6l-3.8 12H16v2H7v-2h3.6l3.8-12H10V4z" fill="currentColor" />
+              </svg>
+            </button>
+
+            <button type="button" class="btn btn-ghost btn-xxs px-2" data-format="h2" aria-label="Heading">
+              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 5h2v6h6V5h2v14h-2v-6H7v6H5V5zm11.5 10.5c0-1.9 1.5-2.8 2.7-3.4.9-.4 1.3-.7 1.3-1.3 0-.6-.5-1-1.2-1-.7 0-1.3.4-1.6 1l-1.7-.8C16.4 9.9 17.5 9 19.3 9c1.8 0 3.1 1.1 3.1 2.8 0 1.7-1.4 2.4-2.4 2.9-.8.4-1.4.7-1.4 1.5v.2h-1.6v-.4z" fill="currentColor" />
+              </svg>
+            </button>
+
+            <button type="button" class="btn btn-ghost btn-xxs px-2" data-format="ul" aria-label="Bullet list">
+              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 6h13v2H7V6zm0 5h13v2H7v-2zm0 5h13v2H7v-2z" fill="currentColor" />
+                <circle cx="4" cy="7" r="1.25" fill="currentColor" />
+                <circle cx="4" cy="12" r="1.25" fill="currentColor" />
+                <circle cx="4" cy="17" r="1.25" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Rich Text Editor (wrapped for polish) -->
+          <div class="notes-editor-container rounded-xl border border-base-300 bg-base-100 overflow-hidden">
+            <div
+              id="scratchNotesEditor"
+              class="notes-editor px-3 py-3 text-[15px] leading-relaxed focus:outline-none min-h-[14rem]"
+              contenteditable="true"
+              data-placeholder="Start typing your note..."
+            ></div>
           </div>
         </div>
         <div
@@ -3904,7 +4152,7 @@
                   class="btn btn-xs btn-ghost"
                   type="button"
                   data-action="close-saved-notes"
-                  aria-label="Close saved notes"
+                  aria-label="Close Notebook"
                 >
                   Close
                 </button>
@@ -3939,24 +4187,7 @@
   </div>
 
   <div id="mobile-nav-shell" class="fixed inset-x-0 bottom-3 z-50 flex justify-center pointer-events-none">
-    <nav
-      class="btm-nav bg-base-100 border border-base-300 rounded-full shadow-lg px-2 py-0.5 flex items-center justify-around gap-2 max-w-md w-3/4 mx-auto pointer-events-auto"
-      aria-label="Primary navigation"
-    >
-      <button
-        type="button"
-        aria-current="page"
-        class="active flex flex-col items-center justify-center gap-0.5 px-1 py-0.5 rounded-full text-[11px] font-medium text-base-content/70 transition"
-      >
-        <span class="leading-tight">Reminders</span>
-      </button>
-      <button
-        type="button"
-        class="flex flex-col items-center justify-center gap-0.5 px-1 py-0.5 rounded-full text-[11px] font-medium text-base-content/70 transition"
-      >
-        <span class="leading-tight">Notebook</span>
-      </button>
-    </nav>
+    <!-- old bottom nav removed: replaced by modern .bottom-nav (bottom-tab buttons) -->
   </div>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
@@ -4107,7 +4338,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-2OIGANQG.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-C4W7FE3D.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
@@ -4272,6 +4503,7 @@
           <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
+      
     </div>
     <div class="modal-backdrop" data-close></div>
   </div>
@@ -4764,13 +4996,12 @@
         reminders: document.querySelector('[data-view="reminders"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
       };
-      const nav = document.querySelector('.btm-nav');
-      if (!nav) return;
 
-      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 2);
-      const order = ['reminders', 'notebook'];
+      // Use the new bottom-tab buttons as the navigation controls.
+      const buttons = Array.from(document.querySelectorAll('.bottom-tab')) || [];
+      const order = ['reminders', 'new', 'notebook'];
 
-      if (!buttons.length || order.some((key) => !views[key])) {
+      if (order.some((key) => key !== 'new' && !views[key])) {
         return;
       }
 
@@ -4814,6 +5045,22 @@
 
         activeView = target;
 
+        // Sync any bottom-tab buttons we added so they reflect the active view
+        try {
+          document.querySelectorAll('.bottom-tab').forEach((b) => {
+            const tabName = b.dataset.tab;
+            const isActiveTab = tabName === target;
+            b.classList.toggle('active', Boolean(isActiveTab));
+            if (isActiveTab) {
+              b.setAttribute('aria-current', 'page');
+            } else {
+              b.removeAttribute('aria-current');
+            }
+          });
+        } catch (e) {
+          // ignore if bottom-tabs not present
+        }
+
         const skipLink =
           document.querySelector('.skip-link') ||
           document.querySelector('a[href$="#main"]');
@@ -4832,6 +5079,31 @@
           }
         }
       };
+
+      // Listen for global navigation events and delegate to setActiveView
+      window.addEventListener('app:navigate', (ev) => {
+        try {
+          const view = ev?.detail?.view;
+          if (!view) return;
+          // Map 'new' to the add reminder action (trigger addReminderBtn)
+          if (view === 'new') {
+            const addBtn = document.getElementById('addReminderBtn');
+            if (addBtn) {
+              addBtn.click();
+            }
+            // still set active state so the middle tab highlights
+            if (order.includes(view)) {
+              setActiveView(view);
+            }
+            return;
+          }
+          if (order.includes(view)) {
+            setActiveView(view);
+          }
+        } catch (e) {
+          console.error('Failed to handle app:navigate', e);
+        }
+      });
 
       buttons.forEach((button, index) => {
         button.addEventListener('click', () => {
@@ -6246,14 +6518,13 @@
 
   <script>
     // Wire up slim header buttons now that they live inline
-    document.addEventListener('DOMContentLoaded', function() {
+    const initSlimHeaderButtons = function() {
       const slimHeader = document.getElementById('reminders-slim-header');
       if (!slimHeader) return;
 
       const addBtn = slimHeader.querySelector('#addReminderBtn');
       const overflowBtn = slimHeader.querySelector('#overflowMenuBtn');
       const overflowMenu = slimHeader.querySelector('#overflowMenu');
-      const homeBtn = slimHeader.querySelector('[data-scroll-home]');
 
       if (addBtn) {
         addBtn.addEventListener('click', function(event) {
@@ -6272,6 +6543,12 @@
           overflowMenu.classList.toggle('hidden', !shouldOpen);
           overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
           overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+          // debug log to help diagnose clicks not opening the menu
+          try {
+            console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
+          } catch (e) {
+            /* ignore */
+          }
         };
 
         overflowBtn.addEventListener('click', function(event) {
@@ -6289,27 +6566,117 @@
         });
       }
 
-      if (homeBtn) {
-        const scrollTargets = [
-          document.getElementById('view-reminders'),
-          document.getElementById('remindersWrapper'),
-          document.querySelector('[data-section="reminders"]'),
-          document.getElementById('reminders'),
-          document.body
-        ].filter(Boolean);
+      /* home button removed: no scroll-home handler needed */
+    };
 
-        const target = scrollTargets[0];
-        homeBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          if (target && 'scrollIntoView' in target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSlimHeaderButtons, { once: true });
+    } else {
+      initSlimHeaderButtons();
+    }
+
+  </script>
+
+  <!-- Mobile bottom navigation (white rounded pill) -->
+  <div class="bottom-nav-wrapper" role="navigation" aria-label="Primary navigation">
+    <nav class="bottom-nav">
+      <button class="bottom-tab" data-tab="reminders" aria-label="Reminders">
+        <!-- Clock outline icon -->
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 7v5l3 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none" />
+        </svg>
+        <span class="tab-label">Reminders</span>
+      </button>
+
+      <button class="bottom-tab" data-tab="new" aria-label="New Reminder">
+        <!-- Alarm clock icon (U+23F0) as SVG to match 23F0 glyph -->
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7 2l1.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <path d="M16 2l-1.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <circle cx="12" cy="13" r="7" stroke="currentColor" stroke-width="1.6" fill="none" />
+          <path d="M12 9v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+        <span class="tab-label">New Reminder</span>
+      </button>
+
+      <button class="bottom-tab" data-tab="add-note" aria-label="Add Note">
+        <!-- Pencil / New note icon -->
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3 21v-3.6l11.2-11.2 3.6 3.6L6.6 21H3z" stroke="currentColor" stroke-width="1" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+          <path d="M14.8 6.2l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+        <span class="tab-label">Add Note</span>
+      </button>
+
+      <button class="bottom-tab active" data-tab="notebook" aria-label="Notebook" aria-current="page">
+        <!-- Notebook icon (filled for active) -->
+        <svg class="tab-icon active-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <rect x="3" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.2" fill="currentColor" />
+          <path d="M7 8h7" stroke="rgba(255,255,255,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+        <span class="tab-label">Notebook</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    // Bottom-nav tab activation and navigation event
+    (function() {
+      function setActive(tabName) {
+        document.querySelectorAll('.bottom-tab').forEach(b => {
+          if (b.dataset.tab === tabName) {
+            b.classList.add('active');
+            b.setAttribute('aria-current', 'page');
           } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            b.classList.remove('active');
+            b.removeAttribute('aria-current');
           }
         });
       }
 
-    });
+      document.addEventListener('click', function (e) {
+        const tab = e.target.closest('.bottom-tab');
+        if (!tab) return;
+        const name = tab.dataset.tab;
+        setActive(name);
+        // If user tapped the Add Note button, open the notebook view and trigger the New Note action
+        if (name === 'add-note') {
+          // ensure notebook tab is active
+          setActive('notebook');
+          // dispatch navigate to notebook for other listeners
+          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebook' } }));
+          // Prepare a fresh note: clear title and editor, then focus title
+          try {
+            const titleEl = document.getElementById('noteTitleMobile');
+            const editorEl = document.getElementById('scratchNotesEditor');
+            if (titleEl) {
+              if (typeof titleEl.value !== 'undefined') titleEl.value = '';
+              titleEl.removeAttribute('data-note-original');
+            }
+            if (editorEl) {
+              if (editorEl.isContentEditable) {
+                editorEl.innerHTML = '';
+              } else if (typeof editorEl.value !== 'undefined') {
+                editorEl.value = '';
+              }
+            }
+            if (titleEl && typeof titleEl.focus === 'function') titleEl.focus();
+          } catch (err) {
+            console.warn('Failed to prepare new note UI', err);
+          }
+          return;
+        }
+
+        // Dispatch a lightweight custom event so app can react (navigate)
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: name } }));
+      });
+
+      // Default active tab: notebook
+      if (!document.querySelector('.bottom-tab.active')) {
+        setActive('notebook');
+      }
+    })();
   </script>
 
 </body>
