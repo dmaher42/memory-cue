@@ -3236,14 +3236,14 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 }
 
 :root {
-  --primary-blue: #2563EB;
+  --primary-blue: #00796B; /* deep teal primary accent */
 }
 
 .bottom-tab.active {
-  color: var(--primary-blue);
+  color: #00796B; /* deep teal primary accent */
 }
 .bottom-tab.active .tab-icon {
-  color: var(--primary-blue);
+  color: #00796B; /* deep teal primary accent */
 }
 
 .bottom-tab .tab-icon [stroke] {
@@ -3252,7 +3252,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 
 .bottom-tab:focus {
   outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-blue) 12%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, #00796B 12%, transparent); /* deep teal focus shadow */
   border-radius: 10px;
 }
 
