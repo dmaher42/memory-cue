@@ -3216,7 +3216,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   height: 64px;
   padding: 6px 4px;
   border-radius: 10px;
-  color: #333333; /* soft charcoal black */
+  color: #424242; /* Soft Charcoal Black */
   transition: color .18s ease, background .18s ease, transform .12s ease;
   cursor: pointer;
 }
@@ -3226,7 +3226,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   height: 22px;
   display: block;
   margin-bottom: 6px;
-  color: #333333; /* soft charcoal black */
+  color: #424242; /* Soft Charcoal Black */
 }
 
 .bottom-tab .tab-label {

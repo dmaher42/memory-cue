@@ -13,8 +13,8 @@
     :root {
       --card-bg: #F9F9F9; /* very soft off-white/light grey for input fields */
       --card-border: #CBE6D5;
-      --text-primary: #333333; /* soft charcoal black */
-      --text-secondary: #333333; /* soft charcoal black */
+      --text-primary: #424242; /* Soft Charcoal Black */
+      --text-secondary: #424242; /* Soft Charcoal Black */
       --accent-color: #512663; /* Deep Violet Primary Accent */
       --success-color: #689F38;
       --background-color: #274b50; /* deep aqua background */
@@ -53,7 +53,7 @@
       --mobile-header-bg: #F7F7FA; /* Soft Pale Lilac/Blue Tint */
       --mobile-header-border: rgba(0, 121, 107, 0.15);
       --mobile-header-shadow: 0 18px 32px rgba(0, 121, 107, 0.12);
-      --mobile-header-text: #333333; /* soft charcoal black */
+      --mobile-header-text: #424242; /* Soft Charcoal Black */
       --mobile-header-button-bg: #F0F0F0; /* soft off-white/light grey elements */
       --mobile-header-button-color: #00796B; /* deep teal accent */
       --mobile-header-button-border: color-mix(in srgb, #00796B 38%, transparent);
@@ -4182,10 +4182,10 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-      <div class="mobile-view-inner mx-auto w-full px-1 pt-3 pb-3 space-y-1" style="background: #00796B;">
+      <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: #00796B;">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl shadow-sm p-2 space-y-1 pb-1" style="background: #F7F7FA; /* Soft Pale Lilac/Blue Tint */">
+        <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl shadow-sm p-1 space-y-0 pb-1" style="background: #F7F7FA; /* Soft Pale Lilac/Blue Tint */">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-1 border-b border-base-200/70">
             <div class="flex flex-col">
@@ -4196,13 +4196,13 @@
           </div>
 
           <!-- Seamless title field -->
-          <div class="flex items-center gap-2 px-1 py-1 rounded-md notebook-actions-row">
+          <div class="flex items-center gap-2 px-0 py-0 rounded-md notebook-actions-row">
             <input
               id="noteTitleMobile"
               type="text"
               placeholder="Title"
               autocomplete="off"
-              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 border-0 focus:outline-none focus:ring-0 placeholder:text-[#333333] text-[#333333]"
+              class="seamless-title-input flex-1 text-lg font-medium px-2 py-1 border-0 focus:outline-none focus:ring-0 placeholder:text-[#424242] text-[#424242]"
               style="background: #F9F9F9 !important;"
             />
           </div>
@@ -4210,7 +4210,7 @@
           <!-- Single-row formatting toolbar with reduced spacing -->
           <div
             id="scratchNotesToolbar"
-            class="formatting-toolbar-strip flex items-center gap-3 px-2 py-2 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
+            class="formatting-toolbar-strip flex items-center gap-3 px-1 py-1 bg-white/80 rounded-lg border border-gray-100 shadow-sm"
           >
             <button type="button" class="formatting-btn" data-format="bold" aria-label="Bold">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -4244,7 +4244,7 @@
           <div class="distraction-free-editor-container">
             <div
               id="scratchNotesEditor"
-              class="minimal-editor px-6 py-5 text-base leading-relaxed focus:outline-none rounded-lg"
+              class="minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg"
               style="background: #F9F9F9 !important;"
               contenteditable="true"
               data-placeholder="Start typing your note..."
