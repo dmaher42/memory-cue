@@ -26,6 +26,7 @@ const decodeLegacyBody = (body) => {
     return '';
   }
 
+  // If there's no HTML-like characters, return the original string.
   if (!/[<>]/.test(trimmed)) {
     return body;
   }
@@ -40,7 +41,7 @@ const decodeLegacyBody = (body) => {
           : wrapper.textContent || '';
       return text.replace(/\r?\n/g, '\n');
     }
-  } catch {
+  } catch (e) {
     // Ignore DOM conversion errors and fall back to regex handling below.
   }
 
@@ -84,11 +85,9 @@ const normalizeNotes = (value) => {
         let body = typeof note.body === 'string' ? decodeLegacyBody(note.body) : '';
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
-        
         if (!title && !body && !note.body) {
           return null;
         }
-        
         // If decodeLegacyBody stripped all text but the original raw body contained
         // HTML, preserve the original HTML so notes with only markup aren't lost.
         if (!body && note.body && /<[^>]+>/.test(note.body)) {
