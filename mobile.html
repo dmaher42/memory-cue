@@ -3976,7 +3976,11 @@
   </script>
 
   <!-- Slim sticky header (restored) -->
-  <header id="reminders-slim-header" class="sticky top-0 z-40 w-full" role="banner">
+  <header
+    id="reminders-slim-header"
+    class="mobile-header sticky top-0 z-40 w-full flex items-center justify-between gap-2 px-3 py-2 bg-slate-700 text-base-100 shadow-md"
+    role="banner"
+  >
     <style>
       /* Header inner shell: floating pill effect */
       #reminders-slim-header {
@@ -4058,42 +4062,90 @@
       }
     </style>
 
-    <div class="header-inner">
-    <div class="header-leading flex items-center gap-2 flex-shrink-0 px-2 py-2">
-      <!-- MC logo left with vibrant cyan/teal accent -->
-      <a href="/" class="mc-logo-link" aria-label="Memory Cue Home" style="padding: 4px; border-radius: 8px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(8, 145, 178, 0.1)'" onmouseout="this.style.background='transparent'">
-          <img src="icons/mc-logo-32.png" alt="Memory Cue" width="28" height="28" style="display:block;border-radius:6px; filter: hue-rotate(180deg) saturate(1.2);" />
-      </a>
-    </div>
-
-    <!-- Center: quick add placed as the middle grid column and centered -->
-    <div class="header-quick-add flex items-center justify-center px-2 py-2">
-      <div id="quickAddBar" class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl shadow-sm px-3 py-2" aria-label="Quick add reminder" data-visible="true" data-persistent="true" style="background: var(--mobile-header-bg) !important; color: var(--mobile-header-text);">
-        <div class="mc-quick-add-inner space-y-1.5 w-full">
-          <div class="mc-quick-add-row flex items-center gap-2 w-full">
-            <div class="mc-quick-input-group w-full">
-              <input id="quickAddInput" class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content" type="text" autocomplete="off" placeholder="Quick reminder…" style="background: #F9F9F9 !important;" />
-            </div>
-            <div class="mc-quick-actions"></div>
+    <div class="header-inner w-full">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <!-- MC logo left with vibrant cyan/teal accent -->
+          <a
+            href="/"
+            class="mc-logo-link"
+            aria-label="Memory Cue Home"
+            style="padding: 4px; border-radius: 8px; transition: all 0.2s ease;"
+            onmouseover="this.style.background='rgba(8, 145, 178, 0.1)'"
+            onmouseout="this.style.background='transparent'"
+          >
+            <img
+              src="icons/mc-logo-32.png"
+              alt="Memory Cue"
+              width="28"
+              height="28"
+              style="display:block;border-radius:6px; filter: hue-rotate(180deg) saturate(1.2);"
+            />
+          </a>
+          <div class="flex items-center">
+            <button
+              id="addReminderBtn"
+              type="button"
+              class="btn btn-primary btn-sm rounded-full px-4"
+              aria-label="Add reminder"
+            >
+              + Add reminder
+            </button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Right-aligned actions: simplified to Bell and Save (when editing) -->
-    <div class="header-actions flex items-center gap-1 px-2 py-2 justify-end">
-      <button id="headerBellBtn" class="icon-btn" aria-label="Set reminder" style="color: #00796B;">
+        <div class="flex items-center gap-2">
+          <button
+            id="headerBellBtn"
+            type="button"
+            class="btn btn-ghost btn-sm rounded-full"
+            aria-label="Set reminder"
+          >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.5 14.5V11c0-3.038-1.64-5.64-5-6.32V4a2 2 0 10-4 0v0.68C6.64 5.36 5 7.962 5 11v3.5c0 .538-.214 1.055-.595 1.445L3 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
 
-      <button id="headerSaveBtn" class="icon-btn" aria-label="Save" style="color: #00796B; display: none;" data-editing-only="true">
+          <button
+            id="headerSaveBtn"
+            type="button"
+            class="btn btn-ghost btn-sm rounded-full hidden"
+            aria-label="Save"
+            data-editing-only="true"
+          >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+        </div>
+      </div>
 
+      <!-- Center: quick add placed as the middle grid column and centered -->
+      <div class="header-quick-add flex items-center justify-center px-2 py-2">
+        <div
+          id="quickAddBar"
+          class="reminders-quick-add mc-quick-add-bar w-full max-w-md rounded-xl shadow-sm px-3 py-2"
+          aria-label="Quick add reminder"
+          data-visible="true"
+          data-persistent="true"
+          style="background: var(--mobile-header-bg) !important; color: var(--mobile-header-text);"
+        >
+          <div class="mc-quick-add-inner space-y-1.5 w-full">
+            <div class="mc-quick-add-row flex items-center gap-2 w-full">
+              <div class="mc-quick-input-group w-full">
+                <input
+                  id="quickAddInput"
+                  class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Quick reminder…"
+                  style="background: #F9F9F9 !important;"
+                />
+              </div>
+              <div class="mc-quick-actions"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -6717,48 +6769,38 @@
 
   </script>
 
-  <!-- Mobile bottom navigation (white rounded pill) -->
-  <div class="bottom-nav-wrapper" role="navigation" aria-label="Primary navigation">
-    <nav class="bottom-nav">
-      <button class="bottom-tab" data-tab="reminders" aria-label="Reminders">
-        <!-- Clock outline icon -->
-        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M12 7v5l3 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-          <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none" />
-        </svg>
-        <span class="tab-label">Reminders</span>
-      </button>
+  <nav
+    class="mobile-footer fixed inset-x-0 bottom-0 flex items-center justify-around bg-slate-900/90 text-base-100 h-14 backdrop-blur-md border-t border-slate-700"
+    role="navigation"
+    aria-label="Primary navigation"
+  >
+    <button
+      class="mobile-footer-item bottom-tab flex flex-col items-center justify-center gap-0.5 text-[11px]"
+      data-tab="new"
+      aria-label="New Reminder"
+    >
+      <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-fuchsia-500 text-base-100 text-xs font-semibold">
+        New
+      </span>
+    </button>
 
-      <button class="bottom-tab" data-tab="new" aria-label="New Reminder">
-        <!-- Alarm clock icon (U+23F0) as SVG to match 23F0 glyph -->
-        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M7 2l1.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-          <path d="M16 2l-1.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-          <circle cx="12" cy="13" r="7" stroke="currentColor" stroke-width="1.6" fill="none" />
-          <path d="M12 9v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-        </svg>
-        <span class="tab-label">New Reminder</span>
-      </button>
+    <button
+      class="mobile-footer-item bottom-tab flex flex-col items-center justify-center gap-0.5 text-[11px] text-base-content/70"
+      data-tab="reminders"
+      aria-label="Reminders"
+    >
+      <span class="text-xs">Reminders</span>
+    </button>
 
-      <button class="bottom-tab" data-tab="add-note" aria-label="Add Note">
-        <!-- Pencil / New note icon -->
-        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M3 21v-3.6l11.2-11.2 3.6 3.6L6.6 21H3z" stroke="currentColor" stroke-width="1" fill="none" stroke-linejoin="round" stroke-linecap="round" />
-          <path d="M14.8 6.2l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-        </svg>
-        <span class="tab-label">Add Note</span>
-      </button>
-
-      <button class="bottom-tab active" data-tab="notebook" aria-label="Notebook" aria-current="page">
-        <!-- Notebook icon (filled for active) -->
-        <svg class="tab-icon active-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <rect x="3" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.2" fill="currentColor" />
-          <path d="M7 8h7" stroke="rgba(255,255,255,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-        </svg>
-        <span class="tab-label">Notebook</span>
-      </button>
-    </nav>
-  </div>
+    <button
+      class="mobile-footer-item bottom-tab flex flex-col items-center justify-center gap-0.5 text-[11px] text-base-content/70"
+      data-tab="notebook"
+      aria-label="Notebook"
+      aria-current="page"
+    >
+      <span class="text-xs">Notebook</span>
+    </button>
+  </nav>
 
   <script>
     // Bottom-nav tab activation and navigation event

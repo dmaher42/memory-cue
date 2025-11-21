@@ -1,0 +1,16 @@
+.mobile-header {
+  z-index: 30;
+}
+
+.mobile-footer {
+  z-index: 30;
+}
+
+.mobile-footer-item:active {
+  transform: scale(0.96);
+}
+
+.mobile-footer-item--active span {
+  color: #f9fafb;
+  font-weight: 600;
+}
