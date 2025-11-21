@@ -1370,16 +1370,24 @@
     .seamless-title-input {
       transition: all 0.2s ease;
     }
-    
+
     .seamless-title-input {
-      background-color: #FFFFFF !important;
+      background-color: rgba(255, 255, 255, 0.22);
       border-radius: 6px;
+      color: #ffffff;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
     }
-    
+
+    .seamless-title-input::placeholder {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
     .seamless-title-input:focus {
-      background-color: #FFFFFF !important;
+      background-color: rgba(255, 255, 255, 0.22);
       border-radius: 6px;
-      box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.15);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28);
     }
     
     .distraction-free-editor-container {
@@ -1387,24 +1395,28 @@
     }
     
     .minimal-editor {
-      border: 1px solid #E5E7EB;
+      border: 1px solid rgba(255, 255, 255, 0.38);
       box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
       transition: all 0.2s ease;
       line-height: 1.7;
       min-height: calc(100vh - 280px);
       max-height: calc(100vh - 180px);
       overflow-y: auto;
+      background-color: rgba(255, 255, 255, 0.28);
+      color: #1a1a1a;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
-    
+
     .minimal-editor:focus {
-      border-color: #D1D5DB;
-      box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      border-color: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.05);
       outline: none;
     }
-    
+
     .minimal-editor:empty::before {
       content: attr(data-placeholder);
-      color: #333333; /* soft charcoal black */
+      color: color-mix(in srgb, #1a1a1a 78%, #ffffff 22%);
       font-style: italic;
     }
     
@@ -4225,8 +4237,7 @@
               type="text"
               placeholder="Title"
               autocomplete="off"
-              class="seamless-title-input flex-1 text-lg font-medium px-1 py-0 border-0 focus:outline-none focus:ring-0 placeholder:text-[#424242] text-[#424242]"
-              style="background: #F9F9F9 !important;"
+              class="seamless-title-input flex-1 text-lg font-medium px-1 py-0 border-0 focus:outline-none focus:ring-0 text-white placeholder:text-white/90"
             />
           </div>
 
@@ -4268,7 +4279,6 @@
             <div
               id="scratchNotesEditor"
               class="minimal-editor px-1 py-1 text-base leading-relaxed focus:outline-none rounded-lg"
-              style="background: #F9F9F9 !important;"
               contenteditable="true"
               data-placeholder="Start typing your note..."
             ></div>
