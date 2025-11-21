@@ -4093,14 +4093,13 @@
     </div>
   </header>
 
-  <script>
-  // Header editing state management
+  <script type="text/javascript">
+  // Header editing state management - properly contained
   (function() {
     const quickAddInput = document.getElementById('quickAddInput');
     const headerSaveBtn = document.getElementById('headerSaveBtn');
     const headerElement = document.getElementById('reminders-slim-header');
     
-    // Show save button when user starts typing
     if (quickAddInput && headerSaveBtn && headerElement) {
       quickAddInput.addEventListener('input', function() {
         const hasContent = this.value.trim().length > 0;
@@ -4113,25 +4112,20 @@
         }
       });
       
-      // Handle save button click
       headerSaveBtn.addEventListener('click', function() {
-        // Trigger existing save functionality
         const event = new Event('submit');
         if (quickAddInput.form) {
           quickAddInput.form.dispatchEvent(event);
         } else {
-          // Fallback: trigger enter key on input
           const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13 });
           quickAddInput.dispatchEvent(enterEvent);
         }
         
-        // Reset editing state
         headerElement.classList.remove('editing-mode');
         headerSaveBtn.style.display = 'none';
         quickAddInput.value = '';
       });
       
-      // Handle focus/blur for refined UX
       quickAddInput.addEventListener('focus', function() {
         if (this.value.trim().length > 0) {
           headerElement.classList.add('editing-mode');
@@ -6813,6 +6807,29 @@
         setActive('notebook');
       }
     })();
+  </script>
+
+  <script>
+    // Clear any unwanted JavaScript content from notes editor on load
+    document.addEventListener('DOMContentLoaded', function() {
+      const notesEditor = document.getElementById('scratchNotesEditor');
+      if (notesEditor) {
+        const content = notesEditor.innerHTML || '';
+        // Remove any script tags, function definitions, or JavaScript code
+        if (content.includes('<script') || content.includes('function') || content.includes('addEventListener') || content.includes('document.')) {
+          notesEditor.innerHTML = '';
+          // Also clear localStorage if it contains JavaScript
+          try {
+            const stored = localStorage.getItem('memory-cue-notes');
+            if (stored && (stored.includes('function') || stored.includes('addEventListener') || stored.includes('document.'))) {
+              localStorage.removeItem('memory-cue-notes');
+            }
+          } catch (e) {
+            // Ignore localStorage errors
+          }
+        }
+      }
+    });
   </script>
 
 </body>
