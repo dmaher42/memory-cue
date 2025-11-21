@@ -3367,8 +3367,8 @@
         min-width: 0 !important;
       }
 
-      /* If the button is inside the centered header container, keep spacing reasonable */
-      .mx-auto.max-w-md {
+      /* Full width container styling */
+      .mx-auto.w-full {
         padding-left: 0.6rem;
         padding-right: 0.6rem;
       }
@@ -4131,13 +4131,13 @@
   </script>
 
   <!-- quickAddBar is now integrated in the header -->
-  <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16" style="background: #FBFBFB;">
+  <div id="mobile-shell" class="mobile-shell mx-auto w-full px-4 pb-16" style="background: #FBFBFB;">
     <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders" style="background: #274b50;">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel" style="background: #FBFBFB;">
-      <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2" style="background: #00796B;">
+      <div class="mobile-view-inner mx-auto w-full px-4 pt-4 pb-4 space-y-2" style="background: #00796B;">
         <!-- header removed to keep view minimal -->
         <div class="reminders-tabs-wrapper">
           <div class="tabs tabs-boxed w-full text-sm">
@@ -4182,7 +4182,7 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-      <div class="mobile-view-inner mx-auto w-full max-w-md px-1 pt-3 pb-3 space-y-1" style="background: #00796B;">
+      <div class="mobile-view-inner mx-auto w-full px-1 pt-3 pb-3 space-y-1" style="background: #00796B;">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
         <div id="scratch-notes-card" class="scratch-notes-card rounded-2xl shadow-sm p-2 space-y-1 pb-1" style="background: #00796B;">
