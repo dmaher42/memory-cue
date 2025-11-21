@@ -6448,7 +6448,7 @@
 
   <script>
     // Wire up slim header buttons now that they live inline
-    document.addEventListener('DOMContentLoaded', function() {
+    const initSlimHeaderButtons = function() {
       const slimHeader = document.getElementById('reminders-slim-header');
       if (!slimHeader) return;
 
@@ -6473,6 +6473,12 @@
           overflowMenu.classList.toggle('hidden', !shouldOpen);
           overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
           overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+          // debug log to help diagnose clicks not opening the menu
+          try {
+            console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
+          } catch (e) {
+            /* ignore */
+          }
         };
 
         overflowBtn.addEventListener('click', function(event) {
@@ -6491,8 +6497,14 @@
       }
 
       /* home button removed: no scroll-home handler needed */
+    };
 
-    });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSlimHeaderButtons, { once: true });
+    } else {
+      initSlimHeaderButtons();
+    }
+
   </script>
 
   <!-- Mobile bottom navigation (white rounded pill) -->
