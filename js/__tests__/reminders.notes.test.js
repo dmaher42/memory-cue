@@ -11,6 +11,10 @@ const firebaseConfigModule = require('../firebase-config.js');
 function loadRemindersModule() {
   const filePath = path.resolve(__dirname, '../reminders.js');
   let source = fs.readFileSync(filePath, 'utf8');
+  source = source.replace(
+    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';\n",
+    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const module = { exports: {} };
@@ -25,6 +29,7 @@ function loadRemindersModule() {
     document,
     localStorage,
     navigator,
+    HTMLElement: window.HTMLElement,
     Notification,
     fetch: global.fetch,
     Blob: global.Blob,
