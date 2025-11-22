@@ -93,16 +93,16 @@ body {
 
 html[data-theme="night"],
 html[data-theme="dracula"] {
-  --page-bg-base: #050812;
-  --page-bg-muted: #0b1220;
-  --page-bg-accent: rgba(56, 189, 248, 0.14);
-  --page-bg-highlight: rgba(99, 102, 241, 0.12);
-  --planner-panel-bg: color-mix(in srgb, #0b1220 75%, #111827 25%);
-  --planner-panel-border: color-mix(in srgb, #334155 60%, transparent);
-  --planner-card-bg: color-mix(in srgb, #111827 80%, #2e2a63 20%);
-  --planner-card-border: color-mix(in srgb, #475569 55%, transparent);
-  --planner-card-shadow: 0 25px 45px rgba(5, 8, 18, 0.65);
-  --planner-card-highlight: rgba(129, 140, 248, 0.4);
+  --page-bg-base: #040712;
+  --page-bg-muted: #0b1020;
+  --page-bg-accent: rgba(79, 70, 229, 0.2);
+  --page-bg-highlight: rgba(79, 70, 229, 0.14);
+  --planner-panel-bg: color-mix(in srgb, #0b1020 78%, #11182b 22%);
+  --planner-panel-border: color-mix(in srgb, #1c2540 65%, transparent);
+  --planner-card-bg: color-mix(in srgb, #0f1426 75%, #1c2540 25%);
+  --planner-card-border: color-mix(in srgb, #1c2540 70%, transparent);
+  --planner-card-shadow: 0 25px 45px rgba(4, 7, 18, 0.65);
+  --planner-card-highlight: rgba(79, 70, 229, 0.45);
 }
 
 html[data-theme="caramellatte"] {
