@@ -101,8 +101,39 @@
   color: var(--mc-text-soft);
 }
 
+
 .mobile-header {
-  z-index: 90;
+  background: #F7F7FA;
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 8px 16px;
+}
+
+.header-pill {
+  background: #F7F7FA;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+}
+
+.header-pill .quick-reminder {
+  background: #F9F9F9;
+  border: none;
+  flex: 1;
+  margin-right: 12px;
+  padding: 8px;
+  border-radius: 12px;
+  color: #333;
+}
+
+.header-pill .header-icons svg,
+.header-pill .header-icons button {
+  color: #512663;
 }
 
 .mobile-footer {

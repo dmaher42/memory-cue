@@ -3381,3 +3381,23 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   color: #f9fafb;
   font-weight: 600;
 }
+
+/* Override header styles for light theme */
+.mobile-header,
+.header-pill {
+  background: #F7F7FA !important;
+}
+
+.header-pill .quick-reminder {
+  background: #F9F9F9 !important;
+}
+
+.header-pill .header-icons svg,
+.header-pill .header-icons button {
+  color: #512663 !important;
+}
+
+/* Ensure content beneath header starts after sticky header */
+body {
+  margin-top: 72px;
+}
