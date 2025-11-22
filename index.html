@@ -79,29 +79,34 @@
     }
 
     section[data-route="reminders"] {
-      --card-bg: #ffffff;
-      --card-border: #cbe6d5;
+      --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%);
+      --card-border: color-mix(in srgb, #e5e7eb 75%, #d6d0c4 25%);
       --border-color: var(--card-border);
       --text-primary: #1f2a24;
       --text-secondary: #4c6457;
       --accent-color: #b5a9ff;
       --success-color: #63c69b;
-      --hover-bg: #dcefe2;
+      --hover-bg: color-mix(in srgb, var(--card-bg) 85%, #f0eadf 15%);
       --shadow-color: rgba(31, 42, 36, 0.08);
       --shadow-sm: 0 1px 3px var(--shadow-color);
       --shadow-md: 0 4px 12px var(--shadow-color);
       --delete-color: #ef6a6a;
       --priority-high-border: #f4a259;
-      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 18%, #ffffff);
+      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 12%, var(--card-bg));
+      --priority-high-wash: color-mix(in srgb, var(--priority-high-border) 10%, transparent);
       --priority-medium-border: #6c8ae4;
-      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 16%, #ffffff);
+      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 10%, var(--card-bg));
+      --priority-medium-wash: color-mix(in srgb, var(--priority-medium-border) 10%, transparent);
       --priority-low-border: #6b8f71;
-      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 16%, #ffffff);
+      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 10%, var(--card-bg));
+      --priority-low-wash: color-mix(in srgb, var(--priority-low-border) 10%, transparent);
     }
 
     /* Reminders: desktop card styling */
     section[data-route="reminders"] .desktop-task-card {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(145deg, color-mix(in srgb, var(--accent-color) 8%, transparent) 0%, transparent 70%);
+      background-repeat: no-repeat;
       border: 1px solid var(--card-border);
       border-left: 3px solid var(--border-color);
       box-shadow: var(--shadow-sm);
@@ -115,21 +120,27 @@
       transform: translateY(-1px);
       border-color: var(--accent-color);
       border-left-color: var(--accent-color);
-      background: var(--hover-bg);
+      background-color: var(--hover-bg);
     }
 
     section[data-route="reminders"] .desktop-task-card[data-priority="High"] {
-      background-color: var(--priority-high-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-high-border);
     }
 
     section[data-route="reminders"] .desktop-task-card[data-priority="Medium"] {
-      background-color: var(--priority-medium-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-medium-border);
     }
 
     section[data-route="reminders"] .desktop-task-card[data-priority="Low"] {
-      background-color: var(--priority-low-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-low-border);
     }
 
