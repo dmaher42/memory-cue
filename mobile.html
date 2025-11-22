@@ -11,24 +11,24 @@
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --card-bg: #232d61; /* soft indigo card surface */
-      --cauliflower-blue: #5080bf;
-      --card-border: #5e6fd8;
-      --text-primary: #f2f5ff; /* Light text for dark gradient */
-      --text-secondary: #d8defa; /* Muted lavender text */
-      --accent-color: #a9beff; /* Soft periwinkle accent */
+      --card-bg: #F9F9F9; /* Off-white card surface */
+      --cauliflower-blue: #F7F7FA; /* Soft pale lilac background */
+      --card-border: #E6DFF0; /* Light lavender separators */
+      --text-primary: #333333; /* Dark gray for readability */
+      --text-secondary: #666666; /* Medium gray for secondary labels */
+      --accent-color: #512663; /* Deep violet primary accent */
       --success-color: #8ed6c1;
-      --background-color: #131a3d; /* deep indigo fallback */
-      --background-gradient: linear-gradient(135deg, #3a2c8e 0%, #273a8c 45%, #111b44 100%);
-      --hover-bg: rgba(255, 255, 255, 0.08);
-      --shadow-color: rgba(8, 12, 34, 0.28);
+      --background-color: #F7F7FA; /* Soft pale lilac */
+      --background-gradient: linear-gradient(135deg, #F7F7FA 0%, #F7F7FA 100%);
+      --hover-bg: rgba(81, 38, 99, 0.06);
+      --shadow-color: rgba(51, 51, 51, 0.12);
       --true-blue: #0073cf;
       --delete-color: #EF6A6A;
 
       /* Legacy tokens mapped to Calming Tones palette */
       --primary-color: var(--accent-color);
-      --primary-dark: #7A6AE0;
-      --secondary-color: #B5A9FF;
+      --primary-dark: #3E1D4C;
+      --secondary-color: #9E88C9;
       --warning-color: #F7C56C;
       --info-color: var(--accent-color);
       --bg-color: var(--background-color);
@@ -52,16 +52,16 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: var(--cauliflower-blue); /* Cauliflower blue header */
-      --mobile-header-border: rgba(80, 128, 191, 0.82);
-      --mobile-header-shadow: 0 18px 32px rgba(80, 128, 191, 0.35);
-      --mobile-header-text: #e8edff;
-      --mobile-header-button-bg: rgba(255, 255, 255, 0.14); /* soft translucent buttons */
-      --mobile-header-button-color: #e8edff;
-      --mobile-header-button-border: rgba(80, 128, 191, 0.82);
-      --mobile-quick-surface: #1f3252; /* complementary indigo surface */
+      --mobile-header-bg: var(--cauliflower-blue); /* Soft pale lilac header */
+      --mobile-header-border: #E6DFF0;
+      --mobile-header-shadow: 0 18px 32px rgba(51, 51, 51, 0.08);
+      --mobile-header-text: var(--text-primary);
+      --mobile-header-button-bg: rgba(158, 136, 201, 0.15); /* translucent lilac buttons */
+      --mobile-header-button-color: var(--text-primary);
+      --mobile-header-button-border: #E6DFF0;
+      --mobile-quick-surface: var(--card-bg); /* Off-white quick surfaces */
       --mobile-footer-bg: var(--cauliflower-blue);
-      --mobile-quick-shadow: 0 20px 34px rgba(34, 52, 86, 0.45);
+      --mobile-quick-shadow: 0 20px 34px rgba(51, 51, 51, 0.08);
     }
 
     /* Force Soft Pale Lilac/Blue backgrounds with high specificity */
