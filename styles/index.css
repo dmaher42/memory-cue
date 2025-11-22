@@ -3386,17 +3386,20 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 /* Override header styles for light theme */
 .mobile-header,
 .header-pill {
-  background: #F7F7FA !important;
+  background: #1e3a8a !important;
+  color: #e8edff;
+  border: 1px solid #1e3a8a;
 }
 
 .header-pill .quick-reminder {
-  background: #F9F9F9 !important;
+  background: #1e3a8a !important;
+  color: #e8edff;
   min-width: 0;
 }
 
 .header-pill .header-icons svg,
 .header-pill .header-icons button {
-  color: #512663 !important;
+  color: #e8edff !important;
 }
 
 .header-pill {
