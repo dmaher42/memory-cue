@@ -12,6 +12,7 @@
   <style>
     :root {
       --card-bg: #232d61; /* soft indigo card surface */
+      --cauliflower-blue: #5080bf;
       --card-border: #5e6fd8;
       --text-primary: #f2f5ff; /* Light text for dark gradient */
       --text-secondary: #d8defa; /* Muted lavender text */
@@ -51,7 +52,7 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: #5080bf; /* Cauliflower blue header */
+      --mobile-header-bg: var(--cauliflower-blue); /* Cauliflower blue header */
       --mobile-header-border: rgba(80, 128, 191, 0.82);
       --mobile-header-shadow: 0 18px 32px rgba(80, 128, 191, 0.35);
       --mobile-header-text: #e8edff;
@@ -59,7 +60,7 @@
       --mobile-header-button-color: #e8edff;
       --mobile-header-button-border: rgba(80, 128, 191, 0.82);
       --mobile-quick-surface: #1f3252; /* complementary indigo surface */
-      --mobile-footer-bg: linear-gradient(135deg, #6a9ad6 0%, #5080bf 50%, #365c8a 100%);
+      --mobile-footer-bg: var(--cauliflower-blue);
       --mobile-quick-shadow: 0 20px 34px rgba(34, 52, 86, 0.45);
     }
 
@@ -78,7 +79,7 @@
 
     html[data-theme="dark"],
     html.dark {
-      --mobile-header-bg: #5080bf; /* match new cauliflower blue header */
+      --mobile-header-bg: var(--cauliflower-blue); /* match new cauliflower blue header */
       --mobile-header-border: rgba(80, 128, 191, 0.9);
       --mobile-header-shadow: 0 16px 32px rgba(80, 128, 191, 0.4);
       --mobile-header-text: #e8edff;
@@ -1809,19 +1810,19 @@
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-  /* Comprehensive deep aqua background application */
+  /* Comprehensive Cauliflower Blue background application */
   body {
-    background: var(--background-gradient) !important;
+    background: var(--cauliflower-blue) !important;
     color: var(--text-primary);
   }
 
-  /* Footer navigation with deep aqua background */
+  /* Footer navigation with Cauliflower Blue background */
   #mobile-nav-shell {
-    background: var(--mobile-footer-bg) !important;
+    background: var(--cauliflower-blue) !important;
   }
 
   #mobile-nav-shell .btm-nav {
-    background: var(--mobile-footer-bg) !important;
+    background: var(--cauliflower-blue) !important;
     border-top: 1px solid rgba(169, 190, 255, 0.25);
   }
 
