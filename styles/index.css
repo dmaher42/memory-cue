@@ -3409,7 +3409,28 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   gap: 8px;
 }
 
-/* Ensure content beneath header starts after sticky header */
+/* Reduce the offset under the sticky header so the note title sits closer */
 body {
-  margin-top: 72px;
+  margin-top: 56px;
+}
+
+/* Reduce top padding to shorten the space between the header and title */
+#view-notebook {
+  padding-top: calc(env(safe-area-inset-top, 0) + 40px);
+}
+
+/* Light theme overrides for the writing panel */
+#scratchNotesEditor,
+#scratchNotesEditor .note-title-field,
+#scratchNotesEditor .note-body-field {
+  background-color: #F9F9F9 !important; /* Soft Off‑White */
+  color: #000 !important;
+  border-color: #e6dff0 !important;
+  /* Ensure elements sit flush without extra space */
+  margin-top: 0 !important;
+}
+
+/* Use Deep Violet for formatting icons */
+.formatting-toolbar-strip button svg {
+  color: #512663 !important;
 }
