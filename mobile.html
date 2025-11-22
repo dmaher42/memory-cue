@@ -11,9 +11,9 @@
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --card-bg: #ffffff; /* off-white card surface */
+      --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
       --cauliflower-blue: #F7F7FA;
-      --card-border: #e6dff0;
+      --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
       --text-primary: #2f1b3f; /* Deep violet text */
       --text-secondary: #5b4a68; /* Muted violet */
       --accent-color: #512663; /* Deep violet accent */
@@ -35,11 +35,11 @@
       --border-color: var(--card-border);
       --card-border-strong: color-mix(in srgb, var(--card-border) 65%, var(--text-primary) 35%);
       --priority-high-border: #F4A259; /* Bio Orange */
-      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
+      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 12%, var(--card-bg));
       --priority-medium-border: #6C8AE4; /* Quantum Blue */
-      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 16%, #FFFFFF);
+      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 10%, var(--card-bg));
       --priority-low-border: #6B8F71; /* Digital Sage */
-      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 16%, #FFFFFF);
+      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 10%, var(--card-bg));
       --priority-high-color: #ef4444; /* Tailwind red-500 */
       --priority-medium-color: #eab308; /* Tailwind yellow-500 */
       --priority-low-color: #22c55e; /* Tailwind green-500 */
@@ -99,6 +99,8 @@
     .task-item,
     .cue-task-card {
       background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, color-mix(in srgb, var(--accent-color) 6%, transparent) 0%, transparent 70%);
+      background-repeat: no-repeat;
       border: 1px solid var(--card-border);
       border-left-width: 3px;
       border-left-color: var(--card-border);
@@ -109,7 +111,9 @@
     .task-item.priority-high,
     .cue-task-card[data-priority="High"],
     .cue-task-card.priority-high {
-      background-color: var(--priority-high-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-color: var(--priority-high-border);
       border-left-color: var(--priority-high-border);
       border-style: solid;
@@ -120,7 +124,9 @@
     .task-item.priority-medium,
     .cue-task-card[data-priority="Medium"],
     .cue-task-card.priority-medium {
-      background-color: var(--priority-medium-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-color: var(--priority-medium-border);
       border-left-color: var(--priority-medium-border);
       border-style: solid;
@@ -131,7 +137,9 @@
     .task-item.priority-low,
     .cue-task-card[data-priority="Low"],
     .cue-task-card.priority-low {
-      background-color: var(--priority-low-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-color: var(--priority-low-border);
       border-left-color: var(--priority-low-border);
       border-style: solid;
@@ -790,19 +798,25 @@
 
     /* High priority: Bio Orange tint + border */
     .reminder-card.priority-high {
-      background-color: var(--priority-high-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-high-border);
     }
 
     /* Medium priority: Quantum Blue tint + border */
     .reminder-card.priority-medium {
-      background-color: var(--priority-medium-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-medium-border);
     }
 
     /* Low priority: Digital Sage accent */
     .reminder-card.priority-low {
-      background-color: var(--priority-low-bg);
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-low-border);
     }
 
@@ -834,17 +848,23 @@
       }
 
       #reminderList > .reminder-card.priority-high {
-        background: var(--priority-high-bg);
+        background-color: var(--card-bg);
+        background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+        background-repeat: no-repeat;
         border-left: 3px solid var(--priority-high-border);
       }
 
       #reminderList > .reminder-card.priority-medium {
-        background: var(--priority-medium-bg);
+        background-color: var(--card-bg);
+        background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+        background-repeat: no-repeat;
         border-left: 3px solid var(--priority-medium-border);
       }
 
       #reminderList > .reminder-card.priority-low {
-        background: var(--priority-low-bg);
+        background-color: var(--card-bg);
+        background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+        background-repeat: no-repeat;
         border-left: 3px solid var(--priority-low-border);
       }
 
@@ -2745,14 +2765,23 @@
     }
 
     .mobile-shell #reminderList > .reminder-card.priority-high {
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-high-color, var(--priority-high-border));
     }
 
     .mobile-shell #reminderList > .reminder-card.priority-medium {
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-medium-color, var(--priority-medium-border));
     }
 
     .mobile-shell #reminderList > .reminder-card.priority-low {
+      background-color: var(--card-bg);
+      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+      background-repeat: no-repeat;
       border-left-color: var(--priority-low-color, var(--priority-low-border));
     }
 
