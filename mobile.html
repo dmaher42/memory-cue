@@ -4094,6 +4094,78 @@
     })();
   </script>
 
+  <script id="diagnose-header-scroll">
+    (function monitorHeaderPosition(){
+      function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+      function throttle(fn){
+        let busy=false;
+        return function(...args){ if(busy) return; busy=true; requestAnimationFrame(()=>{ fn(...args); busy=false; }); };
+      }
+
+      function attach() {
+        const header = document.getElementById('reminders-slim-header');
+        if(!header) return console.warn('[diagnose-header-scroll] header not found');
+
+        let lastTop = header.getBoundingClientRect().top;
+        let lastStyle = header.getAttribute('style') || '';
+        let lastClass = header.className || '';
+
+        const logIfChanged = throttle(()=>{
+          try {
+            const r = header.getBoundingClientRect();
+            const top = Math.round(r.top);
+            if (top !== lastTop) {
+              console.info('[diagnose-header-scroll] header top changed', { previous: lastTop, now: top, rect: r });
+              lastTop = top;
+            }
+
+            const s = header.getAttribute('style') || '';
+            const c = header.className || '';
+            if (s !== lastStyle) {
+              console.info('[diagnose-header-scroll] header style changed', s);
+              lastStyle = s;
+            }
+            if (c !== lastClass) {
+              console.info('[diagnose-header-scroll] header class changed', c);
+              lastClass = c;
+            }
+          } catch (e) {
+            console.warn('[diagnose-header-scroll] error checking header', e);
+          }
+        });
+
+        // Monitor window scroll and touch events
+        window.addEventListener('scroll', logIfChanged, { passive: true });
+        window.addEventListener('touchmove', logIfChanged, { passive: true });
+        window.addEventListener('pointermove', logIfChanged, { passive: true });
+
+        // Observe mutations to header attributes
+        const mo = new MutationObserver((records)=>{
+          records.forEach(r=>{
+            if (r.type === 'attributes') {
+              console.info('[diagnose-header-scroll] mutation observed', r.attributeName, header.getAttribute(r.attributeName));
+            }
+          });
+        });
+        mo.observe(header, { attributes: true, attributeFilter: ['style','class'] });
+
+        // Also watch potential scroll containers
+        const containers = document.querySelectorAll('main, [data-view], .mobile-view-inner, .reminders-content-shell');
+        containers.forEach(c=>{
+          try { c.addEventListener('scroll', logIfChanged, { passive: true }); } catch(e){}
+        });
+
+        console.info('[diagnose-header-scroll] monitoring attached');
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach, { once: true });
+      } else {
+        attach();
+      }
+    })();
+  </script>
+
   <script>
     // Ensure the mobile header is fixed and content slides under it
     (function keepHeaderFixed() {
