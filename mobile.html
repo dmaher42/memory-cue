@@ -1903,29 +1903,36 @@
   }
 
   /* Floating footer buttons */
+  #mobile-nav-shell {
+    position: sticky;
+  }
+
   #mobile-nav-shell .floating-footer {
     pointer-events: auto;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: center;
     gap: 0.85rem;
     width: min(640px, 100%);
-    padding: 0 1rem;
-    margin-bottom: calc(env(safe-area-inset-bottom, 0.85rem));
+    padding: 0.65rem 1rem;
+    margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
+    background: var(--mobile-footer-bg);
+    backdrop-filter: blur(8px);
+    border-radius: 1rem;
+    box-shadow: 0 14px 30px rgba(81, 38, 99, 0.14), 0 6px 16px rgba(0, 0, 0, 0.08);
   }
 
   #mobile-nav-shell .floating-card {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.65rem 0.9rem;
-    border-radius: 0.85rem;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
     background: var(--mobile-quick-surface);
     color: var(--mobile-header-text);
     box-shadow: var(--mobile-quick-shadow);
-    font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 1rem;
     border: 1px solid var(--mobile-header-button-border);
     transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
@@ -4908,7 +4915,7 @@
     </main>
   </div>
 
-  <div id="mobile-nav-shell" class="fixed inset-x-0 bottom-3 z-50 flex justify-center pointer-events-none px-2">
+  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
     <div class="floating-footer">
       <button
         type="button"
@@ -4922,7 +4929,6 @@
             <path d="M12 7v5l3 2" />
           </svg>
         </span>
-        <span>Reminders</span>
       </button>
 
       <button
@@ -4936,7 +4942,6 @@
             <path d="M12 5v14M5 12h14" />
           </svg>
         </span>
-        <span>New Reminder</span>
       </button>
 
       <button
@@ -4951,7 +4956,6 @@
             <path d="M13.5 8.5l2 2" />
           </svg>
         </span>
-        <span>Add Note</span>
       </button>
 
       <button
@@ -4967,7 +4971,6 @@
             <path d="M5 9h12" />
           </svg>
         </span>
-        <span>Notes</span>
       </button>
     </div>
   </div>
