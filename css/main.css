@@ -118,6 +118,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
   padding: 8px 12px;
 }
 
@@ -125,10 +127,18 @@
   background: #F9F9F9;
   border: none;
   flex: 1;
+  min-width: 0;
   margin-right: 12px;
   padding: 8px;
   border-radius: 12px;
   color: #333;
+}
+
+.header-pill .header-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .header-pill .header-icons svg,
