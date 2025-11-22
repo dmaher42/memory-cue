@@ -11,17 +11,17 @@
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --card-bg: #F9F9F9; /* Off-white card surface */
-      --cauliflower-blue: #F7F7FA; /* Soft pale lilac background */
-      --card-border: #E6DFF0; /* Light lavender separators */
-      --text-primary: #333333; /* Dark gray for readability */
-      --text-secondary: #666666; /* Medium gray for secondary labels */
-      --accent-color: #512663; /* Deep violet primary accent */
+      --card-bg: #ffffff; /* off-white card surface */
+      --cauliflower-blue: #F7F7FA;
+      --card-border: #e6dff0;
+      --text-primary: #2f1b3f; /* Deep violet text */
+      --text-secondary: #5b4a68; /* Muted violet */
+      --accent-color: #512663; /* Deep violet accent */
       --success-color: #8ed6c1;
-      --background-color: #F7F7FA; /* Soft pale lilac */
-      --background-gradient: linear-gradient(135deg, #F7F7FA 0%, #F7F7FA 100%);
+      --background-color: #F7F7FA; /* soft pale backdrop */
+      --background-gradient: linear-gradient(135deg, #f7f7fa 0%, #ede9f5 45%, #e5dcf0 100%);
       --hover-bg: rgba(81, 38, 99, 0.06);
-      --shadow-color: rgba(51, 51, 51, 0.12);
+      --shadow-color: rgba(81, 38, 99, 0.12);
       --true-blue: #0073cf;
       --delete-color: #EF6A6A;
 
@@ -52,16 +52,16 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: var(--cauliflower-blue); /* Soft pale lilac header */
-      --mobile-header-border: #E6DFF0;
-      --mobile-header-shadow: 0 18px 32px rgba(51, 51, 51, 0.08);
-      --mobile-header-text: var(--text-primary);
-      --mobile-header-button-bg: rgba(158, 136, 201, 0.15); /* translucent lilac buttons */
-      --mobile-header-button-color: var(--text-primary);
-      --mobile-header-button-border: #E6DFF0;
-      --mobile-quick-surface: var(--card-bg); /* Off-white quick surfaces */
-      --mobile-footer-bg: var(--cauliflower-blue);
-      --mobile-quick-shadow: 0 20px 34px rgba(51, 51, 51, 0.08);
+      --mobile-header-bg: #F7F7FA; /* Soft Pale Lilac header */
+      --mobile-header-border: rgba(81, 38, 99, 0.12);
+      --mobile-header-shadow: 0 14px 30px rgba(81, 38, 99, 0.12);
+      --mobile-header-text: #512663;
+      --mobile-header-button-bg: #F9F9F9; /* off-white buttons */
+      --mobile-header-button-color: #512663;
+      --mobile-header-button-border: rgba(81, 38, 99, 0.14);
+      --mobile-quick-surface: #F9F9F9; /* complementary off-white surface */
+      --mobile-footer-bg: #F7F7FA;
+      --mobile-quick-shadow: 0 20px 34px rgba(81, 38, 99, 0.12);
     }
 
     /* Force Soft Pale Lilac/Blue backgrounds with high specificity */
@@ -79,15 +79,15 @@
 
     html[data-theme="dark"],
     html.dark {
-      --mobile-header-bg: var(--cauliflower-blue); /* match new cauliflower blue header */
-      --mobile-header-border: rgba(80, 128, 191, 0.9);
-      --mobile-header-shadow: 0 16px 32px rgba(80, 128, 191, 0.4);
-      --mobile-header-text: #e8edff;
-      --mobile-header-button-bg: color-mix(in srgb, rgba(80, 128, 191, 0.6) 100%, transparent);
-      --mobile-header-button-color: #e8edff;
-      --mobile-header-button-border: rgba(80, 128, 191, 0.9);
-      --mobile-quick-surface: color-mix(in srgb, rgba(20, 32, 52, 0.94) 94%, transparent);
-      --mobile-quick-shadow: 0 18px 30px rgba(34, 52, 86, 0.6);
+      --mobile-header-bg: #F7F7FA; /* match Soft Pale Lilac header */
+      --mobile-header-border: rgba(81, 38, 99, 0.12);
+      --mobile-header-shadow: 0 14px 30px rgba(81, 38, 99, 0.12);
+      --mobile-header-text: #512663;
+      --mobile-header-button-bg: #F9F9F9;
+      --mobile-header-button-color: #512663;
+      --mobile-header-button-border: rgba(81, 38, 99, 0.14);
+      --mobile-quick-surface: #F9F9F9;
+      --mobile-quick-shadow: 0 18px 30px rgba(81, 38, 99, 0.12);
       --card-border-strong: color-mix(in srgb, var(--card-border) 50%, var(--text-primary) 50%);
     }
 
@@ -1810,20 +1810,20 @@
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-  /* Comprehensive Cauliflower Blue background application */
+  /* Comprehensive Soft Pale Lilac background application */
   body {
     background: var(--cauliflower-blue) !important;
-    color: var(--text-primary);
+    color: #2f1b3f;
   }
 
-  /* Footer navigation with Cauliflower Blue background */
+  /* Footer navigation softened to match header */
   #mobile-nav-shell {
-    background: var(--cauliflower-blue) !important;
+    background: transparent;
   }
 
   #mobile-nav-shell .btm-nav {
-    background: var(--cauliflower-blue) !important;
-    border-top: 1px solid rgba(169, 190, 255, 0.25);
+    background: transparent;
+    border-top: 1px solid rgba(81, 38, 99, 0.12);
   }
 
   /* Floating footer buttons */
@@ -1846,7 +1846,7 @@
     padding: 0.7rem 0.95rem;
     border-radius: 1rem;
     background: #F7F7FA;
-    color: #424242;
+    color: #512663;
     box-shadow: 0 10px 28px rgba(81, 38, 99, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
     font-weight: 700;
     font-size: 0.95rem;
@@ -4736,9 +4736,69 @@
 
   <div id="mobile-nav-shell" class="fixed inset-x-0 bottom-3 z-50 flex justify-center pointer-events-none px-2">
     <div class="floating-footer">
-      <!-- Footer action buttons removed per request -->
+      <button
+        type="button"
+        class="floating-card"
+        data-nav-target="reminders"
+        aria-label="Go to Reminders"
+      >
+        <span class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="5" width="16" height="14" rx="3" ry="3" />
+            <path d="M9 3v4" />
+            <path d="M15 3v4" />
+            <path d="M7 11h10" />
+          </svg>
+        </span>
+        <span>Reminders</span>
+      </button>
+
+      <button
+        type="button"
+        class="floating-fab"
+        data-nav-target="new"
+        aria-label="Add reminder"
+      >
+        +
+      </button>
+
+      <button
+        type="button"
+        class="floating-card"
+        data-nav-target="notebook"
+        aria-label="Go to Notes"
+      >
+        <span class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3V4z" />
+            <path d="M9 4v16" />
+            <path d="M4 9h16" />
+          </svg>
+        </span>
+        <span>Notes</span>
+      </button>
     </div>
   </div>
+  <script>
+    (function() {
+      const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
+      if (!navFooter) return;
+
+      navFooter.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
+        if (!button) return;
+
+        const view = button.getAttribute('data-nav-target');
+        if (!view) return;
+
+        window.dispatchEvent(
+          new CustomEvent('app:navigate', {
+            detail: { view }
+          })
+        );
+      });
+    })();
+  </script>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
