@@ -4313,6 +4313,12 @@
       /* Slightly reduce vertical padding to keep header compact */
       #reminders-slim-header { padding-top: calc(env(safe-area-inset-top, 0) + 0.5rem); padding-bottom: 0.4rem; }
 
+      /* Ensure the header bar uses the theme header background */
+      #reminders-slim-header {
+        background: var(--mobile-header-bg) !important;
+        color: var(--mobile-header-text) !important;
+      }
+
       /* Force header fixed so it cannot be overridden by other rules */
       #reminders-slim-header.force-fixed {
         position: fixed !important;
