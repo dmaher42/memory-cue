@@ -4177,7 +4177,15 @@
         function applyFixedHeader() {
           // Strongly enforce fixed positioning so it doesn't move during scroll
           header.classList.add('force-fixed');
-          header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
+          try {
+            // ensure the header gets its own compositor layer and no transitions
+            header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
+            header.style.transition = 'none';
+            if (!header.style.transform) header.style.transform = 'translateZ(0)';
+            header.style.willChange = 'transform, top';
+          } catch (e) {
+            /* ignore styling failures */
+          }
 
           // Ensure the main content doesn't sit underneath the header
           const h = Math.ceil(header.getBoundingClientRect().height);
@@ -4313,6 +4321,12 @@
         right: 0 !important;
         width: 100% !important;
         z-index: 9999 !important;
+        /* Prevent transitions or subpixel jitter */
+        transition: none !important;
+        transform: translateZ(0) !important;
+        will-change: transform, top !important;
+        -webkit-backface-visibility: hidden !important;
+        backface-visibility: hidden !important;
       }
     </style>
     <div class="header-pill w-full">
