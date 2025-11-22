@@ -132,7 +132,27 @@ self.addEventListener('fetch', (event) => {
   }
 
   // For everything else, just pass-through to network (and fall back to cache if available)
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  event.respondWith(
+    (async () => {
+      try {
+        return await fetch(req);
+      } catch (e) {
+        // Try cache match first
+        try {
+          const cached = await caches.match(req);
+          if (cached) return cached;
+        } catch (_) {
+          /* ignore cache lookup errors */
+        }
+        // Final fallback: return a generic offline response so respondWith always resolves to a Response
+        return new Response('Offline and no cached response', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
+    })()
+  );
 });
 
 // ---------- Helpers ----------
