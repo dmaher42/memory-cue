@@ -4050,6 +4050,50 @@
     })();
   </script>
 
+  <script id="diagnose-header-ancestors">
+    (function diagnoseHeaderAncestors() {
+      function check() {
+        const header = document.getElementById('reminders-slim-header');
+        if (!header) {
+          console.warn('[diagnose-header-ancestors] header not found');
+          return;
+        }
+
+        const problems = [];
+        let el = header.parentElement;
+        while (el && el !== document.documentElement) {
+          try {
+            const cs = window.getComputedStyle(el);
+            const hasTransform = cs.transform && cs.transform !== 'none';
+            const hasFilter = (cs.filter && cs.filter !== 'none') || (cs.backdropFilter && cs.backdropFilter !== 'none');
+            const hasWillChange = cs.willChange && cs.willChange.indexOf('transform') !== -1;
+            const hasContainPaint = cs.contain && (cs.contain.indexOf('paint') !== -1 || cs.contain.indexOf('layout') !== -1);
+
+            if (hasTransform || hasFilter || hasWillChange || hasContainPaint) {
+              problems.push({ el, transform: cs.transform, filter: cs.filter, backdropFilter: cs.backdropFilter, willChange: cs.willChange, contain: cs.contain });
+              // visually mark the element so it's easy to find in devtools
+              try { el.style.outline = '2px dashed rgba(255,0,0,0.7)'; } catch (e) { /* ignore */ }
+              console.warn('[diagnose-header-ancestors] problematic ancestor found:', el, problems[problems.length-1]);
+            }
+          } catch (e) {
+            console.warn('[diagnose-header-ancestors] error reading computed style for', el, e);
+          }
+          el = el.parentElement;
+        }
+
+        if (!problems.length) {
+          console.info('[diagnose-header-ancestors] no transforms/filters/will-change/contain detected on header ancestors');
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', check, { once: true });
+      } else {
+        check();
+      }
+    })();
+  </script>
+
   <script>
     // Ensure the mobile header is fixed and content slides under it
     (function keepHeaderFixed() {
