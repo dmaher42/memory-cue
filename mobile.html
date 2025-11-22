@@ -1929,21 +1929,21 @@
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 0.7rem 0.95rem;
-    border-radius: 1rem;
-    background: #F7F7FA;
-    color: #512663;
-    box-shadow: 0 10px 28px rgba(81, 38, 99, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 0.65rem 0.9rem;
+    border-radius: 0.85rem;
+    background: var(--mobile-quick-surface);
+    color: var(--mobile-header-text);
+    box-shadow: var(--mobile-quick-shadow);
     font-weight: 700;
     font-size: 0.95rem;
-    border: 1px solid rgba(81, 38, 99, 0.06);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--mobile-header-button-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
 
   #mobile-nav-shell .floating-card:hover,
   #mobile-nav-shell .floating-card:focus-visible {
     transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(81, 38, 99, 0.14), 0 6px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 14px 32px rgba(81, 38, 99, 0.14), 0 6px 16px rgba(0, 0, 0, 0.08);
     outline: none;
   }
 
@@ -1962,7 +1962,7 @@
     width: 4.25rem;
     height: 4.25rem;
     border-radius: 999px;
-    background: #512663;
+    background: var(--accent-color);
     color: #FFFFFF;
     box-shadow: 0 16px 38px rgba(81, 38, 99, 0.32), 0 6px 18px rgba(0, 0, 0, 0.14);
     font-size: 1.6rem;
@@ -3726,6 +3726,38 @@
     .header-pill {
       width: 100%;
       margin-inline: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--mobile-quick-surface);
+      border: 1px solid var(--mobile-header-button-border);
+      border-radius: 9999px;
+      box-shadow: var(--mobile-quick-shadow);
+    }
+
+    .header-pill input.quick-reminder {
+      flex: 1 1 auto;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      padding: 0.25rem 0.5rem;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .header-pill button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border: none;
+      background: transparent;
+      color: var(--accent-color);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .reminders-quick-add .quick-icon {
@@ -4896,10 +4928,8 @@
       >
         <span class="icon" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="4" y="5" width="16" height="14" rx="3" ry="3" />
-            <path d="M9 3v4" />
-            <path d="M15 3v4" />
-            <path d="M7 11h10" />
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 7v5l3 2" />
           </svg>
         </span>
         <span>Reminders</span>
@@ -4922,9 +4952,9 @@
       >
         <span class="icon" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3V4z" />
-            <path d="M9 4v16" />
-            <path d="M4 9h16" />
+            <path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z" />
+            <path d="M9 4v14" />
+            <path d="M5 9h12" />
           </svg>
         </span>
         <span>Notes</span>
@@ -7342,126 +7372,6 @@
       initSlimHeaderButtons();
     }
 
-  </script>
-
-  <!-- Mobile bottom navigation (white rounded pill) -->
-  <div class="bottom-nav-wrapper">
-    <nav class="bottom-nav" role="navigation" aria-label="Primary navigation">
-      <button
-        type="button"
-        class="bottom-tab"
-        data-tab="reminders"
-        aria-label="Reminders"
-      >
-        <svg class="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12,6 12,12 16,14"/>
-        </svg>
-        <span class="tab-label">Reminders</span>
-      </button>
-
-      <button
-        type="button"
-        class="bottom-tab"
-        data-tab="new"
-        aria-label="New Reminder"
-      >
-        <svg class="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="10,2 10,6 14,6 14,2"/>
-          <path d="m12,6v6l4,2"/>
-        </svg>
-        <span class="tab-label">New Reminder</span>
-      </button>
-
-      <button
-        type="button"
-        class="bottom-tab"
-        data-tab="add-note"
-        aria-label="Add Note"
-      >
-        <svg class="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="m12,19l7-7 3,3-7,7-4,1 1-4Z"/>
-          <path d="m18,13l-1.5-7.5L2,2l3.5,14.5L13,18l5-5Z"/>
-          <path d="m2,2l7.586,7.586"/>
-          <circle cx="11" cy="11" r="2"/>
-        </svg>
-        <span class="tab-label">Add Note</span>
-      </button>
-
-      <button
-        type="button"
-        class="bottom-tab active"
-        data-tab="notebook"
-        aria-label="Notebook"
-        aria-current="page"
-      >
-        <svg class="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        </svg>
-        <span class="tab-label">Notebook</span>
-      </button>
-    </nav>
-  </div>
-
-  <script>
-    // Bottom-nav tab activation and navigation event
-    (function() {
-      function setActive(tabName) {
-        document.querySelectorAll('.bottom-tab').forEach(b => {
-          if (b.dataset.tab === tabName) {
-            b.classList.add('active');
-            b.setAttribute('aria-current', 'page');
-          } else {
-            b.classList.remove('active');
-            b.removeAttribute('aria-current');
-          }
-        });
-      }
-
-      document.addEventListener('click', function (e) {
-        const tab = e.target.closest('.bottom-tab');
-        if (!tab) return;
-        const name = tab.dataset.tab;
-        setActive(name);
-        // If user tapped the Add Note button, open the notebook view and trigger the New Note action
-        if (name === 'add-note') {
-          // ensure notebook tab is active
-          setActive('notebook');
-          // dispatch navigate to notebook for other listeners
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebook' } }));
-          // Prepare a fresh note: clear title and editor, then focus title
-          try {
-            const titleEl = document.getElementById('noteTitleMobile');
-            const editorEl = document.getElementById('scratchNotesEditor');
-            if (titleEl) {
-              if (typeof titleEl.value !== 'undefined') titleEl.value = '';
-              titleEl.removeAttribute('data-note-original');
-            }
-            if (editorEl) {
-              if (editorEl.isContentEditable) {
-                editorEl.innerHTML = '';
-              } else if (typeof editorEl.value !== 'undefined') {
-                editorEl.value = '';
-              }
-            }
-            if (titleEl && typeof titleEl.focus === 'function') titleEl.focus();
-          } catch (err) {
-            console.error('Failed to prep new note', err);
-          }
-          return;
-        }
-
-        const body = document.body;
-        if (body) body.dataset.activeView = name;
-        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: name } }));
-      });
-
-      // Ensure the default active state matches body/main initial value
-      const main = document.querySelector('main[data-active-view]');
-      const active = main?.dataset?.activeView || document.body?.dataset?.activeView;
-      if (active) setActive(active);
-    })();
   </script>
 
   <script>
