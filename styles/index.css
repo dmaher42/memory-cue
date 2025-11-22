@@ -140,6 +140,7 @@ html[data-theme="professional"] {
 /* PROFESSIONAL DESKTOP HEADER */
 
  .desktop-header-bar {
+  --desktop-header-solid: #1e3a8a;
   position: static;
   top: auto;
   display: flex;
@@ -149,11 +150,11 @@ html[data-theme="professional"] {
   padding: 0.45rem 1.25rem;
   width: 100%;
   margin: 0 auto 0.75rem;
-  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 92%, transparent);
+  background: var(--desktop-header-solid);
   backdrop-filter: blur(14px);
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 75%, transparent);
-  box-shadow: 0 18px 38px rgba(79, 70, 229, 0.16);
+  border: 1px solid var(--desktop-header-solid);
+  box-shadow: 0 18px 38px rgba(30, 58, 138, 0.28);
 }
 
  .desktop-header-left {
@@ -317,14 +318,14 @@ html[data-theme="professional"] {
   gap: 0.6rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 65%, transparent);
-  color: var(--desktop-text-main, var(--color-base-content, #0f172a));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--desktop-header-solid) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--desktop-header-solid) 90%, transparent);
+  color: #e8edff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
  .desktop-header-brand-link:hover {
-  background: color-mix(in srgb, var(--desktop-header-bg, var(--color-base-200, #e6edff)) 80%, transparent);
+  background: color-mix(in srgb, var(--desktop-header-solid) 88%, transparent);
 }
 
  .desktop-header-logo {
@@ -368,9 +369,9 @@ html[data-theme="professional"] {
   gap: 0.25rem;
   padding: 0.3rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(14, 165, 233, 0.12));
-  box-shadow: 0 16px 32px rgba(79, 70, 229, 0.18);
-  border: 1px solid color-mix(in srgb, var(--desktop-border-subtle, var(--color-base-300, #d7def1)) 70%, transparent);
+  background: var(--desktop-header-solid);
+  box-shadow: 0 16px 32px rgba(30, 58, 138, 0.28);
+  border: 1px solid var(--desktop-header-solid);
 }
 
  .desktop-header-nav-tabs .btn {
@@ -380,7 +381,7 @@ html[data-theme="professional"] {
   padding: 0.3rem 0.85rem;
   border-width: 0;
   background: transparent;
-  color: var(--desktop-nav-text-muted, color-mix(in srgb, var(--color-base-content, #0f172a) 60%, transparent));
+  color: #e8edff;
   box-shadow: none;
 }
 
@@ -3385,17 +3386,20 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 /* Override header styles for light theme */
 .mobile-header,
 .header-pill {
-  background: #F7F7FA !important;
+  background: #1e3a8a !important;
+  color: #e8edff;
+  border: 1px solid #1e3a8a;
 }
 
 .header-pill .quick-reminder {
-  background: #F9F9F9 !important;
+  background: #1e3a8a !important;
+  color: #e8edff;
   min-width: 0;
 }
 
 .header-pill .header-icons svg,
 .header-pill .header-icons button {
-  color: #512663 !important;
+  color: #e8edff !important;
 }
 
 .header-pill {

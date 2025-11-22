@@ -48,28 +48,26 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome for refreshed indigo shell */
-      --mobile-header-bg: #E1F5FE; /* updated header token */
-      --mobile-header-border: rgba(99, 102, 241, 0.22);
-      --mobile-header-shadow: 0 18px 32px rgba(79, 70, 229, 0.18);
-      --mobile-header-text: var(--text-primary);
-      --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(79, 70, 229, 0.12));
-      --mobile-header-button-color: color-mix(in srgb, var(--accent-color) 92%, var(--text-primary) 8%);
-      --mobile-header-button-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
-      --mobile-quick-surface: #E1F5FE; /* updated quick surface token to match header */
-      --mobile-header-text: #0f172a; /* ensure readable header text */
-      --mobile-quick-shadow: 0 20px 34px rgba(79, 70, 229, 0.16);
+      --mobile-header-bg: #1e3a8a; /* Solid blue header to match desktop */
+      --mobile-header-border: rgba(30, 58, 138, 0.8);
+      --mobile-header-shadow: 0 18px 32px rgba(30, 58, 138, 0.35);
+      --mobile-header-text: #e8edff;
+      --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(30, 58, 138, 0.16));
+      --mobile-header-button-color: #e8edff;
+      --mobile-header-button-border: rgba(30, 58, 138, 0.8);
+      --mobile-quick-surface: #1e3a8a; /* updated quick surface token to match header */
+      --mobile-quick-shadow: 0 20px 34px rgba(30, 58, 138, 0.28);
     }
 
     html[data-theme="dark"],
-        --mobile-header-bg: #E1F5FE; /* updated header token */
-      --mobile-header-bg: color-mix(in srgb, rgba(15, 23, 42, 0.92) 96%, transparent);
-      --mobile-header-border: rgba(148, 163, 184, 0.35);
-      --mobile-header-shadow: 0 16px 32px rgba(15, 23, 42, 0.55);
-      --mobile-header-text: color-mix(in srgb, var(--card-bg) 94%, transparent);
-      --mobile-header-button-bg: color-mix(in srgb, rgba(148, 163, 184, 0.2) 100%, transparent);
-      --mobile-header-button-color: color-mix(in srgb, var(--card-bg) 92%, transparent);
-        --mobile-quick-surface: #E1F5FE; /* updated quick surface token to match header */
-        --mobile-header-text: #0f172a; /* ensure readable header text */
+    html.dark {
+      --mobile-header-bg: #1e3a8a; /* match solid desktop header */
+      --mobile-header-border: rgba(30, 58, 138, 0.85);
+      --mobile-header-shadow: 0 16px 32px rgba(30, 58, 138, 0.4);
+      --mobile-header-text: #e8edff;
+      --mobile-header-button-bg: color-mix(in srgb, rgba(30, 58, 138, 0.6) 100%, transparent);
+      --mobile-header-button-color: #e8edff;
+      --mobile-header-button-border: rgba(30, 58, 138, 0.85);
       --mobile-quick-surface: color-mix(in srgb, rgba(15, 23, 42, 0.92) 94%, transparent);
       --mobile-quick-shadow: 0 18px 30px rgba(15, 23, 42, 0.6);
     }
