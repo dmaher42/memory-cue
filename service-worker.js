@@ -98,8 +98,21 @@ self.addEventListener('fetch', (event) => {
 
   // Always bypass certain hosts (Apps Script, etc.)
   if (BYPASS_HOSTS.has(url.hostname)) {
-    event.respondWith(fetch(req));
-    return; // Let the browser handle it (goes to network)
+    // Ensure we handle network failures gracefully even for bypassed hosts
+    event.respondWith(
+      fetch(req).catch(async () => {
+        // Try to return a cached matching request as a fallback
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        // Final fallback: return a generic offline response
+        return new Response('Network unavailable', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      })
+    );
+    return; // Let the service worker provide a graceful fallback
   }
 
   // Handle same-origin navigations with network-first + timeout, fallback to offline shell
