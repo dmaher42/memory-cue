@@ -4051,6 +4051,49 @@
   </script>
 
   <script>
+    // Ensure the mobile header is fixed and content slides under it
+    (function keepHeaderFixed() {
+      const header = document.getElementById('reminders-slim-header');
+      const main = document.getElementById('main') || document.querySelector('main');
+      if (!header) return;
+
+      function applyFixedHeader() {
+        // Strongly enforce fixed positioning so it doesn't move during scroll
+        header.style.position = 'fixed';
+        header.style.top = '0';
+        header.style.left = '0';
+        header.style.right = '0';
+        header.style.width = '100%';
+        header.style.zIndex = '9999';
+        header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
+
+        // Ensure the main content doesn't sit underneath the header
+        const h = Math.ceil(header.getBoundingClientRect().height);
+        if (main) {
+          // Only increase padding-top, never decrease below existing layout padding
+          const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
+          if (h !== current) main.style.paddingTop = h + 'px';
+        } else {
+          document.documentElement.style.setProperty('--mobile-header-height', h + 'px');
+        }
+      }
+
+      // Initial apply
+      applyFixedHeader();
+
+      // Re-apply on resize and orientation change
+      window.addEventListener('resize', applyFixedHeader);
+      window.addEventListener('orientationchange', applyFixedHeader);
+
+      // Watch for header size changes (dynamic content) and reapply spacing
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(applyFixedHeader);
+        ro.observe(header);
+      }
+    })();
+  </script>
+
+  <script>
     // Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
     // prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
     (function() {
