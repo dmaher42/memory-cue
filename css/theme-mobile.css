@@ -18,7 +18,7 @@ body.mobile-theme footer {
 body.mobile-theme .app-header,
 body.mobile-theme header,
 body.mobile-theme .top-bar {
-  background-color: #0073CF;
+  background-color: #5080BF;
   color: #FFFFFF;
   padding: 1rem 1.25rem;
   display: flex;
@@ -55,20 +55,20 @@ body.mobile-theme .top-bar .icon-button {
 body.mobile-theme .app-header button:focus-visible,
 body.mobile-theme .top-bar button:focus-visible,
 body.mobile-theme header button:focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid #5080BF;
   outline-offset: 2px;
 }
 
 body.mobile-theme .app-header button:hover,
 body.mobile-theme .top-bar button:hover,
 body.mobile-theme header button:hover {
-  color: #2563EB;
-  background-color: rgba(37, 99, 235, 0.1);
+  color: #3f6aa0;
+  background-color: rgba(80, 128, 191, 0.12);
 }
 
 body.mobile-theme .app-header button.is-active,
 body.mobile-theme .top-bar button.is-active {
-  color: #2563EB;
+  color: #3f6aa0;
 }
 
 /* Card Styles */
@@ -113,7 +113,7 @@ body.mobile-theme .text-secondary {
 body.mobile-theme .btn-primary,
 body.mobile-theme button.btn-primary,
 body.mobile-theme .button-primary {
-  background-color: #2563EB;
+  background-color: #5080BF;
   color: #FFFFFF;
   border: none;
   border-radius: 0.65rem;
@@ -131,13 +131,13 @@ body.mobile-theme .button-primary {
 body.mobile-theme .btn-primary:hover,
 body.mobile-theme button.btn-primary:hover,
 body.mobile-theme .button-primary:hover {
-  background-color: #1D4ED8;
+  background-color: #3f6aa0;
 }
 
 body.mobile-theme .btn-primary:focus-visible,
 body.mobile-theme button.btn-primary:focus-visible,
 body.mobile-theme .button-primary:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.4);
+  outline: 3px solid rgba(80, 128, 191, 0.4);
   outline-offset: 2px;
 }
 
@@ -199,8 +199,8 @@ body.mobile-theme input:focus,
 body.mobile-theme select:focus,
 body.mobile-theme textarea:focus,
 body.mobile-theme .form-control:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: #5080BF;
+  box-shadow: 0 0 0 3px rgba(80, 128, 191, 0.18);
   outline: none;
 }
 
@@ -227,14 +227,14 @@ body.mobile-theme a,
 body.mobile-theme .link,
 body.mobile-theme .icon,
 body.mobile-theme .text-accent {
-  color: #2563EB;
+  color: #5080BF;
   text-decoration: none;
 }
 
 body.mobile-theme a:hover,
 body.mobile-theme .link:hover,
 body.mobile-theme .hover\:text-accent-dark:hover {
-  color: #1D4ED8;
+  color: #3f6aa0;
 }
 
 /* Utilities */
@@ -260,7 +260,7 @@ body.mobile-theme .card-grid {
 
 /* Accessibility Helpers */
 body.mobile-theme :focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid #5080BF;
   outline-offset: 2px;
 }
 
