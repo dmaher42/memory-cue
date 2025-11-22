@@ -3801,7 +3801,6 @@
       const scrim = document.getElementById('mobile-drawer-scrim');
       const scrollTopBtn = document.getElementById('btn-scroll-top');
       const searchBtn = document.getElementById('btn-search');
-      const themeBtn = document.getElementById('btn-theme');
       const drawerSyncStatus = document.getElementById('mcStatusText');
       const drawerSyncDot = document.getElementById('mcStatus');
       const quickAddPanel = document.getElementById('quickAddBar');
@@ -4015,7 +4014,19 @@
         applyTheme(current === 'dark' ? 'light' : 'dark');
       };
 
-      themeBtn?.addEventListener('click', toggleTheme);
+      const bindThemeButton = () => {
+        const btn = document.getElementById('btn-theme');
+        if (!(btn instanceof HTMLElement)) return false;
+        if (btn.dataset.themeBound === 'true') return true;
+        btn.dataset.themeBound = 'true';
+        btn.addEventListener('click', toggleTheme);
+        applyTheme(root.getAttribute('data-theme'));
+        return true;
+      };
+
+      if (!bindThemeButton()) {
+        document.addEventListener('DOMContentLoaded', bindThemeButton, { once: true });
+      }
 
       window.__mcApplyTheme = applyTheme;
       window.__mcToggleTheme = toggleTheme;
@@ -4451,6 +4462,39 @@
                 <circle cx="12" cy="12" r="3"/>
               </svg>
               Settings
+            </button>
+
+            <button
+              id="btn-theme"
+              type="button"
+              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+              role="menuitem"
+            >
+              <svg
+                id="icon-sun"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.657-7.657-1.414 1.414M7.757 16.243l-1.414 1.414m0-12.728 1.414 1.414m8.486 8.486 1.414 1.414" />
+              </svg>
+              <svg
+                id="icon-moon"
+                class="hidden"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              Toggle theme
             </button>
 
             <button
