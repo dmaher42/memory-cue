@@ -1903,30 +1903,40 @@
   }
 
   /* Floating footer buttons */
+  #mobile-nav-shell {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
   #mobile-nav-shell .floating-footer {
     pointer-events: auto;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: end;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: center;
     gap: 0.85rem;
     width: min(640px, 100%);
-    padding: 0 1rem;
-    margin-bottom: calc(env(safe-area-inset-bottom, 0.85rem));
+    padding: 0.65rem 1rem;
+    margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
+    background: transparent;
+    backdrop-filter: none;
+    border-radius: 1rem;
+    box-shadow: none;
   }
 
   #mobile-nav-shell .floating-card {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.65rem 0.9rem;
-    border-radius: 0.85rem;
-    background: var(--mobile-quick-surface);
-    color: var(--mobile-header-text);
-    box-shadow: var(--mobile-quick-shadow);
-    font-weight: 700;
-    font-size: 0.95rem;
-    border: 1px solid var(--mobile-header-button-border);
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+    font-size: 1rem;
+    border: 1px solid var(--card-border);
     transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
 
@@ -4908,7 +4918,7 @@
     </main>
   </div>
 
-  <div id="mobile-nav-shell" class="fixed inset-x-0 bottom-3 z-50 flex justify-center pointer-events-none px-2">
+  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
     <div class="floating-footer">
       <button
         type="button"
@@ -4922,16 +4932,33 @@
             <path d="M12 7v5l3 2" />
           </svg>
         </span>
-        <span>Reminders</span>
       </button>
 
       <button
         type="button"
-        class="floating-fab"
+        class="floating-card"
         data-nav-target="new"
         aria-label="Add reminder"
       >
-        +
+        <span class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="floating-card"
+        data-nav-target="add-note"
+        aria-label="Add note"
+      >
+        <span class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 17.5V20h2.5L17 9.5 14.5 7 4 17.5z" />
+            <path d="M13.5 8.5l2 2" />
+          </svg>
+        </span>
       </button>
 
       <button
@@ -4947,7 +4974,6 @@
             <path d="M5 9h12" />
           </svg>
         </span>
-        <span>Notes</span>
       </button>
     </div>
   </div>
@@ -4956,12 +4982,43 @@
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
       if (!navFooter) return;
 
+      const focusNotebookInputs = () => {
+        const focusField = () => {
+          const titleInput = document.getElementById('noteTitleMobile');
+          if (titleInput) {
+            titleInput.focus();
+            return;
+          }
+
+          const noteEditor = document.getElementById('scratchNotesEditor');
+          if (noteEditor) {
+            noteEditor.focus();
+          }
+        };
+
+        if (typeof queueMicrotask === 'function') {
+          queueMicrotask(focusField);
+        } else {
+          setTimeout(focusField, 0);
+        }
+      };
+
       navFooter.addEventListener('click', (event) => {
         const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
         if (!button) return;
 
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
+
+        if (view === 'add-note') {
+          window.dispatchEvent(
+            new CustomEvent('app:navigate', {
+              detail: { view: 'notebook' }
+            })
+          );
+          focusNotebookInputs();
+          return;
+        }
 
         window.dispatchEvent(
           new CustomEvent('app:navigate', {
