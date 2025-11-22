@@ -328,16 +328,16 @@ const initMobileNotes = () => {
         : null);
 
     if (NotesEditorClass) {
-      return new NotesEditorClass('#scratchNotesEditor', {
-        toolbar: true,
-        placeholder: 'Start typing your note...',
-      });
+        return new NotesEditorClass('#scratchNotesEditor', {
+          toolbar: true,
+          placeholder: 'Start typing your note…',
+        });
     }
 
     scratchNotesEditorElement.setAttribute('contenteditable', 'true');
     scratchNotesEditorElement.setAttribute('role', 'textbox');
     scratchNotesEditorElement.setAttribute('aria-multiline', 'true');
-    scratchNotesEditorElement.dataset.placeholder = 'Start typing your note...';
+    scratchNotesEditorElement.dataset.placeholder = 'Start typing your note…';
 
     return {
       element: scratchNotesEditorElement,

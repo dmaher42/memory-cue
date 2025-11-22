@@ -188,7 +188,8 @@ html[data-theme="professional"] {
 /* Smooth scrolling inside the editor */
 #scratchNotesEditor {
   scroll-behavior: smooth;
-  background-color: rgba(250, 250, 250, 0.6);
+  background-color: #f9f9f9;
+  border-radius: 12px;
 }
 
 /* Optional: smoother transitions for mobile header/title area */
@@ -202,9 +203,10 @@ html[data-theme="professional"] {
 
 /* Notebook action buttons: New, Save, Saved Notes */
 .notebook-actions-row {
-  background: #ffffff; /* white surrounding background */
-  padding: 0.35rem; /* slight padding for breathing room */
-  border-radius: 8px;
+  background: #f9f9f9; /* soft off-white background */
+  padding: 0.4rem; /* slight padding for breathing room */
+  border-radius: 10px;
+  border: 1px solid #e6dff0;
 }
 
 .notebook-action-btn {
