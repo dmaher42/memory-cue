@@ -2745,8 +2745,9 @@
     .mc-quick-add-bar {
       /* No longer sticky – just part of the normal flow under the header */
       position: static;
-      background: transparent;
-      border-bottom: none;
+      background: var(--mobile-header-bg);
+      border-bottom: 1px solid var(--mobile-header-border);
+      box-shadow: var(--mobile-header-shadow);
       backdrop-filter: none;
       margin: 0.25rem 0 0.25rem;
       width: 100%;
