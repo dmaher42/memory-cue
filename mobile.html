@@ -422,7 +422,7 @@
   }
 
   .btm-nav button.active {
-    background-color: var(--accent-color, #00796B);
+    background-color: var(--accent-color, var(--mobile-quick-surface));
     color: #FFFFFF;
     font-weight: 600;
     border-radius: 12px;
@@ -445,9 +445,9 @@
   }
 
   .mobile-shell #noteBodyMobile:focus-visible {
-    outline: 2px solid var(--accent-color, #00796B);
+    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
     outline-offset: 0;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #00796B) 25%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 25%, transparent);
   }
 
   .mobile-shell #view-notebook .note-body-wrapper {
@@ -572,9 +572,9 @@
   }
 
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
-    outline: 2px solid var(--accent-color, #00796B);
+    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #00796B) 18%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 18%, transparent);
   }
 
   .mobile-shell #notesListMobile .line-clamp-2 {
