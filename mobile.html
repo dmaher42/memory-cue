@@ -4540,6 +4540,26 @@
             </button>
 
             <button
+              id="viewToggleMenu"
+              type="button"
+              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3 justify-between"
+              role="menuitem"
+              aria-pressed="false"
+              aria-live="polite"
+            >
+              <span class="flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="7" height="6" rx="1" />
+                  <rect x="14" y="4" width="7" height="6" rx="1" />
+                  <rect x="3" y="14" width="7" height="6" rx="1" />
+                  <rect x="14" y="14" width="7" height="6" rx="1" />
+                </svg>
+                Layout
+              </span>
+              <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide text-gray-600">View layout: Stacked</span>
+            </button>
+
+            <button
               id="btn-theme"
               type="button"
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
@@ -4671,17 +4691,6 @@
                 <p id="reminderReorderHint" class="sr-only">
                   Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
                 </p>
-                <div class="flex items-center justify-end gap-2 px-1 pb-2">
-                  <button
-                    type="button"
-                    id="viewToggleMenu"
-                    class="btn btn-ghost btn-xs"
-                    aria-pressed="false"
-                    aria-live="polite"
-                  >
-                    <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide">View layout: Stacked</span>
-                  </button>
-                </div>
                 <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
               </div>
             </section>
