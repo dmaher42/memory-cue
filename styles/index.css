@@ -3420,12 +3420,12 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 
 /* Reduce the offset under the sticky header so the note title sits closer */
 body {
-  margin-top: 56px;
+  margin-top: 48px;
 }
 
 /* Reduce top padding to shorten the space between the header and title */
 #view-notebook {
-  padding-top: calc(env(safe-area-inset-top, 0) + 40px);
+  padding-top: calc(env(safe-area-inset-top, 0) + 24px);
 }
 
 /* Light theme overrides for the writing panel */
