@@ -1002,7 +1002,7 @@
       align-items: center;
       justify-content: center;
       padding: 0.5rem 1rem;
-      padding-top: env(safe-area-inset-top, 0); /* remove extra 0.5rem */
+      padding-top: env(safe-area-inset-top, 0);
       background: var(--mobile-header-bg);
       border-bottom: 1px solid var(--mobile-header-border);
       backdrop-filter: blur(12px);
@@ -1094,7 +1094,7 @@
     @media (max-width: 360px) {
       #slimMobileHeader {
         padding: 0.375rem 0.75rem;
-        padding-top: calc(env(safe-area-inset-top, 0) + 0.375rem);
+        padding-top: env(safe-area-inset-top, 0);
       }
 
       #slimMobileHeader h1 {
@@ -4414,11 +4414,19 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        padding: 0.35rem 0.75rem;
+        background: var(--mobile-header-button-bg);
+        border: 1px solid var(--mobile-header-button-border);
+        border-radius: 9999px;
+        box-shadow: 0 2px 6px rgba(81, 38, 99, 0.15);
       }
 
       #reminders-slim-header .quick-reminder {
         flex: 1 1 auto;
         min-width: 0; /* allow truncation / shrink on small screens */
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
       }
 
       #reminders-slim-header .header-icons,
@@ -4431,11 +4439,24 @@
 
       #reminders-slim-header .header-action-btn.icon-btn {
         padding: 0.35rem;
-        border-radius: 0.5rem;
+        border-radius: 0.4rem;
+        background: transparent;
+        color: var(--accent-color);
+        transition: background-color 0.2s ease;
+      }
+
+      #reminders-slim-header .header-action-btn.icon-btn:hover,
+      #reminders-slim-header .header-action-btn.icon-btn:focus-visible {
+        background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+      }
+
+      #reminders-slim-header .header-action-btn.icon-btn:focus-visible {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 2px;
       }
 
       /* Slightly reduce vertical padding to keep header compact */
-      #reminders-slim-header { padding-top: calc(env(safe-area-inset-top, 0) + 0.5rem); padding-bottom: 0.4rem; }
+      #reminders-slim-header { padding-top: env(safe-area-inset-top, 0); padding-bottom: 0.4rem; }
 
       /* Ensure the header bar uses the theme header background */
       #reminders-slim-header {
