@@ -4082,7 +4082,42 @@ export async function initReminders(sel = {}) {
 
   setupMobileReminderTabs();
   if (variant === 'mobile') {
-    fetchAndUpdateMobileTemperature();
+    // Only request geolocation in response to a user gesture to avoid browser
+    // 'Only request geolocation information in response to a user gesture' violations.
+    const triggerTempOnce = () => {
+      try {
+        fetchAndUpdateMobileTemperature();
+      } catch (e) {
+        console.warn('fetchAndUpdateMobileTemperature failed', e);
+      }
+    };
+
+    const addGestureListeners = () => {
+      // Use once:true so listeners remove themselves after firing
+      window.addEventListener('pointerdown', triggerTempOnce, { passive: true, once: true });
+      window.addEventListener('touchstart', triggerTempOnce, { passive: true, once: true });
+      window.addEventListener('click', triggerTempOnce, { passive: true, once: true });
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.permissions && typeof navigator.permissions.query === 'function') {
+      // If permission already granted, it's OK to call immediately; otherwise wait for a gesture
+      try {
+        navigator.permissions
+          .query({ name: 'geolocation' })
+          .then((perm) => {
+            if (perm && perm.state === 'granted') {
+              triggerTempOnce();
+            } else {
+              addGestureListeners();
+            }
+          })
+          .catch(() => addGestureListeners());
+      } catch (e) {
+        addGestureListeners();
+      }
+    } else {
+      addGestureListeners();
+    }
   }
   setupDragAndDrop();
   rescheduleAllReminders();
