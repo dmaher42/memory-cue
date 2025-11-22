@@ -300,6 +300,23 @@ if (document.readyState === 'loading') {
   bootstrapReminders();
 }
 
+const wireHeaderIconShortcuts = () => {
+  const notifShortcutButton = document.getElementById('notifHeaderBtn');
+  const notificationCta = document.getElementById('notifBtn');
+
+  if (notifShortcutButton && notificationCta) {
+    notifShortcutButton.addEventListener('click', () => {
+      notificationCta.click();
+    });
+  }
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wireHeaderIconShortcuts, { once: true });
+} else {
+  wireHeaderIconShortcuts();
+}
+
 const initMobileNotes = () => {
   if (typeof document === 'undefined') {
     return;
