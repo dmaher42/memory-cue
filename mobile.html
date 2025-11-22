@@ -230,8 +230,8 @@
   }
 
   body[data-active-view="notebook"] #view-notebook .card-body {
-    padding: clamp(1.25rem, 5vw, 2rem);
-    padding-bottom: clamp(5rem, 10vw, 6rem);
+    padding: clamp(0.75rem, 4vw, 1.25rem);
+    padding-bottom: clamp(3rem, 8vw, 4.5rem);
     min-height: calc(100dvh - 4rem);
   }
 
@@ -245,8 +245,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding-bottom: clamp(0.5rem, 2vh, 1.5rem);
+    gap: 0.5rem;
+    padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
   }
 
   .mobile-panel--notes header.mobile-header {
@@ -257,8 +257,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem 0.85rem calc(1rem + env(safe-area-inset-bottom, 0.75rem));
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0.75rem));
     position: relative;
     border-radius: 0.85rem;
   }
@@ -279,7 +279,7 @@
   /* Keep note action buttons fixed and accessible without scrolling on all viewports */
   .mobile-panel--notes #scratch-notes-card {
     /* make room for the fixed action bar so content isn't hidden */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3.5rem);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3rem);
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
@@ -345,7 +345,7 @@
   @media (max-width: 640px) {
     .mobile-panel--notes #scratch-notes-card {
       /* make room for the fixed action bar so content isn't hidden */
-      padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3.5rem);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3rem);
     }
 
     .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
