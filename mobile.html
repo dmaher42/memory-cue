@@ -1919,10 +1919,10 @@
     width: min(640px, 100%);
     padding: 0.65rem 1rem;
     margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
-    background: var(--mobile-footer-bg);
-    backdrop-filter: blur(8px);
+    background: transparent;
+    backdrop-filter: none;
     border-radius: 1rem;
-    box-shadow: 0 14px 30px rgba(81, 38, 99, 0.14), 0 6px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: none;
   }
 
   #mobile-nav-shell .floating-card {
@@ -1932,11 +1932,11 @@
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 999px;
-    background: var(--mobile-quick-surface);
-    color: var(--mobile-header-text);
-    box-shadow: var(--mobile-quick-shadow);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
     font-size: 1rem;
-    border: 1px solid var(--mobile-header-button-border);
+    border: 1px solid var(--card-border);
     transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
 
