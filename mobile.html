@@ -4053,42 +4053,50 @@
   <script>
     // Ensure the mobile header is fixed and content slides under it
     (function keepHeaderFixed() {
-      const header = document.getElementById('reminders-slim-header');
-      const main = document.getElementById('main') || document.querySelector('main');
-      if (!header) return;
+      function init() {
+        const header = document.getElementById('reminders-slim-header');
+        const main = document.getElementById('main') || document.querySelector('main');
+        if (!header) return;
 
-      function applyFixedHeader() {
-        // Strongly enforce fixed positioning so it doesn't move during scroll
-        header.classList.add('force-fixed');
-        header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
+        function applyFixedHeader() {
+          // Strongly enforce fixed positioning so it doesn't move during scroll
+          header.classList.add('force-fixed');
+          header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
 
-        // Ensure the main content doesn't sit underneath the header
-        const h = Math.ceil(header.getBoundingClientRect().height);
-        // small gap under header so content doesn't touch it directly
-        const extraGap = 6; // px
-        const desired = h + extraGap;
+          // Ensure the main content doesn't sit underneath the header
+          const h = Math.ceil(header.getBoundingClientRect().height);
+          // small gap under header so content doesn't touch it directly
+          const extraGap = 6; // px
+          const desired = h + extraGap;
 
-        // Always set the CSS variable used elsewhere for layout calculations
-        document.documentElement.style.setProperty('--mobile-header-height', desired + 'px');
+          // Always set the CSS variable used elsewhere for layout calculations
+          document.documentElement.style.setProperty('--mobile-header-height', desired + 'px');
 
-        if (main) {
-          // Only update padding-top if it differs to avoid unnecessary layout churn
-          const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
-          if (current !== desired) main.style.paddingTop = desired + 'px';
+          if (main) {
+            // Only update padding-top if it differs to avoid unnecessary layout churn
+            const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
+            if (current !== desired) main.style.paddingTop = desired + 'px';
+          }
+        }
+
+        // Initial apply
+        applyFixedHeader();
+
+        // Re-apply on resize and orientation change
+        window.addEventListener('resize', applyFixedHeader);
+        window.addEventListener('orientationchange', applyFixedHeader);
+
+        // Watch for header size changes (dynamic content) and reapply spacing
+        if (window.ResizeObserver) {
+          const ro = new ResizeObserver(applyFixedHeader);
+          ro.observe(header);
         }
       }
 
-      // Initial apply
-      applyFixedHeader();
-
-      // Re-apply on resize and orientation change
-      window.addEventListener('resize', applyFixedHeader);
-      window.addEventListener('orientationchange', applyFixedHeader);
-
-      // Watch for header size changes (dynamic content) and reapply spacing
-      if (window.ResizeObserver) {
-        const ro = new ResizeObserver(applyFixedHeader);
-        ro.observe(header);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+      } else {
+        init();
       }
     })();
   </script>
