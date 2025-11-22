@@ -4059,25 +4059,22 @@
 
       function applyFixedHeader() {
         // Strongly enforce fixed positioning so it doesn't move during scroll
-        header.style.position = 'fixed';
-        header.style.top = '0';
-        header.style.left = '0';
-        header.style.right = '0';
-        header.style.width = '100%';
-        header.style.zIndex = '9999';
+        header.classList.add('force-fixed');
         header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
 
         // Ensure the main content doesn't sit underneath the header
         const h = Math.ceil(header.getBoundingClientRect().height);
         // small gap under header so content doesn't touch it directly
         const extraGap = 6; // px
+        const desired = h + extraGap;
+
+        // Always set the CSS variable used elsewhere for layout calculations
+        document.documentElement.style.setProperty('--mobile-header-height', desired + 'px');
+
         if (main) {
           // Only update padding-top if it differs to avoid unnecessary layout churn
-          const desired = h + extraGap;
           const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
           if (current !== desired) main.style.paddingTop = desired + 'px';
-        } else {
-          document.documentElement.style.setProperty('--mobile-header-height', (h + extraGap) + 'px');
         }
       }
 
@@ -4183,6 +4180,16 @@
 
       /* Slightly reduce vertical padding to keep header compact */
       #reminders-slim-header { padding-top: calc(env(safe-area-inset-top, 0) + 0.5rem); padding-bottom: 0.4rem; }
+
+      /* Force header fixed so it cannot be overridden by other rules */
+      #reminders-slim-header.force-fixed {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        z-index: 9999 !important;
+      }
     </style>
     <div class="header-pill w-full">
       <input
