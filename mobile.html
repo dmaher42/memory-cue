@@ -4069,12 +4069,15 @@
 
         // Ensure the main content doesn't sit underneath the header
         const h = Math.ceil(header.getBoundingClientRect().height);
+        // small gap under header so content doesn't touch it directly
+        const extraGap = 6; // px
         if (main) {
-          // Only increase padding-top, never decrease below existing layout padding
+          // Only update padding-top if it differs to avoid unnecessary layout churn
+          const desired = h + extraGap;
           const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
-          if (h !== current) main.style.paddingTop = h + 'px';
+          if (current !== desired) main.style.paddingTop = desired + 'px';
         } else {
-          document.documentElement.style.setProperty('--mobile-header-height', h + 'px');
+          document.documentElement.style.setProperty('--mobile-header-height', (h + extraGap) + 'px');
         }
       }
 
@@ -4152,6 +4155,35 @@
     class="mobile-header px-3 py-2 pt-safe-top"
     role="banner"
   >
+    <style>
+      /* Layout header contents in a single horizontal row */
+      #reminders-slim-header .header-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      #reminders-slim-header .quick-reminder {
+        flex: 1 1 auto;
+        min-width: 0; /* allow truncation / shrink on small screens */
+      }
+
+      #reminders-slim-header .header-icons,
+      #reminders-slim-header .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-shrink: 0;
+      }
+
+      #reminders-slim-header .header-action-btn.icon-btn {
+        padding: 0.35rem;
+        border-radius: 0.5rem;
+      }
+
+      /* Slightly reduce vertical padding to keep header compact */
+      #reminders-slim-header { padding-top: calc(env(safe-area-inset-top, 0) + 0.5rem); padding-bottom: 0.4rem; }
+    </style>
     <div class="header-pill w-full">
       <input
         id="quickAddInput"
