@@ -95,6 +95,15 @@
       padding-top: env(safe-area-inset-top, 0);
     }
 
+    /* Harmonized mobile typography */
+    body.mobile-shell,
+    body.mobile-shell input,
+    body.mobile-shell textarea,
+    body.mobile-shell button {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
     /* Mobile reminder cards coloured by priority using existing tokens */
     .task-item,
     .cue-task-card {
@@ -551,7 +560,8 @@
     position: absolute;
     inset: 0;
     padding: 1rem 1.25rem;
-    font-size: 0.85rem;
+    font-size: 0.98rem;
+    line-height: 1.6;
     color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
     opacity: 0.8;
     pointer-events: none;
@@ -569,6 +579,9 @@
     z-index: 1;
     border: none;
     box-shadow: none;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.6;
   }
 
   .note-body-field textarea.bg-base-100 {
@@ -1175,6 +1188,13 @@
       background-color: color-mix(in srgb, var(--card-bg) 98%, rgba(148, 163, 184, 0.05));
     }
 
+    .seamless-title-input {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
     .notes-editor {
       min-height: 10rem;
       width: 100%;
@@ -1183,9 +1203,11 @@
       padding: 0.75rem 1rem;
       background-color: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
       color: inherit;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.98rem;
       white-space: pre-wrap;
       overflow-wrap: break-word;
-      line-height: 1.5;
+      line-height: 1.6;
       outline: none;
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -1632,9 +1654,9 @@
     .task-title {
       flex: 1 1 auto;
       min-width: 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      line-height: 1.35;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.4;
       color: color-mix(in srgb, var(--text-primary) 95%, transparent);
       margin-bottom: 0.35rem;
     }
@@ -1734,8 +1756,8 @@
       margin-top: 0.5rem;
       padding-top: 0.5rem;
       border-top: 1px solid color-mix(in srgb, var(--border-color) 15%, transparent);
-      font-size: 0.875rem;
-      line-height: 1.5;
+      font-size: 0.98rem;
+      line-height: 1.6;
       color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
     .dark .task-notes {
