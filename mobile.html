@@ -2029,6 +2029,22 @@
       margin-bottom: 0;
     }
 
+    /* Horizontal single-row layout */
+    #reminderList.reminder-single-row {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(260px, 1fr);
+      grid-template-columns: none;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      scroll-snap-type: x proximity;
+    }
+
+    #reminderList.reminder-single-row > * {
+      scroll-snap-align: start;
+    }
+
     /* 2-column grid layout on wider screens */
     @media (min-width: 380px) {
       #reminderList.grid-cols-2 {
@@ -4598,6 +4614,17 @@
                 <p id="reminderReorderHint" class="sr-only">
                   Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
                 </p>
+                <div class="flex items-center justify-end gap-2 px-1 pb-2">
+                  <button
+                    type="button"
+                    id="viewToggleMenu"
+                    class="btn btn-ghost btn-xs"
+                    aria-pressed="false"
+                    aria-live="polite"
+                  >
+                    <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide">View layout: Stacked</span>
+                  </button>
+                </div>
                 <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
               </div>
             </section>
@@ -4873,17 +4900,32 @@
         });
       };
 
-      const updateViewToggleLabel = (isCompact) => {
+      const layoutLabels = {
+        list: 'View layout: Stacked',
+        grid: 'View layout: Grid',
+        row: 'View layout: Single row',
+      };
+
+      const getCurrentLayout = () => {
+        if (reminderList.classList.contains('reminder-single-row')) return 'row';
+        if (reminderList.classList.contains('grid-cols-2')) return 'grid';
+        return 'list';
+      };
+
+      const updateViewToggleLabel = (layout) => {
         if (!viewToggleLabel) return;
-        viewToggleLabel.textContent = isCompact ? 'View layout: Compact' : 'View layout: Full';
+        const label = layoutLabels[layout] || layoutLabels.list;
+        viewToggleLabel.textContent = label;
       };
 
-      const updateToggleState = (isCompact) => {
-        updateViewToggleLabel(isCompact);
-        viewToggleMenu.setAttribute('aria-pressed', isCompact ? 'true' : 'false');
+      const updateToggleState = (layout) => {
+        updateViewToggleLabel(layout);
+        viewToggleMenu.setAttribute('data-layout', layout);
+        viewToggleMenu.setAttribute('aria-pressed', layout === 'list' ? 'false' : 'true');
       };
 
-      const setCompactMode = (compact) => {
+      const setCompactMode = (layout) => {
+        const compact = layout === 'grid';
         reminderList.querySelectorAll('.task-item, [data-compact]').forEach((item) => {
           if (!(item instanceof HTMLElement)) return;
           if (compact) {
@@ -4894,45 +4936,35 @@
         });
       };
 
-      const ensureInitialState = () => {
-        let isGridView = reminderList.classList.contains('grid-cols-2');
+      const applyLayout = (layout) => {
+        reminderList.classList.remove('grid-cols-2', 'space-y-3', 'reminder-single-row');
 
-        if (isGridView) {
-          reminderList.classList.remove('grid-cols-2');
+        if (layout === 'grid') {
+          reminderList.classList.add('grid-cols-2');
+        } else if (layout === 'row') {
+          reminderList.classList.add('reminder-single-row');
+        } else {
           reminderList.classList.add('space-y-3');
-          isGridView = false;
-        } else if (!reminderList.classList.contains('space-y-3')) {
-          reminderList.classList.add('space-y-3');
+          layout = 'list';
         }
 
-        updateToggleState(isGridView);
-        setCompactMode(false);
+        updateToggleState(layout);
+        setCompactMode(layout);
         applyNotificationHighlights();
       };
 
+      const ensureInitialState = () => {
+        applyLayout('list');
+      };
+
       const observer = new MutationObserver(() => {
-        const isGridView = reminderList.classList.contains('grid-cols-2');
-        setCompactMode(isGridView);
-        applyNotificationHighlights();
-        updateToggleState(isGridView);
+        applyLayout(getCurrentLayout());
       });
 
       viewToggleMenu.addEventListener('click', function () {
-        const isGridView = reminderList.classList.contains('grid-cols-2');
-
-        if (isGridView) {
-          reminderList.classList.remove('grid-cols-2');
-          reminderList.classList.add('space-y-3');
-        } else {
-          reminderList.classList.add('grid-cols-2');
-          reminderList.classList.remove('space-y-3');
-        }
-
-        const isNowGridView = !isGridView;
-        updateToggleState(isNowGridView);
-        setCompactMode(isNowGridView);
-
-        applyNotificationHighlights();
+        const currentLayout = getCurrentLayout();
+        const nextLayout = currentLayout === 'list' ? 'grid' : currentLayout === 'grid' ? 'row' : 'list';
+        applyLayout(nextLayout);
       });
 
       ensureInitialState();
