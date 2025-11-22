@@ -1372,60 +1372,69 @@
     }
 
     .seamless-title-input {
-      background-color: rgba(255, 255, 255, 0.22);
-      border-radius: 6px;
-      color: #ffffff;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.35);
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      color: #1a1a1a;
+      border: 1px solid #e6dff0;
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.03);
+      padding: 0.65rem 0.75rem;
     }
 
     .seamless-title-input::placeholder {
-      color: rgba(255, 255, 255, 0.9);
+      color: #7b6b8a;
     }
 
     .seamless-title-input:focus {
-      background-color: rgba(255, 255, 255, 0.22);
-      border-radius: 6px;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28);
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.18);
+      border-color: #512663;
     }
     
     .distraction-free-editor-container {
       margin-top: 0;
+      background-color: #f9f9f9;
+      border: 1px solid #e6dff0;
+      border-radius: 12px;
+      padding: 0.35rem;
     }
     
     .minimal-editor {
-      border: 1px solid rgba(255, 255, 255, 0.38);
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e6dff0;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
       transition: all 0.2s ease;
       line-height: 1.7;
       min-height: calc(100vh - 280px);
       max-height: calc(100vh - 180px);
       overflow-y: auto;
-      background-color: rgba(255, 255, 255, 0.28);
+      background-color: #f9f9f9;
       color: #1a1a1a;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px;
     }
 
     .minimal-editor:focus {
-      border-color: rgba(255, 255, 255, 0.55);
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      border-color: #512663;
+      box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.18), inset 0 1px 2px rgba(0, 0, 0, 0.05);
       outline: none;
     }
 
     .minimal-editor:empty::before {
       content: attr(data-placeholder);
-      color: color-mix(in srgb, #1a1a1a 78%, #ffffff 22%);
+      color: #7b6b8a;
       font-style: italic;
     }
-    
+
     .formatting-toolbar-strip {
-      margin: 0.25rem 0;
-      backdrop-filter: blur(8px);
+      margin: 0.15rem 0 0.35rem;
+      backdrop-filter: blur(6px);
       min-height: auto;
+      background-color: #f9f9f9;
+      border: 1px solid #e6dff0;
+      border-radius: 10px;
+      padding: 0.35rem 0.5rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
-    
+
     .formatting-btn {
       display: inline-flex;
       align-items: center;
@@ -1440,20 +1449,21 @@
       transition: all 0.2s ease;
       margin: 1px;
     }
-    
+
     .formatting-btn:hover {
-      background: rgba(81, 38, 99, 0.1);
-      color: #3D1E4A; /* Darker Deep Violet */
+      background: rgba(81, 38, 99, 0.12);
+      color: #3d1e4a; /* Darker Deep Violet */
       transform: translateY(-1px);
     }
-    
+
     .formatting-btn:active {
       transform: translateY(0);
-      background: rgba(0, 121, 107, 0.15);
+      background: rgba(81, 38, 99, 0.18);
+      color: #3d1e4a;
     }
-    
+
     .formatting-btn:focus-visible {
-      outline: 2px solid #00796B;
+      outline: 2px solid rgba(81, 38, 99, 0.4);
       outline-offset: 2px;
     }
     
@@ -4286,7 +4296,7 @@
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-primary);">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="scratch-notes-card memory-glass-card p-4 space-y-4 pb-2" style="color: var(--text-primary);">
+        <div id="scratch-notes-card" class="scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-primary);">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
             <div class="flex flex-col">
@@ -4297,20 +4307,20 @@
           </div>
 
           <!-- Seamless title field -->
-          <div class="flex items-center gap-2 px-0 py-0 rounded-md notebook-actions-row">
+          <div class="flex items-center gap-2 px-1 py-1 rounded-md notebook-actions-row">
             <input
               id="noteTitleMobile"
               type="text"
-              placeholder="Title"
+              placeholder="Write a clear note title here…"
               autocomplete="off"
-              class="seamless-title-input flex-1 text-lg font-medium px-1 py-0 border-0 focus:outline-none focus:ring-0 text-white placeholder:text-white/90"
+              class="seamless-title-input flex-1 text-lg font-medium border-0 focus:outline-none focus:ring-0 text-base-content placeholder:text-base-content/70"
             />
           </div>
 
           <!-- Single-row formatting toolbar with reduced spacing -->
           <div
             id="scratchNotesToolbar"
-            class="formatting-toolbar-strip flex items-center gap-3 px-0 py-0 bg-transparent rounded-lg border-0 shadow-none"
+            class="formatting-toolbar-strip flex items-center gap-2 px-0 py-0 bg-transparent rounded-lg border-0 shadow-none"
           >
             <button type="button" class="formatting-btn" data-format="bold" aria-label="Bold">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -4346,7 +4356,7 @@
               id="scratchNotesEditor"
               class="minimal-editor px-1 py-1 text-base leading-relaxed focus:outline-none rounded-lg"
               contenteditable="true"
-              data-placeholder="Start typing your note..."
+              data-placeholder="Start typing your note…"
             ></div>
           </div>
         </div>
@@ -4575,7 +4585,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-OP2WEDAS.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-CUSPTCLJ.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
