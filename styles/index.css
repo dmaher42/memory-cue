@@ -218,6 +218,48 @@ html[data-theme="professional"] {
   border: 1px solid #e6dff0;
 }
 
+/* Notebook folder chip bar (mobile) */
+.notebook-folder-bar {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-inline: 12px;
+  padding-top: 6px;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notebook-folder-bar .folder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  background-color: rgba(255,255,255,0.9);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 150ms ease, transform 120ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.notebook-folder-bar .folder-chip:active {
+  transform: translateY(1px);
+}
+
+.notebook-folder-bar .folder-chip.active {
+  background: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(79,70,229,0.12);
+}
+
+.notebook-folder-bar .folder-chip.outlined {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
 .notebook-action-btn {
   display: inline-flex;
   align-items: center;
