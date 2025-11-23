@@ -158,6 +158,34 @@
   transform: scale(0.96);
 }
 
+/* Completed reminders: premium faded style */
+.reminder-card[data-done='true'] {
+  opacity: 0.45;
+  filter: saturate(55%);
+  transform: none;
+  text-decoration: none;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.reminder-card[data-done='true'] .line-through,
+.reminder-card[data-done='true'] .desktop-reminder-title,
+.reminder-card[data-done='true'] [data-reminder-title] {
+  text-decoration: none;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.reminder-card[data-done='true'] .reminder-meta,
+.reminder-card[data-done='true'] time {
+  color: var(--text-muted, #9a8bb0);
+}
+
+.reminder-card[data-done='true']:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
 .mobile-footer-item--active span {
   color: #f9fafb;
   font-weight: 600;
