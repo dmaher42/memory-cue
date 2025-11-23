@@ -2167,16 +2167,17 @@
   /* Secondary view buttons: clock + notebook */
   .floating-card.btn-reminders,
   .floating-card.btn-notebook {
-    /* Slightly tinted surface to tie into the theme while remaining subtle */
-    background-color: color-mix(in srgb, var(--accent-color) 6%, var(--surface-elevated));
-    border-color: color-mix(in srgb, var(--accent-color) 18%, var(--border-subtle));
-    color: var(--accent-color);
-    box-shadow: 0 6px 14px color-mix(in srgb, var(--accent-color) 8%, rgba(0,0,0,0.06));
+    /* Increased tint and stronger shadow for better visibility on mobile */
+    background-color: color-mix(in srgb, var(--accent-color) 30%, var(--surface-elevated));
+    border-color: color-mix(in srgb, var(--accent-color) 28%, transparent);
+    color: #ffffff;
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-color) 18%, rgba(0,0,0,0.12));
   }
 
   .floating-card.btn-reminders svg,
   .floating-card.btn-notebook svg {
-    color: var(--accent-color);
+    color: #ffffff;
+    fill: #ffffff;
   }
 
   /* Primary create buttons: plus + pencil */
