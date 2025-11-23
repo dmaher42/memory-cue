@@ -2058,6 +2058,7 @@
   }
 
   #mobile-nav-shell .floating-footer {
+    position: relative;
     pointer-events: auto;
     display: flex;
     justify-content: center;
@@ -2072,11 +2073,28 @@
     box-shadow: none;
   }
 
+  #mobile-nav-shell .floating-footer::before {
+    content: "";
+    position: absolute;
+    inset: 0.25rem 0.75rem;
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border: 1px solid var(--border-subtle);
+    z-index: 0;
+  }
+
   #mobile-nav-shell .floating-footer .floating-card {
     flex-shrink: 0;
   }
 
   #mobile-nav-shell .floating-card {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
