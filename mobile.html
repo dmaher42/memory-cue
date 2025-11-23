@@ -16,9 +16,12 @@
       --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
       --text-primary: #231B2E; /* Deep violet text */
       --text-secondary: #5b4a68; /* Muted violet */
+      --text-strong: #34163f;
+      --text-body:  #4a3c57;
+      --text-muted: #9a8bb0;
       --text-main: #1F1A24;               /* deep neutral */
       --text-secondary: #4A4153;          /* softer label text */
-      --text-placeholder: #9B8FA8;        /* subtle, elegant placeholder */
+      --text-placeholder: var(--text-muted);        /* subtle, elegant placeholder */
       --font-primary: 'Inter', system-ui, sans-serif;
       --font-size-title: 1.1rem;
       --font-size-body: 0.95rem;
@@ -929,7 +932,7 @@
       #reminderList > .reminder-card time,
       #reminderList > .reminder-card .reminder-meta {
         font-size: 0.825rem;
-        color: #6B7280;
+        color: var(--text-muted);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -983,7 +986,7 @@
     #reminderList > * strong,
     #reminderList > * [data-reminder-title] {
       margin: 0;
-      color: var(--text-primary);
+      color: var(--text-strong);
       font-weight: 700;
       font-size: 1rem;
       margin-bottom: 0.5rem;
@@ -1000,7 +1003,7 @@
     /* Meta info (right side: date/time/status) */
     #reminderList > * time,
     #reminderList > * .reminder-meta {
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
@@ -1018,7 +1021,7 @@
     #reminderList > * p,
     #reminderList > * .description,
     #reminderList > * .details {
-      color: var(--text-secondary);
+      color: var(--text-body);
     }
     html,
     body {
@@ -1308,14 +1311,14 @@
       border: 1.5px solid var(--border-subtle);
       border-radius: 1rem;
       background-color: var(--surface-elevated);
-      color: var(--text-main);
+      color: var(--text-strong);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
 
     .dark .note-title-field {
       background-color: var(--surface-elevated);
-      color: var(--text-main);
+      color: var(--text-strong);
     }
 
     .note-title-field:focus,
@@ -1327,7 +1330,7 @@
 
     .note-title-field input {
       background-color: transparent;
-      color: var(--text-main);
+      color: var(--text-strong);
     }
 
     .note-title-field input:focus {
@@ -1340,7 +1343,7 @@
       font-size: var(--font-size-title);
       font-weight: 600;
       line-height: 1.4;
-      color: var(--text-main);
+      color: var(--text-strong);
       letter-spacing: -0.2px;
     }
 
@@ -1572,7 +1575,7 @@
     .seamless-title-input {
       background-color: #f9f9f9;
       border-radius: 10px;
-      color: var(--text-main);
+      color: var(--text-strong);
       border: 1px solid #e6dff0;
       box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.03);
       padding: 0.65rem 0.75rem;
@@ -1596,7 +1599,7 @@
       margin-top: 0;
       background-color: var(--surface-elevated);
       border: 1px solid var(--border-subtle);
-      color: var(--text-main);
+      color: var(--text-body);
       border-radius: 12px;
       padding: 0.35rem;
     }
@@ -1610,7 +1613,7 @@
       max-height: calc(100vh - 120px);
       overflow-y: auto;
       background-color: #f9f9f9;
-      color: var(--text-main);
+      color: var(--text-body);
       border-radius: 12px;
       font-family: var(--font-primary);
       font-size: var(--font-size-body);
@@ -1628,7 +1631,7 @@
       font-family: var(--font-primary);
       font-size: var(--font-size-body);
       font-weight: 400;
-      color: var(--text-main);
+      color: var(--text-body);
       line-height: 1.45;
     }
 
@@ -1639,12 +1642,12 @@
     .minimal-editor textarea,
     .minimal-editor[contenteditable="true"] {
       background-color: transparent;
-      color: var(--text-main);
+      color: var(--text-body);
     }
 
     .minimal-editor:empty::before {
       content: attr(data-placeholder);
-      color: var(--text-placeholder);
+      color: var(--text-muted);
       font-style: italic;
     }
 
@@ -1844,7 +1847,7 @@
       font-size: 1.05rem;
       font-weight: 700;
       line-height: 1.4;
-      color: color-mix(in srgb, var(--text-primary) 95%, transparent);
+      color: color-mix(in srgb, var(--text-strong) 95%, transparent);
       margin-bottom: 0.35rem;
     }
     .dark .task-title {
@@ -1868,7 +1871,7 @@
       margin-top: 0.3rem;
     }
     .task-meta-text {
-      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+      color: var(--text-muted);
       font-size: 0.8rem;
       line-height: 1.4;
       margin: 0;
@@ -1877,7 +1880,7 @@
       margin-top: 0.25rem;
     }
     .dark .task-meta-text {
-      color: color-mix(in srgb, var(--card-bg) 70%, var(--text-secondary) 30%);
+      color: color-mix(in srgb, var(--card-bg) 70%, var(--text-muted) 30%);
     }
     .task-chip {
       display: inline-flex;
@@ -1945,11 +1948,11 @@
       border-top: 1px solid color-mix(in srgb, var(--border-color) 15%, transparent);
       font-size: 0.98rem;
       line-height: 1.6;
-      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
+      color: var(--text-body);
     }
     .dark .task-notes {
       border-top-color: color-mix(in srgb, var(--text-secondary) 30%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
+      color: color-mix(in srgb, var(--card-bg) 80%, var(--text-body) 20%);
     }
     .task-header {
       display: flex;
@@ -5077,10 +5080,10 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-primary);">
+        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-body);">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-primary);">
+        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-body);">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
             <div class="flex flex-col">
