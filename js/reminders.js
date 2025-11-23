@@ -808,6 +808,8 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
   const quickVoiceBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddVoice') : null;
+  const pillVoiceBtn =
+    typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   let stopQuickAddVoiceListening = null;
 
   function buildQuickReminder(titleText, dueOverride) {
@@ -830,28 +832,49 @@ export async function initReminders(sel = {}) {
     };
   }
 
-  async function quickAddNow() {
-    if (!quickInput) return;
+  async function quickAddNow(options = {}) {
+    if (!quickInput) return null;
     if (typeof stopQuickAddVoiceListening === 'function') {
       try {
         stopQuickAddVoiceListening();
       } catch {}
     }
-    const t = (quickInput.value || '').trim();
-    if (!t) return;
+    const text =
+      typeof options.text === 'string'
+        ? options.text
+        : (quickInput.value || '').trim();
+    const t = (text || '').trim();
+    if (!t) return null;
 
+    const hasDueOverride =
+      options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
+    const dueOverride = hasDueOverride ? options.dueDate : null;
     let quickDue = null;
-    try {
-      const parsedWhen = parseQuickWhen(t);
-      if (parsedWhen && parsedWhen.time) {
-        const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
-        quickDue = isoCandidate;
+    if (dueOverride) {
+      quickDue = new Date(dueOverride).toISOString();
+    } else {
+      try {
+        const parsedWhen = parseQuickWhen(t);
+        if (parsedWhen && parsedWhen.time) {
+          const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
+          quickDue = isoCandidate;
+        }
+      } catch {
+        quickDue = null;
       }
-    } catch {
-      quickDue = null;
     }
 
     const entry = buildQuickReminder(t, quickDue);
+    if (
+      options.notifyAt instanceof Date &&
+      !Number.isNaN(options.notifyAt.getTime())
+    ) {
+      try {
+        entry.notifyAt = new Date(options.notifyAt).toISOString();
+      } catch {
+        entry.notifyAt = null;
+      }
+    }
     assignOrderIndexForNewItem(entry, { position: 'start' });
     items.unshift(entry);
     sortItemsByOrder(items);
@@ -890,6 +913,8 @@ export async function initReminders(sel = {}) {
         // Ignore dispatch issues so the add flow can finish silently.
       }
     }
+
+    return entry;
   }
 
   if (typeof window !== 'undefined') {
@@ -1033,6 +1058,119 @@ export async function initReminders(sel = {}) {
   }
 
   setupQuickAddVoiceSupport();
+
+  const SpeechRecognitionCtor =
+    typeof window !== 'undefined'
+      ? window.SpeechRecognition || window.webkitSpeechRecognition
+      : null;
+  const voiceSpeechRecognition = SpeechRecognitionCtor ? new SpeechRecognitionCtor() : null;
+
+  if (voiceSpeechRecognition) {
+    voiceSpeechRecognition.lang = 'en-AU';
+    voiceSpeechRecognition.interimResults = false;
+    voiceSpeechRecognition.maxAlternatives = 1;
+  }
+
+  if (pillVoiceBtn && voiceSpeechRecognition) {
+    pillVoiceBtn.addEventListener('click', () => {
+      try {
+        voiceSpeechRecognition.start();
+        pillVoiceBtn.classList.add('is-recording');
+      } catch (error) {
+        console.warn('Voice input failed to start', error);
+      }
+    });
+  } else if (pillVoiceBtn) {
+    pillVoiceBtn.addEventListener('click', () => {
+      try {
+        alert('Voice input is not supported on this browser.');
+      } catch {
+        console.warn('Voice input is not supported on this browser.');
+      }
+    });
+  }
+
+  if (voiceSpeechRecognition) {
+    voiceSpeechRecognition.addEventListener('result', (event) => {
+      const transcript = event?.results?.[0]?.[0]?.transcript?.trim();
+      handleVoiceReminderTranscript(transcript);
+    });
+
+    voiceSpeechRecognition.addEventListener('end', () => {
+      if (pillVoiceBtn) {
+        pillVoiceBtn.classList.remove('is-recording');
+      }
+    });
+  }
+
+  function formatReminderText(rawText) {
+    if (!rawText) return '';
+
+    let text = rawText.trim();
+
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+
+    if (!/[.!?]$/.test(text)) {
+      text += '.';
+    }
+
+    return text;
+  }
+
+  function parseNaturalDateTime(rawText) {
+    const result = { dueDate: null, notifyAt: null };
+    if (!rawText) return result;
+
+    const text = rawText.toLowerCase();
+
+    const now = new Date();
+    let target = new Date(now);
+
+    if (text.includes('tomorrow')) {
+      target.setDate(target.getDate() + 1);
+    } else if (text.includes('today')) {
+      // same day
+    } else {
+      return result;
+    }
+
+    const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+    if (!timeMatch) {
+      return result;
+    }
+
+    let hours = parseInt(timeMatch[1], 10);
+    const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+    const meridiem = timeMatch[3];
+
+    if (meridiem === 'pm' && hours < 12) {
+      hours += 12;
+    }
+    if (meridiem === 'am' && hours === 12) {
+      hours = 0;
+    }
+
+    target.setHours(hours, minutes, 0, 0);
+
+    const dueDate = new Date(target);
+    const notifyAt = new Date(dueDate.getTime() - 10 * 60 * 1000);
+
+    result.dueDate = dueDate;
+    result.notifyAt = notifyAt;
+
+    return result;
+  }
+
+  function handleVoiceReminderTranscript(rawText) {
+    if (!rawText || !quickInput) return;
+
+    const cleanedText = formatReminderText(rawText);
+    const { dueDate, notifyAt } = parseNaturalDateTime(rawText);
+
+    quickInput.value = cleanedText;
+
+    quickAddNow({ text: cleanedText, dueDate, notifyAt });
+  }
 
   if (typeof window !== 'undefined') {
     if (!window.memoryCueQuickAddShortcutsBound) {
@@ -1343,6 +1481,7 @@ export async function initReminders(sel = {}) {
   let unsubscribe = null;
   let editingId = null;
   const reminderTimers = {};
+  const reminderNotifyTimers = {};
   let scheduledReminders = {};
 
   function sortItemsByOrder(target = items) {
@@ -2149,6 +2288,7 @@ export async function initReminders(sel = {}) {
         entry.category = normalizeCategory(entry.category);
         entry.priority = entry.priority || 'Medium';
         entry.notes = typeof entry.notes === 'string' ? entry.notes : '';
+        entry.notifyAt = typeof entry.notifyAt === 'string' ? entry.notifyAt : null;
         entry.body = typeof entry.body === 'string' && entry.body
           ? entry.body
           : buildReminderNotificationBody(entry);
@@ -3074,6 +3214,7 @@ export async function initReminders(sel = {}) {
         id: entry.id,
         title: typeof entry.title === 'string' ? entry.title : '',
         due: typeof entry.due === 'string' ? entry.due : null,
+        notifyAt: typeof entry.notifyAt === 'string' ? entry.notifyAt : null,
         priority: entry.priority || 'Medium',
         category: entry.category || DEFAULT_CATEGORY,
         notes: typeof entry.notes === 'string' ? entry.notes : '',
@@ -3110,6 +3251,7 @@ export async function initReminders(sel = {}) {
       }
     }
     if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; }
+    if(reminderNotifyTimers[id]){ clearTimeout(reminderNotifyTimers[id]); delete reminderNotifyTimers[id]; }
     cancelTriggerNotification(id);
     if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); }
   }
@@ -3179,6 +3321,7 @@ export async function initReminders(sel = {}) {
       id:item.id,
       title:item.title,
       due:item.due,
+      notifyAt: typeof item.notifyAt === 'string' ? item.notifyAt : null,
       category: item.category || DEFAULT_CATEGORY,
       priority: item.priority || 'Medium',
       notes: typeof item.notes === 'string' ? item.notes : '',
@@ -3195,9 +3338,13 @@ export async function initReminders(sel = {}) {
     scheduledReminders[item.id]=stored;
     saveScheduled();
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
+    if(reminderNotifyTimers[item.id]){ clearTimeout(reminderNotifyTimers[item.id]); delete reminderNotifyTimers[item.id]; }
     if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
     const dueTime = new Date(item.due).getTime();
     if(!Number.isFinite(dueTime)) return;
+    const notifyTime = typeof item.notifyAt === 'string'
+      ? new Date(item.notifyAt).getTime()
+      : NaN;
     const delay = dueTime - Date.now();
     if(delay<=0){
       if(scheduledReminders[item.id]?.viaTrigger){
@@ -3209,6 +3356,12 @@ export async function initReminders(sel = {}) {
       return;
     }
     const useTriggers = supportsNotificationTriggers();
+    if(Number.isFinite(notifyTime) && notifyTime > Date.now() && notifyTime < dueTime){
+      const notifyDelay = notifyTime - Date.now();
+      reminderNotifyTimers[item.id] = setTimeout(() => {
+        showReminder({ ...item, due: item.due || stored.due });
+      }, notifyDelay);
+    }
     if(useTriggers){
       stored.viaTrigger = false;
       scheduleTriggerNotification(item).then((scheduled) => {
