@@ -922,7 +922,7 @@
               </button>
             </div>
             <form id="planner-lesson-form" class="mt-6 space-y-4" novalidate>
-              <div class="grid gap-4 md:grid-cols-2" data-planner-lesson-section>
+              <div class="grid gap-4 md:grid-cols-3" data-planner-lesson-section>
                 <label class="block text-sm font-medium text-base-content">
                   Day
                   <select id="planner-lesson-day" class="select select-bordered mt-1 w-full" required>
@@ -936,17 +936,32 @@
                   </select>
                 </label>
                 <label class="block text-sm font-medium text-base-content">
+                  Period or time
+                  <input
+                    id="planner-lesson-period"
+                    type="text"
+                    class="input input-bordered mt-1 w-full"
+                    placeholder="e.g. Lesson 3 – 11:15–12:05"
+                  />
+                </label>
+                <label class="block text-sm font-medium text-base-content">
                   Title
                   <input id="planner-lesson-title" type="text" class="input input-bordered mt-1 w-full" required />
                 </label>
               </div>
               <label class="block text-sm font-medium text-base-content" data-planner-summary-section>
                 Summary
+                <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                  <button type="button" class="btn btn-xs" data-summary-template="simple">Simple</button>
+                  <button type="button" class="btn btn-xs btn-ghost" data-summary-template="hpe">HPE</button>
+                  <button type="button" class="btn btn-xs btn-ghost" data-summary-template="english">English</button>
+                  <button type="button" class="btn btn-xs btn-ghost" data-summary-template="cac">CAC</button>
+                </div>
                 <textarea
                   id="planner-lesson-summary"
                   class="textarea textarea-bordered mt-1 w-full"
                   rows="3"
-                  placeholder="What is the focus for this lesson?"
+                  placeholder="What is the focus for this lesson? E.g. ‘Introduce attacking space in small-sided games.’"
                 ></textarea>
               </label>
               <label class="block text-sm font-medium text-base-content">
@@ -955,9 +970,18 @@
                   id="planner-lesson-subject"
                   type="text"
                   class="input input-bordered mt-1 w-full"
-                  placeholder="e.g. Year 8 Science"
+                  placeholder="e.g. Year 9 HPE – 9WR"
                 />
                 <span class="mt-1 block text-xs text-base-content/60">Use subjects to filter the planner by class.</span>
+              </label>
+              <label class="block text-sm font-medium text-base-content">
+                Status
+                <select id="planner-lesson-status" class="select select-bordered mt-1 w-full">
+                  <option value="not_started">Not started</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="ready">Ready</option>
+                  <option value="taught">Taught</option>
+                </select>
               </label>
               <div class="grid gap-4 md:grid-cols-2 hidden" data-planner-detail-section aria-hidden="true">
                 <label class="block text-sm font-medium text-base-content">
@@ -986,6 +1010,9 @@
               <p id="planner-modal-error" class="hidden text-sm text-error" aria-live="assertive" aria-hidden="true"></p>
               <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
                 <button type="button" class="btn" data-planner-modal-close>Cancel</button>
+                <button type="submit" id="planner-modal-submit-add-another" class="btn btn-secondary">
+                  Save &amp; add another
+                </button>
                 <button type="submit" id="planner-modal-submit" class="btn btn-primary">Save lesson</button>
               </div>
             </form>

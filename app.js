@@ -1019,21 +1019,27 @@ function createPlannerLessonModal() {
   const modalDescription = document.getElementById('planner-modal-description');
   const errorElement = document.getElementById('planner-modal-error');
   const submitButton = document.getElementById('planner-modal-submit');
+  const saveAndAddAnotherButton = document.getElementById('planner-modal-submit-add-another');
   const dayField = document.getElementById('planner-lesson-day');
+  const periodField = document.getElementById('planner-lesson-period');
   const titleField = document.getElementById('planner-lesson-title');
   const summaryField = document.getElementById('planner-lesson-summary');
   const subjectField = document.getElementById('planner-lesson-subject');
+  const statusField = document.getElementById('planner-lesson-status');
   const detailBadgeField = document.getElementById('planner-detail-badge');
   const detailTextField = document.getElementById('planner-detail-text');
   const duplicateWeekInput = document.getElementById('planner-duplicate-week');
+  const summaryTemplateButtons = form?.querySelectorAll('[data-summary-template]') || [];
 
   if (
     !(modal instanceof HTMLElement) ||
     !(form instanceof HTMLFormElement) ||
     !(submitButton instanceof HTMLElement) ||
     !(dayField instanceof HTMLSelectElement) ||
+    !(periodField instanceof HTMLInputElement) ||
     !(titleField instanceof HTMLInputElement) ||
-    !(summaryField instanceof HTMLTextAreaElement)
+    !(summaryField instanceof HTMLTextAreaElement) ||
+    !(statusField instanceof HTMLSelectElement)
   ) {
     return null;
   }
@@ -1086,9 +1092,50 @@ function createPlannerLessonModal() {
   const state = { mode: 'add', lessonId: null, trigger: null };
   let preferredFocusElement = null;
   let lastActiveElement = null;
+  let lastUsedDayName = '';
+  let lastUsedSubject = '';
+  let currentTemplateType = 'simple';
+  let submitIntent = 'save';
 
   const setPreferredFocus = (element) => {
     preferredFocusElement = element instanceof HTMLElement ? element : null;
+  };
+
+  const setSubmitIntent = (intent) => {
+    submitIntent = intent;
+  };
+
+  const setStatusValue = (value) => {
+    if (!(statusField instanceof HTMLSelectElement)) {
+      return;
+    }
+    const normalized = LESSON_STATUS_CONFIG[value] ? value : 'not_started';
+    statusField.value = normalized;
+  };
+
+  const setDayValue = (value) => {
+    const dayValue = typeof value === 'string' && value.trim() ? value.trim() : 'Monday';
+    dayField.value = dayValue;
+    if (dayField.value !== dayValue) {
+      dayField.value = 'Monday';
+    }
+  };
+
+  const applySummaryTemplate = (templateType) => {
+    const templateContent = getTemplateContent(templateType || 'simple');
+    if (!templateContent) {
+      return;
+    }
+    const existing = typeof summaryField.value === 'string' ? summaryField.value.trim() : '';
+    if (existing) {
+      const shouldReplace = window.confirm('Replace existing summary with this template?');
+      if (!shouldReplace) {
+        return;
+      }
+    }
+    summaryField.value = templateContent;
+    currentTemplateType = templateType || 'simple';
+    summaryField.focus();
   };
 
   const setBackgroundInert = (shouldInert) => {
@@ -1195,6 +1242,10 @@ function createPlannerLessonModal() {
   const setSubmitting = (isSubmitting) => {
     submitButton.disabled = Boolean(isSubmitting);
     submitButton.classList.toggle('loading', Boolean(isSubmitting));
+    if (saveAndAddAnotherButton instanceof HTMLButtonElement) {
+      saveAndAddAnotherButton.disabled = Boolean(isSubmitting);
+      saveAndAddAnotherButton.classList.toggle('loading', Boolean(isSubmitting));
+    }
   };
 
   const toggleSection = (section, shouldShow) => {
@@ -1210,11 +1261,18 @@ function createPlannerLessonModal() {
   };
 
   const setLessonFieldsDisabled = (isDisabled) => {
-    [dayField, titleField, summaryField, subjectField].forEach((field) => {
+    [dayField, periodField, titleField, summaryField, subjectField, statusField].forEach((field) => {
       if (field instanceof HTMLElement) {
         field.disabled = Boolean(isDisabled);
         field.classList.toggle('opacity-60', Boolean(isDisabled));
         field.classList.toggle('cursor-not-allowed', Boolean(isDisabled));
+      }
+    });
+    summaryTemplateButtons.forEach((button) => {
+      if (button instanceof HTMLButtonElement) {
+        button.disabled = Boolean(isDisabled);
+        button.classList.toggle('opacity-60', Boolean(isDisabled));
+        button.classList.toggle('cursor-not-allowed', Boolean(isDisabled));
       }
     });
   };
@@ -1227,6 +1285,9 @@ function createPlannerLessonModal() {
     if (subjectField instanceof HTMLInputElement) {
       subjectField.value = '';
     }
+    if (periodField instanceof HTMLInputElement) {
+      periodField.value = '';
+    }
     if (detailBadgeField instanceof HTMLInputElement) {
       detailBadgeField.value = '';
     }
@@ -1238,6 +1299,9 @@ function createPlannerLessonModal() {
     if (duplicateWeekInput instanceof HTMLInputElement) {
       duplicateWeekInput.value = '';
     }
+    setStatusValue('not_started');
+    currentTemplateType = 'simple';
+    submitIntent = 'save';
   };
 
   const updateModalCopy = ({ title, description, action }) => {
@@ -1292,15 +1356,17 @@ function createPlannerLessonModal() {
     toggleSection(duplicateSection, false);
     setLessonFieldsDisabled(false);
     const resolvedDay = typeof defaultDay === 'string' && defaultDay.trim() ? defaultDay.trim() : 'Monday';
-    dayField.value = resolvedDay;
-    if (dayField.value !== resolvedDay) {
-      dayField.value = 'Monday';
-    }
+    setDayValue(resolvedDay);
     titleField.value = resolvedDay ? `${resolvedDay} lesson` : '';
     summaryField.value = '';
+    if (periodField instanceof HTMLInputElement) {
+      periodField.value = '';
+    }
     if (subjectField instanceof HTMLInputElement) {
       subjectField.value = '';
     }
+    setStatusValue('not_started');
+    currentTemplateType = 'simple';
     updateModalCopy({
       title: 'Add lesson',
       description: 'Pick a day and capture the lesson focus for this week.',
@@ -1323,15 +1389,17 @@ function createPlannerLessonModal() {
     toggleSection(duplicateSection, false);
     setLessonFieldsDisabled(false);
     const dayValue = lesson.dayLabel || lesson.dayName || 'Monday';
-    dayField.value = dayValue;
-    if (dayField.value !== dayValue) {
-      dayField.value = 'Monday';
-    }
+    setDayValue(dayValue);
     titleField.value = lesson.title || '';
     summaryField.value = lesson.summary || '';
+    if (periodField instanceof HTMLInputElement) {
+      periodField.value = lesson.period || '';
+    }
     if (subjectField instanceof HTMLInputElement) {
       subjectField.value = lesson.subject || '';
     }
+    setStatusValue(lesson.status || 'not_started');
+    currentTemplateType = lesson.templateType || 'simple';
     updateModalCopy({
       title: 'Edit lesson',
       description: 'Update the lesson information for this week.',
@@ -1354,15 +1422,17 @@ function createPlannerLessonModal() {
     toggleSection(duplicateSection, false);
     setLessonFieldsDisabled(true);
     const dayValue = lesson.dayLabel || lesson.dayName || 'Monday';
-    dayField.value = dayValue;
-    if (dayField.value !== dayValue) {
-      dayField.value = 'Monday';
-    }
+    setDayValue(dayValue);
     titleField.value = lesson.title || '';
     summaryField.value = lesson.summary || '';
+    if (periodField instanceof HTMLInputElement) {
+      periodField.value = lesson.period || '';
+    }
     if (subjectField instanceof HTMLInputElement) {
       subjectField.value = lesson.subject || '';
     }
+    setStatusValue(lesson.status || 'not_started');
+    currentTemplateType = lesson.templateType || 'simple';
     if (detailBadgeField instanceof HTMLInputElement) {
       detailBadgeField.value = '';
     }
@@ -1404,6 +1474,7 @@ function createPlannerLessonModal() {
     event.preventDefault();
     clearError();
     setSubmitting(true);
+    const shouldAddAnother = submitIntent === 'add_another';
     try {
       if (state.mode === 'duplicate') {
         const targetWeekId = duplicateWeekInput?.value?.trim();
@@ -1449,9 +1520,11 @@ function createPlannerLessonModal() {
       }
 
       const dayName = dayField.value.trim();
+      const period = periodField?.value?.trim() || '';
       const title = titleField.value.trim();
       const summary = summaryField.value.trim();
       const subject = subjectField?.value?.trim() || '';
+      const status = LESSON_STATUS_CONFIG[statusField?.value] ? statusField.value : 'not_started';
 
       if (!dayName) {
         showError('Choose a day for this lesson.');
@@ -1471,7 +1544,10 @@ function createPlannerLessonModal() {
           dayName,
           title,
           summary,
-          subject
+          subject,
+          period,
+          status,
+          templateType: currentTemplateType || 'simple'
         });
         if (plan) {
           currentPlannerPlan = plan;
@@ -1486,21 +1562,56 @@ function createPlannerLessonModal() {
         dayName,
         title,
         summary,
-        subject
+        subject,
+        period,
+        status,
+        templateType: currentTemplateType || 'simple'
       });
       if (plan) {
         currentPlannerPlan = plan;
         renderPlannerLessons(plan);
         updatePlannerDashboardSummary(plan, activePlannerWeekId);
-        closeModal();
+        if (shouldAddAnother) {
+          lastUsedDayName = dayName;
+          lastUsedSubject = subject;
+          resetForm();
+          setDayValue(lastUsedDayName || 'Monday');
+          titleField.value = dayField.value ? `${dayField.value} lesson` : '';
+          if (subjectField instanceof HTMLInputElement) {
+            subjectField.value = lastUsedSubject || '';
+          }
+          setStatusValue('not_started');
+          currentTemplateType = 'simple';
+          setPreferredFocus(titleField);
+        } else {
+          closeModal();
+        }
       }
     } catch (error) {
       console.error('Failed to save planner change', error);
       showError('Unable to save changes right now. Please try again.');
     } finally {
       setSubmitting(false);
+      submitIntent = 'save';
     }
   };
+
+  if (saveAndAddAnotherButton instanceof HTMLButtonElement) {
+    saveAndAddAnotherButton.addEventListener('click', () => setSubmitIntent('add_another'));
+  }
+
+  submitButton.addEventListener('click', () => setSubmitIntent('save'));
+
+  summaryTemplateButtons.forEach((button) => {
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      const templateType = button.dataset.summaryTemplate || 'simple';
+      applySummaryTemplate(templateType);
+    });
+  });
 
   form.addEventListener('submit', handleSubmit);
 
