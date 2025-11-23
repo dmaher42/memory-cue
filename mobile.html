@@ -1187,6 +1187,13 @@
       font-weight: 600;
     }
 
+    .header-title,
+    .header-center {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-strong, #34163f);
+    }
+
     #slimMobileHeader .header-actions {
       display: flex;
       align-items: center;
@@ -2301,6 +2308,11 @@
       padding-bottom: calc(6.5rem + var(--mobile-safe-area-bottom));
       min-height: calc(100vh - var(--mobile-header-height));
       scroll-padding-top: calc(var(--mobile-header-height) + 16px);
+    }
+
+    body.mobile,
+    #mobile-shell {
+      scroll-padding-top: 54px;
     }
 
     /* Mobile task items */
@@ -3552,14 +3564,15 @@
     header.sticky {
       position: sticky;
       top: 0;
-      z-index: 20;
-      background: var(--mobile-header-bg);
-      color: var(--mobile-header-text);
-      border-bottom: 1px solid var(--mobile-header-border);
-      box-shadow: var(--mobile-header-shadow);
+      z-index: 999;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       min-height: var(--mobile-header-height);
-      padding-block: 0;
-      backdrop-filter: blur(18px);
+      padding: 6px 14px;
+      color: var(--text-strong, #34163f);
       border-radius: 0 0 0.85rem 0.85rem;
     }
 
@@ -3960,28 +3973,25 @@
     }
 
     /* NEW: Sticky lilac header with centered pill */
-    #reminders-slim-header {
+    #reminders-slim-header,
+    #reminders-slim-header .header-shell {
       position: sticky;
       top: 0;
-      top: env(safe-area-inset-top, 0);
-      z-index: 90;
+      z-index: 999;
       width: 100%;
       display: flex;
       justify-content: center;
-      padding: 0.5rem 1rem;
-      background: #F7F7FA;
-      color: #512663;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      border-bottom: 1px solid rgba(81, 38, 99, 0.06);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      color: var(--text-strong, #34163f);
     }
 
     #reminders-slim-header .header-shell {
-      width: 100%;
       max-width: 1080px;
-      display: flex;
-      justify-content: center;
     }
 
     #reminders-slim-header .header-leading,
@@ -4769,17 +4779,32 @@
         flex-shrink: 0;
       }
 
-      #reminders-slim-header .header-action-btn.icon-btn {
-        padding: 0.35rem;
-        border-radius: 0.4rem;
+      #reminders-slim-header .header-action-btn.icon-btn,
+      #reminders-slim-header .pill-voice-btn,
+      .header-icon,
+      .header-right button,
+      .header-left button {
+        color: var(--accent-color, #512663);
+        width: 26px;
+        height: 26px;
+        padding: 4px;
+        border-radius: 8px;
         background: transparent;
-        color: var(--accent-color);
-        transition: background-color 0.2s ease;
+        transition: background-color 0.15s ease, color 0.15s ease;
       }
 
       #reminders-slim-header .header-action-btn.icon-btn:hover,
-      #reminders-slim-header .header-action-btn.icon-btn:focus-visible {
-        background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+      #reminders-slim-header .header-action-btn.icon-btn:focus-visible,
+      #reminders-slim-header .pill-voice-btn:hover,
+      #reminders-slim-header .pill-voice-btn:focus-visible,
+      .header-icon:hover {
+        background-color: rgba(81, 38, 99, 0.08);
+      }
+
+      #reminders-slim-header .header-action-btn.icon-btn:focus-visible,
+      #reminders-slim-header .pill-voice-btn:focus-visible {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 2px;
       }
 
       #reminders-slim-header .header-action-btn.icon-btn:focus-visible {
@@ -4790,14 +4815,15 @@
       /* Slightly reduce vertical padding to keep header compact */
       #reminders-slim-header { padding-top: env(safe-area-inset-top, 0); padding-bottom: 0.4rem; }
 
-      /* Ensure the header bar uses the theme header background */
+      /* Ensure the header bar uses the refined glass surface */
       #reminders-slim-header {
-        background: var(--mobile-header-bg) !important;
-        color: var(--mobile-header-text) !important;
-        border-bottom: 1px solid var(--mobile-header-border);
-        box-shadow: var(--mobile-header-shadow);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.75) !important;
+        color: var(--text-strong, #34163f) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 6px 14px;
       }
 
       /* Force header fixed so it cannot be overridden by other rules */
