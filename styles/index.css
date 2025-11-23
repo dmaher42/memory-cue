@@ -2807,6 +2807,61 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   display: none !important;
 }
 
+/* Reminder list: premium SVG icon buttons */
+.reminder-icon-btn {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: transparent;
+  transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.12s ease;
+}
+
+.reminder-icon-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  display: block;
+}
+
+/* Align action icons consistently inside reminder cards */
+#reminderList [data-reminder] .card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Hover: subtle lilac glow */
+.reminder-icon-btn:hover {
+  box-shadow: 0 6px 18px -8px rgba(167, 140, 220, 0.22), 0 0 10px rgba(186,164,222,0.12);
+}
+
+/* Active (pressed) scale */
+.reminder-icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* Default icon color fallback, prefer accent tokens from theme */
+.reminder-icon-btn {
+  color: var(--primary-dark, #2b2b2b);
+}
+
+/* When using status utility classes, keep colors driven by those classes */
+.reminder-icon-btn.text-success {
+  color: var(--accent-color, #6d28d9);
+}
+.reminder-icon-btn.text-error {
+  color: var(--error, #ef4444);
+}
+
 .desktop-panel--planner {
   --planner-text-scale: 1;
 }
