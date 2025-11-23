@@ -3921,14 +3921,21 @@ export async function initReminders(sel = {}) {
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn';
+      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn reminder-icon-btn';
       if (summary.done) {
         toggleBtn.classList.add('text-base-content/60');
-        toggleBtn.innerHTML = '<span aria-hidden="true">↺</span>';
+        toggleBtn.innerHTML = `
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
+            <path d="M7 7v4h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M20.49 11A8.5 8.5 0 1 0 11 20.49" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>`;
         toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminder.title}`);
       } else {
         toggleBtn.classList.add('text-success');
-        toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
+        toggleBtn.innerHTML = `
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
+            <path d="M4 12.5l4.5 4.5L20 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>`;
         toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
       }
       toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
@@ -3942,8 +3949,13 @@ export async function initReminders(sel = {}) {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn';
-      deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
+      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn reminder-icon-btn';
+      deleteBtn.innerHTML = `
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <path d="M3 6h18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>`;
       deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
       deleteBtn.setAttribute('data-action', 'delete');
       deleteBtn.setAttribute('data-reminder-control', 'delete');
