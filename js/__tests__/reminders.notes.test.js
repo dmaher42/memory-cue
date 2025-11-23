@@ -6,10 +6,15 @@ const { beforeEach, afterEach, describe, expect, test } = require('@jest/globals
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const firebaseConfigModule = require('../firebase-config.js');
 
 function loadRemindersModule() {
   const filePath = path.resolve(__dirname, '../reminders.js');
   let source = fs.readFileSync(filePath, 'utf8');
+  source = source.replace(
+    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';\n",
+    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const module = { exports: {} };
@@ -24,12 +29,14 @@ function loadRemindersModule() {
     document,
     localStorage,
     navigator,
+    HTMLElement: window.HTMLElement,
     Notification,
     fetch: global.fetch,
     Blob: global.Blob,
     Response: global.Response,
     URL: global.URL,
   };
+  sandbox.memoryCueFirebase = global.memoryCueFirebase;
   vm.runInNewContext(source, sandbox, { filename: filePath });
   return module.exports;
 }
@@ -90,6 +97,13 @@ describe('reminder note management', () => {
 
     emitSnapshot = () => {};
 
+    const firebaseConfig = firebaseConfigModule.getFirebaseConfig();
+    global.memoryCueFirebase = {
+      getFirebaseConfig: jest.fn(() => ({ ...firebaseConfig })),
+      DEFAULT_FIREBASE_CONFIG: { ...firebaseConfig },
+    };
+    global.__FIREBASE_CONFIG = { ...firebaseConfig };
+
     firebaseDeps = {
       initializeApp: jest.fn(() => ({})),
       initializeFirestore: jest.fn(() => ({})),
@@ -145,6 +159,8 @@ describe('reminder note management', () => {
     api?.closeActiveNotifications();
     localStorage.clear();
     jest.clearAllTimers();
+    delete global.memoryCueFirebase;
+    delete global.__FIREBASE_CONFIG;
   });
 
   test('appends notes to an existing reminder and saves to firestore', () => {

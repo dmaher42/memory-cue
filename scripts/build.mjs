@@ -61,6 +61,7 @@ async function buildScripts() {
     './app.js': 'app',
     './js/main.js': 'main',
     './js/config-supabase.js': 'config-supabase',
+    './js/init-env.js': 'init-env',
     './js/mobile-theme-toggle.js': 'mobile-theme-toggle',
     './mobile.js': 'mobile',
   };
@@ -69,6 +70,7 @@ async function buildScripts() {
     './js/runtime-env-shim.js': 'runtime-env-shim',
     './js/update-footer-year.js': 'update-footer-year',
     './js/register-service-worker.js': 'register-service-worker',
+    './js/router.js': 'router',
   };
 
   const moduleResult = await build({
@@ -143,7 +145,7 @@ async function rewriteHtml(assetMap, cssPath) {
     const targetPath = path.join(distDir, file);
     try {
       let html = await fs.readFile(targetPath, 'utf8');
-      html = html.replace(/\.\/dist\/styles\.css/g, cssPath);
+      html = html.replace(/\.\/styles\/tailwind\.css/g, cssPath);
       for (const [original, hashed] of assetMap) {
         const pattern = new RegExp(original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
         html = html.replace(pattern, hashed);

@@ -1,11 +1,20 @@
 
+import { initViewportHeight } from './modules/viewport-height.js';
+
+initViewportHeight();
+
 (function () {
   if (typeof document === 'undefined') {
     return;
   }
 
   const THEME_STORAGE_KEY = 'theme';
-  const DEFAULT_THEME = 'light';
+  const DEFAULT_THEME = 'professional';
+  const SUPPORTED_THEMES = ['professional', 'night'];
+  const LEGACY_THEME_MAP = {
+    dark: 'night',
+    light: 'professional',
+  };
 
   function safeGetItem(key) {
     try {
@@ -24,52 +33,121 @@
     }
   }
 
+  const THEME_CHANGE_EVENT = 'memoryCue:theme-change';
+
+  function dispatchThemeChange(theme) {
+    if (typeof window === 'undefined' || !theme) return;
+    try {
+      window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme } }));
+    } catch (error) {
+      if (typeof document !== 'undefined' && typeof document.createEvent === 'function') {
+        const fallbackEvent = document.createEvent('CustomEvent');
+        fallbackEvent.initCustomEvent(THEME_CHANGE_EVENT, true, true, { theme });
+        window.dispatchEvent(fallbackEvent);
+      }
+    }
+  }
+
   function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
     document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  function normalizeTheme(theme) {
+    if (!theme) return DEFAULT_THEME;
+    if (SUPPORTED_THEMES.includes(theme)) {
+      return theme;
+    }
+    if (LEGACY_THEME_MAP[theme]) {
+      return LEGACY_THEME_MAP[theme];
+    }
+    return DEFAULT_THEME;
   }
 
   function resolveInitialTheme() {
     const stored = safeGetItem(THEME_STORAGE_KEY);
-    if (stored) {
-      return stored;
+    const normalized = normalizeTheme(stored);
+    if (normalized !== stored && stored) {
+      safeSetItem(THEME_STORAGE_KEY, normalized);
     }
-    const prefersDark = typeof window !== 'undefined'
-      && typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = prefersDark ? 'dark' : DEFAULT_THEME;
-    safeSetItem(THEME_STORAGE_KEY, theme);
-    return theme;
+    return normalized;
+  }
+
+  function getNextTheme(current) {
+    const currentIndex = SUPPORTED_THEMES.indexOf(current);
+    if (currentIndex === -1) {
+      return SUPPORTED_THEMES[0];
+    }
+    return SUPPORTED_THEMES[(currentIndex + 1) % SUPPORTED_THEMES.length];
+  }
+
+  function getThemeIcon(button, theme) {
+    const dataset = button?.dataset || {};
+    switch (theme) {
+      case 'night':
+        return dataset.iconNight || dataset.iconDark || '🌙';
+      case 'professional':
+      default:
+        return dataset.iconProfessional || dataset.iconLight || '💼';
+    }
+  }
+
+  function getThemeLabel(theme) {
+    switch (theme) {
+      case 'night':
+        return 'Theme: Night';
+      case 'professional':
+      default:
+        return 'Theme: Professional';
+    }
   }
 
   function updateThemeButton(button, theme) {
     if (!button) return;
-    const icon = theme === 'dark'
-      ? button.dataset.iconDark || '🌙'
-      : button.dataset.iconLight || '☀️';
-    button.textContent = icon;
-    const label = theme === 'dark'
-      ? 'Switch to light theme'
-      : 'Switch to dark theme';
-    button.setAttribute('aria-label', label);
-    button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    button.textContent = getThemeIcon(button, theme);
+    button.setAttribute('aria-label', getThemeLabel(theme));
+    button.setAttribute('aria-pressed', theme === DEFAULT_THEME ? 'false' : 'true');
   }
 
   function initThemeToggle() {
     const button = document.getElementById('theme-toggle');
     let theme = resolveInitialTheme();
+    if (!SUPPORTED_THEMES.includes(theme)) {
+      theme = DEFAULT_THEME;
+    }
     applyTheme(theme);
     updateThemeButton(button, theme);
+    dispatchThemeChange(theme);
 
     if (!button) {
       return;
     }
 
     button.addEventListener('click', () => {
-      theme = theme === 'dark' ? 'light' : 'dark';
+      theme = getNextTheme(theme);
       safeSetItem(THEME_STORAGE_KEY, theme);
       applyTheme(theme);
       updateThemeButton(button, theme);
+      dispatchThemeChange(theme);
     });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(THEME_CHANGE_EVENT, (event) => {
+        const newTheme = event?.detail?.theme;
+        if (!newTheme) {
+          return;
+        }
+        if (!SUPPORTED_THEMES.includes(newTheme)) {
+          return;
+        }
+        if (newTheme !== theme) {
+          theme = newTheme;
+          safeSetItem(THEME_STORAGE_KEY, theme);
+          applyTheme(theme);
+        }
+        updateThemeButton(button, theme);
+      });
+    }
   }
 
   function getCurrentRoute() {
@@ -117,55 +195,6 @@
     });
   }
 
-  function initMobileNav() {
-    const toggle = document.getElementById('mobile-nav-toggle');
-    const menu = document.getElementById('mobile-nav-menu');
-    if (!toggle || !menu) return;
-
-    const close = () => {
-      menu.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('click', onOutsideClick, true);
-    };
-
-    const open = () => {
-      menu.hidden = false;
-      toggle.setAttribute('aria-expanded', 'true');
-      const first = menu.querySelector('a,button,[tabindex]:not([tabindex="-1"])');
-      if (first) first.focus();
-      document.addEventListener('keydown', onKeyDown);
-      document.addEventListener('click', onOutsideClick, true);
-    };
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        close();
-      }
-    };
-
-    const onOutsideClick = (event) => {
-      if (!menu.contains(event.target) && event.target !== toggle) {
-        close();
-      }
-    };
-
-    toggle.addEventListener('click', () => {
-      if (menu.hidden) {
-        open();
-      } else {
-        close();
-      }
-    });
-
-    menu.addEventListener('click', (event) => {
-      const link = event.target.closest('[data-nav]');
-      if (link) {
-        close();
-      }
-    });
-  }
-
   function handleRouteUpdate() {
     const route = getCurrentRoute();
     updateActiveNavigation(route);
@@ -178,7 +207,6 @@
     ensureDefaultHash();
     initThemeToggle();
     initSkipLink();
-    initMobileNav();
     handleRouteUpdate();
   }
 

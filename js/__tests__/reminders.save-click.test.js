@@ -10,6 +10,10 @@ const vm = require('vm');
 function loadRemindersModule() {
   const filePath = path.resolve(__dirname, '../reminders.js');
   let source = fs.readFileSync(filePath, 'utf8');
+  source = source.replace(
+    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';\n",
+    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const module = { exports: {} };
@@ -24,12 +28,14 @@ function loadRemindersModule() {
     document,
     localStorage,
     navigator,
+    HTMLElement: window.HTMLElement,
     Notification,
     CustomEvent: window.CustomEvent,
     fetch: global.fetch,
     Blob: global.Blob,
     Response: global.Response,
     URL: global.URL,
+    HTMLElement: window.HTMLElement,
   };
   vm.runInNewContext(source, sandbox, { filename: filePath });
   return module.exports;
@@ -94,6 +100,9 @@ describe('mobile save interactions', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
     window.fetch = global.fetch;
 
+    global.HTMLElement = window.HTMLElement;
+    window.HTMLElement = window.HTMLElement || global.HTMLElement;
+
     global.Notification = MockNotification;
     window.Notification = MockNotification;
 
@@ -135,6 +144,7 @@ describe('mobile save interactions', () => {
     jest.clearAllTimers();
     delete window.toast;
     delete global.toast;
+    delete global.HTMLElement;
   });
 
   test('clicking Save creates and then updates a reminder without duplicate handlers', () => {
@@ -160,9 +170,9 @@ describe('mobile save interactions', () => {
     expect(events.filter((entry) => entry[0] === 'memoryCue:remindersUpdated').length).toBe(initialMemoryCueUpdated + 1);
 
     // Enter edit mode via rendered list button
-    const editButton = document.querySelector('[data-edit]');
-    expect(editButton).toBeTruthy();
-    editButton.click();
+    const reminderRow = document.querySelector('[data-reminder-item="true"]');
+    expect(reminderRow).toBeTruthy();
+    reminderRow.click();
 
     title.value = 'Call Alex Updated';
     highChip.checked = true;

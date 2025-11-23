@@ -2,11 +2,11 @@
 <html lang="en" data-theme="caramellatte">
 <head>
   <base href="/memory-cue/">
-  <!-- BEGIN GPT CHANGE: external styles -->
-  <link rel="stylesheet" href="./dist/styles.css">
-  <!-- END GPT CHANGE -->
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
+<!-- END GPT CHANGE -->
+<!-- BEGIN GPT CHANGE: supabase env bootstrap -->
+<script type="module" src="./js/init-env.js" defer></script>
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
 <script type="module" src="./js/config-supabase.js" defer></script>
@@ -31,11 +31,12 @@
     http-equiv="Content-Security-Policy"
     content="default-src 'self';
              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
-             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com;
+             script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com https://apis.google.com;
              style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
              img-src 'self' data:;
              font-src 'self' data:;
              worker-src 'self';
+             frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.google.com;
              base-uri 'self';
              form-action 'self'"
   >
@@ -57,6 +58,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
+  <link rel="stylesheet" href="./styles/tailwind.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
   <link
@@ -70,6 +72,15 @@
   <!-- END GPT CHANGE -->
   <!-- BEGIN GPT FIX: compact-skeleton-style -->
   <style>
+    :root {
+      --vh: 1vh;
+    }
+
+    body,
+    .min-h-screen {
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+
     .dashboard-widget [aria-hidden="true"].animate-pulse { opacity: .85; }
   </style>
   <!-- END GPT FIX: compact-skeleton-style -->
@@ -84,28 +95,7 @@
     class="relative fixed top-0 z-50 w-full border-b border-base-200/70 bg-base-100/80 backdrop-blur"
   >
     <div class="navbar mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="navbar-start gap-2">
-        <button
-          id="mobile-nav-toggle"
-          type="button"
-          class="btn btn-ghost btn-circle text-base-content lg:hidden"
-          aria-label="Toggle navigation"
-          aria-expanded="false"
-          aria-controls="mobile-nav-menu"
-        >
-          <span class="sr-only">Open navigation</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            class="size-6"
-            aria-hidden="true"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+      <div class="navbar-start">
         <a href="#dashboard" class="btn btn-ghost text-xl font-bold normal-case text-base-content">Memory Cue</a>
       </div>
       <div class="navbar-center nav-desktop hidden lg:flex">
@@ -169,12 +159,12 @@
                 role="menu"
                 tabindex="0"
               >
-                <li><a href="#" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
-                <li><a href="#" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
-                <li><a href="#" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
-                <li><a href="#" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
-                <li><a href="#" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
-                <li><a href="#" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
+                <li><a href="#" data-theme-name="light" data-theme-option="light" role="menuitemradio" aria-checked="false">Light</a></li>
+                <li><a href="#" data-theme-name="dark" data-theme-option="dark" role="menuitemradio" aria-checked="false">Dark</a></li>
+                <li><a href="#" data-theme-name="dracula" data-theme-option="dracula" role="menuitemradio" aria-checked="false">Dracula</a></li>
+                <li><a href="#" data-theme-name="cupcake" data-theme-option="cupcake" role="menuitemradio" aria-checked="false">Cupcake</a></li>
+                <li><a href="#" data-theme-name="caramellatte" data-theme-option="caramellatte" role="menuitemradio" aria-checked="false">Caramellatte</a></li>
+                <li><a href="#" data-theme-name="synthwave" data-theme-option="synthwave" role="menuitemradio" aria-checked="false">Synthwave</a></li>
               </ul>
             </div>
             <div
@@ -187,7 +177,6 @@
                 class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-content"
                 aria-hidden="true"
               >T</span>
-              <span id="user-badge-email" class="max-w-[160px] truncate"></span>
             </div>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2">
@@ -206,27 +195,9 @@
             <button id="sign-out-btn" type="button" hidden class="btn btn-sm btn-error">Sign out</button>
           </div>
           <!-- BEGIN GPT CHANGE: auth feedback -->
-          <div id="auth-feedback" role="status" aria-live="polite" hidden></div>
+          <div id="auth-feedback-header" role="status" aria-live="polite" hidden></div>
           <!-- END GPT CHANGE -->
         </div>
-      </div>
-    </div>
-    <div
-      id="mobile-nav-menu"
-      role="menu"
-      hidden
-      class="absolute left-0 right-0 top-full z-40 gap-2 px-4 pb-4 sm:px-6 lg:hidden"
-    >
-      <div class="rounded-box border border-base-200 bg-base-100/95 p-3 shadow-lg">
-        <ul class="menu menu-vertical gap-1 text-base-content">
-          <li><a href="#dashboard" data-route="dashboard" class="btn btn-ghost justify-start">Dashboard</a></li>
-          <li><a href="#reminders" data-route="reminders" class="btn btn-ghost justify-start">Reminders</a></li>
-          <li><a href="#planner" data-route="planner" class="btn btn-ghost justify-start">Planner</a></li>
-          <li><a href="#notes" data-route="notes" class="btn btn-ghost justify-start">Notes</a></li>
-          <li><a href="#resources" data-route="resources" class="btn btn-ghost justify-start">Resources</a></li>
-          <li><a href="#templates" data-route="templates" class="btn btn-ghost justify-start">Templates</a></li>
-          <li><a href="#settings" data-route="settings" class="btn btn-ghost justify-start">Settings</a></li>
-        </ul>
       </div>
     </div>
   </nav>
@@ -1030,7 +1001,7 @@
                     <button id="cancelEditBtn" class="btn btn-ghost hidden" type="button">Cancel Edit</button>
                     <div class="ml-auto flex gap-2">
                       <button id="closeCueModal" type="button" class="btn btn-outline">Cancel</button>
-                      <button id="saveBtn" class="btn btn-primary" type="button">Save Cue</button>
+                      <button id="saveBtn" class="btn btn-primary" type="button">Save</button>
                     </div>
                   </div>
                 </form>
@@ -1044,61 +1015,10 @@
           </aside>
           <section class="view-panel view-panel--main">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
-              <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div class="flex gap-2 flex-wrap">
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="today" type="button">Today</button>
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="overdue" type="button">Overdue</button>
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="all" type="button">All</button>
-                  <button class="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60" data-filter="done" type="button">Done</button>
-                </div>
-                <div class="flex items-center gap-3">
-                  <div>
-                    <label for="categoryFilter" class="sr-only">Filter by category</label>
-                    <select
-                      id="categoryFilter"
-                      class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
-                    >
-                      <option value="all" selected>All categories</option>
-                      <option value="General">General</option>
-                      <option value="General Appointments">General Appointments</option>
-                      <option value="Home &amp; Personal">Home &amp; Personal</option>
-                      <option value="School – Appointments/Meetings">School – Appointments/Meetings</option>
-                      <option value="School – Communication &amp; Families">School – Communication &amp; Families</option>
-                      <option value="School – Excursions &amp; Events">School – Excursions &amp; Events</option>
-                      <option value="School – Grading &amp; Assessment">School – Grading &amp; Assessment</option>
-                      <option value="School – Prep &amp; Resources">School – Prep &amp; Resources</option>
-                      <option value="School – To-Do">School – To-Do</option>
-                      <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="sort" class="sr-only">Sort reminders</label>
-                    <select id="sort" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:focus:border-gray-600 transition-colors">
-                      <option value="smart">Smart sort</option>
-                      <option value="time">Time</option>
-                      <option value="priority">Priority</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-6 mb-6 text-gray-600 dark:text-gray-400">
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Today: <span id="inlineTodayCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
-                  <span>Overdue: <span id="inlineOverdueCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <span>Total: <span id="inlineTotalCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                  <span>Completed: <span id="inlineCompletedCount" class="font-semibold text-gray-900 dark:text-gray-100">0</span></span>
-                </div>
+              <div class="mb-6">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  You're viewing all reminders. Add new tasks or update existing ones using the form above.
+                </p>
               </div>
 
               <div id="remindersWrapper" class="space-y-4">
@@ -1195,7 +1115,7 @@
               <button id="delete-note" class="px-4 py-2 rounded-lg bg-rose-500 text-white" type="button">Delete</button>
               <button id="clear-note" class="px-4 py-2 rounded-lg bg-red-500 text-white" type="button">Clear</button>
             </div>
-            <label for="saved-notes" class="text-sm font-medium text-gray-600 dark:text-gray-400">Saved notes</label>
+            <label for="saved-notes" class="text-sm font-medium text-gray-600 dark:text-gray-400">Notebook</label>
             <select id="saved-notes" class="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"></select>
           </div>
         </article>
@@ -1488,10 +1408,10 @@
               <textarea class="textarea textarea-bordered h-32" placeholder="Outline the flow, prompts, or equipment needed"></textarea>
             </label>
             <div class="flex flex-wrap items-center gap-3">
-              <label class="label cursor-pointer gap-2">
-                <input type="checkbox" class="checkbox checkbox-primary" id="template-share" />
-                <span class="label-text">Share with my team workspace</span>
-              </label>
+              <div class="flex items-center gap-2 text-sm text-base-content/80">
+                <span class="font-medium text-base-content">Share with my team workspace</span>
+                <span class="badge badge-outline">Optional</span>
+              </div>
               <button type="submit" class="btn btn-primary btn-sm md:btn-md">Save template</button>
               <button type="reset" class="btn btn-outline btn-sm md:btn-md">Reset</button>
             </div>
@@ -1509,23 +1429,23 @@
                 <h3 class="text-lg font-semibold text-base-content">Notifications</h3>
                 <span class="badge badge-outline">Syncs with Supabase</span>
               </div>
-              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-3">
-                <label class="label cursor-pointer justify-between gap-4">
-                  <span class="label-text">Daily briefing email</span>
-                  <input type="checkbox" class="toggle toggle-primary" id="setting-briefing" checked />
-                </label>
+              <div class="rounded-box border border-base-200 bg-base-100 p-4 space-y-3 text-sm text-base-content/80">
+                <div class="flex items-center justify-between gap-4">
+                  <span class="font-medium text-base-content">Daily briefing email</span>
+                  <span class="badge badge-primary">On</span>
+                </div>
                 <div class="flex flex-wrap items-center gap-3 ps-1">
                   <label for="setting-briefing-time" class="label-text text-sm">Send at</label>
                   <input id="setting-briefing-time" type="time" value="07:00" class="input input-sm input-bordered w-28" />
                 </div>
-                <label class="label cursor-pointer justify-between gap-4">
-                  <span class="label-text">Lesson reminders</span>
-                  <input type="checkbox" class="toggle toggle-primary" id="setting-lesson-reminders" checked />
-                </label>
-                <label class="label cursor-pointer justify-between gap-4">
-                  <span class="label-text">Quiet hours</span>
-                  <input type="checkbox" class="toggle toggle-primary" id="setting-quiet-hours" />
-                </label>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="font-medium text-base-content">Lesson reminders</span>
+                  <span class="badge badge-primary">On</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="font-medium text-base-content">Quiet hours</span>
+                  <span class="badge badge-outline">Off</span>
+                </div>
                 <div class="grid gap-2 sm:grid-cols-2" aria-hidden="true">
                   <div class="stat bg-base-200/60 shadow-inner">
                     <div class="stat-title">Notifications today</div>
@@ -1629,42 +1549,7 @@
   <!-- BEGIN GPT CHANGE: live region -->
   <div id="live-status" class="sr-only" aria-live="polite" role="status"></div>
   <!-- END GPT CHANGE -->
-  <nav
-    id="quick-action-toolbar"
-    aria-label="Quick actions"
-    class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 max-sm:bottom-3 max-sm:right-3"
-  >
-    <button
-      type="button"
-      data-quick-action="reminder"
-      class="quick-action-btn bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-300"
-      title="Add reminder"
-      aria-label="Add reminder"
-    >
-      <span aria-hidden="true">🔔</span>
-      <span class="sr-only">Add reminder</span>
-    </button>
-    <button
-      type="button"
-      data-quick-action="note"
-      class="quick-action-btn bg-white/90 text-xl text-gray-900 dark:text-gray-100 shadow-md backdrop-blur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 hover:bg-white dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:focus-visible:outline-gray-500 border border-white/60 dark:border-gray-700/60"
-      title="Create note"
-      aria-label="Create note"
-    >
-      <span aria-hidden="true">📝</span>
-      <span class="sr-only">Create note</span>
-    </button>
-    <button
-      type="button"
-      data-quick-action="planner"
-      class="quick-action-btn bg-emerald-500 text-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 hover:bg-emerald-600"
-      title="New lesson plan"
-      aria-label="New lesson plan"
-    >
-      <span aria-hidden="true">🗓️</span>
-      <span class="sr-only">New lesson plan</span>
-    </button>
-  </nav>
+  <nav id="quick-action-toolbar" aria-label="Quick actions" hidden></nav>
   <footer class="bg-gray-900 text-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -1762,6 +1647,7 @@
       </div>
     </div>
   </div>
+  <script src="./js/router.js" defer></script>
   <script type="module" src="./app.js" defer></script>
   <script src="./js/update-footer-year.js" defer></script>
   <script src="./js/register-service-worker.js" defer></script>

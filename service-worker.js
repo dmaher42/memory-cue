@@ -18,6 +18,15 @@ const CACHE_PREFIX = 'mc-static-';
 const CACHE_VERSION = 'v14'; // bump this to force clients to update
 const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
+const REMINDER_DB_NAME = 'memory-cue-reminders';
+const REMINDER_DB_VERSION = 1;
+const REMINDER_STORE_NAME = 'scheduled';
+const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
+const DEFAULT_REMINDER_CATEGORY = 'General';
+const DEFAULT_REMINDER_URL_PATH = 'mobile.html';
+
+let reminderDbPromise = null;
+
 const SHELL_URLS = [
   `${APP_PATH}index.html`,
   `${APP_PATH}mobile.html`,
@@ -89,8 +98,21 @@ self.addEventListener('fetch', (event) => {
 
   // Always bypass certain hosts (Apps Script, etc.)
   if (BYPASS_HOSTS.has(url.hostname)) {
-    event.respondWith(fetch(req));
-    return; // Let the browser handle it (goes to network)
+    // Ensure we handle network failures gracefully even for bypassed hosts
+    event.respondWith(
+      fetch(req).catch(async () => {
+        // Try to return a cached matching request as a fallback
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        // Final fallback: return a generic offline response
+        return new Response('Network unavailable', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      })
+    );
+    return; // Let the service worker provide a graceful fallback
   }
 
   // Handle same-origin navigations with network-first + timeout, fallback to offline shell
@@ -110,7 +132,27 @@ self.addEventListener('fetch', (event) => {
   }
 
   // For everything else, just pass-through to network (and fall back to cache if available)
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  event.respondWith(
+    (async () => {
+      try {
+        return await fetch(req);
+      } catch (e) {
+        // Try cache match first
+        try {
+          const cached = await caches.match(req);
+          if (cached) return cached;
+        } catch (_) {
+          /* ignore cache lookup errors */
+        }
+        // Final fallback: return a generic offline response so respondWith always resolves to a Response
+        return new Response('Offline and no cached response', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
+    })()
+  );
 });
 
 // ---------- Helpers ----------
@@ -192,6 +234,215 @@ async function matchFirstAvailable(fallbackUrls) {
   }
   return null;
 }
+
+function getReminderDb() {
+  if (!('indexedDB' in self)) {
+    return Promise.resolve(null);
+  }
+  if (!reminderDbPromise) {
+    reminderDbPromise = new Promise((resolve, reject) => {
+      try {
+        const request = indexedDB.open(REMINDER_DB_NAME, REMINDER_DB_VERSION);
+        request.onupgradeneeded = () => {
+          try {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(REMINDER_STORE_NAME)) {
+              db.createObjectStore(REMINDER_STORE_NAME, { keyPath: 'id' });
+            }
+          } catch (error) {
+            reject(error);
+          }
+        };
+        request.onsuccess = () => {
+          resolve(request.result);
+        };
+        request.onerror = () => {
+          reject(request.error || new Error('IndexedDB open failed'));
+        };
+        request.onblocked = () => {
+          // Another context is holding the database open; wait for it.
+        };
+      } catch (error) {
+        reject(error);
+      }
+    }).catch((error) => {
+      console.warn('Failed to open reminder database', error);
+      reminderDbPromise = null;
+      return null;
+    });
+  }
+  return reminderDbPromise;
+}
+
+function idbRequestToPromise(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('IndexedDB request failed'));
+  });
+}
+
+function waitForTransaction(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
+    tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+  });
+}
+
+function sanitizeReminderEntry(entry) {
+  if (!entry || typeof entry !== 'object' || !entry.id) {
+    return null;
+  }
+  const sanitized = {
+    id: entry.id,
+    title: typeof entry.title === 'string' ? entry.title : 'Reminder',
+    body: typeof entry.body === 'string' && entry.body ? entry.body : 'Due now',
+    due: typeof entry.due === 'string' ? entry.due : null,
+    priority: entry.priority || 'Medium',
+    category:
+      typeof entry.category === 'string' && entry.category.trim()
+        ? entry.category.trim()
+        : DEFAULT_REMINDER_CATEGORY,
+    notes: typeof entry.notes === 'string' ? entry.notes : '',
+    urlPath:
+      typeof entry.urlPath === 'string' && entry.urlPath
+        ? entry.urlPath
+        : DEFAULT_REMINDER_URL_PATH,
+    updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
+    notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
+  };
+  if (sanitized.due) {
+    const dueTime = Date.parse(sanitized.due);
+    sanitized.dueTime = Number.isFinite(dueTime) ? dueTime : null;
+  } else {
+    sanitized.dueTime = null;
+  }
+  return sanitized;
+}
+
+async function writeScheduledReminders(reminders = []) {
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return;
+    }
+    const tx = db.transaction(REMINDER_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(REMINDER_STORE_NAME);
+    const done = waitForTransaction(tx);
+    await idbRequestToPromise(store.clear());
+    for (const entry of reminders) {
+      const sanitized = sanitizeReminderEntry(entry);
+      if (sanitized) {
+        await idbRequestToPromise(store.put(sanitized));
+      }
+    }
+    await done;
+  } catch (error) {
+    console.warn('Failed to persist reminder schedule', error);
+  }
+}
+
+async function readScheduledReminders() {
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return [];
+    }
+    const tx = db.transaction(REMINDER_STORE_NAME, 'readonly');
+    const store = tx.objectStore(REMINDER_STORE_NAME);
+    const request = store.getAll();
+    const results = await idbRequestToPromise(request).catch(() => []);
+    await waitForTransaction(tx).catch(() => undefined);
+    return Array.isArray(results)
+      ? results
+          .map(sanitizeReminderEntry)
+          .filter(Boolean)
+      : [];
+  } catch (error) {
+    console.warn('Failed to read scheduled reminders', error);
+    return [];
+  }
+}
+
+async function checkAndNotifyDueReminders({ source = 'unknown' } = {}) {
+  if (!self.registration || typeof self.registration.showNotification !== 'function') {
+    return;
+  }
+  const reminders = await readScheduledReminders();
+  if (!reminders.length) {
+    return;
+  }
+  const now = Date.now();
+  let changed = false;
+  for (const reminder of reminders) {
+    if (!reminder || !reminder.id) {
+      continue;
+    }
+    const dueTime = Number.isFinite(reminder.dueTime)
+      ? reminder.dueTime
+      : (reminder.due ? Date.parse(reminder.due) : NaN);
+    if (!Number.isFinite(dueTime) || dueTime > now) {
+      continue;
+    }
+    const alreadyNotified = Number.isFinite(reminder.notifiedAt)
+      ? reminder.notifiedAt
+      : null;
+    if (alreadyNotified && alreadyNotified >= dueTime) {
+      continue;
+    }
+    const options = {
+      body: reminder.body || 'Due now',
+      tag: reminder.id,
+      renotify: true,
+      data: {
+        id: reminder.id,
+        due: reminder.due,
+        priority: reminder.priority,
+        category: reminder.category,
+        body: reminder.body || 'Due now',
+        urlPath: reminder.urlPath,
+        source,
+      },
+    };
+    try {
+      await self.registration.showNotification(reminder.title || 'Reminder', options);
+      reminder.notifiedAt = now;
+      changed = true;
+    } catch (error) {
+      console.warn('Failed to display reminder notification', error);
+    }
+  }
+  if (changed) {
+    await writeScheduledReminders(reminders);
+  }
+}
+
+self.addEventListener('message', (event) => {
+  const { data } = event;
+  if (!data || typeof data !== 'object') {
+    return;
+  }
+  if (data.type === 'memoryCue:updateScheduledReminders') {
+    const reminders = Array.isArray(data.reminders) ? data.reminders : [];
+    event.waitUntil(writeScheduledReminders(reminders));
+    return;
+  }
+  if (data.type === 'memoryCue:checkScheduledReminders') {
+    event.waitUntil(checkAndNotifyDueReminders({ source: 'message' }));
+  }
+});
+
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === REMINDER_PERIODIC_SYNC_TAG) {
+    event.waitUntil(checkAndNotifyDueReminders({ source: 'periodic-sync' }));
+  }
+});
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === REMINDER_PERIODIC_SYNC_TAG) {
+    event.waitUntil(checkAndNotifyDueReminders({ source: 'background-sync' }));
+  }
+});
 
 self.addEventListener('push', (event) => {
   let data = {};

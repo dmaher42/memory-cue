@@ -1,3 +1,5 @@
+import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
+
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
 
@@ -5,7 +7,14 @@ const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
 let notificationCleanupBound = false;
 const SERVICE_WORKER_SCRIPT = 'service-worker.js';
+const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
+const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
+  updateScheduledReminders: 'memoryCue:updateScheduledReminders',
+  checkScheduledReminders: 'memoryCue:checkScheduledReminders',
+});
 let serviceWorkerReadyPromise = null;
+let backgroundSyncRegistrationPromise = null;
+let backgroundSyncRegistrationSucceeded = false;
 const DEFAULT_CATEGORY = 'General';
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
@@ -20,6 +29,50 @@ const SEEDED_CATEGORIES = Object.freeze([
   'Wellbeing & Support',
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
+const ORDER_INDEX_GAP = 1024;
+
+// Provide a safe fallback that does not embed production credentials in the
+// repository. Hosting environments are expected to inject their own Firebase
+// configuration via the memoryCueFirebase API or a local module export.
+const FALLBACK_FIREBASE_CONFIG = Object.freeze({});
+
+let cachedFirebaseConfig = null;
+
+function resolveFirebaseConfig() {
+  if (cachedFirebaseConfig) {
+    return { ...cachedFirebaseConfig };
+  }
+  const scope = getGlobalScope();
+  const memoryCueApi = scope?.memoryCueFirebase;
+  if (memoryCueApi && typeof memoryCueApi.getFirebaseConfig === 'function') {
+    cachedFirebaseConfig = memoryCueApi.getFirebaseConfig();
+    return { ...cachedFirebaseConfig };
+  }
+  if (typeof require === 'function') {
+    try {
+      const moduleValue = require('./firebase-config.js');
+      if (moduleValue) {
+        const getter = typeof moduleValue.getFirebaseConfig === 'function'
+          ? moduleValue.getFirebaseConfig
+          : typeof moduleValue.default?.getFirebaseConfig === 'function'
+            ? moduleValue.default.getFirebaseConfig
+            : null;
+        if (getter) {
+          cachedFirebaseConfig = getter();
+          return { ...cachedFirebaseConfig };
+        }
+      }
+    } catch {
+      // ignore – likely running in the browser without require
+    }
+  }
+  if (memoryCueApi && memoryCueApi.DEFAULT_FIREBASE_CONFIG) {
+    cachedFirebaseConfig = { ...memoryCueApi.DEFAULT_FIREBASE_CONFIG };
+    return { ...cachedFirebaseConfig };
+  }
+  cachedFirebaseConfig = { ...FALLBACK_FIREBASE_CONFIG };
+  return { ...cachedFirebaseConfig };
+}
 
 function getGlobalScope() {
   if (typeof globalThis !== 'undefined') return globalThis;
@@ -74,6 +127,141 @@ async function ensureServiceWorkerRegistration() {
     }
   })();
   return serviceWorkerReadyPromise;
+}
+
+async function postMessageToServiceWorker(message) {
+  if (!message || typeof message !== 'object') {
+    return false;
+  }
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return false;
+  }
+  try {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration) {
+      return false;
+    }
+    const targets = new Set();
+    if (navigator.serviceWorker.controller) {
+      targets.add(navigator.serviceWorker.controller);
+    }
+    ['active', 'waiting', 'installing'].forEach((state) => {
+      const worker = registration[state];
+      if (worker) {
+        targets.add(worker);
+      }
+    });
+    let delivered = false;
+    targets.forEach((worker) => {
+      try {
+        worker.postMessage(message);
+        delivered = true;
+      } catch (error) {
+        console.warn('Failed posting message to service worker', error);
+      }
+    });
+    return delivered;
+  } catch (error) {
+    console.warn('Unable to reach service worker', error);
+    return false;
+  }
+}
+
+async function setupBackgroundReminderSync() {
+  if (supportsNotificationTriggers()) {
+    return false;
+  }
+  if (backgroundSyncRegistrationSucceeded) {
+    return true;
+  }
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return false;
+  }
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return false;
+  }
+  if (backgroundSyncRegistrationPromise) {
+    try {
+      return await backgroundSyncRegistrationPromise;
+    } catch {
+      // Ignore errors from previous attempt and allow retry below.
+    }
+  }
+  backgroundSyncRegistrationPromise = (async () => {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration) {
+      return false;
+    }
+    let registered = false;
+    if ('periodicSync' in registration) {
+      try {
+        const tags = await registration.periodicSync.getTags();
+        if (!Array.isArray(tags) || !tags.includes(REMINDER_PERIODIC_SYNC_TAG)) {
+          await registration.periodicSync.register(REMINDER_PERIODIC_SYNC_TAG, {
+            minInterval: 15 * 60 * 1000,
+          });
+        }
+        registered = true;
+      } catch (error) {
+        console.warn('Periodic background sync unavailable', error);
+      }
+    }
+    if (!registered && 'sync' in registration) {
+      try {
+        await registration.sync.register(REMINDER_PERIODIC_SYNC_TAG);
+        registered = true;
+      } catch (error) {
+        console.warn('Background sync unavailable', error);
+      }
+    }
+    return registered;
+  })();
+  try {
+    const result = await backgroundSyncRegistrationPromise;
+    if (result) {
+      backgroundSyncRegistrationSucceeded = true;
+    }
+    return result;
+  } catch (error) {
+    console.warn('Background reminder sync setup failed', error);
+    backgroundSyncRegistrationSucceeded = false;
+    return false;
+  } finally {
+    backgroundSyncRegistrationPromise = null;
+  }
+}
+
+async function syncScheduledRemindersWithServiceWorker(remindersPayload = [], { requestCheck = false } = {}) {
+  if (supportsNotificationTriggers()) {
+    return;
+  }
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return;
+  }
+  try {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration) {
+      return;
+    }
+    const delivered = await postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.updateScheduledReminders,
+      reminders: Array.isArray(remindersPayload) ? remindersPayload : [],
+    });
+    if (requestCheck) {
+      await postMessageToServiceWorker({
+        type: SERVICE_WORKER_MESSAGE_TYPES.checkScheduledReminders,
+      });
+    }
+    if (!delivered && typeof registration.update === 'function') {
+      try {
+        await registration.update();
+      } catch {
+        // Ignore update failures.
+      }
+    }
+  } catch (error) {
+    console.warn('Failed syncing reminders with service worker', error);
+  }
 }
 
 async function cancelTriggerNotification(id, registrationOverride) {
@@ -146,7 +334,6 @@ export async function initReminders(sel = {}) {
   const $$ = (s) => (s ? Array.from(document.querySelectorAll(s)) : []);
 
   // Elements
-  const q = $(sel.qSel);
   const title = $(sel.titleSel);
   const date = $(sel.dateSel);
   const time = $(sel.timeSel);
@@ -156,35 +343,188 @@ export async function initReminders(sel = {}) {
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
-  const googleSignInBtn = $(sel.googleSignInBtnSel);
-  const googleSignOutBtn = $(sel.googleSignOutBtnSel);
+  const PIN_TOGGLE_PINNED_CLASS = 'reminder-title-pinned';
+  const PIN_TOGGLE_UNPINNED_CLASS = 'reminder-title-unpinned';
+  const detailPanel = $(sel.detailPanelSel);
+  const detailEmptyState = $(sel.detailEmptySel);
+  const detailContent = $(sel.detailContentSel);
+  const detailTitle = $(sel.detailTitleSel);
+  const detailDue = $(sel.detailDueSel);
+  const detailPriority = $(sel.detailPrioritySel);
+  const detailCategory = $(sel.detailCategorySel);
+  const detailNotes = $(sel.detailNotesSel);
+  const detailNotesPlaceholder = detailNotes?.dataset?.placeholder || 'No notes added yet.';
+  const detailClearBtn = $(sel.detailClearSel);
+  const googleSignInBtns = $$(sel.googleSignInBtnSel);
+  const googleSignOutBtns = $$(sel.googleSignOutBtnSel);
   const statusEl = $(sel.statusSel);
   const syncStatus = $(sel.syncStatusSel);
+  const SYNC_STATUS_LABELS = {
+    online: 'Connected. Changes sync automatically.',
+    offline: "Offline. Changes are saved on this device until you reconnect.",
+  };
+  const UNDO_DELETE_TIMEOUT_MS = 6000;
+  let deleteUndoState = null;
+  let detailSelectionId = null;
+
+  function clearUndoDeleteState(tokenId, { clearMessage = true } = {}) {
+    if (!deleteUndoState) {
+      return;
+    }
+    if (tokenId && deleteUndoState.tokenId !== tokenId) {
+      return;
+    }
+    if (deleteUndoState.timeoutId) {
+      clearTimeout(deleteUndoState.timeoutId);
+    }
+    if (clearMessage && statusEl && statusEl.dataset.undoToken === deleteUndoState.tokenId) {
+      if (typeof statusEl.replaceChildren === 'function') {
+        statusEl.replaceChildren();
+      } else {
+        statusEl.textContent = '';
+      }
+      delete statusEl.dataset.undoToken;
+      delete statusEl.dataset.statusKind;
+    }
+    deleteUndoState = null;
+  }
+
+  function showDeleteUndoMessage(state) {
+    if (!statusEl) {
+      return;
+    }
+    const message = document.createElement('span');
+    message.textContent = 'Reminder deleted.';
+    const spacer = document.createTextNode(' ');
+    const undoButton = document.createElement('button');
+    undoButton.type = 'button';
+    undoButton.textContent = 'Undo';
+    undoButton.className = 'status-undo';
+    undoButton.addEventListener('click', () => undoDelete(state.tokenId));
+    state.button = undoButton;
+    if (typeof statusEl.replaceChildren === 'function') {
+      statusEl.replaceChildren(message, spacer, undoButton);
+    } else {
+      statusEl.textContent = '';
+      statusEl.append(message, spacer, undoButton);
+    }
+    statusEl.dataset.statusKind = 'undo';
+    statusEl.dataset.undoToken = state.tokenId;
+  }
+
+  function renderDetailPanel(reminder) {
+    if (!detailPanel) {
+      return;
+    }
+    const hasSelection = Boolean(reminder);
+    detailPanel.dataset.state = hasSelection ? 'active' : 'empty';
+    detailPanel.dataset.selectedId = hasSelection && reminder?.id ? reminder.id : '';
+
+    if (detailEmptyState) {
+      detailEmptyState.classList.toggle('hidden', hasSelection);
+      detailEmptyState.setAttribute('aria-hidden', hasSelection ? 'true' : 'false');
+    }
+    if (detailContent) {
+      detailContent.classList.toggle('hidden', !hasSelection);
+      detailContent.setAttribute('aria-hidden', hasSelection ? 'false' : 'true');
+    }
+
+    if (!hasSelection) {
+      if (detailTitle) detailTitle.textContent = '';
+      if (detailDue) detailDue.textContent = '';
+      if (detailPriority) detailPriority.textContent = '';
+      if (detailCategory) detailCategory.textContent = '';
+      if (detailNotes) {
+        detailNotes.textContent = detailNotesPlaceholder;
+        detailNotes.dataset.empty = 'true';
+      }
+      return;
+    }
+
+    if (detailTitle) detailTitle.textContent = reminder.title || 'Untitled reminder';
+    if (detailDue) detailDue.textContent = formatDesktopDue(reminder);
+    if (detailPriority) detailPriority.textContent = reminder.priority || 'Medium';
+    if (detailCategory) detailCategory.textContent = reminder.category || DEFAULT_CATEGORY;
+    if (detailNotes) {
+      const noteText = typeof reminder.notes === 'string' ? reminder.notes.trim() : '';
+      if (noteText) {
+        detailNotes.textContent = noteText;
+        detailNotes.dataset.empty = 'false';
+      } else {
+        detailNotes.textContent = detailNotesPlaceholder;
+        detailNotes.dataset.empty = 'true';
+      }
+    }
+  }
+
+  function clearDetailSelection() {
+    detailSelectionId = null;
+    renderDetailPanel(null);
+  }
+
+  function applyDetailSelection(reminder) {
+    detailSelectionId = reminder?.id || null;
+    renderDetailPanel(reminder || null);
+  }
+
+  function syncDetailSelection() {
+    if (!detailPanel) {
+      return;
+    }
+    if (!detailSelectionId) {
+      renderDetailPanel(null);
+      return;
+    }
+    const current = items.find((entry) => entry?.id === detailSelectionId);
+    if (current) {
+      renderDetailPanel(current);
+      return;
+    }
+    clearDetailSelection();
+  }
+
+  renderDetailPanel(null);
+
+  function renderSyncIndicator(state, message) {
+    if (!syncStatus) return;
+
+    const indicatorStates = ['online', 'offline', 'error'];
+    indicatorStates.forEach((cls) => syncStatus.classList.remove(cls));
+    if (indicatorStates.includes(state)) {
+      syncStatus.classList.add(state);
+    }
+
+    syncStatus.dataset.state = state;
+
+    const label = typeof message === 'string' ? message : SYNC_STATUS_LABELS[state] || '';
+    const isDotState = state === 'online' || state === 'offline';
+
+    if (isDotState) {
+      syncStatus.textContent = '';
+      syncStatus.dataset.compact = 'true';
+      if (label) {
+        syncStatus.setAttribute('aria-label', label);
+        syncStatus.setAttribute('title', label);
+      } else {
+        syncStatus.removeAttribute('aria-label');
+        syncStatus.removeAttribute('title');
+      }
+    } else {
+      syncStatus.textContent = label;
+      syncStatus.removeAttribute('data-compact');
+      if (label) {
+        syncStatus.setAttribute('aria-label', label);
+        syncStatus.setAttribute('title', label);
+      } else {
+        syncStatus.removeAttribute('aria-label');
+        syncStatus.removeAttribute('title');
+      }
+    }
+  }
   const notesEl = $(sel.notesSel);
   const saveNotesBtn = $(sel.saveNotesBtnSel);
   const loadNotesBtn = $(sel.loadNotesBtnSel);
-  const sortSel = $(sel.sortSel);
-  const filterBtns = $$(sel.filterBtnsSel);
-  const normaliseFilterValue = (value) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : '';
-  const filterLookup = new Map();
-  filterBtns.forEach((btn) => {
-    const raw = btn?.getAttribute('data-filter');
-    const normalised = normaliseFilterValue(raw);
-    if (normalised && !filterLookup.has(normalised)) {
-      filterLookup.set(normalised, raw);
-    }
-  });
-  const providedDefaultFilter = normaliseFilterValue(sel.defaultFilter);
-  const resolvedDefaultFilter =
-    (providedDefaultFilter && filterLookup.get(providedDefaultFilter)) ||
-    (providedDefaultFilter && !filterLookup.size ? providedDefaultFilter : null);
-  const countTodayEl = $(sel.countTodaySel);
-  const countWeekEl = $(sel.countWeekSel);
-  const countOverdueEl = $(sel.countOverdueSel);
   const countTotalEl = $(sel.countTotalSel);
-  const countCompletedEl = $(sel.countCompletedSel);
-  const googleAvatar = $(sel.googleAvatarSel);
   const googleUserName = $(sel.googleUserNameSel);
   const dateFeedback = $(sel.dateFeedbackSel);
   const voiceBtn = $(sel.voiceBtnSel);
@@ -198,15 +538,191 @@ export async function initReminders(sel = {}) {
   const syncUrlInput = $(sel.syncUrlInputSel);
   const saveSettings = $(sel.saveSettingsSel);
   const testSync = $(sel.testSyncSel);
-  const openSettings = $(sel.openSettingsSel);
+  const openSettingsBtns = $$(sel.openSettingsSel);
   const settingsSection = $(sel.settingsSectionSel);
   const emptyStateEl = $(sel.emptyStateSel);
   const listWrapper = $(sel.listWrapperSel);
-  const categoryFilter = $(sel.categoryFilterSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
+  const plannerContext = $(sel.plannerContextSel);
+  const plannerLessonInput = $(sel.plannerLessonInputSel);
   const variant = sel.variant || 'mobile';
+  const autoWireAuthButtons =
+    typeof sel.autoWireAuthButtons === 'boolean' ? sel.autoWireAuthButtons : variant !== 'desktop';
+
+  // Mobile reminders filter state and cache
+  let mobileRemindersFilterMode = 'all';
+  let mobileRemindersCache = [];
+  let mobileRemindersTemperatureLabel = '';
+
+  // Returns a short, user-facing label for "today", e.g. "Tue 18 Nov"
+  function getTodayLabelForHeader() {
+    const now = new Date();
+    return now.toLocaleDateString(undefined, {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+  }
+
+  function updateMobileRemindersHeaderSubtitle() {
+    if (variant !== 'mobile' || typeof document === 'undefined') {
+      return;
+    }
+    const subtitleEl = document.getElementById('mobileRemindersHeaderSubtitle');
+    if (!subtitleEl) {
+      return;
+    }
+    const todayLabel = getTodayLabelForHeader();
+
+    let baseText;
+    if (mobileRemindersFilterMode === 'today') {
+      baseText = `Today\u2019s reminders \u2022 ${todayLabel}`;
+    } else {
+      baseText = `All reminders \u2022 ${todayLabel}`;
+    }
+
+    if (mobileRemindersTemperatureLabel) {
+      baseText += ` \u2022 ${mobileRemindersTemperatureLabel}`;
+    }
+
+    subtitleEl.textContent = baseText;
+  }
+
+  // Fetch current temperature using browser geolocation and Open-Meteo API.
+  // If anything fails (no geolocation, permission denied, network error),
+  // the function fails silently and leaves the subtitle without temperature.
+  function fetchAndUpdateMobileTemperature() {
+    if (variant !== 'mobile') {
+      return;
+    }
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      // Geolocation not available; nothing to do.
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+
+          const url =
+            'https://api.open-meteo.com/v1/forecast' +
+            `?latitude=${encodeURIComponent(latitude)}` +
+            `&longitude=${encodeURIComponent(longitude)}` +
+            '&current_weather=true';
+
+          fetch(url)
+            .then((res) => {
+              if (!res.ok) throw new Error('Weather request failed');
+              return res.json();
+            })
+            .then((data) => {
+              if (
+                data &&
+                data.current_weather &&
+                typeof data.current_weather.temperature === 'number'
+              ) {
+                const temp = Math.round(data.current_weather.temperature);
+                mobileRemindersTemperatureLabel = `${temp}\u00B0C`; // e.g. "25°C"
+                updateMobileRemindersHeaderSubtitle();
+              }
+            })
+            .catch((err) => {
+              console.warn('Failed to fetch current temperature', err);
+            });
+        } catch (err) {
+          console.warn('Failed to process geolocation weather data', err);
+        }
+      },
+      (error) => {
+        // Geolocation permission denied or failed; do not surface to user.
+        console.warn('Geolocation error for weather', error);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 5 * 60 * 1000, // up to 5 minutes old is fine
+      }
+    );
+  }
 
   const LAST_DEFAULTS_KEY = 'mc:lastDefaults';
+
+  const clearPlannerReminderContext = () => {
+    if (plannerContext) {
+      plannerContext.classList.add('hidden');
+      plannerContext.setAttribute('aria-hidden', 'true');
+      if (typeof plannerContext.replaceChildren === 'function') {
+        plannerContext.replaceChildren();
+      } else {
+        plannerContext.textContent = '';
+      }
+    }
+    if (plannerLessonInput) {
+      plannerLessonInput.value = '';
+      if (plannerLessonInput.dataset) {
+        delete plannerLessonInput.dataset.lessonDayLabel;
+        delete plannerLessonInput.dataset.lessonTitle;
+        delete plannerLessonInput.dataset.lessonSummary;
+      }
+    }
+  };
+
+  const showPlannerReminderContext = (detail = {}) => {
+    if (!plannerContext) {
+      return;
+    }
+    const dayLabel = typeof detail.dayLabel === 'string' ? detail.dayLabel.trim() : '';
+    const lessonTitle = typeof detail.lessonTitle === 'string' ? detail.lessonTitle.trim() : '';
+    const summary = typeof detail.summary === 'string' ? detail.summary.trim() : '';
+    const heading = document.createElement('p');
+    heading.className = 'text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-base-content/60';
+    heading.textContent = dayLabel ? `${dayLabel} lesson` : 'Planner lesson';
+    const titleLine = document.createElement('p');
+    titleLine.className = 'text-sm font-semibold text-base-content';
+    titleLine.textContent = lessonTitle || summary || 'Planner reminder';
+    const summaryLine = summary ? document.createElement('p') : null;
+    if (summaryLine) {
+      summaryLine.className = 'text-sm text-base-content/70';
+      summaryLine.textContent = summary;
+    }
+    if (typeof plannerContext.replaceChildren === 'function') {
+      plannerContext.replaceChildren(...[heading, titleLine, summaryLine].filter(Boolean));
+    } else {
+      plannerContext.textContent = '';
+      plannerContext.append(heading, titleLine);
+      if (summaryLine) {
+        plannerContext.append(summaryLine);
+      }
+    }
+    plannerContext.classList.remove('hidden');
+    plannerContext.removeAttribute('aria-hidden');
+  };
+
+  const applyPlannerReminderPrefill = (detail = {}) => {
+    if (!detail || typeof detail !== 'object') {
+      return;
+    }
+    const plannerLessonId = typeof detail.plannerLessonId === 'string' ? detail.plannerLessonId : '';
+    if (title && typeof detail.reminderTitle === 'string') {
+      title.value = detail.reminderTitle;
+    }
+    if (details && typeof detail.reminderNotes === 'string') {
+      details.value = detail.reminderNotes;
+    }
+    if (date && typeof detail.dueDate === 'string') {
+      date.value = detail.dueDate;
+    }
+    if (plannerLessonInput) {
+      plannerLessonInput.value = plannerLessonId;
+      if (plannerLessonInput.dataset) {
+        plannerLessonInput.dataset.lessonDayLabel = dayLabel;
+        plannerLessonInput.dataset.lessonTitle = lessonTitle;
+        plannerLessonInput.dataset.lessonSummary = summary;
+      }
+    }
+    showPlannerReminderContext(detail);
+  };
 
   function loadLastDefaults() {
     if (typeof localStorage === 'undefined') return {};
@@ -291,13 +807,15 @@ export async function initReminders(sel = {}) {
   const quickBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
   const quickVoiceBtn =
-    typeof document !== 'undefined' ? document.getElementById('quickAddVoiceBtn') : null;
+    typeof document !== 'undefined' ? document.getElementById('quickAddVoice') : null;
+  const pillVoiceBtn =
+    typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   let stopQuickAddVoiceListening = null;
 
-  function buildQuickReminder(titleText) {
+  function buildQuickReminder(titleText, dueOverride) {
     const now = Date.now();
     const d = loadLastDefaults();
-    const dueIso = null;
+    const dueIso = typeof dueOverride === 'string' && dueOverride ? dueOverride : null;
 
     return {
       id: uid(),
@@ -310,25 +828,65 @@ export async function initReminders(sel = {}) {
       updatedAt: now,
       due: dueIso,
       pendingSync: !userId,
+      pinToToday: false,
     };
   }
 
-  async function quickAddNow() {
-    if (!quickInput) return;
+  async function quickAddNow(options = {}) {
+    if (!quickInput) return null;
     if (typeof stopQuickAddVoiceListening === 'function') {
       try {
         stopQuickAddVoiceListening();
       } catch {}
     }
-    const t = (quickInput.value || '').trim();
-    if (!t) return;
+    const text =
+      typeof options.text === 'string'
+        ? options.text
+        : (quickInput.value || '').trim();
+    const t = (text || '').trim();
+    if (!t) return null;
 
-    const entry = buildQuickReminder(t);
+    const hasDueOverride =
+      options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
+    const dueOverride = hasDueOverride ? options.dueDate : null;
+    let quickDue = null;
+    if (dueOverride) {
+      quickDue = new Date(dueOverride).toISOString();
+    } else {
+      try {
+        const parsedWhen = parseQuickWhen(t);
+        if (parsedWhen && parsedWhen.time) {
+          const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
+          quickDue = isoCandidate;
+        }
+      } catch {
+        quickDue = null;
+      }
+    }
+
+    const entry = buildQuickReminder(t, quickDue);
+    if (
+      options.notifyAt instanceof Date &&
+      !Number.isNaN(options.notifyAt.getTime())
+    ) {
+      try {
+        entry.notifyAt = new Date(options.notifyAt).toISOString();
+      } catch {
+        entry.notifyAt = null;
+      }
+    }
+    assignOrderIndexForNewItem(entry, { position: 'start' });
     items.unshift(entry);
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
-    saveToFirebase(entry);
+    if (rebalanced) {
+      items.forEach((item) => saveToFirebase(item));
+    } else {
+      saveToFirebase(entry);
+    }
     tryCalendarSync(entry);
     scheduleReminder(entry);
     rescheduleAllReminders();
@@ -345,6 +903,18 @@ export async function initReminders(sel = {}) {
     emitActivity({ action: 'created', label: `Reminder added · ${entry.title}` });
 
     quickInput.value = '';
+
+    if (typeof document !== 'undefined') {
+      try {
+        document.dispatchEvent(
+          new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
+        );
+      } catch {
+        // Ignore dispatch issues so the add flow can finish silently.
+      }
+    }
+
+    return entry;
   }
 
   if (typeof window !== 'undefined') {
@@ -489,6 +1059,149 @@ export async function initReminders(sel = {}) {
 
   setupQuickAddVoiceSupport();
 
+  const SpeechRecognition =
+    typeof window !== 'undefined'
+      ? window.SpeechRecognition || window.webkitSpeechRecognition
+      : null;
+  let voiceSpeechRecognition = null;
+  const voiceSupported = !!SpeechRecognition;
+
+  if (voiceSupported) {
+    voiceSpeechRecognition = new SpeechRecognition();
+    voiceSpeechRecognition.lang = 'en-AU';
+    voiceSpeechRecognition.interimResults = false;
+    voiceSpeechRecognition.maxAlternatives = 1;
+  }
+
+  function showVoiceNotSupportedMessage() {
+    try {
+      if (typeof toast === 'function') {
+        toast('Voice input is not supported on this device. You can still type your reminder.');
+        return;
+      }
+    } catch {}
+
+    try {
+      alert('Voice input is not supported on this device. You can still type your reminder.');
+    } catch {
+      console.warn('Voice input is not supported on this device.');
+    }
+  }
+
+  if (pillVoiceBtn) {
+    if (voiceSupported && voiceSpeechRecognition) {
+      pillVoiceBtn.addEventListener('click', () => {
+        try {
+          voiceSpeechRecognition.start();
+          pillVoiceBtn.classList.add('is-recording');
+        } catch (error) {
+          console.warn('Voice input failed to start', error);
+        }
+      });
+    } else {
+      pillVoiceBtn.addEventListener('click', () => {
+        showVoiceNotSupportedMessage();
+      });
+    }
+  }
+
+  if (voiceSpeechRecognition) {
+    voiceSpeechRecognition.addEventListener('result', (event) => {
+      const transcript = event?.results?.[0]?.[0]?.transcript?.trim();
+      handleVoiceReminderTranscript(transcript);
+    });
+
+    voiceSpeechRecognition.addEventListener('end', () => {
+      if (pillVoiceBtn) {
+        pillVoiceBtn.classList.remove('is-recording');
+      }
+    });
+
+    voiceSpeechRecognition.addEventListener('error', () => {
+      if (pillVoiceBtn) {
+        pillVoiceBtn.classList.remove('is-recording');
+      }
+    });
+  }
+
+  function formatReminderText(rawText) {
+    if (!rawText) return '';
+
+    let text = rawText.trim();
+
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+
+    if (!/[.!?]$/.test(text)) {
+      text += '.';
+    }
+
+    return text;
+  }
+
+  function parseNaturalDateTime(rawText) {
+    const result = { dueDate: null, notifyAt: null };
+    if (!rawText) return result;
+
+    const text = rawText.toLowerCase().trim();
+
+    const now = new Date();
+    let target = new Date(now);
+
+    if (text.includes('tomorrow')) {
+      target.setDate(target.getDate() + 1);
+    } else if (text.includes('today')) {
+      // same day
+    } else {
+      return result;
+    }
+
+    const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+    if (!timeMatch) {
+      return result;
+    }
+
+    let hours = parseInt(timeMatch[1], 10);
+    const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+    let meridiem = timeMatch[3];
+
+    // Extra meridiem detection for formats like "3 p.m.", "3 p m", etc.
+    if (!meridiem) {
+      if (/\b(p\.?m\.?|p m)\b/.test(text)) {
+        meridiem = 'pm';
+      } else if (/\b(a\.?m\.?|a m)\b/.test(text)) {
+        meridiem = 'am';
+      }
+    }
+
+    if (meridiem === 'pm' && hours < 12) {
+      hours += 12;
+    }
+    if (meridiem === 'am' && hours === 12) {
+      hours = 0;
+    }
+
+    target.setHours(hours, minutes, 0, 0);
+
+    const dueDate = new Date(target);
+    const notifyAt = new Date(dueDate.getTime() - 10 * 60 * 1000);
+
+    result.dueDate = dueDate;
+    result.notifyAt = notifyAt;
+
+    return result;
+  }
+
+  function handleVoiceReminderTranscript(rawText) {
+    if (!rawText || !quickInput) return;
+
+    const cleanedText = formatReminderText(rawText);
+    const { dueDate, notifyAt } = parseNaturalDateTime(rawText);
+
+    quickInput.value = cleanedText;
+
+    quickAddNow({ text: cleanedText, dueDate, notifyAt });
+  }
+
   if (typeof window !== 'undefined') {
     if (!window.memoryCueQuickAddShortcutsBound) {
       window.memoryCueQuickAddShortcutsBound = true;
@@ -517,8 +1230,8 @@ export async function initReminders(sel = {}) {
   } catch {
     /* ignore environments without DOM */
   }
-  const emptyInitialText = sel.emptyStateInitialText || 'Create your first reminder to keep important tasks in view.';
-  const emptyFilteredText = sel.emptyStateFilteredText || 'No reminders match the current filter. Adjust your filters or add a new cue.';
+  const emptyInitialText =
+    sel.emptyStateInitialText || 'Create your first reminder to keep important tasks in view.';
   const sharedEmptyStateMount = (typeof window !== 'undefined' && typeof window.memoryCueMountEmptyState === 'function') ? window.memoryCueMountEmptyState : null;
   const sharedEmptyStateCtaClasses = (typeof window !== 'undefined' && typeof window.memoryCueEmptyStateCtaClasses === 'string')
     ? window.memoryCueEmptyStateCtaClasses
@@ -793,54 +1506,684 @@ export async function initReminders(sel = {}) {
 
   // State
   let items = [];
-  let filter = resolvedDefaultFilter || 'all';
-  let categoryFilterValue = categoryFilter?.value || 'all';
-  const SORT_STORAGE_KEY = 'memoryCue:sortPreference';
-  const SORT_OPTIONS = new Set(['dueDate', 'priority', 'category', 'recent']);
-  const SORT_ALIASES = new Map([
-    ['due', 'dueDate'],
-  ]);
-  let sortKey = 'dueDate';
   let suppressRenderMemoryEvent = false;
   let userId = null;
   let unsubscribe = null;
   let editingId = null;
   const reminderTimers = {};
+  const reminderNotifyTimers = {};
   let scheduledReminders = {};
 
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const storedSort = localStorage.getItem(SORT_STORAGE_KEY);
-      const normalisedSort = SORT_ALIASES.get(storedSort) || storedSort;
-      if (normalisedSort && SORT_OPTIONS.has(normalisedSort)) {
-        sortKey = normalisedSort;
+  function sortItemsByOrder(target = items) {
+    if (!Array.isArray(target)) {
+      return;
+    }
+    target.sort((a, b) => {
+      const aVal = Number.isFinite(a?.orderIndex) ? a.orderIndex : -Infinity;
+      const bVal = Number.isFinite(b?.orderIndex) ? b.orderIndex : -Infinity;
+      if (aVal === bVal) {
+        return compareRemindersForDisplay(a || {}, b || {});
       }
-    } catch {
-      // Ignore localStorage access issues (private browsing, etc.).
+      return bVal - aVal;
+    });
+  }
+
+  function getOrderBounds(target = items) {
+    if (!Array.isArray(target) || target.length === 0) {
+      return { min: 0, max: 0 };
+    }
+    let min = Infinity;
+    let max = -Infinity;
+    target.forEach((entry) => {
+      const value = Number.isFinite(entry?.orderIndex) ? entry.orderIndex : null;
+      if (value == null) {
+        return;
+      }
+      if (value < min) {
+        min = value;
+      }
+      if (value > max) {
+        max = value;
+      }
+    });
+    if (min === Infinity) min = 0;
+    if (max === -Infinity) max = 0;
+    return { min, max };
+  }
+
+  function ensureOrderIndicesInitialized(target = items) {
+    if (!Array.isArray(target) || target.length === 0) {
+      return Array.isArray(target) ? target : [];
+    }
+    const allHaveOrder = target.every((entry) => Number.isFinite(entry?.orderIndex));
+    let sorted;
+    if (allHaveOrder) {
+      sorted = target.slice();
+      sortItemsByOrder(sorted);
+    } else {
+      sorted = target.slice().sort(compareRemindersForDisplay);
+      const total = sorted.length;
+      sorted.forEach((entry, index) => {
+        entry.orderIndex = (total - index) * ORDER_INDEX_GAP;
+      });
+    }
+    if (target === items) {
+      items = sorted;
+    }
+    return sorted;
+  }
+
+  function assignOrderIndexForNewItem(item, { position = 'start' } = {}) {
+    if (!item || typeof item !== 'object') {
+      return;
+    }
+    const { min, max } = getOrderBounds();
+    if (position === 'end') {
+      const base = Number.isFinite(min) ? min : 0;
+      item.orderIndex = base - ORDER_INDEX_GAP || ORDER_INDEX_GAP;
+    } else {
+      const base = Number.isFinite(max) ? max : 0;
+      item.orderIndex = base + ORDER_INDEX_GAP || ORDER_INDEX_GAP;
     }
   }
 
-  if (sortSel && sortKey) {
-    try {
-      sortSel.value = SORT_OPTIONS.has(sortKey) ? sortKey : 'dueDate';
-    } catch {
-      // Ignore value sync issues if option missing.
+  function maybeRebalanceOrderSpacing(target = items) {
+    if (!Array.isArray(target) || target.length < 2) {
+      return false;
     }
+    sortItemsByOrder(target);
+    let needsRebalance = false;
+    for (let i = 1; i < target.length; i += 1) {
+      const prev = target[i - 1];
+      const curr = target[i];
+      const prevVal = Number.isFinite(prev?.orderIndex) ? prev.orderIndex : null;
+      const currVal = Number.isFinite(curr?.orderIndex) ? curr.orderIndex : null;
+      if (prevVal == null || currVal == null || prevVal <= currVal || prevVal - currVal < 1) {
+        needsRebalance = true;
+        break;
+      }
+    }
+    if (!needsRebalance) {
+      return false;
+    }
+    for (let i = 0; i < target.length; i += 1) {
+      target[i].orderIndex = (target.length - i) * ORDER_INDEX_GAP;
+    }
+    if (target === items) {
+      sortItemsByOrder(items);
+    }
+    return true;
+  }
+
+  const dragState = {
+    draggingId: null,
+    dropTargetId: null,
+    dropBefore: true,
+  };
+  let dragSetupComplete = false;
+  const touchDragState = {
+    active: false,
+    ready: false,
+    pointerId: null,
+    item: null,
+    placeholder: null,
+    originalStyles: '',
+    offsetY: 0,
+    fixedX: 0,
+    longPressTimer: null,
+    startX: 0,
+    startY: 0,
+    lastClientX: 0,
+    lastClientY: 0,
+    moved: false,
+    initialTouchAction: '',
+    startTime: 0,
+  };
+
+  function findInteractiveControl(node) {
+    if (!node || typeof node.closest !== 'function') {
+      return null;
+    }
+    return node.closest(
+      'button, a, input, textarea, select, label, [role="button"], [role="menuitem"], [role="option"], [role="switch"], [contenteditable="true"]'
+    );
+  }
+
+  function findDraggableItem(node) {
+    if (!node || typeof node.closest !== 'function') {
+      return null;
+    }
+    return node.closest('[data-reminder-item]');
+  }
+
+  function clearDragHighlights() {
+    if (!list) return;
+    list.querySelectorAll('.drag-over-before, .drag-over-after').forEach((node) => {
+      node.classList.remove('drag-over-before', 'drag-over-after');
+    });
+    list.classList.remove('drag-over-list');
+  }
+
+  function resetDragState() {
+    if (!list) return;
+    const draggingEl = list.querySelector('.is-dragging');
+    if (draggingEl) {
+      draggingEl.classList.remove('is-dragging');
+    }
+    clearDragHighlights();
+    dragState.draggingId = null;
+    dragState.dropTargetId = null;
+    dragState.dropBefore = true;
+  }
+
+  function performReorder(sourceId, targetId, before) {
+    if (!sourceId || sourceId === targetId) {
+      return;
+    }
+    const sourceIndex = items.findIndex((entry) => entry?.id === sourceId);
+    if (sourceIndex < 0) {
+      return;
+    }
+    const [moved] = items.splice(sourceIndex, 1);
+    let insertIndex;
+    if (!targetId) {
+      insertIndex = items.length;
+    } else {
+      const targetIndex = items.findIndex((entry) => entry?.id === targetId);
+      if (targetIndex < 0) {
+        items.splice(sourceIndex, 0, moved);
+        return;
+      }
+      insertIndex = before ? targetIndex : targetIndex + 1;
+    }
+    items.splice(insertIndex, 0, moved);
+
+    const prev = items[insertIndex - 1];
+    const next = items[insertIndex + 1];
+    const prevVal = Number.isFinite(prev?.orderIndex) ? prev.orderIndex : null;
+    const nextVal = Number.isFinite(next?.orderIndex) ? next.orderIndex : null;
+    let newOrder;
+    if (prevVal != null && nextVal != null) {
+      newOrder = (prevVal + nextVal) / 2;
+    } else if (prevVal != null) {
+      newOrder = prevVal - ORDER_INDEX_GAP;
+    } else if (nextVal != null) {
+      newOrder = nextVal + ORDER_INDEX_GAP;
+    } else {
+      newOrder = ORDER_INDEX_GAP;
+    }
+    if (!Number.isFinite(newOrder)) {
+      newOrder = ORDER_INDEX_GAP * (items.length + 1);
+    }
+    moved.orderIndex = newOrder;
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    if (rebalanced) {
+      items.forEach((entry) => saveToFirebase(entry));
+    } else {
+      saveToFirebase(moved);
+    }
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    emitActivity({ action: 'reordered', label: 'Reminders reordered' });
+  }
+
+  function handleDragStart(event) {
+    const item = findDraggableItem(event.target);
+    if (!item) {
+      return;
+    }
+    const interactive = event.target?.closest('button, a, input, textarea, label');
+    if (interactive && interactive !== item) {
+      event.preventDefault();
+      return;
+    }
+    const id = item.dataset.id;
+    if (!id) {
+      return;
+    }
+    dragState.draggingId = id;
+    dragState.dropTargetId = null;
+    dragState.dropBefore = true;
+    item.classList.add('is-dragging');
+    if (event.dataTransfer) {
+      try {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', id);
+      } catch {}
+    }
+  }
+
+  function handleDragOver(event) {
+    if (!dragState.draggingId) {
+      return;
+    }
+    const item = findDraggableItem(event.target);
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    if (!item) {
+      event.preventDefault();
+      dragState.dropTargetId = null;
+      dragState.dropBefore = false;
+      clearDragHighlights();
+      list?.classList.add('drag-over-list');
+      return;
+    }
+    if (item.dataset.id === dragState.draggingId) {
+      event.preventDefault();
+      clearDragHighlights();
+      return;
+    }
+    event.preventDefault();
+    const rect = item.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const before = event.clientY < midpoint;
+    if (dragState.dropTargetId !== item.dataset.id || dragState.dropBefore !== before) {
+      clearDragHighlights();
+      item.classList.add(before ? 'drag-over-before' : 'drag-over-after');
+      dragState.dropTargetId = item.dataset.id;
+      dragState.dropBefore = before;
+    }
+  }
+
+  function handleDragLeave(event) {
+    const item = findDraggableItem(event.target);
+    if (!item) {
+      if (!list?.contains(event.relatedTarget)) {
+        clearDragHighlights();
+      }
+      return;
+    }
+    if (event.relatedTarget && item.contains(event.relatedTarget)) {
+      return;
+    }
+    item.classList.remove('drag-over-before', 'drag-over-after');
+    if (!list?.contains(event.relatedTarget)) {
+      list?.classList.remove('drag-over-list');
+    }
+  }
+
+  function handleDrop(event) {
+    if (!dragState.draggingId) {
+      return;
+    }
+    event.preventDefault();
+    const item = findDraggableItem(event.target);
+    let targetId = item?.dataset.id || null;
+    let before = dragState.dropBefore;
+    if (item) {
+      const rect = item.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      before = event.clientY < midpoint;
+    } else {
+      targetId = null;
+      before = false;
+    }
+    performReorder(dragState.draggingId, targetId, before);
+    resetDragState();
+  }
+
+  function handleDragEnd() {
+    resetDragState();
+  }
+
+  function setupDragAndDrop() {
+    if (!list || dragSetupComplete) {
+      return;
+    }
+    dragSetupComplete = true;
+    list.addEventListener('dragstart', handleDragStart);
+    list.addEventListener('dragover', handleDragOver);
+    list.addEventListener('drop', handleDrop);
+    list.addEventListener('dragend', handleDragEnd);
+    list.addEventListener('dragleave', handleDragLeave);
+    setupTouchDrag();
+  }
+
+  function setupTouchDrag() {
+    if (!list) {
+      return;
+    }
+
+    if (setupTouchDrag._bound) {
+      return;
+    }
+
+    const supportsTouch = (() => {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      if (navigator && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 0) {
+        return true;
+      }
+      try {
+        return window.matchMedia('(pointer: coarse)').matches;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (!supportsTouch) {
+      setupTouchDrag._bound = true;
+      return;
+    }
+
+    const TOUCH_MOVE_THRESHOLD = 6;
+    const LONG_PRESS_DELAY = 160;
+
+    function clearTouchTimer() {
+      if (touchDragState.longPressTimer) {
+        clearTimeout(touchDragState.longPressTimer);
+        touchDragState.longPressTimer = null;
+      }
+    }
+
+    function restoreListTouchAction() {
+      if (!list) {
+        return;
+      }
+      if (touchDragState.initialTouchAction != null) {
+        list.style.touchAction = touchDragState.initialTouchAction;
+      } else {
+        list.style.removeProperty('touch-action');
+      }
+    }
+
+    function resetTouchDragState({ keepHighlights = false } = {}) {
+      clearTouchTimer();
+      if (touchDragState.item && touchDragState.pointerId != null) {
+        try {
+          if (touchDragState.item.hasPointerCapture?.(touchDragState.pointerId)) {
+            touchDragState.item.releasePointerCapture(touchDragState.pointerId);
+          }
+        } catch {
+          /* noop */
+        }
+      }
+      if (touchDragState.placeholder?.parentNode) {
+        try {
+          touchDragState.placeholder.parentNode.removeChild(touchDragState.placeholder);
+        } catch {
+          /* noop */
+        }
+      }
+      if (touchDragState.item) {
+        touchDragState.item.classList.remove('is-dragging');
+        if (touchDragState.originalStyles) {
+          touchDragState.item.setAttribute('style', touchDragState.originalStyles);
+        } else {
+          touchDragState.item.removeAttribute('style');
+        }
+      }
+      restoreListTouchAction();
+      if (!keepHighlights) {
+        clearDragHighlights();
+      }
+      Object.assign(touchDragState, {
+        active: false,
+        ready: false,
+        pointerId: null,
+        item: null,
+        placeholder: null,
+        originalStyles: '',
+        offsetY: 0,
+        fixedX: 0,
+        longPressTimer: null,
+        startX: 0,
+        startY: 0,
+        lastClientX: 0,
+        lastClientY: 0,
+        moved: false,
+        initialTouchAction: '',
+        startTime: 0,
+      });
+    }
+
+    function getDropTargets(exclude) {
+      if (!list) {
+        return [];
+      }
+      return Array.from(list.querySelectorAll('[data-reminder-item]')).filter((node) => node !== exclude);
+    }
+
+    function startTouchDrag(point) {
+      const item = touchDragState.item;
+      if (!item || touchDragState.ready) {
+        return;
+      }
+
+      const rect = item.getBoundingClientRect();
+      const computed = window.getComputedStyle(item);
+
+      touchDragState.ready = true;
+      dragState.draggingId = item.dataset.id || null;
+      touchDragState.offsetY = point.clientY - rect.top;
+      touchDragState.fixedX = rect.left;
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'touch-drag-placeholder';
+      placeholder.setAttribute('aria-hidden', 'true');
+      placeholder.style.height = `${rect.height}px`;
+      placeholder.style.boxSizing = 'border-box';
+      placeholder.style.marginTop = computed.marginTop;
+      placeholder.style.marginBottom = computed.marginBottom;
+      placeholder.style.marginLeft = computed.marginLeft;
+      placeholder.style.marginRight = computed.marginRight;
+      placeholder.style.borderRadius = computed.borderRadius;
+      placeholder.style.border = '2px dashed color-mix(in srgb, var(--primary-color, #5e72e4) 55%, transparent)';
+      placeholder.style.background = 'color-mix(in srgb, var(--primary-color, #5e72e4) 12%, transparent)';
+      placeholder.style.pointerEvents = 'none';
+      placeholder.style.display = 'block';
+      placeholder.style.width = '100%';
+      item.parentNode?.insertBefore(placeholder, item);
+
+      touchDragState.placeholder = placeholder;
+
+      touchDragState.longPressTimer = null;
+      touchDragState.originalStyles = item.getAttribute('style') || '';
+      item.classList.add('is-dragging');
+      item.style.position = 'fixed';
+      item.style.left = `${rect.left}px`;
+      item.style.top = `${rect.top}px`;
+      item.style.width = `${rect.width}px`;
+      item.style.zIndex = '999';
+      item.style.pointerEvents = 'none';
+      item.style.touchAction = 'none';
+
+      touchDragState.initialTouchAction = list.style.touchAction || '';
+      list.style.touchAction = 'none';
+    }
+
+    function updateTouchPosition(clientY) {
+      const item = touchDragState.item;
+      if (!item || !touchDragState.ready) {
+        return;
+      }
+      const nextTop = clientY - touchDragState.offsetY;
+      item.style.top = `${nextTop}px`;
+      item.style.left = `${touchDragState.fixedX}px`;
+    }
+
+    function updateTouchDropTarget(clientY) {
+      if (!touchDragState.ready || !list) {
+        return;
+      }
+
+      const item = touchDragState.item;
+      const targets = getDropTargets(item);
+
+      clearDragHighlights();
+
+      if (!targets.length) {
+        dragState.dropTargetId = null;
+        dragState.dropBefore = false;
+        return;
+      }
+
+      let chosen = null;
+      let before = false;
+
+      for (const candidate of targets) {
+        const rect = candidate.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        if (clientY < midpoint) {
+          chosen = candidate;
+          before = true;
+          break;
+        }
+      }
+
+      if (!chosen) {
+        chosen = targets[targets.length - 1];
+        const rect = chosen.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        before = clientY < midpoint;
+        if (!before) {
+          before = false;
+        }
+      }
+
+      if (!chosen) {
+        dragState.dropTargetId = null;
+        dragState.dropBefore = false;
+        return;
+      }
+
+      const rect = chosen.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const dropBefore = clientY < midpoint;
+
+      chosen.classList.add(dropBefore ? 'drag-over-before' : 'drag-over-after');
+      dragState.dropTargetId = chosen.dataset.id || null;
+      dragState.dropBefore = dropBefore;
+    }
+
+    function finishTouchDrag(cancelled) {
+      const draggedId = dragState.draggingId;
+      const moved = touchDragState.moved;
+
+      if (!touchDragState.ready) {
+        resetTouchDragState();
+        return;
+      }
+
+      resetTouchDragState();
+
+      if (!cancelled && moved && draggedId) {
+        performReorder(draggedId, dragState.dropTargetId, dragState.dropBefore);
+      }
+      resetDragState();
+    }
+
+    function handlePointerDown(event) {
+      const pointerKind = event.pointerType || '';
+      if (pointerKind && pointerKind !== 'touch' && pointerKind !== 'pen') {
+        return;
+      }
+      if (touchDragState.active) {
+        return;
+      }
+      const item = findDraggableItem(event.target);
+      if (!item) {
+        return;
+      }
+      const interactive = findInteractiveControl(event.target);
+      if (interactive && interactive !== item) {
+        return;
+      }
+
+      touchDragState.active = true;
+      touchDragState.pointerId = event.pointerId;
+      touchDragState.item = item;
+      touchDragState.startX = event.clientX;
+      touchDragState.startY = event.clientY;
+      touchDragState.lastClientX = event.clientX;
+      touchDragState.lastClientY = event.clientY;
+      touchDragState.moved = false;
+      touchDragState.ready = false;
+      touchDragState.originalStyles = item.getAttribute('style') || '';
+      touchDragState.startTime = event.timeStamp || Date.now();
+      dragState.dropTargetId = null;
+      dragState.dropBefore = true;
+      dragState.draggingId = null;
+
+      clearTouchTimer();
+      touchDragState.longPressTimer = setTimeout(() => {
+        startTouchDrag({ clientY: touchDragState.lastClientY });
+      }, LONG_PRESS_DELAY);
+
+      try {
+        item.setPointerCapture(event.pointerId);
+      } catch {
+        /* noop */
+      }
+    }
+
+    function handlePointerMove(event) {
+      if (!touchDragState.active || event.pointerId !== touchDragState.pointerId) {
+        return;
+      }
+      const pointerKind = event.pointerType || '';
+      if (pointerKind && pointerKind !== 'touch' && pointerKind !== 'pen') {
+        return;
+      }
+
+      touchDragState.lastClientX = event.clientX;
+      touchDragState.lastClientY = event.clientY;
+
+      if (!touchDragState.ready) {
+        const deltaX = Math.abs(event.clientX - touchDragState.startX);
+        const deltaY = Math.abs(event.clientY - touchDragState.startY);
+        if (deltaX > TOUCH_MOVE_THRESHOLD || deltaY > TOUCH_MOVE_THRESHOLD) {
+          const now = typeof event.timeStamp === 'number' ? event.timeStamp : Date.now();
+          const elapsed = Math.abs(now - touchDragState.startTime);
+          if (elapsed >= LONG_PRESS_DELAY) {
+            clearTouchTimer();
+            startTouchDrag({ clientY: touchDragState.lastClientY });
+          } else {
+            resetTouchDragState();
+          }
+        }
+        return;
+      }
+
+      event.preventDefault();
+      touchDragState.moved = true;
+      updateTouchPosition(event.clientY);
+      updateTouchDropTarget(event.clientY);
+    }
+
+    function handlePointerUp(event) {
+      if (!touchDragState.active || event.pointerId !== touchDragState.pointerId) {
+        return;
+      }
+      finishTouchDrag(false);
+    }
+
+    function handlePointerCancel(event) {
+      if (!touchDragState.active || event.pointerId !== touchDragState.pointerId) {
+        return;
+      }
+      finishTouchDrag(true);
+    }
+
+    list.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerCancel);
+
+    setupTouchDrag._bound = true;
   }
 
   function applySignedOutState() {
     userId = null;
-    syncStatus?.classList.remove('online', 'error');
-    if (syncStatus) {
-      syncStatus.classList.add('offline');
-      syncStatus.textContent = 'Offline';
-    }
-    googleSignInBtn?.classList.remove('hidden');
-    googleSignOutBtn?.classList.add('hidden');
-    if (googleAvatar) {
-      googleAvatar.classList.add('hidden');
-      googleAvatar.src = '';
-    }
+    renderSyncIndicator('offline');
+    googleSignInBtns.forEach((btn) => btn.classList.remove('hidden'));
+    googleSignOutBtns.forEach((btn) => btn.classList.add('hidden'));
     if (googleUserName) {
       googleUserName.textContent = '';
     }
@@ -864,6 +2207,7 @@ export async function initReminders(sel = {}) {
           if (!entry || typeof entry !== 'object') return null;
           const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now();
           const updatedAt = Number.isFinite(entry.updatedAt) ? entry.updatedAt : createdAt;
+          const rawOrder = Number(entry.orderIndex);
           return {
             id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
             title: typeof entry.title === 'string' ? entry.title : '',
@@ -875,6 +2219,12 @@ export async function initReminders(sel = {}) {
             updatedAt,
             due: typeof entry.due === 'string' && entry.due ? entry.due : null,
             pendingSync: !!entry.pendingSync,
+            orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
+            plannerLessonId:
+              typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
+                ? entry.plannerLessonId.trim()
+                : null,
+            pinToToday: entry.pinToToday === true,
           };
         })
         .filter(Boolean);
@@ -904,6 +2254,12 @@ export async function initReminders(sel = {}) {
           updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
           due: typeof entry.due === 'string' && entry.due ? entry.due : null,
           pendingSync: !!entry.pendingSync,
+          orderIndex: Number.isFinite(entry.orderIndex) ? entry.orderIndex : null,
+          plannerLessonId:
+            typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
+              ? entry.plannerLessonId.trim()
+              : null,
+          pinToToday: !!entry.pinToToday,
         }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
@@ -912,11 +2268,12 @@ export async function initReminders(sel = {}) {
   }
 
   function persistItems() {
+    sortItemsByOrder(items);
     persistOfflineReminders(items);
   }
 
   function hydrateOfflineReminders() {
-    items = loadOfflineRemindersFromStorage();
+    items = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
   }
 
   hydrateOfflineReminders();
@@ -926,7 +2283,7 @@ export async function initReminders(sel = {}) {
       items = loadOfflineRemindersFromStorage();
       return;
     }
-    const offline = loadOfflineRemindersFromStorage();
+    let offline = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
     if (!offline.length) {
       items = [];
       persistItems();
@@ -943,7 +2300,9 @@ export async function initReminders(sel = {}) {
         }
       }
     }
-    items = offline.map((entry) => ({ ...entry, pendingSync: false }));
+    items = ensureOrderIndicesInitialized(
+      offline.map((entry) => ({ ...entry, pendingSync: false }))
+    );
     persistItems();
     render();
     rescheduleAllReminders();
@@ -957,8 +2316,36 @@ export async function initReminders(sel = {}) {
     Object.values(scheduledReminders).forEach((entry) => {
       if (entry && typeof entry === 'object') {
         entry.category = normalizeCategory(entry.category);
+        entry.priority = entry.priority || 'Medium';
+        entry.notes = typeof entry.notes === 'string' ? entry.notes : '';
+        entry.notifyAt = typeof entry.notifyAt === 'string' ? entry.notifyAt : null;
+        entry.body = typeof entry.body === 'string' && entry.body
+          ? entry.body
+          : buildReminderNotificationBody(entry);
+        entry.urlPath = entry.urlPath || reminderLandingPath;
+        if (!Number.isFinite(entry.updatedAt)) {
+          entry.updatedAt = Date.now();
+        }
+        if (!Number.isFinite(entry.notifiedAt)) {
+          entry.notifiedAt = null;
+        }
       }
     });
+  }
+
+  if (!supportsNotificationTriggers()) {
+    const initialPayload = buildScheduledReminderPayload();
+    if (
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'granted'
+    ) {
+      setupBackgroundReminderSync();
+      if (initialPayload.length) {
+        syncScheduledRemindersWithServiceWorker(initialPayload, { requestCheck: true });
+      }
+    } else if (initialPayload.length) {
+      syncScheduledRemindersWithServiceWorker(initialPayload);
+    }
   }
 
   const recordFirebaseAvailability = (available) => {
@@ -1133,18 +2520,18 @@ export async function initReminders(sel = {}) {
 
   if (firebaseModulesLoaded && typeof initializeApp === 'function' && typeof getFirestore === 'function' && typeof getAuth === 'function') {
     try {
-      const firebaseConfig = {
-        apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-        authDomain: 'memory-cue-app.firebaseapp.com',
-        projectId: 'memory-cue-app',
-        storageBucket: 'memory-cue-app.firebasestorage.app',
-        messagingSenderId: '751284466633',
-        appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-        measurementId: 'G-R0V4M7VCE6'
-      };
+      const firebaseConfig = resolveFirebaseConfig();
+      if (!firebaseConfig || typeof firebaseConfig !== 'object') {
+        throw new Error('Firebase config unavailable');
+      }
+      if (!firebaseConfig.projectId) {
+        throw new Error('Firebase projectId missing from configuration');
+      }
+      console.info('[Firebase] Initialising Memory Cue', firebaseConfig.projectId);
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
       firebaseReady = true;
+      console.info('[Firebase] Firestore initialised', firebaseConfig.projectId);
       recordFirebaseAvailability(true);
     } catch (err) {
       firebaseReady = false;
@@ -1275,6 +2662,17 @@ export async function initReminders(sel = {}) {
   function startOfWeek(d) { const n = new Date(d); const day = (n.getDay() + 6) % 7; n.setDate(n.getDate() - day); n.setHours(0,0,0,0); return n; }
   function endOfWeek(d) { const s = startOfWeek(d); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
   function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
+  function compareRemindersForDisplay(a, b) {
+    const aDone = a?.done ? 1 : 0;
+    const bDone = b?.done ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    const aDue = a?.due ? new Date(a.due).getTime() : Infinity;
+    const bDue = b?.due ? new Date(b.due).getTime() : Infinity;
+    if (aDue !== bDue) return aDue - bDue;
+    const priorityDiff = priorityWeight(b?.priority) - priorityWeight(a?.priority);
+    if (priorityDiff) return priorityDiff;
+    return (b?.updatedAt || 0) - (a?.updatedAt || 0);
+  }
   function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
   function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
   function fmtTime(d){ return timeFmt.format(d); }
@@ -1284,7 +2682,19 @@ export async function initReminders(sel = {}) {
     const safe = escapeHtml(note).replace(/\r\n/g,'\n');
     return safe.replace(/\n/g,'<br>');
   }
-  function toast(msg){ if(!statusEl) return; statusEl.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(()=> statusEl.textContent='',2500); }
+  function toast(msg){
+    if(!statusEl) return;
+    clearUndoDeleteState();
+    statusEl.dataset.statusKind = 'toast';
+    statusEl.textContent = msg;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{
+      if(statusEl && statusEl.dataset.statusKind === 'toast'){
+        statusEl.textContent='';
+        delete statusEl.dataset.statusKind;
+      }
+    },2500);
+  }
   function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
   // Quick when parser (subset from mobile)
@@ -1328,37 +2738,56 @@ export async function initReminders(sel = {}) {
   // Auth
   const authReady = firebaseReady && auth && typeof GoogleAuthProvider === 'function';
 
-  googleSignInBtn?.addEventListener('click', async () => {
-    if (!authReady || typeof signInWithPopup !== 'function' || typeof signInWithRedirect !== 'function') {
-      toast('Sign-in unavailable offline');
+  setAuthContext({
+    authReady,
+    auth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithRedirect,
+    signOut,
+    toast,
+  });
+
+  const shouldWireAuthButtons = autoWireAuthButtons;
+
+  const wireAuthButton = (button, handler) => {
+    if (!(button instanceof HTMLElement) || button._authWired) {
       return;
     }
-    const provider = new GoogleAuthProvider();
-    try { await signInWithPopup(auth, provider); } catch (error) { try { await signInWithRedirect(auth, provider); } catch { toast('Google sign-in failed'); } }
-  });
+    button.addEventListener('click', (event) => {
+      try {
+        const outcome = handler(event);
+        if (outcome && typeof outcome.then === 'function') {
+          outcome.catch((error) => {
+            console.error('Auth handler error:', error);
+          });
+        }
+      } catch (error) {
+        console.error('Auth handler error:', error);
+      }
+    });
+    button._authWired = true;
+  };
+
+  if (shouldWireAuthButtons && googleSignInBtns.length) {
+    googleSignInBtns.forEach((btn) => wireAuthButton(btn, startSignInFlow));
+  }
 
   if (authReady && typeof getRedirectResult === 'function') {
     getRedirectResult(auth).catch(()=>{});
   }
 
-  googleSignOutBtn?.addEventListener('click', async () => {
-    if (!authReady || typeof signOut !== 'function') {
-      toast('Sign-out unavailable offline');
-      return;
-    }
-    try { await signOut(auth); toast('Signed out'); } catch { toast('Sign-out failed'); }
-  });
+  if (shouldWireAuthButtons && googleSignOutBtns.length) {
+    googleSignOutBtns.forEach((btn) => wireAuthButton(btn, startSignOutFlow));
+  }
 
   if (authReady && typeof onAuthStateChanged === 'function') {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         userId = user.uid;
-        syncStatus?.classList.remove('offline','error');
-        syncStatus?.classList.add('online');
-        if(syncStatus) syncStatus.textContent = 'Online';
-        googleSignInBtn?.classList.add('hidden');
-        googleSignOutBtn?.classList.remove('hidden');
-        if(googleAvatar){ if(user.photoURL){ googleAvatar.classList.remove('hidden'); googleAvatar.src=user.photoURL; } else { googleAvatar.classList.add('hidden'); googleAvatar.src=''; } }
+        renderSyncIndicator('online');
+        googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
+        googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
         if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
         setupFirestoreSync();
         await migrateOfflineRemindersIfNeeded();
@@ -1378,6 +2807,7 @@ export async function initReminders(sel = {}) {
     if(!userId){
       hydrateOfflineReminders();
       render();
+      updateMobileRemindersHeaderSubtitle();
       persistItems();
       rescheduleAllReminders();
       return;
@@ -1389,15 +2819,35 @@ export async function initReminders(sel = {}) {
       const remoteItems = [];
       snapshot.forEach((d)=>{
         const data = d.data();
-        remoteItems.push({ id: d.id, title: data.title, priority: data.priority, notes: data.notes || '', done: !!data.done, due: data.due || null, category: normalizeCategory(data.category), createdAt: data.createdAt?.toMillis?.() || 0, updatedAt: data.updatedAt?.toMillis?.() || 0, pendingSync: false });
+        const orderValue = Number(data.orderIndex);
+        const plannerLessonId = typeof data.plannerLessonId === 'string' && data.plannerLessonId ? data.plannerLessonId : null;
+        const pinToToday = data.pinToToday === true;
+        remoteItems.push({
+          id: d.id,
+          title: data.title,
+          priority: data.priority,
+          notes: data.notes || '',
+          done: !!data.done,
+          due: data.due || null,
+          category: normalizeCategory(data.category),
+          createdAt: data.createdAt?.toMillis?.() || 0,
+          updatedAt: data.updatedAt?.toMillis?.() || 0,
+          pendingSync: false,
+          orderIndex: Number.isFinite(orderValue) ? orderValue : null,
+          plannerLessonId,
+          pinToToday,
+        });
       });
-      items = remoteItems;
+      items = ensureOrderIndicesInitialized(remoteItems);
       render();
+      updateMobileRemindersHeaderSubtitle();
       persistItems();
       rescheduleAllReminders();
     }, (error)=>{
       console.error('Firestore sync error:', error);
-      if(syncStatus){ syncStatus.textContent='Sync Error'; syncStatus.className='sync-status error'; }
+      if(syncStatus){
+        renderSyncIndicator('error', 'Sync Error');
+      }
     });
   }
 
@@ -1405,8 +2855,12 @@ export async function initReminders(sel = {}) {
     if(!firebaseReady || !userId || !db || typeof doc !== 'function' || typeof setDoc !== 'function' || typeof serverTimestamp !== 'function') return;
     try {
       await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
+        ownerUid: userId,
         title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
         category: item.category || DEFAULT_CATEGORY,
+        orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
+        plannerLessonId: typeof item.plannerLessonId === 'string' && item.plannerLessonId ? item.plannerLessonId : null,
+        pinToToday: !!item.pinToToday,
         createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -1418,7 +2872,7 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm(){
+  function resetForm({ preserveDetail = false } = {}){
     if(title) title.value='';
     if(date) date.value='';
     if(time) time.value='';
@@ -1427,10 +2881,31 @@ export async function initReminders(sel = {}) {
     if(categoryInput) categoryInput.value = DEFAULT_CATEGORY;
     applyStoredDefaultsToInputs();
     editingId=null;
-    if(saveBtn) saveBtn.textContent='Save Cue';
+    if(saveBtn) saveBtn.textContent='Save';
     cancelEditBtn?.classList.add('hidden');
+    clearPlannerReminderContext();
+    if (!preserveDetail) {
+      clearDetailSelection();
+    }
   }
-  function loadForEdit(id){ const it = items.find(x=>x.id===id); if(!it) return; if(title) title.value=it.title||''; if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } } setPriorityInputValue(it?.priority || 'Medium'); if(categoryInput) categoryInput.value = normalizeCategory(it.category); if(details) details.value = typeof it.notes === 'string' ? it.notes : ''; editingId=id; if(saveBtn) saveBtn.textContent='Update Cue'; cancelEditBtn?.classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); title?.focus(); dispatchCueEvent('cue:open', { mode: 'edit' }); }
+  function loadForEdit(id){
+    const it = items.find(x=>x.id===id);
+    if(!it) return;
+    if(title) title.value=it.title||'';
+    if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } }
+    setPriorityInputValue(it?.priority || 'Medium');
+    if(categoryInput) categoryInput.value = normalizeCategory(it.category);
+    if(details) details.value = typeof it.notes === 'string' ? it.notes : '';
+    if(plannerLessonInput) plannerLessonInput.value = typeof it.plannerLessonId === 'string' ? it.plannerLessonId : '';
+    clearPlannerReminderContext();
+    applyDetailSelection(it);
+    editingId=id;
+    if(saveBtn) saveBtn.textContent='Update';
+    cancelEditBtn?.classList.remove('hidden');
+    window.scrollTo({top:0,behavior:'smooth'});
+    title?.focus();
+    dispatchCueEvent('cue:open', { mode: 'edit' });
+  }
 
   function addItem(obj){
     const nowMs = Date.now();
@@ -1447,13 +2922,25 @@ export async function initReminders(sel = {}) {
       updatedAt: nowMs,
       due: obj.due || null,
       pendingSync: !userId,
+      plannerLessonId:
+        typeof obj.plannerLessonId === 'string' && obj.plannerLessonId.trim()
+          ? obj.plannerLessonId.trim()
+          : null,
+      pinToToday: !!obj.pinToToday,
     };
+    assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
     updateDefaultsFrom(item);
-    saveToFirebase(item);
+    if (rebalanced) {
+      items.forEach((entry) => saveToFirebase(entry));
+    } else {
+      saveToFirebase(item);
+    }
     tryCalendarSync(item);
     scheduleReminder(item);
     emitReminderUpdates();
@@ -1508,24 +2995,283 @@ export async function initReminders(sel = {}) {
       });
     }
   }
+
+  function setReminderPinnedState(id, pinned) {
+    const reminder = items.find((entry) => entry?.id === id);
+    if (!reminder) {
+      return;
+    }
+    const nextValue = !!pinned;
+    if (reminder.pinToToday === nextValue) {
+      return;
+    }
+    reminder.pinToToday = nextValue;
+    reminder.updatedAt = Date.now();
+    saveToFirebase(reminder);
+    render();
+    persistItems();
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+  }
+
+  function undoDelete(tokenId){
+    if(!deleteUndoState || deleteUndoState.tokenId !== tokenId) return;
+    const { item, index } = deleteUndoState;
+    if(!item) {
+      clearUndoDeleteState(tokenId);
+      return;
+    }
+    clearUndoDeleteState(tokenId);
+    const insertAt = Number.isInteger(index) ? Math.min(Math.max(index, 0), items.length) : items.length;
+    item.pendingSync = !userId;
+    item.updatedAt = Date.now();
+    items.splice(insertAt, 0, item);
+    sortItemsByOrder(items);
+    const rebalanced = maybeRebalanceOrderSpacing(items);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    scheduleReminder(item);
+    if (rebalanced) {
+      items.forEach((entry) => saveToFirebase(entry));
+    } else {
+      saveToFirebase(item);
+    }
+    tryCalendarSync(item);
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    emitActivity({
+      action: 'restored',
+      label: `Reminder restored · ${item.title}`,
+    });
+    toast('Reminder restored');
+  }
   function removeItem(id){
-    const removed = items.find(x=>x.id===id);
-    items = items.filter(x=>x.id!==id);
+    const index = items.findIndex(x=>x.id===id);
+    const removed = index >= 0 ? items.splice(index,1)[0] : null;
+    if (removed && editingId === id) {
+      resetForm();
+    }
     render();
     persistItems();
     deleteFromFirebase(id);
     cancelReminder(id);
-    if(removed){
-      emitActivity({
-        action: 'deleted',
-        label: `Reminder removed · ${removed.title}`,
-      });
-    } else {
-      emitActivity({ action: 'deleted', label: 'Reminder removed' });
+    const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
+    emitActivity({ action: 'deleted', label: activityLabel });
+    if(removed && statusEl){
+      clearUndoDeleteState();
+      const tokenId = `undo-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      deleteUndoState = {
+        tokenId,
+        item: removed,
+        index,
+        timeoutId: null,
+      };
+      showDeleteUndoMessage(deleteUndoState);
+      deleteUndoState.timeoutId = setTimeout(()=>{
+        clearUndoDeleteState(tokenId);
+      }, UNDO_DELETE_TIMEOUT_MS);
+    } else if(removed) {
+      clearUndoDeleteState();
     }
   }
 
-  function saveScheduled(){ localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders)); }
+  function enableSwipeToDelete(element, onDelete) {
+    if (!element || typeof element.addEventListener !== 'function' || typeof onDelete !== 'function') {
+      return;
+    }
+
+    const MIN_DISTANCE = 80;
+    const MAX_VERTICAL_DISTANCE = 48;
+    const MAX_DURATION = 800;
+    const INTERACTIVE_SELECTOR =
+      '[data-no-swipe], a[href], button, input, textarea, select, [role="button"], [role="link"], [contenteditable="true"], [contenteditable=""]';
+
+    let pointerId = null;
+    let tracking = false;
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+
+    const cleanupTracking = () => {
+      if (!tracking) {
+        return;
+      }
+      tracking = false;
+      if (pointerId != null && element.hasPointerCapture?.(pointerId)) {
+        try {
+          element.releasePointerCapture(pointerId);
+        } catch {
+          /* noop */
+        }
+      }
+      pointerId = null;
+      element.removeEventListener('pointermove', handlePointerMove);
+      element.removeEventListener('pointerup', handlePointerUp);
+      element.removeEventListener('pointercancel', handlePointerCancel);
+      element.removeEventListener('pointerleave', handlePointerCancel);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerCancel);
+    };
+
+    const handlePointerDown = (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) {
+        return;
+      }
+      if (tracking) {
+        cleanupTracking();
+      }
+      const target = event.target;
+      if (target instanceof Element && target.closest(INTERACTIVE_SELECTOR)) {
+        return;
+      }
+
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      startTime = typeof event.timeStamp === 'number' ? event.timeStamp : Date.now();
+      tracking = true;
+
+      element.addEventListener('pointermove', handlePointerMove);
+      element.addEventListener('pointerup', handlePointerUp);
+      element.addEventListener('pointercancel', handlePointerCancel);
+      element.addEventListener('pointerleave', handlePointerCancel);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointercancel', handlePointerCancel);
+    };
+
+    const handlePointerMove = (event) => {
+      if (!tracking || event.pointerId !== pointerId) {
+        return;
+      }
+      const deltaY = Math.abs(event.clientY - startY);
+      if (deltaY > MAX_VERTICAL_DISTANCE) {
+        cleanupTracking();
+      }
+    };
+
+    const handlePointerUp = (event) => {
+      if (!tracking || event.pointerId !== pointerId) {
+        return;
+      }
+      const deltaX = event.clientX - startX;
+      const deltaY = Math.abs(event.clientY - startY);
+      const duration = (typeof event.timeStamp === 'number' ? event.timeStamp : Date.now()) - startTime;
+      cleanupTracking();
+      if (deltaX <= -MIN_DISTANCE && deltaY <= MAX_VERTICAL_DISTANCE && duration <= MAX_DURATION) {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          onDelete();
+        } catch (error) {
+          console.warn('Swipe delete handler failed', error);
+        }
+      }
+    };
+
+    const handlePointerCancel = (event) => {
+      if (!tracking) {
+        return;
+      }
+      if (typeof event.pointerId === 'number' && event.pointerId !== pointerId) {
+        return;
+      }
+      cleanupTracking();
+    };
+
+    element.addEventListener('pointerdown', handlePointerDown);
+  }
+
+  function buildReminderNotificationBody(entry) {
+    if (!entry) return 'Due now';
+    const notesText = typeof entry.notes === 'string' ? entry.notes : '';
+    const firstNote = notesText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean);
+    if (firstNote) {
+      if (entry.due) {
+        try {
+          const dueDate = new Date(entry.due);
+          if (!Number.isNaN(dueDate.getTime())) {
+            const timeLabel = fmtTime(dueDate);
+            if (timeLabel) {
+              return `${firstNote} • ${timeLabel}`;
+            }
+          }
+        } catch {
+          // ignore formatting issues
+        }
+      }
+      return firstNote;
+    }
+    if (entry.due) {
+      try {
+        const dueDate = new Date(entry.due);
+        if (!Number.isNaN(dueDate.getTime())) {
+          const timeLabel = fmtTime(dueDate);
+          if (timeLabel) {
+            return `Due ${timeLabel}`;
+          }
+        }
+      } catch {
+        // ignore formatting issues
+      }
+    }
+    return 'Due now';
+  }
+
+  function adviseInstallForBackground() {
+    try {
+      const inStandaloneMode =
+        (typeof window !== 'undefined' &&
+          window.matchMedia &&
+          window.matchMedia('(display-mode: standalone)').matches) ||
+        (typeof navigator !== 'undefined' && navigator.standalone);
+      if (inStandaloneMode) {
+        return;
+      }
+    } catch {
+      // Ignore detection errors
+    }
+    toast('Tip: Add Memory Cue to your home screen so reminders can run in the background.');
+  }
+
+  function buildScheduledReminderPayload() {
+    return Object.values(scheduledReminders || {})
+      .filter((entry) => entry && typeof entry === 'object' && entry.id)
+      .map((entry) => ({
+        id: entry.id,
+        title: typeof entry.title === 'string' ? entry.title : '',
+        due: typeof entry.due === 'string' ? entry.due : null,
+        notifyAt: typeof entry.notifyAt === 'string' ? entry.notifyAt : null,
+        priority: entry.priority || 'Medium',
+        category: entry.category || DEFAULT_CATEGORY,
+        notes: typeof entry.notes === 'string' ? entry.notes : '',
+        body: buildReminderNotificationBody(entry),
+        urlPath: entry.urlPath || reminderLandingPath,
+        updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
+        notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
+      }));
+  }
+
+  function saveScheduled(){
+    try {
+      localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders));
+    } catch (error) {
+      console.warn('Failed to persist scheduled reminders', error);
+    }
+    const payload = buildScheduledReminderPayload();
+    const notificationsGranted =
+      typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    if (notificationsGranted) {
+      setupBackgroundReminderSync();
+    }
+    syncScheduledRemindersWithServiceWorker(
+      payload,
+      { requestCheck: notificationsGranted }
+    );
+  }
   function clearReminderState(id, { closeNotification = true } = {}){
     if(closeNotification){
       const active = activeNotifications.get(id);
@@ -1535,6 +3281,7 @@ export async function initReminders(sel = {}) {
       }
     }
     if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; }
+    if(reminderNotifyTimers[id]){ clearTimeout(reminderNotifyTimers[id]); delete reminderNotifyTimers[id]; }
     cancelTriggerNotification(id);
     if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); }
   }
@@ -1546,7 +3293,10 @@ export async function initReminders(sel = {}) {
       if(existing && typeof existing.close === 'function'){
         try { existing.close(); } catch {}
       }
-      const notification = new Notification(item.title,{ body:'Due now', tag:item.id });
+      const notification = new Notification(item.title,{
+        body: buildReminderNotificationBody(item),
+        tag:item.id
+      });
       activeNotifications.set(item.id, notification);
       const remove = () => {
         if(activeNotifications.get(item.id) === notification){
@@ -1576,21 +3326,10 @@ export async function initReminders(sel = {}) {
       due: item.due,
       priority: item.priority || 'Medium',
       category: item.category || DEFAULT_CATEGORY,
+      body,
       urlPath: reminderLandingPath,
     };
-    const primaryNote = typeof item.notes === 'string'
-      ? item.notes.split(/\r?\n/).find(line => line.trim()) || ''
-      : '';
-    let body = primaryNote || 'Due now';
-    try {
-      const dueDate = new Date(item.due);
-      if(!Number.isNaN(dueDate.getTime())){
-        const timeLabel = fmtTime(dueDate);
-        if(timeLabel){
-          body = primaryNote ? `${primaryNote} • ${timeLabel}` : `Due ${timeLabel}`;
-        }
-      }
-    } catch {}
+    const body = buildReminderNotificationBody(item);
     const options = { body, tag: item.id, data, renotify: true };
     if(dueTime > Date.now()){
       options.showTrigger = new Trigger(dueTime);
@@ -1607,13 +3346,35 @@ export async function initReminders(sel = {}) {
     if(!item||!item.id) return;
     item.category = normalizeCategory(item.category);
     if(!item.due || item.done){ cancelReminder(item.id); return; }
-    const stored = { id:item.id, title:item.title, due:item.due, category: item.category || DEFAULT_CATEGORY };
+    const previous = scheduledReminders[item.id] || {};
+    const stored = {
+      id:item.id,
+      title:item.title,
+      due:item.due,
+      notifyAt: typeof item.notifyAt === 'string' ? item.notifyAt : null,
+      category: item.category || DEFAULT_CATEGORY,
+      priority: item.priority || 'Medium',
+      notes: typeof item.notes === 'string' ? item.notes : '',
+      body: buildReminderNotificationBody(item),
+      urlPath: reminderLandingPath,
+      updatedAt: Date.now(),
+      viaTrigger: !!previous.viaTrigger,
+      notifiedAt: (() => {
+        const prevDue = typeof previous.due === 'string' ? previous.due : null;
+        const prevNotified = Number.isFinite(previous.notifiedAt) ? previous.notifiedAt : null;
+        return prevDue === item.due ? prevNotified : null;
+      })(),
+    };
     scheduledReminders[item.id]=stored;
     saveScheduled();
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
+    if(reminderNotifyTimers[item.id]){ clearTimeout(reminderNotifyTimers[item.id]); delete reminderNotifyTimers[item.id]; }
     if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
     const dueTime = new Date(item.due).getTime();
     if(!Number.isFinite(dueTime)) return;
+    const notifyTime = typeof item.notifyAt === 'string'
+      ? new Date(item.notifyAt).getTime()
+      : NaN;
     const delay = dueTime - Date.now();
     if(delay<=0){
       if(scheduledReminders[item.id]?.viaTrigger){
@@ -1625,6 +3386,12 @@ export async function initReminders(sel = {}) {
       return;
     }
     const useTriggers = supportsNotificationTriggers();
+    if(Number.isFinite(notifyTime) && notifyTime > Date.now() && notifyTime < dueTime){
+      const notifyDelay = notifyTime - Date.now();
+      reminderNotifyTimers[item.id] = setTimeout(() => {
+        showReminder({ ...item, due: item.due || stored.due });
+      }, notifyDelay);
+    }
     if(useTriggers){
       stored.viaTrigger = false;
       scheduleTriggerNotification(item).then((scheduled) => {
@@ -1644,12 +3411,6 @@ export async function initReminders(sel = {}) {
   }
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
 
-  const desktopPriorityClasses = {
-    High: 'bg-rose-400/80 dark:bg-rose-300/80',
-    Medium: 'bg-amber-400/80 dark:bg-amber-300/80',
-    Low: 'bg-emerald-400/80 dark:bg-emerald-300/80'
-  };
-
   function formatDesktopDue(item){
     if(!item?.due) return 'No due date';
     try {
@@ -1663,33 +3424,197 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  const PIN_TOGGLE_HANDLER_PROP = '__mcPinToggleHandler';
+  var pinToggleSyncScheduled = false;
+
+  function updatePinToggleVisualState(toggle, pinned) {
+    if (!(toggle instanceof HTMLElement)) {
+      return;
+    }
+    toggle.classList.add('reminder-title-toggle');
+    toggle.classList.toggle(PIN_TOGGLE_PINNED_CLASS, pinned);
+    toggle.classList.toggle(PIN_TOGGLE_UNPINNED_CLASS, !pinned);
+    toggle.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+  }
+
+  function bindTodayToggleListener(element) {
+    if (!(element instanceof HTMLElement)) {
+      return;
+    }
+    if (element[PIN_TOGGLE_HANDLER_PROP]) {
+      return;
+    }
+    if (!element.hasAttribute('role')) {
+      element.setAttribute('role', 'button');
+    }
+    if (!element.hasAttribute('tabindex')) {
+      element.tabIndex = 0;
+    }
+    element.classList.add('cursor-pointer');
+    const handleToggle = async (event) => {
+      if (event?.defaultPrevented) {
+        return;
+      }
+      event.stopPropagation();
+      if (typeof event?.preventDefault === 'function') {
+        event.preventDefault();
+      }
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const card = typeof target.closest === 'function' ? target.closest('[data-reminder-item]') : null;
+      const reminderId = card?.dataset?.id;
+      if (!reminderId) {
+        updatePinToggleVisualState(target, false);
+        return;
+      }
+      const nextValue = !target.classList.contains(PIN_TOGGLE_PINNED_CLASS);
+      await Promise.resolve(setReminderPinnedState(reminderId, nextValue));
+      updatePinToggleVisualState(target, nextValue);
+    };
+    const handleKeyDown = (event) => {
+      if (event?.defaultPrevented) {
+        return;
+      }
+      if (event?.key === 'Enter' || event?.key === ' ') {
+        event.preventDefault();
+        handleToggle(event);
+      }
+    };
+    element.addEventListener('click', handleToggle);
+    element.addEventListener('keydown', handleKeyDown);
+    element[PIN_TOGGLE_HANDLER_PROP] = { click: handleToggle, keydown: handleKeyDown };
+  }
+
+  function syncPinToggleStates() {
+    if (!list) {
+      return;
+    }
+    const toggles = list.querySelectorAll('[data-role="reminder-today-toggle"]');
+    if (!toggles.length) {
+      return;
+    }
+    toggles.forEach((toggle) => {
+      if (!(toggle instanceof HTMLElement)) {
+        return;
+      }
+      const card = typeof toggle.closest === 'function' ? toggle.closest('[data-reminder-item]') : null;
+      const reminderId = card?.dataset?.id;
+      if (!reminderId) {
+        updatePinToggleVisualState(toggle, false);
+        bindTodayToggleListener(toggle);
+        return;
+      }
+      const reminder = items.find((entry) => entry?.id === reminderId);
+      const pinned = !!reminder?.pinToToday;
+      updatePinToggleVisualState(toggle, pinned);
+      bindTodayToggleListener(toggle);
+    });
+  }
+
+  function schedulePinToggleSync() {
+    if (!list || pinToggleSyncScheduled) {
+      return;
+    }
+    pinToggleSyncScheduled = true;
+    const runner = () => {
+      pinToggleSyncScheduled = false;
+      syncPinToggleStates();
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(runner);
+    } else {
+      setTimeout(runner, 16);
+    }
+  }
+
+  function isReminderForTodayMobile(reminder, todayRange) {
+    if (!reminder || typeof reminder !== 'object') {
+      return false;
+    }
+    if (reminder.pinToToday === true) {
+      return true;
+    }
+    if (!reminder.due || !todayRange || !todayRange.start || !todayRange.end) {
+      return false;
+    }
+    const dueDate = new Date(reminder.due);
+    if (Number.isNaN(dueDate.getTime())) {
+      return false;
+    }
+    return dueDate >= todayRange.start && dueDate <= todayRange.end;
+  }
+
+  function filterMobileReminderRows(rows, filterMode, todayRange) {
+    if (filterMode !== 'today') {
+      return rows;
+    }
+    return Array.isArray(rows)
+      ? rows.filter((entry) => isReminderForTodayMobile(entry, todayRange))
+      : [];
+  }
+
+  function setupMobileReminderTabs() {
+    if (variant !== 'mobile' || typeof document === 'undefined') {
+      return;
+    }
+    if (setupMobileReminderTabs._wired) {
+      return;
+    }
+    const tabButtons = document.querySelectorAll('#view-reminders [data-reminders-tab]');
+    if (!tabButtons.length) {
+      return;
+    }
+    setupMobileReminderTabs._wired = true;
+
+    const syncTabUiState = () => {
+      tabButtons.forEach((button) => {
+        const mode = button.getAttribute('data-reminders-tab');
+        const isActive = mode === mobileRemindersFilterMode;
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (isActive) {
+          button.classList.add('reminders-tab-active');
+        } else {
+          button.classList.remove('reminders-tab-active');
+        }
+      });
+    };
+
+    syncTabUiState();
+    updateMobileRemindersHeaderSubtitle();
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.getAttribute('data-reminders-tab');
+        if (!mode || mode === mobileRemindersFilterMode) {
+          return;
+        }
+        mobileRemindersFilterMode = mode;
+        syncTabUiState();
+        if (Array.isArray(mobileRemindersCache)) {
+          render();
+        }
+        updateMobileRemindersHeaderSubtitle();
+      });
+    });
+  }
+
   function render(){
     const now = new Date();
     const localNow = new Date(now);
     const t0 = new Date(localNow); t0.setHours(0,0,0,0);
     const t1 = new Date(localNow); t1.setHours(23,59,59,999);
-    const w0 = startOfWeek(localNow);
-    const w1 = endOfWeek(localNow);
-    const todays = items.filter(x => {
-      if (!x.due || x.done) return false;
-      const due = new Date(x.due);
-      return due >= t0 && due <= t1;
-    });
-    const weeks  = items.filter(x => {
-      if (!x.due || x.done) return false;
-      const due = new Date(x.due);
-      return due >= w0 && due <= w1;
-    });
-    const overdueCount = items.filter(x => {
-      if (x.done || !x.due) return false;
-      return new Date(x.due) < localNow;
-    }).length;
-    const completedCount = items.filter(x => x.done).length;
-    if(countTodayEl) countTodayEl.textContent = String(todays.length);
-    if(countWeekEl) countWeekEl.textContent = String(weeks.length);
-    if(countOverdueEl) countOverdueEl.textContent = String(overdueCount);
-    if(countTotalEl) countTotalEl.textContent = String(items.length);
-    if(countCompletedEl) countCompletedEl.textContent = String(completedCount);
+    const todayRange = { start: t0, end: t1 };
+
+    clearDragHighlights();
+    sortItemsByOrder(items);
+
+    if (countTotalEl) {
+      try {
+        countTotalEl.textContent = String(items.length);
+      } catch {}
+    }
 
     items.forEach(item => {
       if (item && typeof item === 'object') {
@@ -1703,25 +3628,6 @@ export async function initReminders(sel = {}) {
       }
     });
     const allCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-
-    if (categoryFilter) {
-      const previous = categoryFilterValue;
-      categoryFilter.replaceChildren();
-      const allOption = document.createElement('option');
-      allOption.value = 'all';
-      allOption.textContent = 'All categories';
-      categoryFilter.appendChild(allOption);
-      allCategories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        categoryFilter.appendChild(option);
-      });
-      if (previous !== 'all' && !allCategories.includes(previous)) {
-        categoryFilterValue = 'all';
-      }
-      categoryFilter.value = categoryFilterValue;
-    }
 
     if (categoryDatalist) {
       const existing = new Set();
@@ -1759,106 +3665,42 @@ export async function initReminders(sel = {}) {
     }
 
     let rows = items.slice();
-    const queryStr = q?.value.trim().toLowerCase() || '';
-    if(queryStr){ rows = rows.filter(r => r.title.toLowerCase().includes(queryStr) || (r.notes||'').toLowerCase().includes(queryStr) || (r.category||'').toLowerCase().includes(queryStr)); }
-    if(categoryFilterValue && categoryFilterValue !== 'all'){
-      rows = rows.filter(r => normalizeCategory(r.category) === categoryFilterValue);
+
+    sortItemsByOrder(rows);
+
+    if (variant === 'mobile') {
+      mobileRemindersCache = rows.slice();
+      rows = filterMobileReminderRows(mobileRemindersCache, mobileRemindersFilterMode, todayRange);
+      updateMobileRemindersHeaderSubtitle();
     }
-    rows = rows.filter(r => {
-      if(filter==='done') return r.done;
-      if(filter==='overdue') return !r.done && r.due && new Date(r.due) < localNow;
-      return true;
-    });
 
-    const compareDueDate = (a, b) => {
-      const aDone = a.done ? 1 : 0;
-      const bDone = b.done ? 1 : 0;
-      if (aDone !== bDone) return aDone - bDone;
-      const aDue = a.due ? new Date(a.due).getTime() : Infinity;
-      const bDue = b.due ? new Date(b.due).getTime() : Infinity;
-      if (aDue !== bDue) return aDue - bDue;
-      const priorityDiff = priorityWeight(b.priority) - priorityWeight(a.priority);
-      if (priorityDiff) return priorityDiff;
-      return (b.updatedAt || 0) - (a.updatedAt || 0);
-    };
-
-    const comparePriority = (a, b) => {
-      const diff = priorityWeight(b.priority) - priorityWeight(a.priority);
-      if (diff) return diff;
-      return compareDueDate(a, b);
-    };
-
-    const compareCategory = (a, b) => {
-      const catA = normalizeCategory(a.category || '');
-      const catB = normalizeCategory(b.category || '');
-      const catDiff = catA.localeCompare(catB, undefined, { sensitivity: 'base' });
-      if (catDiff) return catDiff;
-      return compareDueDate(a, b);
-    };
-
-    const compareRecent = (a, b) => {
-      const createdDiff = (b.createdAt || 0) - (a.createdAt || 0);
-      if (createdDiff) return createdDiff;
-      return (b.updatedAt || 0) - (a.updatedAt || 0);
-    };
-
-    const highlightToday = sortKey === 'dueDate';
-
-    const compareMap = {
-      dueDate: compareDueDate,
-      priority: comparePriority,
-      category: compareCategory,
-      recent: compareRecent,
-    };
-
-    const activeComparator = compareMap[sortKey] || compareDueDate;
-    rows.sort(activeComparator);
-
-    filterBtns.forEach(btn => {
-      const isActive = btn.getAttribute('data-filter')===filter;
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-pressed', String(isActive));
-      if (!btn.classList.contains('btn-ghost')) {
-        btn.classList.toggle('bg-gray-900', isActive);
-        btn.classList.toggle('text-white', isActive);
-        btn.classList.toggle('border-gray-900', isActive);
-        btn.classList.toggle('dark:bg-gray-100', isActive);
-        btn.classList.toggle('dark:text-gray-900', isActive);
-        btn.classList.toggle('dark:border-gray-100', isActive);
-        btn.classList.toggle('bg-white', !isActive);
-        btn.classList.toggle('text-gray-600', !isActive);
-        btn.classList.toggle('border-gray-200', !isActive);
-        btn.classList.toggle('dark:bg-gray-800', !isActive);
-        btn.classList.toggle('dark:text-gray-400', !isActive);
-        btn.classList.toggle('dark:border-gray-700', !isActive);
-      }
-    });
+    const highlightToday = true;
 
     const hasAny = items.length > 0;
     const hasRows = rows.length > 0;
 
+    const pendingNotificationIds = (() => {
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+        return new Set();
+      }
+      const entries = Object.values(scheduledReminders || {}).filter((entry) => entry && typeof entry === 'object' && entry.id);
+      return new Set(entries.map((entry) => entry.id));
+    })();
+
     if(emptyStateEl){
-      if(!hasAny){
+      if(!hasRows){
+        const description = hasAny ? 'No reminders to show right now.' : emptyInitialText;
         if(sharedEmptyStateMount){
           sharedEmptyStateMount(emptyStateEl, {
-            icon: 'bell',
-            title: 'Create your first cue',
-            description: emptyInitialText,
-            action: `<button type="button" class="${sharedEmptyStateCtaClasses}" data-trigger="open-cue">Create reminder</button>`
+            icon: hasAny ? 'sparkles' : 'bell',
+            title: hasAny ? 'Nothing to display' : 'Create your first cue',
+            description,
+            action: hasAny
+              ? undefined
+              : `<button type="button" class="${sharedEmptyStateCtaClasses}" data-trigger="open-cue">Create reminder</button>`
           });
         } else {
-          emptyStateEl.textContent = emptyInitialText;
-        }
-        emptyStateEl.classList.remove('hidden');
-      } else if(!hasRows){
-        if(sharedEmptyStateMount){
-          sharedEmptyStateMount(emptyStateEl, {
-            icon: 'sparkles',
-            title: 'No reminders match this view',
-            description: emptyFilteredText
-          });
-        } else {
-          emptyStateEl.textContent = emptyFilteredText;
+          emptyStateEl.textContent = description;
         }
         emptyStateEl.classList.remove('hidden');
       } else {
@@ -1882,6 +3724,7 @@ export async function initReminders(sel = {}) {
         list.innerHTML = '<div class="text-muted">No reminders found.</div>';
         list.classList.remove('hidden');
       }
+      schedulePinToggleSync();
       return;
     }
 
@@ -1892,56 +3735,254 @@ export async function initReminders(sel = {}) {
 
     const shouldGroupCategories = true;
 
-    const createMobileItem = (r, catName) => {
-      const div = document.createElement('div');
-      div.className = 'task-item' + (r.done ? ' completed' : '');
+    const priorityClassTokens = ['priority-high', 'priority-medium', 'priority-low'];
+    const applyPriorityTokensToCard = (card, priorityValue) => {
+      if (!(card instanceof HTMLElement)) {
+        return;
+      }
+
+      card.classList.remove(...priorityClassTokens);
+
+      const normalized = typeof priorityValue === 'string' ? priorityValue.trim().toLowerCase() : '';
+
+      if (normalized.startsWith('h')) {
+        card.classList.add('priority-high');
+      } else if (normalized.startsWith('m')) {
+        card.classList.add('priority-medium');
+      } else if (normalized.startsWith('l')) {
+        card.classList.add('priority-low');
+      }
+    };
+
+    const createMetaChip = (label, tone = 'neutral') => {
+      const chip = document.createElement('span');
+      chip.className =
+        'desktop-reminder-chip inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/80 bg-base-200/80 px-2 py-[2px] text-[0.65rem] font-medium text-base-content/70';
+      chip.title = label;
+      chip.dataset.tone = tone;
+
+      const dot = document.createElement('span');
+      dot.className = 'desktop-reminder-chip__dot h-1.5 w-1.5 rounded-full';
+      if (tone === 'priority-high') {
+        dot.classList.add('bg-error');
+      } else if (tone === 'priority-medium') {
+        dot.classList.add('bg-warning');
+      } else if (tone === 'priority-low') {
+        dot.classList.add('bg-secondary');
+      } else if (tone === 'category') {
+        dot.classList.add('bg-primary');
+      } else {
+        dot.classList.add('bg-base-content', 'opacity-40');
+      }
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'truncate';
+      textSpan.textContent = label;
+
+      chip.append(dot, textSpan);
+      return chip;
+    };
+
+    const buildReminderCard = (reminder, catName, { elementTag, isMobile }) => {
       const summary = {
-        id: r.id,
-        title: r.title,
-        dueIso: r.due || null,
-        priority: r.priority || 'Medium',
+        id: reminder.id,
+        title: reminder.title,
+        dueIso: reminder.due || null,
+        priority: reminder.priority || 'Medium',
         category: catName,
-        done: Boolean(r.done),
+        done: Boolean(reminder.done),
+        pinToToday: reminder.pinToToday === true,
       };
-      div.dataset.category = catName;
-      // Make rows discoverable by other modules (e.g., syncing, exports)
-      div.dataset.reminder = JSON.stringify(summary);
-      div.dataset.id = summary.id;
-      div.dataset.title = summary.title;
-      div.dataset.priority = summary.priority;
-      div.dataset.done = String(summary.done);
-      if (summary.dueIso) div.dataset.due = summary.dueIso; // ISO string
+
+      const desktopCardClasses =
+        'reminder-item task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
+      const mobileCardClasses =
+        'reminder-item task-item reminder-card w-full bg-base-100 rounded-xl border border-base-200 border-l-4 shadow-sm p-4 mb-3 flex items-start justify-between gap-2 text-sm text-base-content transition hover:border-base-300 hover:bg-base-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[.98]';
+
+      const itemEl = document.createElement(elementTag);
+      itemEl.className = isMobile ? mobileCardClasses : desktopCardClasses;
+      itemEl.dataset.id = summary.id;
+      itemEl.dataset.category = summary.category;
+      itemEl.dataset.title = summary.title;
+      const priorityValue = summary.priority && String(summary.priority).trim();
+      if (priorityValue) {
+        itemEl.dataset.priority = priorityValue;
+      } else {
+        delete itemEl.dataset.priority;
+      }
+      itemEl.dataset.done = String(summary.done);
+      if (summary.dueIso) {
+        itemEl.dataset.due = summary.dueIso;
+      } else {
+        delete itemEl.dataset.due;
+      }
+      if (summary.pinToToday) {
+        itemEl.dataset.pinToToday = 'true';
+      } else {
+        delete itemEl.dataset.pinToToday;
+      }
+      itemEl.dataset.reminder = JSON.stringify(summary);
+      itemEl.dataset.orderIndex = Number.isFinite(reminder.orderIndex) ? String(reminder.orderIndex) : '';
+      itemEl.dataset.reminderItem = 'true';
+      itemEl.dataset.compact = 'true';
+      itemEl.classList.add('reminder-draggable');
+      itemEl.setAttribute('draggable', 'true');
+      itemEl.setAttribute('role', 'button');
+      itemEl.tabIndex = 0;
+      itemEl.setAttribute('aria-label', `Edit reminder: ${reminder.title}`);
+
+      applyPriorityTokensToCard(itemEl, summary.priority);
+
+      if (pendingNotificationIds.has(summary.id)) {
+        itemEl.dataset.notificationActive = 'true';
+      } else {
+        delete itemEl.dataset.notificationActive;
+      }
+
       const dueDate = summary.dueIso ? new Date(summary.dueIso) : null;
       const dueIsToday = highlightToday && dueDate && dueDate >= t0 && dueDate <= t1;
       if (dueIsToday) {
-        div.classList.add('is-today');
-        div.dataset.today = 'true';
+        itemEl.classList.add('is-today');
+        itemEl.dataset.today = 'true';
+      } else {
+        itemEl.classList.remove('is-today');
+        delete itemEl.dataset.today;
       }
-      const dueTxt = r.due ? `${fmtTime(new Date(r.due))} • ${fmtDayDate(r.due.slice(0,10))}` : 'No due date';
-      const priorityClass = `priority-${(r.priority || 'Medium').toLowerCase()}`;
-      const notesHtml = r.notes ? `<div class="task-notes">${notesToHtml(r.notes)}</div>` : '';
-      div.innerHTML = `
-        <input type="checkbox" ${r.done ? 'checked' : ''} aria-label="Mark complete" />
-        <div class="task-content">
-          <div class="task-title">${escapeHtml(r.title)}</div>
-          <div class="task-meta">
-            <div class="task-meta-row" style="gap:8px; flex-wrap:wrap;">
-              <span>${dueTxt}</span>
-              <span class="priority-badge ${priorityClass}">${r.priority}</span>
-              <span class="priority-badge" style="background:rgba(56,189,248,.14);color:#0284c7;border-color:rgba(56,189,248,.26);">${escapeHtml(catName)}</span>
-            </div>
-          </div>
-          ${notesHtml}
-        </div>
-        <div class="task-actions">
-          <button class="btn-ghost" data-edit type="button">Edit</button>
-          <button class="btn-ghost" data-del type="button">Del</button>
-        </div>`;
-      div.querySelector('input').addEventListener('change', () => toggleDone(r.id));
-      div.querySelector('[data-edit]').addEventListener('click', () => loadForEdit(r.id));
-      div.querySelector('[data-del]').addEventListener('click', () => removeItem(r.id));
-      return div;
+
+      const content = document.createElement('div');
+      content.className = 'flex min-w-0 flex-1 flex-col gap-2';
+      if (isMobile) {
+        content.classList.add('text-sm', 'text-base-content');
+      }
+
+      const titleEl = document.createElement('p');
+      titleEl.className = isMobile
+        ? 'text-base font-semibold leading-tight text-base-content'
+        : 'text-lg font-bold leading-snug text-base-content';
+      titleEl.classList.add('desktop-reminder-title');
+      if (!isMobile) {
+        titleEl.classList.add('sm:text-[0.95rem]');
+      }
+      if (summary.done) {
+        titleEl.classList.add('line-through', 'text-base-content/60');
+      }
+      if (isMobile) {
+        titleEl.dataset.reminderTitle = 'true';
+        titleEl.textContent = '';
+        const titleToggle = document.createElement('span');
+        titleToggle.dataset.role = 'reminder-today-toggle';
+        titleToggle.className = 'reminder-title-toggle cursor-pointer';
+        titleToggle.setAttribute('role', 'button');
+        titleToggle.tabIndex = 0;
+        titleToggle.textContent = reminder.title;
+        updatePinToggleVisualState(titleToggle, summary.pinToToday);
+        titleEl.appendChild(titleToggle);
+      } else {
+        titleEl.textContent = reminder.title;
+      }
+
+      let titleSlot = titleEl;
+      if (isMobile) {
+        titleSlot = document.createElement('div');
+        titleSlot.className = 'reminder-title-slot';
+        titleSlot.appendChild(titleEl);
+      }
+      content.appendChild(titleSlot);
+
+      const metaRow = document.createElement('div');
+      metaRow.className = isMobile
+        ? 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-sm text-base-content/70'
+        : 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70';
+
+      const dueLabelRaw = formatDesktopDue(reminder);
+      const dueLabel = dueLabelRaw && dueLabelRaw !== 'No due date' ? dueLabelRaw : '';
+      if (dueLabel) {
+        metaRow.appendChild(createMetaChip(dueLabel, 'due'));
+      }
+
+      const hasCustomCategory = Boolean(catName && catName !== DEFAULT_CATEGORY);
+      if (hasCustomCategory) {
+        metaRow.appendChild(createMetaChip(catName, 'category'));
+      }
+
+      if (metaRow.children.length) {
+        content.appendChild(metaRow);
+      }
+
+      itemEl.appendChild(content);
+
+      const controls = document.createElement('div');
+      controls.className = 'task-toolbar flex items-start gap-1';
+      controls.setAttribute('role', 'toolbar');
+      controls.setAttribute('aria-label', 'Reminder actions');
+      if (isMobile) {
+        controls.classList.add('flex-shrink-0');
+      }
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn';
+      if (summary.done) {
+        toggleBtn.classList.add('text-base-content/60');
+        toggleBtn.innerHTML = '<span aria-hidden="true">↺</span>';
+        toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminder.title}`);
+      } else {
+        toggleBtn.classList.add('text-success');
+        toggleBtn.innerHTML = '<span aria-hidden="true">✓</span>';
+        toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
+      }
+      toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
+      toggleBtn.setAttribute('data-reminder-control', 'toggle');
+      toggleBtn.setAttribute('data-no-swipe', 'true');
+      toggleBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleDone(summary.id);
+      });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn';
+      deleteBtn.innerHTML = '<span aria-hidden="true">🗑️</span>';
+      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
+      deleteBtn.setAttribute('data-action', 'delete');
+      deleteBtn.setAttribute('data-reminder-control', 'delete');
+      deleteBtn.setAttribute('data-no-swipe', 'true');
+      deleteBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        removeItem(summary.id);
+      });
+
+      controls.append(toggleBtn, deleteBtn);
+      itemEl.appendChild(controls);
+
+      const openReminder = () => loadForEdit(summary.id);
+      itemEl.addEventListener('click', (event) => {
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        if (target && typeof target.closest === 'function' && target.closest('[data-reminder-control]')) {
+          return;
+        }
+        openReminder();
+      });
+      itemEl.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        if (event.target !== itemEl) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openReminder();
+        }
+      });
+
+      if (isMobile) {
+        enableSwipeToDelete(itemEl, () => removeItem(summary.id));
+      }
+
+      return itemEl;
     };
+
+    const createMobileItem = (r, catName) => buildReminderCard(r, catName, { elementTag: 'div', isMobile: true });
 
     if (variant !== 'desktop' && !shouldGroupCategories) {
       rows.forEach((r) => {
@@ -1963,107 +4004,41 @@ export async function initReminders(sel = {}) {
     const sortedGroups = Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }));
     let firstGroup = true;
     sortedGroups.forEach(([catName, catRows]) => {
-      const headingWrapper = document.createElement(listIsSemantic ? 'li' : 'div');
-      headingWrapper.dataset.categoryHeading = catName;
-      if (listIsSemantic) {
-        headingWrapper.setAttribute('role', 'presentation');
-        headingWrapper.style.listStyle = 'none';
+      if (catName !== DEFAULT_CATEGORY) {
+        const headingWrapper = document.createElement(listIsSemantic ? 'li' : 'div');
+        headingWrapper.dataset.categoryHeading = catName;
+        if (listIsSemantic) {
+          headingWrapper.setAttribute('role', 'presentation');
+          headingWrapper.style.listStyle = 'none';
+        }
+        headingWrapper.className = variant === 'desktop'
+          ? 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500'
+          : 'text-xs font-semibold uppercase text-gray-500 dark:text-gray-500';
+        if (!firstGroup) {
+          headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
+        }
+        const headingInner = document.createElement('div');
+        headingInner.setAttribute('role', 'heading');
+        headingInner.setAttribute('aria-level', '3');
+        headingInner.className = variant === 'desktop'
+          ? 'flex items-center justify-between gap-2 px-1 text-gray-500 dark:text-gray-500'
+          : 'flex items-center justify-between gap-2 text-gray-500 dark:text-gray-500';
+        const headingLabel = document.createElement('span');
+        headingLabel.textContent = catName;
+        const headingCount = document.createElement('span');
+        headingCount.className = 'text-[0.7rem] font-medium text-gray-500 dark:text-gray-500';
+        headingCount.textContent = `${catRows.length} ${catRows.length === 1 ? 'item' : 'items'}`;
+        headingInner.append(headingLabel, headingCount);
+        headingWrapper.appendChild(headingInner);
+        frag.appendChild(headingWrapper);
       }
-      headingWrapper.className = variant === 'desktop'
-        ? 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500'
-        : 'text-xs font-semibold uppercase text-gray-500 dark:text-gray-500';
-      if (!firstGroup) {
-        headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
-      }
-      const headingInner = document.createElement('div');
-      headingInner.setAttribute('role', 'heading');
-      headingInner.setAttribute('aria-level', '3');
-      headingInner.className = variant === 'desktop'
-        ? 'flex items-center justify-between gap-2 px-1 text-gray-500 dark:text-gray-500'
-        : 'flex items-center justify-between gap-2 text-gray-500 dark:text-gray-500';
-      const headingLabel = document.createElement('span');
-      headingLabel.textContent = catName;
-      const headingCount = document.createElement('span');
-      headingCount.className = 'text-[0.7rem] font-medium text-gray-500 dark:text-gray-500';
-      headingCount.textContent = `${catRows.length} ${catRows.length === 1 ? 'item' : 'items'}`;
-      headingInner.append(headingLabel, headingCount);
-      headingWrapper.appendChild(headingInner);
-      frag.appendChild(headingWrapper);
 
       catRows.forEach(r => {
         if(variant === 'desktop'){
-          const itemEl = document.createElement(listIsSemantic ? 'li' : 'div');
-          const summary = {
-            id: r.id,
-            title: r.title,
-            dueIso: r.due || null,
-            priority: r.priority || 'Medium',
-            category: catName,
-            done: Boolean(r.done),
-          };
-          itemEl.dataset.id = summary.id;
-          itemEl.dataset.category = summary.category;
-          itemEl.dataset.title = summary.title;
-          itemEl.dataset.priority = summary.priority;
-          itemEl.dataset.done = String(summary.done);
-          if (summary.dueIso) itemEl.dataset.due = summary.dueIso;
-          itemEl.dataset.reminder = JSON.stringify(summary);
-          itemEl.className = 'card bg-base-100 shadow-xl w-full lg:w-96 border border-base-200';
-          const dueLabel = formatDesktopDue(r);
-          const priorityIndicatorClass = desktopPriorityClasses[r.priority] || desktopPriorityClasses.Medium;
-          const titleClasses = r.done ? 'line-through text-base-content/50' : 'text-base-content';
-          const statusLabel = r.done ? 'Completed' : 'Active';
-          const priorityBadgeClass = r.priority === 'High'
-            ? 'badge badge-outline border-error text-error'
-            : r.priority === 'Medium'
-              ? 'badge badge-outline border-warning text-warning'
-              : 'badge badge-outline border-success text-success';
-          const statusBadgeClass = r.done
-            ? 'badge badge-outline border-success text-success'
-            : 'badge badge-outline border-neutral text-neutral';
-          const toggleClasses = r.done
-            ? 'btn btn-sm btn-outline'
-            : 'btn btn-sm btn-outline btn-success';
-          const notesHtml = r.notes ? `<p class="text-sm leading-relaxed text-base-content/70">${notesToHtml(r.notes)}</p>` : '';
-          itemEl.innerHTML = `
-    <div class="card-body gap-4">
-      <div class="flex items-start justify-between gap-3">
-        <div class="space-y-3">
-          <h3 class="card-title text-base sm:text-lg font-semibold ${titleClasses}">${escapeHtml(r.title)}</h3>
-          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-base-content/70">
-            <span class="badge badge-outline gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-              ${escapeHtml(dueLabel)}
-            </span>
-            <span class="badge badge-outline border-primary text-primary gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full bg-sky-400"></span>
-              ${escapeHtml(catName)}
-            </span>
-            <span class="${priorityBadgeClass} gap-2 text-[0.7rem] sm:text-xs">
-              <span class="h-2 w-2 rounded-full ${priorityIndicatorClass}"></span>
-              ${escapeHtml(r.priority)} priority
-            </span>
-            <span class="${statusBadgeClass} text-[0.7rem] sm:text-xs">${statusLabel}</span>
-          </div>
-        </div>
-        <div class="dropdown dropdown-end">
-          <button type="button" tabindex="0" class="btn btn-ghost btn-circle btn-sm" aria-label="Cue actions">
-            <span class="text-xl leading-none">⋮</span>
-          </button>
-          <ul tabindex="0" class="dropdown-content menu menu-sm p-2 shadow bg-base-100 rounded-box w-40">
-            <li><button type="button" data-action="edit" class="justify-start">Edit</button></li>
-            <li><button type="button" data-action="delete" class="justify-start text-error">Delete</button></li>
-          </ul>
-        </div>
-      </div>
-      ${notesHtml}
-      <div class="card-actions justify-end">
-        <button data-action="toggle" type="button" class="${toggleClasses}">${r.done ? 'Mark active' : 'Mark done'}</button>
-      </div>
-    </div>`;
-          itemEl.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleDone(r.id));
-          itemEl.querySelector('[data-action="edit"]').addEventListener('click', () => loadForEdit(r.id));
-          itemEl.querySelector('[data-action="delete"]').addEventListener('click', () => removeItem(r.id));
+          const itemEl = buildReminderCard(r, catName, {
+            elementTag: listIsSemantic ? 'li' : 'div',
+            isMobile: false,
+          });
           frag.appendChild(itemEl);
           return;
         }
@@ -2074,6 +4049,8 @@ export async function initReminders(sel = {}) {
       firstGroup = false;
     });
     list.appendChild(frag);
+    syncDetailSelection();
+    schedulePinToggleSync();
   }
 
   function closeMenu(){ moreBtn?.setAttribute('aria-expanded','false'); moreMenu?.classList.add('hidden'); }
@@ -2086,11 +4063,13 @@ export async function initReminders(sel = {}) {
   });
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
-  openSettings?.addEventListener('click', () => {
-    const willShow = settingsSection?.classList.contains('hidden');
-    settingsSection?.classList.toggle('hidden');
-    if(willShow) settingsSection?.scrollIntoView({ behavior:'smooth', block:'start' });
-    closeMenu();
+  openSettingsBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const willShow = settingsSection?.classList.contains('hidden');
+      settingsSection?.classList.toggle('hidden');
+      if (willShow) settingsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      closeMenu();
+    });
   });
   document.addEventListener('DOMContentLoaded', () => { settingsSection?.classList.add('hidden'); });
 
@@ -2098,20 +4077,27 @@ export async function initReminders(sel = {}) {
     // Debug: log when save handler invoked to help trace click issues
     try { console.log('handleSaveAction invoked', { editingId, title: title?.value }); } catch (e) {}
 
+    const rawTitle = typeof title?.value === 'string' ? title.value : '';
+    const trimmedTitle = rawTitle.trim();
+    const dateValue = typeof date?.value === 'string' ? date.value : '';
+    const timeValue = typeof time?.value === 'string' ? time.value : '';
+    const plannerLinkId = typeof plannerLessonInput?.value === 'string' ? plannerLessonInput.value.trim() : '';
+
     if(editingId){
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }
-      const tNew = title.value.trim(); if(!tNew){ toast('Add a reminder title'); return; }
+      if(!trimmedTitle){ toast('Add a reminder title'); return; }
       let due=null;
-      if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
-      else { const p=parseQuickWhen(tNew); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-      it.title = tNew;
+      if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
+      else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+      it.title = trimmedTitle;
       const nextPriority = getPriorityInputValue();
       it.priority = nextPriority;
       setPriorityInputValue(nextPriority);
       if(categoryInput){ it.category = normalizeCategory(categoryInput.value); }
       it.due = due;
       if(details){ it.notes = details.value.trim(); }
+      it.plannerLessonId = plannerLinkId || null;
       it.updatedAt=Date.now();
       saveToFirebase(it);
       tryCalendarSync(it);
@@ -2128,13 +4114,40 @@ export async function initReminders(sel = {}) {
       dispatchCueEvent('cue:close', { reason: 'updated' });
       return;
     }
-    const t = title.value.trim(); if(!t){ toast('Add a reminder title'); return; }
+    if(!trimmedTitle){ toast('Add a reminder title'); return; }
     const noteText = details ? details.value.trim() : '';
     let due=null;
-    if(date.value || time.value){ const d=(date.value || todayISO()); const tm=(time.value || '09:00'); due = localDateTimeToISO(d,tm); }
-    else { const p=parseQuickWhen(t); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
-    addItem({ title:t, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText });
-    title.value=''; time.value=''; if(details) details.value='';
+    if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
+    else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+    const plannerLessonDetail = plannerLinkId
+      ? {
+          lessonId: plannerLinkId,
+          dayLabel: plannerLessonInput?.dataset?.lessonDayLabel || '',
+          lessonTitle: plannerLessonInput?.dataset?.lessonTitle || '',
+          summary: plannerLessonInput?.dataset?.lessonSummary || '',
+        }
+      : null;
+    const createdItem = addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText, plannerLessonId: plannerLinkId || null });
+    if (createdItem) {
+      if (plannerLessonDetail) {
+        toast('Planner reminder created');
+        dispatchCueEvent('planner:reminderCreated', {
+          lessonId: plannerLessonDetail.lessonId,
+          dayLabel: plannerLessonDetail.dayLabel,
+          lessonTitle: plannerLessonDetail.lessonTitle,
+          summary: plannerLessonDetail.summary,
+          reminderId: createdItem.id,
+          reminderTitle: createdItem.title,
+          reminderDue: createdItem.due || null,
+        });
+      } else {
+        toast('Reminder created');
+      }
+    }
+    if(title) title.value='';
+    if(time) time.value='';
+    if(details) details.value='';
+    clearPlannerReminderContext();
     dispatchCueEvent('cue:close', { reason: 'created' });
   }
 
@@ -2144,28 +4157,13 @@ export async function initReminders(sel = {}) {
 
   title?.addEventListener('input', debounce(updateDateFeedback,300));
   cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); dispatchCueEvent('cue:close', { reason: 'edit-cancelled' }); });
+  detailClearBtn?.addEventListener('click', () => { resetForm(); });
   document.addEventListener('cue:cancelled', () => { resetForm(); });
   document.addEventListener('cue:prepare', () => { resetForm(); });
-  window.addEventListener('load', ()=> title?.focus());
-  q?.addEventListener('input', debounce(render,150));
-  sortSel?.addEventListener('change', () => {
-    const selected = sortSel.value;
-    sortKey = SORT_ALIASES.get(selected) || selected || 'dueDate';
-    if (!SORT_OPTIONS.has(sortKey)) {
-      sortKey = 'dueDate';
-    }
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem(SORT_STORAGE_KEY, sortKey);
-      } catch {
-        // Ignore storage persistence errors (quota, private mode, etc.).
-      }
-    }
-    render();
+  document.addEventListener('planner:prefillReminder', (event) => {
+    applyPlannerReminderPrefill(event?.detail || {});
   });
-  categoryFilter?.addEventListener('change', () => { categoryFilterValue = categoryFilter.value || 'all'; render(); });
-  filterBtns.forEach(b => b.addEventListener('click', ()=>{ filter = b.getAttribute('data-filter'); render(); }));
-
+  window.addEventListener('load', ()=> title?.focus());
   copyMtlBtn?.addEventListener('click', () => {
     const lines = items.filter(x=>!x.done).map(x=>{ const datePart = x.due ? fmtDayDate(x.due.slice(0,10)) : ''; const timePart = x.due ? new Date(x.due).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit', timeZone: TZ}) : ''; const pieces = [ 'mtl '+x.title, x.due ? `Due Date: ${datePart}` : '', x.due ? `Time: ${timePart}` : '', `Status: Not started` ].filter(Boolean); return pieces.join('\n'); });
     if(lines.length===0){ toast('No active tasks to copy'); return; }
@@ -2179,9 +4177,28 @@ export async function initReminders(sel = {}) {
     rd.onload = () => {
       try {
         const importedItems = JSON.parse(String(rd.result) || '[]').slice(0,500);
-        importedItems.forEach(item => { item.id = uid(); item.category = normalizeCategory(item.category); item.pendingSync = !userId; items=[item,...items]; saveToFirebase(item); });
+        const newlyAdded = [];
+        importedItems.forEach(item => {
+          const entry = {
+            ...item,
+            id: uid(),
+            category: normalizeCategory(item.category),
+            pendingSync: !userId,
+            orderIndex: null,
+          };
+          assignOrderIndexForNewItem(entry, { position: 'start' });
+          items = [entry, ...items];
+          newlyAdded.push(entry);
+        });
+        sortItemsByOrder(items);
+        const rebalanced = maybeRebalanceOrderSpacing(items);
         render();
         persistItems();
+        if (rebalanced) {
+          items.forEach((entry) => saveToFirebase(entry));
+        } else {
+          newlyAdded.forEach((entry) => saveToFirebase(entry));
+        }
         toast('Import successful');
       } catch { toast('Invalid JSON'); }
     };
@@ -2216,16 +4233,28 @@ export async function initReminders(sel = {}) {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
     if(Notification.permission === 'granted'){
       toast('Notifications enabled');
-      if(supportsNotificationTriggers()) ensureServiceWorkerRegistration();
+      if(supportsNotificationTriggers()) {
+        ensureServiceWorkerRegistration();
+      } else {
+        setupBackgroundReminderSync();
+        adviseInstallForBackground();
+      }
       rescheduleAllReminders();
+      render();
       return;
     }
     try {
       const perm = await Notification.requestPermission();
       if(perm==='granted'){
         toast('Notifications enabled');
-        if(supportsNotificationTriggers()) ensureServiceWorkerRegistration();
+        if(supportsNotificationTriggers()) {
+          ensureServiceWorkerRegistration();
+        } else {
+          setupBackgroundReminderSync();
+          adviseInstallForBackground();
+        }
         rescheduleAllReminders();
+        render();
       } else {
         toast('Notifications blocked');
       }
@@ -2234,6 +4263,46 @@ export async function initReminders(sel = {}) {
     }
   });
 
+  setupMobileReminderTabs();
+  if (variant === 'mobile') {
+    // Only request geolocation in response to a user gesture to avoid browser
+    // 'Only request geolocation information in response to a user gesture' violations.
+    const triggerTempOnce = () => {
+      try {
+        fetchAndUpdateMobileTemperature();
+      } catch (e) {
+        console.warn('fetchAndUpdateMobileTemperature failed', e);
+      }
+    };
+
+    const addGestureListeners = () => {
+      // Use once:true so listeners remove themselves after firing
+      window.addEventListener('pointerdown', triggerTempOnce, { passive: true, once: true });
+      window.addEventListener('touchstart', triggerTempOnce, { passive: true, once: true });
+      window.addEventListener('click', triggerTempOnce, { passive: true, once: true });
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.permissions && typeof navigator.permissions.query === 'function') {
+      // If permission already granted, it's OK to call immediately; otherwise wait for a gesture
+      try {
+        navigator.permissions
+          .query({ name: 'geolocation' })
+          .then((perm) => {
+            if (perm && perm.state === 'granted') {
+              triggerTempOnce();
+            } else {
+              addGestureListeners();
+            }
+          })
+          .catch(() => addGestureListeners());
+      } catch (e) {
+        addGestureListeners();
+      }
+    } else {
+      addGestureListeners();
+    }
+  }
+  setupDragAndDrop();
   rescheduleAllReminders();
   render();
   persistItems();
@@ -2248,6 +4317,8 @@ export async function initReminders(sel = {}) {
         items = Array.isArray(listItems)
           ? listItems.map(item => ({ ...item, category: normalizeCategory(item?.category) }))
           : [];
+        items = ensureOrderIndicesInitialized(items);
+        sortItemsByOrder(items);
         render();
       },
       render,

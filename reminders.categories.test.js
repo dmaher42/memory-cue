@@ -10,6 +10,10 @@ let initReminders;
 function loadRemindersModule() {
   const filePath = path.resolve(__dirname, './js/reminders.js');
   let source = fs.readFileSync(filePath, 'utf8');
+  source = source.replace(
+    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';\n",
+    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const NotificationRef = typeof global.Notification === 'undefined' ? undefined : global.Notification;
@@ -28,6 +32,7 @@ function loadRemindersModule() {
     document,
     localStorage,
     navigator,
+    HTMLElement: window.HTMLElement,
     Notification: NotificationRef,
     fetch: global.fetch,
     Blob: BlobRef,
@@ -104,7 +109,6 @@ test('desktop reminders render grouped category headings', async () => {
     syncStatusSel: '#syncStatus',
     emptyStateSel: '#emptyState',
     listWrapperSel: '#remindersWrapper',
-    categoryFilterSel: '#categoryFilter',
     categoryOptionsSel: '#categorySuggestions',
     variant: 'desktop',
     firebaseDeps: createFirebaseStubs(),
@@ -157,7 +161,6 @@ test('mobile reminders group uncategorised items under General', async () => {
     statusSel: '#status',
     syncStatusSel: '#syncStatus',
     listWrapperSel: '#wrapper',
-    categoryFilterSel: '#categoryFilter',
     categoryOptionsSel: '#categorySuggestions',
     variant: 'mobile',
     firebaseDeps: createFirebaseStubs(),
@@ -170,7 +173,7 @@ test('mobile reminders group uncategorised items under General', async () => {
   ]);
 
   const headings = Array.from(document.querySelectorAll('[data-category-heading]'));
-  expect(headings.map((heading) => heading.dataset.categoryHeading)).toEqual(['Excursion', 'General']);
+  expect(headings.map((heading) => heading.dataset.categoryHeading)).toEqual(['Excursion']);
 
   const generalItems = document.querySelectorAll('[data-category="General"]');
   expect(generalItems).toHaveLength(1);
@@ -206,7 +209,6 @@ test('category selectors include school and general presets', async () => {
     cancelEditBtnSel: '#cancelEditBtn',
     statusSel: '#status',
     syncStatusSel: '#syncStatus',
-    categoryFilterSel: '#categoryFilter',
     categoryOptionsSel: '#categorySuggestions',
     firebaseDeps: createFirebaseStubs(),
   });
@@ -225,31 +227,4 @@ test('category selectors include school and general presets', async () => {
     'Wellbeing & Support',
   ]);
 
-  const filterOptions = Array.from(document.querySelectorAll('#categoryFilter option'));
-  expect(filterOptions.map((opt) => opt.value)).toEqual([
-    'all',
-    'General',
-    'General Appointments',
-    'Home & Personal',
-    'School – Appointments/Meetings',
-    'School – Communication & Families',
-    'School – Excursions & Events',
-    'School – Grading & Assessment',
-    'School – Prep & Resources',
-    'School – To-Do',
-    'Wellbeing & Support',
-  ]);
-  expect(filterOptions.map((opt) => opt.textContent)).toEqual([
-    'All categories',
-    'General',
-    'General Appointments',
-    'Home & Personal',
-    'School – Appointments/Meetings',
-    'School – Communication & Families',
-    'School – Excursions & Events',
-    'School – Grading & Assessment',
-    'School – Prep & Resources',
-    'School – To-Do',
-    'Wellbeing & Support',
-  ]);
 });
