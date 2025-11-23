@@ -53,6 +53,7 @@ const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
   const overrides = {
     id: typeof row.id === 'string' && row.id ? row.id : undefined,
     updatedAt: typeof row[updatedAtColumn] === 'string' ? row[updatedAtColumn] : undefined,
+    folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
   };
   return createNote(row.title, row.body, overrides);
 };
@@ -89,11 +90,12 @@ export const initNotesSync = (options = {}) => {
       ? notes.filter((note) => note && typeof note.id === 'string')
       : [];
 
-    const payload = sanitized.map((note) => ({
+      const payload = sanitized.map((note) => ({
       id: note.id,
       [userColumn]: currentUserId,
       title: note.title,
       body: note.body,
+      folder_id: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
       [updatedAtColumn]: typeof note.updatedAt === 'string' && note.updatedAt
         ? note.updatedAt
         : new Date().toISOString(),
@@ -132,7 +134,7 @@ export const initNotesSync = (options = {}) => {
     try {
       const { data, error } = await client
         .from(tableName)
-        .select(`id,title,body,${updatedAtColumn}`)
+        .select(`id,title,body,folder_id,${updatedAtColumn}`)
         .eq(userColumn, currentUserId);
       if (error) {
         throw error;

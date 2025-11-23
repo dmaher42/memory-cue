@@ -1,4 +1,5 @@
 const NOTES_STORAGE_KEY = 'memoryCueNotes';
+const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
 const LEGACY_NOTE_KEYS = ['mobileNotes'];
 
 const hasLocalStorage = () => typeof localStorage !== 'undefined';
@@ -70,6 +71,7 @@ export const createNote = (title, body, overrides = {}) => {
       overrides.updatedAt && isValidDateString(overrides.updatedAt)
         ? overrides.updatedAt
         : new Date().toISOString(),
+    folderId: overrides.folderId && typeof overrides.folderId === 'string' ? overrides.folderId : null,
   };
 };
 
@@ -92,6 +94,7 @@ const normalizeNotes = (value) => {
           title: title || 'Untitled note',
           body,
           updatedAt,
+          folderId: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
         };
       })
       .filter(Boolean);
@@ -108,6 +111,7 @@ const normalizeNotes = (value) => {
       createNote(title, body, {
         id: typeof value.id === 'string' ? value.id : undefined,
         updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : undefined,
+        folderId: typeof value.folderId === 'string' ? value.folderId : undefined,
       }),
     ];
   }
@@ -186,7 +190,12 @@ export const saveAllNotes = (notes, options = {}) => {
 
   const serializable = notes.map((note) => {
     const normalized = normalizeNotes([note]);
-    return normalized[0];
+    // Ensure folderId is present in exported object
+    const out = normalized[0];
+    if (out) {
+      out.folderId = typeof note.folderId === 'string' && note.folderId ? note.folderId : out.folderId || null;
+    }
+    return out;
   }).filter(Boolean);
 
   try {
@@ -210,3 +219,67 @@ export const saveAllNotes = (notes, options = {}) => {
 };
 
 export { NOTES_STORAGE_KEY };
+
+// Folders API
+const defaultFolders = () => [{ id: 'unsorted', name: 'Unsorted' }];
+
+export const getFolders = () => {
+  if (!hasLocalStorage()) {
+    return defaultFolders();
+  }
+  try {
+    const raw = localStorage.getItem(FOLDERS_STORAGE_KEY);
+    if (typeof raw === 'string') {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed.map((f) => ({ id: String(f.id), name: String(f.name) }));
+      }
+    }
+  } catch (e) {
+    // fall through to return default
+  }
+  return defaultFolders();
+};
+
+export const saveFolders = (folders) => {
+  if (!hasLocalStorage() || !Array.isArray(folders)) {
+    return false;
+  }
+  try {
+    const sanitized = folders
+      .filter((f) => f && typeof f.id === 'string' && f.id.trim())
+      .map((f) => ({ id: f.id, name: typeof f.name === 'string' ? f.name : String(f.id) }));
+    if (!sanitized.length) {
+      // always ensure at least the unsorted folder exists
+      sanitized.push(...defaultFolders());
+    }
+    localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(sanitized));
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+export const assignNoteToFolder = (noteId, folderId) => {
+  if (!noteId || typeof noteId !== 'string') {
+    return false;
+  }
+  const notes = loadAllNotes();
+  let changed = false;
+  const newNotes = notes.map((n) => {
+    if (n.id === noteId) {
+      changed = true;
+      return {
+        ...n,
+        folderId: folderId && typeof folderId === 'string' ? folderId : null,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return n;
+  });
+  if (!changed) {
+    return false;
+  }
+  const saved = saveAllNotes(newNotes);
+  return saved;
+};
