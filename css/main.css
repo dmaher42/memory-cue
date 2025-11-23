@@ -261,3 +261,62 @@ select:focus {
   font-size: 0.78rem;
   margin-bottom: 6px;
 }
+
+/* Priority pill selectors */
+.priority-pill-row {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.priority-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.02);
+  color: var(--primary-dark);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 180ms ease, color 180ms ease, transform 120ms ease, border-color 180ms ease;
+}
+
+/* Selected state when the hidden radio is checked */
+.priority-input:checked + .priority-pill,
+.priority-pill:has(+ .priority-input:checked) {
+  /* support for input before label; fallback included */
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+
+/* Also handle case where label immediately follows input (most cases) */
+input.priority-input:checked + label.priority-pill {
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+
+/* Focus state for keyboard users */
+.priority-input:focus + .priority-pill,
+input.priority-input:focus + label.priority-pill {
+  box-shadow: 0 6px 18px rgba(82, 45, 112, 0.18);
+  transform: translateY(-1px);
+}

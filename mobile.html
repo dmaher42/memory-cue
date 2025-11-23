@@ -5738,13 +5738,18 @@
                 <option value="Medium" selected>Medium</option>
                 <option value="Low">Low</option>
               </select>
-              <!-- BEGIN GPT CHANGE: priority chips -->
-              <fieldset id="priorityChips" aria-label="Priority" class="chip-row">
-                <label><input type="radio" name="priority" value="High"> High</label>
-                <label><input type="radio" name="priority" value="Medium" checked> Medium</label>
-                <label><input type="radio" name="priority" value="Low"> Low</label>
+              <!-- BEGIN GPT CHANGE: priority pill selectors -->
+              <fieldset id="priorityChips" aria-label="Priority" class="priority-pill-row" role="radiogroup">
+                <input class="priority-input" type="radio" id="priority-high" name="priority" value="High" aria-label="High priority">
+                <label class="priority-pill" for="priority-high">High</label>
+
+                <input class="priority-input" type="radio" id="priority-medium" name="priority" value="Medium" checked aria-label="Medium priority">
+                <label class="priority-pill" for="priority-medium">Medium</label>
+
+                <input class="priority-input" type="radio" id="priority-low" name="priority" value="Low" aria-label="Low priority">
+                <label class="priority-pill" for="priority-low">Low</label>
               </fieldset>
-              <!-- END GPT CHANGE: priority chips -->
+              <!-- END GPT CHANGE: priority pill selectors -->
             </div>
             <div class="space-y-1">
               <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="category">Category</label>
