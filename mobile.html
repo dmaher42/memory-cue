@@ -2064,17 +2064,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 999px;
-    background: var(--card-bg);
-    color: var(--text-secondary);
-    box-shadow: var(--shadow-sm);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.08);
     font-size: 0.85rem;
     font-family: var(--font-primary);
     font-weight: 500;
-    border: 1px solid var(--card-border);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+    color: var(--accent-color);
   }
 
   #mobile-nav-shell .floating-card:hover,
@@ -2084,19 +2084,52 @@
     outline: none;
   }
 
+  #mobile-nav-shell .floating-card:active {
+    transform: scale(0.94);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.12);
+  }
+
   #mobile-nav-shell .floating-card span.icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 1.15rem;
-    color: var(--accent-color);
+    color: inherit;
   }
 
   .header-pill svg,
   .nav-card svg,
   .fab-card svg,
   .floating-card svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Secondary view buttons: clock + notebook */
+  .floating-card.btn-reminders,
+  .floating-card.btn-notebook {
+    background-color: var(--surface-elevated);
+    border-color: var(--border-subtle);
     color: var(--accent-color);
+  }
+
+  .floating-card.btn-reminders svg,
+  .floating-card.btn-notebook svg {
+    color: var(--accent-color);
+  }
+
+  /* Primary create buttons: plus + pencil */
+  .floating-card.btn-new-reminder,
+  .floating-card.btn-new-note {
+    background-color: var(--accent-color);
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(81, 38, 99, 0.22);
+    color: #ffffff;
+  }
+
+  .floating-card.btn-new-reminder svg,
+  .floating-card.btn-new-note svg {
+    color: #ffffff;
   }
 
   #mobile-nav-shell .floating-fab {
@@ -5087,7 +5120,7 @@
     <div class="floating-footer">
       <button
         type="button"
-        class="floating-card"
+        class="floating-card btn-reminders"
         data-nav-target="reminders"
         aria-label="Go to Reminders"
       >
@@ -5101,25 +5134,44 @@
 
       <button
         type="button"
-        class="floating-card"
+        class="floating-card btn-new-reminder"
         data-nav-target="new"
         aria-label="Add reminder"
       >
         <span class="icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14" />
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
           </svg>
         </span>
       </button>
 
       <button
         type="button"
-        class="floating-card"
+        class="floating-card btn-new-note"
         data-nav-target="add-note"
         aria-label="Add note"
       >
         <span class="icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M4 17.5V20h2.5L17 9.5 14.5 7 4 17.5z" />
             <path d="M13.5 8.5l2 2" />
           </svg>
@@ -5128,7 +5180,7 @@
 
       <button
         type="button"
-        class="floating-card"
+        class="floating-card btn-notebook"
         data-nav-target="notebook"
         aria-label="Go to Notes"
       >
@@ -5175,6 +5227,19 @@
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
 
+        const triggerAddReminder = () => {
+          const addBtn = document.getElementById('addReminderBtn');
+          if (addBtn) {
+            addBtn.click();
+            return;
+          }
+
+          const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+          if (quickAdd && typeof quickAdd.focus === 'function') {
+            quickAdd.focus();
+          }
+        };
+
         if (view === 'add-note') {
           window.dispatchEvent(
             new CustomEvent('app:navigate', {
@@ -5182,6 +5247,16 @@
             })
           );
           focusNotebookInputs();
+          return;
+        }
+
+        if (view === 'new') {
+          window.dispatchEvent(
+            new CustomEvent('app:navigate', {
+              detail: { view }
+            })
+          );
+          triggerAddReminder();
           return;
         }
 
