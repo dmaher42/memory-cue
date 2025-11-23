@@ -1042,6 +1042,8 @@
 
     #slimMobileHeader svg {
       color: var(--accent-color);
+      width: 22px;
+      height: 22px;
     }
 
     /* Pill container in the header for quick‑add and icons */
@@ -1056,6 +1058,11 @@
       border-radius: 9999px;
       box-shadow: 0 2px 6px rgba(81, 38, 99, 0.15);
       color: var(--text-main);
+    }
+
+    #slimMobileHeader .header-pill svg {
+      width: 20px;
+      height: 20px;
     }
 
     /* Style the quick reminder input inside the pill */
@@ -1667,8 +1674,14 @@
     }
 
     .formatting-btn svg {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .format-toolbar svg,
+    .editor-toolbar svg {
+      width: 18px;
+      height: 18px;
     }
 
     .formatting-btn:hover {
@@ -2046,18 +2059,21 @@
 
   #mobile-nav-shell .floating-footer {
     pointer-events: auto;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
+    justify-content: center;
     align-items: center;
-    justify-items: center;
-    gap: 0.85rem;
+    gap: 24px;
     width: min(640px, 100%);
-    padding: 0.65rem 1rem;
+    padding: 6px 1rem 12px;
     margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
     background: transparent;
     backdrop-filter: none;
     border-radius: 1rem;
     box-shadow: none;
+  }
+
+  #mobile-nav-shell .floating-footer .floating-card {
+    flex-shrink: 0;
   }
 
   #mobile-nav-shell .floating-card {
