@@ -1,6 +1,10 @@
+// Planner data store and timetable helpers for weekly lesson planning and slot generation.
 const PLANNER_STORAGE_KEY = 'memoryCue:plannerPlans';
+const TIMETABLE_STORAGE_KEY = 'memoryCue:plannerTimetable';
 const PLANNER_UPDATED_EVENT = 'memoryCue:plannerUpdated';
+const PLANNER_TIMETABLE_UPDATED_EVENT = 'memoryCue:plannerTimetableUpdated';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const TIMETABLE_DAY_NAMES = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
 const hasLocalStorage = () => {
   try {
@@ -114,8 +118,33 @@ const resolveDayIndexFromName = (value) => {
   return matchIndex >= 0 ? matchIndex : 0;
 };
 
+const resolveTimetableDayIndex = (value) => {
+  if (typeof value !== 'string') {
+    return 1;
+  }
+  const target = value.trim().toLowerCase();
+  const matchIndex = TIMETABLE_DAY_NAMES.indexOf(target);
+  return matchIndex >= 0 ? matchIndex + 1 : 1;
+};
+
 const LESSON_STATUS_OPTIONS = new Set(['not_started', 'in_progress', 'ready', 'taught']);
 const LESSON_TEMPLATE_TYPES = new Set(['simple', 'hpe', 'english', 'cac', 'custom']);
+
+const normaliseTimetableEntry = (entry) => {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const id = typeof entry.id === 'string' && entry.id.trim() ? entry.id : generateId();
+  const day = typeof entry.day === 'string' && entry.day.trim() ? entry.day.trim().toLowerCase() : 'monday';
+  const dayIndex = resolveTimetableDayIndex(day);
+  const period = typeof entry.period === 'string' ? entry.period.trim() : '';
+  const className = typeof entry.className === 'string' ? entry.className.trim() : '';
+  const subject = typeof entry.subject === 'string' ? entry.subject.trim() : '';
+  if (!className) {
+    return null;
+  }
+  return { id, day, dayIndex, period, className, subject };
+};
 
 const normaliseDetail = (detail) => {
   if (!detail || typeof detail !== 'object') {
@@ -207,6 +236,16 @@ const normaliseLesson = (lesson, fallback = {}) => {
     : typeof defaults.period === 'string'
       ? defaults.period.trim()
       : '';
+  const timetableEntryId = typeof lesson?.timetableEntryId === 'string' && lesson.timetableEntryId.trim()
+    ? lesson.timetableEntryId.trim()
+    : typeof defaults.timetableEntryId === 'string' && defaults.timetableEntryId.trim()
+      ? defaults.timetableEntryId.trim()
+      : '';
+  const weekStartDate = typeof lesson?.weekStartDate === 'string' && lesson.weekStartDate
+    ? lesson.weekStartDate
+    : typeof defaults.weekStartDate === 'string'
+      ? defaults.weekStartDate
+      : '';
   return {
     id,
     dayIndex,
@@ -221,6 +260,8 @@ const normaliseLesson = (lesson, fallback = {}) => {
     resources,
     weekDay,
     period,
+    timetableEntryId,
+    weekStartDate,
     position: Number.isFinite(rawPosition) ? rawPosition : null
   };
 };
@@ -286,12 +327,17 @@ const getNextPositionForDay = (lessons, dayIndex, excludedLessonId) => {
 const normalisePlan = (plan, fallbackWeekId) => {
   const targetWeekId = typeof plan?.weekId === 'string' && plan.weekId ? plan.weekId : fallbackWeekId;
   const weekStartDate = parseWeekId(targetWeekId);
+  const weekStartIso = weekStartDate ? weekStartDate.toISOString() : '';
   const lessons = Array.isArray(plan?.lessons)
-    ? ensureLessonPositions(plan.lessons.map((lesson) => normaliseLesson(lesson)).filter(Boolean))
+    ? ensureLessonPositions(
+        plan.lessons
+          .map((lesson) => normaliseLesson(lesson, { weekStartDate: weekStartIso }))
+          .filter(Boolean)
+      )
     : [];
   return {
     weekId: targetWeekId,
-    startDate: weekStartDate ? weekStartDate.toISOString() : '',
+    startDate: weekStartIso,
     lessons: sortLessons(lessons),
     teacherNotes: typeof plan?.teacherNotes === 'string' ? plan.teacherNotes : '',
     updatedAt: typeof plan?.updatedAt === 'string' ? plan.updatedAt : new Date().toISOString()
@@ -348,10 +394,53 @@ const setLocalPlan = (weekId, plan) => {
   return plan;
 };
 
+const readLocalTimetable = () => {
+  if (!hasLocalStorage()) {
+    return [];
+  }
+  try {
+    const stored = getStoredValue(TIMETABLE_STORAGE_KEY);
+    if (typeof stored !== 'string' || !stored.length) {
+      return [];
+    }
+    const parsed = safeParseJson(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to read timetable data from storage', error);
+    return [];
+  }
+};
+
+const writeLocalTimetable = (entries) => {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  try {
+    const serialised = JSON.stringify(entries || []);
+    window.localStorage.setItem(TIMETABLE_STORAGE_KEY, serialised);
+  } catch (error) {
+    console.warn('Unable to persist timetable locally', error);
+  }
+};
+
+const getLocalTimetable = () => {
+  const stored = readLocalTimetable();
+  return stored.map((entry) => normaliseTimetableEntry(entry)).filter(Boolean);
+};
+
+const setLocalTimetable = (entries) => {
+  const normalised = Array.isArray(entries)
+    ? entries.map((entry) => normaliseTimetableEntry(entry)).filter(Boolean)
+    : [];
+  writeLocalTimetable(normalised);
+  return normalised;
+};
+
 const plannerCache = new Map();
 let ensureFirestoreFn = null;
 let plannerFirestorePromise = null;
 let shouldUseLocalPlanner = false;
+let timetableCache = null;
 
 const isPermissionDeniedError = (error) => {
   const code = typeof error?.code === 'string' ? error.code.toLowerCase() : '';
@@ -371,6 +460,18 @@ const dispatchPlannerUpdated = (plan) => {
     document.dispatchEvent(event);
   } catch (error) {
     console.warn('Unable to dispatch planner update event', error);
+  }
+};
+
+const dispatchTimetableUpdated = (timetable) => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  try {
+    const event = new CustomEvent(PLANNER_TIMETABLE_UPDATED_EVENT, { detail: { timetable } });
+    document.dispatchEvent(event);
+  } catch (error) {
+    console.warn('Unable to dispatch timetable update event', error);
   }
 };
 
@@ -471,6 +572,81 @@ export const initPlannerStore = (options = {}) => {
   if (typeof options.forceLocal === 'boolean') {
     shouldUseLocalPlanner = options.forceLocal;
   }
+};
+
+const ensureTimetable = () => {
+  if (Array.isArray(timetableCache)) {
+    return timetableCache;
+  }
+  timetableCache = getLocalTimetable();
+  return timetableCache;
+};
+
+const sortTimetableEntries = (entries = []) => {
+  return [...entries].sort((a, b) => {
+    if (a.dayIndex !== b.dayIndex) {
+      return a.dayIndex - b.dayIndex;
+    }
+    const periodA = a.period || '';
+    const periodB = b.period || '';
+    if (periodA && periodB && periodA !== periodB) {
+      return periodA.localeCompare(periodB, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    return a.className.localeCompare(b.className);
+  });
+};
+
+export const getTimetableEntries = () => {
+  const entries = ensureTimetable();
+  return sortTimetableEntries(entries);
+};
+
+export const addTimetableEntry = async (entryInput) => {
+  const entry = normaliseTimetableEntry(entryInput);
+  if (!entry) {
+    return getTimetableEntries();
+  }
+  const existing = ensureTimetable();
+  const next = sortTimetableEntries([...existing.filter(Boolean), entry]);
+  timetableCache = next;
+  setLocalTimetable(next);
+  dispatchTimetableUpdated(next);
+  return next;
+};
+
+export const updateTimetableEntry = async (entryId, updates = {}) => {
+  if (!entryId) {
+    return getTimetableEntries();
+  }
+  const entries = ensureTimetable();
+  const index = entries.findIndex((entry) => entry.id === entryId);
+  if (index === -1) {
+    return getTimetableEntries();
+  }
+  const merged = { ...entries[index], ...updates, id: entryId };
+  const normalised = normaliseTimetableEntry(merged);
+  if (!normalised) {
+    return getTimetableEntries();
+  }
+  const next = sortTimetableEntries(
+    entries.map((entry, idx) => (idx === index ? normalised : entry)).filter(Boolean)
+  );
+  timetableCache = next;
+  setLocalTimetable(next);
+  dispatchTimetableUpdated(next);
+  return next;
+};
+
+export const deleteTimetableEntry = async (entryId) => {
+  if (!entryId) {
+    return getTimetableEntries();
+  }
+  const entries = ensureTimetable();
+  const next = sortTimetableEntries(entries.filter((entry) => entry.id !== entryId));
+  timetableCache = next;
+  setLocalTimetable(next);
+  dispatchTimetableUpdated(next);
+  return next;
 };
 
 export const getWeekIdFromDate = (date = new Date()) => {
@@ -584,7 +760,12 @@ export const addLessonToWeek = async (weekId, lessonInput) => {
     return null;
   }
   const plan = await loadWeekPlan(weekId);
-  const nextLesson = normaliseLesson(lessonInput);
+  const weekStart = parseWeekId(weekId);
+  const weekStartIso = weekStart ? weekStart.toISOString() : '';
+  const nextLesson = normaliseLesson(lessonInput, { weekStartDate: weekStartIso });
+  if (!nextLesson.weekStartDate) {
+    nextLesson.weekStartDate = weekStartIso;
+  }
   nextLesson.position = getNextPositionForDay(plan?.lessons || [], nextLesson.dayIndex);
   const nextPlan = {
     ...plan,
@@ -607,7 +788,10 @@ export const updateLessonInWeek = async (weekId, lessonId, updates = {}) => {
     return plan;
   }
   const currentLesson = lessons[index];
-  const updatedLesson = normaliseLesson({ ...currentLesson, ...updates, id: lessonId }, currentLesson);
+  const updatedLesson = normaliseLesson(
+    { ...currentLesson, ...updates, id: lessonId },
+    { ...currentLesson, weekStartDate: currentLesson.weekStartDate || plan?.startDate || '' }
+  );
   if (updatedLesson.dayIndex !== currentLesson.dayIndex) {
     const remainingLessons = lessons.filter((_, idx) => idx !== index);
     updatedLesson.position = getNextPositionForDay(remainingLessons, updatedLesson.dayIndex);
@@ -741,6 +925,8 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
     return null;
   }
   const sourcePlan = await loadWeekPlan(sourceWeekId);
+  const targetStart = parseWeekId(targetWeekId);
+  const targetStartIso = targetStart ? targetStart.toISOString() : '';
   const duplicatedLessons = (sourcePlan?.lessons || []).map((lesson) => ({
     title: lesson.title,
     summary: lesson.summary,
@@ -751,6 +937,8 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
     weekDay: typeof lesson.weekDay === 'string' ? lesson.weekDay : '',
     templateType: typeof lesson.templateType === 'string' ? lesson.templateType : 'simple',
     status: 'not_started',
+    timetableEntryId: typeof lesson.timetableEntryId === 'string' ? lesson.timetableEntryId : '',
+    weekStartDate: targetStartIso,
     resources: Array.isArray(lesson.resources)
       ? lesson.resources.map((entry) => ({ label: entry?.label || '', url: entry?.url || '' }))
       : [],
@@ -791,4 +979,4 @@ export const clearWeekPlan = async (weekId) => {
   return persisted;
 };
 
-export { PLANNER_UPDATED_EVENT };
+export { PLANNER_UPDATED_EVENT, PLANNER_TIMETABLE_UPDATED_EVENT };
