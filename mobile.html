@@ -5692,6 +5692,7 @@
       <div class="mobile-new-reminder-card">
       <form id="createReminderForm" class="space-y-4">
         <div class="space-y-4">
+          <div class="section-label">Reminder</div>
           <div class="space-y-1">
             <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderText">Reminder</label>
             <input
@@ -5703,6 +5704,7 @@
             />
           </div>
 
+          <div class="section-label">Notes</div>
           <div class="space-y-1">
             <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderDetails">Notes</label>
             <textarea
@@ -5713,6 +5715,7 @@
             ></textarea>
           </div>
 
+          <div class="section-label">When</div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1">
               <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="reminderDate">Date</label>
@@ -5726,6 +5729,7 @@
 
           <div id="dateFeedback" class="text-xs text-info"></div>
 
+          <div class="section-label">Options</div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1">
               <label class="text-xs font-semibold tracking-wide text-base-content/70 uppercase" for="priority">Priority</label>
@@ -5767,12 +5771,12 @@
           </div>
 
           <div class="space-y-1">
-            <span class="text-xs font-semibold tracking-wide text-base-content/70 uppercase">Notifications</span>
+            <div class="section-label">Notifications</div>
             <button id="notifBtn" class="btn btn-outline btn-sm w-full justify-center" type="button">Enable notifications</button>
           </div>
 
           <div class="space-y-2">
-            <span class="text-xs font-semibold tracking-wide text-base-content/70 uppercase">Voice tools</span>
+            <div class="section-label">Voice tools</div>
             <div class="flex items-center gap-2">
               <button
                 id="voiceBtn"

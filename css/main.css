@@ -78,6 +78,8 @@
 .card-body {
   color: var(--mc-text-soft);
 }
+  /* Primary text / heading color used for section labels */
+  --primary-dark: rgba(15, 23, 42, 0.92);
 
 /* Reminder and dashboard specific cards, if present */
 .reminder-card,
@@ -250,3 +252,12 @@ select:focus {
 
 /* Accessibility: visible focus for keyboard users */
 *:focus-visible { outline-offset: 2px; }
+
+/* Section labels used above grouped form blocks */
+.section-label {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
