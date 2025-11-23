@@ -37,6 +37,8 @@
       );
       --hover-bg: rgba(81, 38, 99, 0.06);
       --shadow-color: rgba(81, 38, 99, 0.12);
+      --icon-inactive: #4c5c7a;
+      --icon-active: #512663;
       --true-blue: #0073cf;
       --delete-color: #EF6A6A;
 
@@ -2101,57 +2103,54 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background-color: var(--surface-elevated);
+    background: var(--surface-elevated);
     border: 1px solid var(--border-subtle);
     box-shadow: 0 4px 12px rgba(81, 38, 99, 0.08);
     font-size: 0.85rem;
     font-family: var(--font-primary);
     font-weight: 500;
-    transition: background-color 0.18s ease,
-                transform 0.18s ease,
-                box-shadow 0.22s ease;
-    color: var(--accent-color);
+    color: var(--icon-inactive);
+    transition:
+      background-color 0.18s ease,
+      transform 0.15s ease,
+      box-shadow 0.22s ease,
+      color 0.18s ease;
   }
 
-  #mobile-nav-shell .floating-card:hover,
+  #mobile-nav-shell .floating-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(81, 38, 99, 0.12);
+  }
+
   #mobile-nav-shell .floating-card:focus-visible {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(81, 38, 99, 0.14), 0 6px 16px rgba(0, 0, 0, 0.08);
     outline: none;
-  }
-
-  #mobile-nav-shell .floating-card.is-active {
     transform: translateY(-2px);
-    background-color: rgba(81, 38, 99, 0.12);
-    border-color: var(--accent-color);
-    box-shadow: 0 6px 18px rgba(81, 38, 99, 0.15);
+    box-shadow: 0 12px 28px rgba(81, 38, 99, 0.12);
   }
 
   #mobile-nav-shell .floating-card:active {
-    transform: translateY(0) scale(0.96);
-    box-shadow: 0 3px 10px rgba(81, 38, 99, 0.12);
+    transform: scale(0.94);
   }
 
-  /* Animated premium "active" state for floating cards */
-  #mobile-nav-shell .floating-card.active {
-    background-color: color-mix(in srgb, var(--accent-color) 12%, white);
-    box-shadow: inset 0 0 10px color-mix(in srgb, var(--accent-color) 35%, transparent),
-                0 8px 20px rgba(0, 0, 0, 0.08);
-    transform: scale(1.06);
+  #mobile-nav-shell .floating-card.active,
+  #mobile-nav-shell .floating-card.is-active {
+    background-color: rgba(255, 255, 255, 0.94);
+    border-color: var(--icon-active);
+    color: var(--icon-active);
+    box-shadow:
+      0 8px 20px rgba(81, 38, 99, 0.16),
+      0 0 0 1px color-mix(in srgb, var(--icon-active) 20%, transparent);
   }
 
-  #mobile-nav-shell .floating-card {
-    transition: background-color 0.18s ease,
-                transform 0.18s ease,
-                box-shadow 0.22s ease;
-  }
-
-  #mobile-nav-shell .floating-card span.icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    color: inherit;
+  .icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
   }
 
   .header-pill svg,
@@ -2160,41 +2159,7 @@
   .floating-card svg {
     width: 20px;
     height: 20px;
-    stroke: currentColor;
-    fill: currentColor;
-  }
-
-  /* Secondary view buttons: clock + notebook */
-  .floating-card.btn-reminders,
-  .floating-card.btn-notebook {
-    /* Increased tint and stronger shadow for better visibility on mobile */
-    background-color: color-mix(in srgb, var(--accent-color) 30%, var(--surface-elevated));
-    border-color: color-mix(in srgb, var(--accent-color) 28%, transparent);
-    color: #ffffff;
-    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-color) 18%, rgba(0,0,0,0.12));
-  }
-
-  .floating-card.btn-reminders svg,
-  .floating-card.btn-notebook svg {
-    color: #ffffff;
-    fill: #ffffff;
-  }
-
-  /* Primary create buttons: plus + pencil */
-  .floating-card.btn-new-reminder,
-  .floating-card.btn-new-note {
-    /* Strong, theme-consistent primary action */
-    background-color: var(--accent-color);
-    background-image: linear-gradient(color-mix(in srgb, #ffffff 8%, rgba(255,255,255,0)), transparent);
-    border-color: color-mix(in srgb, var(--accent-color) 20%, transparent);
-    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-color) 18%, rgba(0,0,0,0.08));
-    color: #ffffff;
-    isolation: isolate;
-  }
-
-  .floating-card.btn-new-reminder svg,
-  .floating-card.btn-new-note svg {
-    color: #ffffff;
+    display: block;
   }
 
   #mobile-nav-shell .floating-fab {
@@ -5243,65 +5208,56 @@
       <button
         type="button"
         class="floating-card btn-reminders"
+        id="mobile-footer-reminders"
         data-nav-target="reminders"
         aria-label="Go to Reminders"
       >
-        <span class="icon" aria-hidden="true">⏰</span>
+        <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="7" />
+          <path d="M12 9v3.5l2 1.5" />
+        </svg>
       </button>
 
       <button
         type="button"
         class="floating-card btn-new-reminder"
+        id="mobile-footer-new-reminder"
         data-nav-target="new"
         aria-label="Add reminder"
       >
-        <span class="icon" aria-hidden="true">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 5v14" />
-            <path d="M5 12h14" />
-          </svg>
-        </span>
+        <svg class="icon icon-plus" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="7" />
+          <path d="M12 9v6" />
+          <path d="M9 12h6" />
+        </svg>
       </button>
 
       <button
         type="button"
         class="floating-card btn-new-note"
+        id="mobile-footer-new-note"
         data-nav-target="add-note"
         aria-label="Add note"
       >
-        <span class="icon" aria-hidden="true">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M4 17.5V20h2.5L17 9.5 14.5 7 4 17.5z" />
-            <path d="M13.5 8.5l2 2" />
-          </svg>
-        </span>
+        <svg class="icon icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 17.5 6.7 14l6.9-6.9a1.6 1.6 0 0 1 2.3 0l1.9 1.9a1.6 1.6 0 0 1 0 2.3L11 18.1 7.5 18.8z" />
+          <path d="M13.2 7.8 16.2 10.8" />
+        </svg>
       </button>
 
       <button
         type="button"
         class="floating-card btn-notebook"
+        id="mobile-footer-notebook"
         data-nav-target="notebook"
         aria-label="Go to Notes"
       >
-        <span class="icon" aria-hidden="true">📝</span>
+        <svg class="icon icon-notebook" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="7" y="4" width="10" height="16" rx="2" />
+          <path d="M10 4v16" />
+          <path d="M10 8h4" />
+          <path d="M10 11.5h4" />
+        </svg>
       </button>
     </div>
   </div>
@@ -5331,12 +5287,23 @@
         }
       };
 
+      const setActiveFooterIcon = (buttonId) => {
+        document
+          .querySelectorAll('#mobile-nav-shell .floating-card')
+          .forEach((btn) => {
+            if (!(btn instanceof HTMLElement)) return;
+            btn.classList.toggle('active', btn.id === buttonId);
+          });
+      };
+
       navFooter.addEventListener('click', (event) => {
         const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
         if (!button) return;
 
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
+
+        setActiveFooterIcon(button.id);
 
         const triggerAddReminder = () => {
           const addBtn = document.getElementById('addReminderBtn');
