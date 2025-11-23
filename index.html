@@ -474,423 +474,421 @@
     <main id="mainContent" class="desktop-main" tabindex="-1">
       <div class="desktop-main-inner">
         <div class="desktop-main-region space-y-8">
-      <section data-route="dashboard" class="space-y-6 lg:space-y-12">
-        <div class="space-y-6">
-          <!-- Hero section: use equal columns on large screens to prevent narrow side panel -->
-          <section class="desktop-hero desktop-dashboard-grid dashboard-grid">
-            <!-- Left/main column: ensure cards stack with consistent spacing -->
-            <div class="space-y-4 desktop-hero-column">
-                  <div class="dashboard-weather-quick-card">
-                    <article class="dashboard-weather-card memory-glass-card" aria-label="Local weather update">
-                      <div class="weather-card-header">
-                        <div>
-                          <p class="dashboard-card-eyebrow">Weather</p>
-                          <p id="weatherStatus" role="status" aria-live="polite">Checking the latest forecast…</p>
-                          <p id="weatherLocation">Locating…</p>
-                        </div>
-                        <span id="weatherIcon" aria-hidden="true">⛅️</span>
+      <section data-route="dashboard" class="space-y-6 lg:space-y-10">
+        <div class="rounded-3xl bg-base-200/40 p-4 lg:p-6">
+          <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+            <div class="space-y-6">
+              <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div class="dashboard-weather-quick-card md:col-span-1">
+                  <article class="dashboard-weather-card memory-glass-card rounded-2xl border border-base-200/70 bg-base-100 shadow-lg" aria-label="Local weather update">
+                    <div class="weather-card-header">
+                      <div>
+                        <p class="dashboard-card-eyebrow">Weather</p>
+                        <p id="weatherStatus" class="text-sm font-medium text-base-content" role="status" aria-live="polite">Checking the latest forecast…</p>
+                        <p id="weatherLocation" class="text-xs text-base-content/70">Locating…</p>
                       </div>
-                      <div class="weather-card-main">
-                        <p id="weatherTemperature">--°C</p>
-                        <p id="weatherDescription">Awaiting update</p>
-                      </div>
-                      <p id="weatherFootnote" class="weather-card-footnote hidden">
-                        We use your approximate location to calculate these details.
-                      </p>
-                    </article>
+                      <span id="weatherIcon" aria-hidden="true" class="text-2xl">⛅️</span>
+                    </div>
+                    <div class="weather-card-main">
+                      <p id="weatherTemperature">--°C</p>
+                      <p id="weatherDescription">Awaiting update</p>
+                    </div>
+                    <p id="weatherFootnote" class="weather-card-footnote hidden">
+                      We use your approximate location to calculate these details.
+                    </p>
+                  </article>
+                </div>
+
+                <article class="dashboard-hero-card memory-glass-card rounded-2xl bg-base-100 border border-base-200/70 shadow-lg p-5 space-y-4 h-full md:col-span-1">
+                  <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/70">
+                    <h2 class="text-lg font-semibold tracking-tight text-base-content">Today’s reminders</h2>
+                    <span class="text-xl" aria-hidden="true">⏰</span>
                   </div>
-
-                  <article class="dashboard-hero-card memory-glass-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
-                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
-                      <h2 class="text-sm font-semibold tracking-tight">Today’s reminders</h2>
-                      <span class="text-lg" aria-hidden="true">⏰</span>
+                  <div class="space-y-4">
+                    <p class="text-sm text-base-content/80">
+                      A quick snapshot of what you’ve scheduled for today.
+                    </p>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-4xl font-semibold text-base-content" id="dashboard-reminders-today-count" aria-live="polite">
+                        –
+                      </span>
+                      <span class="text-xs text-base-content/70 uppercase tracking-wide">
+                        reminders today
+                      </span>
                     </div>
-                    <div class="space-y-4">
-                      <p class="text-sm text-base-content/80">
-                        A quick snapshot of what you’ve scheduled for today.
-                      </p>
-                      <div class="flex items-baseline gap-2">
-                        <span class="text-4xl font-semibold text-base-content" id="dashboard-reminders-today-count" aria-live="polite">
-                          –
-                        </span>
-                        <span class="text-xs text-base-content/70 uppercase tracking-wide">
-                          reminders today
-                        </span>
-                      </div>
-                      <ul class="space-y-2 text-xs text-base-content/70">
-                        <li class="flex items-center gap-2">
-                          <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
-                          <span>Use quick-add in Reminders to capture new tasks.</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                          <span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
-                          <span>Mark tasks complete from the Reminders tab when they’re done.</span>
-                        </li>
-                      </ul>
-                      <div class="pt-1">
-                        <button class="btn btn-outline btn-sm" type="button" data-route-target="reminders">
-                          Open Reminders
+                    <ul class="space-y-2 text-sm text-base-content/70">
+                      <li class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+                        <span>Use quick-add in Reminders to capture new tasks.</span>
+                      </li>
+                      <li class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
+                        <span>Mark tasks complete from the Reminders tab when they’re done.</span>
+                      </li>
+                    </ul>
+                    <div class="pt-2">
+                      <button class="btn btn-outline btn-sm" type="button" data-route-target="reminders">
+                        Open Reminders
+                      </button>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="dashboard-hero-card memory-glass-card rounded-2xl bg-base-100 border border-base-200/70 shadow-lg p-5 space-y-4 h-full md:col-span-2 xl:col-span-1 xl:row-span-1">
+                  <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/70">
+                    <h2 class="text-lg font-semibold tracking-tight text-base-content">Next lesson</h2>
+                    <span class="text-xl" aria-hidden="true">🗓️</span>
+                  </div>
+                  <div class="space-y-4">
+                    <p class="text-sm text-base-content/80">
+                      Jot down the key focus for your upcoming class so it’s top of mind.
+                    </p>
+                    <div class="space-y-2">
+                      <label class="text-xs font-semibold text-base-content/70" for="dashboard-next-lesson-title">
+                        Lesson title
+                      </label>
+                      <input
+                        id="dashboard-next-lesson-title"
+                        type="text"
+                        class="input input-bordered input-sm w-full text-sm text-base-content"
+                        placeholder="e.g. Yr7 English – Two Wolves chapter 5"
+                      >
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-xs font-semibold text-base-content/70" for="dashboard-next-lesson-focus">
+                        Focus / key point
+                      </label>
+                      <textarea
+                        id="dashboard-next-lesson-focus"
+                        class="textarea textarea-bordered w-full min-h-[4rem] text-sm text-base-content"
+                        placeholder="Main activity, checkpoint, or behaviour focus for this lesson."
+                      ></textarea>
+                    </div>
+                    <div class="space-y-2">
+                      <div class="flex justify-end gap-2">
+                        <button class="btn btn-outline btn-sm" type="button" data-copy-next-lesson>
+                          Copy to planner
                         </button>
                       </div>
+                      <p
+                        class="text-xs text-base-content/60"
+                        data-next-lesson-feedback
+                        aria-live="polite"
+                      ></p>
                     </div>
-                  </article>
+                  </div>
+                </article>
+              </div>
 
-                  <article class="dashboard-hero-card memory-glass-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
-                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
-                      <h2 class="text-sm font-semibold tracking-tight">Next lesson</h2>
-                      <span class="text-lg" aria-hidden="true">🗓️</span>
+              <section
+                class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/70 shadow-lg p-5 space-y-4"
+                data-dashboard-tab-group="daily-focus"
+                aria-labelledby="daily-overview-heading"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-200/70">
+                  <h2 id="daily-overview-heading" class="text-lg font-semibold tracking-tight text-base-content">Daily overview</h2>
+                  <div role="tablist" aria-label="Daily overview" class="tabs tabs-boxed tabs-sm">
+                    <button
+                      id="daily-tab-snapshot"
+                      type="button"
+                      role="tab"
+                      aria-selected="true"
+                      aria-controls="daily-snapshot-panel"
+                      class="tab tab-sm tab-active"
+                      data-dashboard-tab="snapshot"
+                    >
+                      Daily snapshot
+                    </button>
+                    <button
+                      id="daily-tab-focus"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="todays-focus-panel"
+                      class="tab tab-sm"
+                      data-dashboard-tab="focus"
+                    >
+                      Today's focus
+                    </button>
+                  </div>
+                </div>
+                <div class="space-y-5">
+                  <div
+                    id="daily-snapshot-panel"
+                    role="tabpanel"
+                    aria-labelledby="daily-tab-snapshot"
+                    data-dashboard-panel="snapshot"
+                  >
+                    <h3 id="daily-snapshot-heading" class="text-sm font-semibold text-base-content">Daily snapshot</h3>
+                    <ul
+                      id="dailySnapshotList"
+                      class="mt-3 space-y-3 text-sm text-base-content/80"
+                      role="list"
+                      aria-labelledby="daily-snapshot-heading"
+                    ></ul>
+                    <div class="mt-4 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
+                      <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Shortcut</p>
+                      <p class="text-sm text-base-content/70 mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
                     </div>
-                    <div class="space-y-4">
-                      <p class="text-sm text-base-content/80">
-                        Jot down the key focus for your upcoming class so it’s top of mind.
-                      </p>
-                      <div class="space-y-2">
-                        <label class="text-xs font-medium text-base-content/70" for="dashboard-next-lesson-title">
-                          Lesson title
-                        </label>
-                        <input
-                          id="dashboard-next-lesson-title"
-                          type="text"
-                          class="input input-bordered input-sm w-full text-sm text-base-content"
-                          placeholder="e.g. Yr7 English – Two Wolves chapter 5"
-                        >
+                  </div>
+                  <div
+                    id="todays-focus-panel"
+                    role="tabpanel"
+                    aria-labelledby="daily-tab-focus"
+                    data-dashboard-panel="focus"
+                    class="hidden"
+                    aria-hidden="true"
+                  >
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                      <div class="space-y-3">
+                        <h3 id="todays-focus-heading" class="text-sm font-semibold text-base-content">Today's focus</h3>
+                        <p class="text-sm text-base-content/70">
+                          Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
+                        </p>
+                        <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
+                          <div class="flex items-center gap-2">
+                            <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
+                            <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
+                            <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
+                            <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
+                          </div>
+                        </dl>
                       </div>
-                      <div class="space-y-2">
-                        <label class="text-xs font-medium text-base-content/70" for="dashboard-next-lesson-focus">
-                          Focus / key point
-                        </label>
-                        <textarea
-                          id="dashboard-next-lesson-focus"
-                          class="textarea textarea-bordered w-full min-h-[4rem] text-sm text-base-content"
-                          placeholder="Main activity, checkpoint, or behaviour focus for this lesson."
-                        ></textarea>
-                      </div>
-                      <div class="space-y-2">
-                        <div class="flex justify-end gap-2">
-                          <button class="btn btn-outline btn-sm" type="button" data-copy-next-lesson>
-                            Copy to planner
+                      <div class="flex flex-wrap items-center gap-2">
+                          <button
+                            class="btn btn-primary btn-sm sm:btn-md"
+                            type="button"
+                            data-open-reminder-modal
+                            aria-haspopup="dialog"
+                            aria-controls="add-reminder-form"
+                          >
+                            Add reminder
                           </button>
-                        </div>
-                        <p
-                          class="text-xs text-base-content/60"
-                          data-next-lesson-feedback
-                          aria-live="polite"
-                        ></p>
+                          <div class="join hidden sm:inline-flex">
+                            <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
+                            <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
+                            <button class="btn btn-sm join-item btn-outline" type="button">High</button>
+                          </div>
                       </div>
                     </div>
-                  </article>
+                    <ol
+                      id="todaysFocusList"
+                      class="space-y-2"
+                      role="list"
+                      aria-labelledby="todays-focus-heading"
+                    ></ol>
+                  </div>
                 </div>
+              </section>
 
-                <!-- Right/side column: same spacing as main column -->
-                <div class="space-y-4 desktop-hero-column">
-                  <article class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4 h-full">
-                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/60">
-                      <h2 class="text-sm font-semibold tracking-tight">Top educational news</h2>
+              <div class="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+                <section class="dashboard-card card memory-glass-card h-full rounded-2xl border border-base-200/70 bg-base-100 shadow-lg">
+                  <div class="card-body dashboard-card-body gap-5 p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-1">
+                      <h2 id="week-at-a-glance-heading" class="text-lg font-semibold text-base-content">Week at a glance</h2>
+                      <div class="join">
+                        <button class="btn btn-sm btn-outline join-item" type="button">Prev</button>
+                        <button class="btn btn-sm btn-primary join-item" type="button">Today</button>
+                        <button class="btn btn-sm btn-outline join-item" type="button">Next</button>
+                      </div>
                     </div>
-                    <div class="space-y-4">
-                      <p class="text-xs text-base-content/70">Start conversations informed.</p>
-                      <p id="newsStatus" class="text-sm text-base-content/80" role="status" aria-live="polite">
-                        Gathering the top educational news…
+                    <ol
+                      id="weekAtAGlanceList"
+                      class="relative space-y-4 dashboard-card-text before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"
+                      role="list"
+                      aria-labelledby="week-at-a-glance-heading"
+                    ></ol>
+                  </div>
+                </section>
+
+                <div class="flex flex-col gap-4">
+                  <section id="pinnedNotesCard" class="dashboard-card card memory-glass-card dashboard-card--compact h-full rounded-2xl border border-base-200/70 bg-base-100 shadow-lg">
+                    <div class="card-body dashboard-card-body gap-3 p-5">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h2 class="text-lg font-semibold text-base-content">Pinned notes</h2>
+                        <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
+                      </div>
+                      <ul id="pinnedNotesList" class="space-y-3 text-sm text-base-content/90"></ul>
+                    </div>
+                  </section>
+
+                  <section class="dashboard-card card memory-glass-card dashboard-card--compact flex flex-col gap-3 dashboard-shortcuts rounded-2xl border border-base-200/70 bg-base-100 shadow-lg">
+                    <div class="card-body dashboard-card-body gap-4 p-5">
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h2 class="text-lg font-semibold text-base-content">Action shortcuts</h2>
+                        <span class="text-xs font-medium text-base-content/70">Jump back in</span>
+                      </div>
+                      <p class="text-sm text-base-content/70" data-action-shortcuts-fallback>
+                        Use the quick actions toolbar to capture reminders, jot notes, or brainstorm activities.
                       </p>
-                      <div id="newsContent" class="hidden space-y-4">
-                        <a
-                          id="newsPrimaryLink"
-                          href="#"
-                          class="block rounded-2xl border border-base-200 bg-base-100/90 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Lead story</p>
-                          <p id="newsHeadline" class="mt-2 text-sm font-semibold text-primary hover:underline"></p>
-                          <p id="newsSource" class="mt-1 text-xs text-base-content/70"></p>
-                        </a>
-                        <div class="space-y-3">
-                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">More to skim</p>
-                          <ul id="newsTopStories" class="space-y-2 text-sm"></ul>
-                        </div>
-                      </div>
-                      <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
-                    </div>
-                  </article>
-
-                  <section
-                    class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
-                    aria-labelledby="kpi-heading"
-                    data-dashboard-tab-group="kpi"
-                  >
-                    <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-200/60">
-                      <h2 id="kpi-heading" class="text-sm font-semibold tracking-tight">Key metrics</h2>
-                      <div role="tablist" aria-label="Key metrics" class="tabs tabs-boxed tabs-sm">
-                        <button
-                          id="kpi-tab-reminders"
-                          type="button"
-                          role="tab"
-                          aria-selected="true"
-                          aria-controls="kpi-panel-reminders"
-                          class="tab tab-sm tab-active"
-                          data-dashboard-tab="reminders"
-                        >
-                          Reminders
-                        </button>
-                        <button
-                          id="kpi-tab-planner"
-                          type="button"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="kpi-panel-planner"
-                          class="tab tab-sm"
-                          data-dashboard-tab="planner"
-                        >
-                          Planner
-                        </button>
-                        <button
-                          id="kpi-tab-resources"
-                          type="button"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="kpi-panel-resources"
-                          class="tab tab-sm"
-                          data-dashboard-tab="resources"
-                        >
-                          Resources
-                        </button>
-                        <button
-                          id="kpi-tab-templates"
-                          type="button"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="kpi-panel-templates"
-                          class="tab tab-sm"
-                          data-dashboard-tab="templates"
-                        >
-                          Templates
-                        </button>
-                      </div>
-                    </div>
-                    <div class="space-y-3">
-                      <article
-                        id="kpi-panel-reminders"
-                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5"
-                        role="tabpanel"
-                        aria-labelledby="kpi-tab-reminders"
-                        data-dashboard-panel="reminders"
-                      >
-                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
-                          <p class="font-medium tracking-wide">Reminders</p>
-                          <span aria-hidden="true">🔔</span>
-                        </div>
-                        <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
-                        <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
-                      </article>
-                      <article
-                        id="kpi-panel-planner"
-                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
-                        role="tabpanel"
-                        aria-labelledby="kpi-tab-planner"
-                        aria-hidden="true"
-                        data-dashboard-panel="planner"
-                      >
-                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
-                          <p class="font-medium tracking-wide">Planner</p>
-                          <span aria-hidden="true">🗂️</span>
-                        </div>
-                        <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
-                        <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
-                      </article>
-                      <article
-                        id="kpi-panel-resources"
-                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
-                        role="tabpanel"
-                        aria-labelledby="kpi-tab-resources"
-                        aria-hidden="true"
-                        data-dashboard-panel="resources"
-                      >
-                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
-                          <p class="font-medium tracking-wide">Resources</p>
-                          <span aria-hidden="true">📁</span>
-                        </div>
-                        <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
-                        <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
-                      </article>
-                      <article
-                        id="kpi-panel-templates"
-                        class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
-                        role="tabpanel"
-                        aria-labelledby="kpi-tab-templates"
-                        aria-hidden="true"
-                        data-dashboard-panel="templates"
-                      >
-                        <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
-                          <p class="font-medium tracking-wide">Templates</p>
-                          <span aria-hidden="true">🧩</span>
-                        </div>
-                        <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
-                        <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
-                      </article>
-                    </div>
-                  </section>
-
-                  <section
-                    class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/60 shadow-sm p-4 space-y-4"
-                    data-dashboard-tab-group="daily-focus"
-                    aria-labelledby="daily-overview-heading"
-                  >
-                    <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-200/60">
-                      <h2 id="daily-overview-heading" class="text-sm font-semibold tracking-tight">Daily overview</h2>
-                      <div role="tablist" aria-label="Daily overview" class="tabs tabs-boxed tabs-sm">
-                        <button
-                          id="daily-tab-snapshot"
-                          type="button"
-                          role="tab"
-                          aria-selected="true"
-                          aria-controls="daily-snapshot-panel"
-                          class="tab tab-sm tab-active"
-                          data-dashboard-tab="snapshot"
-                        >
-                          Daily snapshot
-                        </button>
-                        <button
-                          id="daily-tab-focus"
-                          type="button"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="todays-focus-panel"
-                          class="tab tab-sm"
-                          data-dashboard-tab="focus"
-                        >
-                          Today's focus
-                        </button>
-                      </div>
-                    </div>
-                    <div class="space-y-4">
-                      <div
-                        id="daily-snapshot-panel"
-                        role="tabpanel"
-                        aria-labelledby="daily-tab-snapshot"
-                        data-dashboard-panel="snapshot"
-                      >
-                        <h3 id="daily-snapshot-heading" class="text-sm font-semibold text-base-content">Daily snapshot</h3>
-                        <ul
-                          id="dailySnapshotList"
-                          class="mt-3 space-y-3 text-sm text-base-content/80"
-                          role="list"
-                          aria-labelledby="daily-snapshot-heading"
-                        ></ul>
-                        <div class="mt-3 rounded-2xl border border-dashed border-base-200 bg-base-200/60 p-4">
-                          <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Shortcut</p>
-                          <p class="text-sm text-base-content/70 mt-1">Press <kbd class="kbd kbd-sm">Shift</kbd><span class="mx-1">+</span><kbd class="kbd kbd-sm">K</kbd> for quick actions anywhere in the app.</p>
-                        </div>
-                      </div>
-                      <div
-                        id="todays-focus-panel"
-                        role="tabpanel"
-                        aria-labelledby="daily-tab-focus"
-                        data-dashboard-panel="focus"
-                        class="hidden"
-                        aria-hidden="true"
-                      >
-                        <div class="flex flex-wrap items-start justify-between gap-4">
-                          <div class="space-y-3">
-                            <h3 id="todays-focus-heading" class="text-sm font-semibold text-base-content">Today's focus</h3>
-                            <p class="text-sm text-base-content/70">
-                              Keep literacy collaborative, celebrate small wins, and capture anything that needs follow up before the afternoon rush.
-                            </p>
-                            <dl class="flex flex-wrap gap-3 text-xs text-base-content/60">
-                              <div class="flex items-center gap-2">
-                                <dt class="font-semibold uppercase tracking-[0.3em]">Focus area</dt>
-                                <dd class="badge badge-outline badge-xs text-[11px]">Literacy workshops</dd>
-                              </div>
-                              <div class="flex items-center gap-2">
-                                <dt class="font-semibold uppercase tracking-[0.3em]">Time block</dt>
-                                <dd class="badge badge-outline badge-xs text-[11px]">Period 2 · 45 mins</dd>
-                              </div>
-                              <div class="flex items-center gap-2">
-                                <dt class="font-semibold uppercase tracking-[0.3em]">Support</dt>
-                                <dd class="badge badge-outline badge-xs text-[11px]">Co-teach with Mia</dd>
-                              </div>
-                            </dl>
-                          </div>
-                          <div class="flex flex-wrap items-center gap-2">
-                              <button
-                                class="btn btn-primary btn-sm sm:btn-md"
-                                type="button"
-                                data-open-reminder-modal
-                                aria-haspopup="dialog"
-                                aria-controls="add-reminder-form"
-                              >
-                                Add reminder
-                              </button>
-                              <div class="join hidden sm:inline-flex">
-                                <button class="btn btn-sm join-item btn-outline" type="button">Low</button>
-                                <button class="btn btn-sm join-item btn-outline" type="button">Medium</button>
-                                <button class="btn btn-sm join-item btn-outline" type="button">High</button>
-                              </div>
-                          </div>
-                        </div>
-                        <ol
-                          id="todaysFocusList"
-                          class="space-y-2"
-                          role="list"
-                          aria-labelledby="todays-focus-heading"
-                        ></ol>
+                      <div class="flex flex-wrap gap-2" data-action-shortcuts-target></div>
+                      <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
+                        <p class="text-sm font-semibold text-base-content/90">Need inspiration?</p>
+                        <p class="text-sm text-base-content/70 mt-1">
+                          Use the Activity ideas quick action to gather ready-to-run activities tailored to your class context.
+                        </p>
                       </div>
                     </div>
                   </section>
-            </div>
-          </section>
-        </div>
-
-        <div class="desktop-dashboard-grid dashboard-grid">
-          <section class="dashboard-card card memory-glass-card h-full">
-            <div class="card-body dashboard-card-body gap-5">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="week-at-a-glance-heading" class="dashboard-card-title">Week at a glance</h2>
-                <div class="join">
-                  <button class="btn btn-sm btn-secondary join-item" type="button">Prev</button>
-                  <button class="btn btn-sm btn-primary join-item" type="button">Today</button>
-                  <button class="btn btn-sm btn-secondary join-item" type="button">Next</button>
                 </div>
               </div>
-              <ol
-                id="weekAtAGlanceList"
-                class="relative space-y-4 dashboard-card-text before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-base-300/60"
-                role="list"
-                aria-labelledby="week-at-a-glance-heading"
-              ></ol>
             </div>
-          </section>
 
-          <div class="dashboard-card-stack flex flex-col gap-6">
-            <section id="pinnedNotesCard" class="dashboard-card card memory-glass-card dashboard-card--compact h-full">
-              <div class="card-body dashboard-card-body gap-3">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <h2 class="dashboard-card-title">Pinned notes</h2>
-                  <button class="btn btn-sm btn-primary" type="button" disabled title="Coming soon">New note</button>
+            <aside class="space-y-4 rounded-2xl border border-base-200/80 bg-base-100/90 p-4 shadow-lg">
+              <article class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/70 shadow-sm p-5 space-y-4 h-full">
+                <div class="flex items-center justify-between gap-2 pb-2 border-b border-base-200/70">
+                  <h2 class="text-lg font-semibold tracking-tight text-base-content">Top educational news</h2>
                 </div>
-                <ul id="pinnedNotesList" class="space-y-3 text-sm text-base-content/90"></ul>
-              </div>
-            </section>
-
-            <section class="dashboard-card card memory-glass-card dashboard-card--compact flex flex-col gap-3 dashboard-shortcuts">
-              <div class="card-body dashboard-card-body gap-4">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <h2 class="dashboard-card-title">Action shortcuts</h2>
-                  <span class="text-xs font-medium text-base-content/70">Jump back in</span>
-                </div>
-                <p class="text-sm text-base-content/70" data-action-shortcuts-fallback>
-                  Use the quick actions toolbar to capture reminders, jot notes, or brainstorm activities.
-                </p>
-                <div class="flex flex-wrap gap-2" data-action-shortcuts-target></div>
-                <div class="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-4">
-                  <p class="text-sm font-semibold text-base-content/90">Need inspiration?</p>
-                  <p class="text-sm text-base-content/70 mt-1">
-                    Use the Activity ideas quick action to gather ready-to-run activities tailored to your class context.
+                <div class="space-y-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.25em] text-base-content/60">Latest headlines</p>
+                  <p id="newsStatus" class="text-sm text-base-content/80" role="status" aria-live="polite">
+                    Gathering the top educational news…
                   </p>
+                  <div id="newsContent" class="hidden space-y-4">
+                    <a
+                      id="newsPrimaryLink"
+                      href="#"
+                      class="block rounded-2xl border border-base-200 bg-base-100/90 p-4 text-left transition hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">Lead story</p>
+                      <p id="newsHeadline" class="mt-2 text-sm font-semibold text-primary hover:underline"></p>
+                      <p id="newsSource" class="mt-1 text-xs text-base-content/70"></p>
+                    </a>
+                    <div class="space-y-3">
+                      <p class="text-xs font-semibold tracking-wide uppercase text-base-content/60">More to skim</p>
+                      <ul id="newsTopStories" class="space-y-2 text-sm"></ul>
+                    </div>
+                  </div>
+                  <p id="newsFootnote" class="text-xs text-base-content/60" aria-live="polite"></p>
                 </div>
-              </div>
-            </section>
+              </article>
+
+              <section
+                class="dashboard-hero-card rounded-2xl bg-base-100 border border-base-200/70 shadow-sm p-5 space-y-4"
+                aria-labelledby="kpi-heading"
+                data-dashboard-tab-group="kpi"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-200/70">
+                  <h2 id="kpi-heading" class="text-lg font-semibold tracking-tight text-base-content">Key metrics</h2>
+                  <div role="tablist" aria-label="Key metrics" class="tabs tabs-boxed tabs-sm">
+                    <button
+                      id="kpi-tab-reminders"
+                      type="button"
+                      role="tab"
+                      aria-selected="true"
+                      aria-controls="kpi-panel-reminders"
+                      class="tab tab-sm tab-active"
+                      data-dashboard-tab="reminders"
+                    >
+                      Reminders
+                    </button>
+                    <button
+                      id="kpi-tab-planner"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="kpi-panel-planner"
+                      class="tab tab-sm"
+                      data-dashboard-tab="planner"
+                    >
+                      Planner
+                    </button>
+                    <button
+                      id="kpi-tab-resources"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="kpi-panel-resources"
+                      class="tab tab-sm"
+                      data-dashboard-tab="resources"
+                    >
+                      Resources
+                    </button>
+                    <button
+                      id="kpi-tab-templates"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="kpi-panel-templates"
+                      class="tab tab-sm"
+                      data-dashboard-tab="templates"
+                    >
+                      Templates
+                    </button>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <article
+                    id="kpi-panel-reminders"
+                    class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5"
+                    role="tabpanel"
+                    aria-labelledby="kpi-tab-reminders"
+                    data-dashboard-panel="reminders"
+                  >
+                    <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                      <p class="font-medium tracking-wide">Reminders</p>
+                      <span aria-hidden="true">🔔</span>
+                    </div>
+                    <p class="text-xl font-semibold text-base-content"><span id="remindersCount">0</span></p>
+                    <p class="text-[11px] text-base-content/60"><span id="remindersSubtitle"></span></p>
+                  </article>
+                  <article
+                    id="kpi-panel-planner"
+                    class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                    role="tabpanel"
+                    aria-labelledby="kpi-tab-planner"
+                    aria-hidden="true"
+                    data-dashboard-panel="planner"
+                  >
+                    <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                      <p class="font-medium tracking-wide">Planner</p>
+                      <span aria-hidden="true">🗂️</span>
+                    </div>
+                    <p class="text-xl font-semibold text-base-content"><span id="plannerCount">0</span></p>
+                    <p class="text-[11px] text-base-content/60"><span id="plannerSubtitle"></span></p>
+                  </article>
+                  <article
+                    id="kpi-panel-resources"
+                    class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                    role="tabpanel"
+                    aria-labelledby="kpi-tab-resources"
+                    aria-hidden="true"
+                    data-dashboard-panel="resources"
+                  >
+                    <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                      <p class="font-medium tracking-wide">Resources</p>
+                      <span aria-hidden="true">📁</span>
+                    </div>
+                    <p class="text-xl font-semibold text-base-content"><span id="resourcesCount">0</span></p>
+                    <p class="text-[11px] text-base-content/60"><span id="resourcesSubtitle"></span></p>
+                  </article>
+                  <article
+                    id="kpi-panel-templates"
+                    class="dashboard-kpi-tile px-4 py-3 flex flex-col gap-1.5 hidden"
+                    role="tabpanel"
+                    aria-labelledby="kpi-tab-templates"
+                    aria-hidden="true"
+                    data-dashboard-panel="templates"
+                  >
+                    <div class="flex items-center justify-between text-xs text-base-content/70 uppercase">
+                      <p class="font-medium tracking-wide">Templates</p>
+                      <span aria-hidden="true">🧩</span>
+                    </div>
+                    <p class="text-xl font-semibold text-base-content"><span id="templatesCount">0</span></p>
+                    <p class="text-[11px] text-base-content/60"><span id="templatesSubtitle"></span></p>
+                  </article>
+                </div>
+              </section>
+            </aside>
           </div>
-        </div>
         </div>
       </section>
 
@@ -1155,65 +1153,67 @@
           </div>
         </div>
       </section>
-      <section data-route="planner" class="space-y-6" style="display: none;" data-planner-support-state="expanded">
-        <div class="section-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm" data-planner-card-panel>
-          <div class="desktop-panel-body section-pane__body px-4 py-6">
-            <div class="flex flex-wrap items-center justify-between gap-3 pb-3">
-              <div class="flex flex-wrap items-center gap-2">
-                <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
-                <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">This week</button>
-                <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
+      <section data-route="planner" class="space-y-6 lg:space-y-10" style="display: none;" data-planner-support-state="expanded">
+        <div class="rounded-3xl bg-base-200/40 p-4 lg:p-6">
+          <div class="section-pane desktop-panel desktop-panel--planner card border border-base-200/80 bg-base-100/90 text-base-content shadow-lg" data-planner-card-panel>
+            <div class="desktop-panel-body section-pane__body p-6 space-y-5">
+              <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-200/70">
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
+                  <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">This week</button>
+                  <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
+                </div>
+                <p id="plannerWeekRange" class="text-sm font-semibold text-base-content/80"></p>
               </div>
-              <p id="plannerWeekRange" class="text-sm font-medium text-base-content/80"></p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 pb-4">
-              <button type="button" id="planner-copy-week" class="btn btn-outline btn-sm">Copy last week</button>
-              <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
-              <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
-              <div class="join">
-                <button
-                  type="button"
-                  id="planner-list-view-toggle"
-                  class="btn btn-ghost btn-sm join-item btn-active"
-                  aria-pressed="true"
-                >
-                  List view
-                </button>
-                <button
-                  type="button"
-                  id="planner-week-view-toggle"
-                  class="btn btn-ghost btn-sm join-item"
-                  aria-pressed="false"
-                >
-                  Week view
-                </button>
-              </div>
-            </div>
-            <div class="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-              <div class="space-y-4">
-                <div class="planner-cards-scroll">
-                  <div
-                    id="plannerCards"
-                    class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-3 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start"
-                  ></div>
-                  <div id="plannerWeekView" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 hidden"></div>
+              <div class="flex flex-wrap items-center gap-2 pb-2">
+                <button type="button" id="planner-copy-week" class="btn btn-outline btn-sm">Copy last week</button>
+                <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
+                <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
+                <div class="join">
+                  <button
+                    type="button"
+                    id="planner-list-view-toggle"
+                    class="btn btn-ghost btn-sm join-item btn-active"
+                    aria-pressed="true"
+                  >
+                    List view
+                  </button>
+                  <button
+                    type="button"
+                    id="planner-week-view-toggle"
+                    class="btn btn-ghost btn-sm join-item"
+                    aria-pressed="false"
+                  >
+                    Week view
+                  </button>
                 </div>
               </div>
-              <aside class="space-y-2 rounded-2xl border border-base-200 bg-base-200/60 p-4 shadow-sm">
-                <div class="flex items-start justify-between gap-2">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Teacher notes</p>
-                    <p class="text-sm text-base-content/80">Weekly notes for follow ups, printing, and reminders.</p>
+              <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] items-start">
+                <div class="space-y-4">
+                  <div class="planner-cards-scroll rounded-2xl border border-base-200/80 bg-base-100/80 p-4 shadow-sm">
+                    <div
+                      id="plannerCards"
+                      class="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:border [&_[data-planner-lesson]]:border-base-200 [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-5 [&_[data-planner-lesson]]:py-5 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-md [&_[data-planner-lesson]]:space-y-3 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-4 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start"
+                    ></div>
+                    <div id="plannerWeekView" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 hidden"></div>
                   </div>
-                  <span id="plannerTeacherNotesStatus" class="text-xs text-base-content/70" data-status="idle">Notes save automatically.</span>
                 </div>
-                <textarea
-                  id="plannerTeacherNotes"
-                  class="textarea textarea-bordered w-full min-h-[10rem] resize-none text-sm text-base-content"
-                  placeholder="Capture behaviour notes, print jobs, and follow ups for this week."
-                  spellcheck="true"
-                ></textarea>
-              </aside>
+                <aside class="space-y-3 rounded-2xl border border-base-200 bg-base-200/80 p-5 shadow-md lg:sticky lg:top-6">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1">
+                      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Teacher notes</p>
+                      <p class="text-sm text-base-content/80">Weekly notes for follow ups, printing, and reminders.</p>
+                    </div>
+                    <span id="plannerTeacherNotesStatus" class="text-xs font-medium text-base-content/70" data-status="idle">Notes save automatically.</span>
+                  </div>
+                  <textarea
+                    id="plannerTeacherNotes"
+                    class="textarea textarea-bordered w-full min-h-[12rem] resize-none text-sm text-base-content"
+                    placeholder="Capture behaviour notes, print jobs, and follow ups for this week."
+                    spellcheck="true"
+                  ></textarea>
+                </aside>
+              </div>
             </div>
           </div>
         </div>
