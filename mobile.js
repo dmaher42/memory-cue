@@ -7,6 +7,7 @@ import {
   createNote,
   NOTES_STORAGE_KEY,
 } from './js/modules/notes-storage.js';
+import { getFolders } from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
 
 initViewportHeight();
@@ -534,6 +535,7 @@ const initMobileNotes = () => {
 
   let currentNoteId = null;
   let allNotes = [];
+  let currentFolderId = 'all';
   let filterQuery = '';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
@@ -616,6 +618,21 @@ const initMobileNotes = () => {
       const body = typeof note?.body === 'string' ? note.body.toLowerCase() : '';
       return title.includes(normalizedQuery) || body.includes(normalizedQuery);
     });
+  };
+
+  const getVisibleNotes = (source = allNotes) => {
+    if (!Array.isArray(source)) return [];
+    // Apply folder filtering first
+    let filteredByFolder;
+    if (currentFolderId === null || currentFolderId === 'all') {
+      filteredByFolder = [...source];
+    } else if (currentFolderId === 'unsorted') {
+      filteredByFolder = source.filter((note) => !note.folderId || note.folderId === 'unsorted');
+    } else {
+      filteredByFolder = source.filter((note) => note.folderId === currentFolderId);
+    }
+    // Then apply search filter
+    return getFilteredNotes(filteredByFolder);
   };
 
   const setEditorValues = (note) => {
@@ -732,7 +749,7 @@ const initMobileNotes = () => {
     allNotes = Array.isArray(sortedNotes) ? [...sortedNotes] : [];
     const shouldPreserveEditor = preserveDraft && hasUnsavedChanges();
     const hasAnyNotes = allNotes.length > 0;
-    const visibleNotes = getFilteredNotes();
+    const visibleNotes = getVisibleNotes();
 
     renderNotesList(visibleNotes);
 
@@ -883,6 +900,77 @@ const initMobileNotes = () => {
 
     updateListSelection();
     return notes;
+  };
+
+  /* Folder chip bar rendering and interaction */
+  const folderBarEl = document.getElementById('notebook-folder-bar');
+  const buildFolderChips = () => {
+    if (!folderBarEl) return;
+    folderBarEl.innerHTML = '';
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch {
+      folders = [];
+    }
+
+    // Ensure unsorted exists in the list (but don't duplicate)
+    const hasUnsorted = folders.some((f) => f && f.id === 'unsorted');
+    if (!hasUnsorted) {
+      folders.unshift({ id: 'unsorted', name: 'Unsorted' });
+    }
+
+    // Remaining folders sorted alphabetically (excluding unsorted)
+    const remaining = folders
+      .filter((f) => f && f.id !== 'unsorted')
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+    // All, Unsorted, then remaining
+    const ordered = [];
+    ordered.push({ id: 'all', name: 'All' });
+    ordered.push({ id: 'unsorted', name: 'Unsorted' });
+    ordered.push(...remaining);
+
+    ordered.forEach((folder) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'folder-chip';
+      chip.dataset.folderId = folder.id;
+      chip.textContent = folder.name;
+      if (String(currentFolderId) === String(folder.id)) {
+        chip.classList.add('active');
+      }
+      chip.addEventListener('click', () => {
+        currentFolderId = folder.id === 'all' ? 'all' : folder.id;
+        // update active state
+        const chips = folderBarEl.querySelectorAll('.folder-chip');
+        chips.forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        // re-render notes using current filter
+        renderFilteredNotes();
+      });
+      folderBarEl.appendChild(chip);
+    });
+
+    // Add + New folder chip at the end
+    const newChip = document.createElement('button');
+    newChip.type = 'button';
+    newChip.className = 'folder-chip outlined';
+    newChip.textContent = '+ New folder';
+    newChip.addEventListener('click', () => {
+      console.log('New folder click (to be implemented)');
+    });
+    folderBarEl.appendChild(newChip);
+  };
+
+  // Build initial folder bar when the sheet opens and when notes refresh
+  const initFolderBar = () => {
+    try {
+      buildFolderChips();
+    } catch (e) {
+      // If folder rendering fails, keep behavior unchanged
+      console.warn('[notebook] Unable to build folder bar', e);
+    }
   };
 
   if (listElement) {
