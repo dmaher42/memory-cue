@@ -241,6 +241,13 @@ export const getFolders = () => {
   return defaultFolders();
 };
 
+// Helper to look up a folder name by id
+export const getFolderNameById = (id) => {
+  const folders = getFolders();
+  const found = folders.find((f) => f && String(f.id) === String(id));
+  return found ? String(found.name) : 'Unsorted';
+};
+
 export const saveFolders = (folders) => {
   if (!hasLocalStorage() || !Array.isArray(folders)) {
     return false;

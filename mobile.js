@@ -8,6 +8,7 @@ import {
   NOTES_STORAGE_KEY,
 } from './js/modules/notes-storage.js';
 import { getFolders } from './js/modules/notes-storage.js';
+import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
@@ -538,6 +539,7 @@ const initMobileNotes = () => {
   let currentNoteId = null;
   let allNotes = [];
   let currentFolderId = 'all';
+  let currentEditingNoteFolderId = null;
   let filterQuery = '';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
@@ -644,6 +646,11 @@ const initMobileNotes = () => {
       setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
       delete scratchNotesEditorElement.dataset.noteOriginalBody;
+      // default editing folder left as-is; caller (new note flow) will set label
+      const labelElClear = document.getElementById('note-folder-label');
+      if (labelElClear && !currentEditingNoteFolderId) {
+        labelElClear.textContent = getFolderNameById('unsorted');
+      }
       return;
     }
     currentNoteId = note.id;
@@ -653,6 +660,12 @@ const initMobileNotes = () => {
     setEditorContent(nextBody);
     titleInput.dataset.noteOriginalTitle = nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
+    // set current editing folder for existing notes
+    currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+    const labelEl = document.getElementById('note-folder-label');
+    if (labelEl) {
+      labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
+    }
   };
 
   const getEditorValues = () => ({
@@ -856,18 +869,29 @@ const initMobileNotes = () => {
       const topRow = document.createElement('div');
       topRow.className = 'flex items-center justify-between gap-2';
 
+      const titleWrap = document.createElement('div');
+      titleWrap.className = 'flex items-center gap-2';
+
       const titleEl = document.createElement('span');
       titleEl.className = 'saved-note-title note-list-title truncate';
       const noteTitle = note.title || 'Untitled';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
 
+      // Folder badge
+      const folderBadge = document.createElement('span');
+      folderBadge.className = 'note-folder-badge';
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      folderBadge.textContent = getFolderNameById(folderId);
+
       const metaEl = document.createElement('span');
       metaEl.className = 'saved-note-meta note-list-meta';
       const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
       metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
 
-      topRow.appendChild(titleEl);
+      titleWrap.appendChild(titleEl);
+      titleWrap.appendChild(folderBadge);
+      topRow.appendChild(titleWrap);
       topRow.appendChild(metaEl);
 
       // Body preview (strip HTML and clamp to two lines)
@@ -1073,6 +1097,89 @@ const initMobileNotes = () => {
     });
   }
 
+  /* Folder picker modal for assigning a folder to the note */
+  const pickFolderModalEl = document.getElementById('pickFolderModal');
+  const pickFolderListEl = document.getElementById('pickFolderList');
+  const pickFolderConfirmBtn = document.getElementById('pickFolderConfirm');
+  const pickFolderCancelBtn = document.getElementById('pickFolderCancel');
+  let pickFolderController = null;
+  let pickSelectionId = null;
+
+  const openFolderPicker = () => {
+    if (!pickFolderModalEl || !pickFolderListEl) return;
+    // populate folders
+    pickFolderListEl.innerHTML = '';
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch {
+      folders = [];
+    }
+    // ensure unsorted present
+    if (!folders.some((f) => f && f.id === 'unsorted')) {
+      folders.unshift({ id: 'unsorted', name: 'Unsorted' });
+    }
+    // build radio rows
+    folders.forEach((f) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-3 p-2 rounded-md hover:bg-base-100';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'pick-folder';
+      input.value = f.id;
+      input.id = `pick-folder-${f.id}`;
+      if (String(f.id) === String(currentEditingNoteFolderId) || (!currentEditingNoteFolderId && f.id === 'unsorted')) {
+        input.checked = true;
+        pickSelectionId = f.id;
+      }
+      input.addEventListener('change', () => {
+        pickSelectionId = input.value;
+      });
+      const label = document.createElement('label');
+      label.setAttribute('for', input.id);
+      label.textContent = f.name;
+      row.appendChild(input);
+      row.appendChild(label);
+      pickFolderListEl.appendChild(row);
+    });
+
+    if (!pickFolderController) {
+      pickFolderController = new ModalController({
+        modalElement: pickFolderModalEl,
+        closeButton: pickFolderCancelBtn,
+        titleInput: null,
+        autoFocus: true,
+      });
+    }
+    pickFolderController.show();
+  };
+
+  if (pickFolderConfirmBtn) {
+    pickFolderConfirmBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!pickSelectionId) {
+        // nothing selected
+        return;
+      }
+      // set editing folder and update label
+      currentEditingNoteFolderId = pickSelectionId === 'unsorted' ? 'unsorted' : pickSelectionId;
+      const labelElPick = document.getElementById('note-folder-label');
+      if (labelElPick) labelElPick.textContent = getFolderNameById(currentEditingNoteFolderId);
+      try {
+        pickFolderController.requestClose('selected');
+      } catch {}
+    });
+  }
+
+  // wire folder button to open picker
+  const noteFolderBtn = document.getElementById('note-folder-button');
+  if (noteFolderBtn) {
+    noteFolderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openFolderPicker();
+    });
+  }
+
   if (listElement) {
     listElement.addEventListener('click', (event) => {
       const target = event.target;
@@ -1152,14 +1259,15 @@ const initMobileNotes = () => {
           title: sanitizedTitle,
           body,
           updatedAt: timestamp,
+          folderId: currentEditingNoteFolderId === 'all' ? null : currentEditingNoteFolderId || null,
         };
       } else {
-        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp });
+        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp, folderId: currentEditingNoteFolderId === 'all' ? null : currentEditingNoteFolderId || null });
         currentNoteId = newNote.id;
         notesArray.unshift(newNote);
       }
     } else {
-      const newNote = createNote(sanitizedTitle, body);
+      const newNote = createNote(sanitizedTitle, body, { folderId: currentEditingNoteFolderId === 'all' ? null : currentEditingNoteFolderId || null });
       currentNoteId = newNote.id;
       notesArray.unshift(newNote);
     }
@@ -1171,7 +1279,14 @@ const initMobileNotes = () => {
 
   if (newButton) {
     newButton.addEventListener('click', () => {
+      // Prepare editor for creating a new note. Default folder depends on selected folder chip.
       setEditorValues(null);
+      // default editing folder: if a folder is selected in folder bar, use that; otherwise 'unsorted'
+      currentEditingNoteFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'unsorted';
+      const labelElNew = document.getElementById('note-folder-label');
+      if (labelElNew) {
+        labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
+      }
       updateListSelection();
       if (typeof titleInput.focus === 'function') {
         titleInput.focus();
