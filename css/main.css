@@ -9,6 +9,10 @@
   --mc-border-soft: rgba(255, 255, 255, 0.12);
   --mc-text-main: #f9fafb;
   --mc-text-soft: rgba(249, 250, 251, 0.86);
+  --cat-yellow: #f2d38b;
+  --cat-red:    #f29cab;
+  --cat-green:  #9ed8b7;
+  --cat-violet: #c6b4f2;
 }
 
 /* Full-page gradient background, applied to main shells / body */
