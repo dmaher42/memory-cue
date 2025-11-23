@@ -232,7 +232,23 @@ export const getFolders = () => {
     if (typeof raw === 'string') {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) {
-        return parsed.map((f) => ({ id: String(f.id), name: String(f.name) }));
+        // Ensure order is present; if missing, assign and persist
+        let needsSave = false;
+        const normalized = parsed.map((f, idx) => {
+          const id = String(f.id);
+          const name = typeof f.name === 'string' ? f.name : String(f.id);
+          const order = typeof f.order === 'number' ? f.order : idx;
+          if (typeof f.order !== 'number') needsSave = true;
+          return { id, name, order };
+        });
+        if (needsSave) {
+          try {
+            localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(normalized));
+          } catch {
+            /* ignore write errors */
+          }
+        }
+        return normalized;
       }
     }
   } catch (e) {
@@ -255,7 +271,7 @@ export const saveFolders = (folders) => {
   try {
     const sanitized = folders
       .filter((f) => f && typeof f.id === 'string' && f.id.trim())
-      .map((f) => ({ id: f.id, name: typeof f.name === 'string' ? f.name : String(f.id) }));
+      .map((f, idx) => ({ id: f.id, name: typeof f.name === 'string' ? f.name : String(f.id), order: typeof f.order === 'number' ? f.order : idx }));
     if (!sanitized.length) {
       // always ensure at least the unsorted folder exists
       sanitized.push(...defaultFolders());

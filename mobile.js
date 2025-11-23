@@ -930,6 +930,25 @@ const initMobileNotes = () => {
 
   /* Folder chip bar rendering and interaction */
   const folderBarEl = document.getElementById('notebook-folder-bar');
+  
+  const setActiveFolderChip = (folderId) => {
+    const bar = folderBarEl || document.getElementById('notebook-folder-bar');
+    if (!bar) return;
+    const chips = bar.querySelectorAll('.notebook-folder-chip');
+    chips.forEach((chip) => {
+      const isActive = String(chip.dataset.folderId) === String(folderId);
+      chip.classList.toggle('notebook-folder-chip--active', isActive);
+      // keep legacy active class for compatibility
+      chip.classList.toggle('active', isActive);
+      if (isActive) {
+        try {
+          chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        } catch (e) {
+          try { chip.scrollIntoView(); } catch {}
+        }
+      }
+    });
+  };
   const buildFolderChips = () => {
     if (!folderBarEl) return;
     folderBarEl.innerHTML = '';
@@ -946,10 +965,10 @@ const initMobileNotes = () => {
       folders.unshift({ id: 'unsorted', name: 'Unsorted' });
     }
 
-    // Remaining folders sorted alphabetically (excluding unsorted)
+    // Remaining folders ordered by their `order` property (excluding unsorted)
     const remaining = folders
       .filter((f) => f && f.id !== 'unsorted')
-      .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
 
     // All, Unsorted, then remaining
     const ordered = [];
@@ -960,20 +979,26 @@ const initMobileNotes = () => {
     ordered.forEach((folder) => {
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'folder-chip';
+      // keep legacy `folder-chip` for existing code paths, add new premium class
+      chip.className = 'folder-chip notebook-folder-chip';
       chip.dataset.folderId = folder.id;
+      // optional grip for user folders (visual only)
+      if (folder.id !== 'all' && folder.id !== 'unsorted') {
+        const grip = document.createElement('span');
+        grip.className = 'notebook-folder-chip-grip';
+        grip.setAttribute('aria-hidden', 'true');
+        chip.appendChild(grip);
+      }
+
       const nameSpan = document.createElement('span');
+      nameSpan.className = 'notebook-folder-chip-label';
       nameSpan.textContent = folder.name;
       chip.appendChild(nameSpan);
-      if (String(currentFolderId) === String(folder.id)) {
-        chip.classList.add('active');
-      }
+
       chip.addEventListener('click', () => {
         currentFolderId = folder.id === 'all' ? 'all' : folder.id;
-        // update active state
-        const chips = folderBarEl.querySelectorAll('.folder-chip');
-        chips.forEach((c) => c.classList.remove('active'));
-        chip.classList.add('active');
+        // set active class and auto-scroll
+        setActiveFolderChip(currentFolderId);
         // re-render notes using current filter
         renderFilteredNotes();
       });
@@ -996,13 +1021,16 @@ const initMobileNotes = () => {
     // Add + New folder chip at the end
     const newChip = document.createElement('button');
     newChip.type = 'button';
-    newChip.className = 'folder-chip outlined';
+    newChip.className = 'folder-chip outlined notebook-folder-chip';
     newChip.textContent = '+ New folder';
     newChip.addEventListener('click', (e) => {
       e.preventDefault();
       openNewFolderDialog();
     });
     folderBarEl.appendChild(newChip);
+
+    // ensure active chip is visually set and scrolled into view
+    setActiveFolderChip(currentFolderId);
   };
 
   // Build initial folder bar when the sheet opens and when notes refresh
@@ -1212,6 +1240,49 @@ const initMobileNotes = () => {
     }
   };
 
+  // Reorder folders by swapping `order` with neighbor and normalizing
+  const reorderFolder = (folderId, direction) => {
+    if (!folderId || (direction !== -1 && direction !== 1)) return;
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders().slice() : [];
+    } catch (e) {
+      folders = [];
+    }
+    if (!folders.length) return;
+
+    // Only reorder user folders (exclude 'unsorted')
+    const userFolders = folders.filter((f) => f && f.id !== 'unsorted');
+    // Sort by order asc
+    userFolders.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    const idx = userFolders.findIndex((f) => String(f.id) === String(folderId));
+    if (idx === -1) return;
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= userFolders.length) return;
+
+    // swap orders
+    const tmp = userFolders[idx].order;
+    userFolders[idx].order = userFolders[targetIdx].order;
+    userFolders[targetIdx].order = tmp;
+
+    // rebuild full folders array preserving unsorted and applying new orders
+    const unsorted = folders.find((f) => f && f.id === 'unsorted') || { id: 'unsorted', name: 'Unsorted', order: -1 };
+    const rebuilt = [unsorted, ...userFolders];
+
+    // normalize orders to 0..N-1 (keep unsorted as  -1 or 0? We'll place unsorted first with order 0)
+    const normalized = rebuilt.map((f, i) => ({ id: f.id, name: f.name, order: i }));
+
+    try {
+      const saved = saveFolders(normalized);
+      if (saved) {
+        try { buildFolderChips(); } catch {}
+        try { renderFilteredNotes(); } catch {}
+      }
+    } catch (e) {
+      console.warn('[notebook] reorder save failed', e);
+    }
+  };
+
   const openFolderOverflowMenu = (folderId, anchorEl) => {
     closeOverflowMenu();
     const menu = document.createElement('div');
@@ -1219,6 +1290,57 @@ const initMobileNotes = () => {
     menu.style.position = 'absolute';
     menu.style.zIndex = 1200;
     menu.style.minWidth = '160px';
+
+    // Determine position to optionally disable move controls
+    let _isFirst = false;
+    let _isLast = false;
+    try {
+      const _folders = Array.isArray(getFolders()) ? getFolders().filter(Boolean) : [];
+      const _user = _folders.filter((f) => f && f.id !== 'unsorted').sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+      const _idx = _user.findIndex((f) => String(f.id) === String(folderId));
+      _isFirst = _idx === 0;
+      _isLast = _idx === -1 ? true : _idx === _user.length - 1;
+    } catch (e) {
+      _isFirst = false;
+      _isLast = false;
+    }
+
+    // Move up / Move down controls
+    const moveUpBtn = document.createElement('button');
+    moveUpBtn.type = 'button';
+    moveUpBtn.className = 'w-full text-left px-3 py-2 btn-ghost';
+    moveUpBtn.textContent = 'Move up';
+    if (_isFirst) {
+      moveUpBtn.setAttribute('disabled', '');
+      moveUpBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    moveUpBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        reorderFolder(folderId, -1);
+      } catch (err) {
+        console.warn('[notebook] reorder move up failed', err);
+      }
+      closeOverflowMenu();
+    });
+
+    const moveDownBtn = document.createElement('button');
+    moveDownBtn.type = 'button';
+    moveDownBtn.className = 'w-full text-left px-3 py-2 btn-ghost';
+    moveDownBtn.textContent = 'Move down';
+    if (_isLast) {
+      moveDownBtn.setAttribute('disabled', '');
+      moveDownBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    moveDownBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        reorderFolder(folderId, 1);
+      } catch (err) {
+        console.warn('[notebook] reorder move down failed', err);
+      }
+      closeOverflowMenu();
+    });
 
     const renameBtn = document.createElement('button');
     renameBtn.type = 'button';
@@ -1240,6 +1362,8 @@ const initMobileNotes = () => {
       closeOverflowMenu();
     });
 
+    menu.appendChild(moveUpBtn);
+    menu.appendChild(moveDownBtn);
     menu.appendChild(renameBtn);
     menu.appendChild(deleteBtn);
 
