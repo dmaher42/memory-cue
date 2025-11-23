@@ -260,6 +260,24 @@ html[data-theme="professional"] {
   color: var(--accent-color);
 }
 
+/* New folder modal tweaks */
+#newFolderModal {
+  border: none;
+  max-width: 420px;
+  width: calc(100% - 36px);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+#newFolderModal .modal-actions .btn {
+  min-width: 84px;
+}
+
+#newFolderError {
+  color: #e11d48; /* text-error */
+}
+
 .notebook-action-btn {
   display: inline-flex;
   align-items: center;

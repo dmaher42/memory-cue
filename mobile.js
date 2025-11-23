@@ -9,6 +9,8 @@ import {
 } from './js/modules/notes-storage.js';
 import { getFolders } from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
+import { ModalController } from './js/modules/modal-controller.js';
+import { saveFolders } from './js/modules/notes-storage.js';
 
 initViewportHeight();
 
@@ -957,8 +959,9 @@ const initMobileNotes = () => {
     newChip.type = 'button';
     newChip.className = 'folder-chip outlined';
     newChip.textContent = '+ New folder';
-    newChip.addEventListener('click', () => {
-      console.log('New folder click (to be implemented)');
+    newChip.addEventListener('click', (e) => {
+      e.preventDefault();
+      openNewFolderDialog();
     });
     folderBarEl.appendChild(newChip);
   };
@@ -972,6 +975,103 @@ const initMobileNotes = () => {
       console.warn('[notebook] Unable to build folder bar', e);
     }
   };
+
+  /* New Folder modal setup */
+  const newFolderModalEl = document.getElementById('newFolderModal');
+  const newFolderNameInput = document.getElementById('newFolderName');
+  const newFolderError = document.getElementById('newFolderError');
+  const newFolderCreateBtn = document.getElementById('newFolderCreate');
+  const newFolderCancelBtn = document.getElementById('newFolderCancel');
+  let newFolderModalController = null;
+
+  const clearNewFolderError = () => {
+    if (!newFolderError) return;
+    newFolderError.classList.add('sr-only');
+    newFolderError.textContent = '';
+  };
+
+  const showNewFolderError = (msg) => {
+    if (!newFolderError) return;
+    newFolderError.textContent = msg;
+    newFolderError.classList.remove('sr-only');
+  };
+
+  const openNewFolderDialog = () => {
+    if (!newFolderModalEl) return;
+    if (!newFolderModalController) {
+      newFolderModalController = new ModalController({
+        modalElement: newFolderModalEl,
+        closeButton: newFolderCancelBtn,
+        titleInput: newFolderNameInput,
+        modalTitle: document.getElementById('newFolderTitle'),
+        autoFocus: true,
+      });
+    }
+    clearNewFolderError();
+    if (newFolderNameInput) newFolderNameInput.value = '';
+    newFolderModalController.show();
+  };
+
+  const createNewFolder = () => {
+    if (!newFolderNameInput) return;
+    const raw = String(newFolderNameInput.value || '');
+    const name = raw.trim();
+    clearNewFolderError();
+    if (!name.length) {
+      showNewFolderError("Folder name can't be empty.");
+      return;
+    }
+
+    // Load existing folders and check duplicates (case-insensitive)
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch (e) {
+      folders = [];
+    }
+    const exists = folders.some((f) => String(f.name).toLowerCase() === name.toLowerCase());
+    if (exists) {
+      showNewFolderError('You already have a folder with this name.');
+      return;
+    }
+
+    const folderId = `folder-${Date.now().toString(36)}`;
+    const newFolder = { id: folderId, name };
+    const updated = [...folders.filter(Boolean), newFolder];
+    const saved = saveFolders(updated);
+    if (!saved) {
+      showNewFolderError('Unable to create folder. Please try again.');
+      return;
+    }
+
+    // Close modal, set active folder and rebuild
+    try {
+      newFolderModalController.requestClose('created');
+    } catch { /* ignore */ }
+    currentFolderId = folderId;
+    try {
+      buildFolderChips();
+    } catch (e) {
+      console.warn('[notebook] rebuild folder chips failed', e);
+    }
+    renderFilteredNotes();
+  };
+
+  if (newFolderCreateBtn) {
+    newFolderCreateBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      createNewFolder();
+    });
+  }
+
+  if (newFolderNameInput) {
+    newFolderNameInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        createNewFolder();
+      }
+    });
+  }
 
   if (listElement) {
     listElement.addEventListener('click', (event) => {
