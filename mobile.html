@@ -2107,7 +2107,11 @@
     font-size: 0.85rem;
     font-family: var(--font-primary);
     font-weight: 500;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+    transition:
+      background-color 0.18s ease-out,
+      border-color 0.18s ease-out,
+      box-shadow 0.18s ease-out,
+      transform 0.16s ease-out;
     color: var(--accent-color);
   }
 
@@ -2118,9 +2122,16 @@
     outline: none;
   }
 
+  #mobile-nav-shell .floating-card.is-active {
+    transform: translateY(-2px);
+    background-color: rgba(81, 38, 99, 0.12);
+    border-color: var(--accent-color);
+    box-shadow: 0 6px 18px rgba(81, 38, 99, 0.15);
+  }
+
   #mobile-nav-shell .floating-card:active {
-    transform: scale(0.94);
-    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.12);
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 3px 10px rgba(81, 38, 99, 0.12);
   }
 
   #mobile-nav-shell .floating-card span.icon {
