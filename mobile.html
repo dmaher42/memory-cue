@@ -5777,7 +5777,13 @@
 
           <div class="space-y-1">
             <div class="section-label">Notifications</div>
-            <button id="notifBtn" class="btn btn-outline btn-sm w-full justify-center" type="button">Enable notifications</button>
+            <div class="notif-switch-row">
+              <label class="ios-switch" for="notifBtn">
+                <input type="checkbox" id="notifBtn" class="notif-toggle" role="switch" aria-checked="false" />
+                <span class="switch-track"><span class="switch-thumb" aria-hidden="true"></span></span>
+                <span class="sr-only">Enable notifications</span>
+              </label>
+            </div>
           </div>
 
           <div class="space-y-2">
