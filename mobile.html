@@ -183,6 +183,21 @@
       color: var(--text-secondary);
     }
 
+    /* Premium gradient background for the writing panel */
+    .premium-gradient {
+      background: linear-gradient(
+        45deg,
+        hsla(50, 68%, 93%, 1) 0%,
+        hsla(18, 88%, 66%, 1) 20%,
+        hsla(7, 73%, 68%, 1) 45%,
+        hsla(288, 55%, 55%, 1) 100%
+      );
+      background-attachment: fixed;
+      background-size: cover;
+      padding: 0.75rem;
+      border-radius: 1rem;
+    }
+
   .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -4846,7 +4861,7 @@
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-primary);">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-primary);">
+        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-primary);">
           <!-- Header Row -->
           <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
             <div class="flex flex-col">
