@@ -1059,35 +1059,50 @@ export async function initReminders(sel = {}) {
 
   setupQuickAddVoiceSupport();
 
-  const SpeechRecognitionCtor =
+  const SpeechRecognition =
     typeof window !== 'undefined'
       ? window.SpeechRecognition || window.webkitSpeechRecognition
       : null;
-  const voiceSpeechRecognition = SpeechRecognitionCtor ? new SpeechRecognitionCtor() : null;
+  let voiceSpeechRecognition = null;
+  const voiceSupported = !!SpeechRecognition;
 
-  if (voiceSpeechRecognition) {
+  if (voiceSupported) {
+    voiceSpeechRecognition = new SpeechRecognition();
     voiceSpeechRecognition.lang = 'en-AU';
     voiceSpeechRecognition.interimResults = false;
     voiceSpeechRecognition.maxAlternatives = 1;
   }
 
-  if (pillVoiceBtn && voiceSpeechRecognition) {
-    pillVoiceBtn.addEventListener('click', () => {
-      try {
-        voiceSpeechRecognition.start();
-        pillVoiceBtn.classList.add('is-recording');
-      } catch (error) {
-        console.warn('Voice input failed to start', error);
+  function showVoiceNotSupportedMessage() {
+    try {
+      if (typeof toast === 'function') {
+        toast('Voice input is not supported on this device. You can still type your reminder.');
+        return;
       }
-    });
-  } else if (pillVoiceBtn) {
-    pillVoiceBtn.addEventListener('click', () => {
-      try {
-        alert('Voice input is not supported on this browser.');
-      } catch {
-        console.warn('Voice input is not supported on this browser.');
-      }
-    });
+    } catch {}
+
+    try {
+      alert('Voice input is not supported on this device. You can still type your reminder.');
+    } catch {
+      console.warn('Voice input is not supported on this device.');
+    }
+  }
+
+  if (pillVoiceBtn) {
+    if (voiceSupported && voiceSpeechRecognition) {
+      pillVoiceBtn.addEventListener('click', () => {
+        try {
+          voiceSpeechRecognition.start();
+          pillVoiceBtn.classList.add('is-recording');
+        } catch (error) {
+          console.warn('Voice input failed to start', error);
+        }
+      });
+    } else {
+      pillVoiceBtn.addEventListener('click', () => {
+        showVoiceNotSupportedMessage();
+      });
+    }
   }
 
   if (voiceSpeechRecognition) {
@@ -1097,6 +1112,12 @@ export async function initReminders(sel = {}) {
     });
 
     voiceSpeechRecognition.addEventListener('end', () => {
+      if (pillVoiceBtn) {
+        pillVoiceBtn.classList.remove('is-recording');
+      }
+    });
+
+    voiceSpeechRecognition.addEventListener('error', () => {
       if (pillVoiceBtn) {
         pillVoiceBtn.classList.remove('is-recording');
       }
