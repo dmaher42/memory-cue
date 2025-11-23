@@ -339,7 +339,8 @@
     }
 
     .planner-cards-scroll {
-      height: clamp(28rem, 65vh, 48rem);
+      min-height: clamp(24rem, 55vh, 42rem);
+      max-height: clamp(32rem, 70vh, 52rem);
       overflow-y: auto;
       padding-right: 0.5rem;
     }
@@ -1189,11 +1190,11 @@
                 </div>
               </div>
               <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] items-start">
-                <div class="space-y-4">
-                  <div class="planner-cards-scroll rounded-2xl border border-base-200/80 bg-base-100/80 p-4 shadow-sm">
+                <div class="space-y-4 planner-layout">
+                  <div class="planner-cards-scroll rounded-2xl border border-base-200/80 bg-base-100/80 p-4 shadow-sm h-full overflow-y-auto">
                     <div
                       id="plannerCards"
-                      class="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:border [&_[data-planner-lesson]]:border-base-200 [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-5 [&_[data-planner-lesson]]:py-5 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-md [&_[data-planner-lesson]]:space-y-3 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-4 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start"
+                      class="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:border [&_[data-planner-lesson]]:border-base-200 [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-5 [&_[data-planner-lesson]]:py-5 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-md [&_[data-planner-lesson]]:space-y-3 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-4 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start min-h-[12rem]"
                     ></div>
                     <div id="plannerWeekView" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 hidden"></div>
                   </div>
