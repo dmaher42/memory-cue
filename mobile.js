@@ -1633,20 +1633,46 @@ const initMobileNotes = () => {
     refreshFromStorage({ preserveDraft: false });
   });
 
+  const prepareNewNote = () => {
+    // Prepare editor for creating a new note. Default folder depends on selected folder chip.
+    setEditorValues(null);
+    // default editing folder: if a folder is selected in folder bar, use that; otherwise 'unsorted'
+    currentEditingNoteFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'unsorted';
+    const labelElNew = document.getElementById('note-folder-label');
+    if (labelElNew) {
+      labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
+    }
+    updateListSelection();
+    if (typeof titleInput.focus === 'function') {
+      try { titleInput.focus(); } catch {}
+    }
+  };
+
   if (newButton) {
-    newButton.addEventListener('click', () => {
-      // Prepare editor for creating a new note. Default folder depends on selected folder chip.
-      setEditorValues(null);
-      // default editing folder: if a folder is selected in folder bar, use that; otherwise 'unsorted'
-      currentEditingNoteFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'unsorted';
-      const labelElNew = document.getElementById('note-folder-label');
-      if (labelElNew) {
-        labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
+    newButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      prepareNewNote();
+    });
+  }
+
+  // Also wire the footer 'New note' floating button to the same behavior
+  const footerNewNoteBtn = document.getElementById('mobile-footer-new-note');
+  if (footerNewNoteBtn) {
+    footerNewNoteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // switch navigation/view if needed
+      try {
+        // If app uses data-nav-target, attempt to activate the notebook/add-note view
+        const target = footerNewNoteBtn.getAttribute('data-nav-target');
+        if (target) {
+          const navBtns = document.querySelectorAll('[data-nav-target]');
+          navBtns.forEach((b) => b.classList.remove('active'));
+          footerNewNoteBtn.classList.add('active');
+        }
+      } catch (err) {
+        /* ignore nav activation errors */
       }
-      updateListSelection();
-      if (typeof titleInput.focus === 'function') {
-        titleInput.focus();
-      }
+      prepareNewNote();
     });
   }
 
