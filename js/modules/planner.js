@@ -114,6 +114,9 @@ const resolveDayIndexFromName = (value) => {
   return matchIndex >= 0 ? matchIndex : 0;
 };
 
+const LESSON_STATUS_OPTIONS = new Set(['not_started', 'in_progress', 'ready', 'taught']);
+const LESSON_TEMPLATE_TYPES = new Set(['simple', 'hpe', 'english', 'cac', 'custom']);
+
 const normaliseDetail = (detail) => {
   if (!detail || typeof detail !== 'object') {
     return null;
@@ -125,6 +128,19 @@ const normaliseDetail = (detail) => {
   const badge = typeof detail.badge === 'string' ? detail.badge.trim() : '';
   const id = typeof detail.id === 'string' && detail.id.trim() ? detail.id : generateId();
   return { id, badge, text };
+};
+
+const normaliseResource = (resource) => {
+  if (!resource || typeof resource !== 'object') {
+    return null;
+  }
+  const label = typeof resource.label === 'string' ? resource.label.trim() : '';
+  const url = typeof resource.url === 'string' ? resource.url.trim() : '';
+  if (!label && !url) {
+    return null;
+  }
+  const id = typeof resource.id === 'string' && resource.id.trim() ? resource.id : generateId();
+  return { id, label, url };
 };
 
 const normaliseLesson = (lesson, fallback = {}) => {
@@ -171,6 +187,26 @@ const normaliseLesson = (lesson, fallback = {}) => {
     : typeof defaults.subject === 'string'
       ? defaults.subject.trim()
       : '';
+  const statusRaw = typeof lesson?.status === 'string' ? lesson.status.trim().toLowerCase() : '';
+  const status = LESSON_STATUS_OPTIONS.has(statusRaw) ? statusRaw : 'not_started';
+  const templateRaw = typeof lesson?.templateType === 'string' ? lesson.templateType.trim().toLowerCase() : '';
+  const templateType = LESSON_TEMPLATE_TYPES.has(templateRaw) ? templateRaw : 'simple';
+  const resourceSource = Array.isArray(lesson?.resources)
+    ? lesson.resources
+    : Array.isArray(defaults.resources)
+      ? defaults.resources
+      : [];
+  const resources = resourceSource.map((entry) => normaliseResource(entry)).filter(Boolean);
+  const weekDay = typeof lesson?.weekDay === 'string'
+    ? lesson.weekDay.trim()
+    : typeof defaults.weekDay === 'string'
+      ? defaults.weekDay.trim()
+      : DAY_NAMES[dayIndex];
+  const period = typeof lesson?.period === 'string'
+    ? lesson.period.trim()
+    : typeof defaults.period === 'string'
+      ? defaults.period.trim()
+      : '';
   return {
     id,
     dayIndex,
@@ -180,6 +216,11 @@ const normaliseLesson = (lesson, fallback = {}) => {
     details,
     notes,
     subject,
+    status,
+    templateType,
+    resources,
+    weekDay,
+    period,
     position: Number.isFinite(rawPosition) ? rawPosition : null
   };
 };
@@ -252,6 +293,7 @@ const normalisePlan = (plan, fallbackWeekId) => {
     weekId: targetWeekId,
     startDate: weekStartDate ? weekStartDate.toISOString() : '',
     lessons: sortLessons(lessons),
+    teacherNotes: typeof plan?.teacherNotes === 'string' ? plan.teacherNotes : '',
     updatedAt: typeof plan?.updatedAt === 'string' ? plan.updatedAt : new Date().toISOString()
   };
 };
@@ -581,6 +623,21 @@ export const updateLessonInWeek = async (weekId, lessonId, updates = {}) => {
   return persisted;
 };
 
+export const updatePlannerTeacherNotes = async (weekId, notesValue = '') => {
+  if (!weekId) {
+    return null;
+  }
+  const plan = await loadWeekPlan(weekId);
+  const nextPlan = {
+    ...plan,
+    teacherNotes: typeof notesValue === 'string' ? notesValue : plan?.teacherNotes || '',
+    updatedAt: new Date().toISOString()
+  };
+  const persisted = await persistPlan(nextPlan);
+  dispatchPlannerUpdated(persisted);
+  return persisted;
+};
+
 export const deleteLessonFromWeek = async (weekId, lessonId) => {
   if (!weekId || !lessonId) {
     return null;
@@ -690,6 +747,13 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
     dayIndex: lesson.dayIndex,
     notes: typeof lesson.notes === 'string' ? lesson.notes : '',
     subject: typeof lesson.subject === 'string' ? lesson.subject : '',
+    period: typeof lesson.period === 'string' ? lesson.period : '',
+    weekDay: typeof lesson.weekDay === 'string' ? lesson.weekDay : '',
+    templateType: typeof lesson.templateType === 'string' ? lesson.templateType : 'simple',
+    status: 'not_started',
+    resources: Array.isArray(lesson.resources)
+      ? lesson.resources.map((entry) => ({ label: entry?.label || '', url: entry?.url || '' }))
+      : [],
     details: (lesson.details || []).map((detail) => ({
       badge: detail.badge,
       text: detail.text
@@ -698,7 +762,8 @@ export const duplicateWeekPlan = async (sourceWeekId, targetWeekId) => {
   const nextPlan = normalisePlan(
     {
       weekId: targetWeekId,
-      lessons: duplicatedLessons
+      lessons: duplicatedLessons,
+      teacherNotes: typeof sourcePlan?.teacherNotes === 'string' ? sourcePlan.teacherNotes : ''
     },
     targetWeekId
   );

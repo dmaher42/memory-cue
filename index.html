@@ -1099,11 +1099,54 @@
       <section data-route="planner" class="space-y-6" style="display: none;" data-planner-support-state="expanded">
         <div class="section-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm" data-planner-card-panel>
           <div class="desktop-panel-body section-pane__body px-4 py-6">
-            <div class="planner-cards-scroll">
-              <div
-                id="plannerCards"
-                class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-3 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start"
-              ></div>
+            <div class="flex flex-wrap items-center gap-2 pb-4">
+              <button type="button" id="planner-copy-week" class="btn btn-outline btn-sm">Copy last week</button>
+              <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
+              <button type="button" id="planner-new-lesson-btn" class="btn btn-primary btn-sm">New lesson</button>
+              <div class="join">
+                <button
+                  type="button"
+                  id="planner-list-view-toggle"
+                  class="btn btn-ghost btn-sm join-item btn-active"
+                  aria-pressed="true"
+                >
+                  List view
+                </button>
+                <button
+                  type="button"
+                  id="planner-week-view-toggle"
+                  class="btn btn-ghost btn-sm join-item"
+                  aria-pressed="false"
+                >
+                  Week view
+                </button>
+              </div>
+            </div>
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+              <div class="space-y-4">
+                <div class="planner-cards-scroll">
+                  <div
+                    id="plannerCards"
+                    class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-4 [&_[data-planner-lesson]]:py-4 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-lg [&_[data-planner-lesson]]:space-y-2 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-3 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start"
+                  ></div>
+                  <div id="plannerWeekView" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 hidden"></div>
+                </div>
+              </div>
+              <aside class="space-y-2 rounded-2xl border border-base-200 bg-base-200/60 p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Teacher notes</p>
+                    <p class="text-sm text-base-content/80">Weekly notes for follow ups, printing, and reminders.</p>
+                  </div>
+                  <span id="plannerTeacherNotesStatus" class="text-xs text-base-content/70" data-status="idle">Notes save automatically.</span>
+                </div>
+                <textarea
+                  id="plannerTeacherNotes"
+                  class="textarea textarea-bordered w-full min-h-[10rem] resize-none text-sm text-base-content"
+                  placeholder="Capture behaviour notes, print jobs, and follow ups for this week."
+                  spellcheck="true"
+                ></textarea>
+              </aside>
             </div>
           </div>
         </div>
