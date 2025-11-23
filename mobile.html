@@ -2059,18 +2059,21 @@
 
   #mobile-nav-shell .floating-footer {
     pointer-events: auto;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
+    justify-content: center;
     align-items: center;
-    justify-items: center;
-    gap: 0.85rem;
+    gap: 24px;
     width: min(640px, 100%);
-    padding: 0.65rem 1rem;
+    padding: 6px 1rem 12px;
     margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
     background: transparent;
     backdrop-filter: none;
     border-radius: 1rem;
     box-shadow: none;
+  }
+
+  #mobile-nav-shell .floating-footer .floating-card {
+    flex-shrink: 0;
   }
 
   #mobile-nav-shell .floating-card {
