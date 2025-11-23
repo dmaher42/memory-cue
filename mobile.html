@@ -4719,6 +4719,63 @@
         -webkit-backface-visibility: hidden !important;
         backface-visibility: hidden !important;
       }
+
+      #reminders-slim-header .header-overflow-wrapper {
+        position: relative;
+      }
+
+      #reminders-slim-header .overflow-menu {
+        position: absolute;
+        top: 100%;
+        right: 0.75rem;
+        margin-top: 0.4rem;
+        min-width: 180px;
+
+        background-color: var(--surface-elevated);
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.35rem 0;
+        z-index: 50;
+      }
+
+      #reminders-slim-header .overflow-menu.hidden {
+        display: none;
+      }
+
+      #reminders-slim-header .overflow-menu button,
+      #reminders-slim-header .overflow-menu a,
+      #reminders-slim-header .overflow-menu .overflow-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        padding: 0.45rem 0.9rem;
+        font-family: var(--font-primary);
+        font-size: 0.9rem;
+        color: var(--text-main);
+        background: transparent;
+        border: none;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      #reminders-slim-header .overflow-menu button:hover,
+      #reminders-slim-header .overflow-menu a:hover,
+      #reminders-slim-header .overflow-menu .overflow-item:hover {
+        background-color: rgba(81, 38, 99, 0.06);
+      }
+
+      #reminders-slim-header .overflow-menu svg {
+        width: 18px;
+        height: 18px;
+        color: var(--accent-color);
+        flex-shrink: 0;
+      }
     </style>
     <div class="header-pill w-full">
       <input
@@ -4771,7 +4828,7 @@
         </button>
 
         <!-- Overflow menu -->
-        <div class="relative">
+        <div class="relative header-overflow-wrapper">
           <button
             id="headerMenuBtn"
             type="button"
@@ -4790,13 +4847,13 @@
           <!-- Dropdown menu -->
           <div
             id="headerMenu"
-            class="absolute right-0 top-full mt-2 w-48 bg-gray-50 rounded-lg shadow-lg border border-gray-200 py-1 z-50 hidden"
+            class="overflow-menu hidden"
             role="menu"
             aria-labelledby="headerMenuBtn"
           >
             <button
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+              class="overflow-item w-full"
               role="menuitem"
               onclick="window.location.href='/'"
             >
@@ -4810,7 +4867,7 @@
             <button
               id="googleSignInBtn"
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+              class="overflow-item w-full"
               role="menuitem"
             >
               <span aria-hidden="true">🔐</span>
@@ -4820,7 +4877,7 @@
             <button
               id="googleSignOutBtn"
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3 hidden"
+              class="overflow-item w-full hidden"
               role="menuitem"
             >
               <span aria-hidden="true">🔓</span>
@@ -4830,7 +4887,7 @@
             <button
               id="openSettings"
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+              class="overflow-item w-full"
               role="menuitem"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -4843,7 +4900,7 @@
             <button
               id="viewToggleMenu"
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3 justify-between"
+              class="overflow-item w-full justify-between"
               role="menuitem"
               aria-pressed="false"
               aria-live="polite"
@@ -4863,7 +4920,7 @@
             <button
               id="btn-theme"
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+              class="overflow-item w-full"
               role="menuitem"
             >
               <svg
@@ -4895,7 +4952,7 @@
 
             <button
               type="button"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+              class="overflow-item w-full"
               role="menuitem"
               onclick="window.open('https://github.com/dmaher42/memory-cue', '_blank')"
             >
