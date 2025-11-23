@@ -18,6 +18,11 @@ html {
   --font-body-weight: 400;
   --font-body-size: clamp(1rem, 0.97rem + 0.2vw, 1.1rem);
   --font-heading-size: clamp(1.35rem, 1rem + 1vw, 2.5rem);
+  --accent-color: #512663;
+  --surface-main: #F7F7FA;
+  --surface-elevated: #F9F9FB;
+  --border-subtle: #E3D9F4;
+  --text-main: #231B2E;
   --page-bg-base: #f7f8fb;
   --page-bg-muted: #eef2ff;
   --page-bg-accent: rgba(79, 70, 229, 0.16);
@@ -3390,21 +3395,28 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 /* Override header styles for light theme */
 .mobile-header,
 .header-pill {
-  background: #F7F7FA !important;
-  color: #512663;
-  border: 1px solid rgba(81, 38, 99, 0.08);
+  background: var(--surface-elevated) !important;
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 10px 24px rgba(81, 38, 99, 0.12);
 }
 
 .header-pill .quick-reminder {
-  background: #F9F9F9 !important;
-  color: #2f1b3f;
+  background: transparent !important;
+  color: var(--text-main);
   min-width: 0;
 }
 
 .header-pill .header-icons svg,
 .header-pill .header-icons button {
-  color: #512663 !important;
+  color: var(--accent-color) !important;
+}
+
+.header-pill svg,
+.nav-card svg,
+.fab-card svg,
+.floating-card svg {
+  color: var(--accent-color);
 }
 
 .header-pill {
@@ -3432,9 +3444,9 @@ body {
 #scratchNotesEditor,
 #scratchNotesEditor .note-title-field,
 #scratchNotesEditor .note-body-field {
-  background-color: #F9F9F9 !important; /* Soft Off‑White */
-  color: #000 !important;
-  border-color: #e6dff0 !important;
+  background-color: var(--surface-elevated) !important; /* Soft Off‑White */
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
   /* Ensure elements sit flush without extra space */
   margin-top: 0 !important;
 }
