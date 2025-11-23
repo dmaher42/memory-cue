@@ -3419,6 +3419,18 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   color: var(--accent-color);
 }
 
+.header-pill svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fab-card svg,
+.fab svg,
+.floating-card svg {
+  width: 24px;
+  height: 24px;
+}
+
 .header-pill {
   gap: 8px;
   flex-wrap: nowrap;
@@ -3454,4 +3466,12 @@ body {
 /* Use Deep Violet for formatting icons */
 .formatting-toolbar-strip button svg {
   color: #512663 !important;
+  width: 18px;
+  height: 18px;
+}
+
+.format-toolbar svg,
+.editor-toolbar svg {
+  width: 18px;
+  height: 18px;
 }
