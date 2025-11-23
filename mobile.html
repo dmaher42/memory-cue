@@ -1065,7 +1065,10 @@
       border-radius: 0.5rem;
       cursor: pointer;
       padding: 0;
-      transition: background-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.1s ease;
     }
 
     .pill-voice-btn:hover,
@@ -1074,7 +1077,13 @@
     }
 
     .pill-voice-btn.is-recording {
-      background-color: rgba(81, 38, 99, 0.16);
+      background-color: rgba(220, 38, 38, 0.08);
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
+      transform: scale(0.96);
+    }
+
+    .pill-voice-btn.is-recording svg {
+      color: #dc2626;
     }
 
     #slimMobileHeader h1 {
@@ -5224,7 +5233,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-YPGV35L2.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-YGO2HA37.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
