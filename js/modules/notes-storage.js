@@ -26,31 +26,30 @@ const decodeLegacyBody = (body) => {
     return '';
   }
 
-  // If there's no HTML-like characters, return the original string.
-  if (!/[<>]/.test(trimmed)) {
+  // If the body already contains HTML, preserve it verbatim to retain formatting.
+  if (/[<>]/.test(trimmed)) {
     return body;
   }
 
-  try {
-    if (typeof document !== 'undefined') {
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = trimmed;
-      const text =
-        typeof wrapper.innerText === 'string' && wrapper.innerText.length
-          ? wrapper.innerText
-          : wrapper.textContent || '';
-      return text.replace(/\r?\n/g, '\n');
-    }
-  } catch (e) {
-    // Ignore DOM conversion errors and fall back to regex handling below.
+  return body;
+};
+
+const normalizeBodyValue = (body) => {
+  if (typeof body !== 'string') {
+    return '';
   }
 
-  return trimmed
-    .replace(/<br\s*\/?\s*>/gi, '\n')
-    .replace(/<\/?div[^>]*>/gi, '\n')
-    .replace(/<\/?p[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\n{3,}/g, '\n\n');
+  const trimmed = body.trim();
+  if (!trimmed.length) {
+    return '';
+  }
+
+  // Preserve HTML markup, but still tolerate legacy plain-text bodies.
+  if (/[<>]/.test(trimmed)) {
+    return body;
+  }
+
+  return decodeLegacyBody(body);
 };
 
 const isValidDateString = (value) => {
@@ -66,7 +65,7 @@ export const createNote = (title, body, overrides = {}) => {
   return {
     id: overrides.id && typeof overrides.id === 'string' ? overrides.id : generateId(),
     title: trimmedTitle || 'Untitled note',
-    body: typeof body === 'string' ? decodeLegacyBody(body) : '',
+    body: normalizeBodyValue(body),
     updatedAt:
       overrides.updatedAt && isValidDateString(overrides.updatedAt)
         ? overrides.updatedAt
@@ -82,16 +81,11 @@ const normalizeNotes = (value) => {
           return null;
         }
         const title = typeof note.title === 'string' ? note.title.trim() : '';
-        let body = typeof note.body === 'string' ? decodeLegacyBody(note.body) : '';
+        let body = normalizeBodyValue(note.body);
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
         if (!title && !body && !note.body) {
           return null;
-        }
-        // If decodeLegacyBody stripped all text but the original raw body contained
-        // HTML, preserve the original HTML so notes with only markup aren't lost.
-        if (!body && note.body && /<[^>]+>/.test(note.body)) {
-          body = note.body;
         }
         return {
           id,
@@ -106,10 +100,7 @@ const normalizeNotes = (value) => {
   if (value && typeof value === 'object') {
     const title = typeof value.title === 'string' ? value.title : '';
     const rawBody = typeof value.body === 'string' ? value.body : '';
-    let body = rawBody ? decodeLegacyBody(rawBody) : '';
-    if (!body && rawBody && /<[^>]+>/.test(rawBody)) {
-      body = rawBody;
-    }
+    const body = normalizeBodyValue(rawBody);
     if (!title && !body) {
       return [];
     }
