@@ -5152,8 +5152,18 @@
         aria-label="Add reminder"
       >
         <span class="icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14" />
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
           </svg>
         </span>
       </button>
@@ -5165,7 +5175,16 @@
         aria-label="Add note"
       >
         <span class="icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M4 17.5V20h2.5L17 9.5 14.5 7 4 17.5z" />
             <path d="M13.5 8.5l2 2" />
           </svg>
@@ -5221,6 +5240,19 @@
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
 
+        const triggerAddReminder = () => {
+          const addBtn = document.getElementById('addReminderBtn');
+          if (addBtn) {
+            addBtn.click();
+            return;
+          }
+
+          const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+          if (quickAdd && typeof quickAdd.focus === 'function') {
+            quickAdd.focus();
+          }
+        };
+
         if (view === 'add-note') {
           window.dispatchEvent(
             new CustomEvent('app:navigate', {
@@ -5228,6 +5260,16 @@
             })
           );
           focusNotebookInputs();
+          return;
+        }
+
+        if (view === 'new') {
+          window.dispatchEvent(
+            new CustomEvent('app:navigate', {
+              detail: { view }
+            })
+          );
+          triggerAddReminder();
           return;
         }
 
