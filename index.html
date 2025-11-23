@@ -921,99 +921,123 @@
                 ✕
               </button>
             </div>
-            <form id="planner-lesson-form" class="mt-6 space-y-4" novalidate>
-              <div class="grid gap-4 md:grid-cols-3" data-planner-lesson-section>
-                <label class="block text-sm font-medium text-base-content">
-                  Day
-                  <select id="planner-lesson-day" class="select select-bordered mt-1 w-full" required>
-                    <option value="Monday">Monday</option>
-                    <option value="Tuesday">Tuesday</option>
-                    <option value="Wednesday">Wednesday</option>
-                    <option value="Thursday">Thursday</option>
-                    <option value="Friday">Friday</option>
-                    <option value="Saturday">Saturday</option>
-                    <option value="Sunday">Sunday</option>
-                  </select>
-                </label>
-                <label class="block text-sm font-medium text-base-content">
-                  Period or time
-                  <input
-                    id="planner-lesson-period"
-                    type="text"
-                    class="input input-bordered mt-1 w-full"
-                    placeholder="e.g. Lesson 3 – 11:15–12:05"
-                  />
-                </label>
-                <label class="block text-sm font-medium text-base-content">
-                  Title
-                  <input id="planner-lesson-title" type="text" class="input input-bordered mt-1 w-full" required />
-                </label>
-              </div>
-              <label class="block text-sm font-medium text-base-content" data-planner-summary-section>
-                Summary
-                <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                  <button type="button" class="btn btn-xs" data-summary-template="simple">Simple</button>
-                  <button type="button" class="btn btn-xs btn-ghost" data-summary-template="hpe">HPE</button>
-                  <button type="button" class="btn btn-xs btn-ghost" data-summary-template="english">English</button>
-                  <button type="button" class="btn btn-xs btn-ghost" data-summary-template="cac">CAC</button>
+            <form id="planner-lesson-form" class="mt-6" novalidate>
+              <div class="mx-auto w-full max-w-3xl rounded-2xl bg-base-100 border border-base-200 p-6 shadow-sm">
+                <div class="space-y-6">
+                  <!-- SECTION A — Lesson details -->
+                  <section data-planner-lesson-section class="space-y-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-base-content mb-1">Day</label>
+                        <select id="planner-lesson-day" class="select select-bordered mt-1 w-full" required>
+                          <option value="Monday">Monday</option>
+                          <option value="Tuesday">Tuesday</option>
+                          <option value="Wednesday">Wednesday</option>
+                          <option value="Thursday">Thursday</option>
+                          <option value="Friday">Friday</option>
+                          <option value="Saturday">Saturday</option>
+                          <option value="Sunday">Sunday</option>
+                        </select>
+                      </div>
+                      <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-base-content mb-1">Period or time</label>
+                        <input
+                          id="planner-lesson-period"
+                          type="text"
+                          class="input input-bordered mt-1 w-full"
+                          placeholder="e.g. Lesson 3 – 11:15–12:05"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-base-content mb-1">Title</label>
+                      <input id="planner-lesson-title" type="text" class="input input-bordered mt-1 w-full" required />
+                    </div>
+                  </section>
+
+                  <!-- SECTION B — Lesson structure -->
+                  <section data-planner-summary-section class="space-y-2">
+                    <div>
+                      <label class="block text-sm font-medium text-base-content">Summary</label>
+                      <p class="text-xs text-base-content/60 mt-1">What is the focus for this lesson? Use the templates below to structure your plan.</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                      <button type="button" class="btn btn-xs" data-summary-template="simple">Simple</button>
+                      <button type="button" class="btn btn-xs btn-ghost" data-summary-template="hpe">HPE</button>
+                      <button type="button" class="btn btn-xs btn-ghost" data-summary-template="english">English</button>
+                      <button type="button" class="btn btn-xs btn-ghost" data-summary-template="cac">CAC</button>
+                    </div>
+
+                    <div>
+                      <textarea
+                        id="planner-lesson-summary"
+                        class="textarea textarea-bordered mt-2 w-full"
+                        rows="4"
+                        placeholder="What is the focus for this lesson? E.g. ‘Introduce attacking space in small-sided games.’"
+                      ></textarea>
+                    </div>
+                  </section>
+
+                  <!-- SECTION C — Class & status -->
+                  <section class="space-y-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <label class="block text-sm font-medium text-base-content mb-1">Subject or class (optional)</label>
+                        <input
+                          id="planner-lesson-subject"
+                          type="text"
+                          class="input input-bordered mt-1 w-full"
+                          placeholder="e.g. Year 9 HPE – 9WR"
+                        />
+                        <p class="text-xs text-base-content/60 mt-1">Use subjects to filter the planner by class. e.g. ‘Year 9 HPE – 9WR’.</p>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-base-content mb-1">Status</label>
+                        <select id="planner-lesson-status" class="select select-bordered mt-1 w-full">
+                          <option value="not_started">Not started</option>
+                          <option value="in_progress">In progress</option>
+                          <option value="ready">Ready</option>
+                          <option value="taught">Taught</option>
+                        </select>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Hidden/detail sections (preserve original structure and IDs) -->
+                  <div class="grid gap-4 md:grid-cols-2 hidden" data-planner-detail-section aria-hidden="true">
+                    <label class="block text-sm font-medium text-base-content">
+                      Detail badge (optional)
+                      <input id="planner-detail-badge" type="text" class="input input-bordered mt-1 w-full" />
+                    </label>
+                    <label class="block text-sm font-medium text-base-content">
+                      Detail text
+                      <textarea
+                        id="planner-detail-text"
+                        class="textarea textarea-bordered mt-1 w-full"
+                        rows="2"
+                        placeholder="Add a quick reminder, resource, or checkpoint."
+                      ></textarea>
+                    </label>
+                  </div>
+
+                  <div class="space-y-2 hidden" data-planner-duplicate-section aria-hidden="true">
+                    <label class="block text-sm font-medium text-base-content">
+                      Week starting Monday (YYYY-MM-DD)
+                      <input id="planner-duplicate-week" type="date" class="input input-bordered mt-1 w-full" />
+                    </label>
+                    <p class="text-sm text-base-content/70">Choose the Monday date for the week that should receive a copy of this plan.</p>
+                  </div>
+
+                  <p id="planner-modal-error" class="hidden text-sm text-error" aria-live="assertive" aria-hidden="true"></p>
+
+                  <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                    <button type="button" class="btn" data-planner-modal-close>Cancel</button>
+                    <button type="submit" id="planner-modal-submit-add-another" class="btn btn-secondary">Save &amp; add another</button>
+                    <button type="submit" id="planner-modal-submit" class="btn btn-primary">Save lesson</button>
+                  </div>
                 </div>
-                <textarea
-                  id="planner-lesson-summary"
-                  class="textarea textarea-bordered mt-1 w-full"
-                  rows="3"
-                  placeholder="What is the focus for this lesson? E.g. ‘Introduce attacking space in small-sided games.’"
-                ></textarea>
-              </label>
-              <label class="block text-sm font-medium text-base-content">
-                Subject or class (optional)
-                <input
-                  id="planner-lesson-subject"
-                  type="text"
-                  class="input input-bordered mt-1 w-full"
-                  placeholder="e.g. Year 9 HPE – 9WR"
-                />
-                <span class="mt-1 block text-xs text-base-content/60">Use subjects to filter the planner by class.</span>
-              </label>
-              <label class="block text-sm font-medium text-base-content">
-                Status
-                <select id="planner-lesson-status" class="select select-bordered mt-1 w-full">
-                  <option value="not_started">Not started</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="ready">Ready</option>
-                  <option value="taught">Taught</option>
-                </select>
-              </label>
-              <div class="grid gap-4 md:grid-cols-2 hidden" data-planner-detail-section aria-hidden="true">
-                <label class="block text-sm font-medium text-base-content">
-                  Detail badge (optional)
-                  <input id="planner-detail-badge" type="text" class="input input-bordered mt-1 w-full" />
-                </label>
-                <label class="block text-sm font-medium text-base-content">
-                  Detail text
-                  <textarea
-                    id="planner-detail-text"
-                    class="textarea textarea-bordered mt-1 w-full"
-                    rows="2"
-                    placeholder="Add a quick reminder, resource, or checkpoint."
-                  ></textarea>
-                </label>
-              </div>
-              <div class="space-y-2 hidden" data-planner-duplicate-section aria-hidden="true">
-                <label class="block text-sm font-medium text-base-content">
-                  Week starting Monday (YYYY-MM-DD)
-                  <input id="planner-duplicate-week" type="date" class="input input-bordered mt-1 w-full" />
-                </label>
-                <p class="text-sm text-base-content/70">
-                  Choose the Monday date for the week that should receive a copy of this plan.
-                </p>
-              </div>
-              <p id="planner-modal-error" class="hidden text-sm text-error" aria-live="assertive" aria-hidden="true"></p>
-              <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
-                <button type="button" class="btn" data-planner-modal-close>Cancel</button>
-                <button type="submit" id="planner-modal-submit-add-another" class="btn btn-secondary">
-                  Save &amp; add another
-                </button>
-                <button type="submit" id="planner-modal-submit" class="btn btn-primary">Save lesson</button>
               </div>
             </form>
           </div>
