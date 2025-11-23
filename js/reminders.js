@@ -3947,26 +3947,32 @@ export async function initReminders(sel = {}) {
         toggleDone(summary.id);
       });
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn reminder-icon-btn';
-      deleteBtn.innerHTML = `
+      // Premium icon button (replaces previous trash/delete icon)
+      const premiumBtn = document.createElement('button');
+      premiumBtn.type = 'button';
+      premiumBtn.className = 'btn btn-ghost btn-circle btn-xs text-warning task-toolbar-btn reminder-icon-btn';
+      premiumBtn.innerHTML = `
         <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
-          <path d="M3 6h18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M2 9l4 5 5-6 5 6 4-5v8H2z" fill="currentColor"/>
+          <path d="M7 7l3 2 3-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
         </svg>`;
-      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
-      deleteBtn.setAttribute('data-action', 'delete');
-      deleteBtn.setAttribute('data-reminder-control', 'delete');
-      deleteBtn.setAttribute('data-no-swipe', 'true');
-      deleteBtn.addEventListener('click', (event) => {
+      premiumBtn.setAttribute('aria-label', `Premium feature`);
+      premiumBtn.setAttribute('data-action', 'premium');
+      premiumBtn.setAttribute('data-reminder-control', 'premium');
+      premiumBtn.setAttribute('data-no-swipe', 'true');
+      premiumBtn.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        removeItem(summary.id);
+        // Non-destructive: indicate this is a premium feature and suggest upgrade
+        try {
+          toast('Premium feature — upgrade to unlock');
+        } catch (err) {
+          // Fallback minimal feedback
+          console.log('Premium feature clicked');
+        }
       });
 
-      controls.append(toggleBtn, deleteBtn);
+      controls.append(toggleBtn, premiumBtn);
       itemEl.appendChild(controls);
 
       const openReminder = () => loadForEdit(summary.id);
