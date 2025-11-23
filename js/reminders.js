@@ -1142,7 +1142,7 @@ export async function initReminders(sel = {}) {
     const result = { dueDate: null, notifyAt: null };
     if (!rawText) return result;
 
-    const text = rawText.toLowerCase();
+    const text = rawText.toLowerCase().trim();
 
     const now = new Date();
     let target = new Date(now);
@@ -1162,7 +1162,16 @@ export async function initReminders(sel = {}) {
 
     let hours = parseInt(timeMatch[1], 10);
     const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-    const meridiem = timeMatch[3];
+    let meridiem = timeMatch[3];
+
+    // Extra meridiem detection for formats like "3 p.m.", "3 p m", etc.
+    if (!meridiem) {
+      if (/\b(p\.?m\.?|p m)\b/.test(text)) {
+        meridiem = 'pm';
+      } else if (/\b(a\.?m\.?|a m)\b/.test(text)) {
+        meridiem = 'am';
+      }
+    }
 
     if (meridiem === 'pm' && hours < 12) {
       hours += 12;
