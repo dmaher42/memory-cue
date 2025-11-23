@@ -969,23 +969,17 @@ const initMobileNotes = () => {
     } catch {
       folders = [];
     }
+    // Build a minimal, visible folder list: All, Unsorted, then any user folders
+    const DEFAULT_FOLDERS = [
+      { id: 'all', name: 'All' },
+      { id: 'unsorted', name: 'Unsorted' },
+    ];
 
-    // Ensure unsorted exists in the list (but don't duplicate)
-    const hasUnsorted = folders.some((f) => f && f.id === 'unsorted');
-    if (!hasUnsorted) {
-      folders.unshift({ id: 'unsorted', name: 'Unsorted' });
-    }
+    const userFolders = Array.isArray(folders)
+      ? folders.filter((f) => f && f.id !== 'unsorted' && f.id !== 'all')
+      : [];
 
-    // Remaining folders ordered by their `order` property (excluding unsorted)
-    const remaining = folders
-      .filter((f) => f && f.id !== 'unsorted')
-      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
-
-    // All, Unsorted, then remaining
-    const ordered = [];
-    ordered.push({ id: 'all', name: 'All' });
-    ordered.push({ id: 'unsorted', name: 'Unsorted' });
-    ordered.push(...remaining);
+    const ordered = [...DEFAULT_FOLDERS, ...userFolders];
 
     ordered.forEach((folder) => {
       const chip = document.createElement('button');
@@ -1036,7 +1030,8 @@ const initMobileNotes = () => {
     newChip.textContent = '+ New folder';
     newChip.addEventListener('click', (e) => {
       e.preventDefault();
-      openNewFolderDialog();
+      // minimal stub for now
+      console.log('New folder clicked (to be implemented later)');
     });
     folderBarEl.appendChild(newChip);
 
