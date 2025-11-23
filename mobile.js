@@ -940,10 +940,10 @@ const initMobileNotes = () => {
   };
 
   /* Folder chip bar rendering and interaction */
-  const folderBarEl = document.getElementById('notebook-folder-bar');
-  
+  const getFolderBarEl = () => document.getElementById('notebook-folder-bar');
+
   const setActiveFolderChip = (folderId) => {
-    const bar = folderBarEl || document.getElementById('notebook-folder-bar');
+    const bar = getFolderBarEl();
     if (!bar) return;
     const chips = bar.querySelectorAll('.notebook-folder-chip');
     chips.forEach((chip) => {
@@ -961,8 +961,9 @@ const initMobileNotes = () => {
     });
   };
   const buildFolderChips = () => {
-    if (!folderBarEl) return;
-    folderBarEl.innerHTML = '';
+    const folderBar = getFolderBarEl();
+    if (!folderBar) return;
+    folderBar.innerHTML = '';
     let folders = [];
     try {
       folders = Array.isArray(getFolders()) ? getFolders() : [];
@@ -1020,13 +1021,14 @@ const initMobileNotes = () => {
         });
         chip.appendChild(overflowBtn);
       }
-      folderBarEl.appendChild(chip);
+      folderBar.appendChild(chip);
     });
 
     // Add + New folder chip at the end
     const newChip = document.createElement('button');
     newChip.type = 'button';
-    newChip.className = 'folder-chip outlined notebook-folder-chip';
+    newChip.className = 'folder-chip outlined notebook-folder-chip notebook-folder-chip--new';
+    newChip.dataset.folderId = 'new-folder';
     newChip.textContent = '+ New folder';
     newChip.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1037,7 +1039,7 @@ const initMobileNotes = () => {
         console.warn('[notebook] failed to open new folder dialog', err);
       }
     });
-    folderBarEl.appendChild(newChip);
+    folderBar.appendChild(newChip);
 
     // ensure active chip is visually set and scrolled into view
     setActiveFolderChip(currentFolderId);
