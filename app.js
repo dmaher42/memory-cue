@@ -31,7 +31,12 @@ import {
   PLANNER_UPDATED_EVENT,
   getPlannerLessonsForWeek,
   getWeekDateForDayIndex,
-  updatePlannerTeacherNotes
+  updatePlannerTeacherNotes,
+  getTimetableEntries,
+  addTimetableEntry,
+  updateTimetableEntry,
+  deleteTimetableEntry,
+  PLANNER_TIMETABLE_UPDATED_EVENT
 } from './js/modules/planner.js';
 
 // Planner structure:
@@ -39,7 +44,7 @@ import {
 // - js/modules/planner.js: planner data store, lesson normalisation, and persistence helpers.
 // - index.html / docs/index.html: planner layout, modal markup, and toolbar controls.
 // Planner updates:
-// - Added lesson status, subject tags, templates, resources, teacher notes panel, week view, and duplicate functionality.
+// - Added lesson status, subject tags, templates, resources, teacher notes panel, week view, duplicate functionality, and timetable slotting.
 // Teacher notes are stored per week alongside the lesson plan data.
 
 initViewportHeight();
@@ -890,6 +895,15 @@ const plannerInsightsSubjectsElement = document.getElementById('plannerInsightsS
 const plannerInsightsNotesElement = document.getElementById('plannerInsightsNotes');
 const plannerTeacherNotesField = document.getElementById('plannerTeacherNotes');
 const plannerTeacherNotesStatus = document.getElementById('plannerTeacherNotesStatus');
+const plannerLessonTimetableField = document.getElementById('planner-lesson-timetable');
+const timetableForm = document.getElementById('timetable-form');
+const timetableList = document.getElementById('timetable-list');
+const timetableDayField = document.getElementById('timetable-day');
+const timetablePeriodField = document.getElementById('timetable-period');
+const timetableClassField = document.getElementById('timetable-class');
+const timetableSubjectField = document.getElementById('timetable-subject');
+const timetableSubmitButton = document.getElementById('timetable-submit');
+const timetableResetButton = document.getElementById('timetable-reset');
 const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
 const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
 
@@ -1006,6 +1020,72 @@ function formatDateForInputValue(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function getTimetableEntryLabel(entry) {
+  if (!entry) {
+    return '';
+  }
+  const parts = [];
+  const dayLabel = typeof entry.day === 'string' ? entry.day.trim() : '';
+  const period = typeof entry.period === 'string' ? entry.period.trim() : '';
+  const className = typeof entry.className === 'string' ? entry.className.trim() : '';
+  if (dayLabel) {
+    parts.push(dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1));
+  }
+  if (period) {
+    parts.push(period);
+  }
+  if (className) {
+    parts.push(className);
+  }
+  return parts.join(' – ');
+}
+
+function clampDayIndexValue(value) {
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+  if (value < 0) {
+    return 0;
+  }
+  if (value > 6) {
+    return 6;
+  }
+  return value;
+}
+
+function getDayNameFromIndex(index) {
+  const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const target = clampDayIndexValue(index);
+  return names[target] || 'Monday';
+}
+
+function formatDayLabel(dayValue) {
+  if (typeof dayValue !== 'string') {
+    return 'Monday';
+  }
+  const trimmed = dayValue.trim();
+  if (!trimmed) {
+    return 'Monday';
+  }
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+function syncPlannerTimetableOptions(selectedId = '') {
+  if (!(plannerLessonTimetableField instanceof HTMLSelectElement)) {
+    return;
+  }
+  const options = ['<option value="">No timetable link</option>'];
+  timetableEntries.forEach((entry) => {
+    const label = getTimetableEntryLabel(entry) || 'Timetable slot';
+    const selected = selectedId && entry.id === selectedId ? 'selected' : '';
+    options.push(`<option value="${entry.id}" ${selected}>${escapeCueText(label)}</option>`);
+  });
+  plannerLessonTimetableField.innerHTML = options.join('');
+  if (selectedId && plannerLessonTimetableField.value !== selectedId) {
+    plannerLessonTimetableField.value = selectedId;
+  }
 }
 
 function createPlannerLessonModal() {
@@ -1261,7 +1341,7 @@ function createPlannerLessonModal() {
   };
 
   const setLessonFieldsDisabled = (isDisabled) => {
-    [dayField, periodField, titleField, summaryField, subjectField, statusField].forEach((field) => {
+    [dayField, periodField, titleField, summaryField, subjectField, statusField, plannerLessonTimetableField].forEach((field) => {
       if (field instanceof HTMLElement) {
         field.disabled = Boolean(isDisabled);
         field.classList.toggle('opacity-60', Boolean(isDisabled));
@@ -1282,6 +1362,10 @@ function createPlannerLessonModal() {
     clearError();
     setPreferredFocus(null);
     setLessonFieldsDisabled(false);
+    syncPlannerTimetableOptions('');
+    if (plannerLessonTimetableField instanceof HTMLSelectElement) {
+      plannerLessonTimetableField.value = '';
+    }
     if (subjectField instanceof HTMLInputElement) {
       subjectField.value = '';
     }
@@ -1346,7 +1430,7 @@ function createPlannerLessonModal() {
     }
   };
 
-  const openAddLesson = ({ defaultDay = 'Monday', trigger } = {}) => {
+  const openAddLesson = ({ defaultDay = 'Monday', trigger, timetableEntry } = {}) => {
     state.mode = 'add';
     state.lessonId = null;
     resetForm();
@@ -1355,16 +1439,23 @@ function createPlannerLessonModal() {
     toggleSection(detailSection, false);
     toggleSection(duplicateSection, false);
     setLessonFieldsDisabled(false);
-    const resolvedDay = typeof defaultDay === 'string' && defaultDay.trim() ? defaultDay.trim() : 'Monday';
+    const resolvedDay =
+      typeof timetableEntry?.day === 'string' && timetableEntry.day.trim()
+        ? timetableEntry.day.charAt(0).toUpperCase() + timetableEntry.day.slice(1)
+        : typeof defaultDay === 'string' && defaultDay.trim()
+          ? defaultDay.trim()
+          : 'Monday';
     setDayValue(resolvedDay);
-    titleField.value = resolvedDay ? `${resolvedDay} lesson` : '';
+    titleField.value =
+      (timetableEntry?.className && timetableEntry.className.trim()) || (resolvedDay ? `${resolvedDay} lesson` : '');
     summaryField.value = '';
     if (periodField instanceof HTMLInputElement) {
-      periodField.value = '';
+      periodField.value = timetableEntry?.period || '';
     }
     if (subjectField instanceof HTMLInputElement) {
-      subjectField.value = '';
+      subjectField.value = timetableEntry?.subject || '';
     }
+    syncPlannerTimetableOptions(timetableEntry?.id || '');
     setStatusValue('not_started');
     currentTemplateType = 'simple';
     updateModalCopy({
@@ -1397,6 +1488,10 @@ function createPlannerLessonModal() {
     }
     if (subjectField instanceof HTMLInputElement) {
       subjectField.value = lesson.subject || '';
+    }
+    syncPlannerTimetableOptions(lesson.timetableEntryId || '');
+    if (plannerLessonTimetableField instanceof HTMLSelectElement) {
+      plannerLessonTimetableField.value = lesson.timetableEntryId || '';
     }
     setStatusValue(lesson.status || 'not_started');
     currentTemplateType = lesson.templateType || 'simple';
@@ -1525,6 +1620,14 @@ function createPlannerLessonModal() {
       const summary = summaryField.value.trim();
       const subject = subjectField?.value?.trim() || '';
       const status = LESSON_STATUS_CONFIG[statusField?.value] ? statusField.value : 'not_started';
+      const timetableEntryId =
+        plannerLessonTimetableField instanceof HTMLSelectElement ? plannerLessonTimetableField.value : '';
+      const weekStartDate = (() => {
+        const mondayDate = getWeekDateForDayIndex(activePlannerWeekId, 1);
+        return mondayDate instanceof Date && !Number.isNaN(mondayDate.getTime())
+          ? mondayDate.toISOString()
+          : '';
+      })();
 
       if (!dayName) {
         showError('Choose a day for this lesson.');
@@ -1547,6 +1650,8 @@ function createPlannerLessonModal() {
           subject,
           period,
           status,
+          timetableEntryId,
+          weekStartDate,
           templateType: currentTemplateType || 'simple'
         });
         if (plan) {
@@ -1565,6 +1670,8 @@ function createPlannerLessonModal() {
         subject,
         period,
         status,
+        timetableEntryId,
+        weekStartDate,
         templateType: currentTemplateType || 'simple'
       });
       if (plan) {
@@ -2313,6 +2420,8 @@ let activePlannerWeekId = defaultPlannerWeekId;
 let currentPlannerPlan = null;
 let plannerRenderPromise = null;
 let selectedPlannerLessonId = null;
+let timetableEntries = getTimetableEntries();
+let editingTimetableId = null;
 const plannerNotesSaveTimers = new Map();
 const PLANNER_NOTES_SAVE_DELAY = 800;
 const PLANNER_NOTES_STATUS_CLEAR_DELAY = 1500;
@@ -2466,6 +2575,14 @@ function updatePlannerWeekRange(weekId) {
   }
 }
 
+function getWeekStartIsoString(weekId = activePlannerWeekId) {
+  const mondayDate = getWeekDateForDayIndex(weekId, 1);
+  if (mondayDate instanceof Date && !Number.isNaN(mondayDate.getTime())) {
+    return mondayDate.toISOString();
+  }
+  return '';
+}
+
 function getLessonSubjectLabel(lesson) {
   if (!lesson || typeof lesson !== 'object') {
     return '';
@@ -2499,6 +2616,78 @@ const LESSON_STATUS_CONFIG = {
   ready: { label: 'Ready', badge: 'badge-success' },
   taught: { label: 'Taught', badge: 'badge-neutral' },
 };
+
+function renderPlannerSlotCard(entry) {
+  if (!entry) {
+    return '';
+  }
+  const dayLabel = formatDayLabel(entry.day || 'Monday');
+  const periodLabel = entry.period ? entry.period : 'Lesson';
+  const subjectBadge = entry.subject
+    ? `<span class="badge badge-ghost badge-xs">${escapeCueText(entry.subject)}</span>`
+    : '';
+  return `
+    <article
+      class="flex h-full flex-col justify-between rounded-2xl border border-dashed border-base-300/80 bg-base-100/70 px-4 py-4 text-left text-base-content shadow-sm"
+      data-planner-slot="true"
+      data-timetable-entry="${entry.id}"
+    >
+      <div class="space-y-2">
+        <p class="label-text">${escapeCueText(dayLabel)} · ${escapeCueText(periodLabel)}</p>
+        <p class="text-base font-semibold">${escapeCueText(entry.className || 'Timetable slot')}</p>
+        ${entry.subject ? `<p class="text-xs text-base-content/70">${escapeCueText(entry.subject)}</p>` : ''}
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-3">
+        <div class="flex flex-wrap gap-2">${subjectBadge}</div>
+        <button
+          type="button"
+          class="btn btn-primary btn-xs"
+          data-planner-action="create-slot"
+          data-timetable-entry-id="${entry.id}"
+        >
+          Plan lesson
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function buildPlannerSlotsForWeek(lessons = [], weekId = activePlannerWeekId) {
+  const lessonList = Array.isArray(lessons) ? lessons : [];
+  const usedLessonIds = new Set();
+  const weekStartDate = getWeekStartIsoString(weekId);
+  const slots = [];
+  timetableEntries.forEach((entry) => {
+    const linkedLesson = lessonList.find((lesson) => lesson.timetableEntryId === entry.id);
+    const dayIndex = clampDayIndexValue(Number(entry.dayIndex));
+    if (linkedLesson) {
+      usedLessonIds.add(linkedLesson.id);
+      slots.push({ type: 'lesson', entry, lesson: linkedLesson, dayIndex });
+    } else {
+      slots.push({ type: 'slot', entry, lesson: null, dayIndex, weekStartDate });
+    }
+  });
+  lessonList.forEach((lesson) => {
+    if (usedLessonIds.has(lesson.id)) {
+      return;
+    }
+    const dayIndex = clampDayIndexValue(Number(lesson.dayIndex));
+    slots.push({ type: 'lesson', entry: null, lesson, dayIndex, isLoose: true });
+  });
+  return slots.sort((a, b) => {
+    if (a.dayIndex !== b.dayIndex) {
+      return a.dayIndex - b.dayIndex;
+    }
+    const periodA = a.entry?.period || a.lesson?.period || '';
+    const periodB = b.entry?.period || b.lesson?.period || '';
+    if (periodA && periodB && periodA !== periodB) {
+      return periodA.localeCompare(periodB, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    const classA = a.entry?.className || a.lesson?.title || '';
+    const classB = b.entry?.className || b.lesson?.title || '';
+    return classA.localeCompare(classB);
+  });
+}
 
 function renderStatusSelect(lessonId, status) {
   const normalized = LESSON_STATUS_CONFIG[status] ? status : 'not_started';
@@ -2549,12 +2738,15 @@ function renderPlannerLessons(plan) {
   }
   updatePlannerTeacherNotesPanel(plan);
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
-  if (!lessons.length) {
-    renderPlannerMessage('No lessons saved for this week yet.');
-    renderPlannerWeekView([]);
+  const targetWeekId = plan?.weekId || activePlannerWeekId || defaultPlannerWeekId;
+  const slots = buildPlannerSlotsForWeek(lessons, targetWeekId);
+  const lessonsToRender = lessons;
+  const hasSlots = slots.some((slot) => slot.type === 'slot');
+  if (!lessons.length && !hasSlots) {
+    renderPlannerMessage('No lessons or timetable slots yet. Start by adding a timetable entry.');
+    renderPlannerWeekView([], slots);
     return;
   }
-  const lessonsToRender = lessons;
   const lessonIds = lessonsToRender
     .map((lesson) => (typeof lesson.id === 'string' && lesson.id ? lesson.id : ''))
     .filter((id) => Boolean(id));
@@ -2772,28 +2964,66 @@ function renderPlannerLessons(plan) {
       `;
     })
     .join('');
-  plannerCardsContainer.innerHTML = markup;
+  const slotCards = slots
+    .filter((slot) => slot.type === 'slot' && slot.entry)
+    .map((slot) => renderPlannerSlotCard(slot.entry))
+    .join('');
+  const combinedMarkup = [markup, slotCards].filter(Boolean).join('');
+  if (!combinedMarkup) {
+    renderPlannerMessage('No lessons or timetable slots yet. Start by adding a timetable entry.');
+    renderPlannerWeekView([], slots);
+    return;
+  }
+  plannerCardsContainer.innerHTML = combinedMarkup;
   setSelectedPlannerLesson(selectedPlannerLessonId);
-  renderPlannerWeekView(lessonsToRender);
+  renderPlannerWeekView(lessonsToRender, slots);
 }
 
-function renderPlannerWeekView(lessons = []) {
+function renderPlannerWeekView(lessons = [], slots = null) {
   if (!plannerWeekViewContainer) {
     return;
   }
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const grouped = days.map((day, index) => ({ day, index, lessons: [] }));
-  lessons.forEach((lesson) => {
-    const dayIndex = Number.isFinite(lesson?.dayIndex) ? lesson.dayIndex : 0;
+  const slotsToRender = Array.isArray(slots) ? slots : buildPlannerSlotsForWeek(lessons, activePlannerWeekId);
+  const days = [
+    { day: 'Monday', index: 1 },
+    { day: 'Tuesday', index: 2 },
+    { day: 'Wednesday', index: 3 },
+    { day: 'Thursday', index: 4 },
+    { day: 'Friday', index: 5 }
+  ];
+  const grouped = days.map((entry) => ({ ...entry, items: [] }));
+  slotsToRender.forEach((slot) => {
+    const dayIndex = clampDayIndexValue(Number(slot?.dayIndex));
     const target = grouped.find((entry) => entry.index === dayIndex);
     if (target) {
-      target.lessons.push(lesson);
+      target.items.push(slot);
     }
   });
   const markup = grouped
-    .map(({ day, lessons: dayLessons }) => {
-      const items = dayLessons
-        .map((lesson) => {
+    .map(({ day, items }) => {
+      const dayItems = items
+        .map((item) => {
+          if (item.type === 'slot' && item.entry) {
+            const periodLabel = item.entry.period ? ` · ${escapeCueText(item.entry.period)}` : '';
+            const subjectLabel = item.entry.subject
+              ? `<span class="badge badge-ghost badge-xs">${escapeCueText(item.entry.subject)}</span>`
+              : '';
+            return `
+              <div class="rounded-xl border border-dashed border-base-200 bg-base-100 px-3 py-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <p class="text-xs font-semibold text-base-content/70">${escapeCueText(item.entry.className || 'Timetable slot')}</p>
+                    <p class="text-xs text-base-content/60">${escapeCueText(formatDayLabel(item.entry.day || day) + periodLabel)}</p>
+                  </div>
+                  ${subjectLabel}
+                </div>
+                <div class="mt-2 flex flex-wrap justify-end">
+                  <button class="btn btn-primary btn-ghost btn-xs" type="button" data-planner-action="create-slot" data-timetable-entry-id="${item.entry.id}">Plan lesson</button>
+                </div>
+              </div>
+            `;
+          }
+          const lesson = item.lesson || item;
           const subjectLabel = getLessonSubjectLabel(lesson);
           const subjectBadgeClass = getLessonSubjectBadgeClass(subjectLabel);
           const statusLabel = LESSON_STATUS_CONFIG[lesson.status]?.label || LESSON_STATUS_CONFIG.not_started.label;
@@ -2822,7 +3052,7 @@ function renderPlannerWeekView(lessons = []) {
       return `
         <div class="space-y-2 rounded-2xl border border-base-200 bg-base-200/50 p-3">
           <p class="text-xs font-semibold uppercase tracking-[0.25em] text-base-content/70">${day}</p>
-          <div class="space-y-2">${items || fallback}</div>
+          <div class="space-y-2">${dayItems || fallback}</div>
         </div>
       `;
     })
@@ -2846,8 +3076,173 @@ function setPlannerViewMode(mode = 'list') {
     plannerWeekViewToggle.setAttribute('aria-pressed', normalized === 'week' ? 'true' : 'false');
   }
   if (normalized === 'week') {
-    renderPlannerWeekView(currentPlannerPlan?.lessons || []);
+    const lessons = currentPlannerPlan?.lessons || [];
+    renderPlannerWeekView(lessons, buildPlannerSlotsForWeek(lessons, activePlannerWeekId));
   }
+}
+
+function resetTimetableFormFields() {
+  if (timetableForm instanceof HTMLFormElement) {
+    timetableForm.reset();
+  }
+  editingTimetableId = null;
+  if (timetableDayField instanceof HTMLSelectElement) {
+    timetableDayField.value = 'monday';
+  }
+  if (timetableSubmitButton instanceof HTMLElement) {
+    timetableSubmitButton.textContent = 'Add to timetable';
+  }
+}
+
+function renderTimetableEntries() {
+  if (!timetableList) {
+    return;
+  }
+  if (!timetableEntries.length) {
+    timetableList.innerHTML = '<p class="text-sm text-base-content/70">No timetable entries yet. Add your classes to auto-create lesson slots.</p>';
+    syncPlannerTimetableOptions('');
+    return;
+  }
+  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+  const grouped = dayOrder.map((day) => ({ day, entries: [] }));
+  timetableEntries.forEach((entry) => {
+    const target = grouped.find((group) => group.day === (entry.day || '').toLowerCase());
+    if (target) {
+      target.entries.push(entry);
+    }
+  });
+  const markup = grouped
+    .map(({ day, entries }) => {
+      const dayLabel = formatDayLabel(day);
+      const items = entries
+        .map((entry) => {
+          const subjectBadge = entry.subject
+            ? `<span class="badge badge-ghost badge-xs">${escapeCueText(entry.subject)}</span>`
+            : '';
+          const periodLabel = entry.period ? `<span class="text-xs text-base-content/60">${escapeCueText(entry.period)}</span>` : '';
+          return `
+            <li class="flex items-center justify-between gap-2 rounded-xl border border-base-200 bg-base-100 px-3 py-2">
+              <div>
+                <p class="text-sm font-semibold text-base-content">${escapeCueText(entry.className)}</p>
+                <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/70">
+                  <span>${escapeCueText(dayLabel)}</span>
+                  ${periodLabel}
+                  ${subjectBadge}
+                </div>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" class="btn btn-ghost btn-xs" data-timetable-action="edit" data-entry-id="${entry.id}">Edit</button>
+                <button type="button" class="btn btn-ghost btn-xs text-error" data-timetable-action="delete" data-entry-id="${entry.id}">Delete</button>
+              </div>
+            </li>
+          `;
+        })
+        .join('');
+      const fallback = '<p class="text-xs text-base-content/60">No slots for this day yet.</p>';
+      return `
+        <div class="space-y-2 rounded-2xl border border-base-200 bg-base-200/60 p-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-base-content/70">${dayLabel}</p>
+          <ul class="space-y-2">${items || fallback}</ul>
+        </div>
+      `;
+    })
+    .join('');
+  timetableList.innerHTML = markup;
+  syncPlannerTimetableOptions(plannerLessonTimetableField instanceof HTMLSelectElement ? plannerLessonTimetableField.value : '');
+}
+
+async function handleTimetableSubmit(event) {
+  event.preventDefault();
+  if (!timetableDayField || !timetableClassField) {
+    return;
+  }
+  const day = timetableDayField.value || 'monday';
+  const period = timetablePeriodField?.value?.trim() || '';
+  const className = timetableClassField.value?.trim();
+  const subject = timetableSubjectField?.value?.trim() || '';
+  if (!className) {
+    return;
+  }
+  try {
+    if (editingTimetableId) {
+      timetableEntries = await updateTimetableEntry(editingTimetableId, { day, period, className, subject });
+    } else {
+      timetableEntries = await addTimetableEntry({ day, period, className, subject });
+    }
+    resetTimetableFormFields();
+    renderTimetableEntries();
+    renderPlannerLessons(currentPlannerPlan || { lessons: [] });
+  } catch (error) {
+    console.error('Unable to save timetable entry', error);
+  }
+}
+
+function handleTimetableListClick(event) {
+  const trigger = event.target instanceof Element ? event.target.closest('[data-timetable-action]') : null;
+  if (!trigger) {
+    return;
+  }
+  const action = trigger.getAttribute('data-timetable-action');
+  const entryId = trigger.getAttribute('data-entry-id');
+  if (!action || !entryId) {
+    return;
+  }
+  if (action === 'edit') {
+    const entry = timetableEntries.find((item) => item.id === entryId);
+    if (!entry) {
+      return;
+    }
+    editingTimetableId = entry.id;
+    if (timetableDayField instanceof HTMLSelectElement) {
+      timetableDayField.value = entry.day || 'monday';
+    }
+    if (timetablePeriodField instanceof HTMLInputElement) {
+      timetablePeriodField.value = entry.period || '';
+    }
+    if (timetableClassField instanceof HTMLInputElement) {
+      timetableClassField.value = entry.className || '';
+    }
+    if (timetableSubjectField instanceof HTMLInputElement) {
+      timetableSubjectField.value = entry.subject || '';
+    }
+    if (timetableSubmitButton instanceof HTMLElement) {
+      timetableSubmitButton.textContent = 'Update slot';
+    }
+    return;
+  }
+  if (action === 'delete') {
+    const shouldDelete = typeof window !== 'undefined' && typeof window.confirm === 'function'
+      ? window.confirm('Remove this timetable slot?')
+      : true;
+    if (!shouldDelete) {
+      return;
+    }
+    deleteTimetableEntry(entryId)
+      .then((entries) => {
+        timetableEntries = entries;
+        renderTimetableEntries();
+        renderPlannerLessons(currentPlannerPlan || { lessons: [] });
+      })
+      .catch((error) => {
+        console.error('Unable to delete timetable entry', error);
+      });
+  }
+}
+
+function initTimetableView() {
+  if (timetableForm instanceof HTMLFormElement) {
+    timetableForm.addEventListener('submit', handleTimetableSubmit);
+  }
+  if (timetableResetButton instanceof HTMLElement) {
+    timetableResetButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      resetTimetableFormFields();
+    });
+  }
+  if (timetableList) {
+    timetableList.addEventListener('click', handleTimetableListClick);
+  }
+  renderTimetableEntries();
 }
 function setSelectedPlannerLesson(lessonId) {
   selectedPlannerLessonId = lessonId || null;
@@ -3426,6 +3821,49 @@ function handlePlannerOpenResources() {
   }
 }
 
+async function handlePlannerCreateSlot(entryId, trigger) {
+  if (!entryId || !activePlannerWeekId) {
+    return;
+  }
+  const entry = timetableEntries.find((item) => item.id === entryId);
+  if (!entry) {
+    return;
+  }
+  const triggerElement = trigger instanceof HTMLElement ? trigger : null;
+  if (triggerElement) {
+    triggerElement.setAttribute('disabled', 'true');
+  }
+  try {
+    const weekStartDate = getWeekStartIsoString(activePlannerWeekId);
+    const plan = await addLessonToWeek(activePlannerWeekId, {
+      dayIndex: clampDayIndexValue(Number(entry.dayIndex)),
+      dayName: formatDayLabel(entry.day),
+      title: entry.className || formatDayLabel(entry.day || 'Monday'),
+      summary: '',
+      subject: entry.subject || '',
+      period: entry.period || '',
+      status: 'not_started',
+      timetableEntryId: entry.id,
+      weekStartDate
+    });
+    if (plan) {
+      currentPlannerPlan = plan;
+      const newLesson = plan.lessons?.find(
+        (lesson) => lesson.timetableEntryId === entry.id && (!lesson.weekStartDate || lesson.weekStartDate === weekStartDate)
+      );
+      selectedPlannerLessonId = newLesson?.id || selectedPlannerLessonId;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to create lesson from timetable slot', error);
+  } finally {
+    if (triggerElement) {
+      triggerElement.removeAttribute('disabled');
+    }
+  }
+}
+
 async function handlePlannerCardAction(event) {
   const trigger = event.target instanceof Element ? event.target.closest('[data-planner-action]') : null;
   if (!trigger) {
@@ -3476,6 +3914,11 @@ async function handlePlannerCardAction(event) {
     case 'create-reminder':
       await handlePlannerCreateReminder(lessonId, trigger);
       break;
+    case 'create-slot': {
+      const entryId = trigger.getAttribute('data-timetable-entry-id');
+      await handlePlannerCreateSlot(entryId, trigger);
+      break;
+    }
     default:
       break;
   }
@@ -3720,10 +4163,25 @@ function handlePlannerUpdated(event) {
   }
 }
 
+function handleTimetableUpdated(event) {
+  const entries = Array.isArray(event?.detail?.timetable) ? event.detail.timetable : [];
+  timetableEntries = entries;
+  renderTimetableEntries();
+  syncPlannerTimetableOptions(plannerLessonTimetableField instanceof HTMLSelectElement ? plannerLessonTimetableField.value : '');
+  if (currentPlannerPlan) {
+    renderPlannerLessons(currentPlannerPlan);
+  }
+}
+
 updatePlannerDashboardSummary(null, defaultPlannerWeekId);
 
 if (typeof document !== 'undefined') {
   document.addEventListener(PLANNER_UPDATED_EVENT, handlePlannerUpdated);
+  document.addEventListener(PLANNER_TIMETABLE_UPDATED_EVENT, handleTimetableUpdated);
+}
+
+if (timetableForm || timetableList) {
+  initTimetableView();
 }
 
 if (typeof window !== 'undefined') {
