@@ -307,6 +307,20 @@ html[data-theme="professional"] {
   color: var(--text-main);
 }
 
+/* Overflow icon inside folder chip */
+.folder-chip { position: relative; }
+.folder-chip .chip-overflow {
+  margin-left: 8px;
+  font-size: 0.9rem;
+  opacity: 0.75;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+.folder-chip .chip-overflow:hover { opacity: 1; background: rgba(0,0,0,0.04); }
+
 .notebook-action-btn {
   display: inline-flex;
   align-items: center;

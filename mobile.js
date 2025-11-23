@@ -962,7 +962,9 @@ const initMobileNotes = () => {
       chip.type = 'button';
       chip.className = 'folder-chip';
       chip.dataset.folderId = folder.id;
-      chip.textContent = folder.name;
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = folder.name;
+      chip.appendChild(nameSpan);
       if (String(currentFolderId) === String(folder.id)) {
         chip.classList.add('active');
       }
@@ -975,6 +977,19 @@ const initMobileNotes = () => {
         // re-render notes using current filter
         renderFilteredNotes();
       });
+      // For editable folders (not All or Unsorted) show overflow affordance
+      if (folder.id !== 'all' && folder.id !== 'unsorted') {
+        const overflowBtn = document.createElement('button');
+        overflowBtn.type = 'button';
+        overflowBtn.className = 'chip-overflow';
+        overflowBtn.setAttribute('aria-label', 'Folder options');
+        overflowBtn.innerHTML = '⋯';
+        overflowBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          openFolderOverflowMenu(folder.id, chip);
+        });
+        chip.appendChild(overflowBtn);
+      }
       folderBarEl.appendChild(chip);
     });
 
@@ -1178,6 +1193,213 @@ const initMobileNotes = () => {
       e.preventDefault();
       openFolderPicker();
     });
+  }
+
+  /* Folder overflow menu + rename/delete handling */
+  let activeOverflowMenu = null;
+  const closeOverflowMenu = () => {
+    if (activeOverflowMenu && activeOverflowMenu.parentNode) {
+      activeOverflowMenu.parentNode.removeChild(activeOverflowMenu);
+    }
+    activeOverflowMenu = null;
+    document.removeEventListener('click', closeOverflowMenu);
+    document.removeEventListener('keydown', handleOverflowKeydown);
+  };
+
+  const handleOverflowKeydown = (ev) => {
+    if (ev.key === 'Escape') {
+      closeOverflowMenu();
+    }
+  };
+
+  const openFolderOverflowMenu = (folderId, anchorEl) => {
+    closeOverflowMenu();
+    const menu = document.createElement('div');
+    menu.className = 'memory-glass-card p-2 rounded shadow-lg';
+    menu.style.position = 'absolute';
+    menu.style.zIndex = 1200;
+    menu.style.minWidth = '160px';
+
+    const renameBtn = document.createElement('button');
+    renameBtn.type = 'button';
+    renameBtn.className = 'w-full text-left px-3 py-2 btn-ghost';
+    renameBtn.textContent = 'Rename folder';
+    renameBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openRenameDialog(folderId);
+      closeOverflowMenu();
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'w-full text-left px-3 py-2 btn-ghost text-accent';
+    deleteBtn.textContent = 'Delete folder';
+    deleteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDeleteConfirm(folderId);
+      closeOverflowMenu();
+    });
+
+    menu.appendChild(renameBtn);
+    menu.appendChild(deleteBtn);
+
+    document.body.appendChild(menu);
+    activeOverflowMenu = menu;
+
+    // position menu under anchor
+    try {
+      const rect = anchorEl.getBoundingClientRect();
+      const top = rect.bottom + window.scrollY + 6;
+      const left = rect.left + window.scrollX;
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    } catch (e) {
+      // fallback: center
+      menu.style.top = '50%';
+      menu.style.left = '50%';
+      menu.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // close handlers
+    document.addEventListener('click', closeOverflowMenu);
+    document.addEventListener('keydown', handleOverflowKeydown);
+  };
+
+  /* Rename folder modal wiring */
+  const renameFolderModalEl = document.getElementById('renameFolderModal');
+  const renameFolderNameInput = document.getElementById('renameFolderName');
+  const renameFolderError = document.getElementById('renameFolderError');
+  const renameFolderSaveBtn = document.getElementById('renameFolderSave');
+  const renameFolderCancelBtn = document.getElementById('renameFolderCancel');
+  let renameFolderController = null;
+  let pendingRenameFolderId = null;
+
+  const clearRenameError = () => {
+    if (!renameFolderError) return;
+    renameFolderError.classList.add('sr-only');
+    renameFolderError.textContent = '';
+  };
+  const showRenameError = (msg) => {
+    if (!renameFolderError) return;
+    renameFolderError.textContent = msg;
+    renameFolderError.classList.remove('sr-only');
+  };
+
+  const openRenameDialog = (folderId) => {
+    if (!renameFolderModalEl) return;
+    pendingRenameFolderId = folderId;
+    const folders = Array.isArray(getFolders()) ? getFolders() : [];
+    const found = folders.find((f) => f && String(f.id) === String(folderId));
+    if (!found) return;
+    if (!renameFolderController) {
+      renameFolderController = new ModalController({
+        modalElement: renameFolderModalEl,
+        closeButton: renameFolderCancelBtn,
+        titleInput: renameFolderNameInput,
+        modalTitle: document.getElementById('renameFolderTitle'),
+        autoFocus: true,
+      });
+    }
+    clearRenameError();
+    if (renameFolderNameInput) renameFolderNameInput.value = found.name || '';
+    renameFolderController.show();
+  };
+
+  const saveRename = () => {
+    if (!pendingRenameFolderId || !renameFolderNameInput) return;
+    const raw = String(renameFolderNameInput.value || '');
+    const name = raw.trim();
+    clearRenameError();
+    if (!name.length) {
+      showRenameError("Folder name can't be empty.");
+      return;
+    }
+    let folders = [];
+    try { folders = Array.isArray(getFolders()) ? getFolders() : []; } catch { folders = []; }
+    const duplicate = folders.some((f) => String(f.name).toLowerCase() === name.toLowerCase() && String(f.id) !== String(pendingRenameFolderId));
+    if (duplicate) {
+      showRenameError('You already have a folder with this name.');
+      return;
+    }
+    const updated = folders.map((f) => (String(f.id) === String(pendingRenameFolderId) ? { ...f, name } : f));
+    const saved = saveFolders(updated);
+    if (!saved) {
+      showRenameError('Unable to rename folder. Please try again.');
+      return;
+    }
+    try { renameFolderController.requestClose('saved'); } catch {}
+    pendingRenameFolderId = null;
+    // refresh UI
+    try { buildFolderChips(); } catch {}
+    renderFilteredNotes();
+  };
+
+  if (renameFolderSaveBtn) {
+    renameFolderSaveBtn.addEventListener('click', (e) => { e.preventDefault(); saveRename(); });
+  }
+  if (renameFolderNameInput) {
+    renameFolderNameInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); saveRename(); } });
+  }
+
+  /* Delete folder flow */
+  const deleteFolderModalEl = document.getElementById('deleteFolderModal');
+  const deleteFolderConfirmBtn = document.getElementById('deleteFolderConfirm');
+  const deleteFolderCancelBtn = document.getElementById('deleteFolderCancel');
+  let deleteFolderController = null;
+  let pendingDeleteFolderId = null;
+
+  const openDeleteConfirm = (folderId) => {
+    if (!deleteFolderModalEl) return;
+    pendingDeleteFolderId = folderId;
+    if (!deleteFolderController) {
+      deleteFolderController = new ModalController({
+        modalElement: deleteFolderModalEl,
+        closeButton: deleteFolderCancelBtn,
+        titleInput: null,
+        modalTitle: document.getElementById('deleteFolderTitle'),
+        autoFocus: false,
+      });
+    }
+    deleteFolderController.show();
+  };
+
+  const confirmDeleteFolder = () => {
+    if (!pendingDeleteFolderId) return;
+    // Remove folder and reassign notes
+    let folders = [];
+    try { folders = Array.isArray(getFolders()) ? getFolders() : []; } catch { folders = []; }
+    const updatedFolders = folders.filter((f) => String(f.id) !== String(pendingDeleteFolderId));
+    // Ensure unsorted exists
+    if (!updatedFolders.some((f) => f && f.id === 'unsorted')) {
+      updatedFolders.unshift({ id: 'unsorted', name: 'Unsorted' });
+    }
+    const saved = saveFolders(updatedFolders);
+    if (!saved) {
+      try { deleteFolderController.requestClose('failed'); } catch {}
+      pendingDeleteFolderId = null;
+      return;
+    }
+    // Reassign notes
+    const notes = loadAllNotes();
+    const updatedNotes = (Array.isArray(notes) ? notes : []).map((n) => {
+      if (n && String(n.folderId) === String(pendingDeleteFolderId)) {
+        return { ...n, folderId: 'unsorted', updatedAt: new Date().toISOString() };
+      }
+      return n;
+    });
+    saveAllNotes(updatedNotes);
+    // If current filter was the deleted folder, switch to unsorted
+    if (String(currentFolderId) === String(pendingDeleteFolderId)) {
+      currentFolderId = 'unsorted';
+    }
+    pendingDeleteFolderId = null;
+    try { deleteFolderController.requestClose('deleted'); } catch {}
+    buildFolderChips();
+    renderFilteredNotes();
+  };
+
+  if (deleteFolderConfirmBtn) {
+    deleteFolderConfirmBtn.addEventListener('click', (e) => { e.preventDefault(); confirmDeleteFolder(); });
   }
 
   if (listElement) {
