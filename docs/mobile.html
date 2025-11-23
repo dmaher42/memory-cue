@@ -746,18 +746,27 @@
       justify-content: space-between;
       padding: 0.5rem 1rem;
       padding-top: calc(env(safe-area-inset-top, 0) + 0.5rem);
-      background: var(--mobile-header-bg);
-      border-bottom: 1px solid var(--mobile-header-border);
+      background-color: var(--surface-main);
+      border-bottom: 1px solid var(--border-subtle);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: var(--mobile-header-shadow);
+      box-shadow: 0 2px 6px rgba(81, 38, 99, 0.08);
+    }
+
+    #slimMobileHeader svg {
+      color: var(--accent-color);
     }
 
     #slimMobileHeader h1 {
       font-size: 1rem;
       font-weight: 600;
       margin: 0;
-      color: var(--mobile-header-text);
+      color: var(--text-main);
+    }
+
+    #slimMobileHeader .header-title {
+      color: var(--text-main);
+      font-weight: 600;
     }
 
     #slimMobileHeader .header-actions {
