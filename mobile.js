@@ -1030,8 +1030,12 @@ const initMobileNotes = () => {
     newChip.textContent = '+ New folder';
     newChip.addEventListener('click', (e) => {
       e.preventDefault();
-      // minimal stub for now
-      console.log('New folder clicked (to be implemented later)');
+      // open the New Folder dialog (full flow exists elsewhere)
+      try {
+        openNewFolderDialog();
+      } catch (err) {
+        console.warn('[notebook] failed to open new folder dialog', err);
+      }
     });
     folderBarEl.appendChild(newChip);
 
