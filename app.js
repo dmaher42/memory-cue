@@ -30,8 +30,17 @@ import {
   clearWeekPlan,
   PLANNER_UPDATED_EVENT,
   getPlannerLessonsForWeek,
-  getWeekDateForDayIndex
+  getWeekDateForDayIndex,
+  updatePlannerTeacherNotes
 } from './js/modules/planner.js';
+
+// Planner structure:
+// - app.js: planner UI rendering, lesson cards, templates, resources, week view toggle, and teacher notes panel.
+// - js/modules/planner.js: planner data store, lesson normalisation, and persistence helpers.
+// - index.html / docs/index.html: planner layout, modal markup, and toolbar controls.
+// Planner updates:
+// - Added lesson status, subject tags, templates, resources, teacher notes panel, week view, and duplicate functionality.
+// Teacher notes are stored per week alongside the lesson plan data.
 
 initViewportHeight();
 
@@ -869,6 +878,9 @@ const plannerCopyWeekButton = document.getElementById('planner-copy-week');
 const plannerClearWeekButton = document.getElementById('planner-clear-week');
 const plannerDuplicateButton = document.getElementById('planner-duplicate-btn');
 const plannerNewLessonButton = document.getElementById('planner-new-lesson-btn');
+const plannerListViewToggle = document.getElementById('planner-list-view-toggle');
+const plannerWeekViewToggle = document.getElementById('planner-week-view-toggle');
+const plannerWeekViewContainer = document.getElementById('plannerWeekView');
 const plannerTextSizeSelect = document.querySelector('[data-planner-text-size]');
 const plannerPanelElement = document.querySelector('[data-planner-card-panel]');
 const plannerSummaryCountElement = document.getElementById('plannerSummaryCount');
@@ -876,6 +888,8 @@ const plannerSummaryRangeElement = document.getElementById('plannerSummaryRange'
 const plannerInsightsLessonsElement = document.getElementById('plannerInsightsLessons');
 const plannerInsightsSubjectsElement = document.getElementById('plannerInsightsSubjects');
 const plannerInsightsNotesElement = document.getElementById('plannerInsightsNotes');
+const plannerTeacherNotesField = document.getElementById('plannerTeacherNotes');
+const plannerTeacherNotesStatus = document.getElementById('plannerTeacherNotesStatus');
 const mobileNotesTextSizeSelect = document.querySelector('[data-mobile-notes-text-size]');
 const mobileNotesPanelElement = document.querySelector('.mobile-panel--notes');
 
@@ -2200,6 +2214,9 @@ const PLANNER_NOTES_STATUS_TEXT = {
 const PLANNER_NOTES_STATUS_VALUES = new Set(['saving', 'saved', 'error']);
 const PLANNER_NOTES_OPEN_STATE_STORAGE_KEY = 'plannerNotesOpenState';
 let plannerNotesOpenState = loadPlannerNotesOpenState();
+let plannerTeacherNotesTimer = null;
+let plannerViewMode = 'list';
+const PLANNER_TEACHER_NOTES_DELAY = 800;
 
 function loadPlannerNotesOpenState() {
   if (typeof localStorage === 'undefined') {
@@ -2345,13 +2362,85 @@ function getLessonSubjectLabel(lesson) {
   return typeof lesson.subject === 'string' ? lesson.subject.trim() : '';
 }
 
+function getLessonSubjectBadgeClass(subject) {
+  if (!subject) {
+    return 'badge-ghost';
+  }
+  const lower = subject.toLowerCase();
+  if (lower.includes('hpe') || lower.includes('pe')) {
+    return 'badge-info';
+  }
+  if (lower.includes('english')) {
+    return 'badge-success';
+  }
+  if (lower.includes('civics') || lower.includes('cac')) {
+    return 'badge-secondary';
+  }
+  if (lower.includes('geo')) {
+    return 'badge-warning';
+  }
+  return 'badge-ghost';
+}
+
+const LESSON_STATUS_CONFIG = {
+  not_started: { label: 'Not started', badge: 'badge-ghost' },
+  in_progress: { label: 'In progress', badge: 'badge-warning' },
+  ready: { label: 'Ready', badge: 'badge-success' },
+  taught: { label: 'Taught', badge: 'badge-neutral' },
+};
+
+function renderStatusSelect(lessonId, status) {
+  const normalized = LESSON_STATUS_CONFIG[status] ? status : 'not_started';
+  const options = Object.entries(LESSON_STATUS_CONFIG)
+    .map(([value, config]) => {
+      const selected = value === normalized ? 'selected' : '';
+      return `<option value="${value}" ${selected}>${escapeCueText(config.label)}</option>`;
+    })
+    .join('');
+  return `
+    <label class="flex items-center gap-2 text-xs font-semibold text-base-content/80">
+      <span>Status</span>
+      <select class="select select-bordered select-xs" data-lesson-status="true" data-lesson-id="${lessonId}">
+        ${options}
+      </select>
+    </label>
+  `;
+}
+
+function renderResourcesList(resources = [], lessonId = '') {
+  if (!resources.length) {
+    return '<p class="text-xs text-base-content/60">No resources added yet.</p>';
+  }
+  return `
+    <ul class="space-y-2">
+      ${resources
+        .map((resource) => {
+          const label = typeof resource?.label === 'string' && resource.label.trim() ? resource.label.trim() : 'Resource';
+          const url = typeof resource?.url === 'string' ? resource.url.trim() : '';
+          const id = typeof resource?.id === 'string' ? resource.id : '';
+          const link = url
+            ? `<a class="link link-primary break-words" href="${url}" target="_blank" rel="noreferrer">${escapeCueText(label)}</a>`
+            : `<span class="text-base-content">${escapeCueText(label)}</span>`;
+          const removeButton = id
+            ? `<button class="btn btn-ghost btn-xs text-error" type="button" data-planner-action="remove-resource" data-lesson-id="${lessonId}" data-resource-id="${id}">Remove</button>`
+            : '';
+          return `<li class="flex items-start justify-between gap-2 rounded-lg bg-base-200/70 px-2 py-1">${link}${removeButton}</li>`;
+        })
+        .join('')}
+    </ul>
+  `;
+}
+
+
 function renderPlannerLessons(plan) {
   if (!plannerCardsContainer) {
     return;
   }
+  updatePlannerTeacherNotesPanel(plan);
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
   if (!lessons.length) {
     renderPlannerMessage('No lessons saved for this week yet.');
+    renderPlannerWeekView([]);
     return;
   }
   const lessonsToRender = lessons;
@@ -2372,14 +2461,14 @@ function renderPlannerLessons(plan) {
               return `
                 <li class="flex items-center gap-2">
                   ${badge}
-                  <span class="text-sm text-base-content/70">${escapeCueText(detail.text)}</span>
+                  <span class="text-sm text-base-content/80">${escapeCueText(detail.text)}</span>
                 </li>
               `;
             })
             .join('')
         : '';
       const detailsSection = detailItems
-        ? `<ul class="space-y-2 text-sm text-base-content/70">${detailItems}</ul>`
+        ? `<ul class="space-y-2 text-sm text-base-content/80">${detailItems}</ul>`
         : '<p class="text-sm text-base-content/60">No details yet.</p>';
       const lessonId = typeof lesson.id === 'string' ? lesson.id : '';
       const isSelected = Boolean(selectedPlannerLessonId && lessonId && selectedPlannerLessonId === lessonId);
@@ -2387,13 +2476,13 @@ function renderPlannerLessons(plan) {
         .filter(Boolean)
         .join(' ');
       const summaryMarkup = lesson.summary
-        ? `<p class="text-sm text-base-content/70">${escapeCueText(lesson.summary)}</p>`
+        ? `<p class="text-sm text-base-content/80">${escapeCueText(lesson.summary)}</p>`
         : '';
       const subjectLabel = getLessonSubjectLabel(lesson);
+      const subjectBadgeClass = getLessonSubjectBadgeClass(subjectLabel);
       const subjectBadge = subjectLabel
-        ? `<span class="badge badge-outline badge-sm text-base-content/70">${escapeCueText(subjectLabel)}</span>`
+        ? `<span class="badge ${subjectBadgeClass} badge-sm">${escapeCueText(subjectLabel)}</span>`
         : '';
-      const subjectMarkup = subjectBadge ? `<div class="mt-2 flex flex-wrap gap-1">${subjectBadge}</div>` : '';
       const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
       const notesOpen = isPlannerLessonNotesOpen(lessonId);
       const notesSection = lessonId
@@ -2456,36 +2545,99 @@ function renderPlannerLessons(plan) {
             </div>
           `
         : '';
+      const statusSelect = lessonId ? renderStatusSelect(lessonId, lesson.status) : '';
+      const resourcesList = renderResourcesList(Array.isArray(lesson.resources) ? lesson.resources : [], lessonId);
+      const statusBadge = LESSON_STATUS_CONFIG[lesson.status]?.badge || LESSON_STATUS_CONFIG.not_started.badge;
+      const statusLabel = LESSON_STATUS_CONFIG[lesson.status]?.label || LESSON_STATUS_CONFIG.not_started.label;
+      const scheduleLabelParts = [lesson.weekDay || lesson.dayLabel || 'Lesson'];
+      if (lesson.period) {
+        scheduleLabelParts.push(lesson.period);
+      }
+      const scheduleLabel = scheduleLabelParts.filter(Boolean).join(' · ');
       return `
-        <article class="card border border-base-300 bg-base-200/70 shadow-sm transition hover:-translate-y-1 hover:shadow" ${selectionAttributes}>
+        <article class="card border border-base-300 bg-base-100 shadow-lg transition hover:-translate-y-1 hover:shadow-xl" ${selectionAttributes}>
           <div class="card-body gap-4">
-            <div class="flex items-start justify-between gap-2">
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">${escapeCueText(
-                  lesson.dayLabel || ''
-                )}</p>
-                <h2 class="text-lg font-semibold text-base-content">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</h2>
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
+                  <span>${escapeCueText(scheduleLabel)}</span>
+                  <span class="badge ${statusBadge} badge-xs">${escapeCueText(statusLabel)}</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="text-lg font-semibold text-base-content">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</h2>
+                  ${subjectBadge}
+                </div>
                 ${summaryMarkup}
-                ${subjectMarkup}
+                <div class="flex flex-wrap items-center gap-3">
+                  ${statusSelect}
+                </div>
               </div>
-              <div class="flex flex-wrap items-center justify-end gap-1">
+              <div class="flex flex-col items-end gap-2">
                 ${moveControls}
-                <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-xs text-error"
-                  data-planner-action="delete"
-                  data-lesson-id="${lessonId}"
-                >
-                  Delete
-                </button>
+                <div class="flex flex-wrap justify-end gap-1">
+                  <button type="button" class="btn btn-ghost btn-xs" data-planner-action="duplicate" data-lesson-id="${lessonId}">Duplicate</button>
+                  <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-error"
+                    data-planner-action="delete"
+                    data-lesson-id="${lessonId}"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
             ${detailsSection}
+            <div class="rounded-xl border border-base-200 bg-base-200/60 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60">Resources</p>
+                  <p class="text-xs text-base-content/70">Link slides, videos, and activity sheets.</p>
+                </div>
+                <span class="badge badge-outline badge-sm">${Array.isArray(lesson.resources) ? lesson.resources.length : 0} linked</span>
+              </div>
+              <div class="mt-2 space-y-2">
+                ${resourcesList}
+                <div class="grid gap-2 md:grid-cols-[1fr_1.5fr_auto]">
+                  <input
+                    type="text"
+                    class="input input-bordered input-sm w-full"
+                    placeholder="Label (e.g. Slides)"
+                    data-resource-label="true"
+                    data-lesson-id="${lessonId}"
+                  />
+                  <input
+                    type="url"
+                    class="input input-bordered input-sm w-full"
+                    placeholder="URL"
+                    data-resource-url="true"
+                    data-lesson-id="${lessonId}"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    data-planner-action="add-resource"
+                    data-lesson-id="${lessonId}"
+                  >
+                    Add resource
+                  </button>
+                </div>
+              </div>
+            </div>
             ${notesSection}
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="dropdown dropdown-end">
+                <label tabindex="0" class="btn btn-ghost btn-xs">Add template</label>
+                <ul tabindex="0" class="dropdown-content menu rounded-box z-[1] mt-2 w-64 bg-base-100 p-2 shadow">
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="simple" data-lesson-id="${lessonId}">Simple lesson template</button></li>
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="hpe" data-lesson-id="${lessonId}">HPE lesson template</button></li>
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="english" data-lesson-id="${lessonId}">English lesson template</button></li>
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="cac" data-lesson-id="${lessonId}">CAC lesson template</button></li>
+                </ul>
+              </div>
               <button
                 type="button"
                 class="btn btn-sm btn-primary"
@@ -2511,8 +2663,81 @@ function renderPlannerLessons(plan) {
     .join('');
   plannerCardsContainer.innerHTML = markup;
   setSelectedPlannerLesson(selectedPlannerLessonId);
+  renderPlannerWeekView(lessonsToRender);
 }
 
+function renderPlannerWeekView(lessons = []) {
+  if (!plannerWeekViewContainer) {
+    return;
+  }
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const grouped = days.map((day, index) => ({ day, index, lessons: [] }));
+  lessons.forEach((lesson) => {
+    const dayIndex = Number.isFinite(lesson?.dayIndex) ? lesson.dayIndex : 0;
+    const target = grouped.find((entry) => entry.index === dayIndex);
+    if (target) {
+      target.lessons.push(lesson);
+    }
+  });
+  const markup = grouped
+    .map(({ day, lessons: dayLessons }) => {
+      const items = dayLessons
+        .map((lesson) => {
+          const subjectLabel = getLessonSubjectLabel(lesson);
+          const subjectBadgeClass = getLessonSubjectBadgeClass(subjectLabel);
+          const statusLabel = LESSON_STATUS_CONFIG[lesson.status]?.label || LESSON_STATUS_CONFIG.not_started.label;
+          const statusBadge = LESSON_STATUS_CONFIG[lesson.status]?.badge || LESSON_STATUS_CONFIG.not_started.badge;
+          return `
+            <button
+              type="button"
+              class="w-full text-left rounded-xl border border-base-200 bg-base-100 px-3 py-2 shadow-sm transition hover:-translate-y-[1px] hover:shadow"
+              data-week-view-lesson="${lesson.id || ''}"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <p class="text-xs font-semibold text-base-content/70">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</p>
+                  <p class="text-xs text-base-content/60">${escapeCueText(lesson.summary || '')}</p>
+                </div>
+                <div class="flex flex-col items-end gap-1">
+                  ${subjectLabel ? `<span class="badge ${subjectBadgeClass} badge-xs">${escapeCueText(subjectLabel)}</span>` : ''}
+                  <span class="badge ${statusBadge} badge-xs">${escapeCueText(statusLabel)}</span>
+                </div>
+              </div>
+            </button>
+          `;
+        })
+        .join('');
+      const fallback = '<p class="text-xs text-base-content/60">No lessons yet.</p>';
+      return `
+        <div class="space-y-2 rounded-2xl border border-base-200 bg-base-200/50 p-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-base-content/70">${day}</p>
+          <div class="space-y-2">${items || fallback}</div>
+        </div>
+      `;
+    })
+    .join('');
+  plannerWeekViewContainer.innerHTML = markup;
+}
+
+function setPlannerViewMode(mode = 'list') {
+  const normalized = mode === 'week' ? 'week' : 'list';
+  plannerViewMode = normalized;
+  if (plannerCardsContainer) {
+    plannerCardsContainer.classList.toggle('hidden', normalized === 'week');
+  }
+  if (plannerWeekViewContainer) {
+    plannerWeekViewContainer.classList.toggle('hidden', normalized !== 'week');
+  }
+  if (plannerListViewToggle instanceof HTMLElement) {
+    plannerListViewToggle.setAttribute('aria-pressed', normalized === 'list' ? 'true' : 'false');
+  }
+  if (plannerWeekViewToggle instanceof HTMLElement) {
+    plannerWeekViewToggle.setAttribute('aria-pressed', normalized === 'week' ? 'true' : 'false');
+  }
+  if (normalized === 'week') {
+    renderPlannerWeekView(currentPlannerPlan?.lessons || []);
+  }
+}
 function setSelectedPlannerLesson(lessonId) {
   selectedPlannerLessonId = lessonId || null;
   if (plannerCardsContainer) {
@@ -2525,6 +2750,23 @@ function setSelectedPlannerLesson(lessonId) {
         card.removeAttribute('data-planner-selected');
       }
     });
+  }
+}
+
+function handlePlannerWeekViewClick(event) {
+  const trigger = event.target instanceof Element ? event.target.closest('[data-week-view-lesson]') : null;
+  if (!trigger) {
+    return;
+  }
+  const lessonId = trigger.getAttribute('data-week-view-lesson');
+  if (!lessonId) {
+    return;
+  }
+  setPlannerViewMode('list');
+  setSelectedPlannerLesson(lessonId);
+  const card = plannerCardsContainer?.querySelector(`[data-lesson-id="${lessonId}"]`);
+  if (card instanceof HTMLElement && typeof card.scrollIntoView === 'function') {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
@@ -2623,6 +2865,188 @@ function setPlannerNotesStatusText(field, status) {
     const textValue = PLANNER_NOTES_STATUS_TEXT[textKey] || PLANNER_NOTES_STATUS_TEXT.idle;
     statusTextElement.textContent = textValue;
     statusTextElement.setAttribute('data-status', textKey);
+  }
+}
+
+function updatePlannerTeacherNotesPanel(plan) {
+  if (!(plannerTeacherNotesField instanceof HTMLTextAreaElement)) {
+    return;
+  }
+  setTeacherNotesStatus('idle');
+  const value = typeof plan?.teacherNotes === 'string' ? plan.teacherNotes : '';
+  if (plannerTeacherNotesField.value !== value) {
+    plannerTeacherNotesField.value = value;
+  }
+}
+
+function setTeacherNotesStatus(statusKey = 'idle') {
+  if (!(plannerTeacherNotesStatus instanceof HTMLElement)) {
+    return;
+  }
+  const textMap = {
+    idle: 'Notes save automatically.',
+    saving: 'Saving…',
+    saved: 'Saved',
+    error: 'Unable to save',
+  };
+  const text = textMap[statusKey] || textMap.idle;
+  plannerTeacherNotesStatus.textContent = text;
+  plannerTeacherNotesStatus.setAttribute('data-status', statusKey);
+}
+
+async function persistPlannerTeacherNotes(value) {
+  if (!activePlannerWeekId) {
+    return;
+  }
+  setTeacherNotesStatus('saving');
+  try {
+    const plan = await updatePlannerTeacherNotes(activePlannerWeekId, value);
+    if (plan) {
+      currentPlannerPlan = plan;
+    }
+    setTeacherNotesStatus('saved');
+    const scheduleClear = getPlannerTimeoutScheduler();
+    if (scheduleClear) {
+      scheduleClear(() => setTeacherNotesStatus('idle'), PLANNER_NOTES_STATUS_CLEAR_DELAY);
+    } else {
+      setTeacherNotesStatus('idle');
+    }
+  } catch (error) {
+    console.error('Failed to save teacher notes', error);
+    setTeacherNotesStatus('error');
+  }
+}
+
+function handlePlannerTeacherNotesInput(event) {
+  if (!(plannerTeacherNotesField instanceof HTMLTextAreaElement) || event?.target !== plannerTeacherNotesField) {
+    return;
+  }
+  if (plannerTeacherNotesTimer) {
+    const clearFn = getPlannerTimeoutClearer();
+    if (clearFn) {
+      clearFn(plannerTeacherNotesTimer);
+    }
+  }
+  const schedule = getPlannerTimeoutScheduler();
+  if (!schedule) {
+    return;
+  }
+  plannerTeacherNotesTimer = schedule(() => {
+    plannerTeacherNotesTimer = null;
+    persistPlannerTeacherNotes(plannerTeacherNotesField.value);
+  }, PLANNER_TEACHER_NOTES_DELAY);
+}
+
+function getTemplateContent(templateType = 'simple') {
+  switch (templateType) {
+    case 'hpe':
+      return `Focus skill:\nWarm-up:\nSkill drill:\nModified game:\nReflection questions:`;
+    case 'english':
+      return `Text focus:\nDiscussion questions:\nMentor sentence:\nWriting task:\nReflection / exit ticket:`;
+    case 'cac':
+      return `Civics topic:\nKey terms:\nSource / video:\nDiscussion questions:\nActivity:\nReflection question:`;
+    case 'simple':
+    default:
+      return `Learning intention:\nSuccess criteria:\nWarm-up:\nMain activity:\nExit task:`;
+  }
+}
+
+async function applyLessonTemplate(lessonId, templateType) {
+  if (!lessonId) {
+    return;
+  }
+  await ensurePlannerPlanAvailable();
+  const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
+  if (!lesson) {
+    return;
+  }
+  const templateNotes = getTemplateContent(templateType);
+  const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
+  const combinedNotes = notesValue ? `${notesValue.trim()}\n\n${templateNotes}` : templateNotes;
+  try {
+    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, {
+      notes: combinedNotes,
+      templateType: templateType || 'simple',
+    });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to apply lesson template', error);
+  }
+}
+
+async function handlePlannerStatusChange(event) {
+  const select = event.target instanceof HTMLSelectElement && event.target.hasAttribute('data-lesson-status')
+    ? event.target
+    : null;
+  if (!select) {
+    return;
+  }
+  const lessonId = select.getAttribute('data-lesson-id');
+  const statusValue = select.value;
+  if (!lessonId) {
+    return;
+  }
+  try {
+    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, { status: statusValue });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+    }
+  } catch (error) {
+    console.error('Failed to update lesson status', error);
+  }
+}
+
+async function handlePlannerAddResource(lessonId, labelInput, urlInput) {
+  if (!lessonId || !(labelInput instanceof HTMLInputElement) || !(urlInput instanceof HTMLInputElement)) {
+    return;
+  }
+  const label = labelInput.value.trim();
+  const url = urlInput.value.trim();
+  if (!label && !url) {
+    return;
+  }
+  const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
+  if (!lesson) {
+    return;
+  }
+  const nextResources = Array.isArray(lesson.resources) ? [...lesson.resources] : [];
+  nextResources.push({ id: generateClientId('resource'), label, url });
+  try {
+    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, { resources: nextResources });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+    }
+    labelInput.value = '';
+    urlInput.value = '';
+  } catch (error) {
+    console.error('Failed to add resource', error);
+  }
+}
+
+async function handlePlannerRemoveResource(lessonId, resourceId) {
+  if (!lessonId || !resourceId) {
+    return;
+  }
+  const lesson = currentPlannerPlan?.lessons?.find((entry) => entry.id === lessonId);
+  if (!lesson) {
+    return;
+  }
+  const nextResources = (lesson.resources || []).filter((resource) => resource?.id !== resourceId);
+  try {
+    const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, { resources: nextResources });
+    if (plan) {
+      currentPlannerPlan = plan;
+      renderPlannerLessons(plan);
+    }
+  } catch (error) {
+    console.error('Failed to remove resource', error);
   }
 }
 
@@ -2828,17 +3252,30 @@ async function handlePlannerDuplicateLesson(lessonId, triggerElement) {
     summary: lesson.summary,
     subject: lesson.subject,
     notes: lesson.notes,
+    period: lesson.period,
+    templateType: lesson.templateType || 'simple',
+    status: 'not_started',
+    resources: Array.isArray(lesson.resources)
+      ? lesson.resources.map((resource) => ({
+          label: resource?.label || '',
+          url: resource?.url || '',
+        }))
+      : [],
     details: Array.isArray(lesson.details)
       ? lesson.details.map((detail) => ({ badge: detail?.badge || '', text: detail?.text || '' }))
       : [],
   };
   try {
     const plan = await addLessonToWeek(activePlannerWeekId, lessonCopy);
-    if (plan) {
-      currentPlannerPlan = plan;
+    let nextPlan = plan;
+    if (plan && Number.isFinite(lesson.position)) {
+      nextPlan = await updateLessonInWeek(activePlannerWeekId, duplicateId, { position: lesson.position + 0.1 });
+    }
+    if (nextPlan) {
+      currentPlannerPlan = nextPlan;
       selectedPlannerLessonId = duplicateId;
-      renderPlannerLessons(plan);
-      updatePlannerDashboardSummary(plan, activePlannerWeekId);
+      renderPlannerLessons(nextPlan);
+      updatePlannerDashboardSummary(nextPlan, activePlannerWeekId);
       if (liveStatusRegion) {
         liveStatusRegion.textContent = `Duplicated ${lesson.title || 'lesson'} into this week.`;
       }
@@ -2893,6 +3330,26 @@ async function handlePlannerCardAction(event) {
     case 'delete':
       handlePlannerDeleteLesson(lessonId);
       break;
+    case 'duplicate':
+      await handlePlannerDuplicateLesson(lessonId, trigger);
+      break;
+    case 'apply-template': {
+      const templateType = trigger.getAttribute('data-template-type') || 'simple';
+      applyLessonTemplate(lessonId, templateType);
+      break;
+    }
+    case 'add-resource': {
+      const card = trigger.closest('[data-planner-lesson]');
+      const labelInput = card?.querySelector('input[data-resource-label][data-lesson-id]');
+      const urlInput = card?.querySelector('input[data-resource-url][data-lesson-id]');
+      await handlePlannerAddResource(lessonId, labelInput, urlInput);
+      break;
+    }
+    case 'remove-resource': {
+      const resourceId = trigger.getAttribute('data-resource-id');
+      await handlePlannerRemoveResource(lessonId, resourceId);
+      break;
+    }
     case 'move-up':
       handlePlannerMoveLesson(lessonId, 'up', trigger);
       break;
@@ -3092,14 +3549,21 @@ function initPlannerView() {
   initPlannerStore({ ensureFirestore: ensureCueFirestore });
   plannerCardsContainer.addEventListener('click', handlePlannerSelection);
   plannerCardsContainer.addEventListener('click', handlePlannerCardAction);
+  plannerCardsContainer.addEventListener('change', handlePlannerStatusChange);
   plannerCardsContainer.addEventListener('input', handlePlannerNotesInput);
   plannerCardsContainer.addEventListener('focusout', handlePlannerNotesFocusOut);
   plannerCardsContainer.addEventListener('toggle', handlePlannerNotesToggle);
+  plannerWeekViewContainer?.addEventListener('click', handlePlannerWeekViewClick);
+  if (plannerTeacherNotesField instanceof HTMLTextAreaElement) {
+    plannerTeacherNotesField.addEventListener('input', handlePlannerTeacherNotesInput);
+  }
   plannerNewLessonButton?.addEventListener('click', handlePlannerNewLesson);
   plannerDuplicateButton?.addEventListener('click', handlePlannerDuplicatePlan);
   plannerCopyWeekButton?.addEventListener('click', handlePlannerCopyPreviousWeek);
   plannerClearWeekButton?.addEventListener('click', handlePlannerClearWeek);
   plannerTextSizeSelect?.addEventListener('change', handlePlannerTextSizeChange);
+  plannerListViewToggle?.addEventListener('click', () => setPlannerViewMode('list'));
+  plannerWeekViewToggle?.addEventListener('click', () => setPlannerViewMode('week'));
   plannerPrevButton?.addEventListener('click', () => {
     const previousWeek = getWeekIdFromOffset(activePlannerWeekId, -1);
     renderPlannerForWeek(previousWeek);
@@ -3111,6 +3575,7 @@ function initPlannerView() {
   plannerTodayButton?.addEventListener('click', () => {
     renderPlannerForWeek(getPlannerWeekIdFromDate());
   });
+  setPlannerViewMode(plannerViewMode);
   renderPlannerForWeek(activePlannerWeekId);
 }
 
