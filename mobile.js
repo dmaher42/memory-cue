@@ -743,20 +743,20 @@ const initMobileNotes = () => {
       itemButton.dataset.noteId = note.id;
       itemButton.dataset.role = 'open-note';
       itemButton.className =
-        'saved-note-item w-full text-left rounded-xl bg-base-100 border border-base-300 px-3 py-2 flex flex-col gap-1 active:scale-[0.99] transition-transform';
+        'saved-note-item note-list-item w-full text-left active:scale-[0.99] focus:outline-none';
 
       // Top row: title and optional meta (timestamp)
       const topRow = document.createElement('div');
       topRow.className = 'flex items-center justify-between gap-2';
 
       const titleEl = document.createElement('span');
-      titleEl.className = 'saved-note-title text-sm font-semibold truncate';
+      titleEl.className = 'saved-note-title note-list-title truncate';
       const noteTitle = note.title || 'Untitled';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
 
       const metaEl = document.createElement('span');
-      metaEl.className = 'saved-note-meta text-[11px] text-base-content/60';
+      metaEl.className = 'saved-note-meta note-list-meta';
       const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
       metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
 
@@ -765,7 +765,7 @@ const initMobileNotes = () => {
 
       // Body preview (strip HTML and clamp to two lines)
       const previewEl = document.createElement('p');
-      previewEl.className = 'saved-note-preview text-xs text-base-content/70 line-clamp-2';
+      previewEl.className = 'saved-note-preview note-list-preview line-clamp-2';
       const rawBody = note.body || '';
       const plainBody = String(rawBody).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
       previewEl.textContent = plainBody || 'No content yet.';
