@@ -199,6 +199,20 @@
   font-weight: 600;
 }
 
+/* Visual indicator when the mobile 'Add Reminder' sheet is open */
+#mobile-footer-new-reminder[aria-expanded="true"],
+.floating-footer #mobile-footer-new-reminder[aria-expanded="true"] {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 18px 40px rgba(111, 59, 209, 0.18);
+  background: linear-gradient(90deg, var(--premium-accent), var(--premium-accent-dark));
+  color: #fff;
+}
+
+/* Ensure the inner svg/icon contrasts when active */
+#mobile-footer-new-reminder[aria-expanded="true"] svg {
+  filter: brightness(0) invert(1) saturate(1.2);
+}
+
 /* Soft-glass elevated card for mobile New Reminder form */
 .mobile-new-reminder-card {
   background: rgba(255, 255, 255, 0.7);
