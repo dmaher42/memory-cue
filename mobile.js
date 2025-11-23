@@ -385,7 +385,7 @@ const initMobileNotes = () => {
     return;
   }
 
-  // Wire up formatting toolbar (bold, italic, h2, ul) for the rich text editor
+  // Wire up formatting toolbar (bold, italic, h2, ul, ol) for the rich text editor
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
     toolbarEl.addEventListener('click', (event) => {
@@ -411,6 +411,9 @@ const initMobileNotes = () => {
         case 'ul':
           document.execCommand('insertUnorderedList', false, null);
           break;
+        case 'ol':
+          document.execCommand('insertOrderedList', false, null);
+          break;
         default:
           break;
       }
@@ -430,6 +433,91 @@ const initMobileNotes = () => {
       return scratchNotesEditor.getHTML() || '';
     }
     return scratchNotesEditorElement.innerHTML || '';
+  };
+
+  const getEditorText = () => {
+    if (scratchNotesEditor && typeof scratchNotesEditor.getText === 'function') {
+      return scratchNotesEditor.getText() || '';
+    }
+    return scratchNotesEditorElement.textContent || '';
+  };
+
+  const getClosestBlock = (node) => {
+    let current = node;
+    while (current && current !== scratchNotesEditorElement) {
+      if (
+        current.nodeType === Node.ELEMENT_NODE &&
+        ['div', 'p', 'li'].includes(current.tagName?.toLowerCase())
+      ) {
+        return current;
+      }
+      current = current.parentNode;
+    }
+    return scratchNotesEditorElement;
+  };
+
+  const detectListShortcut = (prefixText) => {
+    if (typeof prefixText !== 'string') {
+      return null;
+    }
+    const normalized = prefixText.replace(/\u00a0/g, ' ').trim();
+    if (normalized === '*') {
+      return 'ul';
+    }
+    if (normalized === '1') {
+      return 'ol';
+    }
+    return null;
+  };
+
+  const handleListShortcuts = (event) => {
+    if (![' ', 'Enter'].includes(event.key)) {
+      return;
+    }
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    if (!scratchNotesEditorElement.contains(range.startContainer)) {
+      return;
+    }
+
+    const block = getClosestBlock(range.startContainer);
+    const prefixRange = range.cloneRange();
+    prefixRange.selectNodeContents(block);
+    prefixRange.setEnd(range.startContainer, range.startOffset);
+    const marker = detectListShortcut(prefixRange.toString());
+
+    if (!marker) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const blockText = block.textContent || '';
+    const cleaned = blockText.replace(/^\s*[\*1]\s?/, '');
+    block.textContent = cleaned;
+
+    const caretTarget = block.firstChild || block;
+    const caretRange = document.createRange();
+    caretRange.setStart(caretTarget, caretTarget.nodeType === Node.TEXT_NODE ? 0 : 0);
+    caretRange.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(caretRange);
+
+    try {
+      scratchNotesEditorElement.focus();
+    } catch {
+      /* ignore focus errors */
+    }
+
+    document.execCommand(
+      marker === 'ul' ? 'insertUnorderedList' : 'insertOrderedList',
+      false,
+      null
+    );
   };
 
   const debounce = (fn, delay = 200) => {
@@ -603,7 +691,7 @@ const initMobileNotes = () => {
 
   const hasUnsavedChanges = () => {
     const currentTitle = typeof titleInput.value === 'string' ? titleInput.value : '';
-    const currentBody = getEditorText();
+    const currentBody = getEditorHTML();
     const originalTitle = titleInput.dataset.noteOriginalTitle ?? '';
     const originalBody = scratchNotesEditorElement.dataset.noteOriginalBody ?? '';
     return currentTitle !== originalTitle || currentBody !== originalBody;
@@ -926,6 +1014,7 @@ const initMobileNotes = () => {
   try {
     // contenteditable should emit input events
     scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
+    scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
     // also save on blur (user leaving editor)
     scratchNotesEditorElement.addEventListener('blur', () => {
       // flush any pending autosave immediately
