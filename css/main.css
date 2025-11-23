@@ -190,3 +190,21 @@
   color: #f9fafb;
   font-weight: 600;
 }
+
+/* Soft-glass elevated card for mobile New Reminder form */
+.mobile-new-reminder-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  margin-bottom: 4px;
+}
+
+.mobile-new-reminder-card .input,
+.mobile-new-reminder-card .textarea,
+.mobile-new-reminder-card .select {
+  background: transparent;
+  color: inherit;
+}
