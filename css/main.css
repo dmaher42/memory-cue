@@ -220,17 +220,12 @@
   -webkit-backdrop-filter: blur(16px);
   border-radius: 22px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px;
+  padding: 18px;
   margin-bottom: 4px;
   /* Soft-lilac premium palette scoped to this card */
-  --premium-accent: #9b6ef7; /* soft lilac */
-  --premium-accent-dark: #6f3bd1;
-  --premium-surface: rgba(250,245,255,0.82);
-  --premium-border: rgba(139, 92, 246, 0.12);
-  --premium-shadow: 0 14px 40px rgba(111, 59, 209, 0.08);
-  background: linear-gradient(180deg, rgba(250,245,255,0.86), rgba(244,240,255,0.82));
-  border: 1px solid var(--premium-border);
-  box-shadow: var(--premium-shadow);
+  --premium-accent: rgba(111, 59, 209, 1);
+  --premium-accent-dark: rgba(82, 45, 112, 1);
+  --border-subtle: rgba(35,31,32,0.06);
 }
 
 .mobile-new-reminder-card .input,
@@ -269,6 +264,15 @@
 .mobile-new-reminder-card .btn-premium-secondary:focus {
   transform: translateY(-2px);
   box-shadow: 0 10px 26px rgba(111, 59, 209, 0.06);
+}
+
+/* Close button placed at top-right of sheet panel */
+.sheet-panel { position: relative; }
+.sheet-panel .close-sheet-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 60;
 }
 
 /* Global upgraded form controls */
