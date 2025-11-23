@@ -426,6 +426,7 @@
         <a href="#dashboard" class="btn btn-sm btn-ghost" data-nav="dashboard">Dashboard</a>
         <a href="#reminders" class="btn btn-sm btn-ghost" data-nav="reminders">Reminders</a>
         <a href="#planner" class="btn btn-sm btn-ghost" data-nav="planner">Planner</a>
+        <a href="#timetable" class="btn btn-sm btn-ghost" data-nav="timetable">Timetable</a>
         <a href="#notes" class="btn btn-sm btn-ghost" data-nav="notes">Notes</a>
       </nav>
       <div class="desktop-header-right">
@@ -982,7 +983,7 @@
 
                   <!-- SECTION C — Class & status -->
                   <section class="space-y-4">
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
                       <div class="space-y-1">
                         <label class="block text-sm font-medium text-base-content">Subject or class (optional)</label>
                         <input
@@ -1001,6 +1002,13 @@
                           <option value="ready">Ready</option>
                           <option value="taught">Taught</option>
                         </select>
+                      </div>
+                      <div class="space-y-1">
+                        <label class="block text-sm font-medium text-base-content">Link to timetable slot</label>
+                        <select id="planner-lesson-timetable" class="select select-bordered w-full">
+                          <option value="">No timetable link</option>
+                        </select>
+                        <p class="text-xs text-base-content/60">Attach this lesson to a saved timetable slot.</p>
                       </div>
                     </div>
                   </section>
@@ -1150,6 +1158,14 @@
       <section data-route="planner" class="space-y-6" style="display: none;" data-planner-support-state="expanded">
         <div class="section-pane desktop-panel desktop-panel--planner card border border-base-300/80 bg-base-100 text-base-content shadow-sm" data-planner-card-panel>
           <div class="desktop-panel-body section-pane__body px-4 py-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="planner-prev" class="btn btn-ghost btn-xs" aria-label="View previous week">Prev</button>
+                <button type="button" id="planner-today" class="btn btn-ghost btn-xs" aria-label="Jump to current week">This week</button>
+                <button type="button" id="planner-next" class="btn btn-ghost btn-xs" aria-label="View next week">Next</button>
+              </div>
+              <p id="plannerWeekRange" class="text-sm font-medium text-base-content/80"></p>
+            </div>
             <div class="flex flex-wrap items-center gap-2 pb-4">
               <button type="button" id="planner-copy-week" class="btn btn-outline btn-sm">Copy last week</button>
               <button type="button" id="planner-duplicate-btn" class="btn btn-outline btn-sm">Duplicate plan</button>
@@ -1199,6 +1215,62 @@
                 ></textarea>
               </aside>
             </div>
+          </div>
+        </div>
+      </section>
+      <section data-route="timetable" class="space-y-6" style="display: none;">
+        <div class="section-pane desktop-panel card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+          <div class="desktop-panel-body section-pane__body px-4 py-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Planner</p>
+                <h3 class="text-xl font-semibold text-base-content">Timetable</h3>
+                <p class="text-sm text-base-content/70">Save your weekly slots so lesson cards auto-appear in the planner.</p>
+              </div>
+            </div>
+            <form id="timetable-form" class="space-y-4" novalidate>
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <label class="form-control">
+                  <span class="label-text text-sm font-medium text-base-content">Day</span>
+                  <select id="timetable-day" class="select select-bordered w-full">
+                    <option value="monday">Monday</option>
+                    <option value="tuesday">Tuesday</option>
+                    <option value="wednesday">Wednesday</option>
+                    <option value="thursday">Thursday</option>
+                    <option value="friday">Friday</option>
+                  </select>
+                </label>
+                <label class="form-control md:col-span-1">
+                  <span class="label-text text-sm font-medium text-base-content">Period</span>
+                  <input id="timetable-period" type="text" class="input input-bordered w-full" placeholder="Lesson 1" />
+                </label>
+                <label class="form-control md:col-span-2">
+                  <span class="label-text text-sm font-medium text-base-content">Class</span>
+                  <input id="timetable-class" type="text" class="input input-bordered w-full" placeholder="e.g. 7KN English" required />
+                </label>
+              </div>
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <label class="form-control md:col-span-2">
+                  <span class="label-text text-sm font-medium text-base-content">Subject (optional)</span>
+                  <input id="timetable-subject" type="text" class="input input-bordered w-full" placeholder="English" />
+                </label>
+                <div class="flex items-end gap-2">
+                  <button id="timetable-reset" type="button" class="btn btn-ghost">Reset</button>
+                  <button id="timetable-submit" type="submit" class="btn btn-primary">Add to timetable</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="section-pane desktop-panel card border border-base-300/80 bg-base-100 text-base-content shadow-sm">
+          <div class="desktop-panel-body section-pane__body px-4 py-6">
+            <div class="flex items-center justify-between pb-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Weekly slots</p>
+                <p class="text-sm text-base-content/70">Tap a slot to edit or remove it. Slots appear automatically in the planner.</p>
+              </div>
+            </div>
+            <div id="timetable-list" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
           </div>
         </div>
       </section>
@@ -1543,7 +1615,7 @@
   <script src="./assets/router-OOUMFDE4.js" defer></script>
   <script type="module" src="./js/quick-actions.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-WEA4VIRD.js" defer></script>
+  <script type="module" src="./assets/app-ZZ2XMSLD.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
