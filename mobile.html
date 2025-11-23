@@ -1065,7 +1065,10 @@
       border-radius: 0.5rem;
       cursor: pointer;
       padding: 0;
-      transition: background-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.1s ease;
     }
 
     .pill-voice-btn:hover,
@@ -1074,7 +1077,13 @@
     }
 
     .pill-voice-btn.is-recording {
-      background-color: rgba(81, 38, 99, 0.16);
+      background-color: rgba(220, 38, 38, 0.08);
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
+      transform: scale(0.96);
+    }
+
+    .pill-voice-btn.is-recording svg {
+      color: #dc2626;
     }
 
     #slimMobileHeader h1 {
