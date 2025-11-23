@@ -14,11 +14,15 @@
       --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
       --cauliflower-blue: #F7F7FA;
       --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
-      --text-primary: #2f1b3f; /* Deep violet text */
+      --text-primary: #231B2E; /* Deep violet text */
       --text-secondary: #5b4a68; /* Muted violet */
       --accent-color: #512663; /* Deep violet accent */
+      --surface-main: #F7F7FA;      /* page / shell */
+      --surface-elevated: #F9F9FB;  /* cards, pills, editor containers */
+      --border-subtle: #E3D9F4;
+      --text-main: #231B2E;
       --success-color: #8ed6c1;
-      --background-color: #F7F7FA; /* soft pale backdrop */
+      --background-color: var(--surface-main); /* soft pale backdrop */
       --background-gradient: linear-gradient(
         135deg,
         #F7F7FA 0%,
@@ -57,15 +61,15 @@
       --reminder-card-font-size: 0.85rem;
 
       /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: #F7F7FA; /* Soft Pale Lilac header */
-      --mobile-header-border: rgba(81, 38, 99, 0.12);
+      --mobile-header-bg: var(--surface-main); /* Soft Pale Lilac header */
+      --mobile-header-border: var(--border-subtle);
       --mobile-header-shadow: 0 14px 30px rgba(81, 38, 99, 0.12);
-      --mobile-header-text: #512663;
-      --mobile-header-button-bg: #F9F9F9; /* off-white buttons */
+      --mobile-header-text: var(--text-main);
+      --mobile-header-button-bg: var(--surface-elevated); /* off-white buttons */
       --mobile-header-button-color: #512663;
-      --mobile-header-button-border: rgba(81, 38, 99, 0.14);
-      --mobile-quick-surface: #F9F9F9; /* complementary off-white surface */
-      --mobile-footer-bg: #F7F7FA;
+      --mobile-header-button-border: var(--border-subtle);
+      --mobile-quick-surface: var(--surface-elevated); /* complementary off-white surface */
+      --mobile-footer-bg: var(--surface-main);
       --mobile-quick-shadow: 0 20px 34px rgba(81, 38, 99, 0.12);
     }
 
@@ -1037,10 +1041,11 @@
       align-items: center;
       gap: 0.5rem;
       padding: 0.35rem 0.75rem;
-      background: var(--mobile-header-button-bg);
-      border: 1px solid var(--mobile-header-button-border);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
       border-radius: 9999px;
       box-shadow: 0 2px 6px rgba(81, 38, 99, 0.15);
+      color: var(--text-main);
     }
 
     /* Style the quick reminder input inside the pill */
@@ -1049,7 +1054,7 @@
       border: none;
       background: transparent;
       padding: 0.25rem 0.5rem;
-      color: var(--text-primary);
+      color: var(--text-main);
       font-size: 0.9rem;
     }
 
@@ -1261,22 +1266,29 @@
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-color) 18%, transparent);
     }
     .note-title-field {
-      border: 1.5px solid var(--card-border-strong);
+      border: 1.5px solid var(--border-subtle);
       border-radius: 1rem;
-      background-color: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
+      background-color: var(--surface-elevated);
+      color: var(--text-main);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
 
     .dark .note-title-field {
-      background-color: color-mix(in srgb, var(--text-primary) 75%, transparent);
+      background-color: var(--surface-elevated);
+      color: var(--text-main);
     }
 
     .note-title-field:focus,
     .note-title-field:focus-visible {
-      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--card-border-strong));
+      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--border-subtle));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
-      background-color: color-mix(in srgb, var(--card-bg) 98%, rgba(148, 163, 184, 0.05));
+      background-color: var(--surface-elevated);
+    }
+
+    .note-title-field input {
+      background-color: transparent;
+      color: var(--text-main);
     }
 
     .seamless-title-input {
@@ -1290,10 +1302,10 @@
       min-height: 10rem;
       width: 100%;
       border-radius: 1rem;
-      border: 1.5px solid var(--card-border-strong);
+      border: 1.5px solid var(--border-subtle);
       padding: 0.75rem 1rem;
-      background-color: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
-      color: inherit;
+      background-color: var(--surface-elevated);
+      color: var(--text-main);
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 0.98rem;
       white-space: pre-wrap;
@@ -1304,12 +1316,18 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
     .dark .notes-editor {
-      border-color: var(--card-border-strong);
-      background-color: color-mix(in srgb, var(--text-primary) 70%, transparent);
+      border-color: var(--border-subtle);
+      background-color: var(--surface-elevated);
     }
     .notes-editor:focus-visible {
-      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--card-border-strong));
+      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--border-subtle));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 22%, transparent);
+    }
+
+    .notes-editor textarea,
+    .notes-editor[contenteditable="true"] {
+      background-color: transparent;
+      color: var(--text-main);
     }
     .notes-editor:empty::before {
       content: attr(data-placeholder);
@@ -1519,37 +1537,44 @@
     }
 
     .seamless-title-input:focus {
-      background-color: #f9f9f9;
+      background-color: var(--surface-elevated);
       border-radius: 10px;
       box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.18);
-      border-color: #512663;
+      border-color: var(--accent-color);
     }
-    
+
     .distraction-free-editor-container {
       margin-top: 0;
-      background-color: #f9f9f9;
-      border: 1px solid #e6dff0;
+      background-color: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
       border-radius: 12px;
       padding: 0.35rem;
     }
-    
+
     .minimal-editor {
-      border: 1px solid #e6dff0;
+      border: 1px solid var(--border-subtle);
       box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
       transition: all 0.2s ease;
       line-height: 1.7;
       min-height: calc(100vh - 220px);
       max-height: calc(100vh - 120px);
       overflow-y: auto;
-      background-color: #f9f9f9;
-      color: #1a1a1a;
+      background-color: var(--surface-elevated);
+      color: var(--text-main);
       border-radius: 12px;
     }
 
     .minimal-editor:focus {
-      border-color: #512663;
+      border-color: var(--accent-color);
       box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.18), inset 0 1px 2px rgba(0, 0, 0, 0.05);
       outline: none;
+    }
+
+    .minimal-editor textarea,
+    .minimal-editor[contenteditable="true"] {
+      background-color: transparent;
+      color: var(--text-main);
     }
 
     .minimal-editor:empty::before {
@@ -1986,11 +2011,11 @@
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 999px;
-    background: var(--card-bg);
-    color: var(--text-primary);
+    background: var(--surface-elevated);
+    color: var(--text-main);
     box-shadow: var(--shadow-sm);
     font-size: 1rem;
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--border-subtle);
     transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
 
@@ -2006,6 +2031,13 @@
     align-items: center;
     justify-content: center;
     font-size: 1.15rem;
+  }
+
+  .header-pill svg,
+  .nav-card svg,
+  .fab-card svg,
+  .floating-card svg {
+    color: var(--accent-color);
   }
 
   #mobile-nav-shell .floating-fab {
@@ -3784,10 +3816,11 @@
       align-items: center;
       gap: 0.5rem;
       padding: 0.35rem 0.75rem;
-      background: var(--mobile-quick-surface);
-      border: 1px solid var(--mobile-header-button-border);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
       border-radius: 9999px;
       box-shadow: var(--mobile-quick-shadow);
+      color: var(--text-main);
     }
 
     .header-pill input.quick-reminder {
@@ -3796,7 +3829,7 @@
       border: none;
       background: transparent;
       padding: 0.25rem 0.5rem;
-      color: var(--text-primary);
+      color: var(--text-main);
       font-size: 0.95rem;
     }
 
@@ -4501,10 +4534,11 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.35rem 0.75rem;
-        background: var(--mobile-header-button-bg);
-        border: 1px solid var(--mobile-header-button-border);
+        background: var(--surface-elevated);
+        border: 1px solid var(--border-subtle);
         border-radius: 9999px;
         box-shadow: 0 2px 6px rgba(81, 38, 99, 0.15);
+        color: var(--text-main);
       }
 
       #reminders-slim-header .quick-reminder {
@@ -4512,7 +4546,7 @@
         min-width: 0; /* allow truncation / shrink on small screens */
         background: transparent;
         border: none;
-        color: var(--text-primary);
+        color: var(--text-main);
       }
 
       #reminders-slim-header .header-icons,
