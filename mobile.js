@@ -558,6 +558,17 @@ const initMobileNotes = () => {
     savedNotesSheet.classList.remove('hidden');
     savedNotesSheet.dataset.open = 'true';
     savedNotesSheet.setAttribute('aria-hidden', 'false');
+    // Ensure folder chips are built and notes are rendered when opening the sheet
+    try {
+      buildFolderChips();
+    } catch (e) {
+      /* ignore */
+    }
+    try {
+      renderFilteredNotes();
+    } catch (e) {
+      /* ignore */
+    }
   };
 
   const hideSavedNotesSheet = () => {
