@@ -2826,28 +2826,55 @@ function renderPlannerLessons(plan) {
             </details>
           `
         : '';
-      const moveControls = lessonId
+      const lessonActionsMenu = lessonId
         ? `
-            <div class="flex flex-wrap items-center gap-1 justify-end sm:flex-nowrap" role="group" aria-label="Reorder lesson">
-              <button
-                type="button"
-                class="btn btn-ghost btn-xs"
-                data-planner-action="move-up"
-                data-lesson-id="${lessonId}"
-              >
-                Move up
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-xs"
-                data-planner-action="move-down"
-                data-lesson-id="${lessonId}"
-              >
-                Move down
-              </button>
+            <div class="dropdown dropdown-end">
+              <label tabindex="0" class="btn btn-ghost btn-circle btn-sm" aria-label="Lesson actions">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+                  <circle cx="12" cy="6" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                  <circle cx="12" cy="18" r="1.5" />
+                </svg>
+              </label>
+              <ul tabindex="0" class="dropdown-content menu rounded-box z-[1] mt-2 w-48 bg-base-100 p-2 shadow">
+                <li><button type="button" data-planner-action="move-up" data-lesson-id="${lessonId}">Move up</button></li>
+                <li><button type="button" data-planner-action="move-down" data-lesson-id="${lessonId}">Move down</button></li>
+                <li><button type="button" data-planner-action="duplicate" data-lesson-id="${lessonId}">Duplicate</button></li>
+                <li><button type="button" data-planner-action="edit" data-lesson-id="${lessonId}">Edit</button></li>
+                <li>
+                  <button type="button" class="text-error" data-planner-action="delete" data-lesson-id="${lessonId}">
+                    Delete
+                  </button>
+                </li>
+              </ul>
             </div>
           `
         : '';
+      const addActionsMenu = `
+        <div class="dropdown">
+          <label tabindex="0" class="btn btn-sm btn-outline gap-2" aria-label="Add lesson detail or reminder">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path d="M12 5c.552 0 1 .448 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H6a1 1 0 1 1 0-2h5V6c0-.552.448-1 1-1Z" />
+            </svg>
+            Add
+          </label>
+          <ul tabindex="0" class="dropdown-content menu rounded-box z-[1] mt-2 w-56 bg-base-100 p-2 shadow">
+            <li>
+              <button type="button" data-planner-action="add-detail" data-lesson-id="${lessonId}">Add detail</button>
+            </li>
+            <li>
+              <button
+                type="button"
+                data-planner-action="create-reminder"
+                data-open-reminder-modal="true"
+                data-lesson-id="${lessonId}"
+              >
+                Create reminder
+              </button>
+            </li>
+          </ul>
+        </div>
+      `;
       const statusSelect = lessonId ? renderStatusSelect(lessonId, lesson.status) : '';
       const resourcesList = renderResourcesList(Array.isArray(lesson.resources) ? lesson.resources : [], lessonId);
       const statusBadge = LESSON_STATUS_CONFIG[lesson.status]?.badge || LESSON_STATUS_CONFIG.not_started.badge;
@@ -2876,21 +2903,7 @@ function renderPlannerLessons(plan) {
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2">
-                ${moveControls}
-                <div class="flex flex-wrap justify-end gap-1">
-                  <button type="button" class="btn btn-ghost btn-xs" data-planner-action="duplicate" data-lesson-id="${lessonId}">Duplicate</button>
-                  <button type="button" class="btn btn-ghost btn-xs" data-planner-action="edit" data-lesson-id="${lessonId}">
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-xs text-error"
-                    data-planner-action="delete"
-                    data-lesson-id="${lessonId}"
-                  >
-                    Delete
-                  </button>
-                </div>
+                ${lessonActionsMenu}
               </div>
             </div>
             ${detailsSection}
@@ -2941,23 +2954,7 @@ function renderPlannerLessons(plan) {
                   <li><button type="button" data-planner-action="apply-template" data-template-type="cac" data-lesson-id="${lessonId}">CAC lesson template</button></li>
                 </ul>
               </div>
-              <button
-                type="button"
-                class="btn btn-sm btn-primary"
-                data-planner-action="create-reminder"
-                data-open-reminder-modal="true"
-                data-lesson-id="${lessonId}"
-              >
-                Create reminder
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline"
-                data-planner-action="add-detail"
-                data-lesson-id="${lessonId}"
-              >
-                Add detail
-              </button>
+              ${addActionsMenu}
             </div>
           </div>
         </article>
