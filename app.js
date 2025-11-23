@@ -3073,6 +3073,12 @@ async function applyLessonTemplate(lessonId, templateType) {
   }
   const templateNotes = getTemplateContent(templateType);
   const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
+  if (notesValue && typeof window !== 'undefined' && typeof window.confirm === 'function') {
+    const proceed = window.confirm('Add this template to the existing notes?');
+    if (!proceed) {
+      return;
+    }
+  }
   const combinedNotes = notesValue ? `${notesValue.trim()}\n\n${templateNotes}` : templateNotes;
   try {
     const plan = await updateLessonInWeek(activePlannerWeekId, lessonId, {
