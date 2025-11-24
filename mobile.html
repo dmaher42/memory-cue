@@ -675,6 +675,87 @@
     padding: 8px 0 16px;
   }
 
+  .notebook-folder-filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .notebook-folder-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(47, 27, 63, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: var(--primary-dark);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, color 0.14s ease;
+  }
+
+  .notebook-folder-chip--active {
+    background: var(--accent-color, #512663);
+    border-color: var(--accent-color, #512663);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
+  }
+
+  .notebook-note-card {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 4px 18px rgba(81, 38, 99, 0.1);
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .notebook-note-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--primary-dark);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .notebook-note-snippet {
+    font-size: 0.8rem;
+    color: rgba(47, 27, 63, 0.7);
+    max-height: 2.4em;
+    overflow: hidden;
+  }
+
+  .notebook-note-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .notebook-note-timestamp {
+    font-size: 0.72rem;
+    color: rgba(47, 27, 63, 0.55);
+  }
+
+  .notebook-note-folder-pill {
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    background: rgba(81, 38, 99, 0.06);
+    color: rgba(47, 27, 63, 0.85);
+    max-width: 40%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
   .mobile-shell #notesListMobile .note-item-mobile {
     margin: 0;
   }
@@ -5335,7 +5416,16 @@
 
               <div class="px-2 pb-3 overflow-y-auto">
                 <div id="notebook-folder-bar" class="notebook-folder-bar px-3 py-2">
-                  <!-- Folder chips will be populated dynamically by JS -->
+                  <div class="notebook-folder-filter-bar">
+                    <button
+                      type="button"
+                      class="notebook-folder-chip notebook-folder-chip--active"
+                      data-folder-id="all"
+                    >
+                      All notes
+                    </button>
+                    <!-- Folder chips will be populated dynamically by JS -->
+                  </div>
                 </div>
 
                 <div class="px-3 pb-3">
@@ -5719,7 +5809,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-NMR44QON.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-QICZVYE3.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
