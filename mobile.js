@@ -3325,7 +3325,8 @@ document.addEventListener('click', (ev) => {
 
       let folders = [];
       try {
-        folders = Array.isArray(getFolders()) ? getFolders() : [];
+        const loadedFolders = getFolders();
+        folders = Array.isArray(loadedFolders) ? loadedFolders : [];
       } catch (e) {
         folders = [];
       }
@@ -3338,7 +3339,10 @@ document.addEventListener('click', (ev) => {
         return null;
       }
 
-      const folderId = `folder-${Date.now().toString(36)}`;
+      // Generate folder ID with additional entropy to avoid collisions
+      const timestamp = Date.now().toString(36);
+      const randomPart = Math.random().toString(36).substring(2, 8);
+      const folderId = `folder-${timestamp}-${randomPart}`;
       const newFolder = { id: folderId, name };
       const updated = [...folders.filter(Boolean), newFolder];
       const saved = saveFolders(updated);
@@ -3355,6 +3359,19 @@ document.addEventListener('click', (ev) => {
       }
 
       return { id: folderId, name };
+    };
+
+    // Shared handler for folder creation (used by both click and Enter key)
+    const handleFolderCreate = () => {
+      const folderData = createFolder();
+      if (folderData && typeof pendingFolderCallback === 'function') {
+        try {
+          pendingFolderCallback(folderData);
+        } catch (err) {
+          console.warn('[notebook] folder callback failed', err);
+        }
+        pendingFolderCallback = null;
+      }
     };
 
     // Wire the "Create new folder" button in notebook editor header
@@ -3391,15 +3408,7 @@ document.addEventListener('click', (ev) => {
     if (newFolderCreateBtn) {
       newFolderCreateBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        const folderData = createFolder();
-        if (folderData && typeof pendingFolderCallback === 'function') {
-          try {
-            pendingFolderCallback(folderData);
-          } catch (err) {
-            console.warn('[notebook] folder callback failed', err);
-          }
-          pendingFolderCallback = null;
-        }
+        handleFolderCreate();
       });
     }
 
@@ -3408,15 +3417,7 @@ document.addEventListener('click', (ev) => {
       newFolderNameInput.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') {
           ev.preventDefault();
-          const folderData = createFolder();
-          if (folderData && typeof pendingFolderCallback === 'function') {
-            try {
-              pendingFolderCallback(folderData);
-            } catch (err) {
-              console.warn('[notebook] folder callback failed', err);
-            }
-            pendingFolderCallback = null;
-          }
+          handleFolderCreate();
         }
       });
     }
