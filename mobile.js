@@ -492,53 +492,41 @@ const initMobileNotes = () => {
       return null;
     }
     const normalized = prefixText.replace(/\u00a0/g, ' ');
-    // Ends with a single space, accounts for leading whitespace.
-    if (/^\s*[\*-]\s$/.test(normalized)) {
+    if (/^\s*[\*-]\s*$/.test(normalized)) {
       return 'ul';
     }
-    if (/^\s*1\.?\s$/.test(normalized)) {
+    if (/^\s*1\.?\s*$/.test(normalized)) {
       return 'ol';
     }
     return null;
   };
 
   const handleListShortcuts = (event) => {
-    // Check for space key on keyup for more reliable DOM state
     if (event.key !== ' ') {
       return;
     }
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
-      return;
-    }
-    const range = selection.getRangeAt(0);
-    if (!scratchNotesEditorElement.contains(range.startContainer)) {
-      return;
-    }
-
-    const block = getClosestBlock(range.startContainer);
-    const prefixRange = range.cloneRange();
-    prefixRange.selectNodeContents(block);
-    prefixRange.setEnd(range.startContainer, range.startOffset);
-    const prefixText = prefixRange.toString();
-    const marker = detectListShortcut(prefixText);
-
-    if (!marker) {
-      return;
-    }
-
-    event.preventDefault();
-
-    // The prefixRange contains the text we want to replace.
-    prefixRange.deleteContents();
-
-    try {
-      scratchNotesEditorElement.focus();
-    } catch {
-      /* ignore focus errors */
-    }
-
-    applyFormatCommand(marker === 'ul' ? 'insertUnorderedList' : 'insertOrderedList');
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+      const range = selection.getRangeAt(0);
+      if (!scratchNotesEditorElement.contains(range.startContainer)) {
+        return;
+      }
+      const block = getClosestBlock(range.startContainer);
+      const prefixRange = range.cloneRange();
+      prefixRange.selectNodeContents(block);
+      prefixRange.setEnd(range.startContainer, range.startOffset);
+      const prefixText = prefixRange.toString();
+      const marker = detectListShortcut(prefixText);
+      if (!marker) {
+        return;
+      }
+      event.preventDefault();
+      prefixRange.deleteContents();
+      applyFormatCommand(marker === 'ul' ? 'insertUnorderedList' : 'insertOrderedList');
+    }, 0);
   };
 
   const handleFormattingShortcuts = (event) => {
@@ -723,6 +711,7 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
+    if (currentNoteId === note.id) return;
     if (!note) {
       currentNoteId = null;
       titleInput.value = '';
@@ -2036,7 +2025,7 @@ const initMobileNotes = () => {
   try {
     // contenteditable should emit input events
     scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
-    scratchNotesEditorElement.addEventListener('keyup', handleListShortcuts);
+    scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
     scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
     // also save on blur (user leaving editor)
     scratchNotesEditorElement.addEventListener('blur', () => {
