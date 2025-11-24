@@ -899,10 +899,24 @@ const initMobileNotes = () => {
       const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
       metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
 
+      const overflowBtn = document.createElement('button');
+      overflowBtn.type = 'button';
+      overflowBtn.dataset.noteId = note.id;
+      overflowBtn.dataset.role = 'note-menu';
+      overflowBtn.className =
+        'btn btn-ghost btn-xs rounded-full text-base-content/80 hover:bg-base-100';
+      overflowBtn.setAttribute('aria-label', 'Note actions');
+      overflowBtn.textContent = '⋯';
+
+      const actionsWrap = document.createElement('div');
+      actionsWrap.className = 'flex items-center gap-1';
+      actionsWrap.appendChild(metaEl);
+      actionsWrap.appendChild(overflowBtn);
+
       titleWrap.appendChild(titleEl);
       titleWrap.appendChild(folderBadge);
       topRow.appendChild(titleWrap);
-      topRow.appendChild(metaEl);
+      topRow.appendChild(actionsWrap);
 
       // Body preview (strip HTML and clamp to two lines)
       const previewEl = document.createElement('p');
@@ -1160,9 +1174,16 @@ const initMobileNotes = () => {
   let pickFolderController = null;
   let pickSelectionId = null;
 
-  const openFolderPicker = () => {
+  let pickFolderConfirmHandler = null;
+
+  const openFolderPicker = (options = {}) => {
+    const { initialFolderId = null, onConfirm = null } = options || {};
     if (!pickFolderModalEl || !pickFolderListEl) return;
-    pickSelectionId = currentEditingNoteFolderId || 'unsorted';
+    pickSelectionId =
+      (initialFolderId && typeof initialFolderId === 'string'
+        ? initialFolderId
+        : currentEditingNoteFolderId) || 'unsorted';
+    pickFolderConfirmHandler = typeof onConfirm === 'function' ? onConfirm : null;
     // populate folders
     pickFolderListEl.innerHTML = '';
     let folders = [];
@@ -1185,9 +1206,8 @@ const initMobileNotes = () => {
       input.value = f.id;
       input.id = `pick-folder-${f.id}`;
       const shouldCheck =
-        String(f.id) === String(currentEditingNoteFolderId) ||
         String(f.id) === String(pickSelectionId) ||
-        (!currentEditingNoteFolderId && f.id === 'unsorted');
+        (!pickSelectionId && f.id === 'unsorted');
       if (shouldCheck) {
         input.checked = true;
         pickSelectionId = f.id;
@@ -1221,10 +1241,21 @@ const initMobileNotes = () => {
         // nothing selected
         return;
       }
-      // set editing folder and update label
-      currentEditingNoteFolderId = pickSelectionId === 'unsorted' ? 'unsorted' : pickSelectionId;
-      const labelElPick = document.getElementById('note-folder-label');
-      if (labelElPick) labelElPick.textContent = getFolderNameById(currentEditingNoteFolderId);
+      const selectedFolderId = pickSelectionId;
+      if (pickFolderConfirmHandler) {
+        try {
+          pickFolderConfirmHandler(selectedFolderId);
+        } catch (e) {
+          console.warn('[notebook] folder pick handler failed', e);
+        }
+        pickFolderConfirmHandler = null;
+      } else {
+        // set editing folder and update label
+        currentEditingNoteFolderId =
+          selectedFolderId === 'unsorted' ? 'unsorted' : selectedFolderId;
+        const labelElPick = document.getElementById('note-folder-label');
+        if (labelElPick) labelElPick.textContent = getFolderNameById(currentEditingNoteFolderId);
+      }
       try {
         pickFolderController.requestClose('selected');
       } catch {}
@@ -1255,6 +1286,90 @@ const initMobileNotes = () => {
     if (ev.key === 'Escape') {
       closeOverflowMenu();
     }
+  };
+
+  const handleMoveNoteToFolder = (noteId, targetFolderId) => {
+    if (!noteId) return;
+    const normalizedTarget = targetFolderId === 'unsorted' ? null : targetFolderId;
+    const saved = assignNoteToFolder(noteId, normalizedTarget);
+    if (!saved) {
+      return;
+    }
+    try {
+      refreshFromStorage({ preserveDraft: true });
+    } catch (e) {
+      console.warn('[notebook] failed to refresh notes after move', e);
+    }
+    try {
+      buildFolderChips();
+    } catch (e) {
+      console.warn('[notebook] failed to refresh folder chips after move', e);
+    }
+    closeOverflowMenu();
+  };
+
+  const openNoteOverflowMenu = (note, anchorEl) => {
+    if (!note || !anchorEl) return;
+    closeOverflowMenu();
+    const menu = document.createElement('div');
+    menu.className =
+      'memory-glass-card p-2 rounded-2xl shadow-xl backdrop-blur-md border border-base-200/80';
+    menu.style.position = 'absolute';
+    menu.style.zIndex = 1200;
+    menu.style.minWidth = '180px';
+
+    const moveBtn = document.createElement('button');
+    moveBtn.type = 'button';
+    moveBtn.className = 'w-full text-left px-3 py-2 btn-ghost rounded-xl';
+    moveBtn.textContent = 'Move to folder…';
+    moveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openFolderPicker({
+        initialFolderId:
+          note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted',
+        onConfirm: (selectedId) => handleMoveNoteToFolder(note.id, selectedId),
+      });
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'w-full text-left px-3 py-2 btn-ghost text-error rounded-xl';
+    deleteBtn.textContent = 'Delete note';
+    deleteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const confirmFn =
+        typeof window !== 'undefined' && typeof window.confirm === 'function'
+          ? window.confirm
+          : null;
+      const shouldDelete = confirmFn
+        ? confirmFn('Delete this note? This cannot be undone.')
+        : true;
+      if (shouldDelete) {
+        handleDeleteNote(note.id);
+      }
+      closeOverflowMenu();
+    });
+
+    menu.appendChild(moveBtn);
+    menu.appendChild(deleteBtn);
+
+    document.body.appendChild(menu);
+    activeOverflowMenu = menu;
+
+    try {
+      const rect = anchorEl.getBoundingClientRect();
+      const top = rect.bottom + window.scrollY + 6;
+      const left = rect.right + window.scrollX - menu.offsetWidth;
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    } catch (e) {
+      menu.style.top = '50%';
+      menu.style.left = '50%';
+      menu.style.transform = 'translate(-50%, -50%)';
+    }
+
+    document.addEventListener('click', closeOverflowMenu);
+    document.addEventListener('keydown', handleOverflowKeydown);
   };
 
   // Reorder folders by swapping `order` with neighbor and normalizing
@@ -1567,6 +1682,20 @@ const initMobileNotes = () => {
           : true;
         if (shouldDelete) {
           handleDeleteNote(noteId);
+        }
+        return;
+      }
+
+      const menuTrigger = target.closest('button[data-role="note-menu"]');
+      if (menuTrigger && listElement.contains(menuTrigger)) {
+        event.preventDefault();
+        const noteId = menuTrigger.getAttribute('data-note-id');
+        if (!noteId) {
+          return;
+        }
+        const note = allNotes.find((item) => item.id === noteId);
+        if (note) {
+          openNoteOverflowMenu(note, menuTrigger);
         }
         return;
       }
