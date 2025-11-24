@@ -3921,21 +3921,39 @@ export async function initReminders(sel = {}) {
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn reminder-icon-btn';
+      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn reminder-icon-btn reminder-complete-toggle';
+      toggleBtn.classList.toggle('reminder-complete-toggle--active', summary.done);
+
+      const iconStateClass = summary.done
+        ? 'reminder-complete-toggle-icon--checked'
+        : 'reminder-complete-toggle-icon--unchecked';
+
+      toggleBtn.innerHTML = `
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          xmlns="http://www.w3.org/2000/svg"
+          focusable="false"
+          class="reminder-complete-toggle-icon"
+        >
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" opacity="0.32" />
+          <path
+            d="M5.5 12.25l4.25 4.25L18.75 7.5"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="${iconStateClass}"
+          />
+        </svg>`;
+
       if (summary.done) {
         toggleBtn.classList.add('text-base-content/60');
-        toggleBtn.innerHTML = `
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
-            <path d="M7 7v4h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <path d="M20.49 11A8.5 8.5 0 1 0 11 20.49" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>`;
         toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminder.title}`);
       } else {
         toggleBtn.classList.add('text-success');
-        toggleBtn.innerHTML = `
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
-            <path d="M4 12.5l4.5 4.5L20 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>`;
         toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
       }
       toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
