@@ -29,6 +29,18 @@ function runMobileModule(window) {
     "import { initNotesSync } from './js/modules/notes-sync.js';",
     'const initNotesSync = window.__initNotesSync;',
   );
+  source = source.replace(
+    "import { getFolders } from './js/modules/notes-storage.js';",
+    'const { getFolders } = window.__notesModule;'
+  );
+  source = source.replace(
+    "import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';",
+    'const { getFolderNameById, assignNoteToFolder } = window.__notesModule;'
+  );
+  source = source.replace(
+    "import { ModalController } from './js/modules/modal-controller.js';",
+    'const { ModalController } = window.__notesModule;'
+  );
 
   const context = vm.createContext({});
   context.window = window;
@@ -81,11 +93,26 @@ describe('mobile create sheet interactions', () => {
     window.__initReminders = undefined;
     window.__saveClicks = undefined;
     window.__initSupabaseAuth = undefined;
+    window.__notesModule = undefined;
   });
 
   test('clicking Save Reminder triggers handlers when sheet content stops bubbling', async () => {
     window.__saveClicks = 0;
     window.__initSupabaseAuth = jest.fn();
+    window.__notesModule = {
+      loadAllNotes: () => [],
+      saveAllNotes: () => {},
+      createNote: (note) => note || {},
+      NOTES_STORAGE_KEY: 'memoryCue:notes',
+      getFolders: () => [],
+      getFolderNameById: () => 'General',
+      assignNoteToFolder: () => {},
+      ModalController: class ModalController {
+        constructor() {}
+        show() {}
+        hide() {}
+      },
+    };
     window.__initReminders = jest.fn(() => {
       const saveBtn = document.getElementById('saveReminder');
       if (saveBtn) {
