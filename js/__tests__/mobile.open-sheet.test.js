@@ -30,6 +30,18 @@ function loadMobileModule() {
     "import { initNotesSync } from './js/modules/notes-sync.js';",
     'const { initNotesSync } = window.__mobileMocks;',
   );
+  source = source.replace(
+    "import { getFolders } from './js/modules/notes-storage.js';",
+    'const { getFolders } = window.__mobileMocks;'
+  );
+  source = source.replace(
+    "import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';",
+    'const { getFolderNameById, assignNoteToFolder } = window.__mobileMocks;'
+  );
+  source = source.replace(
+    "import { ModalController } from './js/modules/modal-controller.js';",
+    'const { ModalController } = window.__mobileMocks;'
+  );
   const context = vm.createContext({
     window,
     document,
@@ -88,6 +100,14 @@ describe('mobile sheet opener events', () => {
       createNote: () => ({}),
       NOTES_STORAGE_KEY: 'memoryCue:notes',
       initNotesSync: () => ({ handleSessionChange() {}, setSupabaseClient() {} }),
+      getFolders: () => [],
+      getFolderNameById: () => 'General',
+      assignNoteToFolder: () => {},
+      ModalController: class ModalController {
+        constructor() {}
+        show() {}
+        hide() {}
+      },
     };
 
     loadMobileModule();
