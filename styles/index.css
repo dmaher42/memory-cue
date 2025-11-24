@@ -3079,6 +3079,43 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   color: var(--error, #ef4444);
 }
 
+.reminder-complete-toggle {
+  border: 1px solid transparent;
+  background-color: transparent;
+  transition:
+    transform 0.14s ease-out,
+    box-shadow 0.14s ease-out,
+    background-color 0.14s ease-out,
+    border-color 0.14s ease-out;
+}
+
+.reminder-complete-toggle--active {
+  background-color: var(--accent-color, #512663);
+  border-color: var(--accent-color, #512663);
+  box-shadow: 0 6px 16px rgba(81, 38, 99, 0.28);
+  transform: scale(1.02);
+}
+
+.reminder-complete-toggle-icon {
+  transition: transform 0.16s ease-out, opacity 0.16s ease-out;
+  transform-origin: center;
+}
+
+.reminder-complete-toggle-icon--checked {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.reminder-complete-toggle-icon--unchecked {
+  opacity: 0;
+  transform: scale(0.75);
+}
+
+.reminder-complete-toggle:active {
+  transform: scale(0.94);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
 .desktop-panel--planner {
   --planner-text-scale: 1;
 }
