@@ -181,7 +181,7 @@ html[data-theme="professional"] {
 
 /* Notebook editor polish */
 /* Placeholder styling */
-#scratchNotesEditor:empty::before {
+#notebook-editor-body:empty::before {
   content: attr(data-placeholder);
   color: rgba(0, 0, 0, 0.35);
   pointer-events: none;
@@ -195,10 +195,13 @@ html[data-theme="professional"] {
 }
 
 /* Smooth scrolling inside the editor */
-#scratchNotesEditor {
+#notebook-editor-body {
   scroll-behavior: smooth;
   background-color: #f9f9f9;
   border-radius: 12px;
+  min-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* Optional: smoother transitions for mobile header/title area */
@@ -3728,9 +3731,9 @@ body {
 }
 
 /* Light theme overrides for the writing panel */
-#scratchNotesEditor,
-#scratchNotesEditor .note-title-field,
-#scratchNotesEditor .note-body-field {
+#notebook-editor-body,
+#notebook-editor-body .note-title-field,
+#notebook-editor-body .note-body-field {
   background-color: var(--surface-elevated) !important; /* Soft Off‑White */
   color: var(--text-main) !important;
   border-color: var(--border-subtle) !important;

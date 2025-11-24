@@ -327,7 +327,7 @@ const initMobileNotes = () => {
   }
 
   const titleInput = document.getElementById('noteTitleMobile');
-  const scratchNotesEditorElement = document.getElementById('scratchNotesEditor');
+  const scratchNotesEditorElement = document.getElementById('notebook-editor-body');
   const saveButton = document.getElementById('noteSaveMobile');
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
@@ -349,7 +349,7 @@ const initMobileNotes = () => {
         : null);
 
     if (NotesEditorClass) {
-        return new NotesEditorClass('#scratchNotesEditor', {
+        return new NotesEditorClass('#notebook-editor-body', {
           toolbar: true,
           placeholder: 'Start typing your note…',
         });
@@ -389,34 +389,38 @@ const initMobileNotes = () => {
     return;
   }
 
-  // Wire up formatting toolbar (bold, italic, h2, ul, ol) for the rich text editor
+  const applyFormatCommand = (command) => {
+    if (!command || !scratchNotesEditorElement) return;
+    try {
+      scratchNotesEditorElement.focus();
+    } catch {
+      /* ignore focus errors */
+    }
+    document.execCommand(command, false, null);
+  };
+
+  // Wire up formatting toolbar (bold, italic, underline, ul, ol) for the rich text editor
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
     toolbarEl.addEventListener('click', (event) => {
-      const button = event.target.closest('button[data-format]');
+      const button = event.target.closest('.notebook-format-button[data-format]');
       if (!button) return;
       const format = button.getAttribute('data-format');
-      try {
-        // focus editor before applying formatting
-        scratchNotesEditorElement.focus();
-      } catch {
-        /* ignore */
-      }
       switch (format) {
         case 'bold':
-          document.execCommand('bold', false, null);
+          applyFormatCommand('bold');
           break;
         case 'italic':
-          document.execCommand('italic', false, null);
+          applyFormatCommand('italic');
           break;
-        case 'h2':
-          document.execCommand('formatBlock', false, 'h2');
+        case 'underline':
+          applyFormatCommand('underline');
           break;
-        case 'ul':
-          document.execCommand('insertUnorderedList', false, null);
+        case 'bullet-list':
+          applyFormatCommand('insertUnorderedList');
           break;
-        case 'ol':
-          document.execCommand('insertOrderedList', false, null);
+        case 'numbered-list':
+          applyFormatCommand('insertOrderedList');
           break;
         default:
           break;
@@ -425,11 +429,19 @@ const initMobileNotes = () => {
   }
 
   const setEditorContent = (value = '') => {
+    const normalizedValue = typeof value === 'string' ? value : '';
     if (scratchNotesEditor && typeof scratchNotesEditor.setContent === 'function') {
-      scratchNotesEditor.setContent(value || '');
+      scratchNotesEditor.setContent(normalizedValue || '');
       return;
     }
-    scratchNotesEditorElement.innerHTML = value || '';
+
+    const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(normalizedValue);
+    scratchNotesEditorElement.innerHTML = '';
+    if (looksLikeHtml) {
+      scratchNotesEditorElement.innerHTML = normalizedValue || '';
+    } else {
+      scratchNotesEditorElement.textContent = normalizedValue || '';
+    }
   };
 
   const getEditorHTML = () => {
@@ -464,11 +476,11 @@ const initMobileNotes = () => {
     if (typeof prefixText !== 'string') {
       return null;
     }
-    const normalized = prefixText.replace(/\u00a0/g, ' ').trim();
-    if (normalized === '*') {
+    const normalized = prefixText.replace(/\u00a0/g, ' ');
+    if (/^\s*[\*-]\s*$/.test(normalized)) {
       return 'ul';
     }
-    if (normalized === '1') {
+    if (/^\s*1\.?\s*$/.test(normalized)) {
       return 'ol';
     }
     return null;
@@ -500,7 +512,7 @@ const initMobileNotes = () => {
     event.preventDefault();
 
     const blockText = block.textContent || '';
-    const cleaned = blockText.replace(/^\s*[\*1]\s?/, '');
+    const cleaned = blockText.replace(/^\s*(?:[\*-]|1\.?)(?:\s|\u00a0)?/, '');
     block.textContent = cleaned;
 
     const caretTarget = block.firstChild || block;
@@ -517,11 +529,29 @@ const initMobileNotes = () => {
       /* ignore focus errors */
     }
 
-    document.execCommand(
-      marker === 'ul' ? 'insertUnorderedList' : 'insertOrderedList',
-      false,
-      null
-    );
+    applyFormatCommand(marker === 'ul' ? 'insertUnorderedList' : 'insertOrderedList');
+  };
+
+  const handleFormattingShortcuts = (event) => {
+    if (!event || event.altKey || !(event.ctrlKey || event.metaKey)) {
+      return;
+    }
+    const key = (event.key || '').toLowerCase();
+    let command = null;
+    if (key === 'b') {
+      command = 'bold';
+    } else if (key === 'i') {
+      command = 'italic';
+    } else if (key === 'u') {
+      command = 'underline';
+    }
+
+    if (!command) {
+      return;
+    }
+
+    event.preventDefault();
+    applyFormatCommand(command);
   };
 
   const debounce = (fn, delay = 200) => {
@@ -637,7 +667,7 @@ const initMobileNotes = () => {
     }
     return source.filter((note) => {
       const title = typeof note?.title === 'string' ? note.title.toLowerCase() : '';
-      const body = typeof note?.body === 'string' ? note.body.toLowerCase() : '';
+      const body = getNoteBodyText(note).toLowerCase();
       return title.includes(normalizedQuery) || body.includes(normalizedQuery);
     });
   };
@@ -689,7 +719,7 @@ const initMobileNotes = () => {
       titleInput.value = '';
       setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
-      delete scratchNotesEditorElement.dataset.noteOriginalBody;
+      scratchNotesEditorElement.dataset.noteOriginalBody = '';
       const labelElClear = document.getElementById('note-folder-label');
       if (labelElClear) {
         labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
@@ -698,7 +728,12 @@ const initMobileNotes = () => {
     }
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const nextBody = note.body || '';
+    const nextBody =
+      (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
+        ? note.bodyHtml
+        : typeof note.body === 'string'
+          ? note.body
+          : '') || '';
     titleInput.value = nextTitle;
     setEditorContent(nextBody);
     titleInput.dataset.noteOriginalTitle = nextTitle;
@@ -711,11 +746,34 @@ const initMobileNotes = () => {
     }
   };
 
-  const getEditorValues = () => ({
-    title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
-    // preserve HTML (paragraphs, inline formatting)
-    body: getEditorHTML(),
-  });
+  const extractPlainText = (html = '') => {
+    const temp = document.createElement('div');
+    temp.innerHTML = typeof html === 'string' ? html : '';
+    return (temp.textContent || temp.innerText || '').trim();
+  };
+
+  const getNoteBodyText = (note) => {
+    if (!note) return '';
+    if (typeof note.bodyText === 'string' && note.bodyText.trim().length) {
+      return note.bodyText.trim();
+    }
+    const source = typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
+      ? note.bodyHtml
+      : typeof note.body === 'string'
+        ? note.body
+        : '';
+    return extractPlainText(source);
+  };
+
+  const getEditorValues = () => {
+    const bodyHtml = getEditorHTML();
+    const bodyText = extractPlainText(bodyHtml);
+    return {
+      title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
+      bodyHtml,
+      bodyText,
+    };
+  };
 
   const updateListSelection = () => {
     if (!listElement) {
@@ -971,9 +1029,11 @@ const initMobileNotes = () => {
       // Body preview (strip HTML and clamp to two lines)
       const previewEl = document.createElement('p');
       previewEl.className = 'saved-note-preview note-list-preview line-clamp-2';
-      const rawBody = note.body || '';
-      const plainBody = String(rawBody).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-      previewEl.textContent = plainBody || 'No content yet.';
+      const previewText = getNoteBodyText(note);
+      const truncated = previewText.length > 120
+        ? `${previewText.slice(0, 120).trimEnd()}…`
+        : previewText;
+      previewEl.textContent = truncated || 'No content yet.';
 
       itemButton.appendChild(topRow);
       itemButton.appendChild(previewEl);
@@ -1803,7 +1863,9 @@ const initMobileNotes = () => {
   saveButton.addEventListener('click', () => {
     const existingNotes = loadAllNotes();
     const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
-    const { title, body } = getEditorValues();
+    const { title, bodyHtml, bodyText } = getEditorValues();
+    const noteBodyHtml = bodyHtml || '';
+    const noteBodyText = bodyText || extractPlainText(noteBodyHtml);
     const sanitizedTitle = title || 'Untitled note';
     const timestamp = new Date().toISOString();
     const normalizedFolderId =
@@ -1817,17 +1879,28 @@ const initMobileNotes = () => {
         notesArray[noteIndex] = {
           ...notesArray[noteIndex],
           title: sanitizedTitle,
-          body,
+          body: noteBodyHtml,
+          bodyHtml: noteBodyHtml,
+          bodyText: noteBodyText,
           updatedAt: timestamp,
           folderId: normalizedFolderId,
         };
       } else {
-        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp, folderId: normalizedFolderId });
+        const newNote = createNote(sanitizedTitle, noteBodyHtml, {
+          updatedAt: timestamp,
+          folderId: normalizedFolderId,
+          bodyHtml: noteBodyHtml,
+          bodyText: noteBodyText,
+        });
         currentNoteId = newNote.id;
         notesArray.unshift(newNote);
       }
     } else {
-      const newNote = createNote(sanitizedTitle, body, { folderId: normalizedFolderId });
+      const newNote = createNote(sanitizedTitle, noteBodyHtml, {
+        folderId: normalizedFolderId,
+        bodyHtml: noteBodyHtml,
+        bodyText: noteBodyText,
+      });
       currentNoteId = newNote.id;
       notesArray.unshift(newNote);
     }
@@ -1904,6 +1977,7 @@ const initMobileNotes = () => {
     // contenteditable should emit input events
     scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
     scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
+    scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
     // also save on blur (user leaving editor)
     scratchNotesEditorElement.addEventListener('blur', () => {
       // flush any pending autosave immediately
