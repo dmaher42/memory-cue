@@ -235,6 +235,7 @@ html[data-theme="professional"] {
 .notebook-folder-chip {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   max-width: 140px;
   padding: 4px 12px;
   border-radius: 999px;
@@ -268,6 +269,21 @@ html[data-theme="professional"] {
     0 6px 18px rgba(81, 38, 99, 0.32),
     0 0 0 1px rgba(255, 255, 255, 0.16);
   transform: translateY(-1px);
+}
+
+.notebook-folder-chip-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--primary-dark);
+}
+
+.notebook-folder-chip--active .notebook-folder-chip-count {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 
 .notebook-folder-chip:active {
@@ -353,6 +369,25 @@ html[data-theme="professional"] {
 
 .note-folder-chip:active {
   transform: scale(0.96);
+}
+
+.notebook-empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.notebook-empty-title {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.notebook-empty-body {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, rgba(0, 0, 0, 0.6));
 }
 
 /* Folder badge in the notes list */

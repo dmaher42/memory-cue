@@ -650,6 +650,32 @@ const initMobileNotes = () => {
     return getFilteredNotes(filteredByFolder);
   };
 
+  const getNoteCountsByFolder = (allNotesArray = [], folders = []) => {
+    const counts = {
+      all: Array.isArray(allNotesArray) ? allNotesArray.length : 0,
+      unsorted: 0,
+    };
+
+    (Array.isArray(folders) ? folders : []).forEach((folder) => {
+      if (folder && folder.id && folder.id !== 'unsorted') {
+        counts[folder.id] = 0;
+      }
+    });
+
+    (Array.isArray(allNotesArray) ? allNotesArray : []).forEach((note) => {
+      const folderId = note?.folderId || 'unsorted';
+      if (!folderId || folderId === 'unsorted') {
+        counts.unsorted += 1;
+      } else if (Object.prototype.hasOwnProperty.call(counts, folderId)) {
+        counts[folderId] += 1;
+      } else {
+        counts.unsorted += 1;
+      }
+    });
+
+    return counts;
+  };
+
   const setEditorValues = (note) => {
     if (!note) {
       currentNoteId = null;
@@ -772,6 +798,11 @@ const initMobileNotes = () => {
   const refreshFromStorage = ({ preserveDraft = true } = {}) => {
     const sortedNotes = getSortedNotes();
     allNotes = Array.isArray(sortedNotes) ? [...sortedNotes] : [];
+    try {
+      buildFolderChips();
+    } catch (e) {
+      /* ignore chip render failures */
+    }
     const shouldPreserveEditor = preserveDraft && hasUnsavedChanges();
     const hasAnyNotes = allNotes.length > 0;
     const visibleNotes = getVisibleNotes();
@@ -852,14 +883,26 @@ const initMobileNotes = () => {
     }
 
     if (!notes.length) {
-      const emptyItem = document.createElement('li');
-      emptyItem.className =
-        'text-xs italic text-base-content/60 px-3 py-4 text-center rounded-2xl border border-dashed border-base-200/80 bg-base-100/50';
-      emptyItem.textContent =
-        allNotes.length && getNormalizedFilterQuery()
-          ? 'No notes match this filter.'
-          : 'No saved notes yet.';
-      listElement.appendChild(emptyItem);
+      const hasFilter = Boolean(getNormalizedFilterQuery());
+      const isAllFolder = !currentFolderId || currentFolderId === 'all';
+      const isCustomFolder = currentFolderId && currentFolderId !== 'all' && currentFolderId !== 'unsorted';
+      const emptyTitle = hasFilter
+        ? 'No notes match this filter'
+        : isAllFolder
+          ? "You don't have any notes yet."
+          : isCustomFolder
+            ? 'No notes in this folder yet.'
+            : 'No notes here yet';
+      const emptyBody = hasFilter
+        ? 'Try adjusting your search or filters.'
+        : 'Create your first note in this folder to get started.';
+
+      listElement.innerHTML = `
+        <div class="notebook-empty-state">
+          <h3 class="notebook-empty-title">${emptyTitle}</h3>
+          <p class="notebook-empty-body">${emptyBody}</p>
+        </div>
+      `;
       return notes;
     }
 
@@ -976,6 +1019,9 @@ const initMobileNotes = () => {
       .filter((f) => f && f.id !== 'unsorted')
       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
 
+    const folderListForCounts = [unsortedFolder, ...extraFolders];
+    const noteCounts = getNoteCountsByFolder(allNotes, folderListForCounts);
+
     const chipModel = [
       { id: 'all', name: 'All', isVirtual: true },
       { ...unsortedFolder, isVirtual: false },
@@ -1000,6 +1046,13 @@ const initMobileNotes = () => {
       nameSpan.className = 'notebook-folder-chip-label';
       nameSpan.textContent = folder.name;
       chip.appendChild(nameSpan);
+
+      const countSpan = document.createElement('span');
+      countSpan.className = 'notebook-folder-chip-count';
+      const countKey = folder.id === 'all' ? 'all' : folder.id || 'unsorted';
+      const countValue = typeof noteCounts[countKey] === 'number' ? noteCounts[countKey] : 0;
+      countSpan.textContent = countValue;
+      chip.appendChild(countSpan);
 
       chip.addEventListener('click', () => {
         currentFolderId = folder.id === 'all' ? 'all' : folder.id;
