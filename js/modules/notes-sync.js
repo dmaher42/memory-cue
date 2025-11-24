@@ -74,6 +74,7 @@ export const initNotesSync = (options = {}) => {
   let currentUserId = null;
   let isApplyingRemote = false;
   let lastSyncedIds = new Set();
+  let remoteSyncPromise = null;
 
   const ensureSupabase = () => {
     if (supabase) {
@@ -84,6 +85,20 @@ export const initNotesSync = (options = {}) => {
   };
 
   const mapRowToNote = mapRowToNoteFactory(updatedAtColumn);
+
+  const maybeSyncFromRemote = async () => {
+    if (!currentUserId || isApplyingRemote || remoteSyncPromise) {
+      return remoteSyncPromise;
+    }
+    remoteSyncPromise = pullFromRemote()
+      .catch(() => {
+        // Swallow sync errors here; pullFromRemote already logs detail.
+      })
+      .finally(() => {
+        remoteSyncPromise = null;
+      });
+    return remoteSyncPromise;
+  };
 
   const syncToRemote = async (notes) => {
     const client = ensureSupabase();
@@ -201,6 +216,17 @@ export const initNotesSync = (options = {}) => {
     }
     await pullFromRemote();
   };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', maybeSyncFromRemote);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          maybeSyncFromRemote();
+        }
+      });
+    }
+  }
 
   return {
     setSupabaseClient(client) {
