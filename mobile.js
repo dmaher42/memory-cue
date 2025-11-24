@@ -357,6 +357,8 @@ const initMobileNotes = () => {
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
+  const folderSelectorEl = document.getElementById('notebook-folder-selector');
+  const folderSelectorListEl = document.getElementById('notebook-folder-selector-list');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
   const createScratchNotesEditor = () => {
@@ -498,17 +500,19 @@ const initMobileNotes = () => {
       return null;
     }
     const normalized = prefixText.replace(/\u00a0/g, ' ');
-    if (/^\s*[\*-]\s*$/.test(normalized)) {
+    // Ends with a single space, accounts for leading whitespace.
+    if (/^\s*[\*-]\s$/.test(normalized)) {
       return 'ul';
     }
-    if (/^\s*1\.?\s*$/.test(normalized)) {
+    if (/^\s*1\.?\s$/.test(normalized)) {
       return 'ol';
     }
     return null;
   };
 
   const handleListShortcuts = (event) => {
-    if (![' ', 'Enter'].includes(event.key)) {
+    // Check for space key on keyup for more reliable DOM state
+    if (event.key !== ' ') {
       return;
     }
     const selection = window.getSelection();
@@ -524,7 +528,8 @@ const initMobileNotes = () => {
     const prefixRange = range.cloneRange();
     prefixRange.selectNodeContents(block);
     prefixRange.setEnd(range.startContainer, range.startOffset);
-    const marker = detectListShortcut(prefixRange.toString());
+    const prefixText = prefixRange.toString();
+    const marker = detectListShortcut(prefixText);
 
     if (!marker) {
       return;
@@ -532,17 +537,8 @@ const initMobileNotes = () => {
 
     event.preventDefault();
 
-    const blockText = block.textContent || '';
-    const cleaned = blockText.replace(/^\s*(?:[\*-]|1\.?)(?:\s|\u00a0)?/, '');
-    block.textContent = cleaned;
-
-    const caretTarget = block.firstChild || block;
-    const caretRange = document.createRange();
-    caretRange.setStart(caretTarget, caretTarget.nodeType === Node.TEXT_NODE ? 0 : 0);
-    caretRange.collapse(true);
-
-    selection.removeAllRanges();
-    selection.addRange(caretRange);
+    // The prefixRange contains the text we want to replace.
+    prefixRange.deleteContents();
 
     try {
       scratchNotesEditorElement.focus();
@@ -591,6 +587,7 @@ const initMobileNotes = () => {
   let allNotes = [];
   let currentFolderId = 'all';
   let currentEditingNoteFolderId = 'unsorted';
+  let currentFolderMoveNoteId = null;
   let filterQuery = '';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
@@ -1516,6 +1513,73 @@ const initMobileNotes = () => {
     closeOverflowMenu();
   };
 
+  const closeFolderSelector = () => {
+    if (folderSelectorEl) {
+      folderSelectorEl.classList.remove('notebook-folder-selector--open');
+      folderSelectorEl.setAttribute('aria-hidden', 'true');
+    }
+    if (folderSelectorListEl) {
+      folderSelectorListEl.innerHTML = '';
+    }
+    currentFolderMoveNoteId = null;
+  };
+
+  const openFolderSelectorForNote = (noteId) => {
+    if (!noteId || !folderSelectorEl || !folderSelectorListEl) {
+      return;
+    }
+
+    currentFolderMoveNoteId = noteId;
+    folderSelectorListEl.innerHTML = '';
+
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch {
+      folders = [];
+    }
+
+    if (!folders.some((f) => f && f.id === 'unsorted')) {
+      folders.unshift({ id: 'unsorted', name: 'Unsorted' });
+    }
+
+    const activeNote = allNotes.find((n) => n.id === noteId) || null;
+    const activeFolderId =
+      activeNote && typeof activeNote.folderId === 'string' && activeNote.folderId
+        ? activeNote.folderId
+        : 'unsorted';
+
+    folders.forEach((folder) => {
+      if (!folder || typeof folder.id === 'undefined') return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'notebook-folder-selector-item';
+      button.dataset.folderId = folder.id;
+      button.textContent = folder.name || String(folder.id);
+      if (String(folder.id) === String(activeFolderId)) {
+        button.classList.add('notebook-folder-selector-item-current');
+      }
+      button.addEventListener('click', () => {
+        const targetNoteId = currentFolderMoveNoteId || noteId;
+        handleMoveNoteToFolder(targetNoteId, folder.id || 'unsorted');
+        closeFolderSelector();
+      });
+      folderSelectorListEl.appendChild(button);
+    });
+
+    folderSelectorEl.classList.add('notebook-folder-selector--open');
+    folderSelectorEl.setAttribute('aria-hidden', 'false');
+  };
+
+  if (folderSelectorEl) {
+    folderSelectorEl.addEventListener('click', (ev) => {
+      if (ev.target === folderSelectorEl) {
+        ev.preventDefault();
+        closeFolderSelector();
+      }
+    });
+  }
+
   const openNoteOverflowMenu = (note, anchorEl) => {
     if (!note || !anchorEl) return;
     closeOverflowMenu();
@@ -2042,7 +2106,7 @@ const initMobileNotes = () => {
   try {
     // contenteditable should emit input events
     scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
-    scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
+    scratchNotesEditorElement.addEventListener('keyup', handleListShortcuts);
     scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
     // also save on blur (user leaving editor)
     scratchNotesEditorElement.addEventListener('blur', () => {

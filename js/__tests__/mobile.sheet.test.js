@@ -41,6 +41,10 @@ function runMobileModule(window) {
     "import { ModalController } from './js/modules/modal-controller.js';",
     'const { ModalController } = window.__notesModule;'
   );
+  source = source.replace(
+    "import { saveFolders } from './js/modules/notes-storage.js';",
+    'const { saveFolders } = window.__notesModule;'
+  );
 
   const context = vm.createContext({});
   context.window = window;
@@ -112,6 +116,7 @@ describe('mobile create sheet interactions', () => {
         show() {}
         hide() {}
       },
+      saveFolders: () => {},
     };
     window.__initReminders = jest.fn(() => {
       const saveBtn = document.getElementById('saveReminder');
