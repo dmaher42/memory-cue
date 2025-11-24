@@ -5145,32 +5145,10 @@
     (function() {
       const menuBtn = document.getElementById('headerMenuBtn');
       const menu = document.getElementById('headerMenu');
-      
-      if (menuBtn && menu) {
-        menuBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const isOpen = menuBtn.getAttribute('aria-expanded') === 'true';
-          
-          if (isOpen) {
-            menu.classList.add('hidden');
-            menuBtn.setAttribute('aria-expanded', 'false');
-          } else {
-            menu.classList.remove('hidden');
-            menuBtn.setAttribute('aria-expanded', 'true');
-          }
-        });
 
-        // Close menu when clicking outside
-        document.addEventListener('click', function() {
-          menu.classList.add('hidden');
-          menuBtn.setAttribute('aria-expanded', 'false');
-        });
-
-        // Prevent menu close when clicking inside menu
-        menu.addEventListener('click', function(e) {
-          e.stopPropagation();
-        });
-      }
+      // The slim header script below binds the current overflow menu behavior.
+      // Skip the legacy handler to avoid double toggles closing the menu.
+      if (menuBtn && menu) return;
     })();
   </script>
 
