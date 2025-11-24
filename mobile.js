@@ -1053,9 +1053,9 @@ const initMobileNotes = () => {
       itemButton.dataset.noteId = note.id;
       itemButton.dataset.role = 'open-note';
       itemButton.className =
-        'saved-note-item note-list-item w-full text-left active:scale-[0.99] focus:outline-none';
+        'notebook-note-card saved-note-item note-list-item w-full text-left active:scale-[0.99] focus:outline-none';
 
-      // Top row: title and optional meta (timestamp)
+      // Top row: title and overflow menu
       const topRow = document.createElement('div');
       topRow.className = 'flex items-center justify-between gap-2';
 
@@ -1063,21 +1063,10 @@ const initMobileNotes = () => {
       titleWrap.className = 'flex items-center gap-2';
 
       const titleEl = document.createElement('span');
-      titleEl.className = 'saved-note-title note-list-title truncate';
+      titleEl.className = 'saved-note-title note-list-title truncate notebook-note-title';
       const noteTitle = note.title || 'Untitled';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
-
-      // Folder badge
-      const folderBadge = document.createElement('span');
-      folderBadge.className = 'note-folder-badge';
-      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
-      folderBadge.textContent = getFolderNameById(folderId);
-
-      const metaEl = document.createElement('span');
-      metaEl.className = 'saved-note-meta note-list-meta';
-      const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
-      metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
 
       const overflowBtn = document.createElement('button');
       overflowBtn.type = 'button';
@@ -1088,27 +1077,40 @@ const initMobileNotes = () => {
       overflowBtn.setAttribute('aria-label', 'Note actions');
       overflowBtn.textContent = '⋯';
 
-      const actionsWrap = document.createElement('div');
-      actionsWrap.className = 'flex items-center gap-1';
-      actionsWrap.appendChild(metaEl);
-      actionsWrap.appendChild(overflowBtn);
-
       titleWrap.appendChild(titleEl);
-      titleWrap.appendChild(folderBadge);
       topRow.appendChild(titleWrap);
-      topRow.appendChild(actionsWrap);
+      topRow.appendChild(overflowBtn);
 
       // Body preview (strip HTML and clamp to two lines)
       const previewEl = document.createElement('p');
-      previewEl.className = 'saved-note-preview note-list-preview line-clamp-2';
+      previewEl.className = 'saved-note-preview note-list-preview line-clamp-2 notebook-note-snippet';
       const previewText = getNoteBodyText(note);
       const truncated = previewText.length > 120
         ? `${previewText.slice(0, 120).trimEnd()}…`
         : previewText;
       previewEl.textContent = truncated || 'No content yet.';
 
+      // Meta row with timestamp and folder pill
+      const metaRow = document.createElement('div');
+      metaRow.className = 'notebook-note-meta-row';
+
+      const metaEl = document.createElement('span');
+      metaEl.className = 'saved-note-meta note-list-meta notebook-note-timestamp';
+      const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
+      metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
+
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      const folderPill = document.createElement('span');
+      folderPill.className = 'notebook-note-folder-pill';
+      const folderName = getFolderNameById(folderId) || 'No folder';
+      folderPill.textContent = folderName;
+
+      metaRow.appendChild(metaEl);
+      metaRow.appendChild(folderPill);
+
       itemButton.appendChild(topRow);
       itemButton.appendChild(previewEl);
+      itemButton.appendChild(metaRow);
 
       // Delete button (preserve attributes used by existing handlers)
       const deleteButton = document.createElement('button');
@@ -1159,6 +1161,8 @@ const initMobileNotes = () => {
     const folderBar = getFolderBarEl();
     if (!folderBar) return;
     folderBar.innerHTML = '';
+    const filterBar = document.createElement('div');
+    filterBar.className = 'notebook-folder-filter-bar';
     let folders = [];
     try {
       folders = Array.isArray(getFolders()) ? getFolders() : [];
@@ -1176,24 +1180,17 @@ const initMobileNotes = () => {
     const noteCounts = getNoteCountsByFolder(allNotes, folderListForCounts);
 
     const chipModel = [
-      { id: 'all', name: 'All', isVirtual: true },
+      { id: 'all', name: 'All notes', isVirtual: true },
       { ...unsortedFolder, isVirtual: false },
       ...extraFolders.map((f) => ({ ...f, isVirtual: false })),
     ];
 
-    chipModel.forEach((folder) => {
+    const createChip = (folder) => {
       const chip = document.createElement('button');
       chip.type = 'button';
       // keep legacy `folder-chip` for existing code paths, add new premium class
       chip.className = 'folder-chip notebook-folder-chip';
       chip.dataset.folderId = folder.id;
-      // optional grip for user folders (visual only)
-      if (folder.id !== 'all' && folder.id !== 'unsorted') {
-        const grip = document.createElement('span');
-        grip.className = 'notebook-folder-chip-grip';
-        grip.setAttribute('aria-hidden', 'true');
-        chip.appendChild(grip);
-      }
 
       const nameSpan = document.createElement('span');
       nameSpan.className = 'notebook-folder-chip-label';
@@ -1215,6 +1212,7 @@ const initMobileNotes = () => {
         // re-render notes using current filter
         renderFilteredNotes();
       });
+
       // For editable folders (not All or Unsorted) show overflow affordance
       if (folder.id !== 'all' && folder.id !== 'unsorted') {
         const overflowBtn = document.createElement('button');
@@ -1228,7 +1226,12 @@ const initMobileNotes = () => {
         });
         chip.appendChild(overflowBtn);
       }
-      folderBar.appendChild(chip);
+
+      return chip;
+    };
+
+    chipModel.forEach((folder) => {
+      filterBar.appendChild(createChip(folder));
     });
 
     // Add + New folder chip at the end
@@ -1246,7 +1249,9 @@ const initMobileNotes = () => {
         console.warn('[notebook] failed to open new folder dialog', err);
       }
     });
-    folderBar.appendChild(newChip);
+    filterBar.appendChild(newChip);
+
+    folderBar.appendChild(filterBar);
 
     // ensure active chip is visually set and scrolled into view
     setActiveFolderChip(currentFolderId);
