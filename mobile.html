@@ -865,12 +865,13 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      gap: var(--reminder-card-gap);
-      padding: 14px 16px;
+      column-gap: 10px;
+      row-gap: 2px;
+      padding: 10px 14px;
       margin: 0 0 10px;
       border: 1px solid rgba(255, 255, 255, 0.45);
       font-size: var(--reminder-card-font-size);
-      line-height: 1.4;
+      line-height: 1.25;
       background: rgba(255, 255, 255, 0.74);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -937,8 +938,9 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
-        gap: 0.5rem;
-        padding: 14px 16px;
+        column-gap: 10px;
+        row-gap: 2px;
+        padding: 10px 14px;
         margin-bottom: 10px;
         background: rgba(255, 255, 255, 0.74);
         backdrop-filter: blur(12px);
@@ -947,7 +949,7 @@
         border-radius: 14px;
         box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
         font-size: var(--reminder-card-font-size);
-        line-height: 1.4;
+        line-height: 1.25;
         border-left: 4px solid var(--cat-violet);
       }
 
@@ -984,17 +986,19 @@
         font-size: 0.95rem;
         font-weight: 500;
         color: var(--primary-dark);
+        line-height: 1.25;
       }
 
       #reminderList > .reminder-card time,
       #reminderList > .reminder-card .reminder-meta {
-        font-size: 0.75rem;
+        font-size: 0.78rem;
         color: rgba(47, 27, 63, 0.55);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
+        gap: 10px;
+        margin-top: 0;
+        line-height: 1.25;
       }
 
       #reminderList > .reminder-card .priority-pill {
@@ -1046,7 +1050,7 @@
       color: var(--primary-dark);
       font-weight: 500;
       font-size: 0.95rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0;
       grid-column: 1;
       min-width: 0; /* allow text to truncate */
       overflow: hidden;
@@ -1055,18 +1059,20 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       line-clamp: 2;
+      line-height: 1.25;
     }
 
     /* Meta info (right side: date/time/status) */
     #reminderList > * time,
     #reminderList > * .reminder-meta {
       color: rgba(47, 27, 63, 0.55);
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: var(--reminder-card-gap);
-      margin-top: 0.75rem;
+      gap: 10px;
+      margin-top: 0;
+      line-height: 1.25;
       grid-column: 1 / -1;
     }
 
@@ -2474,7 +2480,7 @@
       box-sizing: border-box;
       margin-left: 0;
       margin-right: 0;
-      padding: 0.5rem 0.75rem;
+      padding: 0;
     }
     
     /* Remove any inherited margins/padding that might constrain width */
@@ -2485,18 +2491,19 @@
 
     /* Compact reminder card styling */
     .task-item[data-compact="true"] {
-      margin-bottom: 0.5rem !important;
-      padding: 0.6rem 0.85rem;
+      margin-bottom: 10px !important;
+      padding: 10px 14px;
       min-height: 64px;
       border-left-width: 3px;
       border-radius: 0.75rem;
-      gap: 0.4rem;
+      column-gap: 10px;
+      row-gap: 2px;
     }
 
     .task-item[data-compact="true"] .reminder-primary-row {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 10px;
     }
 
     .task-item[data-compact="true"] .reminder-control-slot {
@@ -2518,7 +2525,7 @@
 
     .task-item[data-compact="true"] .task-title {
       font-size: 0.95rem;
-      line-height: 1.3;
+      line-height: 1.25;
       margin: 0;
       white-space: nowrap;
       overflow: hidden;
@@ -2536,7 +2543,8 @@
       justify-content: flex-end;
       gap: 0.35rem;
       min-width: 0;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
+      line-height: 1.25;
       color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
       text-align: right;
     }
@@ -2551,8 +2559,8 @@
 
     .task-item[data-compact="true"] .reminder-due {
       display: inline-block;
-      font-size: 0.75rem;
-      line-height: 1.2;
+      font-size: 0.78rem;
+      line-height: 1.25;
       max-width: 10.5rem;
       white-space: nowrap;
       overflow: hidden;
@@ -2602,7 +2610,8 @@
       flex-wrap: wrap;
       gap: 0.4rem;
       align-items: center;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
+      line-height: 1.25;
       color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
 
@@ -2718,8 +2727,9 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      gap: var(--reminder-card-gap);
-      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      column-gap: 10px;
+      row-gap: 2px;
+      padding: 10px 14px;
       margin-bottom: 10px;
       background: rgba(255, 255, 255, 0.74);
       border: 1px solid rgba(255, 255, 255, 0.45);
@@ -2729,7 +2739,7 @@
       box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
       transition: all 0.2s ease;
       font-size: var(--reminder-card-font-size);
-      line-height: 1.4;
+      line-height: 1.25;
     }
 
     .cue-item:last-child,
@@ -2760,21 +2770,21 @@
     #reminderList [data-reminder][data-priority="High"] {
       border-left: 3px solid var(--priority-high-border);
       background: var(--priority-high-bg);
-      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
+      padding-left: calc(14px - 1.5px);
     }
 
     .cue-item[data-priority="Medium"],
     #reminderList [data-reminder][data-priority="Medium"] {
       border-left: 3px solid var(--priority-medium-border);
       background: var(--priority-medium-bg);
-      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
+      padding-left: calc(14px - 1.5px);
     }
 
     .cue-item[data-priority="Low"],
     #reminderList [data-reminder][data-priority="Low"] {
       border-left: 3px solid var(--priority-low-border);
       background: var(--priority-low-bg);
-      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
+      padding-left: calc(14px - 1.5px);
     }
 
     .dark .cue-item[data-priority="High"],
@@ -2803,8 +2813,9 @@
       margin: 0;
       color: var(--primary-dark);
       font-weight: 500;
+      line-height: 1.25;
       font-size: 0.95rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0;
       grid-column: 1;
       min-width: 0;
       overflow: hidden;
@@ -2819,12 +2830,13 @@
     #reminderList [data-reminder] time,
     #reminderList [data-reminder] .reminder-meta {
       color: rgba(47, 27, 63, 0.55);
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: var(--reminder-card-gap);
-      margin-top: 0.75rem;
+      gap: 10px;
+      margin-top: 0;
+      line-height: 1.25;
       grid-column: 1 / -1;
     }
 
@@ -3190,8 +3202,8 @@
 
     .mobile-shell #reminderList > .reminder-card .reminder-primary-row {
       display: flex;
-      align-items: flex-start;
-      gap: 0.6rem;
+      align-items: center;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
@@ -3214,7 +3226,7 @@
       font-size: 0.95rem;
       font-weight: 500;
       color: var(--primary-dark);
-      line-height: 1.3;
+      line-height: 1.25;
       margin: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -3230,9 +3242,9 @@
     .mobile-shell #reminderList > .reminder-card .reminder-due,
     .mobile-shell #reminderList > .reminder-card .task-meta-text,
     .mobile-shell #reminderList > .reminder-card time {
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       color: rgba(47, 27, 63, 0.55);
-      line-height: 1.35;
+      line-height: 1.25;
     }
 
     .mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
