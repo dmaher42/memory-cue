@@ -425,12 +425,13 @@ const initMobileNotes = () => {
     document.execCommand(command, false, null);
   };
 
-  // Wire up formatting toolbar (bold, italic, underline, ul, ol) for the rich text editor
-  const toolbarEl = document.getElementById('scratchNotesToolbar');
-  if (toolbarEl && scratchNotesEditorElement) {
-    toolbarEl.addEventListener('click', (event) => {
-      const button = event.target.closest('.notebook-format-button[data-format]');
+  // Wire up formatting toolbar (bold, italic, underline, ul, ol)
+  const toolbar = document.getElementById('scratchNotesToolbar');
+  if (toolbar) {
+    toolbar.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-format]');
       if (!button) return;
+
       const format = button.getAttribute('data-format');
       switch (format) {
         case 'bold':
@@ -453,6 +454,7 @@ const initMobileNotes = () => {
       }
     });
   }
+
 
   const setEditorContent = (value = '') => {
     const normalizedValue = typeof value === 'string' ? value : '';
@@ -729,7 +731,7 @@ const initMobileNotes = () => {
     if (!note) {
       currentNoteId = null;
       titleInput.value = '';
-      setEditorContent('');
+      scratchNotesEditorElement.innerHTML = '';
       delete titleInput.dataset.noteOriginalTitle;
       scratchNotesEditorElement.dataset.noteOriginalBody = '';
       const labelElClear = document.getElementById('note-folder-label');
@@ -747,7 +749,7 @@ const initMobileNotes = () => {
           ? note.body
           : '') || '';
     titleInput.value = nextTitle;
-    setEditorContent(nextBody);
+    scratchNotesEditorElement.innerHTML = nextBody;
     titleInput.dataset.noteOriginalTitle = nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
     // set current editing folder for existing notes
@@ -778,7 +780,7 @@ const initMobileNotes = () => {
   };
 
   const getEditorValues = () => {
-    const bodyHtml = getEditorHTML();
+    const bodyHtml = scratchNotesEditorElement.innerHTML || '';
     const bodyText = extractPlainText(bodyHtml);
     return {
       title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
