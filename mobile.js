@@ -42,6 +42,9 @@ initViewportHeight();
     const saveBtn = document.getElementById('saveReminder');
     const prioritySelect = document.getElementById('priority');
     const chips = document.getElementById('priorityChips');
+    const editorShell = sheet.querySelector('.reminder-editor-shell');
+    const notifSwitchRow = sheet.querySelector('.notif-switch-row');
+    const notifToggle = sheet.querySelector('#notifBtn');
     const priorityRadios = chips
       ? Array.from(chips.querySelectorAll('input[name="priority"]'))
       : [];
@@ -66,6 +69,10 @@ initViewportHeight();
     };
 
     ensureHidden();
+
+    [notifSwitchRow, notifToggle].forEach((el) => {
+      el?.addEventListener('click', (event) => event.stopPropagation());
+    });
 
     let lastTrigger = null;
 
@@ -121,6 +128,16 @@ initViewportHeight();
       }
     };
 
+    const playEnterAnimation = () => {
+      if (!(editorShell instanceof HTMLElement)) return;
+      editorShell.classList.remove('reminder-enter', 'reminder-enter-active');
+      void editorShell.offsetWidth;
+      editorShell.classList.add('reminder-enter');
+      requestAnimationFrame(() => {
+        editorShell.classList.add('reminder-enter-active');
+      });
+    };
+
     const openSheet = (trigger) => {
       lastTrigger = trigger instanceof HTMLElement ? trigger : null;
       sheet.classList.remove('hidden');
@@ -135,12 +152,16 @@ initViewportHeight();
 
       syncRadiosFromSelect();
       focusFirstField();
+      playEnterAnimation();
 
       dispatchSheetEvent('reminder:sheet-opened', { trigger: lastTrigger });
     };
 
     const closeSheet = (reason = 'dismissed') => {
       const wasOpen = !sheet.classList.contains('hidden');
+      if (editorShell) {
+        editorShell.classList.remove('reminder-enter', 'reminder-enter-active');
+      }
       ensureHidden();
 
       if (lastTrigger) {
