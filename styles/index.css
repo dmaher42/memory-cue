@@ -325,6 +325,31 @@ html[data-theme="professional"] {
   color: var(--accent-color);
 }
 
+.notebook-search-bar {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(81, 38, 99, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  font-size: 0.95rem;
+  color: var(--primary-dark, #1f112e);
+  outline: none;
+  transition: box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.notebook-search-bar::placeholder {
+  color: #4b2a63;
+  opacity: 0.72;
+}
+
+.notebook-search-bar:focus {
+  border-color: rgba(81, 38, 99, 0.3);
+  box-shadow: 0 6px 16px rgba(81, 38, 99, 0.18);
+  background: rgba(255, 255, 255, 0.88);
+}
+
 /* New folder modal tweaks */
 #newFolderModal {
   border: none;
