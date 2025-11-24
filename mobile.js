@@ -357,6 +357,8 @@ const initMobileNotes = () => {
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
+  const folderSelectorEl = document.getElementById('notebook-folder-selector');
+  const folderSelectorListEl = document.getElementById('notebook-folder-selector-list');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
   const createScratchNotesEditor = () => {
@@ -591,6 +593,7 @@ const initMobileNotes = () => {
   let allNotes = [];
   let currentFolderId = 'all';
   let currentEditingNoteFolderId = 'unsorted';
+  let currentFolderMoveNoteId = null;
   let filterQuery = '';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
@@ -1102,6 +1105,7 @@ const initMobileNotes = () => {
       const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
       const folderPill = document.createElement('span');
       folderPill.className = 'notebook-note-folder-pill';
+      folderPill.dataset.noteId = note.id;
       const folderName = getFolderNameById(folderId) || 'No folder';
       folderPill.textContent = folderName;
 
@@ -1507,6 +1511,73 @@ const initMobileNotes = () => {
     closeOverflowMenu();
   };
 
+  const closeFolderSelector = () => {
+    if (folderSelectorEl) {
+      folderSelectorEl.classList.remove('notebook-folder-selector--open');
+      folderSelectorEl.setAttribute('aria-hidden', 'true');
+    }
+    if (folderSelectorListEl) {
+      folderSelectorListEl.innerHTML = '';
+    }
+    currentFolderMoveNoteId = null;
+  };
+
+  const openFolderSelectorForNote = (noteId) => {
+    if (!noteId || !folderSelectorEl || !folderSelectorListEl) {
+      return;
+    }
+
+    currentFolderMoveNoteId = noteId;
+    folderSelectorListEl.innerHTML = '';
+
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch {
+      folders = [];
+    }
+
+    if (!folders.some((f) => f && f.id === 'unsorted')) {
+      folders.unshift({ id: 'unsorted', name: 'Unsorted' });
+    }
+
+    const activeNote = allNotes.find((n) => n.id === noteId) || null;
+    const activeFolderId =
+      activeNote && typeof activeNote.folderId === 'string' && activeNote.folderId
+        ? activeNote.folderId
+        : 'unsorted';
+
+    folders.forEach((folder) => {
+      if (!folder || typeof folder.id === 'undefined') return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'notebook-folder-selector-item';
+      button.dataset.folderId = folder.id;
+      button.textContent = folder.name || String(folder.id);
+      if (String(folder.id) === String(activeFolderId)) {
+        button.classList.add('notebook-folder-selector-item-current');
+      }
+      button.addEventListener('click', () => {
+        const targetNoteId = currentFolderMoveNoteId || noteId;
+        handleMoveNoteToFolder(targetNoteId, folder.id || 'unsorted');
+        closeFolderSelector();
+      });
+      folderSelectorListEl.appendChild(button);
+    });
+
+    folderSelectorEl.classList.add('notebook-folder-selector--open');
+    folderSelectorEl.setAttribute('aria-hidden', 'false');
+  };
+
+  if (folderSelectorEl) {
+    folderSelectorEl.addEventListener('click', (ev) => {
+      if (ev.target === folderSelectorEl) {
+        ev.preventDefault();
+        closeFolderSelector();
+      }
+    });
+  }
+
   const openNoteOverflowMenu = (note, anchorEl) => {
     if (!note || !anchorEl) return;
     closeOverflowMenu();
@@ -1863,6 +1934,18 @@ const initMobileNotes = () => {
     listElement.addEventListener('click', (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const folderPill = target.closest('.notebook-note-folder-pill');
+      if (folderPill && listElement.contains(folderPill)) {
+        event.preventDefault();
+        event.stopPropagation();
+        const hostButton = folderPill.closest('button[data-role="open-note"]');
+        const noteId = folderPill.dataset.noteId || hostButton?.getAttribute('data-note-id');
+        if (noteId) {
+          openFolderSelectorForNote(noteId);
+        }
         return;
       }
 
