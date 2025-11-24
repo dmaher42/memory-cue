@@ -401,6 +401,41 @@ html[data-theme="professional"] {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
+@media (max-width: 768px) {
+  .mobile-shell #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 4px 14px;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card {
+    width: 100%;
+    margin: 0;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--surface-elevated, #f9f9fb) 92%, #ece7f3 8%);
+    border: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 70%, #d6cfee 30%);
+    box-shadow: 0 6px 16px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .note-card-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--accent-color, #512663);
+    font-weight: 600;
+  }
+
+  .mobile-shell #notesListMobile .note-card-preview,
+  .mobile-shell #notesListMobile .note-card-meta,
+  .mobile-shell #notesListMobile .note-card-folder,
+  .mobile-shell #notesListMobile .notebook-note-timestamp {
+    display: none;
+  }
+}
+
 .premium-note-card {
   position: relative;
   background: rgba(255, 255, 255, 0.94);
