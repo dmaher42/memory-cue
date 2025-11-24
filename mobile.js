@@ -332,7 +332,7 @@ const initMobileNotes = () => {
   const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
-  const filterInput = document.getElementById('notesSearchMobile');
+  const filterInput = document.getElementById('notebook-search-input');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
@@ -543,6 +543,13 @@ const initMobileNotes = () => {
   let filterQuery = '';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
+
+  const clearSearchFilter = () => {
+    filterQuery = '';
+    if (filterInput) {
+      filterInput.value = '';
+    }
+  };
 
   const isSavedNotesSheetOpen = () =>
     savedNotesSheet?.dataset.open === 'true';
@@ -1123,6 +1130,7 @@ const initMobileNotes = () => {
         currentFolderId = folder.id === 'all' ? 'all' : folder.id;
         // set active class and auto-scroll
         setActiveFolderChip(currentFolderId);
+        clearSearchFilter();
         // re-render notes using current filter
         renderFilteredNotes();
       });
@@ -1246,6 +1254,7 @@ const initMobileNotes = () => {
       newFolderModalController.requestClose('created');
     } catch { /* ignore */ }
     currentFolderId = folderId;
+    clearSearchFilter();
     try {
       buildFolderChips();
     } catch (e) {
@@ -1752,6 +1761,7 @@ const initMobileNotes = () => {
     // If current filter was the deleted folder, switch to unsorted
     if (String(currentFolderId) === String(pendingDeleteFolderId)) {
       currentFolderId = 'unsorted';
+      clearSearchFilter();
     }
     pendingDeleteFolderId = null;
     try { deleteFolderController.requestClose('deleted'); } catch {}
