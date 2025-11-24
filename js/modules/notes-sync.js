@@ -46,17 +46,21 @@ const mergeNotes = (localNotes = [], remoteNotes = []) => {
   return Array.from(merged.values()).sort((a, b) => toTimestamp(b?.updatedAt) - toTimestamp(a?.updatedAt));
 };
 
-const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
-  if (!row || typeof row !== 'object') {
-    return null;
-  }
-  const overrides = {
-    id: typeof row.id === 'string' && row.id ? row.id : undefined,
-    updatedAt: typeof row[updatedAtColumn] === 'string' ? row[updatedAtColumn] : undefined,
-    folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
+  const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
+    if (!row || typeof row !== 'object') {
+      return null;
+    }
+    const rawBodyHtml =
+      (typeof row.body_html === 'string' && row.body_html.length ? row.body_html : null) ?? row.body;
+    const overrides = {
+      id: typeof row.id === 'string' && row.id ? row.id : undefined,
+      updatedAt: typeof row[updatedAtColumn] === 'string' ? row[updatedAtColumn] : undefined,
+      folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
+      bodyHtml: rawBodyHtml,
+      bodyText: typeof row.body_text === 'string' ? row.body_text : undefined,
+    };
+  return createNote(row.title, rawBodyHtml, overrides);
   };
-  return createNote(row.title, row.body, overrides);
-};
 
 export const initNotesSync = (options = {}) => {
   const {
@@ -94,7 +98,7 @@ export const initNotesSync = (options = {}) => {
       id: note.id,
       [userColumn]: currentUserId,
       title: note.title,
-      body: note.body,
+      body: typeof note.bodyHtml === 'string' && note.bodyHtml.length ? note.bodyHtml : note.body,
       folder_id: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
       [updatedAtColumn]: typeof note.updatedAt === 'string' && note.updatedAt
         ? note.updatedAt
