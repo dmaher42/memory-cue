@@ -1062,11 +1062,26 @@ const initMobileNotes = () => {
 
     notes.forEach((note) => {
       const listItem = document.createElement('article');
-      listItem.className = 'premium-note-card note-item-mobile';
+      listItem.className = 'premium-note-card note-item-mobile notebook-note-card';
       listItem.dataset.noteId = note.id;
       listItem.dataset.role = 'open-note';
       listItem.setAttribute('role', 'button');
       listItem.tabIndex = 0;
+
+      const noteRow = document.createElement('div');
+      noteRow.className = 'notebook-note-row';
+
+      const noteTitle = note.title || 'Untitled';
+      const titleEl = document.createElement('h4');
+      titleEl.className = 'note-card-title line-clamp-2';
+      titleEl.textContent = noteTitle;
+      titleEl.setAttribute('title', noteTitle);
+
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      const folderPill = document.createElement('span');
+      folderPill.className = 'note-card-folder';
+      const folderName = getFolderNameById(folderId) || 'Unsorted';
+      folderPill.textContent = folderName;
 
       const actionBtn = document.createElement('button');
       actionBtn.type = 'button';
@@ -1082,41 +1097,11 @@ const initMobileNotes = () => {
         </svg>
       `;
 
-      const noteTitle = note.title || 'Untitled';
-      const titleEl = document.createElement('h4');
-      titleEl.className = 'note-card-title line-clamp-2';
-      titleEl.textContent = noteTitle;
-      titleEl.setAttribute('title', noteTitle);
+      noteRow.appendChild(titleEl);
+      noteRow.appendChild(folderPill);
+      noteRow.appendChild(actionBtn);
 
-      const previewEl = document.createElement('p');
-      previewEl.className = 'note-card-preview line-clamp-2';
-      const previewText = getNoteBodyText(note);
-      const truncated = previewText.length > 120
-        ? `${previewText.slice(0, 120).trimEnd()}…`
-        : previewText;
-      previewEl.textContent = truncated || 'No content yet.';
-
-      const metaRow = document.createElement('div');
-      metaRow.className = 'note-card-meta';
-
-      const metaEl = document.createElement('span');
-      metaEl.className = 'notebook-note-timestamp';
-      const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
-      metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
-
-      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
-      const folderPill = document.createElement('span');
-      folderPill.className = 'note-card-folder';
-      const folderName = getFolderNameById(folderId) || 'Unsorted';
-      folderPill.textContent = folderName;
-
-      metaRow.appendChild(metaEl);
-      metaRow.appendChild(folderPill);
-
-      listItem.appendChild(actionBtn);
-      listItem.appendChild(titleEl);
-      listItem.appendChild(previewEl);
-      listItem.appendChild(metaRow);
+      listItem.appendChild(noteRow);
       listElement.appendChild(listItem);
     });
 
