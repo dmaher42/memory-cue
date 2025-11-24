@@ -5732,7 +5732,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-RCQMMDMV.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-MZOWV274.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
@@ -5742,18 +5742,20 @@
 
     #create-sheet .sheet-panel {
       position: fixed;
-      inset-inline: 0;
-      bottom: 0;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: transparent;
       border: none;
       box-shadow: none;
-      padding: 14px 14px calc(16px + env(safe-area-inset-bottom));
+      padding: calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
     }
 
     #create-sheet .reminder-editor-shell {
       margin: 0 auto;
       width: min(640px, 100%);
-      border-radius: 20px 20px 0 0;
+      border-radius: 20px;
       padding: 16px 16px 20px;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(16px);
@@ -5763,6 +5765,8 @@
         0 -4px 12px rgba(0, 0, 0, 0.06);
       transform: translateY(0);
       transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+      max-height: min(90vh, 720px);
+      overflow: auto;
     }
 
     #create-sheet .reminder-editor-shell.reminder-enter {
@@ -5919,13 +5923,6 @@
       padding-top: 4px;
     }
 
-    .reminder-voice-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
     #dateFeedback {
       min-height: 1em;
     }
@@ -6039,41 +6036,6 @@
                 <span class="switch-track"><span class="switch-thumb" aria-hidden="true"></span></span>
                 <span class="sr-only">Enable notifications</span>
               </label>
-            </div>
-          </div>
-
-          <div class="reminder-field">
-            <span class="reminder-field-label">Voice tools</span>
-            <div class="reminder-voice-row">
-              <button
-                id="voiceBtn"
-                type="button"
-                class="btn btn-circle btn-ghost"
-                aria-label="Start voice input"
-                aria-pressed="false"
-                title="Fill reminder using your voice"
-              >
-                <span aria-hidden="true">🎙️</span>
-                <span class="sr-only">Start voice input</span>
-              </button>
-              <button
-                id="sheetVoiceBtn"
-                class="btn btn-outline btn-sm"
-                type="button"
-                aria-pressed="false"
-                aria-label="Dictate reminder"
-              >
-                🎤 Voice input
-              </button>
-              <p
-                id="sheetVoiceStatus"
-                class="text-xs text-base-content/60"
-                role="status"
-                aria-live="polite"
-                hidden
-              >
-                Tap the microphone to start speaking.
-              </p>
             </div>
           </div>
 
