@@ -846,16 +846,24 @@ const initMobileNotes = () => {
     return currentTitle !== originalTitle || currentBody !== originalBody;
   };
 
+  const getNoteTimestamp = (note) => {
+    if (!note) return 0;
+    const candidates = [note.updatedAt, note.modifiedAt, note.createdAt];
+    for (const value of candidates) {
+      const parsed = Date.parse(value || '');
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return 0;
+  };
+
   const getSortedNotes = () => {
     const notes = loadAllNotes();
     if (!Array.isArray(notes)) {
       return [];
     }
-    return [...notes].sort((a, b) => {
-      const aTime = Date.parse(a?.updatedAt || '');
-      const bTime = Date.parse(b?.updatedAt || '');
-      return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
-    });
+    return [...notes].sort((a, b) => getNoteTimestamp(b) - getNoteTimestamp(a));
   };
 
   const readStoredSnapshot = () => {
