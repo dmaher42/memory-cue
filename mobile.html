@@ -754,6 +754,75 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+    cursor: pointer;
+  }
+
+  .notebook-folder-selector {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 999;
+  }
+
+  .notebook-folder-selector--open {
+    display: flex;
+  }
+
+  .notebook-folder-selector-sheet {
+    width: min(640px, 100%);
+    border-radius: 16px 16px 0 0;
+    padding: 12px 16px 16px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.14);
+  }
+
+  .notebook-folder-selector-header {
+    margin-bottom: 8px;
+  }
+
+  .notebook-folder-selector-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+  }
+
+  .notebook-folder-selector-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 40vh;
+    overflow-y: auto;
+    padding-top: 4px;
+  }
+
+  .notebook-folder-selector-item {
+    border-radius: 999px;
+    border: 1px solid rgba(47, 27, 63, 0.1);
+    padding: 7px 11px;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--primary-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  }
+
+  .notebook-folder-selector-item:hover {
+    background: rgba(81, 38, 99, 0.06);
+    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.12);
+  }
+
+  .notebook-folder-selector-item-current {
+    border-color: var(--accent-color, #512663);
+    background: rgba(81, 38, 99, 0.08);
   }
 
   .mobile-shell #notesListMobile .note-item-mobile {
@@ -5473,6 +5542,14 @@
                   </div>
                 </div>
               </dialog>
+              <div id="notebook-folder-selector" class="notebook-folder-selector" aria-hidden="true">
+                <div class="notebook-folder-selector-sheet">
+                  <header class="notebook-folder-selector-header">
+                    <h3 class="notebook-folder-selector-title">Move note to...</h3>
+                  </header>
+                  <div class="notebook-folder-selector-list" id="notebook-folder-selector-list"></div>
+                </div>
+              </div>
               <!-- Rename Folder Modal -->
               <dialog id="renameFolderModal" class="memory-glass-card" aria-hidden="true">
                 <div class="p-4">
@@ -5809,7 +5886,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-QICZVYE3.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-SRG72ZNY.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
