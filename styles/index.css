@@ -325,6 +325,24 @@ html[data-theme="professional"] {
   color: var(--accent-color);
 }
 
+/* Notebook list transitions */
+.notebook-list-transition-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.notebook-list-transition-in {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.notebook-list-transition-in-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
 /* New folder modal tweaks */
 #newFolderModal {
   border: none;

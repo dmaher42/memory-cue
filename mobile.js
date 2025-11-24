@@ -841,6 +841,52 @@ const initMobileNotes = () => {
     return visibleNotes;
   };
 
+  const NOTEBOOK_LIST_TRANSITION_MS = 160;
+  const scheduleNotebookFrame =
+    typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame
+      : (cb) => setTimeout(cb, 0);
+  const cancelNotebookFrame =
+    typeof cancelAnimationFrame === 'function'
+      ? cancelAnimationFrame
+      : (id) => clearTimeout(id);
+  let listTransitionTimeoutId = null;
+  let listTransitionFrameId = null;
+
+  const runNotebookListTransition = (renderFn) => {
+    if (typeof renderFn !== 'function') {
+      return;
+    }
+
+    if (!listElement) {
+      renderFn();
+      return;
+    }
+
+    if (listTransitionTimeoutId) {
+      clearTimeout(listTransitionTimeoutId);
+      listTransitionTimeoutId = null;
+    }
+    if (listTransitionFrameId) {
+      cancelNotebookFrame(listTransitionFrameId);
+      listTransitionFrameId = null;
+    }
+
+    listElement.classList.remove('notebook-list-transition-in', 'notebook-list-transition-in-active');
+    listElement.classList.add('notebook-list-transition-out');
+
+    listTransitionTimeoutId = setTimeout(() => {
+      renderFn();
+
+      listElement.classList.remove('notebook-list-transition-out');
+      listElement.classList.add('notebook-list-transition-in');
+
+      listTransitionFrameId = scheduleNotebookFrame(() => {
+        listElement.classList.add('notebook-list-transition-in-active');
+      });
+    }, NOTEBOOK_LIST_TRANSITION_MS);
+  };
+
   const handleDeleteNote = (noteId) => {
     if (!noteId) {
       return;
@@ -867,7 +913,12 @@ const initMobileNotes = () => {
     refreshFromStorage({ preserveDraft: false });
   };
 
-  const renderNotesList = (notes = []) => {
+  const renderNotesList = (notes = [], { withTransition = true } = {}) => {
+    if (withTransition) {
+      runNotebookListTransition(() => renderNotesList(notes, { withTransition: false }));
+      return notes;
+    }
+
     if (!listElement) {
       return notes;
     }
