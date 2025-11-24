@@ -428,11 +428,71 @@ html[data-theme="professional"] {
     font-weight: 600;
   }
 
-  .mobile-shell #notesListMobile .note-card-preview,
-  .mobile-shell #notesListMobile .note-card-meta,
-  .mobile-shell #notesListMobile .note-card-folder,
-  .mobile-shell #notesListMobile .notebook-note-timestamp {
-    display: none;
+.mobile-shell #notesListMobile .note-card-preview,
+.mobile-shell #notesListMobile .note-card-meta,
+.mobile-shell #notesListMobile .notebook-note-timestamp {
+  display: none;
+}
+}
+
+.notebook-note-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 2px 12px;
+  }
+
+  #notesListMobile .premium-note-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    margin: 0;
+    background: color-mix(in srgb, var(--surface-elevated, #f9f9fb) 92%, #ece7f3 8%);
+    border: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 70%, #d6cfee 30%);
+    box-shadow: 0 6px 16px rgba(81, 38, 99, 0.12);
+    border-radius: 14px;
+  }
+
+  #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: rgba(47, 27, 63, 0.9);
+  }
+
+  #notesListMobile .note-card-action {
+    position: static;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 6px;
+    margin-left: 4px;
+  }
+
+  #notesListMobile .note-card-action:hover,
+  #notesListMobile .note-card-action:focus-visible {
+    background: var(--hover-bg, rgba(81, 38, 99, 0.08));
+    border-radius: 12px;
   }
 }
 
