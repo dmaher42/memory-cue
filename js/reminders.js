@@ -3922,20 +3922,25 @@ export async function initReminders(sel = {}) {
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
       toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn reminder-icon-btn';
+      const premiumCircleCheckIcon = `
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" focusable="false" fill="none">
+          <circle cx="12" cy="12" r="8.35" stroke="currentColor" stroke-width="1.7" />
+          <path d="M8.2 12.3 11 15.1 16.1 8.9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M16.8 6.3A6.75 6.75 0 0 0 12.2 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.4" />
+        </svg>`;
+      const premiumCircleCheckDoneIcon = `
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" focusable="false" fill="none">
+          <circle cx="12" cy="12" r="8.35" fill="currentColor" fill-opacity="0.08" stroke="currentColor" stroke-width="1.7" />
+          <path d="M8.2 12.3 11 15.1 16.1 8.9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M16.8 6.3A6.75 6.75 0 0 0 12.2 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.28" />
+        </svg>`;
       if (summary.done) {
         toggleBtn.classList.add('text-base-content/60');
-        toggleBtn.innerHTML = `
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
-            <path d="M7 7v4h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <path d="M20.49 11A8.5 8.5 0 1 0 11 20.49" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>`;
+        toggleBtn.innerHTML = premiumCircleCheckDoneIcon;
         toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminder.title}`);
       } else {
         toggleBtn.classList.add('text-success');
-        toggleBtn.innerHTML = `
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" focusable="false">
-            <path d="M4 12.5l4.5 4.5L20 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>`;
+        toggleBtn.innerHTML = premiumCircleCheckIcon;
         toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
       }
       toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
