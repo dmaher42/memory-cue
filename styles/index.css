@@ -3037,8 +3037,9 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 }
 
 .reminder-icon-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  opacity: 0.9;
   stroke: currentColor;
   stroke-width: 1.9;
   stroke-linecap: round;
