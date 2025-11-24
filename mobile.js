@@ -539,7 +539,7 @@ const initMobileNotes = () => {
   let currentNoteId = null;
   let allNotes = [];
   let currentFolderId = 'all';
-  let currentEditingNoteFolderId = null;
+  let currentEditingNoteFolderId = 'unsorted';
   let filterQuery = '';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
@@ -657,10 +657,9 @@ const initMobileNotes = () => {
       setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
       delete scratchNotesEditorElement.dataset.noteOriginalBody;
-      // default editing folder left as-is; caller (new note flow) will set label
       const labelElClear = document.getElementById('note-folder-label');
-      if (labelElClear && !currentEditingNoteFolderId) {
-        labelElClear.textContent = getFolderNameById('unsorted');
+      if (labelElClear) {
+        labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
       }
       return;
     }
@@ -1162,6 +1161,7 @@ const initMobileNotes = () => {
 
   const openFolderPicker = () => {
     if (!pickFolderModalEl || !pickFolderListEl) return;
+    pickSelectionId = currentEditingNoteFolderId || 'unsorted';
     // populate folders
     pickFolderListEl.innerHTML = '';
     let folders = [];
@@ -1183,7 +1183,11 @@ const initMobileNotes = () => {
       input.name = 'pick-folder';
       input.value = f.id;
       input.id = `pick-folder-${f.id}`;
-      if (String(f.id) === String(currentEditingNoteFolderId) || (!currentEditingNoteFolderId && f.id === 'unsorted')) {
+      const shouldCheck =
+        String(f.id) === String(currentEditingNoteFolderId) ||
+        String(f.id) === String(pickSelectionId) ||
+        (!currentEditingNoteFolderId && f.id === 'unsorted');
+      if (shouldCheck) {
         input.checked = true;
         pickSelectionId = f.id;
       }
@@ -1608,6 +1612,10 @@ const initMobileNotes = () => {
     const { title, body } = getEditorValues();
     const sanitizedTitle = title || 'Untitled note';
     const timestamp = new Date().toISOString();
+    const normalizedFolderId =
+      currentEditingNoteFolderId && currentEditingNoteFolderId !== 'all'
+        ? currentEditingNoteFolderId
+        : 'unsorted';
 
     if (currentNoteId) {
       const noteIndex = notesArray.findIndex((note) => note.id === currentNoteId);
@@ -1617,15 +1625,15 @@ const initMobileNotes = () => {
           title: sanitizedTitle,
           body,
           updatedAt: timestamp,
-          folderId: currentEditingNoteFolderId === 'all' ? null : currentEditingNoteFolderId || null,
+          folderId: normalizedFolderId,
         };
       } else {
-        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp, folderId: currentEditingNoteFolderId === 'all' ? null : currentEditingNoteFolderId || null });
+        const newNote = createNote(sanitizedTitle, body, { updatedAt: timestamp, folderId: normalizedFolderId });
         currentNoteId = newNote.id;
         notesArray.unshift(newNote);
       }
     } else {
-      const newNote = createNote(sanitizedTitle, body, { folderId: currentEditingNoteFolderId === 'all' ? null : currentEditingNoteFolderId || null });
+      const newNote = createNote(sanitizedTitle, body, { folderId: normalizedFolderId });
       currentNoteId = newNote.id;
       notesArray.unshift(newNote);
     }
