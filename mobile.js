@@ -43,6 +43,8 @@ initViewportHeight();
     const prioritySelect = document.getElementById('priority');
     const chips = document.getElementById('priorityChips');
     const editorShell = sheet.querySelector('.reminder-editor-shell');
+    const notifSwitchRow = sheet.querySelector('.notif-switch-row');
+    const notifToggle = sheet.querySelector('#notifBtn');
     const priorityRadios = chips
       ? Array.from(chips.querySelectorAll('input[name="priority"]'))
       : [];
@@ -67,6 +69,10 @@ initViewportHeight();
     };
 
     ensureHidden();
+
+    [notifSwitchRow, notifToggle].forEach((el) => {
+      el?.addEventListener('click', (event) => event.stopPropagation());
+    });
 
     let lastTrigger = null;
 
