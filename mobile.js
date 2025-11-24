@@ -1012,7 +1012,7 @@ const initMobileNotes = () => {
       if (folder.id !== 'all' && folder.id !== 'unsorted') {
         const overflowBtn = document.createElement('button');
         overflowBtn.type = 'button';
-        overflowBtn.className = 'chip-overflow';
+        overflowBtn.className = 'notebook-folder-chip-overflow';
         overflowBtn.setAttribute('aria-label', 'Folder options');
         overflowBtn.innerHTML = '⋯';
         overflowBtn.addEventListener('click', (ev) => {
@@ -1301,6 +1301,7 @@ const initMobileNotes = () => {
   };
 
   const openFolderOverflowMenu = (folderId, anchorEl) => {
+    if (!folderId || folderId === 'all' || folderId === 'unsorted') return;
     closeOverflowMenu();
     const menu = document.createElement('div');
     menu.className = 'memory-glass-card p-2 rounded shadow-lg';
@@ -1427,7 +1428,7 @@ const initMobileNotes = () => {
   };
 
   const openRenameDialog = (folderId) => {
-    if (!renameFolderModalEl) return;
+    if (!renameFolderModalEl || folderId === 'all' || folderId === 'unsorted') return;
     pendingRenameFolderId = folderId;
     const folders = Array.isArray(getFolders()) ? getFolders() : [];
     const found = folders.find((f) => f && String(f.id) === String(folderId));
@@ -1490,7 +1491,7 @@ const initMobileNotes = () => {
   let pendingDeleteFolderId = null;
 
   const openDeleteConfirm = (folderId) => {
-    if (!deleteFolderModalEl) return;
+    if (!deleteFolderModalEl || folderId === 'all' || folderId === 'unsorted') return;
     pendingDeleteFolderId = folderId;
     if (!deleteFolderController) {
       deleteFolderController = new ModalController({
