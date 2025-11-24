@@ -970,19 +970,20 @@ const initMobileNotes = () => {
     } catch {
       folders = [];
     }
-    // Build a minimal, visible folder list: All, Unsorted, then any user folders
-    const DEFAULT_FOLDERS = [
-      { id: 'all', name: 'All' },
-      { id: 'unsorted', name: 'Unsorted' },
+    const normalized = Array.isArray(folders) ? folders.filter(Boolean) : [];
+    const unsortedFolder =
+      normalized.find((f) => f && f.id === 'unsorted') || { id: 'unsorted', name: 'Unsorted' };
+    const extraFolders = normalized
+      .filter((f) => f && f.id !== 'unsorted')
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+
+    const chipModel = [
+      { id: 'all', name: 'All', isVirtual: true },
+      { ...unsortedFolder, isVirtual: false },
+      ...extraFolders.map((f) => ({ ...f, isVirtual: false })),
     ];
 
-    const userFolders = Array.isArray(folders)
-      ? folders.filter((f) => f && f.id !== 'unsorted' && f.id !== 'all')
-      : [];
-
-    const ordered = [...DEFAULT_FOLDERS, ...userFolders];
-
-    ordered.forEach((folder) => {
+    chipModel.forEach((folder) => {
       const chip = document.createElement('button');
       chip.type = 'button';
       // keep legacy `folder-chip` for existing code paths, add new premium class
@@ -1585,7 +1586,7 @@ const initMobileNotes = () => {
   }
 
   const renderFilteredNotes = () => {
-    renderNotesList(getFilteredNotes());
+    renderNotesList(getVisibleNotes());
   };
 
   if (filterInput) {

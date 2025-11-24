@@ -254,7 +254,13 @@ export const getFolders = () => {
   } catch (e) {
     // fall through to return default
   }
-  return defaultFolders();
+  const defaults = defaultFolders();
+  try {
+    localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(defaults));
+  } catch {
+    // ignore write errors when seeding defaults
+  }
+  return defaults;
 };
 
 // Helper to look up a folder name by id
