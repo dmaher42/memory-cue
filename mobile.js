@@ -500,17 +500,19 @@ const initMobileNotes = () => {
       return null;
     }
     const normalized = prefixText.replace(/\u00a0/g, ' ');
-    if (/^\s*[\*-]\s*$/.test(normalized)) {
+    // Ends with a single space, accounts for leading whitespace.
+    if (/^\s*[\*-]\s$/.test(normalized)) {
       return 'ul';
     }
-    if (/^\s*1\.?\s*$/.test(normalized)) {
+    if (/^\s*1\.?\s$/.test(normalized)) {
       return 'ol';
     }
     return null;
   };
 
   const handleListShortcuts = (event) => {
-    if (![' ', 'Enter'].includes(event.key)) {
+    // Check for space key on keyup for more reliable DOM state
+    if (event.key !== ' ') {
       return;
     }
     const selection = window.getSelection();
@@ -526,7 +528,8 @@ const initMobileNotes = () => {
     const prefixRange = range.cloneRange();
     prefixRange.selectNodeContents(block);
     prefixRange.setEnd(range.startContainer, range.startOffset);
-    const marker = detectListShortcut(prefixRange.toString());
+    const prefixText = prefixRange.toString();
+    const marker = detectListShortcut(prefixText);
 
     if (!marker) {
       return;
@@ -534,17 +537,8 @@ const initMobileNotes = () => {
 
     event.preventDefault();
 
-    const blockText = block.textContent || '';
-    const cleaned = blockText.replace(/^\s*(?:[\*-]|1\.?)(?:\s|\u00a0)?/, '');
-    block.textContent = cleaned;
-
-    const caretTarget = block.firstChild || block;
-    const caretRange = document.createRange();
-    caretRange.setStart(caretTarget, caretTarget.nodeType === Node.TEXT_NODE ? 0 : 0);
-    caretRange.collapse(true);
-
-    selection.removeAllRanges();
-    selection.addRange(caretRange);
+    // The prefixRange contains the text we want to replace.
+    prefixRange.deleteContents();
 
     try {
       scratchNotesEditorElement.focus();
@@ -2136,7 +2130,7 @@ const initMobileNotes = () => {
   try {
     // contenteditable should emit input events
     scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
-    scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
+    scratchNotesEditorElement.addEventListener('keyup', handleListShortcuts);
     scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
     // also save on blur (user leaving editor)
     scratchNotesEditorElement.addEventListener('blur', () => {

@@ -42,6 +42,10 @@ function loadMobileModule() {
     "import { ModalController } from './js/modules/modal-controller.js';",
     'const { ModalController } = window.__mobileMocks;'
   );
+  source = source.replace(
+    "import { saveFolders } from './js/modules/notes-storage.js';",
+    'const { saveFolders } = window.__mobileMocks;'
+  );
   const context = vm.createContext({
     window,
     document,
@@ -108,6 +112,7 @@ describe('mobile sheet opener events', () => {
         show() {}
         hide() {}
       },
+      saveFolders: () => {},
     };
 
     loadMobileModule();
