@@ -5731,7 +5731,7 @@
       position: fixed;
       inset: 0;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       background: transparent;
       border: none;
@@ -5742,14 +5742,14 @@
     #create-sheet .reminder-editor-shell {
       margin: 0 auto;
       width: min(640px, 100%);
-      border-radius: 20px;
-      padding: 16px 16px 20px;
+      border-radius: 20px 20px 0 0;
+      padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0));
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       box-shadow:
-        0 -12px 30px rgba(0, 0, 0, 0.08),
-        0 -4px 12px rgba(0, 0, 0, 0.06);
+        0 -14px 34px rgba(0, 0, 0, 0.1),
+        0 -6px 18px rgba(81, 38, 99, 0.12);
       transform: translateY(0);
       transition: transform 0.18s ease-out, opacity 0.18s ease-out;
       max-height: min(90vh, 720px);
@@ -5921,7 +5921,7 @@
       class="sheet-panel reminder-sheet-panel fixed inset-x-0 bottom-0 z-40"
       data-dialog-content
     >
-      <div class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
+      <div id="new-reminder-shell" class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
         <header class="reminder-editor-header">
           <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
           <div class="reminder-header-title-group">
