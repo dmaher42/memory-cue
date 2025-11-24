@@ -5422,7 +5422,8 @@
                       class="notebook-folder-chip notebook-folder-chip--active"
                       data-folder-id="all"
                     >
-                      All notes
+                      <span class="notebook-folder-chip-label">All notes</span>
+                      <span class="notebook-folder-chip-count">0</span>
                     </button>
                     <!-- Folder chips will be populated dynamically by JS -->
                   </div>
@@ -5463,7 +5464,7 @@
               <!-- Pick Folder Modal -->
               <dialog id="pickFolderModal" class="memory-glass-card" aria-hidden="true">
                 <div class="p-4">
-                  <h3 id="pickFolderTitle" class="text-lg font-semibold">Move to folder</h3>
+                  <h3 id="pickFolderTitle" class="text-lg font-semibold">Move note to…</h3>
                   <div id="pickFolderList" class="mt-3 space-y-2" role="list">
                     <!-- Folder rows populated by JS -->
                   </div>

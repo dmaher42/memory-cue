@@ -800,9 +800,7 @@ const initMobileNotes = () => {
     if (!listElement) {
       return;
     }
-    const buttons = listElement.querySelectorAll(
-      'button[data-role="open-note"][data-note-id]'
-    );
+    const buttons = listElement.querySelectorAll('[data-role="open-note"][data-note-id]');
     buttons.forEach((button) => {
       if (!(button instanceof HTMLElement)) {
         return;
@@ -928,6 +926,19 @@ const initMobileNotes = () => {
   };
 
   const NOTEBOOK_LIST_TRANSITION_MS = 160;
+
+  const showMoveToast = (folderName) => {
+    const name = folderName || 'folder';
+    const toast = document.createElement('div');
+    toast.className = 'note-toast';
+    toast.textContent = `Moved to ${name}`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 2800);
+  };
   const scheduleNotebookFrame =
     typeof requestAnimationFrame === 'function'
       ? requestAnimationFrame
@@ -1028,7 +1039,7 @@ const initMobileNotes = () => {
         : isAllFolder
           ? "You don't have any notes yet."
           : isCustomFolder
-            ? 'No notes in this folder yet.'
+            ? 'Empty folder'
             : 'No notes here yet';
       const emptyBody = hasFilter
         ? 'Try adjusting your search or filters.'
@@ -1036,6 +1047,7 @@ const initMobileNotes = () => {
 
       listElement.innerHTML = `
         <div class="notebook-empty-state">
+          <div class="notebook-empty-illustration" aria-hidden="true">📂</div>
           <h3 class="notebook-empty-title">${emptyTitle}</h3>
           <p class="notebook-empty-body">${emptyBody}</p>
         </div>
@@ -1044,91 +1056,62 @@ const initMobileNotes = () => {
     }
 
     notes.forEach((note) => {
-      const listItem = document.createElement('li');
-      listItem.className = 'note-item-mobile w-full';
+      const listItem = document.createElement('article');
+      listItem.className = 'premium-note-card note-item-mobile';
+      listItem.dataset.noteId = note.id;
+      listItem.dataset.role = 'open-note';
+      listItem.setAttribute('role', 'button');
+      listItem.tabIndex = 0;
 
-      // Create tappable card button that opens the note
-      const itemButton = document.createElement('button');
-      itemButton.type = 'button';
-      itemButton.dataset.noteId = note.id;
-      itemButton.dataset.role = 'open-note';
-      itemButton.className =
-        'notebook-note-card saved-note-item note-list-item w-full text-left active:scale-[0.99] focus:outline-none';
+      const actionBtn = document.createElement('button');
+      actionBtn.type = 'button';
+      actionBtn.dataset.noteId = note.id;
+      actionBtn.dataset.role = 'note-menu';
+      actionBtn.className = 'note-card-action';
+      actionBtn.setAttribute('aria-label', 'Note actions');
+      actionBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="5" cy="12" r="1.5" />
+          <circle cx="12" cy="12" r="1.5" />
+          <circle cx="19" cy="12" r="1.5" />
+        </svg>
+      `;
 
-      // Top row: title and overflow menu
-      const topRow = document.createElement('div');
-      topRow.className = 'flex items-center justify-between gap-2';
-
-      const titleWrap = document.createElement('div');
-      titleWrap.className = 'flex items-center gap-2';
-
-      const titleEl = document.createElement('span');
-      titleEl.className = 'saved-note-title note-list-title truncate notebook-note-title';
       const noteTitle = note.title || 'Untitled';
+      const titleEl = document.createElement('h4');
+      titleEl.className = 'note-card-title line-clamp-2';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
 
-      const overflowBtn = document.createElement('button');
-      overflowBtn.type = 'button';
-      overflowBtn.dataset.noteId = note.id;
-      overflowBtn.dataset.role = 'note-menu';
-      overflowBtn.className =
-        'btn btn-ghost btn-xs rounded-full text-base-content/80 hover:bg-base-100';
-      overflowBtn.setAttribute('aria-label', 'Note actions');
-      overflowBtn.textContent = '⋯';
-
-      titleWrap.appendChild(titleEl);
-      topRow.appendChild(titleWrap);
-      topRow.appendChild(overflowBtn);
-
-      // Body preview (strip HTML and clamp to two lines)
       const previewEl = document.createElement('p');
-      previewEl.className = 'saved-note-preview note-list-preview line-clamp-2 notebook-note-snippet';
+      previewEl.className = 'note-card-preview line-clamp-2';
       const previewText = getNoteBodyText(note);
       const truncated = previewText.length > 120
         ? `${previewText.slice(0, 120).trimEnd()}…`
         : previewText;
       previewEl.textContent = truncated || 'No content yet.';
 
-      // Meta row with timestamp and folder pill
       const metaRow = document.createElement('div');
-      metaRow.className = 'notebook-note-meta-row';
+      metaRow.className = 'note-card-meta';
 
       const metaEl = document.createElement('span');
-      metaEl.className = 'saved-note-meta note-list-meta notebook-note-timestamp';
+      metaEl.className = 'notebook-note-timestamp';
       const ts = note.updatedAt || note.modifiedAt || note.createdAt || '';
       metaEl.textContent = ts ? formatNoteTimestamp(ts) : '';
 
       const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
       const folderPill = document.createElement('span');
-      folderPill.className = 'notebook-note-folder-pill';
-      const folderName = getFolderNameById(folderId) || 'No folder';
+      folderPill.className = 'note-card-folder';
+      const folderName = getFolderNameById(folderId) || 'Unsorted';
       folderPill.textContent = folderName;
 
       metaRow.appendChild(metaEl);
       metaRow.appendChild(folderPill);
 
-      itemButton.appendChild(topRow);
-      itemButton.appendChild(previewEl);
-      itemButton.appendChild(metaRow);
-
-      // Delete button (preserve attributes used by existing handlers)
-      const deleteButton = document.createElement('button');
-      deleteButton.type = 'button';
-      deleteButton.dataset.noteId = note.id;
-      deleteButton.dataset.role = 'delete-note';
-      deleteButton.className =
-        'delete-note-btn btn btn-ghost btn-xs text-error shrink-0 focus-visible:outline-none focus-visible:ring-0';
-      deleteButton.setAttribute('aria-label', 'Delete note');
-      deleteButton.textContent = '✕';
-
-      // Row wrapper to keep delete button aligned to the right
-      const row = document.createElement('div');
-      row.className = 'flex items-start justify-between gap-3';
-      row.appendChild(itemButton);
-      row.appendChild(deleteButton);
-
-      listItem.appendChild(row);
+      listItem.appendChild(actionBtn);
+      listItem.appendChild(titleEl);
+      listItem.appendChild(previewEl);
+      listItem.appendChild(metaRow);
       listElement.appendChild(listItem);
     });
 
@@ -1239,7 +1222,7 @@ const initMobileNotes = () => {
     newChip.type = 'button';
     newChip.className = 'folder-chip outlined notebook-folder-chip notebook-folder-chip--new';
     newChip.dataset.folderId = 'new-folder';
-    newChip.textContent = '+ New folder';
+    newChip.innerHTML = '<span class="notebook-folder-chip-icon">+</span><span>New folder</span>';
     newChip.addEventListener('click', (e) => {
       e.preventDefault();
       // open the New Folder dialog (full flow exists elsewhere)
@@ -1375,6 +1358,28 @@ const initMobileNotes = () => {
 
   let pickFolderConfirmHandler = null;
 
+  const finalizeFolderSelection = (selectedFolderId) => {
+    if (!selectedFolderId) {
+      return;
+    }
+    if (pickFolderConfirmHandler) {
+      try {
+        pickFolderConfirmHandler(selectedFolderId);
+      } catch (e) {
+        console.warn('[notebook] folder pick handler failed', e);
+      }
+      pickFolderConfirmHandler = null;
+    } else {
+      currentEditingNoteFolderId =
+        selectedFolderId === 'unsorted' ? 'unsorted' : selectedFolderId;
+      const labelElPick = document.getElementById('note-folder-label');
+      if (labelElPick) labelElPick.textContent = getFolderNameById(currentEditingNoteFolderId);
+    }
+    try {
+      pickFolderController?.requestClose('selected');
+    } catch {}
+  };
+
   const openFolderPicker = (options = {}) => {
     const { initialFolderId = null, onConfirm = null } = options || {};
     if (!pickFolderModalEl || !pickFolderListEl) return;
@@ -1398,7 +1403,7 @@ const initMobileNotes = () => {
     // build radio rows
     folders.forEach((f) => {
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-3 p-2 rounded-md hover:bg-base-100';
+      row.className = 'pick-folder-row';
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = 'pick-folder';
@@ -1410,15 +1415,30 @@ const initMobileNotes = () => {
       if (shouldCheck) {
         input.checked = true;
         pickSelectionId = f.id;
+        row.classList.add('is-active');
       }
       input.addEventListener('change', () => {
         pickSelectionId = input.value;
+        const rows = pickFolderListEl?.querySelectorAll('.pick-folder-row') || [];
+        rows.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            node.classList.toggle('is-active', node === row);
+          }
+        });
       });
       const label = document.createElement('label');
       label.setAttribute('for', input.id);
       label.textContent = f.name;
       row.appendChild(input);
       row.appendChild(label);
+      row.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        input.checked = true;
+        input.dispatchEvent(new Event('change'));
+        if (pickFolderConfirmHandler) {
+          finalizeFolderSelection(input.value);
+        }
+      });
       pickFolderListEl.appendChild(row);
     });
 
@@ -1440,24 +1460,7 @@ const initMobileNotes = () => {
         // nothing selected
         return;
       }
-      const selectedFolderId = pickSelectionId;
-      if (pickFolderConfirmHandler) {
-        try {
-          pickFolderConfirmHandler(selectedFolderId);
-        } catch (e) {
-          console.warn('[notebook] folder pick handler failed', e);
-        }
-        pickFolderConfirmHandler = null;
-      } else {
-        // set editing folder and update label
-        currentEditingNoteFolderId =
-          selectedFolderId === 'unsorted' ? 'unsorted' : selectedFolderId;
-        const labelElPick = document.getElementById('note-folder-label');
-        if (labelElPick) labelElPick.textContent = getFolderNameById(currentEditingNoteFolderId);
-      }
-      try {
-        pickFolderController.requestClose('selected');
-      } catch {}
+      finalizeFolderSelection(pickSelectionId);
     });
   }
 
@@ -1503,6 +1506,12 @@ const initMobileNotes = () => {
       buildFolderChips();
     } catch (e) {
       console.warn('[notebook] failed to refresh folder chips after move', e);
+    }
+    try {
+      const targetName = getFolderNameById(normalizedTarget || 'unsorted') || 'Unsorted';
+      showMoveToast(targetName);
+    } catch {
+      /* no-op */
     }
     closeOverflowMenu();
   };
@@ -1866,26 +1875,6 @@ const initMobileNotes = () => {
         return;
       }
 
-      const deleteTrigger = target.closest('button[data-role="delete-note"]');
-      if (deleteTrigger && listElement.contains(deleteTrigger)) {
-        event.preventDefault();
-        const noteId = deleteTrigger.getAttribute('data-note-id');
-        if (!noteId) {
-          return;
-        }
-        const confirmFn =
-          typeof window !== 'undefined' && typeof window.confirm === 'function'
-            ? window.confirm
-            : null;
-        const shouldDelete = confirmFn
-          ? confirmFn('Delete this note? This cannot be undone.')
-          : true;
-        if (shouldDelete) {
-          handleDeleteNote(noteId);
-        }
-        return;
-      }
-
       const menuTrigger = target.closest('button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
@@ -1900,7 +1889,7 @@ const initMobileNotes = () => {
         return;
       }
 
-      const openTrigger = target.closest('button[data-role="open-note"]');
+      const openTrigger = target.closest('[data-role="open-note"]');
       if (openTrigger && listElement.contains(openTrigger)) {
         event.preventDefault();
         const noteId = openTrigger.getAttribute('data-note-id');
