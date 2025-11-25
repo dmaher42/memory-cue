@@ -722,7 +722,7 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
-    // Defensive check: ensure we handle a null/undefined note before reading its properties.
+    // Defensive: ensure we handle a null/undefined note before reading its properties
     if (!note) {
       currentNoteId = null;
       if (titleInput) titleInput.value = '';
@@ -736,21 +736,15 @@ const initMobileNotes = () => {
       return;
     }
 
-    // Existing behavior for when note is present.
+    // existing behavior for when note is present
     if (currentNoteId === note.id) return;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const nextBody =
-      (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
-        ? note.bodyHtml
-        : typeof note.body === 'string'
-          ? note.body
-          : '') || '';
+    const nextBody = (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length ? note.bodyHtml : typeof note.body === 'string' ? note.body : '') || '';
     if (titleInput) titleInput.value = nextTitle;
     setEditorContent(nextBody);
     if (titleInput) titleInput.dataset.noteOriginalTitle = nextTitle;
     if (scratchNotesEditorElement) scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
-    // set current editing folder for existing notes
     currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
     const labelEl = document.getElementById('note-folder-label');
     if (labelEl) {
