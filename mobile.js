@@ -722,7 +722,7 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
-    // Defensive: ensure we handle a null/undefined note before reading its properties
+    // Defensive check: ensure we handle a null/undefined note before reading its properties.
     if (!note) {
       currentNoteId = null;
       if (titleInput) titleInput.value = '';
@@ -736,7 +736,7 @@ const initMobileNotes = () => {
       return;
     }
 
-    // existing behavior for when note is present
+    // Existing behavior for when note is present.
     if (currentNoteId === note.id) return;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
