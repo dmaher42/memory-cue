@@ -1887,13 +1887,15 @@
       outline: none;
     }
 
-    .minimal-editor textarea {
-      font-family: var(--font-primary);
-      font-size: var(--font-size-body);
-      font-weight: 400;
-      color: var(--text-body);
-      line-height: 1.45;
-    }
+  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-base-100/90 backdrop-blur">
+    <div class="flex items-center gap-2 min-w-0">
+      <a href="#" class="flex items-center min-w-0">
+        <img src="./icons/icon-192.png" alt="Memory Cue" class="h-6 w-6 mr-2" />
+        <span class="font-semibold truncate">MC</span>
+      </a>
+      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
+      <span id="mcStatusText" class="sr-only">Offline</span>
+    </div>
 
     .minimal-editor textarea:focus {
       outline: 2px solid rgba(81, 38, 99, 0.25);
@@ -7276,26 +7278,35 @@
           }
         });
 
-        if (!reminders.length) {
-          for (let index = 0; index < localStorage.length; index += 1) {
-            const key = localStorage.key(index);
-            if (!key || triedKeys.has(key) || !/remind/i.test(key)) continue;
-            triedKeys.add(key);
-            try {
-              const value = localStorage.getItem(key);
-              if (!value) continue;
-              const parsed = JSON.parse(value);
-              if (Array.isArray(parsed)) {
-                parsed.forEach((item) => reminders.push(item));
-              } else if (parsed && typeof parsed === 'object') {
-                if (Array.isArray(parsed.items)) parsed.items.forEach((item) => reminders.push(item));
-                if (Array.isArray(parsed.reminders)) parsed.reminders.forEach((item) => reminders.push(item));
-              }
-            } catch {
-              // ignore
-            }
+  <script id="mobile-enhancements">
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', (event) => {
+        const trigger = event.target;
+        const dialog = trigger?.closest?.('.sheet, .modal');
+        if (!dialog) return;
+
+        // Prefer the page's sheet close API so all state is cleaned up.
+        try {
+          if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
+            try { window.closeAddTask('data-close'); return; } catch(e) { /* fallback */ }
           }
+        } catch {}
+
+        // If no API available, dispatch the standard cue:close event so modules that
+        // listen for it can perform proper teardown, then hide the element as a fallback.
+        try {
+          document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'data-close', trigger } }));
+        } catch (e) {
+          // ignore
         }
+
+        // Final fallback: hide the dialog element (keeps backward compatibility).
+        dialog.classList.add('hidden');
+        dialog.setAttribute('hidden', '');
+        dialog.setAttribute('aria-hidden', 'true');
+        dialog.removeAttribute('open');
+      });
+    });
 
         return reminders.map(normaliseReminder).filter(Boolean);
       };
