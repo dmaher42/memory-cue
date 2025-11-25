@@ -740,12 +740,7 @@ const initMobileNotes = () => {
     if (currentNoteId === note.id) return;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const nextBody =
-      (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
-        ? note.bodyHtml
-        : typeof note.body === 'string'
-          ? note.body
-          : '') || '';
+    const nextBody = (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length ? note.bodyHtml : typeof note.body === 'string' ? note.body : '') || '';
     if (titleInput) titleInput.value = nextTitle;
     setEditorContent(nextBody);
     if (titleInput) titleInput.dataset.noteOriginalTitle = nextTitle;
