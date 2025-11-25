@@ -722,32 +722,29 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
-    if (currentNoteId === note.id) return;
+    // Defensive: ensure we handle a null/undefined note before reading its properties
     if (!note) {
       currentNoteId = null;
-      titleInput.value = '';
-      scratchNotesEditorElement.innerHTML = '';
-      delete titleInput.dataset.noteOriginalTitle;
-      scratchNotesEditorElement.dataset.noteOriginalBody = '';
+      if (titleInput) titleInput.value = '';
+      setEditorContent('');
+      if (titleInput) delete titleInput.dataset.noteOriginalTitle;
+      if (scratchNotesEditorElement) scratchNotesEditorElement.dataset.noteOriginalBody = '';
       const labelElClear = document.getElementById('note-folder-label');
       if (labelElClear) {
         labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
       }
       return;
     }
+
+    // existing behavior for when note is present
+    if (currentNoteId === note.id) return;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const nextBody =
-      (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
-        ? note.bodyHtml
-        : typeof note.body === 'string'
-          ? note.body
-          : '') || '';
-    titleInput.value = nextTitle;
-    scratchNotesEditorElement.innerHTML = nextBody;
-    titleInput.dataset.noteOriginalTitle = nextTitle;
-    scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
-    // set current editing folder for existing notes
+    const nextBody = (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length ? note.bodyHtml : typeof note.body === 'string' ? note.body : '') || '';
+    if (titleInput) titleInput.value = nextTitle;
+    setEditorContent(nextBody);
+    if (titleInput) titleInput.dataset.noteOriginalTitle = nextTitle;
+    if (scratchNotesEditorElement) scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
     currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
     const labelEl = document.getElementById('note-folder-label');
     if (labelEl) {
