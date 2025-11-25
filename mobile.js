@@ -450,34 +450,6 @@ const initMobileNotes = () => {
     });
   }
 
-  // Wire up formatting toolbar (bold, italic, underline, ul, ol) for the rich text editor
-  const toolbarEl = document.getElementById('scratchNotesToolbar');
-  if (toolbarEl && scratchNotesEditorElement) {
-    toolbarEl.addEventListener('click', (event) => {
-      const button = event.target.closest('.notebook-format-button[data-format]');
-      if (!button) return;
-      const format = button.getAttribute('data-format');
-      switch (format) {
-        case 'bold':
-          applyFormatCommand('bold');
-          break;
-        case 'italic':
-          applyFormatCommand('italic');
-          break;
-        case 'underline':
-          applyFormatCommand('underline');
-          break;
-        case 'bullet-list':
-          applyFormatCommand('insertUnorderedList');
-          break;
-        case 'numbered-list':
-          applyFormatCommand('insertOrderedList');
-          break;
-        default:
-          break;
-      }
-    });
-  }
 
   const setEditorContent = (value = '') => {
     const normalizedValue = typeof value === 'string' ? value : '';
