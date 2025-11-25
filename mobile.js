@@ -243,6 +243,114 @@ initViewportHeight();
 })();
 /* END GPT CHANGE */
 
+/* DEBUG HELPERS: overlay / freeze detector
+   Enable by adding ?debugFreeze to the URL or run
+   `localStorage.setItem('mc_debug_freeze', '1')` in the console and reload.
+*/
+(function () {
+  let enabled = false;
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('mc_debug_freeze') === '1') {
+      enabled = true;
+    }
+  } catch (e) {
+    enabled = false;
+  }
+
+  try {
+    if (!enabled) {
+      const u = typeof location !== 'undefined' ? new URL(location.href) : null;
+      if (u && u.searchParams.has('debugFreeze')) enabled = true;
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
+  if (!enabled) return;
+
+  function describeElement(el) {
+    if (!el) return null;
+    try {
+      const tag = el.tagName;
+      const id = el.id ? `#${el.id}` : '';
+      const cls = el.className ? `.${String(el.className).split(/\s+/).slice(0,3).join('.')}` : '';
+      return `${tag}${id}${cls}`;
+    } catch {
+      return String(el);
+    }
+  }
+
+  function findCoveringCandidates() {
+    const points = [
+      [window.innerWidth / 2, window.innerHeight / 2],
+      [10, 10],
+      [window.innerWidth - 10, 10],
+      [10, window.innerHeight - 10],
+      [window.innerWidth - 10, window.innerHeight - 10],
+    ];
+    const found = new Set();
+    for (const [x, y] of points) {
+      try {
+        const el = document.elementFromPoint(x, y);
+        if (!el) continue;
+        let node = el;
+        while (node) {
+          found.add(node);
+          node = node.parentElement;
+        }
+      } catch (e) {}
+    }
+    return Array.from(found);
+  }
+
+  function highlightEl(el) {
+    try {
+      if (!el || !(el instanceof HTMLElement)) return;
+      el.dataset._mcDebugOutline = '1';
+      el.style.outline = '3px solid rgba(255,0,0,0.9)';
+      el.style.zIndex = '999999';
+    } catch (e) {}
+  }
+
+  function clearHighlights() {
+    try {
+      document.querySelectorAll('[data-_mcDebugOutline]').forEach((e) => {
+        e.style.outline = '';
+        e.style.zIndex = '';
+        e.removeAttribute('data-_mcDebugOutline');
+      });
+    } catch (e) {}
+  }
+
+  window.mcDebugFindOverlay = function mcDebugFindOverlay() {
+    try {
+      const list = findCoveringCandidates();
+      console.info('[mc.debug] overlay candidates:', list.map(describeElement));
+      return list;
+    } catch (e) {
+      console.warn('[mc.debug] find failed', e);
+      return [];
+    }
+  };
+
+  console.info('[mc.debug] freeze detector enabled — use `mcDebugFindOverlay()` or click to highlight blockers');
+
+  document.addEventListener('click', function (ev) {
+    try {
+      // Log the click target and then highlight covering elements
+      console.info('[mc.debug] click target:', describeElement(ev.target));
+      clearHighlights();
+      const candidates = findCoveringCandidates();
+      candidates.slice(0, 6).forEach(highlightEl);
+      console.info('[mc.debug] highlighted candidates:', candidates.map(describeElement));
+      // Auto-clear after a short delay
+      setTimeout(clearHighlights, 2500);
+    } catch (e) {
+      console.warn('[mc.debug] click handler failed', e);
+    }
+  }, true);
+})();
+
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
     return;
