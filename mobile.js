@@ -3236,3 +3236,197 @@ document.addEventListener('click', (ev) => {
   });
 })();
 /* END GPT CHANGE */
+
+/* BEGIN GPT CHANGE: notebook editor "New Folder" button wiring */
+(function () {
+  const wireNewFolderButton = () => {
+    const newFolderBtn = document.getElementById('note-new-folder-button');
+    const newFolderModal = document.getElementById('newFolderModal');
+    const newFolderNameInput = document.getElementById('newFolderName');
+    const newFolderCreateBtn = document.getElementById('newFolderCreate');
+    const newFolderCancelBtn = document.getElementById('newFolderCancel');
+    const newFolderError = document.getElementById('newFolderError');
+
+    if (!newFolderBtn || !newFolderModal) {
+      return false;
+    }
+
+    let modalController = null;
+    let pendingFolderCallback = null;
+
+    const clearError = () => {
+      if (newFolderError) {
+        newFolderError.classList.add('sr-only');
+        newFolderError.textContent = '';
+      }
+    };
+
+    const showError = (msg) => {
+      if (newFolderError) {
+        newFolderError.textContent = msg;
+        newFolderError.classList.remove('sr-only');
+      }
+    };
+
+    const openModal = () => {
+      if (!modalController) {
+        modalController = new ModalController({
+          modalElement: newFolderModal,
+          closeButton: newFolderCancelBtn,
+          titleInput: newFolderNameInput,
+          modalTitle: document.getElementById('newFolderTitle'),
+          autoFocus: true,
+        });
+      }
+      clearError();
+      if (newFolderNameInput) {
+        newFolderNameInput.value = '';
+      }
+      modalController.show();
+    };
+
+    const createFolder = () => {
+      if (!newFolderNameInput) return null;
+      const name = String(newFolderNameInput.value || '').trim();
+      clearError();
+
+      if (!name.length) {
+        showError("Folder name can't be empty.");
+        return null;
+      }
+
+      let folders = [];
+      try {
+        const loadedFolders = getFolders();
+        folders = Array.isArray(loadedFolders) ? loadedFolders : [];
+      } catch (e) {
+        folders = [];
+      }
+
+      const exists = folders.some(
+        (f) => String(f.name).toLowerCase() === name.toLowerCase()
+      );
+      if (exists) {
+        showError('You already have a folder with this name.');
+        return null;
+      }
+
+      // Generate folder ID with additional entropy to avoid collisions
+      const timestamp = Date.now().toString(36);
+      const randomPart = Math.random().toString(36).substring(2, 8);
+      const folderId = `folder-${timestamp}-${randomPart}`;
+      const newFolder = { id: folderId, name };
+      const updated = [...folders.filter(Boolean), newFolder];
+      const saved = saveFolders(updated);
+
+      if (!saved) {
+        showError('Unable to create folder. Please try again.');
+        return null;
+      }
+
+      try {
+        modalController.requestClose('created');
+      } catch {
+        /* ignore */
+      }
+
+      return { id: folderId, name };
+    };
+
+    // Shared handler for folder creation (used by both click and Enter key)
+    const handleFolderCreate = () => {
+      const folderData = createFolder();
+      if (folderData && typeof pendingFolderCallback === 'function') {
+        try {
+          pendingFolderCallback(folderData);
+        } catch (err) {
+          console.warn('[notebook] folder callback failed', err);
+        }
+        pendingFolderCallback = null;
+      }
+    };
+
+    // Wire the "Create new folder" button in notebook editor header
+    newFolderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // Set up callback for when folder is created
+      pendingFolderCallback = (folderData) => {
+        if (!folderData) return;
+
+        // Update the folder label in the notebook editor header
+        const labelEl = document.getElementById('note-folder-label');
+        if (labelEl) {
+          labelEl.textContent =
+            getFolderNameById(folderData.id) || folderData.name || 'Unsorted';
+        }
+
+        // Dispatch custom event to notify notebook of folder change
+        try {
+          document.dispatchEvent(
+            new CustomEvent('memoryCue:folderCreatedFromEditor', {
+              detail: { folderId: folderData.id, folderName: folderData.name },
+            })
+          );
+        } catch (err) {
+          console.warn('[notebook] failed to dispatch folder created event', err);
+        }
+      };
+
+      openModal();
+    });
+
+    // Wire the create button inside the modal
+    if (newFolderCreateBtn) {
+      newFolderCreateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleFolderCreate();
+      });
+    }
+
+    // Wire Enter key in the input
+    if (newFolderNameInput) {
+      newFolderNameInput.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          handleFolderCreate();
+        }
+      });
+    }
+
+    // Clear callback on cancel
+    if (newFolderCancelBtn) {
+      newFolderCancelBtn.addEventListener('click', () => {
+        pendingFolderCallback = null;
+      });
+    }
+
+    return true;
+  };
+
+  // Resilient initialization with retry mechanism
+  const init = () => {
+    if (wireNewFolderButton()) {
+      return;
+    }
+    // Guard for environments without setInterval (e.g., some test runners)
+    if (typeof setInterval !== 'function') {
+      return;
+    }
+    let retries = 0;
+    const maxRetries = 10;
+    const retryInterval = setInterval(() => {
+      retries += 1;
+      if (wireNewFolderButton() || retries >= maxRetries) {
+        clearInterval(retryInterval);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+/* END GPT CHANGE */
