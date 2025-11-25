@@ -1,0 +1,474 @@
+:root {
+  --mc-grad-from: #4f46e5;  /* indigo */
+  --mc-grad-mid:  #a855f7;  /* purple */
+  --mc-grad-to:   #ec4899;  /* pink */
+
+  /* Helper tokens used by input styles */
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --accent-color: var(--mc-grad-mid);
+  /* Accent darker variant for premium buttons */
+  --accent-dark: #3a1650;
+
+  /* Glass surface + text colours */
+  --mc-surface: rgba(15, 23, 42, 0.65);
+  --mc-surface-soft: rgba(15, 23, 42, 0.45);
+  --mc-border-soft: rgba(255, 255, 255, 0.12);
+  --mc-text-main: #f9fafb;
+  --mc-text-soft: rgba(249, 250, 251, 0.86);
+  --cat-yellow: #f2d38b;
+  --cat-red:    #f29cab;
+  --cat-green:  #9ed8b7;
+  --cat-violet: #c6b4f2;
+}
+
+/* Full-page gradient background, applied to main shells / body */
+.memory-page-gradient {
+  background: radial-gradient(circle at top, #60a5fa 0, #4f46e5 30%, #111827 100%);
+  color: var(--mc-text-main);
+}
+
+/* Optional: subtle inner gradient for view panels */
+.memory-panel {
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.95),
+    rgba(30, 64, 175, 0.9),
+    rgba(88, 28, 135, 0.9)
+  );
+}
+
+/* Shared glass card style used across app */
+.memory-glass-card {
+  background: linear-gradient(
+    140deg,
+    rgba(96, 165, 250, 0.96),
+    rgba(168, 85, 247, 0.95),
+    rgba(236, 72, 153, 0.9)
+  );
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.09);
+  border-radius: 1.25rem;
+  color: var(--mc-text-main);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Variant for smaller / secondary cards */
+.memory-glass-card-soft {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.92),
+    rgba(168, 85, 247, 0.9)
+  );
+  box-shadow:
+    0 14px 30px rgba(15, 23, 42, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  border-radius: 1.1rem;
+  color: var(--mc-text-soft);
+}
+
+/* Upgrade generic cards (DaisyUI/Tailwind .card) to glass theme */
+.card {
+  background: var(--mc-surface-soft);
+  border-radius: 1.1rem;
+  border: 1px solid var(--mc-border-soft);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.6);
+  color: var(--mc-text-soft);
+}
+
+.card-body {
+  color: var(--mc-text-soft);
+}
+  /* Primary text / heading color used for section labels */
+  --primary-dark: rgba(15, 23, 42, 0.92);
+
+/* Reminder and dashboard specific cards, if present */
+.reminder-card,
+.dashboard-card {
+  background: var(--mc-surface-soft);
+  border-radius: 1.1rem;
+  border: 1px solid var(--mc-border-soft);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.6);
+  color: var(--mc-text-soft);
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #f9fafb;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-ghost {
+  color: var(--mc-text-soft);
+}
+
+/* Text colours */
+.text-base-content {
+  color: var(--mc-text-soft);
+}
+
+
+.mobile-header {
+  background: #F7F7FA;
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 8px 16px;
+}
+
+.header-pill {
+  background: #F7F7FA;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+  padding: 8px 12px;
+}
+
+.header-pill .quick-reminder {
+  background: #F9F9F9;
+  border: none;
+  flex: 1;
+  min-width: 0;
+  margin-right: 12px;
+  padding: 8px;
+  border-radius: 12px;
+  color: #333;
+}
+
+.header-pill .header-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-pill .header-icons svg,
+.header-pill .header-icons button {
+  color: #512663;
+}
+
+.mobile-footer {
+  z-index: 30;
+}
+
+.mobile-footer-item:active {
+  transform: scale(0.96);
+}
+
+/* Completed reminders: premium faded style */
+.reminder-card[data-done='true'] {
+  opacity: 0.45;
+  filter: saturate(55%);
+  transform: none;
+  text-decoration: none;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.reminder-card[data-done='true'] .line-through,
+.reminder-card[data-done='true'] .desktop-reminder-title,
+.reminder-card[data-done='true'] [data-reminder-title] {
+  text-decoration: none;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.reminder-card[data-done='true'] .reminder-meta,
+.reminder-card[data-done='true'] time {
+  color: var(--text-muted, #9a8bb0);
+}
+
+.reminder-card[data-done='true']:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.mobile-footer-item--active span {
+  color: #f9fafb;
+  font-weight: 600;
+}
+
+/* Visual indicator when the mobile 'Add Reminder' sheet is open */
+#mobile-footer-new-reminder[aria-expanded="true"],
+.floating-footer #mobile-footer-new-reminder[aria-expanded="true"] {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 18px 40px rgba(111, 59, 209, 0.18);
+  background: linear-gradient(90deg, var(--premium-accent), var(--premium-accent-dark));
+  color: #fff;
+}
+
+/* Ensure the inner svg/icon contrasts when active */
+#mobile-footer-new-reminder[aria-expanded="true"] svg {
+  filter: brightness(0) invert(1) saturate(1.2);
+}
+
+/* Soft-glass elevated card for mobile New Reminder form */
+.mobile-new-reminder-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 18px;
+  margin-bottom: 4px;
+  /* Soft-lilac premium palette scoped to this card */
+  --premium-accent: rgba(111, 59, 209, 1);
+  --premium-accent-dark: rgba(82, 45, 112, 1);
+  --border-subtle: rgba(35,31,32,0.06);
+}
+
+.mobile-new-reminder-card .input,
+.mobile-new-reminder-card .textarea,
+.mobile-new-reminder-card .select {
+  background: rgba(255,255,255,0.85);
+  color: var(--primary-dark);
+  border: 1px solid rgba(139,92,246,0.08);
+  box-shadow: inset 0 1px 6px rgba(0,0,0,0.04);
+}
+
+/* Scoped premium buttons inside the mobile create card */
+.mobile-new-reminder-card .btn-premium-primary {
+  background: linear-gradient(90deg, var(--premium-accent), var(--premium-accent-dark));
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 0.45rem 1rem;
+  box-shadow: 0 10px 26px rgba(111, 59, 209, 0.08);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+.mobile-new-reminder-card .btn-premium-primary:hover,
+.mobile-new-reminder-card .btn-premium-primary:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(111, 59, 209, 0.12);
+}
+.mobile-new-reminder-card .btn-premium-secondary {
+  background: #ffffff;
+  color: var(--premium-accent-dark);
+  border: 1px solid var(--premium-accent);
+  border-radius: 14px;
+  padding: 0.45rem 1rem;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+.mobile-new-reminder-card .btn-premium-secondary:hover,
+.mobile-new-reminder-card .btn-premium-secondary:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(111, 59, 209, 0.06);
+}
+
+/* Close button placed at top-right of sheet panel */
+.sheet-panel { position: relative; }
+.sheet-panel .close-sheet-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 60;
+}
+
+/* Global upgraded form controls */
+.input,
+.textarea,
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="search"],
+textarea,
+.select,
+select {
+  border-radius: 14px !important;
+  border: 1px solid var(--border-subtle) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.06);
+  transition: box-shadow 180ms ease, border-color 180ms ease, transform 120ms ease;
+  color: inherit;
+}
+
+/* Focus state: accent border + subtle outer glow */
+.input:focus,
+.textarea:focus,
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="email"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+.select:focus,
+select:focus {
+  outline: none !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 6px 18px rgba(82, 45, 112, 0.28), inset 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+/* Accessibility: visible focus for keyboard users */
+*:focus-visible { outline-offset: 2px; }
+
+/* Section labels used above grouped form blocks */
+.section-label {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+/* Priority pill selectors */
+.priority-pill-row {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.priority-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.02);
+  color: var(--primary-dark);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 180ms ease, color 180ms ease, transform 120ms ease, border-color 180ms ease;
+}
+
+/* Selected state when the hidden radio is checked */
+.priority-input:checked + .priority-pill,
+.priority-pill:has(+ .priority-input:checked) {
+  /* support for input before label; fallback included */
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+
+/* Also handle case where label immediately follows input (most cases) */
+input.priority-input:checked + label.priority-pill {
+  background: var(--premium-accent);
+  color: #fff;
+  border-color: var(--premium-accent);
+}
+
+/* Focus state for keyboard users */
+.priority-input:focus + .priority-pill,
+input.priority-input:focus + label.priority-pill {
+  box-shadow: 0 6px 18px rgba(82, 45, 112, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Notifications iOS-style switch */
+.notif-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ios-switch {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.ios-switch input.notif-toggle {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.ios-switch .switch-track {
+  width: 44px;
+  height: 26px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 999px;
+  display: inline-block;
+  position: relative;
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.ios-switch .switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.ios-switch input.notif-toggle:checked + .switch-track {
+  background: var(--accent-color);
+}
+
+.ios-switch input.notif-toggle:checked + .switch-track .switch-thumb {
+  transform: translateX(18px);
+}
+
+.ios-switch input.notif-toggle:focus + .switch-track {
+  box-shadow: 0 6px 18px rgba(82, 45, 112, 0.18);
+}
+
+.ios-switch .sr-only { margin-left: 8px; }
+
+/* Scoped adjustments for elements inside the mobile new-reminder card to match premium lilac theme */
+.mobile-new-reminder-card .priority-pill {
+  background: rgba(245,240,255,0.8);
+  border-color: rgba(139,92,246,0.12);
+}
+
+.mobile-new-reminder-card .priority-input:checked + .priority-pill,
+.mobile-new-reminder-card .priority-pill:has(+ .priority-input:checked),
+.mobile-new-reminder-card input.priority-input:checked + label.priority-pill {
+  background: var(--premium-accent);
+  color: #fff;
+  border-color: var(--premium-accent);
+}
+
+.mobile-new-reminder-card .ios-switch .switch-track {
+  background: rgba(230,225,255,0.6);
+}
+
+.mobile-new-reminder-card .ios-switch input.notif-toggle:checked + .switch-track {
+  background: var(--premium-accent);
+}
+
+.mobile-new-reminder-card .ios-switch input.notif-toggle:checked + .switch-track .switch-thumb {
+  transform: translateX(18px);
+}
+
+.mobile-new-reminder-card input:focus,
+.mobile-new-reminder-card textarea:focus,
+.mobile-new-reminder-card select:focus {
+  border-color: var(--premium-accent);
+  box-shadow: 0 10px 30px rgba(111,59,209,0.12), inset 0 1px 6px rgba(0,0,0,0.04);
+}

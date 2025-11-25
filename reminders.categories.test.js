@@ -10,6 +10,10 @@ let initReminders;
 function loadRemindersModule() {
   const filePath = path.resolve(__dirname, './js/reminders.js');
   let source = fs.readFileSync(filePath, 'utf8');
+  source = source.replace(
+    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';\n",
+    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const NotificationRef = typeof global.Notification === 'undefined' ? undefined : global.Notification;
@@ -28,6 +32,7 @@ function loadRemindersModule() {
     document,
     localStorage,
     navigator,
+    HTMLElement: window.HTMLElement,
     Notification: NotificationRef,
     fetch: global.fetch,
     Blob: BlobRef,
