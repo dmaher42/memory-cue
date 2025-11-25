@@ -5523,21 +5523,7 @@
                   <!-- Note items are rendered here by JS -->
                 </div>
               </div>
-              <!-- New Folder Modal -->
-              <dialog id="newFolderModal" class="memory-glass-card" aria-hidden="true">
-                <div class="p-4">
-                  <h3 id="newFolderTitle" class="text-lg font-semibold">New folder</h3>
-                  <div class="mt-3">
-                    <label for="newFolderName" class="sr-only">Folder name</label>
-                    <input id="newFolderName" type="text" class="input input-sm w-full" placeholder="Folder name" />
-                    <p id="newFolderError" class="text-xs text-error mt-2 sr-only">Error</p>
-                  </div>
-                  <div class="modal-actions mt-4 flex justify-end gap-3">
-                    <button id="newFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-                    <button id="newFolderCreate" type="button" class="btn btn-primary">Create</button>
-                  </div>
-                </div>
-              </dialog>
+              <!-- New Folder Modal (moved to top-level below) -->
               <!-- Pick Folder Modal -->
               <dialog id="pickFolderModal" class="memory-glass-card" aria-hidden="true">
                 <div class="p-4">
@@ -5668,6 +5654,22 @@
       </button>
     </div>
   </div>
+
+  <!-- New Folder Modal moved out of savedNotesSheet and into top-level so it's always accessible -->
+  <dialog id="newFolderModal" class="memory-glass-card" aria-hidden="true">
+    <div class="p-4">
+      <h3 id="newFolderTitle" class="text-lg font-semibold">New folder</h3>
+      <div class="mt-3">
+        <label for="newFolderName" class="sr-only">Folder name</label>
+        <input id="newFolderName" type="text" class="input input-sm w-full" placeholder="Folder name" />
+        <p id="newFolderError" class="text-xs text-error mt-2 sr-only">Error</p>
+      </div>
+      <div class="modal-actions mt-4 flex justify-end gap-3">
+        <button id="newFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="newFolderCreate" type="button" class="btn btn-primary">Create</button>
+      </div>
+    </div>
+  </dialog>
   <script>
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
