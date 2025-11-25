@@ -357,11 +357,11 @@ const initMobileNotes = () => {
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
-  const folderSelectorEl = document.getElementById('notebook-folder-selector');
-  const folderSelectorListEl = document.getElementById('notebook-folder-selector-list');
-  const folderSelectorCreateBtn = document.getElementById('notebook-folder-selector-create');
-  const folderSelectorCancelBtn = document.getElementById('notebook-folder-selector-cancel');
-  const folderSelectorSheet = folderSelectorEl?.querySelector('.notebook-folder-selector-sheet');
+  const folderSelectorEl = document.getElementById('moveFolderSheet');
+  const folderSelectorListEl = document.getElementById('move-folder-list');
+  const folderSelectorCreateBtn = document.getElementById('move-folder-create');
+  const folderSelectorCancelBtn = document.getElementById('move-folder-cancel');
+  const folderSelectorSheet = folderSelectorEl?.querySelector('.sheet-panel');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
   const createScratchNotesEditor = () => {
@@ -416,12 +416,7 @@ const initMobileNotes = () => {
   }
 
   const applyFormatCommand = (command) => {
-    if (!command || !scratchNotesEditorElement) return;
-    try {
-      scratchNotesEditorElement.focus();
-    } catch {
-      /* ignore focus errors */
-    }
+    if (!command) return;
     document.execCommand(command, false, null);
   };
 
@@ -1550,14 +1545,22 @@ const initMobileNotes = () => {
       } catch {
         /* ignore */
       }
+      return;
+    }
+    if (folderSelectorSheet) {
+      try {
+        folderSelectorSheet.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
     }
   };
 
   const handleFolderSelectorKeydown = (event) => {
-    if (!folderSelectorEl?.classList.contains('notebook-folder-selector--open')) return;
+    if (!folderSelectorEl || folderSelectorEl.classList.contains('hidden')) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      closeFolderSelector();
+      closeMoveFolderSheet();
       return;
     }
     if (event.key !== 'Tab') return;
@@ -1588,13 +1591,13 @@ const initMobileNotes = () => {
         labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
       }
     }
-    closeFolderSelector();
+    closeMoveFolderSheet();
   };
 
-  const closeFolderSelector = (options = {}) => {
+  const closeMoveFolderSheet = (options = {}) => {
     const { preserveCreateHandler = false } = options || {};
     if (folderSelectorEl) {
-      folderSelectorEl.classList.remove('notebook-folder-selector--open');
+      folderSelectorEl.classList.add('hidden');
       folderSelectorEl.setAttribute('aria-hidden', 'true');
     }
     if (folderSelectorListEl) {
@@ -1650,34 +1653,31 @@ const initMobileNotes = () => {
 
     folders.forEach((folder) => {
       if (!folder || typeof folder.id === 'undefined') return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'notebook-folder-selector-item';
-      button.dataset.folderId = folder.id;
-      button.setAttribute('role', 'option');
+      const row = document.createElement('li');
+      row.className = 'folder-select-row';
+      row.dataset.folderId = folder.id;
+      row.setAttribute('role', 'option');
+      row.tabIndex = 0;
       const isActive = String(folder.id) === String(activeFolderId);
       if (isActive) {
-        button.classList.add('notebook-folder-selector-item-current');
-        button.setAttribute('aria-selected', 'true');
+        row.classList.add('active');
+        row.setAttribute('aria-selected', 'true');
       } else {
-        button.setAttribute('aria-selected', 'false');
+        row.setAttribute('aria-selected', 'false');
       }
-      button.innerHTML = `
-        <span class="notebook-folder-selector-item-label">
-          <svg class="notebook-folder-selector-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path d="M3.5 6.75A1.75 1.75 0 0 1 5.25 5h4.1c.46 0 .9.2 1.21.54l.58.62c.31.34.75.54 1.21.54h4.9A1.75 1.75 0 0 1 19 8.45v7.8A1.75 1.75 0 0 1 17.25 18h-12A1.75 1.75 0 0 1 3.5 16.25v-9.5Z" />
-          </svg>
-          <span class="notebook-folder-selector-name">${folder.name || String(folder.id)}</span>
-        </span>
-      `;
-      button.addEventListener('click', () => {
-        handleFolderSelection(folder.id || 'unsorted');
-      });
-      folderSelectorListEl.appendChild(button);
+      row.textContent = folder.name || String(folder.id);
+      folderSelectorListEl.appendChild(row);
     });
 
-    folderSelectorEl.classList.add('notebook-folder-selector--open');
+    folderSelectorEl.classList.remove('hidden');
     folderSelectorEl.setAttribute('aria-hidden', 'false');
+    if (folderSelectorSheet) {
+      try {
+        folderSelectorSheet.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
+    }
     if (triggerEl === noteFolderBtn) {
       noteFolderBtn.setAttribute('aria-expanded', 'true');
     }
@@ -1685,11 +1685,34 @@ const initMobileNotes = () => {
     focusFirstFolderSelectorItem();
   };
 
+  if (folderSelectorListEl) {
+    folderSelectorListEl.addEventListener('click', (event) => {
+      const row =
+        event.target instanceof HTMLElement
+          ? event.target.closest('.folder-select-row')
+          : null;
+      if (!row || !folderSelectorListEl.contains(row)) return;
+      event.preventDefault();
+      handleFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+
+    folderSelectorListEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const row =
+        event.target instanceof HTMLElement
+          ? event.target.closest('.folder-select-row')
+          : null;
+      if (!row || !folderSelectorListEl.contains(row)) return;
+      event.preventDefault();
+      handleFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+  }
+
   if (folderSelectorEl) {
     folderSelectorEl.addEventListener('click', (ev) => {
       if (ev.target === folderSelectorEl) {
         ev.preventDefault();
-        closeFolderSelector();
+        closeMoveFolderSheet();
       }
     });
   }
@@ -1697,7 +1720,7 @@ const initMobileNotes = () => {
   if (folderSelectorCancelBtn) {
     folderSelectorCancelBtn.addEventListener('click', (event) => {
       event.preventDefault();
-      closeFolderSelector();
+      closeMoveFolderSheet();
     });
   }
 
@@ -1718,9 +1741,9 @@ const initMobileNotes = () => {
             labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
           }
         }
-        closeFolderSelector();
+        closeMoveFolderSheet();
       };
-      closeFolderSelector({ preserveCreateHandler: true });
+      closeMoveFolderSheet({ preserveCreateHandler: true });
       openNewFolderDialog();
     });
   }

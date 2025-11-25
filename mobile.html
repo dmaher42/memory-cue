@@ -756,154 +756,6 @@
     cursor: pointer;
   }
 
-  .notebook-folder-selector {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    background: rgba(81, 38, 99, 0.08);
-    z-index: 999;
-    transition: background 0.2s ease;
-  }
-
-  .notebook-folder-selector--open {
-    display: flex;
-  }
-
-  .notebook-folder-selector-sheet {
-    width: min(640px, 100%);
-    border-radius: 18px 18px 0 0;
-    padding: 12px 16px 16px;
-    background: #fff;
-    box-shadow: 0 -18px 38px rgba(0, 0, 0, 0.14);
-    transform: translateY(18px);
-    opacity: 0;
-    transition: transform 0.22s ease, opacity 0.22s ease;
-  }
-
-  .notebook-folder-selector--open .notebook-folder-selector-sheet {
-    transform: translateY(0);
-    opacity: 1;
-  }
-
-  .notebook-folder-selector-grip {
-    width: 46px;
-    height: 5px;
-    border-radius: 999px;
-    background: rgba(81, 38, 99, 0.16);
-    margin: 0 auto 8px;
-  }
-
-  .notebook-folder-selector-header {
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .notebook-folder-selector-title {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--primary-dark);
-  }
-
-  .notebook-folder-selector-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 40vh;
-    overflow-y: auto;
-    padding-top: 4px;
-    margin-bottom: 12px;
-  }
-
-  .notebook-folder-selector-item {
-    border-radius: 14px;
-    border: 1px solid rgba(47, 27, 63, 0.12);
-    padding: 9px 12px;
-    font-size: 0.9rem;
-    background: rgba(255, 255, 255, 0.96);
-    color: var(--primary-dark);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: background-color 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
-    text-align: left;
-  }
-
-  .notebook-folder-selector-item:hover,
-  .notebook-folder-selector-item:focus-visible {
-    background: rgba(81, 38, 99, 0.06);
-    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.12);
-    outline: none;
-  }
-
-  .notebook-folder-selector-item-current {
-    border-color: var(--accent-color, #512663);
-    background: rgba(81, 38, 99, 0.08);
-  }
-
-  .notebook-folder-selector-item-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .notebook-folder-selector-icon {
-    width: 18px;
-    height: 18px;
-    color: var(--primary-dark);
-    opacity: 0.75;
-    flex-shrink: 0;
-  }
-
-  .notebook-folder-selector-name {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .notebook-folder-selector-create,
-  .notebook-folder-selector-cancel {
-    width: 100%;
-    border: none;
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.12s ease, box-shadow 0.12s ease;
-  }
-
-  .notebook-folder-selector-create {
-    background: rgba(81, 38, 99, 0.08);
-    color: var(--primary-dark);
-    margin-bottom: 8px;
-  }
-
-  .notebook-folder-selector-create:hover,
-  .notebook-folder-selector-create:focus-visible {
-    background: rgba(81, 38, 99, 0.12);
-    outline: none;
-    box-shadow: 0 6px 16px rgba(81, 38, 99, 0.16);
-  }
-
-  .notebook-folder-selector-cancel {
-    background: #f8f5fb;
-    color: var(--primary-dark);
-  }
-
-  .notebook-folder-selector-cancel:hover,
-  .notebook-folder-selector-cancel:focus-visible {
-    background: rgba(81, 38, 99, 0.1);
-    outline: none;
-  }
 
   .mobile-shell #notesListMobile .note-item-mobile {
     margin: 0;
@@ -976,13 +828,84 @@
     transition:
       transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
       opacity 0.25s ease;
-    border: 1.5px solid var(--card-border-strong);
-    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+    /* Premium glassy card styling */
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 22px;
+    box-shadow: 0 20px 40px rgba(81, 38, 99, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.5);
   }
 
   .mobile-shell #savedNotesSheet[data-open="true"] .saved-notes-panel {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
+  }
+
+  /* Saved Notes Sheet Title Styling */
+  .mobile-shell #savedNotesSheet #savedNotesSheetTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-strong, #34163f);
+    letter-spacing: 0.01em;
+  }
+
+  /* Reduce spacing in saved notes sheet */
+  .mobile-shell #savedNotesSheet .saved-notes-panel > div {
+    gap: 0.5rem;
+  }
+
+  .mobile-shell #savedNotesSheet .flex.justify-center {
+    padding-top: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .mobile-shell #savedNotesSheet .flex.items-center.justify-between {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Tighten spacing between folder chips and search bar */
+  .mobile-shell #savedNotesSheet .notebook-folder-bar {
+    padding: 0.5rem 0.75rem 0.75rem;
+  }
+
+  .mobile-shell #savedNotesSheet .notebook-folder-filter-bar {
+    padding: 3px;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  /* Reduce padding around search input */
+  .mobile-shell #savedNotesSheet .px-3.pb-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  /* Style the search input */
+  .mobile-shell #savedNotesSheet .notebook-search-bar {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(230, 224, 242, 0.8);
+    background: rgba(248, 245, 252, 0.6);
+    font-size: 0.85rem;
+    color: var(--text-main, #231b2e);
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+  }
+
+  .mobile-shell #savedNotesSheet .notebook-search-bar:focus {
+    outline: none;
+    border-color: var(--primary-dark, #3E1D4C);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.1);
+  }
+
+  .mobile-shell #savedNotesSheet .notebook-search-bar::placeholder {
+    color: rgba(47, 27, 63, 0.5);
   }
 
   .quick-actions-panel {
@@ -5616,39 +5539,24 @@
                   </div>
                 </div>
               </dialog>
-              <div
-                id="notebook-folder-selector"
-                class="notebook-folder-selector"
-                aria-hidden="true"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="notebook-folder-selector-title"
-              >
-                <div class="notebook-folder-selector-sheet" role="document">
-                  <div class="notebook-folder-selector-grip" aria-hidden="true"></div>
-                  <header class="notebook-folder-selector-header">
-                    <h3 id="notebook-folder-selector-title" class="notebook-folder-selector-title">Move to folder</h3>
-                  </header>
-                  <div
-                    class="notebook-folder-selector-list"
-                    id="notebook-folder-selector-list"
-                    role="listbox"
-                    aria-label="Available folders"
-                  ></div>
-                  <button
-                    id="notebook-folder-selector-create"
-                    class="notebook-folder-selector-create"
-                    type="button"
-                  >
-                    + Create new folder
-                  </button>
-                  <button
-                    id="notebook-folder-selector-cancel"
-                    class="notebook-folder-selector-cancel"
-                    type="button"
-                  >
-                    Cancel
-                  </button>
+              <div id="moveFolderSheet" class="sheet-backdrop hidden" aria-hidden="true">
+                <div
+                  class="sheet-panel"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="move-folder-title"
+                  tabindex="-1"
+                >
+                  <div class="sheet-header">
+                    <h2 id="move-folder-title">Move to folder</h2>
+                  </div>
+                  <div class="sheet-body">
+                    <ul id="move-folder-list" class="folder-select-list" role="listbox" aria-label="Available folders"></ul>
+                    <button id="move-folder-create" class="sheet-secondary-action" type="button">
+                      + Create new folder
+                    </button>
+                  </div>
+                  <button id="move-folder-cancel" class="sheet-cancel" type="button">Cancel</button>
                 </div>
               </div>
               <!-- Rename Folder Modal -->
