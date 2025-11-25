@@ -278,6 +278,8 @@ initViewportHeight();
 })();
 /* END GPT CHANGE */
 
+/* DEBUG HELPERS removed */
+
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
     return;
@@ -357,12 +359,177 @@ const initMobileNotes = () => {
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
-  const folderSelectorEl = document.getElementById('notebook-folder-selector');
-  const folderSelectorListEl = document.getElementById('notebook-folder-selector-list');
-  const folderSelectorCreateBtn = document.getElementById('notebook-folder-selector-create');
-  const folderSelectorCancelBtn = document.getElementById('notebook-folder-selector-cancel');
-  const folderSelectorSheet = folderSelectorEl?.querySelector('.notebook-folder-selector-sheet');
+  const folderSelectorEl = document.getElementById('moveFolderSheet');
+  const folderSelectorListEl = document.getElementById('move-folder-list');
+  const folderSelectorCreateBtn = document.getElementById('move-folder-create');
+  const folderSelectorCancelBtn = document.getElementById('move-folder-cancel');
+  const folderSelectorSheet = folderSelectorEl?.querySelector('.sheet-panel');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
+
+  const wireNewFolderButton = ({ ModalController, saveFolders, getFolders, getFolderNameById }) => {
+    const newFolderBtn = document.getElementById('note-new-folder-button');
+    const newFolderModal = document.getElementById('newFolderModal');
+    const newFolderNameInput = document.getElementById('newFolderName');
+    const newFolderCreateBtn = document.getElementById('newFolderCreate');
+    const newFolderCancelBtn = document.getElementById('newFolderCancel');
+    const newFolderError = document.getElementById('newFolderError');
+
+    if (!newFolderBtn || !newFolderModal) {
+      return false;
+    }
+
+    let modalController = null;
+    let pendingFolderCallback = null;
+
+    const clearError = () => {
+      if (newFolderError) {
+        newFolderError.classList.add('sr-only');
+        newFolderError.textContent = '';
+      }
+    };
+
+    const showError = (msg) => {
+      if (newFolderError) {
+        newFolderError.textContent = msg;
+        newFolderError.classList.remove('sr-only');
+      }
+    };
+
+    const openModal = () => {
+      if (!modalController) {
+        modalController = new ModalController({
+          modalElement: newFolderModal,
+          closeButton: newFolderCancelBtn,
+          titleInput: newFolderNameInput,
+          modalTitle: document.getElementById('newFolderTitle'),
+          autoFocus: true,
+        });
+      }
+      clearError();
+      if (newFolderNameInput) {
+        newFolderNameInput.value = '';
+      }
+      modalController.show();
+    };
+
+    const createFolder = () => {
+      if (!newFolderNameInput) return null;
+      const name = String(newFolderNameInput.value || '').trim();
+      clearError();
+
+      if (!name.length) {
+        showError("Folder name can't be empty.");
+        return null;
+      }
+
+      let folders = [];
+      try {
+        const loadedFolders = getFolders();
+        folders = Array.isArray(loadedFolders) ? loadedFolders : [];
+      } catch (e) {
+        folders = [];
+      }
+
+      const exists = folders.some(
+        (f) => String(f.name).toLowerCase() === name.toLowerCase()
+      );
+      if (exists) {
+        showError('You already have a folder with this name.');
+        return null;
+      }
+
+      // Generate folder ID with additional entropy to avoid collisions
+      const timestamp = Date.now().toString(36);
+      const randomPart = Math.random().toString(36).substring(2, 8);
+      const folderId = `folder-${timestamp}-${randomPart}`;
+      const newFolder = { id: folderId, name };
+      const updated = [...folders.filter(Boolean), newFolder];
+      const saved = saveFolders(updated);
+
+      if (!saved) {
+        showError('Unable to create folder. Please try again.');
+        return null;
+      }
+
+      try {
+        modalController.requestClose('created');
+      } catch {
+        /* ignore */
+      }
+
+      return { id: folderId, name };
+    };
+
+    // Shared handler for folder creation (used by both click and Enter key)
+    const handleFolderCreate = () => {
+      const folderData = createFolder();
+      if (folderData && typeof pendingFolderCallback === 'function') {
+        try {
+          pendingFolderCallback(folderData);
+        } catch (err) {
+          console.warn('[notebook] folder callback failed', err);
+        }
+        pendingFolderCallback = null;
+      }
+    };
+
+    // Wire the "Create new folder" button in notebook editor header
+    newFolderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // Set up callback for when folder is created
+      pendingFolderCallback = (folderData) => {
+        if (!folderData) return;
+
+        // Update the folder label in the notebook editor header
+        const labelEl = document.getElementById('note-folder-label');
+        if (labelEl) {
+          labelEl.textContent =
+            getFolderNameById(folderData.id) || folderData.name || 'Unsorted';
+        }
+
+        // Dispatch custom event to notify notebook of folder change
+        try {
+          document.dispatchEvent(
+            new CustomEvent('memoryCue:folderCreatedFromEditor', {
+              detail: { folderId: folderData.id, folderName: folderData.name },
+            })
+          );
+        } catch (err) {
+          console.warn('[notebook] failed to dispatch folder created event', err);
+        }
+      };
+
+      openModal();
+    });
+
+    // Wire the create button inside the modal
+    if (newFolderCreateBtn) {
+      newFolderCreateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleFolderCreate();
+      });
+    }
+
+    // Wire Enter key in the input
+    if (newFolderNameInput) {
+      newFolderNameInput.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          handleFolderCreate();
+        }
+      });
+    }
+
+    // Clear callback on cancel
+    if (newFolderCancelBtn) {
+      newFolderCancelBtn.addEventListener('click', () => {
+        pendingFolderCallback = null;
+      });
+    }
+
+    return true;
+  };
 
   const createScratchNotesEditor = () => {
     if (!scratchNotesEditorElement) {
@@ -416,12 +583,7 @@ const initMobileNotes = () => {
   }
 
   const applyFormatCommand = (command) => {
-    if (!command || !scratchNotesEditorElement) return;
-    try {
-      scratchNotesEditorElement.focus();
-    } catch {
-      /* ignore focus errors */
-    }
+    if (!command) return;
     document.execCommand(command, false, null);
   };
 
@@ -727,7 +889,7 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
-    if (currentNoteId === note.id) return;
+    // Defensive: ensure we handle a null/undefined note before reading its properties
     if (!note) {
       currentNoteId = null;
       titleInput.value = '';
@@ -740,6 +902,9 @@ const initMobileNotes = () => {
       }
       return;
     }
+
+    // existing behavior for when note is present
+    if (currentNoteId === note.id) return;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
     const nextBody = note.bodyHtml || note.body || '';
@@ -1545,14 +1710,22 @@ const initMobileNotes = () => {
       } catch {
         /* ignore */
       }
+      return;
+    }
+    if (folderSelectorSheet) {
+      try {
+        folderSelectorSheet.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
     }
   };
 
   const handleFolderSelectorKeydown = (event) => {
-    if (!folderSelectorEl?.classList.contains('notebook-folder-selector--open')) return;
+    if (!folderSelectorEl || folderSelectorEl.classList.contains('hidden')) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      closeFolderSelector();
+      closeMoveFolderSheet();
       return;
     }
     if (event.key !== 'Tab') return;
@@ -1583,13 +1756,13 @@ const initMobileNotes = () => {
         labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
       }
     }
-    closeFolderSelector();
+    closeMoveFolderSheet();
   };
 
-  const closeFolderSelector = (options = {}) => {
+  const closeMoveFolderSheet = (options = {}) => {
     const { preserveCreateHandler = false } = options || {};
     if (folderSelectorEl) {
-      folderSelectorEl.classList.remove('notebook-folder-selector--open');
+      folderSelectorEl.classList.add('hidden');
       folderSelectorEl.setAttribute('aria-hidden', 'true');
     }
     if (folderSelectorListEl) {
@@ -1645,34 +1818,31 @@ const initMobileNotes = () => {
 
     folders.forEach((folder) => {
       if (!folder || typeof folder.id === 'undefined') return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'notebook-folder-selector-item';
-      button.dataset.folderId = folder.id;
-      button.setAttribute('role', 'option');
+      const row = document.createElement('li');
+      row.className = 'folder-select-row';
+      row.dataset.folderId = folder.id;
+      row.setAttribute('role', 'option');
+      row.tabIndex = 0;
       const isActive = String(folder.id) === String(activeFolderId);
       if (isActive) {
-        button.classList.add('notebook-folder-selector-item-current');
-        button.setAttribute('aria-selected', 'true');
+        row.classList.add('active');
+        row.setAttribute('aria-selected', 'true');
       } else {
-        button.setAttribute('aria-selected', 'false');
+        row.setAttribute('aria-selected', 'false');
       }
-      button.innerHTML = `
-        <span class="notebook-folder-selector-item-label">
-          <svg class="notebook-folder-selector-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path d="M3.5 6.75A1.75 1.75 0 0 1 5.25 5h4.1c.46 0 .9.2 1.21.54l.58.62c.31.34.75.54 1.21.54h4.9A1.75 1.75 0 0 1 19 8.45v7.8A1.75 1.75 0 0 1 17.25 18h-12A1.75 1.75 0 0 1 3.5 16.25v-9.5Z" />
-          </svg>
-          <span class="notebook-folder-selector-name">${folder.name || String(folder.id)}</span>
-        </span>
-      `;
-      button.addEventListener('click', () => {
-        handleFolderSelection(folder.id || 'unsorted');
-      });
-      folderSelectorListEl.appendChild(button);
+      row.textContent = folder.name || String(folder.id);
+      folderSelectorListEl.appendChild(row);
     });
 
-    folderSelectorEl.classList.add('notebook-folder-selector--open');
+    folderSelectorEl.classList.remove('hidden');
     folderSelectorEl.setAttribute('aria-hidden', 'false');
+    if (folderSelectorSheet) {
+      try {
+        folderSelectorSheet.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
+    }
     if (triggerEl === noteFolderBtn) {
       noteFolderBtn.setAttribute('aria-expanded', 'true');
     }
@@ -1680,11 +1850,34 @@ const initMobileNotes = () => {
     focusFirstFolderSelectorItem();
   };
 
+  if (folderSelectorListEl) {
+    folderSelectorListEl.addEventListener('click', (event) => {
+      const row =
+        event.target instanceof HTMLElement
+          ? event.target.closest('.folder-select-row')
+          : null;
+      if (!row || !folderSelectorListEl.contains(row)) return;
+      event.preventDefault();
+      handleFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+
+    folderSelectorListEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const row =
+        event.target instanceof HTMLElement
+          ? event.target.closest('.folder-select-row')
+          : null;
+      if (!row || !folderSelectorListEl.contains(row)) return;
+      event.preventDefault();
+      handleFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+  }
+
   if (folderSelectorEl) {
     folderSelectorEl.addEventListener('click', (ev) => {
       if (ev.target === folderSelectorEl) {
         ev.preventDefault();
-        closeFolderSelector();
+        closeMoveFolderSheet();
       }
     });
   }
@@ -1692,7 +1885,7 @@ const initMobileNotes = () => {
   if (folderSelectorCancelBtn) {
     folderSelectorCancelBtn.addEventListener('click', (event) => {
       event.preventDefault();
-      closeFolderSelector();
+      closeMoveFolderSheet();
     });
   }
 
@@ -1713,9 +1906,9 @@ const initMobileNotes = () => {
             labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
           }
         }
-        closeFolderSelector();
+        closeMoveFolderSheet();
       };
-      closeFolderSelector({ preserveCreateHandler: true });
+      closeMoveFolderSheet({ preserveCreateHandler: true });
       openNewFolderDialog();
     });
   }
@@ -2293,6 +2486,8 @@ const initMobileNotes = () => {
       }, 2000);
     }
   }
+
+  wireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById });
 };
 
 if (document.readyState === 'loading') {
