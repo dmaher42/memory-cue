@@ -81,6 +81,8 @@ describe('mobile sign-in wiring', () => {
       <button id="overflowMenuBtn"></button>
       <div id="overflowMenu" class="hidden">
         <button id="googleSignInBtn">Sign in</button>
+        <button id="googleSignInBtnMenu">Sign in (menu)</button>
+        <button id="googleSignOutBtnMenu">Sign out (menu)</button>
       </div>
     `;
 
@@ -108,6 +110,21 @@ describe('mobile sign-in wiring', () => {
     loadMobileModuleWithStartSignIn();
 
     const btn = document.getElementById('googleSignInBtn');
+    expect(btn).not.toBeNull();
+
+    btn.click();
+
+    // startSignInFlow is our mocked method on __mobileMocks; wait for microtask
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(window.__mobileMocks.startSignInFlow).toHaveBeenCalled();
+  });
+
+  test('clicking overflow menu sign-in button calls startSignInFlow fallback when supabase is not available', async () => {
+    // Load mobile.js with our mocked startSignInFlow
+    loadMobileModuleWithStartSignIn();
+
+    const btn = document.getElementById('googleSignInBtnMenu');
     expect(btn).not.toBeNull();
 
     btn.click();
