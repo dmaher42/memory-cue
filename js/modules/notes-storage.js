@@ -18,51 +18,44 @@ const generateId = () => {
 };
 
 const decodeLegacyBody = (body) => {
-  if (typeof body !== 'string') {
-    return '';
-  }
+  if (typeof body !== 'string') return '';
 
   const trimmed = body.trim();
-  if (!trimmed.length) {
-    return '';
+  if (!trimmed.length) return '';
+
+  // If there is no markup, return the original body
+  if (!/[<>]/.test(trimmed)) return body;
+
+  try {
+    if (typeof document !== 'undefined') {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = trimmed;
+      const text =
+        typeof wrapper.innerText === 'string' && wrapper.innerText.length
+          ? wrapper.innerText
+          : wrapper.textContent || '';
+      return text.replace(/\r?\n/g, '\n');
+    }
+  } catch (e) {
+    // Ignore DOM conversion errors and fall back to regex handling below.
   }
 
-  // If the body already contains HTML, preserve it verbatim to retain formatting.
-  if (/[<>]/.test(trimmed)) {
-    return body;
-  }
+  // Fallback: regex-based HTML stripping when DOM is unavailable.
+  // Run replacements in a loop until no more tags are found to handle nested/incomplete tags.
+  let result = trimmed;
+  let previousResult;
+  do {
+    previousResult = result;
+    result = result
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/div[^>]*>/gi, '\n')
+      .replace(/<\/p[^>]*>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  } while (result !== previousResult);
 
-  return body;
-};
-
-const normalizeBodyValue = (body) => {
-  if (typeof body !== 'string') {
-    return '';
-  }
-
-  const trimmed = body.trim();
-  if (!trimmed.length) {
-    return '';
-  }
-
-  // Preserve HTML markup, but still tolerate legacy plain-text bodies.
-  if (/[<>]/.test(trimmed)) {
-    return body;
-  }
-
-  return decodeLegacyBody(body);
-};
-
-const extractPlainText = (html = '') => {
-  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-    const temp = document.createElement('div');
-    temp.innerHTML = typeof html === 'string' ? html : '';
-    return (temp.textContent || temp.innerText || '').trim();
-  }
-  if (typeof html !== 'string') {
-    return '';
-  }
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return result.replace(/\n{3,}/g, '\n\n');
 };
 
 const isValidDateString = (value) => {
@@ -75,26 +68,14 @@ const isValidDateString = (value) => {
 
 export const createNote = (title, body, overrides = {}) => {
   const trimmedTitle = typeof title === 'string' ? title.trim() : '';
-  const rawBodyHtml =
-    typeof overrides.bodyHtml === 'string' && overrides.bodyHtml.length
-      ? overrides.bodyHtml
-      : body;
-  const normalizedBodyHtml = normalizeBodyValue(rawBodyHtml);
-  const providedBodyText = typeof overrides.bodyText === 'string' ? overrides.bodyText : null;
-  const normalizedBodyText = providedBodyText && providedBodyText.trim().length
-    ? providedBodyText.trim()
-    : extractPlainText(normalizedBodyHtml);
   return {
     id: overrides.id && typeof overrides.id === 'string' ? overrides.id : generateId(),
     title: trimmedTitle || 'Untitled note',
-    body: normalizedBodyHtml,
-    bodyHtml: normalizedBodyHtml,
-    bodyText: normalizedBodyText,
+    body: typeof body === 'string' ? decodeLegacyBody(body) : '',
     updatedAt:
       overrides.updatedAt && isValidDateString(overrides.updatedAt)
         ? overrides.updatedAt
         : new Date().toISOString(),
-    folderId: overrides.folderId && typeof overrides.folderId === 'string' ? overrides.folderId : null,
   };
 };
 
@@ -106,28 +87,25 @@ const normalizeNotes = (value) => {
           return null;
         }
         const title = typeof note.title === 'string' ? note.title.trim() : '';
-        const rawBodyHtml =
-          typeof note.bodyHtml === 'string' && note.bodyHtml.length
-            ? note.bodyHtml
-            : note.body;
-        const body = normalizeBodyValue(rawBodyHtml);
-        const bodyText =
-          typeof note.bodyText === 'string' && note.bodyText.trim().length
-            ? note.bodyText.trim()
-            : extractPlainText(body);
+        let body = typeof note.body === 'string' ? decodeLegacyBody(note.body) : '';
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
+
         if (!title && !body && !note.body) {
           return null;
         }
+
+        // If decodeLegacyBody stripped all text but the original raw body contained
+        // HTML, preserve the original HTML so notes with only markup aren't lost.
+        if (!body && note.body && /<[^>]+>/.test(note.body)) {
+          body = note.body;
+        }
+
         return {
           id,
           title: title || 'Untitled note',
           body,
-          bodyHtml: body,
-          bodyText,
           updatedAt,
-          folderId: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
         };
       })
       .filter(Boolean);
@@ -135,15 +113,11 @@ const normalizeNotes = (value) => {
 
   if (value && typeof value === 'object') {
     const title = typeof value.title === 'string' ? value.title : '';
-    const rawBodyHtml = typeof value.bodyHtml === 'string' && value.bodyHtml.length
-      ? value.bodyHtml
-      : typeof value.body === 'string'
-        ? value.body
-        : '';
-    const body = normalizeBodyValue(rawBodyHtml);
-    const bodyText = typeof value.bodyText === 'string' && value.bodyText.trim().length
-      ? value.bodyText.trim()
-      : extractPlainText(body);
+    const rawBody = typeof value.body === 'string' ? value.body : '';
+    let body = rawBody ? decodeLegacyBody(rawBody) : '';
+    if (!body && rawBody && /<[^>]+>/.test(rawBody)) {
+      body = rawBody;
+    }
     if (!title && !body) {
       return [];
     }
@@ -151,9 +125,6 @@ const normalizeNotes = (value) => {
       createNote(title, body, {
         id: typeof value.id === 'string' ? value.id : undefined,
         updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : undefined,
-        folderId: typeof value.folderId === 'string' ? value.folderId : undefined,
-        bodyHtml: body,
-        bodyText,
       }),
     ];
   }
@@ -230,15 +201,12 @@ export const saveAllNotes = (notes, options = {}) => {
     return false;
   }
 
-  const serializable = notes.map((note) => {
-    const normalized = normalizeNotes([note]);
-    // Ensure folderId is present in exported object
-    const out = normalized[0];
-    if (out) {
-      out.folderId = typeof note.folderId === 'string' && note.folderId ? note.folderId : out.folderId || null;
-    }
-    return out;
-  }).filter(Boolean);
+  const serializable = notes
+    .map((note) => {
+      const normalized = normalizeNotes([note]);
+      return normalized[0];
+    })
+    .filter(Boolean);
 
   try {
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(serializable));
@@ -262,7 +230,7 @@ export const saveAllNotes = (notes, options = {}) => {
 
 export { NOTES_STORAGE_KEY };
 
-// Folders API
+// Folders API - preserved for compatibility
 const defaultFolders = () => [{ id: 'unsorted', name: 'Unsorted' }];
 
 export const getFolders = () => {
@@ -305,7 +273,6 @@ export const getFolders = () => {
   return defaults;
 };
 
-// Helper to look up a folder name by id
 export const getFolderNameById = (id) => {
   const folders = getFolders();
   const found = folders.find((f) => f && String(f.id) === String(id));
