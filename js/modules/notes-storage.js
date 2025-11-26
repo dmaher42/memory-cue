@@ -40,12 +40,22 @@ const decodeLegacyBody = (body) => {
     // Ignore DOM conversion errors and fall back to regex handling below.
   }
 
-  return trimmed
-    .replace(/<br\s*\/?\s*>/gi, '\n')
-    .replace(/<\/div[^>]*>/gi, '\n')
-    .replace(/<\/p[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\n{3,}/g, '\n\n');
+  // Fallback: regex-based HTML stripping when DOM is unavailable.
+  // Run replacements in a loop until no more tags are found to handle nested/incomplete tags.
+  let result = trimmed;
+  let previousResult;
+  do {
+    previousResult = result;
+    result = result
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/div[^>]*>/gi, '\n')
+      .replace(/<\/p[^>]*>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  } while (result !== previousResult);
+
+  return result.replace(/\n{3,}/g, '\n\n');
 };
 
 const isValidDateString = (value) => {
