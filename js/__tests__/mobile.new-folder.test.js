@@ -216,4 +216,37 @@ describe('mobile new folder modal interaction', () => {
     saveBtn.click();
     expect(saveClicked).toBe(true);
   });
+
+  test('wires new folder button when created after init (retry logic)', async () => {
+    // Unload module to simulate fresh environment where the button is not present at init
+    jest.resetModules();
+    document.getElementById('note-new-folder-button')?.remove();
+
+    // Ensure module load happens without the button and the retry will attempt to wire
+    loadMobileModule();
+
+    // Simulate the module retry: add button after a short delay, within the retry window
+    setTimeout(() => {
+      const btn = document.createElement('button');
+      btn.id = 'note-new-folder-button';
+      btn.type = 'button';
+      btn.textContent = 'New Folder';
+      document.body.appendChild(btn);
+    }, 25);
+
+    // Wait for async wiring attempts to run
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const newFolderBtn = document.getElementById('note-new-folder-button');
+    const modalEl = document.getElementById('newFolderModal');
+    expect(newFolderBtn).toBeTruthy();
+    // Retry wiring should expose window.openNewFolderDialog and mark the button wired
+    expect(typeof window.openNewFolderDialog).toBe('function');
+    // Expect wiring to have occurred
+    expect(newFolderBtn.dataset.__newFolderWired).toBe('true');
+    newFolderBtn.click();
+    // The modal show should toggle aria-hidden to false via the ModalController mock
+    expect(modalEl.getAttribute('aria-hidden')).toBe('false');
+    // no-op: we used real timers for this test
+  });
 });

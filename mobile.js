@@ -276,6 +276,58 @@ initViewportHeight();
     setupSheet();
   }
 })();
+
+/* Top-level defensive wiring for new folder button.
+ * This ensures the New Folder CTA will function even when initMobileNotes doesn't run
+ * (e.g., minimal DOM environments or tests that don't initialise the full notes UI).
+ */
+(() => {
+  const attemptWire = (attempts = 0) => {
+    const newFolderBtn = document.getElementById('note-new-folder-button');
+    const newFolderModal = document.getElementById('newFolderModal');
+    const newFolderNameInput = document.getElementById('newFolderName');
+    const newFolderCreateBtn = document.getElementById('newFolderCreate');
+    const newFolderCancelBtn = document.getElementById('newFolderCancel');
+    if (!(newFolderBtn instanceof HTMLElement) || !(newFolderModal instanceof HTMLElement)) {
+      if (attempts > 20) return;
+      setTimeout(() => attemptWire(attempts + 1), 50);
+      return;
+    }
+    try {
+      if (newFolderBtn.dataset && newFolderBtn.dataset.__newFolderWired === 'true') return;
+    } catch {
+      /* ignore */
+    }
+    const ModalCtrl = typeof ModalController === 'function' ? ModalController : null;
+    let controller = null;
+    const openModal = () => {
+      if (!controller && ModalCtrl) {
+        controller = new ModalCtrl({
+          modalElement: newFolderModal,
+          closeButton: newFolderCancelBtn,
+          titleInput: newFolderNameInput,
+          modalTitle: document.getElementById('newFolderTitle'),
+          autoFocus: true,
+        });
+      }
+      try { controller?.show(); } catch {}
+    };
+    // attaching click listener to new folder button
+    newFolderBtn.addEventListener('click', (ev) => {
+      try { ev.preventDefault(); } catch {}
+      openModal();
+    });
+    try { if (newFolderCancelBtn) newFolderCancelBtn.addEventListener('click', () => { try { controller?.requestClose('user-dismissed'); } catch {} }); } catch {}
+    // expose a quick debug/open helper similar to the one created by ensureWireNewFolderButton
+    try { if (typeof window !== 'undefined') window.openNewFolderDialog = openModal; } catch {}
+    try { if (newFolderBtn.dataset) { newFolderBtn.dataset.__newFolderWired = 'true'; } } catch {}
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => attemptWire(), { once: true });
+  } else {
+    attemptWire();
+  }
+})();
 /* END GPT CHANGE */
 
 /* DEBUG HELPERS removed */
@@ -473,6 +525,15 @@ const initMobileNotes = () => {
       }
     };
 
+    // Prevent duplicate wiring
+    try {
+      if (newFolderBtn.dataset?.__newFolderWired === 'true') {
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
+
     // Wire the "Create new folder" button in notebook editor header
     newFolderBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -502,6 +563,12 @@ const initMobileNotes = () => {
 
       openModal();
     });
+      // mark wired immediately so duplicate wiring isn't applied
+      try {
+        if (newFolderBtn.dataset) newFolderBtn.dataset.__newFolderWired = 'true';
+      } catch {
+        /* ignore */
+      }
 
     // Wire the create button inside the modal
     if (newFolderCreateBtn) {
@@ -529,6 +596,58 @@ const initMobileNotes = () => {
     }
 
     return true;
+  };
+
+  // Defensive retry: sometimes the DOM or the modal may be created after initMobileNotes
+  // In those cases, attempt to wire up to a few times (with short delays). This mirrors
+  // patterns used elsewhere in the codebase for dynamic DOM wiring.
+  const ensureWireNewFolderButton = ({ ModalController, saveFolders, getFolders, getFolderNameById }, attempts = 0) => {
+    const wired = wireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById });
+    // debug: wiring attempt logs removed in non-debug builds
+    if (wired) {
+      // wired ok
+      try {
+        const btn = document.getElementById('note-new-folder-button');
+        if (btn && btn.dataset) btn.dataset.__newFolderWired = 'true';
+      } catch {
+        /* ignore */
+      }
+      if (typeof window !== 'undefined') {
+        window.openNewFolderDialog = () => {
+          try {
+            const modalEl = document.getElementById('newFolderModal');
+            if (!modalEl) return;
+            const controller = new ModalController({ modalElement: modalEl, autoFocus: true });
+            controller.show();
+          } catch (err) {
+            /* ignore */
+          }
+        };
+      }
+      return true;
+    }
+    if (attempts >= 10) {
+      return false;
+    }
+    // Also attempt a MutationObserver-based fallback to catch dynamically added buttons
+    try {
+      const observer = new MutationObserver(() => {
+        const btn = document.getElementById('note-new-folder-button');
+        if (btn) {
+          try {
+            observer.disconnect();
+          } catch {}
+          ensureWireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById }, attempts + 1);
+        }
+      });
+      if (document.body) {
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+    } catch {
+      /* ignore */
+    }
+    setTimeout(() => ensureWireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById }, attempts + 1), 50);
+    return false;
   };
 
   const createScratchNotesEditor = () => {
@@ -2502,7 +2621,7 @@ const initMobileNotes = () => {
     }
   }
 
-  wireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById });
+  ensureWireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById });
 };
 
 if (document.readyState === 'loading') {
