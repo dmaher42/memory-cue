@@ -1,4 +1,5 @@
 const NOTES_STORAGE_KEY = 'memoryCueNotes';
+const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
 const LEGACY_NOTE_KEYS = ['mobileNotes'];
 
 const hasLocalStorage = () => typeof localStorage !== 'undefined';
@@ -220,8 +221,6 @@ export const saveAllNotes = (notes, options = {}) => {
 export { NOTES_STORAGE_KEY };
 
 // Folders API - preserved for compatibility
-const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
-
 const defaultFolders = () => [{ id: 'unsorted', name: 'Unsorted' }];
 
 export const getFolders = () => {
