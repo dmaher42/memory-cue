@@ -5696,6 +5696,9 @@
         }
       };
 
+      // expose helper so other scripts (or inline event handlers) can call it
+      if (typeof window !== 'undefined') window.focusNotebookInputs = focusNotebookInputs;
+
       const setActiveFooterIcon = (buttonId) => {
         document
           .querySelectorAll('#mobile-nav-shell .floating-card')
@@ -5737,6 +5740,29 @@
           window.dispatchEvent(
             new CustomEvent('app:navigate', {
               detail: { view: 'notebook' }
+            })
+          );
+          focusNotebookInputs();
+          return;
+        }
+
+        if (view === 'notebook') {
+          window.dispatchEvent(
+            new CustomEvent('app:navigate', {
+              detail: { view }
+            })
+          );
+          focusNotebookInputs();
+          return;
+        }
+
+        // When clicking the notebook footer button, ensure the notebook view
+        // receives focus so the editor is active. This mirrors the behavior we
+        // trigger when the 'add-note' target is used to navigate to the notebook.
+        if (view === 'notebook') {
+          window.dispatchEvent(
+            new CustomEvent('app:navigate', {
+              detail: { view }
             })
           );
           focusNotebookInputs();
@@ -5914,9 +5940,9 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script src="js/register-service-worker.js" defer></script>
-  <script type="module" src="mobile.js?v=2025-10-29-1"></script>
-  <script type="module" src="js/mobile-theme-toggle.js"></script>
+  <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
+  <script type="module" src="./assets/mobile-TDVPIG43.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
       background: radial-gradient(circle at 50% 10%, rgba(104, 65, 144, 0.14), transparent 38%),
@@ -6265,16 +6291,6 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <script id="mobile-enhancements">
-    document.querySelectorAll('[data-close]').forEach((btn) => {
-      btn.addEventListener('click', (event) => {
-        const trigger = event.target;
-        const dialog = trigger?.closest?.('.sheet, .modal');
-        if (dialog) {
-          dialog.classList.add('hidden');
-        }
-      });
-    });
-
     (function () {
       const list = document.getElementById('reminderList');
       if (!list) return;
@@ -7287,36 +7303,7 @@
           }
         });
 
-  <script id="mobile-enhancements">
-    document.querySelectorAll('[data-close]').forEach((btn) => {
-      btn.addEventListener('click', (event) => {
-        const trigger = event.target;
-        const dialog = trigger?.closest?.('.sheet, .modal');
-        if (!dialog) return;
-
-        // Prefer the page's sheet close API so all state is cleaned up.
-        try {
-          if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
-            try { window.closeAddTask('data-close'); return; } catch(e) { /* fallback */ }
-          }
-        } catch {}
-
-        // If no API available, dispatch the standard cue:close event so modules that
-        // listen for it can perform proper teardown, then hide the element as a fallback.
-        try {
-          document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'data-close', trigger } }));
-        } catch (e) {
-          // ignore
-        }
-
-        // Final fallback: hide the dialog element (keeps backward compatibility).
-        dialog.classList.add('hidden');
-        dialog.setAttribute('hidden', '');
-        dialog.setAttribute('aria-hidden', 'true');
-        dialog.removeAttribute('open');
-      });
-    });
-
+  
         return reminders.map(normaliseReminder).filter(Boolean);
       };
 
