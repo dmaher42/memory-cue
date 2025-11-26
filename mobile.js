@@ -2526,7 +2526,6 @@ const supabaseAuthController = initSupabaseAuth({
     statusIndicator: ['#mcStatus'],
     feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
   },
-  disableButtonBinding: true,
   onSessionChange: (user) => {
     notesSyncController?.handleSessionChange(user);
   },
