@@ -6264,17 +6264,7 @@
   </div>
   <!-- END GPT CHANGE: settings modal -->
 
-  <script id="mobile-enhancements">
-    document.querySelectorAll('[data-close]').forEach((btn) => {
-      btn.addEventListener('click', (event) => {
-        const trigger = event.target;
-        const dialog = trigger?.closest?.('.sheet, .modal');
-        if (dialog) {
-          dialog.classList.add('hidden');
-        }
-      });
-    });
-
+ 
     (function () {
       const list = document.getElementById('reminderList');
       if (!list) return;
@@ -7287,36 +7277,7 @@
           }
         });
 
-  <script id="mobile-enhancements">
-    document.querySelectorAll('[data-close]').forEach((btn) => {
-      btn.addEventListener('click', (event) => {
-        const trigger = event.target;
-        const dialog = trigger?.closest?.('.sheet, .modal');
-        if (!dialog) return;
-
-        // Prefer the page's sheet close API so all state is cleaned up.
-        try {
-          if (typeof window !== 'undefined' && typeof window.closeAddTask === 'function') {
-            try { window.closeAddTask('data-close'); return; } catch(e) { /* fallback */ }
-          }
-        } catch {}
-
-        // If no API available, dispatch the standard cue:close event so modules that
-        // listen for it can perform proper teardown, then hide the element as a fallback.
-        try {
-          document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'data-close', trigger } }));
-        } catch (e) {
-          // ignore
-        }
-
-        // Final fallback: hide the dialog element (keeps backward compatibility).
-        dialog.classList.add('hidden');
-        dialog.setAttribute('hidden', '');
-        dialog.setAttribute('aria-hidden', 'true');
-        dialog.removeAttribute('open');
-      });
-    });
-
+  
         return reminders.map(normaliseReminder).filter(Boolean);
       };
 
