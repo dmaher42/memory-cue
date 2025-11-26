@@ -829,6 +829,21 @@ const initMobileNotes = () => {
 
   bindSavedNotesSheetEvents();
 
+  // Expose helper functions so the footer nav script can close overlays
+  if (typeof window !== 'undefined') {
+    try {
+      window.hideSavedNotesSheet = hideSavedNotesSheet;
+      window.closeMoveFolderSheet = closeMoveFolderSheet;
+      window.closeOverflowMenu = closeOverflowMenu;
+      // closeAddTask is already exported elsewhere but ensure it's available
+      if (typeof window.closeAddTask === 'function') {
+        window.closeAddTask = window.closeAddTask;
+      }
+    } catch (e) {
+      // no-op in restricted environments
+    }
+  }
+
   const getNormalizedFilterQuery = () =>
     typeof filterQuery === 'string' ? filterQuery.trim().toLowerCase() : '';
 
