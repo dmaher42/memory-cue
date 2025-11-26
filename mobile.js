@@ -334,7 +334,25 @@ initViewportHeight();
 (function () {
   function wireHeaderAuthButtons() {
     function resolveSignIn() {
-      // Prefer test-provided mock
+      // Check for Supabase client with signInWithOAuth
+      if (typeof window !== 'undefined') {
+        // Check mock supabase client
+        if (window.__mobileMocks && typeof window.__mobileMocks.initSupabaseAuth === 'function') {
+          try {
+            const authController = window.__mobileMocks.initSupabaseAuth();
+            if (authController?.supabase?.auth && typeof authController.supabase.auth.signInWithOAuth === 'function') {
+              return () => authController.supabase.auth.signInWithOAuth({ provider: 'google' });
+            }
+          } catch (err) {
+            console.debug('initSupabaseAuth check failed:', err);
+          }
+        }
+        // Check window.supabase client
+        if (window.supabase?.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
+          return () => window.supabase.auth.signInWithOAuth({ provider: 'google' });
+        }
+      }
+      // Fall back to test-provided mock startSignInFlow
       if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
         return window.__mobileMocks.startSignInFlow;
       }
