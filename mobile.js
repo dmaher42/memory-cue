@@ -334,25 +334,25 @@ initViewportHeight();
 (function () {
   function wireHeaderAuthButtons() {
     function resolveSignIn() {
-      // First check if a Supabase client with signInWithOAuth is available (via mocks or window.supabase)
+      // Check for Supabase client with signInWithOAuth
       if (typeof window !== 'undefined') {
-        // Check for mock supabase client from initSupabaseAuth
+        // Check mock supabase client
         if (window.__mobileMocks && typeof window.__mobileMocks.initSupabaseAuth === 'function') {
           try {
             const authController = window.__mobileMocks.initSupabaseAuth();
             if (authController?.supabase?.auth && typeof authController.supabase.auth.signInWithOAuth === 'function') {
               return () => authController.supabase.auth.signInWithOAuth({ provider: 'google' });
             }
-          } catch {
-            // Fall through to other methods
+          } catch (err) {
+            console.debug('initSupabaseAuth check failed:', err);
           }
         }
-        // Check for window.supabase client
+        // Check window.supabase client
         if (window.supabase?.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
           return () => window.supabase.auth.signInWithOAuth({ provider: 'google' });
         }
       }
-      // Prefer test-provided mock startSignInFlow
+      // Fall back to test-provided mock startSignInFlow
       if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
         return window.__mobileMocks.startSignInFlow;
       }
