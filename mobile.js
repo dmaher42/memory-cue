@@ -376,36 +376,47 @@ initViewportHeight();
     }
 
     try {
-      const signIn = document.getElementById('googleSignInBtn');
-      const signOut = document.getElementById('googleSignOutBtn');
+      // Wire both header buttons and overflow menu buttons
+      const signInButtons = [
+        document.getElementById('googleSignInBtn'),
+        document.getElementById('googleSignInBtnMenu'),
+      ].filter(Boolean);
+      const signOutButtons = [
+        document.getElementById('googleSignOutBtn'),
+        document.getElementById('googleSignOutBtnMenu'),
+      ].filter(Boolean);
 
-      if (signIn && !signIn._mcAuthWired) {
-        signIn.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          try {
-            const fn = resolveSignIn();
-            const result = fn && fn();
-            if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
-          } catch (e) {
-            console.error('Sign-in handler failed', e);
-          }
-        });
-        signIn._mcAuthWired = true;
-      }
+      signInButtons.forEach((signIn) => {
+        if (signIn && !signIn._mcAuthWired) {
+          signIn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            try {
+              const fn = resolveSignIn();
+              const result = fn && fn();
+              if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
+            } catch (e) {
+              console.error('Sign-in handler failed', e);
+            }
+          });
+          signIn._mcAuthWired = true;
+        }
+      });
 
-      if (signOut && !signOut._mcAuthWired) {
-        signOut.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          try {
-            const fn = resolveSignOut();
-            const result = fn && fn();
-            if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
-          } catch (e) {
-            console.error('Sign-out handler failed', e);
-          }
-        });
-        signOut._mcAuthWired = true;
-      }
+      signOutButtons.forEach((signOut) => {
+        if (signOut && !signOut._mcAuthWired) {
+          signOut.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            try {
+              const fn = resolveSignOut();
+              const result = fn && fn();
+              if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
+            } catch (e) {
+              console.error('Sign-out handler failed', e);
+            }
+          });
+          signOut._mcAuthWired = true;
+        }
+      });
     } catch (e) {
       console.error('Header auth wiring failed', e);
     }
@@ -2720,8 +2731,8 @@ const notesSyncController = initNotesSync();
 
 const supabaseAuthController = initSupabaseAuth({
   selectors: {
-    signInButtons: ['#googleSignInBtn'],
-    signOutButtons: ['#googleSignOutBtn'],
+    signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
+    signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
     userBadge: '#user-badge',
     userBadgeEmail: '#user-badge-email',
     userBadgeInitial: '#user-badge-initial',
@@ -2757,7 +2768,8 @@ if (supabaseAuthController?.supabase) {
 // an auth flow either via the Supabase client or via the startSignInFlow helper.
 (() => {
   try {
-    const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn'));
+    // Wire both header and overflow menu sign-in buttons
+    const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn, #googleSignInBtnMenu'));
     if (!signInButtons.length) return;
     signInButtons.forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
