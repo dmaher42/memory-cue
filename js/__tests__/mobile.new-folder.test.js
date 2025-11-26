@@ -10,6 +10,19 @@ const vm = require('vm');
 function loadMobileModule() {
   const filePath = path.resolve(__dirname, '../../mobile.js');
   let source = fs.readFileSync(filePath, 'utf8');
+  // Strip out ES module import lines - tests provide necessary mocks via window.__mobileMocks
+  source = source.replace(/^import[\s\S]*?;\s*$/mg, '');
+  const preamble = `
+const initViewportHeight = window.__mobileMocks?.initViewportHeight || (() => () => {});
+const initReminders = window.__initReminders || window.__mobileMocks?.initReminders || (async () => {});
+const initSupabaseAuth = window.__initSupabaseAuth || window.__mobileMocks?.initSupabaseAuth || (() => {});
+const startSignInFlow = window.__startSignInFlow || window.__mobileMocks?.startSignInFlow || (async () => {});
+const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__notesModule || window.__mobileMocks || { loadAllNotes: () => [], saveAllNotes: () => {}, createNote: (n) => n, NOTES_STORAGE_KEY: 'memoryCue:notes' };
+const initNotesSync = window.__initNotesSync || window.__mobileMocks?.initNotesSync || (() => ({ handleSessionChange() {}, setSupabaseClient() {} }));
+const { getFolders, getFolderNameById, assignNoteToFolder, saveFolders } = window.__notesModule || window.__mobileMocks || { getFolders: () => [], getFolderNameById: () => '', assignNoteToFolder: () => {}, saveFolders: () => {} };
+const ModalController = window.__notesModule?.ModalController || window.__mobileMocks?.ModalController || class { constructor(){} show(){} hide(){} };
+`;
+  source = preamble + source;
   // Replace various imports with mocked window objects for tests
   source = source.replace(
     "import { initViewportHeight } from './js/modules/viewport-height.js';",

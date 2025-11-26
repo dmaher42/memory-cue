@@ -81,7 +81,6 @@ afterEach(() => {
   localStorage.clear();
   document.body.innerHTML = '';
 });
-
 test('clicking #googleSignInBtn calls startSignInFlow via the wireAuthButton', async () => {
   // Arrange: inject a startSignInFlow stub that increments a global counter
   global.__startCalled = 0;
@@ -94,6 +93,7 @@ test('clicking #googleSignInBtn calls startSignInFlow via the wireAuthButton', a
     listWrapperSel: '#remindersWrapper',
     emptyStateSel: '#emptyState',
     listSel: '#reminderList',
+    googleSignInBtnSel: '#googleSignInBtn',
     firebaseDeps: createFirebaseStubs(),
   });
 
