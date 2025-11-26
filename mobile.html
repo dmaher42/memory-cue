@@ -6788,8 +6788,9 @@
           const isActive = key === target;
 
           if (view) {
-            view.classList.toggle('hidden', !isActive);
-            view.setAttribute('aria-hidden', String(!isActive));
+            const shouldBeVisible = (key === target) || (target === 'new' && key === 'reminders');
+            view.classList.toggle('hidden', !shouldBeVisible);
+            view.setAttribute('aria-hidden', String(!shouldBeVisible));
           }
 
           if (button) {
