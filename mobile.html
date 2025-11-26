@@ -5595,7 +5595,7 @@
     </main>
   </div>
 
-  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
+  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 flex justify-center pointer-events-none px-2 pb-3" style="z-index:10001;">
     <div class="floating-footer">
       <button
         type="button"
@@ -5711,6 +5711,12 @@
 
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
+
+        // Close any open overlays before navigating so the view is visible
+        try { window.hideSavedNotesSheet?.(); } catch (e) { /* ignore */ }
+        try { window.closeMoveFolderSheet?.(); } catch (e) { /* ignore */ }
+        try { window.closeOverflowMenu?.(); } catch (e) { /* ignore */ }
+        try { if (typeof window.closeAddTask === 'function') window.closeAddTask(); } catch (e) { /* ignore */ }
 
         setActiveFooterIcon(button.id);
 
