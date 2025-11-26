@@ -1,6 +1,6 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
-import { initSupabaseAuth } from './js/supabase-auth.js';
+import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';
 import {
   loadAllNotes,
   saveAllNotes,
@@ -2547,6 +2547,45 @@ if (supabaseAuthController?.supabase) {
     /* noop */
   }
 }
+
+// Ensure sign-in button is wired on mobile even when `initSupabaseAuth` is called
+// with `disableButtonBinding: true`. This guarantees the Google sign-in CTA triggers
+// an auth flow either via the Supabase client or via the startSignInFlow helper.
+(() => {
+  try {
+    const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn'));
+    if (!signInButtons.length) return;
+    signInButtons.forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
+      // Prevent duplicate wiring
+      if (btn.dataset.__signedInWired === 'true') return;
+      btn.addEventListener('click', async (ev) => {
+        try {
+          ev.preventDefault();
+        } catch {}
+        // Prefer using the Supabase client if available
+        try {
+          const supabase = supabaseAuthController?.supabase;
+          if (supabase && supabase.auth && typeof supabase.auth.signInWithOAuth === 'function') {
+            await supabase.auth.signInWithOAuth({ provider: 'google' });
+            return;
+          }
+        } catch (err) {
+          // Fall through to the generic startSignInFlow fallback
+          console.warn('Supabase signInWithOAuth attempt failed, falling back to startSignInFlow', err);
+        }
+        try {
+          await startSignInFlow();
+        } catch (err) {
+          // no-op – errors are handled/logged by startSignInFlow
+        }
+      });
+      btn.dataset.__signedInWired = 'true';
+    });
+  } catch (err) {
+    /* noop */
+  }
+})();
 
 (() => {
   const menuBtn = document.getElementById('overflowMenuBtn');

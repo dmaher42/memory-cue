@@ -20,7 +20,7 @@ function loadMobileModule() {
   );
   source = source.replace(
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const { initSupabaseAuth } = window.__mobileMocks;'
+    "const { initSupabaseAuth, startSignInFlow } = window.__mobileMocks;"
   );
   source = source.replace(
     "import { ModalController } from './js/modules/modal-controller.js';",
@@ -60,6 +60,7 @@ describe('mobile footer navigation', () => {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
       initSupabaseAuth: jest.fn(),
+      startSignInFlow: jest.fn(),
       ModalController: class ModalController {
         constructor() {}
         show() {}

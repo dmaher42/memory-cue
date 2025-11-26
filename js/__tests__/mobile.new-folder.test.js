@@ -21,7 +21,7 @@ function loadMobileModule() {
   );
   source = source.replace(
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const { initSupabaseAuth } = window.__mobileMocks;'
+    "const { initSupabaseAuth, startSignInFlow } = window.__mobileMocks;"
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -57,7 +57,7 @@ function loadMobileModule() {
   );
   source = source.replace(
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const { initSupabaseAuth } = window.__mobileMocks;'
+    "const { initSupabaseAuth, startSignInFlow } = window.__mobileMocks;"
   );
   source = source.replace(
     "import { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } from './js/modules/notes-storage.js';",
@@ -132,6 +132,7 @@ describe('mobile new folder modal interaction', () => {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
       initSupabaseAuth: jest.fn().mockReturnValue({}),
+      startSignInFlow: jest.fn(),
       getFolders: () => [{ id: 'unsorted', name: 'Unsorted' }],
       getFolderNameById: (id) => (id === 'unsorted' ? 'Unsorted' : 'Custom'),
       saveFolders: () => true,

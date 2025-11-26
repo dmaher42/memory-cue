@@ -20,7 +20,7 @@ function loadMobileModule() {
   );
   source = source.replace(
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const { initSupabaseAuth } = window.__mobileMocks;'
+    "const { initSupabaseAuth, startSignInFlow } = window.__mobileMocks;"
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -99,6 +99,7 @@ describe('mobile sheet opener events', () => {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
       initSupabaseAuth: jest.fn(),
+      startSignInFlow: jest.fn(),
       loadAllNotes: () => [],
       saveAllNotes: () => {},
       createNote: () => ({}),

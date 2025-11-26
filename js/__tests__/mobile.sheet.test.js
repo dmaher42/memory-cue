@@ -19,7 +19,7 @@ function runMobileModule(window) {
   );
   source = source.replace(
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const initSupabaseAuth = window.__initSupabaseAuth;',
+    'const initSupabaseAuth = window.__initSupabaseAuth; const startSignInFlow = window.__startSignInFlow;'
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -103,6 +103,7 @@ describe('mobile create sheet interactions', () => {
   test('clicking Save Reminder triggers handlers when sheet content stops bubbling', async () => {
     window.__saveClicks = 0;
     window.__initSupabaseAuth = jest.fn();
+    window.__startSignInFlow = jest.fn();
     window.__notesModule = {
       loadAllNotes: () => [],
       saveAllNotes: () => {},
