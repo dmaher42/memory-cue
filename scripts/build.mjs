@@ -128,7 +128,7 @@ async function copyStatic() {
     }
   }
 
-  const directories = ['icons', 'styles', 'css', 'memory', 'js'];
+  const directories = ['icons', 'styles', 'css', 'memory'];
   for (const dir of directories) {
     const source = path.join(rootDir, dir);
     try {

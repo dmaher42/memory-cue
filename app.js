@@ -2708,43 +2708,247 @@ function renderResourcesList(resources = [], lessonId = '') {
 
 
 function renderPlannerLessons(plan) {
-  const plannerGrid = document.querySelector('.planner-grid');
-  if (!plannerGrid) {
+  if (!plannerCardsContainer) {
     return;
   }
-
+  updatePlannerTeacherNotesPanel(plan);
   const lessons = Array.isArray(plan?.lessons) ? plan.lessons : [];
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-
-  const lessonsByDay = days.map(day => ({
-    day,
-    lessons: lessons.filter(lesson => lesson.dayName === day)
-  }));
-
-  lessonsByDay.forEach(dayData => {
-    const dayCard = plannerGrid.querySelector(`.day-card:nth-child(${days.indexOf(dayData.day) + 1})`);
-    const dayContent = dayCard.querySelector('.day-content');
-
-    if (dayData.lessons.length === 0) {
-      dayContent.innerHTML = '<p class="text-sm text-base-content/60">No lessons planned for this day.</p>';
-      return;
-    }
-
-    dayContent.innerHTML = dayData.lessons.map(lesson => `
-      <div class="lesson-card">
-        <p class="lesson-title">${lesson.title}</p>
-        <div class="lesson-details">
-          ${lesson.details.map(detail => `
-            <div class="lesson-tag">
-              <span class="tag-dot" style="background-color: ${detail.color || '#888'};"></span>
-              <span>${detail.text}</span>
+  const targetWeekId = plan?.weekId || activePlannerWeekId || defaultPlannerWeekId;
+  const slots = buildPlannerSlotsForWeek(lessons, targetWeekId);
+  const lessonsToRender = lessons;
+  const hasSlots = slots.some((slot) => slot.type === 'slot');
+  if (!lessons.length && !hasSlots) {
+    renderPlannerMessage('No lessons or timetable slots yet. Start by adding a timetable entry.');
+    renderPlannerWeekView([], slots);
+    return;
+  }
+  const lessonIds = lessonsToRender
+    .map((lesson) => (typeof lesson.id === 'string' && lesson.id ? lesson.id : ''))
+    .filter((id) => Boolean(id));
+  if (selectedPlannerLessonId && !lessonIds.includes(selectedPlannerLessonId)) {
+    selectedPlannerLessonId = null;
+  }
+  const markup = lessonsToRender
+    .map((lesson) => {
+      const detailItems = Array.isArray(lesson.details)
+        ? lesson.details
+            .map((detail) => {
+              const badge = detail.badge
+                ? `<span class="badge badge-outline badge-sm text-secondary">${escapeCueText(detail.badge)}</span>`
+                : '';
+              return `
+                <li class="flex items-center gap-2">
+                  ${badge}
+                  <span class="text-sm text-base-content/80">${escapeCueText(detail.text)}</span>
+                </li>
+              `;
+            })
+            .join('')
+        : '';
+      const detailsSection = detailItems
+        ? `<ul class="space-y-2 text-sm text-base-content/80">${detailItems}</ul>`
+        : '<p class="text-sm text-base-content/60">No details yet.</p>';
+      const lessonId = typeof lesson.id === 'string' ? lesson.id : '';
+      const isSelected = Boolean(selectedPlannerLessonId && lessonId && selectedPlannerLessonId === lessonId);
+      const selectionAttributes = ['data-planner-lesson', lessonId ? `data-lesson-id="${lessonId}"` : '', isSelected ? 'data-planner-selected="true"' : '']
+        .filter(Boolean)
+        .join(' ');
+      const summaryMarkup = lesson.summary
+        ? `<p class="text-sm text-base-content/80">${escapeCueText(lesson.summary)}</p>`
+        : '';
+      const subjectLabel = getLessonSubjectLabel(lesson);
+      const subjectBadgeClass = getLessonSubjectBadgeClass(subjectLabel);
+      const subjectBadge = subjectLabel
+        ? `<span class="badge ${subjectBadgeClass} badge-sm">${escapeCueText(subjectLabel)}</span>`
+        : '';
+      const notesValue = typeof lesson.notes === 'string' ? lesson.notes : '';
+      const notesOpen = isPlannerLessonNotesOpen(lessonId);
+      const notesSection = lessonId
+        ? `
+            <details
+              class="planner-notes-collapse"
+              data-planner-notes-collapse="true"
+              data-lesson-id="${lessonId}"
+              ${notesOpen ? 'open' : ''}
+            >
+              <summary class="planner-notes-summary">
+                <span class="label-text text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Lesson notes</span>
+                <span class="planner-notes-summary-indicator" aria-hidden="true"></span>
+              </summary>
+              <div class="planner-notes-panel">
+                <label class="form-control w-full gap-1">
+                  <textarea
+                    class="textarea textarea-bordered w-full min-h-[6rem] text-base-content"
+                    data-planner-notes="true"
+                    data-lesson-id="${lessonId}"
+                    placeholder="Write lesson notes"
+                    spellcheck="true"
+                    aria-label="Lesson notes"
+                  >${escapeCueText(notesValue)}</textarea>
+                  <div class="label py-1">
+                    <span class="label-text-alt text-xs text-base-content/60">
+                      Status:
+                      <span
+                        data-notes-status-text
+                        data-status="idle"
+                        role="status"
+                        aria-live="polite"
+                      >${escapeCueText(PLANNER_NOTES_STATUS_TEXT.idle)}</span>
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </details>
+          `
+        : '';
+      const lessonActionsMenu = lessonId
+        ? `
+            <div class="dropdown dropdown-end">
+              <label tabindex="0" class="btn btn-ghost btn-circle btn-sm" aria-label="Lesson actions">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+                  <circle cx="12" cy="6" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                  <circle cx="12" cy="18" r="1.5" />
+                </svg>
+              </label>
+              <ul tabindex="0" class="dropdown-content menu rounded-box z-[1] mt-2 w-48 bg-base-100 p-2 shadow">
+                <li><button type="button" data-planner-action="move-up" data-lesson-id="${lessonId}">Move up</button></li>
+                <li><button type="button" data-planner-action="move-down" data-lesson-id="${lessonId}">Move down</button></li>
+                <li><button type="button" data-planner-action="duplicate" data-lesson-id="${lessonId}">Duplicate</button></li>
+                <li><button type="button" data-planner-action="edit" data-lesson-id="${lessonId}">Edit</button></li>
+                <li>
+                  <button type="button" class="text-error" data-planner-action="delete" data-lesson-id="${lessonId}">
+                    Delete
+                  </button>
+                </li>
+              </ul>
             </div>
-          `).join('')}
+          `
+        : '';
+      const addActionsMenu = `
+        <div class="dropdown">
+          <label tabindex="0" class="btn btn-sm btn-outline gap-2" aria-label="Add lesson detail or reminder">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path d="M12 5c.552 0 1 .448 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H6a1 1 0 1 1 0-2h5V6c0-.552.448-1 1-1Z" />
+            </svg>
+            Add
+          </label>
+          <ul tabindex="0" class="dropdown-content menu rounded-box z-[1] mt-2 w-56 bg-base-100 p-2 shadow">
+            <li>
+              <button type="button" data-planner-action="add-detail" data-lesson-id="${lessonId}">Add detail</button>
+            </li>
+            <li>
+              <button
+                type="button"
+                data-planner-action="create-reminder"
+                data-open-reminder-modal="true"
+                data-lesson-id="${lessonId}"
+              >
+                Create reminder
+              </button>
+            </li>
+          </ul>
         </div>
-        <button class="btn btn-sm btn-outline add-detail-btn">Add detail</button>
-      </div>
-    `).join('');
-  });
+      `;
+      const statusSelect = lessonId ? renderStatusSelect(lessonId, lesson.status) : '';
+      const resourcesList = renderResourcesList(Array.isArray(lesson.resources) ? lesson.resources : [], lessonId);
+      const statusBadge = LESSON_STATUS_CONFIG[lesson.status]?.badge || LESSON_STATUS_CONFIG.not_started.badge;
+      const statusLabel = LESSON_STATUS_CONFIG[lesson.status]?.label || LESSON_STATUS_CONFIG.not_started.label;
+      const scheduleLabelParts = [lesson.weekDay || lesson.dayLabel || 'Lesson'];
+      if (lesson.period) {
+        scheduleLabelParts.push(lesson.period);
+      }
+      const scheduleLabel = scheduleLabelParts.filter(Boolean).join(' · ');
+      return `
+        <article class="card border border-base-300 bg-base-100 shadow-lg transition hover:-translate-y-1 hover:shadow-xl" ${selectionAttributes}>
+          <div class="card-body gap-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">
+                  <span>${escapeCueText(scheduleLabel)}</span>
+                  <span class="badge ${statusBadge} badge-xs">${escapeCueText(statusLabel)}</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="text-lg font-semibold text-base-content">${escapeCueText(lesson.title || lesson.dayLabel || 'Lesson')}</h2>
+                  ${subjectBadge}
+                </div>
+                ${summaryMarkup}
+                <div class="flex flex-wrap items-center gap-3">
+                  ${statusSelect}
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                ${lessonActionsMenu}
+              </div>
+            </div>
+            ${detailsSection}
+            <div class="rounded-xl border border-base-200 bg-base-200/60 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60">Resources</p>
+                  <p class="text-xs text-base-content/70">Link slides, videos, and activity sheets.</p>
+                </div>
+                <span class="badge badge-outline badge-sm">${Array.isArray(lesson.resources) ? lesson.resources.length : 0} linked</span>
+              </div>
+              <div class="mt-2 space-y-2">
+                ${resourcesList}
+                <div class="grid gap-2 md:grid-cols-[1fr_1.5fr_auto]">
+                  <input
+                    type="text"
+                    class="input input-bordered input-sm w-full"
+                    placeholder="Label (e.g. Slides)"
+                    data-resource-label="true"
+                    data-lesson-id="${lessonId}"
+                  />
+                  <input
+                    type="url"
+                    class="input input-bordered input-sm w-full"
+                    placeholder="URL"
+                    data-resource-url="true"
+                    data-lesson-id="${lessonId}"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    data-planner-action="add-resource"
+                    data-lesson-id="${lessonId}"
+                  >
+                    Add resource
+                  </button>
+                </div>
+              </div>
+            </div>
+            ${notesSection}
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="dropdown dropdown-end">
+                <label tabindex="0" class="btn btn-ghost btn-xs">Add template</label>
+                <ul tabindex="0" class="dropdown-content menu rounded-box z-[1] mt-2 w-64 bg-base-100 p-2 shadow">
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="simple" data-lesson-id="${lessonId}">Simple lesson template</button></li>
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="hpe" data-lesson-id="${lessonId}">HPE lesson template</button></li>
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="english" data-lesson-id="${lessonId}">English lesson template</button></li>
+                  <li><button type="button" data-planner-action="apply-template" data-template-type="cac" data-lesson-id="${lessonId}">CAC lesson template</button></li>
+                </ul>
+              </div>
+              ${addActionsMenu}
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+  const slotCards = slots
+    .filter((slot) => slot.type === 'slot' && slot.entry)
+    .map((slot) => renderPlannerSlotCard(slot.entry))
+    .join('');
+  const combinedMarkup = [markup, slotCards].filter(Boolean).join('');
+  if (!combinedMarkup) {
+    renderPlannerMessage('No lessons or timetable slots yet. Start by adding a timetable entry.');
+    renderPlannerWeekView([], slots);
+    return;
+  }
+  plannerCardsContainer.innerHTML = combinedMarkup;
+  setSelectedPlannerLesson(selectedPlannerLessonId);
+  renderPlannerWeekView(lessonsToRender, slots);
 }
 
 function renderPlannerWeekView(lessons = [], slots = null) {

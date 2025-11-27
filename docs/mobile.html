@@ -1,123 +1,75 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light" class="h-full">
 <head>
+  <base href="/memory-cue/" />
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
   <script type="module" src="./assets/init-env-MQHJLMJ2.js" defer></script>
-  <script type="module" src="./assets/config-supabase-UH2FHEHM.js" defer></script>
+  <script type="module" src="./assets/config-supabase-MP3TZUE5.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
   <!-- === /SUPABASE CONFIG === -->
-  <base href="./" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
     :root {
-      --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
-      --cauliflower-blue: #F7F7FA;
-      --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
-      --text-primary: #231B2E; /* Deep violet text */
-      --text-secondary: #5b4a68; /* Muted violet */
-      --text-strong: #34163f;
-      --text-body:  #4a3c57;
-      --text-muted: #9a8bb0;
-      --text-main: #1F1A24;               /* deep neutral */
-      --text-secondary: #4A4153;          /* softer label text */
-      --text-placeholder: var(--text-muted);        /* subtle, elegant placeholder */
-      --font-primary: 'Inter', system-ui, sans-serif;
-      --font-size-title: 1.1rem;
-      --font-size-body: 0.95rem;
-      --accent-color: #512663; /* Deep violet accent */
-      --surface-main: #F7F7FA;      /* page / shell */
-      --surface-elevated: #F9F9FB;  /* cards, pills, editor containers */
-      --border-subtle: #E3D9F4;
-      --text-main: #231B2E;
-      --success-color: #8ed6c1;
-      --background-color: var(--surface-main); /* soft pale backdrop */
-      --background-gradient: linear-gradient(
-        135deg,
-        #F7F7FA 0%,
-        #ECE7F3 50%,
-        #D9CDEB 100%
-      );
-      --hover-bg: rgba(81, 38, 99, 0.06);
-      --shadow-color: rgba(81, 38, 99, 0.12);
-      --icon-inactive: #4c5c7a;
-      --icon-active: #512663;
-      --true-blue: #0073cf;
+      --card-bg: #FFFFFF;
+      --card-border: #CBE6D5;
+      --text-primary: #1F2A24;
+      --text-secondary: #4C6457;
+      --accent-color: #B5A9FF;
+      --success-color: #63C69B;
+      --background-color: #eef2ff;
+      --hover-bg: #DCEFE2;
+      --shadow-color: rgba(31, 42, 36, 0.08);
       --delete-color: #EF6A6A;
-
-      --cat-yellow: #f2d38b;
-      --cat-red:    #f29cab;
-      --cat-green:  #9ed8b7;
-      --cat-violet: #c6b4f2;
 
       /* Legacy tokens mapped to Calming Tones palette */
       --primary-color: var(--accent-color);
-      --primary-dark: #3E1D4C;
-      --secondary-color: #9E88C9;
+      --primary-dark: #7A6AE0;
+      --secondary-color: #B5A9FF;
       --warning-color: #F7C56C;
       --info-color: var(--accent-color);
       --bg-color: var(--background-color);
       --border-color: var(--card-border);
-      --card-border-strong: color-mix(in srgb, var(--card-border) 65%, var(--text-primary) 35%);
       --priority-high-border: #F4A259; /* Bio Orange */
-      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 12%, var(--card-bg));
+      --priority-high-bg: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
       --priority-medium-border: #6C8AE4; /* Quantum Blue */
-      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 10%, var(--card-bg));
+      --priority-medium-bg: color-mix(in srgb, var(--priority-medium-border) 16%, #FFFFFF);
       --priority-low-border: #6B8F71; /* Digital Sage */
-      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 10%, var(--card-bg));
+      --priority-low-bg: color-mix(in srgb, var(--priority-low-border) 16%, #FFFFFF);
       --priority-high-color: #ef4444; /* Tailwind red-500 */
       --priority-medium-color: #eab308; /* Tailwind yellow-500 */
       --priority-low-color: #22c55e; /* Tailwind green-500 */
-      --cat-yellow: #f2d38b;
-      --cat-red:    #f29cab;
-      --cat-green:  #9ed8b7;
-      --cat-violet: #c6b4f2;
       --shadow-sm: 0 1px 3px var(--shadow-color);
       --shadow-md: 0 4px 12px var(--shadow-color);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      --reminder-card-padding-y: 0.9rem;
-      --reminder-card-padding-x: 1rem;
-      --reminder-card-gap: 0.625rem;
-      --reminder-card-font-size: 0.9rem;
+      --reminder-card-padding-y: 0.35rem;
+      --reminder-card-padding-x: 0.6rem;
+      --reminder-card-gap: 0.3rem;
+      --reminder-card-font-size: 0.85rem;
 
-      /* Mobile chrome with comprehensive warm grey background */
-      --mobile-header-bg: var(--surface-main); /* Soft Pale Lilac header */
-      --mobile-header-border: var(--border-subtle);
-      --mobile-header-shadow: 0 14px 30px rgba(81, 38, 99, 0.12);
-      --mobile-header-text: var(--text-main);
-      --mobile-header-button-bg: var(--surface-elevated); /* off-white buttons */
-      --mobile-header-button-color: #512663;
-      --mobile-header-button-border: var(--border-subtle);
-      --mobile-quick-surface: var(--surface-elevated); /* complementary off-white surface */
-      --mobile-footer-bg: var(--surface-main);
-      --mobile-quick-shadow: 0 20px 34px rgba(81, 38, 99, 0.12);
-    }
-
-    /* Force Soft Pale Lilac/Blue backgrounds with high specificity */
-    .header-inner,
-    .header-quick-add,
-    #quickAddBar {
-      background: var(--mobile-header-bg) !important;
-      color: var(--mobile-header-text) !important;
-    }
-
-    .mobile-view-inner,
-    #scratch-notes-card {
-      background: var(--mobile-quick-surface) !important;
+      /* Mobile chrome for refreshed indigo shell */
+      --mobile-header-bg: #5080bf; /* Cauliflower blue header */
+      --mobile-header-border: rgba(80, 128, 191, 0.82);
+      --mobile-header-shadow: 0 18px 32px rgba(80, 128, 191, 0.35);
+      --mobile-header-text: #e8edff;
+      --mobile-header-button-bg: color-mix(in srgb, var(--card-bg) 94%, rgba(80, 128, 191, 0.16));
+      --mobile-header-button-color: #e8edff;
+      --mobile-header-button-border: rgba(80, 128, 191, 0.82);
+      --mobile-quick-surface: #1f3252; /* updated quick surface token to match header */
+      --mobile-quick-shadow: 0 20px 34px rgba(34, 52, 86, 0.45);
     }
 
     html[data-theme="dark"],
     html.dark {
-      --mobile-header-bg: #F7F7FA; /* match Soft Pale Lilac header */
-      --mobile-header-border: rgba(81, 38, 99, 0.12);
-      --mobile-header-shadow: 0 14px 30px rgba(81, 38, 99, 0.12);
-      --mobile-header-text: #512663;
-      --mobile-header-button-bg: #F9F9F9;
-      --mobile-header-button-color: #512663;
-      --mobile-header-button-border: rgba(81, 38, 99, 0.14);
-      --mobile-quick-surface: #F9F9F9;
-      --mobile-quick-shadow: 0 18px 30px rgba(81, 38, 99, 0.12);
-      --card-border-strong: color-mix(in srgb, var(--card-border) 50%, var(--text-primary) 50%);
+      --mobile-header-bg: #5080bf; /* match new cauliflower blue header */
+      --mobile-header-border: rgba(80, 128, 191, 0.9);
+      --mobile-header-shadow: 0 16px 32px rgba(80, 128, 191, 0.4);
+      --mobile-header-text: #e8edff;
+      --mobile-header-button-bg: color-mix(in srgb, rgba(80, 128, 191, 0.6) 100%, transparent);
+      --mobile-header-button-color: #e8edff;
+      --mobile-header-button-border: rgba(80, 128, 191, 0.9);
+      --mobile-quick-surface: color-mix(in srgb, rgba(20, 32, 52, 0.94) 94%, transparent);
+      --mobile-quick-shadow: 0 18px 30px rgba(34, 52, 86, 0.6);
     }
 
     .pt-safe-top {
@@ -137,8 +89,6 @@
     .task-item,
     .cue-task-card {
       background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, color-mix(in srgb, var(--accent-color) 6%, transparent) 0%, transparent 70%);
-      background-repeat: no-repeat;
       border: 1px solid var(--card-border);
       border-left-width: 3px;
       border-left-color: var(--card-border);
@@ -149,9 +99,7 @@
     .task-item.priority-high,
     .cue-task-card[data-priority="High"],
     .cue-task-card.priority-high {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
+      background-color: var(--priority-high-bg);
       border-color: var(--priority-high-border);
       border-left-color: var(--priority-high-border);
       border-style: solid;
@@ -162,9 +110,7 @@
     .task-item.priority-medium,
     .cue-task-card[data-priority="Medium"],
     .cue-task-card.priority-medium {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
+      background-color: var(--priority-medium-bg);
       border-color: var(--priority-medium-border);
       border-left-color: var(--priority-medium-border);
       border-style: solid;
@@ -175,51 +121,11 @@
     .task-item.priority-low,
     .cue-task-card[data-priority="Low"],
     .cue-task-card.priority-low {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
+      background-color: var(--priority-low-bg);
       border-color: var(--priority-low-border);
       border-left-color: var(--priority-low-border);
       border-style: solid;
       border-width: 1px;
-    }
-
-    .reminder-title-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.15rem;
-      border-radius: 0.35rem;
-      transition: var(--transition);
-    }
-
-    .reminder-title-toggle:focus-visible {
-      outline: 2px solid var(--accent-color);
-      outline-offset: 2px;
-    }
-
-    .reminder-title-pinned {
-      font-weight: 700;
-      color: var(--accent-color);
-    }
-
-    .reminder-title-unpinned {
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    /* Premium gradient background for the writing panel */
-    .premium-gradient {
-      background: linear-gradient(
-        45deg,
-        hsla(50, 68%, 93%, 1) 0%,
-        hsla(18, 88%, 66%, 1) 20%,
-        hsla(7, 73%, 68%, 1) 45%,
-        hsla(288, 55%, 55%, 1) 100%
-      );
-      background-attachment: fixed;
-      background-size: cover;
-      padding: 0.75rem;
-      border-radius: 1rem;
     }
 
   .container {
@@ -254,7 +160,7 @@
   }
 
   body[data-active-view="notebook"] #view-notebook {
-    background: #FBFBFB;
+    background: var(--card-bg);
   }
 
   body[data-active-view="notebook"] #view-notebook .card {
@@ -265,177 +171,14 @@
     background: transparent;
   }
 
-  /* Distraction-free writing environment background */
-  .mobile-panel--notes {
-    background: var(--background-gradient);
-  }
-
-  .mobile-panel--notes .mobile-view-inner {
-    background: var(--background-gradient);
-  }
-
-  .mobile-panel--notes #scratch-notes-card {
-    background: var(--background-gradient);
-  }
-
   [data-view="notebook"] .textarea {
     min-height: 0 !important;
   }
 
   body[data-active-view="notebook"] #view-notebook .card-body {
-    padding: clamp(0.75rem, 4vw, 1.25rem);
-    padding-bottom: clamp(3rem, 8vw, 4.5rem);
+    padding: clamp(1.25rem, 5vw, 2rem);
+    padding-bottom: clamp(5rem, 10vw, 6rem);
     min-height: calc(100dvh - 4rem);
-  }
-
-  .mobile-panel--notes {
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .mobile-panel--notes .mobile-view-inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
-  }
-
-  .mobile-panel--notes header.mobile-header {
-    flex-shrink: 0;
-  }
-
-  .mobile-panel--notes #scratch-notes-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    max-width: 640px;
-    margin: 12px auto 0;
-    padding: 0.75rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0.75rem));
-    position: relative;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.08),
-      0 0 0 1px rgba(255, 255, 255, 0.7);
-  }
-
-  #view-notebook #scratch-notes-card > * + * {
-    margin-top: 0.35rem;
-  }
-
-  .mobile-panel--notes #scratch-notes-card .notes-editor {
-    flex: 1;
-    min-height: clamp(9rem, 32vh, 18rem);
-    max-height: clamp(12rem, 40vh, 22rem);
-    overflow-y: auto;
-  }
-
-  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
-    margin-top: auto;
-    padding-top: 0.5rem;
-    padding-bottom: env(safe-area-inset-bottom, 0.75rem);
-  }
-
-  /* Keep note action buttons fixed and accessible without scrolling on all viewports */
-  .mobile-panel--notes #scratch-notes-card {
-    /* make room for the fixed action bar so content isn't hidden */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3rem);
-  }
-
-  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
-    position: fixed;
-    left: 0.5rem;
-    right: 0.5rem;
-    /* Position above the bottom navigation bar so buttons don't overlap the footer */
-    bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.25rem);
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.5rem 0.6rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.02), transparent);
-    box-shadow: 0 -6px 18px rgba(0,0,0,0.06);
-    border-radius: 0.6rem;
-    z-index: 60;
-  }
-
-  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom .btn {
-    /* keep New and Save visually identical: fixed width */
-    width: 3.6rem;
-    box-sizing: border-box;
-    padding: 0.35rem 0;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-
-  /* Top-right compact actions (aligned with Title input) */
-  .mobile-panel--notes #scratch-notes-card .note-actions-top {
-    position: absolute;
-    top: 0.6rem;
-    right: 0.85rem;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    z-index: 70;
-  }
-
-  .mobile-panel--notes #scratch-notes-card .note-actions-top .btn {
-    min-width: 2.6rem;
-    padding: 0.25rem 0.6rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
-  /* Shrink the mobile Save button by 75% (reduce to 25% scale) */
-  #noteSaveMobile {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transform: none;
-    padding: 0.35rem 0;
-    font-size: 1rem;
-    font-weight: 600;
-    width: 3.6rem;
-    box-sizing: border-box;
-    border-radius: 0.45rem;
-    line-height: 1;
-    z-index: 70;
-  }
-
-  @media (max-width: 640px) {
-    .mobile-panel--notes #scratch-notes-card {
-      /* make room for the fixed action bar so content isn't hidden */
-      padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 3rem);
-    }
-
-    .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
-      position: fixed;
-      left: 0.5rem;
-      right: 0.5rem;
-      /* Position above the bottom navigation bar so buttons don't overlap the footer */
-      bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.25rem);
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.5rem 0.6rem;
-      background: linear-gradient(to top, rgba(0,0,0,0.02), transparent);
-      box-shadow: 0 -6px 18px rgba(0,0,0,0.06);
-      border-radius: 0.6rem;
-      z-index: 60;
-    }
-
-    .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom .btn {
-      width: 3.6rem;
-      box-sizing: border-box;
-      padding: 0.35rem 0;
-      font-size: 1rem;
-      font-weight: 600;
-    }
   }
 
   .mobile-shell #view-notebook .card {
@@ -466,47 +209,10 @@
     padding-bottom: env(safe-area-inset-bottom, 0.75rem);
   }
 
-  #mobile-nav-shell .btm-nav {
-    min-height: 2rem;
-    padding-top: 0.25rem;
-      padding-bottom: env(safe-area-inset-bottom, 0.75rem);
-      margin-top: auto;
-  }
-
-  #mobile-nav-shell .btm-nav button {
-    min-height: auto;
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
-  /* Center labels and adjust spacing for footer nav buttons */
-  #mobile-nav-shell .btm-nav button span {
-    display: block;
-    text-align: center;
-    font-size: 0.95rem;
-    font-weight: 600;
-    line-height: 1;
-    padding: 0;
-  }
-
   .btm-nav button.active {
-    background-color: var(--accent-color, var(--mobile-quick-surface));
-    color: #FFFFFF;
+    background-color: color-mix(in srgb, var(--accent-color, #2563eb) 22%, transparent);
+    color: var(--accent-color, #2563eb);
     font-weight: 600;
-    border-radius: 12px;
-  }
-
-  .btm-nav button:not(.active) {
-    background-color: #F7F7FA;
-    color: #424242;
-    border-radius: 12px;
-    margin: 2px;
   }
 
   .mobile-shell #noteBodyMobile {
@@ -519,9 +225,9 @@
   }
 
   .mobile-shell #noteBodyMobile:focus-visible {
-    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
+    outline: 2px solid var(--accent-color, #2563eb);
     outline-offset: 0;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 25%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 25%, transparent);
   }
 
   .mobile-shell #view-notebook .note-body-wrapper {
@@ -575,26 +281,18 @@
   }
 
   #savedNotesSheet .saved-notes-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: min(92vw, 28rem);
-    transform: translate(-50%, calc(-50% + 24px)) scale(0.96);
-    opacity: 0;
-    transition:
-      transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
-      opacity 0.25s ease;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
   #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+    transform: translateY(0);
   }
 
   .note-body-field {
     position: relative;
     border-radius: 1.25rem;
-    border: 1.5px solid var(--card-border-strong);
+    border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
     background: color-mix(in srgb, var(--card-bg) 94%, rgba(148, 163, 184, 0.12));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
     overflow: hidden;
@@ -602,13 +300,8 @@
   }
 
   .note-body-field:focus-within {
-    border-color: color-mix(in srgb, var(--accent-color) 60%, var(--card-border-strong));
+    border-color: color-mix(in srgb, var(--accent-color) 70%, var(--card-border));
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
-  }
-
-  .mobile-panel--notes #scratch-notes-card {
-    border: 1.5px solid var(--card-border-strong);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
   }
 
   .note-body-field::before {
@@ -649,10 +342,17 @@
     opacity: 0.8;
   }
 
+  #noteTitleMobile {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
-    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
+    outline: 2px solid var(--accent-color, #2563eb);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 18%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, #2563eb) 18%, transparent);
   }
 
   .mobile-shell #notesListMobile .line-clamp-2 {
@@ -674,89 +374,6 @@
     gap: 8px;
     padding: 8px 0 16px;
   }
-
-  .notebook-folder-filter-bar {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 6px;
-    margin-bottom: 10px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  .notebook-folder-chip {
-    border-radius: 999px;
-    border: 1px solid rgba(47, 27, 63, 0.12);
-    background: rgba(255, 255, 255, 0.85);
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    color: var(--primary-dark);
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, color 0.14s ease;
-  }
-
-  .notebook-folder-chip--active {
-    background: var(--accent-color, #512663);
-    border-color: var(--accent-color, #512663);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
-  }
-
-  .notebook-note-card {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 4px 18px rgba(81, 38, 99, 0.1);
-    padding: 10px 14px;
-    margin-bottom: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .notebook-note-title {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--primary-dark);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
-  .notebook-note-snippet {
-    font-size: 0.8rem;
-    color: rgba(47, 27, 63, 0.7);
-    max-height: 2.4em;
-    overflow: hidden;
-  }
-
-  .notebook-note-meta-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .notebook-note-timestamp {
-    font-size: 0.72rem;
-    color: rgba(47, 27, 63, 0.55);
-  }
-
-  .notebook-note-folder-pill {
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: 0.7rem;
-    background: rgba(81, 38, 99, 0.06);
-    color: rgba(47, 27, 63, 0.85);
-    max-width: 40%;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    cursor: pointer;
-  }
-
 
   .mobile-shell #notesListMobile .note-item-mobile {
     margin: 0;
@@ -820,93 +437,12 @@
   }
 
   .mobile-shell #savedNotesSheet .saved-notes-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: min(92vw, 28rem);
-    transform: translate(-50%, calc(-50% + 24px)) scale(0.96);
-    opacity: 0;
-    transition:
-      transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
-      opacity 0.25s ease;
-    /* Premium glassy card styling */
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 22px;
-    box-shadow: 0 20px 40px rgba(81, 38, 99, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.5);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
   .mobile-shell #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-
-  /* Saved Notes Sheet Title Styling */
-  .mobile-shell #savedNotesSheet #savedNotesSheetTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-strong, #34163f);
-    letter-spacing: 0.01em;
-  }
-
-  /* Reduce spacing in saved notes sheet */
-  .mobile-shell #savedNotesSheet .saved-notes-panel > div {
-    gap: 0.5rem;
-  }
-
-  .mobile-shell #savedNotesSheet .flex.justify-center {
-    padding-top: 0.75rem;
-    padding-bottom: 0.5rem;
-  }
-
-  .mobile-shell #savedNotesSheet .flex.items-center.justify-between {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-bottom: 0.5rem;
-  }
-
-  /* Tighten spacing between folder chips and search bar */
-  .mobile-shell #savedNotesSheet .notebook-folder-bar {
-    padding: 0.5rem 0.75rem 0.75rem;
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-folder-filter-bar {
-    padding: 3px;
-    gap: 6px;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-
-  /* Reduce padding around search input */
-  .mobile-shell #savedNotesSheet .px-3.pb-3 {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-
-  /* Style the search input */
-  .mobile-shell #savedNotesSheet .notebook-search-bar {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 999px;
-    border: 1px solid rgba(230, 224, 242, 0.8);
-    background: rgba(248, 245, 252, 0.6);
-    font-size: 0.85rem;
-    color: var(--text-main, #231b2e);
-    transition: border-color 0.18s ease, background-color 0.18s ease;
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-search-bar:focus {
-    outline: none;
-    border-color: var(--primary-dark, #3E1D4C);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.1);
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-search-bar::placeholder {
-    color: rgba(47, 27, 63, 0.5);
+    transform: translateY(0);
   }
 
   .quick-actions-panel {
@@ -957,7 +493,7 @@
     background: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
     color: color-mix(in srgb, var(--card-bg) 96%, transparent);
     transform: translateY(-1px);
-    box-shadow: 0 14px 28px rgba(0, 121, 107, 0.2);
+    box-shadow: 0 14px 28px rgba(79, 70, 229, 0.2);
     outline: none;
   }
 
@@ -975,7 +511,7 @@
   html[data-theme="dark"] .quick-action-btn:focus-visible,
   html.dark .quick-action-btn:hover,
   html.dark .quick-action-btn:focus-visible {
-    box-shadow: 0 16px 32px rgba(0, 121, 107, 0.65);
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
   }
 
   .quick-action-icon {
@@ -1014,65 +550,56 @@
     grid-auto-rows: auto;
   }
 
-    /* Each reminder item uses the premium soft elevated card styling */
+    /* Each reminder item uses the Calming Tones card styling */
     #reminderList > * {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      column-gap: 10px;
-      row-gap: 2px;
-      padding: 10px 14px;
-      margin: 0 0 10px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
+      gap: var(--reminder-card-gap);
+      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      margin: 0;
+      border: 1px solid var(--card-border);
       font-size: var(--reminder-card-font-size);
-      line-height: 1.25;
-      background: rgba(255, 255, 255, 0.74);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 14px;
-      box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
-      transition: box-shadow 0.18s ease, transform 0.18s ease;
+      line-height: 1.4;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px var(--shadow-color);
+      transition: all 0.2s ease;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
       position: static;
-      border-left: 4px solid var(--cat-violet);
     }
 
     #reminderList > *:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(81, 38, 99, 0.12);
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transform: translateY(-2px);
+      border-color: var(--accent-color);
     }
 
     /* --- Priority Tints & Borders --- */
 
     /* Update the base card to include a default border */
     .reminder-card {
-      border-left: 4px solid var(--cat-violet);
-      transition: box-shadow 0.18s ease, transform 0.18s ease;
+      border-left: 3px solid var(--border-color);
+      transition: all 0.2s ease;
     }
 
     /* High priority: Bio Orange tint + border */
     .reminder-card.priority-high {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
+      background-color: var(--priority-high-bg);
       border-left-color: var(--priority-high-border);
     }
 
     /* Medium priority: Quantum Blue tint + border */
     .reminder-card.priority-medium {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
+      background-color: var(--priority-medium-bg);
       border-left-color: var(--priority-medium-border);
     }
 
     /* Low priority: Digital Sage accent */
     .reminder-card.priority-low {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
+      background-color: var(--priority-low-bg);
       border-left-color: var(--priority-low-border);
     }
 
@@ -1092,39 +619,29 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
-        column-gap: 10px;
-        row-gap: 2px;
-        padding: 10px 14px;
-        margin-bottom: 10px;
-        background: rgba(255, 255, 255, 0.74);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
+        gap: 0.5rem;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
         font-size: var(--reminder-card-font-size);
-        line-height: 1.25;
-        border-left: 4px solid var(--cat-violet);
+        line-height: 1.4;
       }
 
       #reminderList > .reminder-card.priority-high {
-        background-color: var(--card-bg);
-        background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
-        background-repeat: no-repeat;
+        background: var(--priority-high-bg);
         border-left: 3px solid var(--priority-high-border);
       }
 
       #reminderList > .reminder-card.priority-medium {
-        background-color: var(--card-bg);
-        background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
-        background-repeat: no-repeat;
+        background: var(--priority-medium-bg);
         border-left: 3px solid var(--priority-medium-border);
       }
 
       #reminderList > .reminder-card.priority-low {
-        background-color: var(--card-bg);
-        background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
-        background-repeat: no-repeat;
+        background: var(--priority-low-bg);
         border-left: 3px solid var(--priority-low-border);
       }
 
@@ -1137,22 +654,19 @@
       #reminderList > .reminder-card strong,
       #reminderList > .reminder-card [data-reminder-title] {
         margin: 0;
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: var(--primary-dark);
-        line-height: 1.25;
+        font-size: 1rem;
+        font-weight: 800;
       }
 
       #reminderList > .reminder-card time,
       #reminderList > .reminder-card .reminder-meta {
-        font-size: 0.78rem;
-        color: rgba(47, 27, 63, 0.55);
+        font-size: 0.825rem;
+        color: #6B7280;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;
-        margin-top: 0;
-        line-height: 1.25;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
       }
 
       #reminderList > .reminder-card .priority-pill {
@@ -1201,10 +715,10 @@
     #reminderList > * strong,
     #reminderList > * [data-reminder-title] {
       margin: 0;
-      color: var(--primary-dark);
-      font-weight: 500;
-      font-size: 0.95rem;
-      margin-bottom: 0;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
       grid-column: 1;
       min-width: 0; /* allow text to truncate */
       overflow: hidden;
@@ -1213,20 +727,18 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       line-clamp: 2;
-      line-height: 1.25;
     }
 
     /* Meta info (right side: date/time/status) */
     #reminderList > * time,
     #reminderList > * .reminder-meta {
-      color: rgba(47, 27, 63, 0.55);
-      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      margin-top: 0;
-      line-height: 1.25;
+      gap: var(--reminder-card-gap);
+      margin-top: 0.75rem;
       grid-column: 1 / -1;
     }
 
@@ -1238,11 +750,20 @@
     #reminderList > * p,
     #reminderList > * .description,
     #reminderList > * .details {
-      color: var(--text-body);
+      color: var(--text-secondary);
     }
     html,
     body {
       overflow-x: hidden;
+    }
+
+    /* Hide legacy blue header */
+    .mobile-header.legacy-header,
+    .app-header,
+    .masthead,
+    .header-bar,
+    header.sticky.top-0.z-40.w-full {
+      display: none !important;
     }
 
     /* Slim sticky header from reminders wrapper */
@@ -1252,9 +773,9 @@
       z-index: 50;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       padding: 0.5rem 1rem;
-      padding-top: env(safe-area-inset-top, 0);
+      padding-top: calc(env(safe-area-inset-top, 0) + 0.5rem);
       background-color: var(--surface-main);
       border-bottom: 1px solid var(--border-subtle);
       backdrop-filter: blur(12px);
@@ -1268,98 +789,6 @@
       height: 22px;
     }
 
-    /* Pill container in the header for quick‑add and icons */
-    #slimMobileHeader .header-pill {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.75rem;
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 9999px;
-      box-shadow: 0 2px 6px rgba(81, 38, 99, 0.15);
-      color: var(--text-main);
-    }
-
-    #slimMobileHeader .header-pill svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    /* Style the quick reminder input inside the pill */
-    #slimMobileHeader .header-pill input.quick-reminder {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 0.25rem 0.5rem;
-      color: var(--text-main);
-      font-size: 0.9rem;
-    }
-
-    /* Style the header action buttons inside the pill */
-    #slimMobileHeader .header-pill button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      border: none;
-      background: transparent;
-      color: var(--accent-color);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    .pill-voice-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      border: none;
-      background: transparent;
-      color: var(--accent-color);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      padding: 0;
-      transition:
-        background-color 0.15s ease,
-        box-shadow 0.15s ease,
-        transform 0.1s ease;
-    }
-
-    .pill-voice-btn:hover,
-    .pill-voice-btn:focus {
-      background-color: rgba(81, 38, 99, 0.08);
-    }
-
-    .pill-voice-btn.is-recording {
-      background-color: rgba(220, 38, 38, 0.08);
-      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
-      transform: scale(0.96);
-    }
-
-    .pill-voice-btn.is-recording svg {
-      color: #dc2626;
-    }
-
-    .fab-card,
-    .nav-card,
-    .pill-button {
-      font-family: var(--font-primary);
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    .pill-voice-btn {
-      font-family: var(--font-primary);
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
     #slimMobileHeader h1 {
       font-size: 1rem;
       font-weight: 600;
@@ -1370,13 +799,6 @@
     #slimMobileHeader .header-title {
       color: var(--text-main);
       font-weight: 600;
-    }
-
-    .header-title,
-    .header-center {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-strong, #34163f);
     }
 
     #slimMobileHeader .header-actions {
@@ -1418,7 +840,7 @@
     @media (max-width: 360px) {
       #slimMobileHeader {
         padding: 0.375rem 0.75rem;
-        padding-top: env(safe-area-inset-top, 0);
+        padding-top: calc(env(safe-area-inset-top, 0) + 0.375rem);
       }
 
       #slimMobileHeader h1 {
@@ -1452,17 +874,17 @@
   <link rel="manifest" href="./manifest.webmanifest" id="manifestLink" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <!-- Ensure this file exists; keep as-is or change to your actual icon -->
-  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles/tokens.css" />
-  <link rel="stylesheet" href="styles/a11y.css" />
+  <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/a11y.css" />
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
     integrity="sha384-yxrQVVFFRZdq4Z/YbeTDzSYbn1W6VnVonm2vAgnxtxUMehcccE4k2NufOz2tJnOe"
     crossorigin="anonymous"
   />
-  <link rel="stylesheet" href="styles/daisy-themes.css" />
-  <link rel="stylesheet" href="css/theme-mobile.css" />
+  <link rel="stylesheet" href="./styles/daisy-themes.css" />
+  <link rel="stylesheet" href="./css/theme-mobile.css" />
   <style>
     /* Accessibility helper */
     .sr-only {
@@ -1531,105 +953,29 @@
       background: color-mix(in srgb, var(--success-color) 90%, transparent);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-color) 18%, transparent);
     }
-
-    #view-notebook .mobile-view-inner {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 0.75rem 0.75rem 1rem;
-    }
-
-    #view-notebook .notebook-actions-row {
-      margin-bottom: 6px;
-      padding: 0.4rem 0.5rem;
-      border-radius: 12px;
-    }
-
-    #view-notebook #noteTitleMobile,
-    #view-notebook .seamless-title-input {
-      color: var(--text-strong, #34163f);
-      font-weight: 600;
-    }
-
-    #view-notebook #noteTitleMobile::placeholder {
-      color: var(--text-muted, #9a8bb0);
-    }
-    .note-title-field {
-      border: 1.5px solid var(--border-subtle);
-      border-radius: 1rem;
-      background-color: var(--surface-elevated);
-      color: var(--text-strong);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-    }
-
-    .dark .note-title-field {
-      background-color: var(--surface-elevated);
-      color: var(--text-strong);
-    }
-
-    .note-title-field:focus,
-    .note-title-field:focus-visible {
-      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--border-subtle));
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
-      background-color: var(--surface-elevated);
-    }
-
-    .note-title-field input {
-      background-color: transparent;
-      color: var(--text-strong);
-    }
-
-    .note-title-field input:focus {
-      outline: 2px solid rgba(81, 38, 99, 0.25);
-    }
-
-    .note-title-field input,
-    .seamless-title-input {
-      font-family: var(--font-primary);
-      font-size: var(--font-size-title);
-      font-weight: 600;
-      line-height: 1.4;
-      color: var(--text-strong);
-      letter-spacing: -0.2px;
-    }
-
     .notes-editor {
       min-height: 10rem;
       width: 100%;
-      border-radius: 1rem;
-      border: 1.5px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
       padding: 0.75rem 1rem;
-      background-color: var(--surface-elevated);
-      color: var(--text-main);
+      background-color: color-mix(in srgb, var(--card-bg) 90%, transparent);
+      color: inherit;
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 0.98rem;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       line-height: 1.6;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      transition: var(--transition);
     }
     .dark .notes-editor {
-      border-color: var(--border-subtle);
-      background-color: var(--surface-elevated);
+      border-color: color-mix(in srgb, var(--border-color) 35%, transparent);
+      background-color: color-mix(in srgb, var(--text-primary) 65%, transparent);
     }
     .notes-editor:focus-visible {
-      border-color: color-mix(in srgb, var(--accent-color) 60%, var(--border-subtle));
-      box-shadow: none;
-    }
-
-    .notes-editor:focus-within {
-      box-shadow:
-        0 0 0 1px rgba(81, 38, 99, 0.12),
-        0 0 0 4px rgba(81, 38, 99, 0.06);
-      transition: box-shadow 0.18s ease;
-    }
-
-    .notes-editor textarea,
-    .notes-editor[contenteditable="true"] {
-      background-color: transparent;
-      color: var(--text-main);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
     }
     .notes-editor:empty::before {
       content: attr(data-placeholder);
@@ -1819,174 +1165,6 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
-
-    /* Distraction-free writing environment styles */
-    .seamless-title-input {
-      transition: all 0.2s ease;
-    }
-
-    .seamless-title-input {
-      background-color: #f9f9f9;
-      border-radius: 10px;
-      color: var(--text-strong);
-      border: 1px solid #e6dff0;
-      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.03);
-      padding: 0.65rem 0.75rem;
-    }
-
-    .header-pill input::placeholder,
-    .note-title-field input::placeholder,
-    .seamless-title-input::placeholder {
-      color: var(--text-placeholder);
-    }
-
-    .seamless-title-input:focus {
-      background-color: var(--surface-elevated);
-      border-radius: 10px;
-      box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.18);
-      border-color: #512663;
-      outline: 2px solid rgba(81, 38, 99, 0.25);
-    }
-
-    .distraction-free-editor-container {
-      margin-top: 0;
-      background: rgba(249, 249, 252, 0.66);
-      border: 1px solid rgba(230, 225, 240, 0.75);
-      color: var(--text-body);
-      border-radius: 14px;
-      padding: 0.35rem;
-      transition: box-shadow 0.18s ease, border-color 0.18s ease;
-    }
-
-    .distraction-free-editor-container:focus-within {
-      box-shadow:
-        0 0 0 1px rgba(81, 38, 99, 0.12),
-        0 0 0 4px rgba(81, 38, 99, 0.06);
-    }
-
-    .minimal-editor {
-      border: 1px solid rgba(220, 214, 233, 0.9);
-      box-shadow: none;
-      transition: all 0.2s ease;
-      line-height: 1.45;
-      min-height: calc(100vh - 220px);
-      max-height: calc(100vh - 120px);
-      overflow-y: auto;
-      background: rgba(249, 249, 252, 0.96);
-      color: var(--text-body, #4a3c57);
-      border-radius: 12px;
-      font-family: var(--font-primary);
-      font-size: var(--font-size-body);
-      font-weight: 400;
-      padding: 10px 12px;
-    }
-
-    .minimal-editor:focus,
-    .minimal-editor[contenteditable="true"]:focus {
-      border-color: rgba(81, 38, 99, 0.22);
-      box-shadow: none;
-      outline: none;
-    }
-
-  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-base-100/90 backdrop-blur">
-    <div class="flex items-center gap-2 min-w-0">
-      <a href="#" class="flex items-center min-w-0">
-        <img src="./icons/icon-192.png" alt="Memory Cue" class="h-6 w-6 mr-2" />
-        <span class="font-semibold truncate">MC</span>
-      </a>
-      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
-      <span id="mcStatusText" class="sr-only">Offline</span>
-    </div>
-
-    .minimal-editor textarea:focus {
-      outline: 2px solid rgba(81, 38, 99, 0.25);
-    }
-
-    .minimal-editor textarea,
-    .minimal-editor[contenteditable="true"] {
-      background-color: transparent;
-      color: var(--text-body);
-    }
-
-    .minimal-editor:empty::before {
-      content: attr(data-placeholder);
-      color: var(--text-muted, #9a8bb0);
-      font-style: italic;
-    }
-
-    #view-notebook .editor-hint,
-    #view-notebook .note-subtitle {
-      color: var(--text-muted, #9a8bb0);
-    }
-
-    .formatting-toolbar-strip {
-      display: flex;
-      gap: 6px;
-      padding: 4px 6px;
-      margin-bottom: 6px;
-      border-radius: 999px;
-      background: rgba(247, 247, 250, 0.96);
-      border: 1px solid rgba(230, 225, 240, 0.9);
-      box-shadow: none;
-      min-height: auto;
-    }
-
-    .formatting-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: none;
-      background: transparent;
-      color: var(--accent-color, #512663);
-      cursor: pointer;
-      transition: background-color 0.18s ease, color 0.18s ease;
-      margin: 0;
-    }
-
-    .formatting-btn:hover,
-    .formatting-btn:focus-visible {
-      background: rgba(81, 38, 99, 0.08);
-      color: var(--accent-color, #512663);
-      outline: none;
-    }
-
-    .formatting-btn svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .format-toolbar svg,
-    .editor-toolbar svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .formatting-btn:hover {
-      background: rgba(81, 38, 99, 0.12);
-      color: #3d1e4a; /* Darker Deep Violet */
-      transform: translateY(-1px);
-    }
-
-    .formatting-btn:active {
-      transform: translateY(0);
-      background: rgba(81, 38, 99, 0.18);
-      color: #3d1e4a;
-    }
-
-    .formatting-btn:focus-visible {
-      outline: 2px solid rgba(81, 38, 99, 0.4);
-      outline-offset: 2px;
-    }
-    
-    /* Enhance the overall scratch notes card for seamless flow */
-    #scratch-notes-card {
-      border: none !important;
-      box-shadow: none !important;
-      padding: 0.5rem !important;
-    }
     .view-panel {
       display: grid;
       gap: 1.5rem;
@@ -2122,7 +1300,7 @@
       font-size: 1.05rem;
       font-weight: 700;
       line-height: 1.4;
-      color: color-mix(in srgb, var(--text-strong) 95%, transparent);
+      color: color-mix(in srgb, var(--text-primary) 95%, transparent);
       margin-bottom: 0.35rem;
     }
     .dark .task-title {
@@ -2146,7 +1324,7 @@
       margin-top: 0.3rem;
     }
     .task-meta-text {
-      color: var(--text-muted);
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
       font-size: 0.8rem;
       line-height: 1.4;
       margin: 0;
@@ -2155,7 +1333,7 @@
       margin-top: 0.25rem;
     }
     .dark .task-meta-text {
-      color: color-mix(in srgb, var(--card-bg) 70%, var(--text-muted) 30%);
+      color: color-mix(in srgb, var(--card-bg) 70%, var(--text-secondary) 30%);
     }
     .task-chip {
       display: inline-flex;
@@ -2223,11 +1401,11 @@
       border-top: 1px solid color-mix(in srgb, var(--border-color) 15%, transparent);
       font-size: 0.98rem;
       line-height: 1.6;
-      color: var(--text-body);
+      color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
     .dark .task-notes {
       border-top-color: color-mix(in srgb, var(--text-secondary) 30%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 80%, var(--text-body) 20%);
+      color: color-mix(in srgb, var(--card-bg) 80%, transparent);
     }
     .task-header {
       display: flex;
@@ -2323,163 +1501,11 @@
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-  /* Comprehensive Soft Pale Lilac background application */
-  body {
-    background: var(--background-gradient) !important;
-    color: #2f1b3f;
-  }
-
-  /* Floating footer buttons */
-  #mobile-nav-shell {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-  }
-
-  #mobile-nav-shell .floating-footer {
-    position: relative;
-    pointer-events: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 24px;
-    width: min(640px, 100%);
-    padding: 6px 1rem 12px;
-    margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
-    background: transparent;
-    backdrop-filter: none;
-    border-radius: 1rem;
-    box-shadow: none;
-  }
-
-  #mobile-nav-shell .floating-footer::before {
-    content: "";
-    position: absolute;
-    inset: 0.25rem 0.75rem;
-    border-radius: 999px;
-
-    background: rgba(255, 255, 255, 0.78);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-
-    border: 1px solid var(--border-subtle);
-    z-index: 0;
-  }
-
-  #mobile-nav-shell .floating-footer .floating-card {
-    flex-shrink: 0;
-  }
-
-  #mobile-nav-shell .floating-card {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-subtle);
-    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.08);
-    font-size: 0.85rem;
-    font-family: var(--font-primary);
-    font-weight: 500;
-    color: var(--icon-inactive);
-    transition:
-      background-color 0.18s ease,
-      transform 0.15s ease,
-      box-shadow 0.22s ease,
-      color 0.18s ease;
-  }
-
-  #mobile-nav-shell .floating-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(81, 38, 99, 0.12);
-  }
-
-  #mobile-nav-shell .floating-card:focus-visible {
-    outline: none;
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(81, 38, 99, 0.12);
-  }
-
-  #mobile-nav-shell .floating-card:active {
-    transform: scale(0.94);
-  }
-
-  #mobile-nav-shell .floating-card.active,
-  #mobile-nav-shell .floating-card.is-active {
-    background-color: rgba(255, 255, 255, 0.94);
-    border-color: var(--icon-active);
-    color: var(--icon-active);
-    box-shadow:
-      0 8px 20px rgba(81, 38, 99, 0.16),
-      0 0 0 1px color-mix(in srgb, var(--icon-active) 20%, transparent);
-  }
-
-  .icon {
-    width: 20px;
-    height: 20px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    display: block;
-  }
-
-  .header-pill svg,
-  .nav-card svg,
-  .fab-card svg,
-  .floating-card svg {
-    width: 20px;
-    height: 20px;
-    display: block;
-  }
-
-  #mobile-nav-shell .floating-fab {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 4.25rem;
-    height: 4.25rem;
-    border-radius: 999px;
-    background: var(--accent-color);
-    color: #FFFFFF;
-    box-shadow: 0 16px 38px rgba(81, 38, 99, 0.32), 0 6px 18px rgba(0, 0, 0, 0.14);
-    font-size: 1.6rem;
-    font-weight: 800;
-    border: none;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-  }
-
-  #mobile-nav-shell .floating-fab:hover,
-  #mobile-nav-shell .floating-fab:focus-visible {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 42px rgba(81, 38, 99, 0.38), 0 10px 20px rgba(0, 0, 0, 0.16);
-    outline: 3px solid rgba(81, 38, 99, 0.32);
-    outline-offset: 3px;
-  }
-
-  #mobile-nav-shell .floating-fab::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-    pointer-events: none;
-  }
-
-  /* Enhanced mobile body */
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: var(--background-gradient);
-    background-color: var(--background-color);
-    color: var(--text-primary);
+    /* Enhanced mobile body */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-primary);
       line-height: 1.6;
       margin: 0;
       padding: 0;
@@ -2492,14 +1518,9 @@
     /* Mobile main container */
     main {
       padding-top: 0;
-      padding-bottom: calc(6.5rem + var(--mobile-safe-area-bottom));
+      padding-bottom: calc(32px + var(--mobile-safe-area-bottom));
       min-height: calc(100vh - var(--mobile-header-height));
       scroll-padding-top: calc(var(--mobile-header-height) + 16px);
-    }
-
-    body.mobile,
-    #mobile-shell {
-      scroll-padding-top: 54px;
     }
 
     /* Mobile task items */
@@ -2545,46 +1566,6 @@
       min-height: 44px;
       border-radius: 12px;
       font-weight: 600;
-    }
-
-    /* Reminders tabs */
-    .mobile-shell .reminders-tabs-wrapper .tabs {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.5rem;
-      padding: 0;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-    }
-
-    .mobile-shell .reminders-tabs-wrapper .tab {
-      border-radius: 9999px;
-      border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
-      background-color: color-mix(in srgb, var(--card-bg) 92%, transparent);
-      color: var(--text-secondary);
-      font-weight: 600;
-      transition: var(--transition);
-    }
-
-    .mobile-shell .reminders-tabs-wrapper .tab.reminders-tab-active {
-      background-color: var(--accent-color);
-      border-color: color-mix(in srgb, var(--accent-color) 70%, transparent);
-      color: #fff;
-      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-color) 35%, transparent);
-    }
-
-    html[data-theme="dark"] .mobile-shell .reminders-tabs-wrapper .tab {
-      border-color: rgba(148, 163, 184, 0.4);
-      background-color: color-mix(in srgb, rgba(15, 23, 42, 0.9) 80%, transparent);
-      color: color-mix(in srgb, var(--card-bg) 85%, transparent);
-    }
-
-    html[data-theme="dark"] .mobile-shell .reminders-tabs-wrapper .tab.reminders-tab-active {
-      background-color: color-mix(in srgb, var(--accent-color) 70%, rgba(15, 23, 42, 0.3));
-      border-color: color-mix(in srgb, var(--accent-color) 70%, transparent);
-      color: #fff;
-      box-shadow: 0 6px 14px color-mix(in srgb, var(--accent-color) 45%, transparent);
     }
 
     /* Responsive reminder grid - default grid layout */
@@ -2636,7 +1617,7 @@
       box-sizing: border-box;
       margin-left: 0;
       margin-right: 0;
-      padding: 0;
+      padding: 0.5rem 0.75rem;
     }
     
     /* Remove any inherited margins/padding that might constrain width */
@@ -2647,19 +1628,18 @@
 
     /* Compact reminder card styling */
     .task-item[data-compact="true"] {
-      margin-bottom: 10px !important;
-      padding: 10px 14px;
+      margin-bottom: 0.5rem !important;
+      padding: 0.6rem 0.85rem;
       min-height: 64px;
       border-left-width: 3px;
       border-radius: 0.75rem;
-      column-gap: 10px;
-      row-gap: 2px;
+      gap: 0.4rem;
     }
 
     .task-item[data-compact="true"] .reminder-primary-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 0.5rem;
     }
 
     .task-item[data-compact="true"] .reminder-control-slot {
@@ -2681,7 +1661,7 @@
 
     .task-item[data-compact="true"] .task-title {
       font-size: 0.95rem;
-      line-height: 1.25;
+      line-height: 1.3;
       margin: 0;
       white-space: nowrap;
       overflow: hidden;
@@ -2699,8 +1679,7 @@
       justify-content: flex-end;
       gap: 0.35rem;
       min-width: 0;
-      font-size: 0.78rem;
-      line-height: 1.25;
+      font-size: 0.75rem;
       color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
       text-align: right;
     }
@@ -2715,8 +1694,8 @@
 
     .task-item[data-compact="true"] .reminder-due {
       display: inline-block;
-      font-size: 0.78rem;
-      line-height: 1.25;
+      font-size: 0.75rem;
+      line-height: 1.2;
       max-width: 10.5rem;
       white-space: nowrap;
       overflow: hidden;
@@ -2766,8 +1745,7 @@
       flex-wrap: wrap;
       gap: 0.4rem;
       align-items: center;
-      font-size: 0.78rem;
-      line-height: 1.25;
+      font-size: 0.75rem;
       color: color-mix(in srgb, var(--text-secondary) 85%, var(--text-primary) 15%);
     }
 
@@ -2883,19 +1861,16 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      column-gap: 10px;
-      row-gap: 2px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      background: rgba(255, 255, 255, 0.74);
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 14px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
+      gap: var(--reminder-card-gap);
+      padding: var(--reminder-card-padding-y) var(--reminder-card-padding-x);
+      margin-bottom: var(--reminder-card-gap);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px var(--shadow-color);
       transition: all 0.2s ease;
       font-size: var(--reminder-card-font-size);
-      line-height: 1.25;
+      line-height: 1.4;
     }
 
     .cue-item:last-child,
@@ -2926,21 +1901,21 @@
     #reminderList [data-reminder][data-priority="High"] {
       border-left: 3px solid var(--priority-high-border);
       background: var(--priority-high-bg);
-      padding-left: calc(14px - 1.5px);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
     }
 
     .cue-item[data-priority="Medium"],
     #reminderList [data-reminder][data-priority="Medium"] {
       border-left: 3px solid var(--priority-medium-border);
       background: var(--priority-medium-bg);
-      padding-left: calc(14px - 1.5px);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
     }
 
     .cue-item[data-priority="Low"],
     #reminderList [data-reminder][data-priority="Low"] {
       border-left: 3px solid var(--priority-low-border);
       background: var(--priority-low-bg);
-      padding-left: calc(14px - 1.5px);
+      padding-left: calc(var(--reminder-card-padding-x) - 1.5px);
     }
 
     .dark .cue-item[data-priority="High"],
@@ -2967,11 +1942,10 @@
     #reminderList [data-reminder] strong,
     #reminderList [data-reminder] [data-reminder-title] {
       margin: 0;
-      color: var(--primary-dark);
-      font-weight: 500;
-      line-height: 1.25;
-      font-size: 0.95rem;
-      margin-bottom: 0;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
       grid-column: 1;
       min-width: 0;
       overflow: hidden;
@@ -2985,14 +1959,13 @@
     .cue-meta,
     #reminderList [data-reminder] time,
     #reminderList [data-reminder] .reminder-meta {
-      color: rgba(47, 27, 63, 0.55);
-      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      margin-top: 0;
-      line-height: 1.25;
+      gap: var(--reminder-card-gap);
+      margin-top: 0.75rem;
       grid-column: 1 / -1;
     }
 
@@ -3005,7 +1978,7 @@
     #reminderList [data-reminder] p,
     #reminderList [data-reminder] .description,
     #reminderList [data-reminder] .details {
-      color: var(--text-muted, #9a8bb0);
+      color: var(--text-secondary);
     }
 
     .cue-actions,
@@ -3083,47 +2056,57 @@
       justify-content: flex-end;
       z-index: 90;
     }
-    <div class="sheet-panel p-6">
-      <div class="sheet-body mt-4">
-        <div class="mobile-new-reminder-card p-4 rounded-2xl">
-          <button id="closeCreateSheet" class="close-sheet-btn btn-ghost" aria-label="Close sheet">✕</button>
-          <form id="createReminderForm" class="space-y-3">
-            <div>
-              <input id="reminderText" class="input input-lg w-full" type="text" placeholder="What do you want to remember?" aria-label="Reminder" />
-            </div>
-            <div>
-              <textarea id="reminderDetails" class="textarea w-full" rows="3" placeholder="Notes (optional)" aria-label="Notes"></textarea>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <input id="reminderDate" type="date" class="input w-full" aria-label="Date" />
-              <input id="reminderTime" type="time" class="input w-full" aria-label="Time" />
-            </div>
-            <div>
-              <div class="flex items-center space-x-3">
-                <span class="text-sm">Priority</span>
-                <div id="priorityChips" class="flex items-center space-x-2">
-                  <input type="radio" id="priority-low" name="priority" value="low" hidden />
-                  <label class="priority-pill" for="priority-low">Low</label>
-                  <input type="radio" id="priority-medium" name="priority" value="medium" hidden />
-                  <label class="priority-pill" for="priority-medium">Medium</label>
-                  <input type="radio" id="priority-high" name="priority" value="high" hidden />
-                  <label class="priority-pill" for="priority-high">High</label>
-                </div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between">
-              <label class="flex items-center space-x-2">
-                <span class="sr-only">Notify</span>
-                <input id="notifBtn" type="checkbox" class="ios-switch" aria-label="Notify" />
-              </label>
-              <div class="flex items-center">
-                <button type="submit" id="saveReminder" class="btn-premium-primary">Save</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    .sheet-panel {
+      position: relative;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: calc(var(--vh, 1vh) * 85);
+      overflow: auto;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      background: var(--fallback-b1, var(--card-bg));
+      color: inherit;
+      box-shadow: 0 -16px 32px color-mix(in srgb, var(--text-primary) 25%, transparent);
+      padding: 16px;
+    }
+    .dark .sheet-panel {
+      background: color-mix(in srgb, var(--text-primary) 97%, transparent);
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      gap: 12px;
+    }
+    .sheet-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-header-actions .btn.is-listening {
+      background: var(--fallback-p, var(--primary-color));
+      color: var(--fallback-pc, var(--card-bg));
+    }
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      background: color-mix(in srgb, var(--text-primary) 45%, transparent);
+    }
+    #settingsModal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 80;
+    }
+    .modal-panel {
+      position: relative;
+      max-width: 420px;
+      width: calc(100% - 32px);
+      background: var(--fallback-b1, var(--card-bg));
       color: inherit;
       border-radius: 16px;
       box-shadow: 0 20px 40px color-mix(in srgb, var(--text-primary) 30%, transparent);
@@ -3336,30 +2319,21 @@
     }
 
     .mobile-shell #reminderList > .reminder-card.priority-high {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
       border-left-color: var(--priority-high-color, var(--priority-high-border));
     }
 
     .mobile-shell #reminderList > .reminder-card.priority-medium {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
       border-left-color: var(--priority-medium-color, var(--priority-medium-border));
     }
 
     .mobile-shell #reminderList > .reminder-card.priority-low {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
       border-left-color: var(--priority-low-color, var(--priority-low-border));
     }
 
     .mobile-shell #reminderList > .reminder-card .reminder-primary-row {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-start;
+      gap: 0.6rem;
       flex-wrap: wrap;
     }
 
@@ -3379,10 +2353,10 @@
     .mobile-shell .reminder-card .title,
     .mobile-shell #reminderList > .reminder-card .reminder-title-slot > *,
     .mobile-shell #reminderList > .reminder-card [data-reminder-title] {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--primary-dark);
-      line-height: 1.25;
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--desktop-text-main, var(--text-primary));
+      line-height: 1.3;
       margin: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -3399,8 +2373,8 @@
     .mobile-shell #reminderList > .reminder-card .task-meta-text,
     .mobile-shell #reminderList > .reminder-card time {
       font-size: 0.78rem;
-      color: rgba(47, 27, 63, 0.55);
-      line-height: 1.25;
+      color: var(--desktop-text-muted, var(--text-secondary));
+      line-height: 1.35;
     }
 
     .mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
@@ -3445,7 +2419,7 @@
       padding-top: 0.35rem;
       border-top: 1px solid color-mix(in srgb, var(--card-border) 35%, transparent);
       font-size: 0.8rem;
-      color: var(--text-muted, #9a8bb0);
+      color: var(--text-secondary, var(--desktop-text-muted));
     }
 
     .mobile-shell #reminderList > .reminder-card .priority-pill,
@@ -3455,7 +2429,7 @@
     }
   </style>
 </head>
-<body class="min-h-full bg-base-200 text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
+<body class="min-h-full bg-base-200 text-base-content show-full mobile-theme mobile-shell overflow-x-hidden">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
@@ -3749,16 +2723,14 @@
     header.sticky {
       position: sticky;
       top: 0;
-      z-index: 999;
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.55);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      z-index: 20;
+      background: var(--mobile-header-bg);
+      color: var(--mobile-header-text);
+      border-bottom: 1px solid var(--mobile-header-border);
+      box-shadow: var(--mobile-header-shadow);
       min-height: var(--mobile-header-height);
-      padding: 6px 14px;
-      color: var(--text-strong, #34163f);
-      border-radius: 0 0 0.85rem 0.85rem;
+      padding-block: 0;
+      backdrop-filter: blur(18px);
     }
 
     /* Inner container: single row, spaced out */
@@ -3858,7 +2830,6 @@
       backdrop-filter: none;
       margin: 0.25rem 0 0.25rem;
       width: 100%;
-      max-width: none; /* allow quick-add to use the available header space */
     }
 
     .mc-quick-add-inner {
@@ -4084,8 +3055,8 @@
         min-width: 0 !important;
       }
 
-      /* Full width container styling */
-      .mx-auto.w-full {
+      /* If the button is inside the centered header container, keep spacing reasonable */
+      .mx-auto.max-w-md {
         padding-left: 0.6rem;
         padding-right: 0.6rem;
       }
@@ -4156,230 +3127,102 @@
     .header-shadow {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
-
-    /* NEW: Sticky lilac header with centered pill */
-    #reminders-slim-header,
-    #reminders-slim-header .header-shell {
-      position: sticky;
-      top: 0;
-      z-index: 999;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      padding: 6px 14px;
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.55);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      color: var(--text-strong, #34163f);
-    }
-
-    #reminders-slim-header .header-shell {
-      max-width: 1080px;
-    }
-
-    #reminders-slim-header .header-leading,
-    #reminders-slim-header .header-actions {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      z-index: 65;
-    }
-
-    #reminders-slim-header .header-quick-add {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 0 0.5rem;
-      z-index: 62;
-      width: 100%;
-    }
-
-    .reminders-quick-add {
-      width: 100%;
-      max-width: 820px;
-      background: #FBFBFD;
-      border-radius: 28px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      padding: 0.45rem 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      color: #512663;
-      border: 1px solid rgba(81, 38, 99, 0.08);
-    }
-
-    .header-pill {
-      width: 100%;
-      margin-inline: auto;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.75rem;
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 9999px;
-      box-shadow: var(--mobile-quick-shadow);
-      color: var(--text-main);
-    }
-
-    .header-pill input.quick-reminder {
-      flex: 1 1 auto;
-      min-width: 0;
-      border: none;
-      background: transparent;
-      padding: 0.25rem 0.5rem;
-      color: var(--text-main);
-      font-size: var(--font-size-body);
-      font-family: var(--font-primary);
-      font-weight: 400;
-    }
-
-    .header-pill input.quick-reminder:focus {
-      outline: 2px solid rgba(81, 38, 99, 0.25);
-    }
-
-    .header-pill button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      border: none;
-      background: transparent;
-      color: var(--accent-color);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .reminders-quick-add .quick-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      background: #F9F9F9;
-      color: #512663;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.04);
-      flex-shrink: 0;
-    }
-
-    .reminders-quick-add input {
-      border: none;
-      outline: none;
-      background: #F9F9F9;
-      width: 100%;
-      font-size: 0.95rem;
-      color: #512663;
-      padding: 0.55rem 0.9rem;
-      border-radius: 999px;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-    }
-
-    .reminders-quick-add input::placeholder {
-      color: color-mix(in srgb, #512663 38%, #8c77a3);
-    }
-
-    #reminders-slim-header .header-action-btn {
-      color: #512663;
-      background: transparent;
-      border: none;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 36px;
-      min-height: 36px;
-      transition: background-color 0.15s ease;
-    }
-
-    #reminders-slim-header .header-actions .icon-btn {
-      width: 36px;
-      height: 36px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      background: transparent;
-      border: none;
-      color: #512663;
-      cursor: pointer;
-      transition: background-color 0.15s ease;
-    }
-
-    #reminders-slim-header .header-actions .icon-btn:hover {
-      background: rgba(81, 38, 99, 0.08);
-    }
-
-    #reminders-slim-header .header-actions .icon-btn:focus-visible {
-      outline: 2px solid rgba(81, 38, 99, 0.24);
-      outline-offset: 2px;
-    }
-
-    /* Hide inline Save/Notebook actions in notebook row */
-    .notebook-actions-row .notebook-action-btn.save,
-    .notebook-actions-row .notebook-action-btn.saved {
-      display: none !important;
-    }
-
-    /* Make the notebook Save icon clearly visible in the header */
-    #reminders-slim-header #noteSaveMobile {
-      background: transparent;
-      border: none;
-      color: #512663;
-      padding: 0.15rem;
-      min-width: 36px;
-      min-height: 36px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #reminders-slim-header #noteSaveMobile:focus-visible {
-      outline: 2px solid rgba(81, 38, 99, 0.24);
-      outline-offset: 2px;
-    }
-
-    /* Adjust main content to account for sticky header */
-    #view-reminders {
-      padding-top: 0 !important;
-    }
-
-    .reminders-content-shell {
-      background-color: transparent;
-      border-radius: 1.25rem;
-      padding: 1rem;
-      width: 100%;
-    }
-
-    /* Responsive adjustments for narrow screens */
-    @media (max-width: 380px) {
-      #reminders-slim-header {
-        padding: 0.35rem 0.65rem;
-      }
-
-      #reminders-slim-header .header-actions {
-        gap: 0.35rem;
-      }
-
-      #reminders-slim-header .header-leading,
-      #reminders-slim-header .header-quick-add {
-        width: 100%;
-      }
-
-      #reminders-slim-header .header-quick-add {
-        padding: 0;
-      }
-
-      .reminders-quick-add {
-        padding: 0.4rem 0.6rem;
-        border-radius: 24px;
-      }
-    }
   </style>
+
+  <header class="sticky top-0 z-40 w-full">
+    <div
+      class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
+      style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
+    >
+      <div class="flex items-center gap-3 min-w-0 flex-nowrap">
+        <button
+          id="btn-open-drawer"
+          type="button"
+          class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
+          aria-label="Open navigation menu"
+          aria-expanded="false"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
+        </button>
+           </div>
+
+      <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
+        <button
+          id="addReminderBtn"
+          type="button"
+          class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
+          data-open-add-task
+          data-open-quick-add
+          aria-controls="quickAddBar"
+          aria-expanded="false"
+        >
+          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
+          <span class="mc-add-btn-label">Add reminder</span>
+        </button>
+        <div class="relative">
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
+            aria-label="Open quick settings"
+            aria-haspopup="menu"
+            aria-controls="overflowMenu"
+            aria-expanded="false"
+          >
+            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+          </button>
+
+          <div
+            id="overflowMenu"
+            class="hidden quick-actions-panel absolute right-0 mt-2"
+            role="menu"
+            aria-hidden="true"
+            aria-labelledby="overflowMenuHeading"
+          >
+            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+            <ul class="quick-actions" role="presentation">
+              <li role="none">
+                <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                  <span class="sr-only">Dictate reminder</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                  <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                  <span class="sr-only">Open settings</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                  <span class="sr-only">Toggle theme</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                  <span class="sr-only">Sign in</span>
+                </button>
+              </li>
+              <li role="none">
+                <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                  <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                  <span class="sr-only">Sign out</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
   <div
     id="mobile-drawer-scrim"
@@ -4411,7 +3254,7 @@
       aria-labelledby="drawerSyncHeading"
     >
       <div class="flex items-center gap-3">
-        <div id="syncStatus" class="sync-inline" data-state="offline" title="">
+        <div id="syncStatus" class="sync-inline" data-state="offline" title="Sync status">
           <span id="mcStatus" class="sync-dot offline" role="status" aria-hidden="true"></span>
         </div>
         <div class="min-w-0">
@@ -4419,7 +3262,7 @@
             id="drawerSyncHeading"
             class="text-[11px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500"
           >
-          
+            Sync status
           </p>
           <span id="mcStatusText" class="mc-status-text block text-base-content dark:text-neutral-100">Offline</span>
         </div>
@@ -4440,6 +3283,7 @@
       const scrim = document.getElementById('mobile-drawer-scrim');
       const scrollTopBtn = document.getElementById('btn-scroll-top');
       const searchBtn = document.getElementById('btn-search');
+      const themeBtn = document.getElementById('btn-theme');
       const drawerSyncStatus = document.getElementById('mcStatusText');
       const drawerSyncDot = document.getElementById('mcStatus');
       const quickAddPanel = document.getElementById('quickAddBar');
@@ -4653,19 +3497,7 @@
         applyTheme(current === 'dark' ? 'light' : 'dark');
       };
 
-      const bindThemeButton = () => {
-        const btn = document.getElementById('btn-theme');
-        if (!(btn instanceof HTMLElement)) return false;
-        if (btn.dataset.themeBound === 'true') return true;
-        btn.dataset.themeBound = 'true';
-        btn.addEventListener('click', toggleTheme);
-        applyTheme(root.getAttribute('data-theme'));
-        return true;
-      };
-
-      if (!bindThemeButton()) {
-        document.addEventListener('DOMContentLoaded', bindThemeButton, { once: true });
-      }
+      themeBtn?.addEventListener('click', toggleTheme);
 
       window.__mcApplyTheme = applyTheme;
       window.__mcToggleTheme = toggleTheme;
@@ -4700,655 +3532,197 @@
     })();
   </script>
 
-  <script id="diagnose-header-ancestors">
-    (function diagnoseHeaderAncestors() {
-      function check() {
-        const header = document.getElementById('reminders-slim-header');
-        if (!header) {
-          console.warn('[diagnose-header-ancestors] header not found');
-          return;
-        }
-
-        const problems = [];
-        let el = header.parentElement;
-        while (el && el !== document.documentElement) {
-          try {
-            const cs = window.getComputedStyle(el);
-            const hasTransform = cs.transform && cs.transform !== 'none';
-            const hasFilter = (cs.filter && cs.filter !== 'none') || (cs.backdropFilter && cs.backdropFilter !== 'none');
-            const hasWillChange = cs.willChange && cs.willChange.indexOf('transform') !== -1;
-            const hasContainPaint = cs.contain && (cs.contain.indexOf('paint') !== -1 || cs.contain.indexOf('layout') !== -1);
-
-            if (hasTransform || hasFilter || hasWillChange || hasContainPaint) {
-              problems.push({ el, transform: cs.transform, filter: cs.filter, backdropFilter: cs.backdropFilter, willChange: cs.willChange, contain: cs.contain });
-              // visually mark the element so it's easy to find in devtools
-              try { el.style.outline = '2px dashed rgba(255,0,0,0.7)'; } catch (e) { /* ignore */ }
-              console.warn('[diagnose-header-ancestors] problematic ancestor found:', el, problems[problems.length-1]);
-            }
-          } catch (e) {
-            console.warn('[diagnose-header-ancestors] error reading computed style for', el, e);
-          }
-          el = el.parentElement;
-        }
-
-        if (!problems.length) {
-          console.info('[diagnose-header-ancestors] no transforms/filters/will-change/contain detected on header ancestors');
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', check, { once: true });
-      } else {
-        check();
-      }
-    })();
-  </script>
-
-  <script id="diagnose-header-scroll">
-    (function monitorHeaderPosition(){
-      function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
-      function throttle(fn){
-        let busy=false;
-        return function(...args){ if(busy) return; busy=true; requestAnimationFrame(()=>{ fn(...args); busy=false; }); };
-      }
-
-      function attach() {
-        const header = document.getElementById('reminders-slim-header');
-        if(!header) return console.warn('[diagnose-header-scroll] header not found');
-
-        let lastTop = header.getBoundingClientRect().top;
-        let lastStyle = header.getAttribute('style') || '';
-        let lastClass = header.className || '';
-
-        const logIfChanged = throttle(()=>{
-          try {
-            const r = header.getBoundingClientRect();
-            const top = Math.round(r.top);
-            if (top !== lastTop) {
-              console.info('[diagnose-header-scroll] header top changed', { previous: lastTop, now: top, rect: r });
-              lastTop = top;
-            }
-
-            const s = header.getAttribute('style') || '';
-            const c = header.className || '';
-            if (s !== lastStyle) {
-              console.info('[diagnose-header-scroll] header style changed', s);
-              lastStyle = s;
-            }
-            if (c !== lastClass) {
-              console.info('[diagnose-header-scroll] header class changed', c);
-              lastClass = c;
-            }
-          } catch (e) {
-            console.warn('[diagnose-header-scroll] error checking header', e);
-          }
-        });
-
-        // Monitor window scroll and touch events
-        window.addEventListener('scroll', logIfChanged, { passive: true });
-        window.addEventListener('touchmove', logIfChanged, { passive: true });
-        window.addEventListener('pointermove', logIfChanged, { passive: true });
-
-        // Observe mutations to header attributes
-        const mo = new MutationObserver((records)=>{
-          records.forEach(r=>{
-            if (r.type === 'attributes') {
-              console.info('[diagnose-header-scroll] mutation observed', r.attributeName, header.getAttribute(r.attributeName));
-            }
-          });
-        });
-        mo.observe(header, { attributes: true, attributeFilter: ['style','class'] });
-
-        // Also watch potential scroll containers
-        const containers = document.querySelectorAll('main, [data-view], .mobile-view-inner, .reminders-content-shell');
-        containers.forEach(c=>{
-          try { c.addEventListener('scroll', logIfChanged, { passive: true }); } catch(e){}
-        });
-
-        console.info('[diagnose-header-scroll] monitoring attached');
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', attach, { once: true });
-      } else {
-        attach();
-      }
-    })();
-  </script>
-
-  <script>
-    // Ensure the mobile header is fixed and content slides under it
-    (function keepHeaderFixed() {
-      function init() {
-        const header = document.getElementById('reminders-slim-header');
-        const main = document.getElementById('main') || document.querySelector('main');
-        if (!header) return;
-
-        function applyFixedHeader() {
-          // Strongly enforce fixed positioning so it doesn't move during scroll
-          header.classList.add('force-fixed');
-          try {
-            // ensure the header gets its own compositor layer and no transitions
-            header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
-            header.style.transition = 'none';
-            if (!header.style.transform) header.style.transform = 'translateZ(0)';
-            header.style.willChange = 'transform, top';
-          } catch (e) {
-            /* ignore styling failures */
-          }
-
-          // Ensure the main content doesn't sit underneath the header
-          const h = Math.ceil(header.getBoundingClientRect().height);
-          // small gap under header so content doesn't touch it directly
-          const extraGap = 6; // px
-          const desired = h + extraGap;
-
-          // Always set the CSS variable used elsewhere for layout calculations
-          document.documentElement.style.setProperty('--mobile-header-height', desired + 'px');
-
-          if (main) {
-            // Only update padding-top if it differs to avoid unnecessary layout churn
-            const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
-            if (current !== desired) main.style.paddingTop = desired + 'px';
-          }
-        }
-
-        // Initial apply
-        applyFixedHeader();
-
-        // Re-apply on resize and orientation change
-        window.addEventListener('resize', applyFixedHeader);
-        window.addEventListener('orientationchange', applyFixedHeader);
-
-        // Watch for header size changes (dynamic content) and reapply spacing
-        if (window.ResizeObserver) {
-          const ro = new ResizeObserver(applyFixedHeader);
-          ro.observe(header);
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
-      } else {
-        init();
-      }
-    })();
-  </script>
-
-  <script>
-    // Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
-    // prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
-    (function() {
-      const views = {
-        reminders: document.querySelector('[data-view="reminders"]'),
-        notebook: document.querySelector('[data-view="notebook"]')
-      };
-
-      const order = ['reminders', 'new', 'notebook'];
-
-      function showViewFor(name) {
-        // When navigating to 'new', we display the reminders view but keep the
-        // body/main active view set to 'new' so the bottom-tab can be highlighted.
-        const target = name === 'new' ? 'reminders' : name;
-        Object.keys(views).forEach((k) => {
-          const el = views[k];
-          if (!el) return;
-          const isActive = k === target;
-          el.classList.toggle('hidden', !isActive);
-          el.setAttribute('aria-hidden', String(!isActive));
-        });
-
-        const main = document.getElementById('main') || document.querySelector('main');
-        if (main) main.setAttribute('data-active-view', name);
-        if (document.body) document.body.setAttribute('data-active-view', name);
-
-        // If this is the 'new' view, trigger the add reminder action so the
-        // quick-add UI is ready.
-        if (name === 'new') {
-          const addBtn = document.getElementById('addReminderBtn');
-          if (addBtn) {
-            try { addBtn.click(); } catch (e) { console.warn('Failed to trigger add reminder', e); }
-          } else {
-            // fallback: focus quick add input if present
-            const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
-            if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
-          }
-        }
-      }
-
-      window.addEventListener('app:navigate', (ev) => {
-        try {
-          const view = ev?.detail?.view;
-          if (!view || !order.includes(view)) return;
-          showViewFor(view);
-        } catch (e) {
-          console.error('Error handling app:navigate', e);
-        }
-      });
-    })();
-  </script>
-
-  <!-- Mobile header matching screenshot -->
-  <header
-    id="reminders-slim-header"
-    class="mobile-header px-3 py-2 pt-safe-top"
-    role="banner"
-  >
-    <style>
-      /* Layout header contents in a single horizontal row */
-      #reminders-slim-header .header-pill {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.45rem 0.75rem;
-        background: rgba(249, 249, 252, 0.96);
-        border: 1px solid rgba(220, 214, 233, 0.95);
-        border-radius: 9999px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        color: var(--text-main);
-        flex: 1 1 auto;
-      }
-
-      #reminders-slim-header .header-pill:focus-within {
-        box-shadow:
-          0 0 0 1px rgba(81, 38, 99, 0.14),
-          0 0 0 4px rgba(81, 38, 99, 0.06),
-          0 2px 6px rgba(0, 0, 0, 0.05);
-        transition: box-shadow 0.18s ease;
-      }
-
-      #reminders-slim-header .quick-reminder {
-        flex: 1 1 auto;
-        min-width: 0; /* allow truncation / shrink on small screens */
-        background: transparent;
-        border: none;
-        color: var(--text-main, #4a3c57);
-        outline: none;
-        font-size: 0.92rem;
-        font-family: var(--font-primary, system-ui);
-      }
-
-      #reminders-slim-header .quick-reminder:focus {
-        outline: none;
-      }
-
-      #reminders-slim-header .quick-reminder::placeholder {
-        color: var(--text-muted, #9a8bb0);
-        opacity: 1;
-      }
-
-      #reminders-slim-header .header-icons,
-      #reminders-slim-header .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        flex-shrink: 0;
-      }
-
-      #reminders-slim-header .quick-add-action,
-      #reminders-slim-header .quick-add-mic,
-      .header-icon,
-      .header-right button,
-      .header-left button {
-        border: none;
-        background: transparent;
-        padding: 0.35rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        color: var(--accent-color, #512663);
-        cursor: pointer;
-        transition: background-color 0.16s ease, transform 0.14s ease, color 0.16s ease;
-      }
-
-      #reminders-slim-header .quick-add-action:hover,
-      #reminders-slim-header .quick-add-mic:hover,
-      .header-icon:hover {
-        background-color: rgba(81, 38, 99, 0.06);
-        transform: translateY(-1px);
-      }
-
-      #reminders-slim-header .quick-add-action:focus-visible,
-      #reminders-slim-header .quick-add-mic:focus-visible {
-        outline: 2px solid rgba(81, 38, 99, 0.26);
-        outline-offset: 2px;
-      }
-
-      #reminders-slim-header .quick-add-action:active,
-      #reminders-slim-header .quick-add-mic:active {
-        transform: scale(0.94);
-      }
-
-      #reminders-slim-header .quick-add-action svg,
-      #reminders-slim-header .quick-add-mic svg {
-        width: 18px;
-        height: 18px;
-      }
-
-      /* Slightly reduce vertical padding to keep header compact */
-      #reminders-slim-header { padding-top: env(safe-area-inset-top, 0); padding-bottom: 0.4rem; }
-
-      /* Ensure the header bar uses the refined glass surface */
-      #reminders-slim-header {
-        background: rgba(255, 255, 255, 0.75) !important;
-        color: var(--text-strong, #34163f) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.55);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        padding: 6px 14px;
-      }
-
-      /* Force header fixed so it cannot be overridden by other rules */
-      #reminders-slim-header.force-fixed {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        z-index: 9999 !important;
-        /* Prevent transitions or subpixel jitter */
-        transition: none !important;
-        transform: translateZ(0) !important;
-        will-change: transform, top !important;
-        -webkit-backface-visibility: hidden !important;
-        backface-visibility: hidden !important;
-      }
-
-      #reminders-slim-header .header-overflow-wrapper {
-        position: relative;
-      }
-
-      #reminders-slim-header .overflow-menu {
-        position: absolute;
-        top: 100%;
-        right: 0.75rem;
-        margin-top: 0.4rem;
-        min-width: 180px;
-
-        background-color: var(--surface-elevated);
-        border-radius: 0.75rem;
-        border: 1px solid var(--border-subtle);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        padding: 0.35rem 0;
-        z-index: 50;
-      }
-
-      #reminders-slim-header .overflow-menu.hidden {
-        display: none;
-      }
-
-      #reminders-slim-header .overflow-menu button,
-      #reminders-slim-header .overflow-menu a,
-      #reminders-slim-header .overflow-menu .overflow-item {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-
-        padding: 0.45rem 0.9rem;
-        font-family: var(--font-primary);
-        font-size: 0.9rem;
-        color: var(--text-main);
-        background: transparent;
-        border: none;
-        text-align: left;
-        white-space: nowrap;
-      }
-
-      #reminders-slim-header .overflow-menu button:hover,
-      #reminders-slim-header .overflow-menu a:hover,
-      #reminders-slim-header .overflow-menu .overflow-item:hover {
-        background-color: rgba(81, 38, 99, 0.06);
-      }
-
-      #reminders-slim-header .overflow-menu svg {
-        width: 18px;
-        height: 18px;
-        color: var(--accent-color);
-        flex-shrink: 0;
-      }
-    </style>
-    <div class="header-pill w-full quick-add-shell">
-      <input
-        id="quickAddInput"
-        type="text"
-        placeholder="Quick reminder…"
-        class="quick-reminder quick-add-input w-full text-sm"
-      />
-
-      <div class="header-icons header-actions flex items-center gap-2 flex-shrink-0">
-
-        <button class="pill-voice-btn quick-add-mic" aria-label="Voice Input">
-          <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M12 14q-1.25 0-2.125-.875T9 11V6q0-1.25.875-2.125T12 3q1.25 0 2.125.875T15 6v5q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-3.05-.35-5.025-2.5T4 10h2q0 2.3 1.6 3.9T12 15.5q2.3 0 3.9-1.6T17.5 10h2q0 2.8-1.975 4.95T12 17.9V21Z"/>
-          </svg>
-        </button>
-
-        <button
-          id="noteSaveMobile"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action"
-          aria-label="Save note"
-        >
-          <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
-          </svg>
-        </button>
-
-        <button
-          id="notifHeaderBtn"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action"
-          aria-label="Notifications"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-            <path d="m13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-        </button>
-
-        <button
-          id="googleSignInBtn"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action"
-          aria-label="Sign in"
-          title="Sign in"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z" fill="currentColor"></path>
-          </svg>
-        </button>
-
-        <button
-          id="googleSignOutBtn"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action hidden"
-          aria-label="Sign out"
-          title="Sign out"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 17v-2H7V9h9V7l5 5-5 5z" fill="currentColor"></path>
-          </svg>
-        </button>
-
-        <!-- Overflow menu -->
-        <div class="relative header-overflow-wrapper">
-          <button
-            id="headerMenuBtn"
-            type="button"
-            class="header-action-btn icon-btn quick-add-action"
-            aria-label="More options"
-            aria-expanded="false"
-            aria-haspopup="true"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="1"/>
-              <circle cx="12" cy="5" r="1"/>
-              <circle cx="12" cy="19" r="1"/>
-            </svg>
-          </button>
-
-          <!-- Dropdown menu -->
-          <div
-            id="headerMenu"
-            class="overflow-menu hidden"
-            role="menu"
-            aria-labelledby="headerMenuBtn"
-          >
-            <button
-              type="button"
-              class="overflow-item w-full"
-              role="menuitem"
-              onclick="window.location.href='/'"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9,22 9,12 15,12 15,22"/>
-              </svg>
-              Home
-            </button>
-
-            <button
-              id="googleSignInBtnMenu"
-              type="button"
-              class="overflow-item w-full"
-              role="menuitem"
-            >
-              <span aria-hidden="true">🔐</span>
-              Sign in
-            </button>
-
-            <button
-              id="googleSignOutBtnMenu"
-              type="button"
-              class="overflow-item w-full hidden"
-              role="menuitem"
-            >
-              <span aria-hidden="true">🔓</span>
-              Sign out
-            </button>
-
-            <button
-              id="openSettings"
-              type="button"
-              class="overflow-item w-full"
-              role="menuitem"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              Settings
-            </button>
-
-            <button
-              id="viewToggleMenu"
-              type="button"
-              class="overflow-item w-full justify-between"
-              role="menuitem"
-              aria-pressed="false"
-              aria-live="polite"
-            >
-              <span class="flex items-center gap-3">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="7" height="6" rx="1" />
-                  <rect x="14" y="4" width="7" height="6" rx="1" />
-                  <rect x="3" y="14" width="7" height="6" rx="1" />
-                  <rect x="14" y="14" width="7" height="6" rx="1" />
-                </svg>
-                Layout
-              </span>
-              <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide text-gray-600">View layout: Stacked</span>
-            </button>
-
-            <button
-              id="btn-theme"
-              type="button"
-              class="overflow-item w-full"
-              role="menuitem"
-            >
-              <svg
-                id="icon-sun"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.657-7.657-1.414 1.414M7.757 16.243l-1.414 1.414m0-12.728 1.414 1.414m8.486 8.486 1.414 1.414" />
-              </svg>
-              <svg
-                id="icon-moon"
-                class="hidden"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-              Toggle theme
-            </button>
-
-            <button
-              type="button"
-              class="overflow-item w-full"
-              role="menuitem"
-              onclick="window.open('https://github.com/dmaher42/memory-cue', '_blank')"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <path d="M12 17h.01"/>
-              </svg>
-              About
-            </button>
+  <!-- NEW: Slim sticky header for reminders -->
+  <div id="reminders-slim-header" role="banner" style="background: #E1F5FE; color: #0f172a;">
+    <div class="header-leading">
+      <button
+        id="btn-open-drawer"
+        type="button"
+        class="header-btn header-btn-icon"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+      >
+        <span class="text-xl leading-none" aria-hidden="true">☰</span>
+        <span class="sr-only">Open navigation menu</span>
+      </button>
+      <button
+        id="addReminderBtn"
+        type="button"
+        class="header-btn header-btn-icon"
+        data-open-add-task
+        aria-label="Open detailed reminder form"
+        aria-controls="createReminderModal"
+        aria-expanded="false"
+      >
+        <span class="text-lg leading-none" aria-hidden="true">＋</span>
+        <span class="sr-only">Open detailed reminder form</span>
+      </button>
+    </div>
+    <div class="header-quick-add">
+      <div
+        id="quickAddBar"
+        class="reminders-quick-add mc-quick-add-bar w-full rounded-xl bg-base-100 shadow-sm px-3 py-2"
+        aria-label="Quick add reminder"
+        data-visible="true"
+        data-persistent="true"
+      >
+        <div class="mc-quick-add-inner space-y-1.5 w-full">
+          <div class="mc-quick-add-row flex flex-col items-center gap-2 w-full">
+            <div class="mc-quick-input-group w-full">
+              <input
+                id="quickAddInput"
+                class="mc-quick-input input input-bordered input-sm w-full text-sm text-base-content"
+                type="text"
+                autocomplete="off"
+                placeholder="Quick reminder…"
+              />
+              <div class="mc-quick-actions flex items-center gap-2">
+                <button
+                  id="quickAddVoice"
+                  type="button"
+                  class="mc-quick-voice"
+                  aria-pressed="false"
+                  title="Voice quick add"
+                >
+                  <span aria-hidden="true">🎤</span>
+                  <span class="sr-only">Voice quick add</span>
+                </button>
+                <button
+                  id="quickAddSubmit"
+                  type="button"
+                  class="mc-quick-submit btn btn-primary btn-sm"
+                  data-quick-add-submit
+                >
+                  Add
+                </button>
+                <button
+                  id="quickAddReminderOptions"
+                  type="button"
+                  class="mc-quick-options btn btn-ghost btn-sm"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  data-quick-add-options
+                >
+                  Options
+                </button>
+              </div>
+            </div>
+            <div class="mc-quick-meta flex items-center gap-2 text-xs text-base-content/70 w-full">
+              <span id="quickAddDueLabel" class="mc-quick-meta-due" aria-live="polite"></span>
+              <span id="quickAddListLabel" class="mc-quick-meta-list" aria-live="polite"></span>
+            </div>
+            <div class="mc-quick-chips flex flex-wrap gap-2 text-sm">
+              <button type="button" class="mc-quick-chip" data-chip-due-today>Today</button>
+              <button type="button" class="mc-quick-chip" data-chip-due-tomorrow>Tomorrow</button>
+              <button type="button" class="mc-quick-chip" data-chip-due-weekend>Weekend</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </header>
+    <div class="header-actions">
+      <div class="header-overflow-wrapper">
+        <button id="overflowMenuBtn" type="button" class="header-btn header-btn-icon" aria-label="Open quick settings" aria-haspopup="menu" aria-controls="overflowMenu" aria-expanded="false">
+          <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
+        </button>
 
-  <script>
-    // Header menu functionality
-    (function() {
-      const menuBtn = document.getElementById('headerMenuBtn');
-      const menu = document.getElementById('headerMenu');
+        <div
+          id="overflowMenu"
+          class="hidden quick-actions-panel absolute right-0 mt-2"
+          role="menu"
+          aria-hidden="true"
+          aria-labelledby="overflowMenuHeading"
+        >
+          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+          <ul class="quick-actions" role="presentation">
+            <li role="none">
+              <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                <span class="sr-only">Dictate reminder</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                <span class="sr-only">Open settings</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                <span class="sr-only">Toggle theme</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                <span class="sr-only">Sign in</span>
+              </button>
+            </li>
+            <li role="none">
+              <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                <span class="sr-only">Sign out</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- Notebook opener + Save (check) button moved into header for quick access -->
+      <button id="openSavedNotesSheet" type="button" class="header-btn header-btn-icon" aria-label="Open Notebook" title="Open Notebook">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
+        </svg>
+      </button>
 
-      // The slim header script below binds the current overflow menu behavior.
-      // Skip the legacy handler to avoid double toggles closing the menu.
-      if (menuBtn && menu) return;
-    })();
-  </script>
+      <!-- Save (check) button moved into header for quick access -->
+      <button id="noteSaveMobile" type="button" class="header-btn header-btn-icon" aria-label="Save note">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
+        </svg>
+      </button>
 
-  <!-- quickAddBar is now integrated in the header -->
-  <div
-    id="mobile-shell"
-    class="mobile-shell mx-auto w-full px-4 pb-16"
-    style="background: #FBFBFB; padding-top: env(safe-area-inset-top, 0);"
-  >
-    <main
-      id="main"
-      class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
-      tabindex="-1"
-      data-active-view="reminders"
-      style="background: #FBFBFB;"
-    >
+      <style>
+        /* Make the notebook Save icon clearly visible in the header */
+        #reminders-slim-header #noteSaveMobile {
+          background: transparent;
+          border: none;
+          color: var(--mobile-header-text);
+          padding: 0.15rem;
+          min-width: 36px;
+          min-height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        #reminders-slim-header #noteSaveMobile:focus-visible {
+          outline: 3px solid color-mix(in srgb, var(--accent-color) 24%, transparent);
+          outline-offset: 2px;
+        }
+      </style>
+      <!-- home button removed: replaced by MC logo on the left -->
+    </div>
+  </div>
+  <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
+    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel" style="background: #FBFBFB;">
-      <div class="mobile-view-inner mx-auto w-full px-4 pt-4 pb-4 space-y-2" style="background: var(--mobile-quick-surface);">
-        <!-- header removed to keep view minimal -->
+    <section data-view="reminders" id="view-reminders" class="view-panel">
+      <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2">
+        <header class="mobile-header flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <h1 class="text-lg font-semibold">Reminders</h1>
+          </div>
+        </header>
+
         <div class="reminders-tabs-wrapper">
           <div class="tabs tabs-boxed w-full text-sm">
             <button
@@ -5375,13 +3749,24 @@
           <div id="remindersListMobile" class="space-y-2">
             <section
               id="reminderListSection"
-              class="w-full relative memory-glass-card-soft"
+              class="w-full relative"
             >
               <div class="w-full" id="remindersWrapper">
                 <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
                 <p id="reminderReorderHint" class="sr-only">
                   Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
                 </p>
+                <div class="flex items-center justify-end gap-2 px-1 pb-2">
+                  <button
+                    type="button"
+                    id="viewToggleMenu"
+                    class="btn btn-ghost btn-xs"
+                    aria-pressed="false"
+                    aria-live="polite"
+                  >
+                    <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide">View layout: Stacked</span>
+                  </button>
+                </div>
                 <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
               </div>
             </section>
@@ -5392,99 +3777,72 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-body);">
-        <!-- notebook view header removed to keep UI minimal -->
-        <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-body);">
-          <!-- Header Row -->
-          <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
-            <div class="flex flex-col">
-              <span class="sr-only">Notebook</span>
+      <div class="mobile-view-inner mx-auto w-full max-w-md px-3 pt-3 pb-3 space-y-2">
+        <header class="mobile-header flex flex-col gap-1">
+          <div id="notebook-view-header" class="space-y-1">
+            <div class="flex items-baseline justify-between gap-2">
+              <h1 class="text-base font-semibold text-base-content">Notebook</h1>
             </div>
+          </div>
+        </header>
+        <div
+          id="scratch-notes-card"
+          class="scratch-notes-card bg-base-100 border border-base-300 rounded-lg shadow-sm p-3 space-y-2"
+        >
+          <div class="flex items-center justify-between gap-2 pb-1 border-b border-base-200/70">
+                <div class="flex flex-col">
+                  <span class="sr-only">Notebook</span>
+                </div>
 
-            <button id="openSavedNotesSheet" type="button" class="header-btn header-btn-icon" aria-label="Open Notebook" title="Open Notebook">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
-        </svg>
-      </button>
+            <!-- moved Saved notes button into sub-header for compact mobile layout -->
+          </div>
           </div>
 
-          <!-- Seamless title field -->
-            <div class="flex flex-col items-stretch gap-1 px-1 py-1 rounded-md notebook-actions-row">
+          <div class="space-y-3">
+            <div class="space-y-1">
+              <label
+                for="noteTitleMobile"
+                class="text-xs font-semibold tracking-wide text-base-content/70 uppercase"
+              >
+                Title
+              </label>
               <input
                 id="noteTitleMobile"
                 type="text"
-                placeholder="Note title"
-                autocomplete="off"
-                class="seamless-title-input flex-1 text-lg font-medium border-0 focus:outline-none focus:ring-0 text-base-content placeholder:text-base-content/70"
+                class="input input-bordered input-sm w-full text-sm text-base-content"
+                placeholder="e.g. Kids basketball schedule – this weekend"
               />
-              <div class="flex items-center gap-2 self-start">
-                <button id="note-folder-button" class="note-folder-chip" type="button" aria-haspopup="dialog" aria-expanded="false">
-                  <span id="note-folder-label">Unsorted</span>
-                </button>
-                <button id="note-new-folder-button" class="note-new-folder-btn" type="button" aria-label="Create new folder" title="Create new folder">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    <line x1="12" y1="11" x2="12" y2="17"></line>
-                    <line x1="9" y1="14" x2="15" y2="14"></line>
-                  </svg>
-                </button>
+            </div>
+
+            <div class="space-y-1">
+              <label
+                for="noteBodyMobile"
+                class="text-xs font-semibold tracking-wide text-base-content/70 uppercase"
+              >
+                Note
+              </label>
+              <div class="note-body-wrapper">
+                <div
+                  class="note-body-field"
+                  data-role="note-body-field"
+                  data-placeholder="Start typing your scratch note…"
+                  data-has-content="false"
+                >
+                  <textarea
+                    id="noteBodyMobile"
+                    class="textarea textarea-bordered w-full text-sm text-base-content"
+                    placeholder="Start typing your scratch note…"
+                  ></textarea>
+                </div>
               </div>
             </div>
 
-          <!-- Single-row formatting toolbar with reduced spacing -->
-          <div
-            id="scratchNotesToolbar"
-            class="formatting-toolbar-strip flex items-center gap-2 px-0 py-0 bg-transparent rounded-lg border-0 shadow-none"
-          >
-            <button type="button" class="formatting-btn notebook-format-button" data-format="bold" aria-label="Bold">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="italic" aria-label="Italic">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M10 4h9v2h-3.6l-3.8 12H16v2H7v-2h3.6l3.8-12H10V4z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="underline" aria-label="Underline">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 4h2v7a3 3 0 0 0 6 0V4h2v7a5 5 0 0 1-10 0V4z" fill="currentColor" />
-                <path d="M5 19h14v2H5z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="bullet-list" aria-label="Bullet list">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 6h13v2H7V6zm0 5h13v2H7v-2zm0 5h13v2H7v-2z" fill="currentColor" />
-                <circle cx="4" cy="7" r="1.25" fill="currentColor" />
-                <circle cx="4" cy="12" r="1.25" fill="currentColor" />
-                <circle cx="4" cy="17" r="1.25" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="numbered-list" aria-label="Numbered list">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 6h11v2H9V6zm0 5h11v2H9v-2zm0 5h11v2H9v-2z" fill="currentColor" />
-                <path d="M4 6.5V8h2V4H4v1.5h1v1H4zm1.5 4H4a.5.5 0 0 0-.5.5v.75H4V12h1v2H3.5v1H6v-3.5a1 1 0 0 0-1-1Zm.5 5H4v1h1v1H4v1h2v-3Z" fill="currentColor" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Minimal main editor with soft styling -->
-          <div class="distraction-free-editor-container">
-            <div
-                id="notebook-editor-body"
-              class="note-editor-area notebook-editor-body minimal-editor px-1 py-1 text-base leading-relaxed focus:outline-none rounded-lg"
-              contenteditable="true"
-              spellcheck="true"
-              data-placeholder="Start typing your note…"
-            ></div>
+            <div id="scratch-notes-actions" class="flex justify-end gap-2 notebook-actions-row">
+              <!-- Save moved to header -->
+            </div>
           </div>
         </div>
-        <div
+          <div
           id="savedNotesSheet"
           class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
           aria-hidden="true"
@@ -5495,121 +3853,50 @@
         >
           <div
             id="saved-notes-panel"
-            class="saved-notes-panel fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] max-w-md flex-col space-y-2 rounded-3xl border border-base-300 bg-base-100 px-4 py-3 shadow-xl transition-transform"
+            class="saved-notes-panel mt-4 bg-base-100 border border-base-300 rounded-2xl shadow-sm px-4 py-3 space-y-2 fixed inset-x-0 bottom-0 z-40 max-w-md mx-auto rounded-t-3xl shadow-xl border-t border-base-300 pt-3 pb-4 transition-transform flex flex-col max-h-[80vh]"
           >
-            <div class="flex flex-col max-h-[70vh]">
-              <div class="flex justify-center pt-2 pb-1">
-                <div class="h-1.5 w-10 rounded-full bg-base-300"></div>
+            <div class="flex items-start justify-between gap-3">
+              <div id="saved-notes-header" class="space-y-1 mb-1">
+                <h3 id="savedNotesSheetTitle" class="text-sm font-semibold text-base-content/90">Saved notes</h3>
+                <p class="text-xs text-base-content/70">Tap a note to load it here.</p>
               </div>
+              <button
+                type="button"
+                class="btn btn-ghost btn-circle"
+                data-action="close-saved-notes"
+                aria-label="Close saved notes"
+              >
+                ✕
+              </button>
+            </div>
 
-              <div class="flex items-center justify-between px-4 pb-2">
-                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
-                <button
-                  id="closeSavedNotesSheet"
-                  class="btn btn-xs btn-ghost"
-                  type="button"
-                  data-action="close-saved-notes"
-                  aria-label="Close Notebook"
-                >
-                  Close
-                </button>
+            <div class="flex items-center justify-between gap-2 text-[11px] text-base-content/60" data-note-detail-list>
+              <p id="notesStatusText" class="text-[11px] text-base-content/60 truncate"></p>
+              <span class="flex items-center gap-1 whitespace-nowrap">
+                <span id="notesSyncStatus" class="sync-dot ready" aria-hidden="true"></span>
+              </span>
+            </div>
+
+            <div class="space-y-2 border border-base-200/70 rounded-2xl bg-base-100/80 px-3 py-3">
+              <label class="sr-only" for="notesFilterMobile">Filter notes</label>
+              <input
+                id="notesFilterMobile"
+                type="search"
+                class="input input-bordered input-sm w-full text-sm text-base-content bg-base-200/80 placeholder:text-base-content/70 placeholder:opacity-80"
+                placeholder="Search saved notes…"
+              />
+              <div class="flex items-center justify-between text-xs font-semibold text-base-content/70">
+                <span class="text-base-content/60 font-medium">Showing</span>
+                <span id="notesCountMobile" class="text-sm font-semibold whitespace-nowrap"></span>
               </div>
+            </div>
 
-              <div class="px-2 pb-3 overflow-y-auto">
-                <div id="notebook-folder-bar" class="notebook-folder-bar px-3 py-2">
-                  <div class="notebook-folder-filter-bar">
-                    <button
-                      type="button"
-                      class="notebook-folder-chip notebook-folder-chip--active"
-                      data-folder-id="all"
-                    >
-                      <span class="notebook-folder-chip-label">All notes</span>
-                      <span class="notebook-folder-chip-count">0</span>
-                    </button>
-                    <!-- Folder chips will be populated dynamically by JS -->
-                  </div>
-                </div>
-
-                <div class="px-3 pb-3">
-                  <input
-                    id="notebook-search-input"
-                    type="search"
-                    placeholder="Search notes…"
-                    class="notebook-search-bar"
-                  />
-                </div>
-
-                <div
-                  id="notesListMobile"
-                  class="notebook-list text-sm"
-                  aria-label="Saved scratch notes"
-                >
-                  <!-- Note items are rendered here by JS -->
-                </div>
-              </div>
-              <!-- New Folder Modal (moved to top-level below) -->
-              <!-- Pick Folder Modal -->
-              <dialog id="pickFolderModal" class="memory-glass-card" aria-hidden="true">
-                <div class="p-4">
-                  <h3 id="pickFolderTitle" class="text-lg font-semibold">Move note to…</h3>
-                  <div id="pickFolderList" class="mt-3 space-y-2" role="list">
-                    <!-- Folder rows populated by JS -->
-                  </div>
-                  <div class="modal-actions mt-4 flex justify-end gap-3">
-                    <button id="pickFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-                    <button id="pickFolderConfirm" type="button" class="btn btn-primary">Select</button>
-                  </div>
-                </div>
-              </dialog>
-              <div id="moveFolderSheet" class="sheet-backdrop hidden" aria-hidden="true">
-                <div
-                  class="sheet-panel"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="move-folder-title"
-                  tabindex="-1"
-                >
-                  <div class="sheet-header">
-                    <h2 id="move-folder-title">Move to folder</h2>
-                  </div>
-                  <div class="sheet-body">
-                    <ul id="move-folder-list" class="folder-select-list" role="listbox" aria-label="Available folders"></ul>
-                    <button id="move-folder-create" class="sheet-secondary-action" type="button">
-                      + Create new folder
-                    </button>
-                  </div>
-                  <button id="move-folder-cancel" class="sheet-cancel" type="button">Cancel</button>
-                </div>
-              </div>
-              <!-- Rename Folder Modal -->
-              <dialog id="renameFolderModal" class="memory-glass-card" aria-hidden="true">
-                <div class="p-4">
-                  <h3 id="renameFolderTitle" class="text-lg font-semibold">Rename folder</h3>
-                  <div class="mt-3">
-                    <label for="renameFolderName" class="sr-only">Folder name</label>
-                    <input id="renameFolderName" type="text" class="input input-sm w-full" placeholder="Folder name" />
-                    <p id="renameFolderError" class="text-xs text-error mt-2 sr-only">Error</p>
-                  </div>
-                  <div class="modal-actions mt-4 flex justify-end gap-3">
-                    <button id="renameFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-                    <button id="renameFolderSave" type="button" class="btn btn-primary">Save</button>
-                  </div>
-                </div>
-              </dialog>
-
-              <!-- Delete Folder Confirmation Modal -->
-              <dialog id="deleteFolderModal" class="memory-glass-card" aria-hidden="true">
-                <div class="p-4">
-                  <h3 id="deleteFolderTitle" class="text-lg font-semibold">Delete folder</h3>
-                  <div class="mt-3 text-sm">
-                    Deleting this folder won’t delete your notes. They will be moved to “Unsorted”.
-                  </div>
-                  <div class="modal-actions mt-4 flex justify-end gap-3">
-                    <button id="deleteFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-                    <button id="deleteFolderConfirm" type="button" class="btn btn-outline">Delete</button>
-                  </div>
-                </div>
-              </dialog>
+            <div class="mt-1 max-h-56 overflow-y-auto flex-1 w-full">
+              <ul
+                id="notesListMobile"
+                class="notebook-list text-sm"
+                aria-label="Saved scratch notes"
+              ></ul>
             </div>
           </div>
         </div>
@@ -5619,205 +3906,28 @@
     </main>
   </div>
 
-  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 flex justify-center pointer-events-none px-2 pb-3" style="z-index:10001;">
-    <div class="floating-footer">
+  <div id="mobile-nav-shell" class="fixed inset-x-0 bottom-3 z-50 flex justify-center pointer-events-none">
+    <nav
+      class="btm-nav bg-base-100 border border-base-300 rounded-full shadow-lg px-3 py-1 flex items-center justify-around gap-2 max-w-md w-3/4 mx-auto pointer-events-auto"
+      aria-label="Primary navigation"
+    >
       <button
         type="button"
-        class="floating-card btn-reminders"
-        id="mobile-footer-reminders"
-        data-nav-target="reminders"
-        aria-label="Go to Reminders"
+        aria-current="page"
+        class="active flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[11px] font-medium text-base-content/70 transition"
       >
-        <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="7" />
-          <path d="M12 9v3.5l2 1.5" />
-        </svg>
+        <span class="text-base-content/70" aria-hidden="true">⏰</span>
+        <span class="leading-tight">Reminders</span>
       </button>
-
       <button
         type="button"
-        class="floating-card btn-new-reminder"
-        id="mobile-footer-new-reminder"
-        data-nav-target="new"
-        data-open-add-task
-        aria-label="Add reminder"
+        class="flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[11px] font-medium text-base-content/70 transition"
       >
-        <svg class="icon icon-plus" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="7" />
-          <path d="M12 9v6" />
-          <path d="M9 12h6" />
-        </svg>
+        <span class="text-base-content/70" aria-hidden="true">📝</span>
+        <span class="leading-tight">Notebook</span>
       </button>
-
-      <button
-        type="button"
-        class="floating-card btn-new-note"
-        id="mobile-footer-new-note"
-        data-nav-target="add-note"
-        aria-label="Add note"
-      >
-        <svg class="icon icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 17.5 6.7 14l6.9-6.9a1.6 1.6 0 0 1 2.3 0l1.9 1.9a1.6 1.6 0 0 1 0 2.3L11 18.1 7.5 18.8z" />
-          <path d="M13.2 7.8 16.2 10.8" />
-        </svg>
-      </button>
-
-      <button
-        type="button"
-        class="floating-card btn-notebook"
-        id="mobile-footer-notebook"
-        data-nav-target="notebook"
-        aria-label="Go to Notes"
-      >
-        <svg class="icon icon-notebook" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="7" y="4" width="10" height="16" rx="2" />
-          <path d="M10 4v16" />
-          <path d="M10 8h4" />
-          <path d="M10 11.5h4" />
-        </svg>
-      </button>
-    </div>
+    </nav>
   </div>
-
-  <!-- New Folder Modal moved out of savedNotesSheet and into top-level so it's always accessible -->
-  <dialog id="newFolderModal" class="memory-glass-card" aria-hidden="true">
-    <div class="p-4">
-      <h3 id="newFolderTitle" class="text-lg font-semibold">New folder</h3>
-      <div class="mt-3">
-        <label for="newFolderName" class="sr-only">Folder name</label>
-        <input id="newFolderName" type="text" class="input input-sm w-full" placeholder="Folder name" />
-        <p id="newFolderError" class="text-xs text-error mt-2 sr-only">Error</p>
-      </div>
-      <div class="modal-actions mt-4 flex justify-end gap-3">
-        <button id="newFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-        <button id="newFolderCreate" type="button" class="btn btn-primary">Create</button>
-      </div>
-    </div>
-  </dialog>
-  <script>
-    (function() {
-      const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
-      if (!navFooter) return;
-
-      const focusNotebookInputs = () => {
-        const focusField = () => {
-          const titleInput = document.getElementById('noteTitleMobile');
-          if (titleInput) {
-            titleInput.focus();
-            return;
-          }
-
-          const noteEditor = document.getElementById('notebook-editor-body');
-          if (noteEditor) {
-            noteEditor.focus();
-          }
-        };
-
-        if (typeof queueMicrotask === 'function') {
-          queueMicrotask(focusField);
-        } else {
-          setTimeout(focusField, 0);
-        }
-      };
-
-      // expose helper so other scripts (or inline event handlers) can call it
-      if (typeof window !== 'undefined') window.focusNotebookInputs = focusNotebookInputs;
-
-      const setActiveFooterIcon = (buttonId) => {
-        document
-          .querySelectorAll('#mobile-nav-shell .floating-card')
-          .forEach((btn) => {
-            if (!(btn instanceof HTMLElement)) return;
-            btn.classList.toggle('active', btn.id === buttonId);
-          });
-      };
-
-      navFooter.addEventListener('click', (event) => {
-        const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
-        if (!button) return;
-
-        const view = button.getAttribute('data-nav-target');
-        if (!view) return;
-
-        // Close any open overlays before navigating so the view is visible
-        try { window.hideSavedNotesSheet?.(); } catch (e) { /* ignore */ }
-        try { window.closeMoveFolderSheet?.(); } catch (e) { /* ignore */ }
-        try { window.closeOverflowMenu?.(); } catch (e) { /* ignore */ }
-        try { if (typeof window.closeAddTask === 'function') window.closeAddTask(); } catch (e) { /* ignore */ }
-
-        // As a fallback, broadcast a generic `cue:close` event so individual
-        // controllers can respond by hiding open sheets and overlays.
-        try { document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'app:navigate' } })); } catch (e) { /* ignore */ }
-        // As a robustness fallback, dispatch a global "cue:close" event which
-        // modal/sheet controllers listen for and will close any open overlays.
-        try { document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'nav' } })); } catch (e) { /* ignore */ }
-
-        setActiveFooterIcon(button.id);
-
-        const triggerAddReminder = () => {
-          const addBtn = document.getElementById('addReminderBtn');
-          if (addBtn) {
-            addBtn.click();
-            return;
-          }
-
-          const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
-          if (quickAdd && typeof quickAdd.focus === 'function') {
-            quickAdd.focus();
-          }
-        };
-
-        if (view === 'add-note') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view: 'notebook' }
-            })
-          );
-          focusNotebookInputs();
-          return;
-        }
-
-        if (view === 'notebook') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view }
-            })
-          );
-          focusNotebookInputs();
-          return;
-        }
-
-        // When clicking the notebook footer button, ensure the notebook view
-        // receives focus so the editor is active. This mirrors the behavior we
-        // trigger when the 'add-note' target is used to navigate to the notebook.
-        if (view === 'notebook') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view }
-            })
-          );
-          focusNotebookInputs();
-          return;
-        }
-
-        if (view === 'new') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view }
-            })
-          );
-          triggerAddReminder();
-          return;
-        }
-
-        window.dispatchEvent(
-          new CustomEvent('app:navigate', {
-            detail: { view }
-          })
-        );
-      });
-    })();
-  </script>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
@@ -5972,7 +4082,7 @@
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-TDVPIG43.js?v=2025-10-29-1"></script>
+  <script type="module" src="./assets/mobile-NGXAV7ZY.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
@@ -5984,7 +4094,7 @@
       position: fixed;
       inset: 0;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       background: transparent;
       border: none;
@@ -5995,14 +4105,14 @@
     #create-sheet .reminder-editor-shell {
       margin: 0 auto;
       width: min(640px, 100%);
-      border-radius: 20px 20px 0 0;
-      padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0));
+      border-radius: 20px;
+      padding: 16px 16px 20px;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       box-shadow:
-        0 -14px 34px rgba(0, 0, 0, 0.1),
-        0 -6px 18px rgba(81, 38, 99, 0.12);
+        0 -12px 30px rgba(0, 0, 0, 0.08),
+        0 -4px 12px rgba(0, 0, 0, 0.06);
       transform: translateY(0);
       transition: transform 0.18s ease-out, opacity 0.18s ease-out;
       max-height: min(90vh, 720px);
@@ -6166,15 +4276,16 @@
     #dateFeedback {
       min-height: 1em;
     }
+
   </style>
-  <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
+    <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
     <div class="sheet-backdrop backdrop fixed inset-0 z-30 bg-black/40" data-close></div>
     <div
       class="sheet-panel reminder-sheet-panel fixed inset-x-0 bottom-0 z-40"
       data-dialog-content
     >
-      <div id="new-reminder-shell" class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
+      <div class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
         <header class="reminder-editor-header">
           <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
           <div class="reminder-header-title-group">
@@ -6289,7 +4400,6 @@
     </div>
   </div>
   <!-- END GPT CHANGE: bottom sheet for Create Reminder -->
-
   <!-- BEGIN GPT CHANGE: settings modal -->
   <div id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" class="hidden">
     <div class="modal-panel">
@@ -6315,13 +4425,22 @@
           <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
-      
     </div>
     <div class="modal-backdrop" data-close></div>
   </div>
   <!-- END GPT CHANGE: settings modal -->
 
   <script id="mobile-enhancements">
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', (event) => {
+        const trigger = event.target;
+        const dialog = trigger?.closest?.('.sheet, .modal');
+        if (dialog) {
+          dialog.classList.add('hidden');
+        }
+      });
+    });
+
     (function () {
       const list = document.getElementById('reminderList');
       if (!list) return;
@@ -6411,46 +4530,47 @@
         }
       };
 
+      const createTodayToggle = () => {
+        const wrapper = document.createElement('label');
+        wrapper.className =
+          'reminder-today-toggle flex items-start justify-end self-start ml-auto mt-1 text-base-content/70 select-none';
+        wrapper.setAttribute('data-role', 'reminder-today-toggle-wrapper');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'checkbox checkbox-xs align-middle';
+        checkbox.setAttribute('data-role', 'reminder-today-toggle');
+
+        wrapper.append(checkbox);
+        return wrapper;
+      };
+
       const ensureTodayToggleInCard = (card) => {
         if (!(card instanceof HTMLElement)) return;
-        const titleTarget =
-          card.querySelector('.reminder-title-slot [data-reminder-title]') ||
-          card.querySelector('.reminder-title-slot .task-title') ||
-          card.querySelector('[data-reminder-title]') ||
-          card.querySelector('.task-title') ||
-          card.querySelector('h3, h4, strong');
-        if (!(titleTarget instanceof HTMLElement)) {
+        if (card.querySelector('[data-role="reminder-today-toggle-wrapper"]')) {
           return;
         }
-        let toggle = titleTarget.querySelector('[data-role="reminder-today-toggle"]');
-        if (toggle instanceof HTMLElement) {
-          toggle.classList.add('reminder-title-toggle', 'cursor-pointer');
-          if (!toggle.hasAttribute('role')) {
-            toggle.setAttribute('role', 'button');
-          }
-          if (!toggle.hasAttribute('tabindex')) {
-            toggle.tabIndex = 0;
-          }
-          if (!toggle.classList.contains('reminder-title-pinned') && !toggle.classList.contains('reminder-title-unpinned')) {
-            toggle.classList.add('reminder-title-unpinned');
-          }
+
+        const toolbar = card.querySelector('.task-toolbar');
+        if (toolbar instanceof HTMLElement) {
+          toolbar.classList.add('flex', 'items-center', 'gap-2');
+          toolbar.appendChild(createTodayToggle());
           return;
         }
-        toggle = document.createElement('span');
-        toggle.dataset.role = 'reminder-today-toggle';
-        toggle.className = 'reminder-title-toggle cursor-pointer reminder-title-unpinned';
-        toggle.setAttribute('role', 'button');
-        toggle.setAttribute('aria-pressed', 'false');
-        toggle.tabIndex = 0;
-        const fragment = document.createDocumentFragment();
-        while (titleTarget.firstChild) {
-          fragment.appendChild(titleTarget.firstChild);
+
+        const metaSlot = card.querySelector('.reminder-meta-slot');
+        if (metaSlot instanceof HTMLElement) {
+          let metaActions = metaSlot.querySelector('.reminder-meta-actions');
+          if (!(metaActions instanceof HTMLElement)) {
+            metaActions = document.createElement('div');
+            metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
+            metaSlot.appendChild(metaActions);
+          }
+          metaActions.appendChild(createTodayToggle());
+          return;
         }
-        if (!fragment.childNodes.length && card.dataset.title) {
-          fragment.appendChild(document.createTextNode(card.dataset.title));
-        }
-        toggle.appendChild(fragment);
-        titleTarget.appendChild(toggle);
+
+        card.appendChild(createTodayToggle());
       };
 
       const restructureReminderCard = (card) => {
@@ -6491,6 +4611,7 @@
           metaSlot.className = 'reminder-meta-slot flex items-center gap-2 shrink-0';
           const metaActions = document.createElement('div');
           metaActions.className = 'reminder-meta-actions flex items-center gap-2 flex-wrap justify-end text-right';
+          metaActions.appendChild(createTodayToggle());
           metaSlot.appendChild(metaActions);
 
           primaryRow.append(titleCol, metaSlot);
@@ -6590,6 +4711,8 @@
           }
         }
 
+        metaActions.appendChild(createTodayToggle());
+
         let priorityChip = null;
         const secondaryChips = [];
         if (metaContainer instanceof HTMLElement) {
@@ -6680,7 +4803,14 @@
           headerRow.appendChild(headerActions);
         }
 
-        ensureTodayToggleInCard(card);
+        let todayToggleWrapper = headerActions.querySelector('[data-role="reminder-today-toggle-wrapper"]');
+        if (!todayToggleWrapper) {
+          todayToggleWrapper = createTodayToggle();
+        }
+
+        if (!headerActions.contains(todayToggleWrapper)) {
+          headerActions.appendChild(todayToggleWrapper);
+        }
       };
 
       const upgrade = (node) => {
@@ -6798,12 +4928,13 @@
         reminders: document.querySelector('[data-view="reminders"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
       };
+      const nav = document.querySelector('.btm-nav');
+      if (!nav) return;
 
-      // Use the new bottom-tab buttons as the navigation controls.
-      const buttons = Array.from(document.querySelectorAll('.bottom-tab')) || [];
-      const order = ['reminders', 'new', 'notebook'];
+      const buttons = Array.from(nav.querySelectorAll('button')).slice(0, 2);
+      const order = ['reminders', 'notebook'];
 
-      if (order.some((key) => key !== 'new' && !views[key])) {
+      if (!buttons.length || order.some((key) => !views[key])) {
         return;
       }
 
@@ -6835,9 +4966,8 @@
           const isActive = key === target;
 
           if (view) {
-            const shouldBeVisible = (key === target) || (target === 'new' && key === 'reminders');
-            view.classList.toggle('hidden', !shouldBeVisible);
-            view.setAttribute('aria-hidden', String(!shouldBeVisible));
+            view.classList.toggle('hidden', !isActive);
+            view.setAttribute('aria-hidden', String(!isActive));
           }
 
           if (button) {
@@ -6847,22 +4977,6 @@
         });
 
         activeView = target;
-
-        // Sync any bottom-tab buttons we added so they reflect the active view
-        try {
-          document.querySelectorAll('.bottom-tab').forEach((b) => {
-            const tabName = b.dataset.tab;
-            const isActiveTab = tabName === target;
-            b.classList.toggle('active', Boolean(isActiveTab));
-            if (isActiveTab) {
-              b.setAttribute('aria-current', 'page');
-            } else {
-              b.removeAttribute('aria-current');
-            }
-          });
-        } catch (e) {
-          // ignore if bottom-tabs not present
-        }
 
         const skipLink =
           document.querySelector('.skip-link') ||
@@ -6882,31 +4996,6 @@
           }
         }
       };
-
-      // Listen for global navigation events and delegate to setActiveView
-      window.addEventListener('app:navigate', (ev) => {
-        try {
-          const view = ev?.detail?.view;
-          if (!view) return;
-          // Map 'new' to the add reminder action (trigger addReminderBtn)
-          if (view === 'new') {
-            const addBtn = document.getElementById('addReminderBtn');
-            if (addBtn) {
-              addBtn.click();
-            }
-            // still set active state so the middle tab highlights
-            if (order.includes(view)) {
-              setActiveView(view);
-            }
-            return;
-          }
-          if (order.includes(view)) {
-            setActiveView(view);
-          }
-        } catch (e) {
-          console.error('Failed to handle app:navigate', e);
-        }
-      });
 
       buttons.forEach((button, index) => {
         button.addEventListener('click', () => {
@@ -7335,7 +5424,27 @@
           }
         });
 
-  
+        if (!reminders.length) {
+          for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index);
+            if (!key || triedKeys.has(key) || !/remind/i.test(key)) continue;
+            triedKeys.add(key);
+            try {
+              const value = localStorage.getItem(key);
+              if (!value) continue;
+              const parsed = JSON.parse(value);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((item) => reminders.push(item));
+              } else if (parsed && typeof parsed === 'object') {
+                if (Array.isArray(parsed.items)) parsed.items.forEach((item) => reminders.push(item));
+                if (Array.isArray(parsed.reminders)) parsed.reminders.forEach((item) => reminders.push(item));
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+
         return reminders.map(normaliseReminder).filter(Boolean);
       };
 
@@ -7504,6 +5613,12 @@
         }
       });
     })();
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      /* home button removed: no scroll-home handler needed */
+    });
   </script>
 
   <!-- Enhanced Notes Functionality -->
@@ -8300,85 +6415,141 @@
   </script>
 
   <script>
-    // Wire up slim header buttons now that they live inline
-    const initSlimHeaderButtons = function() {
-      const slimHeader = document.getElementById('reminders-slim-header');
-      if (!slimHeader) return;
+    // Slim mobile header helper - Move Reminders title and action buttons into sticky header
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        // Find or create the header wrapper
+        let headerWrapper = document.getElementById('slimMobileHeader');
+        if (!headerWrapper) {
+          headerWrapper = document.createElement('div');
+          headerWrapper.id = 'slimMobileHeader';
+          headerWrapper.setAttribute('role', 'banner');
+          document.body.insertBefore(headerWrapper, document.body.firstChild);
+        } else {
+          headerWrapper.setAttribute('role', 'banner');
+        }
 
-      const addBtn = slimHeader.querySelector('#addReminderBtn');
-      const overflowBtn = slimHeader.querySelector('#headerMenuBtn');
-      const overflowMenu = slimHeader.querySelector('#headerMenu');
-
-      if (addBtn) {
-        addBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          const cueEvent = new CustomEvent('cue:open', {
-            detail: { mode: 'create', trigger: addBtn }
-          });
-          document.dispatchEvent(cueEvent);
-        });
-      }
-
-      if (overflowBtn && overflowMenu) {
-        const toggleMenu = (forceOpen) => {
-          const isHidden = overflowMenu.classList.contains('hidden');
-          const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
-          overflowMenu.classList.toggle('hidden', !shouldOpen);
-          overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
-          overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-          // debug log to help diagnose clicks not opening the menu
-          try {
-            console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
-          } catch (e) {
-            /* ignore */
-          }
-        };
-
-        overflowBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          toggleMenu();
-        });
-
-        document.addEventListener('click', (event) => {
-          if (overflowMenu.classList.contains('hidden')) return;
-          const wrapper = event.target instanceof Element ? event.target.closest('.header-overflow-wrapper') : null;
-          if (!wrapper) {
-            toggleMenu(false);
-          }
-        });
-      }
-
-      /* home button removed: no scroll-home handler needed */
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initSlimHeaderButtons, { once: true });
-    } else {
-      initSlimHeaderButtons();
-    }
-
-  </script>
-
-  <script>
-    // Clear any unwanted JavaScript content from notes editor on load
-    document.addEventListener('DOMContentLoaded', function() {
-      const notesEditor = document.getElementById('notebook-editor-body');
-      if (notesEditor) {
-        const content = notesEditor.innerHTML || '';
-        // Remove any script tags, function definitions, or JavaScript code
-        if (content.includes('<script') || content.includes('function') || content.includes('addEventListener') || content.includes('document.')) {
-          notesEditor.innerHTML = '';
-          // Also clear localStorage if it contains JavaScript
-          try {
-            const stored = localStorage.getItem('memory-cue-notes');
-            if (stored && (stored.includes('function') || stored.includes('addEventListener') || stored.includes('document.'))) {
-              localStorage.removeItem('memory-cue-notes');
-            }
-          } catch (e) {
-            // Ignore localStorage errors
+        // Find the Reminders title - forgiving search with multiple fallbacks
+        let titleText = 'Reminders';
+        const titleSelectors = [
+          '[data-view="reminders"] header h1',
+          '[data-view="reminders"] h1',
+          '.mobile-header h1',
+          '#view-reminders h1',
+          'h1'
+        ];
+        
+        for (const selector of titleSelectors) {
+          const titleEl = document.querySelector(selector);
+          if (titleEl && titleEl.textContent.trim()) {
+            titleText = titleEl.textContent.trim();
+            break;
           }
         }
+
+        // Create title element
+        const title = document.createElement('h1');
+        title.textContent = titleText;
+
+        // Find action buttons - forgiving search
+        const buttons = [];
+        
+        // Look for Add Reminder button
+        const addBtnSelectors = [
+          '#addReminderBtn',
+          '[data-open-add-task]',
+          'button[aria-label*="Add"]',
+          'button[title*="Add"]',
+          '.mc-add-btn'
+        ];
+        
+        for (const selector of addBtnSelectors) {
+          const btn = document.querySelector(selector);
+          if (btn) {
+            const clone = btn.cloneNode(true);
+            clone.className = 'header-btn';
+            clone.innerHTML = '<span class="btn-icon" aria-hidden="true">＋</span><span class="btn-label">Add</span>';
+            // Copy event listeners by re-attaching click handler
+            clone.addEventListener('click', (e) => {
+              btn.click();
+            });
+            buttons.push(clone);
+            break;
+          }
+        }
+
+        // Look for Home button
+        const homeBtnSelectors = [
+          '#btn-open-drawer',
+          'button[aria-label*="home" i]',
+          'button[aria-label*="navigation" i]',
+          'button[title*="home" i]'
+        ];
+        
+        for (const selector of homeBtnSelectors) {
+          const btn = document.querySelector(selector);
+          if (btn) {
+            const clone = btn.cloneNode(true);
+            clone.className = 'header-btn';
+            clone.innerHTML = '<span aria-hidden="true">🏠</span><span class="sr-only">Home</span>';
+            clone.addEventListener('click', (e) => {
+              btn.click();
+            });
+            buttons.push(clone);
+            break;
+          }
+        }
+
+        // Look for Overflow/More menu button
+        const overflowBtnSelectors = [
+          '#overflowMenuBtn',
+          'button[aria-label*="settings" i]',
+          'button[aria-label*="menu" i]',
+          'button[aria-haspopup="menu"]',
+          'button[title*="settings" i]'
+        ];
+        
+        for (const selector of overflowBtnSelectors) {
+          const btn = document.querySelector(selector);
+          if (btn) {
+            const clone = btn.cloneNode(true);
+            clone.className = 'header-btn';
+            clone.innerHTML = '<span aria-hidden="true">⚙️</span><span class="sr-only">Settings</span>';
+            clone.addEventListener('click', (e) => {
+              btn.click();
+            });
+            buttons.push(clone);
+            break;
+          }
+        }
+
+        // Build header structure
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'header-actions';
+        buttons.forEach(btn => actionsDiv.appendChild(btn));
+
+        // Clear and populate header
+        headerWrapper.innerHTML = '';
+        headerWrapper.appendChild(title);
+        headerWrapper.appendChild(actionsDiv);
+
+        // Hide the original reminders header to avoid duplication
+        const originalHeaders = document.querySelectorAll('[data-view="reminders"] header.mobile-header');
+        originalHeaders.forEach(h => {
+          if (h.querySelector('h1') && h.querySelector('h1').textContent.includes('Reminders')) {
+            h.style.display = 'none';
+          }
+        });
+
+        console.log('Slim mobile header initialized successfully');
+      } catch (error) {
+        console.error('Error initializing slim mobile header:', error);
+        // Fallback: create a minimal header
+        const fallbackHeader = document.createElement('div');
+        fallbackHeader.id = 'slimMobileHeader';
+        fallbackHeader.setAttribute('role', 'banner');
+        fallbackHeader.innerHTML = '<h1>Reminders</h1><div class="header-actions"></div>';
+        document.body.insertBefore(fallbackHeader, document.body.firstChild);
       }
     });
   </script>
