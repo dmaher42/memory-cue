@@ -330,93 +330,7 @@ initViewportHeight();
 })();
 /* END GPT CHANGE */
 
-// Wire header overflow auth buttons (separate from reminder wiring)
-(function () {
-  function wireHeaderAuthButtons() {
-    function resolveSignIn() {
-      // Prefer test-provided mock
-      if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
-        return window.__mobileMocks.startSignInFlow;
-      }
-      if (typeof window !== 'undefined' && typeof window.startSignInFlow === 'function') {
-        return window.startSignInFlow;
-      }
-      // Try dynamic import at runtime
-      return async function dynamicStart() {
-        try {
-          const mod = await import('./js/supabase-auth.js');
-          if (mod && typeof mod.startSignInFlow === 'function') {
-            return mod.startSignInFlow();
-          }
-        } catch (e) {
-          console.warn('Dynamic import for startSignInFlow failed', e);
-        }
-        return null;
-      };
-    }
-
-    function resolveSignOut() {
-      if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignOutFlow === 'function') {
-        return window.__mobileMocks.startSignOutFlow;
-      }
-      if (typeof window !== 'undefined' && typeof window.startSignOutFlow === 'function') {
-        return window.startSignOutFlow;
-      }
-      return async function dynamicSignOut() {
-        try {
-          const mod = await import('./js/supabase-auth.js');
-          if (mod && typeof mod.startSignOutFlow === 'function') {
-            return mod.startSignOutFlow();
-          }
-        } catch (e) {
-          console.warn('Dynamic import for startSignOutFlow failed', e);
-        }
-        return null;
-      };
-    }
-
-    try {
-      const signIn = document.getElementById('googleSignInBtn');
-      const signOut = document.getElementById('googleSignOutBtn');
-
-      if (signIn && !signIn._mcAuthWired) {
-        signIn.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          try {
-            const fn = resolveSignIn();
-            const result = fn && fn();
-            if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
-          } catch (e) {
-            console.error('Sign-in handler failed', e);
-          }
-        });
-        signIn._mcAuthWired = true;
-      }
-
-      if (signOut && !signOut._mcAuthWired) {
-        signOut.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          try {
-            const fn = resolveSignOut();
-            const result = fn && fn();
-            if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
-          } catch (e) {
-            console.error('Sign-out handler failed', e);
-          }
-        });
-        signOut._mcAuthWired = true;
-      }
-    } catch (e) {
-      console.error('Header auth wiring failed', e);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wireHeaderAuthButtons, { once: true });
-  } else {
-    wireHeaderAuthButtons();
-  }
-})();
+/* header overflow auth wiring removed (handled by main sign-in wiring below) */
 
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
@@ -1006,6 +920,9 @@ const initMobileNotes = () => {
     if (!savedNotesSheet) {
       return;
     }
+    // Also wire an optionally visible global trigger (openSavedNotesGlobal)
+    const openSavedNotesGlobal = document.getElementById('openSavedNotesGlobal');
+
     openSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       showSavedNotesSheet();
@@ -1016,6 +933,13 @@ const initMobileNotes = () => {
         notesListMobileEl.scrollTop = 0;
       }
     });
+    if (openSavedNotesGlobal) {
+      openSavedNotesGlobal.addEventListener('click', (event) => {
+        event.preventDefault();
+        showSavedNotesSheet();
+      });
+    }
+
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       hideSavedNotesSheet();
