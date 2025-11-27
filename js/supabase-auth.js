@@ -11,6 +11,64 @@ let _externalAuthContext = {
   toast: null,
 };
 
+// Fallback toast configuration
+const TOAST_DURATION_MS = 4000;
+const TOAST_BOTTOM_OFFSET = '80px'; // Above the footer nav
+const TOAST_Z_INDEX = 10000;
+
+/**
+ * Show a toast message. Uses the externally provided toast if available,
+ * otherwise creates a temporary DOM element as a fallback.
+ */
+function showToast(message) {
+  // Try using the external toast handler first
+  if (_externalAuthContext?.toast && typeof _externalAuthContext.toast === 'function') {
+    try {
+      _externalAuthContext.toast(message);
+      return;
+    } catch {
+      // Fall through to fallback
+    }
+  }
+
+  // Fallback: create a simple DOM-based toast
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  try {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'polite');
+    toast.style.cssText = `
+      position: fixed;
+      bottom: ${TOAST_BOTTOM_OFFSET};
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 30, 30, 0.95);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: ${TOAST_Z_INDEX};
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      max-width: 90%;
+      text-align: center;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      try {
+        toast.remove();
+      } catch {
+        // Ignore removal errors
+      }
+    }, TOAST_DURATION_MS);
+  } catch {
+    // Ignore toast creation errors
+  }
+}
+
 /**
  * Allow other modules to supply a small auth context (handlers + helpers).
  * Defensive: merges values and tolerates invalid input.
@@ -68,15 +126,14 @@ export async function startSignInFlow(options = {}) {
         return supabase.auth.signIn({ provider: 'google' });
       }
     }
+    // No auth method available - notify user
+    // eslint-disable-next-line no-console
+    console.warn('[supabase-auth] No auth provider configured. Sign-in unavailable.');
+    showToast('Sign-in is not available. Authentication service may be offline or not configured.');
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[supabase-auth] startSignInFlow error', err);
-    try {
-      _externalAuthContext?.toast?.('Sign-in failed');
-    } catch (toastErr) {
-      // eslint-disable-next-line no-console
-      console.warn('[supabase-auth] toast handler failed', toastErr);
-    }
+    showToast('Sign-in failed. Please try again.');
     throw err;
   }
   return Promise.resolve(null);
