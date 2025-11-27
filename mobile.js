@@ -330,6 +330,7 @@ initViewportHeight();
 })();
 /* END GPT CHANGE */
 
+
 // Wire header overflow auth buttons (separate from reminder wiring)
 (function () {
   function wireHeaderAuthButtons() {
@@ -446,6 +447,8 @@ initViewportHeight();
     wireHeaderAuthButtons();
   }
 })();
+=======
+
 
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
@@ -1035,6 +1038,9 @@ const initMobileNotes = () => {
     if (!savedNotesSheet) {
       return;
     }
+    // Also wire an optionally visible global trigger (openSavedNotesGlobal)
+    const openSavedNotesGlobal = document.getElementById('openSavedNotesGlobal');
+
     openSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       showSavedNotesSheet();
@@ -1045,6 +1051,13 @@ const initMobileNotes = () => {
         notesListMobileEl.scrollTop = 0;
       }
     });
+    if (openSavedNotesGlobal) {
+      openSavedNotesGlobal.addEventListener('click', (event) => {
+        event.preventDefault();
+        showSavedNotesSheet();
+      });
+    }
+
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       hideSavedNotesSheet();
