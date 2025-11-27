@@ -11,6 +11,11 @@ let _externalAuthContext = {
   toast: null,
 };
 
+// Fallback toast configuration
+const TOAST_DURATION_MS = 4000;
+const TOAST_BOTTOM_OFFSET = '80px'; // Above the footer nav
+const TOAST_Z_INDEX = 10000;
+
 /**
  * Show a toast message. Uses the externally provided toast if available,
  * otherwise creates a temporary DOM element as a fallback.
@@ -38,7 +43,7 @@ function showToast(message) {
     toast.setAttribute('aria-live', 'polite');
     toast.style.cssText = `
       position: fixed;
-      bottom: 80px;
+      bottom: ${TOAST_BOTTOM_OFFSET};
       left: 50%;
       transform: translateX(-50%);
       background: rgba(30, 30, 30, 0.95);
@@ -46,7 +51,7 @@ function showToast(message) {
       padding: 12px 20px;
       border-radius: 8px;
       font-size: 14px;
-      z-index: 10000;
+      z-index: ${TOAST_Z_INDEX};
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       max-width: 90%;
       text-align: center;
@@ -58,7 +63,7 @@ function showToast(message) {
       } catch {
         // Ignore removal errors
       }
-    }, 4000);
+    }, TOAST_DURATION_MS);
   } catch {
     // Ignore toast creation errors
   }
@@ -124,7 +129,7 @@ export async function startSignInFlow(options = {}) {
     // No auth method available - notify user
     // eslint-disable-next-line no-console
     console.warn('[supabase-auth] No auth provider configured. Sign-in unavailable.');
-    showToast('Sign-in is not configured. Please check your settings.');
+    showToast('Sign-in is not available. Authentication service may be offline or not configured.');
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[supabase-auth] startSignInFlow error', err);
