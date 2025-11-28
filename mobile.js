@@ -2829,7 +2829,13 @@ if (supabaseAuthController?.supabase) {
           // no-op – errors are handled/logged by startSignInFlow
         }
       });
-      btn.dataset.__signedInWired = 'true';
+      try {
+        btn.dataset.__signedInWired = 'true';
+      } catch {}
+      try {
+        // Mark the canonical wiring flag used by other modules/tests
+        btn._mcAuthWired = true;
+      } catch {}
     });
   } catch (err) {
     /* noop */
