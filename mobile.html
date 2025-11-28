@@ -5158,6 +5158,7 @@
           class="header-action-btn icon-btn quick-add-action"
           aria-label="Sign in"
           title="Sign in"
+          onclick="window.__mcTriggerSignIn && window.__mcTriggerSignIn()"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z" fill="currentColor"></path>
@@ -5171,6 +5172,7 @@
           class="header-action-btn icon-btn quick-add-action"
           aria-label="Open Notebook"
           title="Open Notebook"
+          onclick="window.showSavedNotesSheet && window.showSavedNotesSheet()"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
             <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
@@ -5193,7 +5195,7 @@
         <!-- Overflow menu -->
         <div class="relative header-overflow-wrapper">
           <button
-            id="headerMenuBtn"
+            id="headerMenuBtnSlim"
             type="button"
             class="header-action-btn icon-btn quick-add-action"
             aria-label="More options"
@@ -5209,10 +5211,10 @@
 
           <!-- Dropdown menu -->
           <div
-            id="headerMenu"
+            id="headerMenuSlim"
             class="overflow-menu hidden"
             role="menu"
-            aria-labelledby="headerMenuBtn"
+            aria-labelledby="headerMenuBtnSlim"
           >
             <button
               type="button"
@@ -5456,7 +5458,7 @@
 
           <!-- Visible global 'Open Notebook' action (always present in the header) -->
           <div class="ml-2 block">
-            <button id="openSavedNotesGlobal" type="button" class="btn btn-sm btn-ghost" aria-label="Open Notebook (saved notes)" title="Open Notebook (saved notes)">
+            <button type="button" class="btn btn-sm btn-ghost open-saved-notes-global" aria-label="Open Notebook (saved notes)" title="Open Notebook (saved notes)">
               <svg class="w-5 h-5 inline" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
               </svg>
@@ -6029,6 +6031,68 @@
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
   <script type="module" src="./assets/mobile-TDVPIG43.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
+  <script>
+    // Inline fallback: ensure the header 'Open Notebook' button opens the saved notes sheet
+    (function() {
+      const ensureFallback = () => {
+        const btn = document.getElementById('openSavedNotesGlobal');
+        const sheet = document.getElementById('savedNotesSheet');
+        if (!btn || !sheet) return;
+        if (btn.__mcFallbackWired) return;
+        btn.addEventListener('click', (ev) => {
+          try {
+            ev.preventDefault();
+          } catch {}
+          try {
+            sheet.classList.remove('hidden');
+            sheet.dataset.open = 'true';
+            sheet.setAttribute('aria-hidden', 'false');
+            console.debug && console.debug('[fallback] opened savedNotesSheet via inline fallback');
+          } catch (e) {
+            /* ignore */
+          }
+        });
+        btn.__mcFallbackWired = true;
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureFallback, { once: true });
+      } else {
+        ensureFallback();
+      }
+    })();
+  </script>
+  <script>
+    // Inline fallback for Google Sign-in button to ensure it triggers an auth attempt
+    (function() {
+      window.__mcTriggerSignInInvoked = false;
+      window.__mcTriggerSignIn = function() {
+        window.__mcTriggerSignInInvoked = true;
+        try {
+          console.debug && console.debug('[fallback] __mcTriggerSignIn invoked');
+          if (typeof window.startSignInFlow === 'function') {
+            try { window.startSignInFlow(); } catch (e) { console.debug && console.debug('[fallback] startSignInFlow error', e); }
+            return;
+          }
+          if (window.supabase && window.supabase.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
+            try { window.supabase.auth.signInWithOAuth({ provider: 'google' }); } catch (e) { console.debug && console.debug('[fallback] supabase.signInWithOAuth error', e); }
+            return;
+          }
+          console.debug && console.debug('[fallback] No auth entrypoint available');
+        } catch (err) {
+          console.debug && console.debug('[fallback] __mcTriggerSignIn failure', err);
+        }
+      };
+
+      const btn = document.getElementById('googleSignInBtn');
+      if (btn && !btn.__mcFallbackWired) {
+        btn.addEventListener('click', (ev) => {
+          try { ev.preventDefault(); } catch {}
+          try { window.__mcTriggerSignIn && window.__mcTriggerSignIn(); } catch (e) { /* ignore */ }
+        });
+        btn.__mcFallbackWired = true;
+      }
+    })();
+  </script>
   <style id="reminder-editor-premium">
     #create-sheet {
       background: radial-gradient(circle at 50% 10%, rgba(104, 65, 144, 0.14), transparent 38%),
@@ -8361,8 +8425,8 @@
       if (!slimHeader) return;
 
       const addBtn = slimHeader.querySelector('#addReminderBtn');
-      const overflowBtn = slimHeader.querySelector('#headerMenuBtn');
-      const overflowMenu = slimHeader.querySelector('#headerMenu');
+      const overflowBtn = slimHeader.querySelector('#headerMenuBtnSlim');
+      const overflowMenu = slimHeader.querySelector('#headerMenuSlim');
 
       if (addBtn) {
         addBtn.addEventListener('click', function(event) {
@@ -8376,12 +8440,12 @@
 
       if (overflowBtn && overflowMenu) {
         const toggleMenu = (forceOpen) => {
+          // Ensure we're toggling the menu that belongs to this slim header instance
           const isHidden = overflowMenu.classList.contains('hidden');
           const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
           overflowMenu.classList.toggle('hidden', !shouldOpen);
           overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
           overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-          // debug log to help diagnose clicks not opening the menu
           try {
             console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
           } catch (e) {
@@ -8397,8 +8461,9 @@
 
         document.addEventListener('click', (event) => {
           if (overflowMenu.classList.contains('hidden')) return;
+          // Only close if the click was outside this slim header's overflow wrapper
           const wrapper = event.target instanceof Element ? event.target.closest('.header-overflow-wrapper') : null;
-          if (!wrapper) {
+          if (!wrapper || !slimHeader.contains(wrapper)) {
             toggleMenu(false);
           }
         });
