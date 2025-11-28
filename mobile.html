@@ -8506,6 +8506,49 @@
       console.warn('[mobile] supabase did not initialise in time', err);
     });
   </script>
+  </script>
 
-</body>
+    <!-- Quick-fix: include Supabase config + auth and attach header sign-in/out handlers -->
+    <script type="module" src="./js/config-supabase.js"></script>
+    <script type="module" src="./js/supabase-auth.js"></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Find all sign in buttons in header and overflow menu
+        const signInBtns = document.querySelectorAll('[data-action="sign-in"], #signInBtn');
+        const signOutBtns = document.querySelectorAll('[data-action="sign-out"], #signOutBtn');
+
+        // Add click handlers to sign in buttons
+        signInBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = prompt('Enter your email for sign in:');
+            if (email && window.supabase) {
+              window.supabase.auth.signInWithOtp({ email })
+                .then(({ error }) => {
+                  if (error) alert('Error: ' + error.message);
+                  else alert('Magic link sent! Check your email.');
+                })
+                .catch(err => alert('Error: ' + err.message));
+            } else if (!window.supabase) {
+              alert('Authentication not available. Supabase client not initialised.');
+            }
+          });
+        });
+
+        // Add click handlers to sign out buttons
+        signOutBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.supabase && window.supabase.auth) {
+              window.supabase.auth.signOut().catch(() => {});
+            } else {
+              console.warn('Supabase client not available for sign-out');
+            }
+          });
+        });
+      });
+    </script>
+
+  </body>
 </html>
