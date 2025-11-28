@@ -287,3 +287,64 @@ body.mobile-theme :focus-visible {
     gap: 1.25rem;
   }
 }
+
+/* Mobile authentication UI styles */
+body.mobile-theme .auth-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 160px;
+  max-width: 260px;
+  align-items: flex-end;
+}
+
+body.mobile-theme .auth-form {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+body.mobile-theme .auth-form .input,
+body.mobile-theme .auth-form .input[type="email"] {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.55rem;
+}
+
+body.mobile-theme .auth-feedback {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+body.mobile-theme .user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+body.mobile-theme .avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: var(--accent-color);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+@media (min-width: 640px) {
+  body.mobile-theme .auth-container {
+    flex-direction: row;
+    align-items: center;
+  }
+  body.mobile-theme .auth-form {
+    margin-right: 0.5rem;
+  }
+}
+

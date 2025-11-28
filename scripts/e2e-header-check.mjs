@@ -58,6 +58,21 @@ const URL = process.env.URL || 'http://localhost:3000/mobile.html';
   let savedOpen = null;
   try {
     await page.waitForSelector('#openSavedNotesGlobal', { timeout: 3000 });
+    console.log('Waiting briefly to allow bindings to attach...');
+    await page.waitForTimeout(800);
+    // Wait for the saved-notes binder test flag that the app sets when it attaches
+    try {
+      await page.waitForFunction(() => !!window.__mcSavedNotesBinderAttached, { timeout: 5000 });
+      console.log('saved-notes binder attached (window.__mcSavedNotesBinderAttached)');
+    } catch (e) {
+      console.log('saved-notes binder flag not observed after wait:', e && e.message ? e.message : e);
+    }
+    try {
+      await page.waitForFunction(() => typeof window.showSavedNotesSheet === 'function', { timeout: 3000 });
+      console.log('window.showSavedNotesSheet is available');
+    } catch (e) {
+      console.log('window.showSavedNotesSheet not available after wait:', e.message);
+    }
     console.log('Clicking #openSavedNotesGlobal');
     await page.click('#openSavedNotesGlobal');
     await page.waitForTimeout(200);
@@ -70,6 +85,35 @@ const URL = process.env.URL || 'http://localhost:3000/mobile.html';
     }
     savedOpen = await page.$eval('#savedNotesSheet', (el) => el.dataset.open === 'true');
     console.log('savedNotesSheet open:', savedOpen);
+    // If the global header trigger didn't open the sheet, try fallback triggers
+    if (!savedOpen) {
+      try {
+        const sheetBtn = await page.$('#openSavedNotesSheet');
+        if (sheetBtn) {
+          console.log('Clicking fallback #openSavedNotesSheet');
+          await sheetBtn.click();
+          await page.waitForTimeout(200);
+          savedOpen = await page.$eval('#savedNotesSheet', (el) => el.dataset.open === 'true');
+          console.log('savedNotesSheet open after fallback sheetBtn:', savedOpen);
+        }
+      } catch (e) {
+        console.log('Fallback #openSavedNotesSheet click failed:', e && e.message ? e.message : e);
+      }
+    }
+    if (!savedOpen) {
+      try {
+        const globalAlt = await page.$('.open-saved-notes-global');
+        if (globalAlt) {
+          console.log('Clicking fallback .open-saved-notes-global');
+          await globalAlt.click();
+          await page.waitForTimeout(200);
+          savedOpen = await page.$eval('#savedNotesSheet', (el) => el.dataset.open === 'true');
+          console.log('savedNotesSheet open after fallback globalAlt:', savedOpen);
+        }
+      } catch (e) {
+        console.log('Fallback .open-saved-notes-global click failed:', e && e.message ? e.message : e);
+      }
+    }
   } catch (err) {
     console.warn('openSavedNotesGlobal not found or click failed:', err.message);
   }

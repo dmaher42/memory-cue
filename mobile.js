@@ -395,47 +395,77 @@ initViewportHeight();
     }
 
     try {
-      // Wire both header buttons and overflow menu buttons
-      const signInButtons = [
-        document.getElementById('googleSignInBtn'),
-        document.getElementById('googleSignInBtnMenu'),
-      ].filter(Boolean);
-      const signOutButtons = [
-        document.getElementById('googleSignOutBtn'),
-        document.getElementById('googleSignOutBtnMenu'),
-      ].filter(Boolean);
-
-      signInButtons.forEach((signIn) => {
-        if (signIn && !signIn._mcAuthWired) {
-          signIn.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            try {
-              const fn = resolveSignIn();
-              const result = fn && fn();
-              if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
-            } catch (e) {
-              console.error('Sign-in handler failed', e);
+      // Wire both header buttons and overflow menu buttons. Use a defensive
+      // wait so the handlers attach even if the DOM is mutated after initial
+      // parsing (helps across different build outputs / load timings).
+      const waitForAny = (selectors, timeout = 3000) => {
+        return new Promise((resolve) => {
+          const found = selectors.map((s) => document.querySelector(s)).filter(Boolean);
+          if (found.length) return resolve(found);
+          const obs = new MutationObserver(() => {
+            const f = selectors.map((s) => document.querySelector(s)).filter(Boolean);
+            if (f.length) {
+              obs.disconnect();
+              resolve(f);
             }
           });
-          signIn._mcAuthWired = true;
-        }
-      });
+          obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
+          if (typeof timeout === 'number') {
+            setTimeout(() => {
+              try { obs.disconnect(); } catch (e) {}
+              resolve([]);
+            }, timeout);
+          }
+        });
+      };
 
-      signOutButtons.forEach((signOut) => {
-        if (signOut && !signOut._mcAuthWired) {
-          signOut.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            try {
-              const fn = resolveSignOut();
-              const result = fn && fn();
-              if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
-            } catch (e) {
-              console.error('Sign-out handler failed', e);
+      (async () => {
+        const signInSelectors = ['#googleSignInBtn', '#googleSignInBtnMenu'];
+        const signOutSelectors = ['#googleSignOutBtn', '#googleSignOutBtnMenu'];
+
+        const signInEls = await waitForAny(signInSelectors, 3000);
+        const signOutEls = await waitForAny(signOutSelectors, 3000);
+
+        signInEls.forEach((signIn) => {
+          try {
+            if (signIn && !signIn._mcAuthWired) {
+              signIn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                try {
+                  const fn = resolveSignIn();
+                  const result = fn && fn();
+                  if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
+                } catch (e) {
+                  console.error('Sign-in handler failed', e);
+                }
+              });
+              try { signIn._mcAuthWired = true; } catch (e) {}
             }
-          });
-          signOut._mcAuthWired = true;
-        }
-      });
+          } catch (e) {
+            /* ignore individual element errors */
+          }
+        });
+
+        signOutEls.forEach((signOut) => {
+          try {
+            if (signOut && !signOut._mcAuthWired) {
+              signOut.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                try {
+                  const fn = resolveSignOut();
+                  const result = fn && fn();
+                  if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
+                } catch (e) {
+                  console.error('Sign-out handler failed', e);
+                }
+              });
+              try { signOut._mcAuthWired = true; } catch (e) {}
+            }
+          } catch (e) {
+            /* ignore individual element errors */
+          }
+        });
+      })();
     } catch (e) {
       console.error('Header auth wiring failed', e);
     }
@@ -1040,7 +1070,41 @@ const initMobileNotes = () => {
       return;
     }
     // Also wire an optionally visible global trigger (openSavedNotesGlobal)
-    const openSavedNotesGlobal = document.getElementById('openSavedNotesGlobal');
+    // Use a defensive polling helper so this works reliably in the built bundle
+    const waitForAnyElement = (selectors, timeout = 5000, interval = 150) => {
+      if (!Array.isArray(selectors)) selectors = [selectors];
+      return new Promise((resolve) => {
+        const check = () => {
+          for (const s of selectors) {
+            try {
+              const el = document.querySelector(s);
+              if (el) return resolve(el);
+            } catch (e) {
+              // ignore bad selector
+            }
+          }
+          return null;
+        };
+
+        // immediate check
+        const found = check();
+        if (found) return resolve(found);
+
+        const start = Date.now();
+        const timer = setInterval(() => {
+          const now = Date.now();
+          const f = check();
+          if (f) {
+            clearInterval(timer);
+            return resolve(f);
+          }
+          if (now - start >= timeout) {
+            clearInterval(timer);
+            return resolve(null);
+          }
+        }, interval);
+      });
+    };
 
     openSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
@@ -1052,12 +1116,36 @@ const initMobileNotes = () => {
         notesListMobileEl.scrollTop = 0;
       }
     });
-    if (openSavedNotesGlobal) {
-      openSavedNotesGlobal.addEventListener('click', (event) => {
-        event.preventDefault();
-        showSavedNotesSheet();
-      });
+
+    // Try a couple of selectors that may correspond to the global trigger
+    // Log diagnostic info so E2E can detect when the binder runs
+    try {
+      console.info && console.info('[savedNotes] waiting for global trigger selectors', ['#openSavedNotesGlobal', '#openSavedNotesSheet', '.open-saved-notes-global'], { timeout: 5000, interval: 150 });
+    } catch (e) {
+      /* ignore */
     }
+    waitForAnyElement(['#openSavedNotesGlobal', '#openSavedNotesSheet', '.open-saved-notes-global'], 5000, 150)
+      .then((openSavedNotesGlobal) => {
+        try {
+          if (openSavedNotesGlobal) {
+            try {
+              openSavedNotesGlobal.addEventListener('click', (event) => {
+                event.preventDefault();
+                showSavedNotesSheet();
+              });
+              console.info && console.info('[savedNotes] attached click handler to global trigger', openSavedNotesGlobal);
+              // mark for automated tests
+              try { window.__mcSavedNotesBinderAttached = true; } catch (e) {}
+            } catch (e) {
+              console.warn && console.warn('[savedNotes] failed to attach click handler to global trigger', e);
+            }
+          } else {
+            console.info && console.info('[savedNotes] no global trigger found within timeout');
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      });
 
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
@@ -1075,12 +1163,17 @@ const initMobileNotes = () => {
     });
   };
 
-  bindSavedNotesSheetEvents();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindSavedNotesSheetEvents, { once: true });
+  } else {
+    bindSavedNotesSheetEvents();
+  }
 
-  // Expose helper functions so the footer nav script can close overlays
+  // Expose helper functions early so external scripts or tests can call them
   if (typeof window !== 'undefined') {
     try {
       window.hideSavedNotesSheet = hideSavedNotesSheet;
+      // expose showSavedNotesSheet early so wiring checks can detect it
       window.showSavedNotesSheet = showSavedNotesSheet;
       window.closeMoveFolderSheet = closeMoveFolderSheet;
       window.closeOverflowMenu = closeOverflowMenu;
@@ -1091,6 +1184,23 @@ const initMobileNotes = () => {
     } catch (e) {
       // no-op in restricted environments
     }
+  }
+
+  // Delegated click listener as a resilient fallback for global saved-notes triggers.
+  // This avoids relying on querying for the exact element instance during startup.
+  try {
+    document.addEventListener('click', (event) => {
+      try {
+        const trigger = event.target && event.target.closest ? event.target.closest('#openSavedNotesGlobal, #openSavedNotesSheet, .open-saved-notes-global') : null;
+        if (trigger) {
+          event.preventDefault();
+          try { showSavedNotesSheet(); } catch (_) {}
+          try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
+        }
+      } catch (_) {}
+    });
+  } catch (e) {
+    // ignore if DOM not available or addEventListener fails
   }
 
   const getNormalizedFilterQuery = () =>
