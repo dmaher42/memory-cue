@@ -330,7 +330,122 @@ initViewportHeight();
 })();
 /* END GPT CHANGE */
 
-/* header overflow auth wiring removed (handled by main sign-in wiring below) */
+// Wire header overflow auth buttons (separate from reminder wiring)
+(function () {
+  function wireHeaderAuthButtons() {
+    function resolveSignIn() {
+      // Check for Supabase client with signInWithOAuth
+      if (typeof window !== 'undefined') {
+        // Check mock supabase client
+        if (window.__mobileMocks && typeof window.__mobileMocks.initSupabaseAuth === 'function') {
+          try {
+            const authController = window.__mobileMocks.initSupabaseAuth();
+            if (authController?.supabase?.auth && typeof authController.supabase.auth.signInWithOAuth === 'function') {
+              return () => authController.supabase.auth.signInWithOAuth({ provider: 'google' });
+            }
+          } catch (err) {
+            console.debug('initSupabaseAuth check failed:', err);
+          }
+        }
+        // Check window.supabase client
+        if (window.supabase?.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
+          return () => window.supabase.auth.signInWithOAuth({ provider: 'google' });
+        }
+      }
+      // Fall back to test-provided mock startSignInFlow
+      if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
+        return window.__mobileMocks.startSignInFlow;
+      }
+      if (typeof window !== 'undefined' && typeof window.startSignInFlow === 'function') {
+        return window.startSignInFlow;
+      }
+      // Try dynamic import at runtime
+      return async function dynamicStart() {
+        try {
+          const mod = await import('./js/supabase-auth.js');
+          if (mod && typeof mod.startSignInFlow === 'function') {
+            return mod.startSignInFlow();
+          }
+        } catch (e) {
+          console.warn('Dynamic import for startSignInFlow failed', e);
+        }
+        return null;
+      };
+    }
+
+    function resolveSignOut() {
+      if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignOutFlow === 'function') {
+        return window.__mobileMocks.startSignOutFlow;
+      }
+      if (typeof window !== 'undefined' && typeof window.startSignOutFlow === 'function') {
+        return window.startSignOutFlow;
+      }
+      return async function dynamicSignOut() {
+        try {
+          const mod = await import('./js/supabase-auth.js');
+          if (mod && typeof mod.startSignOutFlow === 'function') {
+            return mod.startSignOutFlow();
+          }
+        } catch (e) {
+          console.warn('Dynamic import for startSignOutFlow failed', e);
+        }
+        return null;
+      };
+    }
+
+    try {
+      // Wire both header buttons and overflow menu buttons
+      const signInButtons = [
+        document.getElementById('googleSignInBtn'),
+        document.getElementById('googleSignInBtnMenu'),
+      ].filter(Boolean);
+      const signOutButtons = [
+        document.getElementById('googleSignOutBtn'),
+        document.getElementById('googleSignOutBtnMenu'),
+      ].filter(Boolean);
+
+      signInButtons.forEach((signIn) => {
+        if (signIn && !signIn._mcAuthWired) {
+          signIn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            try {
+              const fn = resolveSignIn();
+              const result = fn && fn();
+              if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
+            } catch (e) {
+              console.error('Sign-in handler failed', e);
+            }
+          });
+          signIn._mcAuthWired = true;
+        }
+      });
+
+      signOutButtons.forEach((signOut) => {
+        if (signOut && !signOut._mcAuthWired) {
+          signOut.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            try {
+              const fn = resolveSignOut();
+              const result = fn && fn();
+              if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
+            } catch (e) {
+              console.error('Sign-out handler failed', e);
+            }
+          });
+          signOut._mcAuthWired = true;
+        }
+      });
+    } catch (e) {
+      console.error('Header auth wiring failed', e);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireHeaderAuthButtons, { once: true });
+  } else {
+    wireHeaderAuthButtons();
+  }
+})();
 
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
@@ -2644,8 +2759,8 @@ const notesSyncController = initNotesSync();
 
 const supabaseAuthController = initSupabaseAuth({
   selectors: {
-    signInButtons: ['#googleSignInBtn'],
-    signOutButtons: ['#googleSignOutBtn'],
+    signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
+    signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
     userBadge: '#user-badge',
     userBadgeEmail: '#user-badge-email',
     userBadgeInitial: '#user-badge-initial',
@@ -2681,7 +2796,8 @@ if (supabaseAuthController?.supabase) {
 // an auth flow either via the Supabase client or via the startSignInFlow helper.
 (() => {
   try {
-    const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn'));
+    // Wire both header and overflow menu sign-in buttons
+    const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn, #googleSignInBtnMenu'));
     if (!signInButtons.length) return;
     signInButtons.forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
