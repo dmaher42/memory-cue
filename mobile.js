@@ -1147,6 +1147,57 @@ const initMobileNotes = () => {
         }
       });
 
+    // Additionally, attach delegated listeners to header overflow menus so
+    // clicks inside the menu reliably open saved notes even if the specific
+    // trigger element wasn't present at initial bind time.
+    const overflowMenuSelectors = ['#headerMenu', '#headerMenuSlim', '.header-overflow-wrapper'];
+
+    const attachDelegatedToMenu = (menuEl) => {
+      if (!menuEl || menuEl.__mcSavedNotesMenuWired) return;
+      try {
+        menuEl.addEventListener('click', (ev) => {
+          try {
+            const trigger = ev.target && ev.target.closest ? ev.target.closest('#openSavedNotesGlobal, #openSavedNotesSheet, .open-saved-notes-global, [data-action="open-saved-notes"]') : null;
+            if (trigger) {
+              ev.preventDefault();
+              try { showSavedNotesSheet(); } catch (_) {}
+              try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
+            }
+          } catch (_) {}
+        });
+        menuEl.__mcSavedNotesMenuWired = true;
+      } catch (e) {
+        /* ignore wiring failures */
+      }
+    };
+
+    // Attempt to attach immediately if menus exist, otherwise observe DOM for insertion
+    overflowMenuSelectors.forEach((sel) => {
+      const found = document.querySelector(sel);
+      if (found) attachDelegatedToMenu(found);
+    });
+
+    try {
+      const menuObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of Array.from(m.addedNodes || [])) {
+            if (!(node instanceof Element)) continue;
+            overflowMenuSelectors.forEach((sel) => {
+              try {
+                const el = node.matches && node.matches(sel) ? node : node.querySelector && node.querySelector(sel);
+                if (el) attachDelegatedToMenu(el instanceof NodeList ? el[0] : el);
+              } catch (e) {
+                /* ignore */
+              }
+            });
+          }
+        }
+      });
+      menuObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    } catch (e) {
+      /* ignore observer failures */
+    }
+
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       hideSavedNotesSheet();
