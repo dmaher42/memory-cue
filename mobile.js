@@ -447,7 +447,6 @@ initViewportHeight();
     wireHeaderAuthButtons();
   }
 })();
-=======
 
 
 const bootstrapReminders = () => {
