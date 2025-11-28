@@ -6074,7 +6074,7 @@
             return;
           }
           if (window.supabase && window.supabase.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
-            try { window.supabase.auth.signInWithOAuth({ provider: 'google' }); } catch (e) { console.debug && console.debug('[fallback] supabase.signInWithOAuth error', e); }
+            try { window.supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined }); } catch (e) { console.debug && console.debug('[fallback] supabase.signInWithOAuth error', e); }
             return;
           }
           console.debug && console.debug('[fallback] No auth entrypoint available');

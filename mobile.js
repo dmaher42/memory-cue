@@ -342,7 +342,7 @@ initViewportHeight();
           try {
             const authController = window.__mobileMocks.initSupabaseAuth();
             if (authController?.supabase?.auth && typeof authController.supabase.auth.signInWithOAuth === 'function') {
-              return () => authController.supabase.auth.signInWithOAuth({ provider: 'google' });
+              return () => authController.supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
             }
           } catch (err) {
             console.debug('initSupabaseAuth check failed:', err);
@@ -350,7 +350,7 @@ initViewportHeight();
         }
         // Check window.supabase client
         if (window.supabase?.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
-          return () => window.supabase.auth.signInWithOAuth({ provider: 'google' });
+          return () => window.supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
         }
       }
       // Fall back to test-provided mock startSignInFlow
@@ -2816,7 +2816,7 @@ if (supabaseAuthController?.supabase) {
         try {
           const supabase = supabaseAuthController?.supabase;
           if (supabase && supabase.auth && typeof supabase.auth.signInWithOAuth === 'function') {
-            await supabase.auth.signInWithOAuth({ provider: 'google' });
+            await supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
             return;
           }
         } catch (err) {

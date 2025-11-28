@@ -118,8 +118,13 @@ export async function startSignInFlow(options = {}) {
     // Fallback to Supabase client if available
     const supabase = getSupabaseClient();
     if (supabase && supabase.auth) {
+      // Resolve a sensible `redirectTo` target when not explicitly provided.
+      const defaultRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
+        ? `${window.location.origin}/oauth/consent`
+        : undefined;
+      const resolvedOptions = { redirectTo: defaultRedirect, ...options };
       if (typeof supabase.auth.signInWithOAuth === 'function') {
-        return supabase.auth.signInWithOAuth({ provider: 'google', ...options });
+        return supabase.auth.signInWithOAuth({ provider: 'google', ...resolvedOptions });
       }
       if (typeof supabase.auth.signIn === 'function') {
         // legacy support
