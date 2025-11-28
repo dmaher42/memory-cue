@@ -5339,8 +5339,39 @@
       const menu = document.getElementById('headerMenu');
 
       // The slim header script below binds the current overflow menu behavior.
-      // Skip the legacy handler to avoid double toggles closing the menu.
-      if (menuBtn && menu) return;
+      // If we don't have required elements, skip wiring.
+      if (!menuBtn || !menu) return;
+
+      // Toggle the overflow menu visibility and keep ARIA attributes in sync
+      const closeMenu = () => {
+        menu.classList.add('hidden');
+        menu.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      const openMenu = () => {
+        menu.classList.remove('hidden');
+        menu.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+      };
+
+      menuBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const isOpen = menuBtn.getAttribute('aria-expanded') === 'true';
+        if (isOpen) closeMenu(); else openMenu();
+      });
+
+      // Close when clicking outside
+      document.addEventListener('click', (ev) => {
+        if (!menu.contains(ev.target) && ev.target !== menuBtn) {
+          closeMenu();
+        }
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') closeMenu();
+      });
     })();
   </script>
 
