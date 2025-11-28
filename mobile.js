@@ -330,6 +330,7 @@ initViewportHeight();
 })();
 /* END GPT CHANGE */
 
+
 // Wire header overflow auth buttons (separate from reminder wiring)
 (function () {
   function wireHeaderAuthButtons() {
@@ -446,6 +447,7 @@ initViewportHeight();
     wireHeaderAuthButtons();
   }
 })();
+
 
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
