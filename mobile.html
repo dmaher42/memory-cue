@@ -5158,7 +5158,6 @@
           class="header-action-btn icon-btn quick-add-action"
           aria-label="Sign in"
           title="Sign in"
-          onclick="window.__mcTriggerSignIn && window.__mcTriggerSignIn()"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z" fill="currentColor"></path>
@@ -5172,7 +5171,6 @@
           class="header-action-btn icon-btn quick-add-action"
           aria-label="Open Notebook"
           title="Open Notebook"
-          onclick="window.showSavedNotesSheet && window.showSavedNotesSheet()"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
             <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
@@ -6031,69 +6029,7 @@
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
   <script type="module" src="./assets/mobile-TDVPIG43.js?v=2025-10-29-1"></script>
   <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
-  <script>
-    // Inline fallback: ensure the header 'Open Notebook' button opens the saved notes sheet
-    (function() {
-      const ensureFallback = () => {
-        const btn = document.getElementById('openSavedNotesGlobal');
-        const sheet = document.getElementById('savedNotesSheet');
-        if (!btn || !sheet) return;
-        if (btn.__mcFallbackWired) return;
-        btn.addEventListener('click', (ev) => {
-          try {
-            ev.preventDefault();
-          } catch {}
-          try {
-            sheet.classList.remove('hidden');
-            sheet.dataset.open = 'true';
-            sheet.setAttribute('aria-hidden', 'false');
-            console.debug && console.debug('[fallback] opened savedNotesSheet via inline fallback');
-          } catch (e) {
-            /* ignore */
-          }
-        });
-        btn.__mcFallbackWired = true;
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ensureFallback, { once: true });
-      } else {
-        ensureFallback();
-      }
-    })();
-  </script>
-  <script>
-    // Inline fallback for Google Sign-in button to ensure it triggers an auth attempt
-    (function() {
-      window.__mcTriggerSignInInvoked = false;
-      window.__mcTriggerSignIn = function() {
-        window.__mcTriggerSignInInvoked = true;
-        try {
-          console.debug && console.debug('[fallback] __mcTriggerSignIn invoked');
-          if (typeof window.startSignInFlow === 'function') {
-            try { window.startSignInFlow(); } catch (e) { console.debug && console.debug('[fallback] startSignInFlow error', e); }
-            return;
-          }
-          if (window.supabase && window.supabase.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
-            try { window.supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined }); } catch (e) { console.debug && console.debug('[fallback] supabase.signInWithOAuth error', e); }
-            return;
-          }
-          console.debug && console.debug('[fallback] No auth entrypoint available');
-        } catch (err) {
-          console.debug && console.debug('[fallback] __mcTriggerSignIn failure', err);
-        }
-      };
-
-      const btn = document.getElementById('googleSignInBtn');
-      if (btn && !btn.__mcFallbackWired) {
-        btn.addEventListener('click', (ev) => {
-          try { ev.preventDefault(); } catch {}
-          try { window.__mcTriggerSignIn && window.__mcTriggerSignIn(); } catch (e) { /* ignore */ }
-        });
-        try { btn.__mcFallbackWired = true; } catch {}
-        try { btn._mcAuthWired = true; } catch {}
-      }
-    })();
-  </script>
+  <!-- Inline fallbacks removed: relying on canonical bundled wiring -->
   <style id="reminder-editor-premium">
     #create-sheet {
       background: radial-gradient(circle at 50% 10%, rgba(104, 65, 144, 0.14), transparent 38%),
