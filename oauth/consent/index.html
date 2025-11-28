@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Memory Cue — OAuth Consent</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#fafafa;color:#111 }
+    .card{background:#fff;border:1px solid #eee;padding:1.25rem 1.5rem;border-radius:12px;max-width:680px;width:94%;box-shadow:0 6px 18px rgba(38,26,64,0.06)}
+    h1{margin:0 0 .25rem;font-size:1.1rem}
+    p{margin:.25rem 0 .75rem;color:#444}
+    pre{background:#f7f7fb;padding:.75rem;border-radius:8px;overflow:auto;font-size:0.85rem}
+    a.button{display:inline-block;margin-top:.5rem;padding:.45rem .7rem;border-radius:6px;background:#512663;color:#fff;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Signing you in…</h1>
+    <p id="status">Completing authentication. You will be redirected to the app shortly. If nothing happens, click <a id="continueLink" class="button" href="/">Continue to app</a>.</p>
+    <details>
+      <summary>Debug info</summary>
+      <pre id="debug">Loading...</pre>
+    </details>
+  </div>
+
+  <script>
+    // Display URL debug info to help diagnose callback redirects
+    const debugEl = document.getElementById('debug');
+    const lines = [];
+    lines.push('href: ' + location.href);
+    lines.push('origin: ' + location.origin);
+    lines.push('pathname: ' + location.pathname);
+    lines.push('search: ' + location.search);
+    lines.push('hash: ' + location.hash);
+    debugEl.textContent = lines.join('\n');
+
+    // Try to detect Supabase client and session (best-effort). If present and session exists,
+    // redirect to app. Otherwise perform a timed redirect back to `/`.
+    (async function() {
+      try {
+        if (window.supabase && window.supabase.auth && typeof window.supabase.auth.getSession === 'function') {
+          try {
+            const { data: sessionData } = await window.supabase.auth.getSession();
+            if (sessionData && sessionData.session) {
+              document.getElementById('status').textContent = 'Sign-in successful — redirecting to the app...';
+              setTimeout(() => (location.href = '/'), 800);
+              return;
+            }
+          } catch (e) {
+            console.debug && console.debug('supabase getSession error', e);
+          }
+        }
+      } catch (err) {
+        console.debug && console.debug('consent page error', err);
+      }
+
+      // Fallback: give the user a short delay, then navigate to the app root.
+      setTimeout(() => {
+        try { location.href = '/'; } catch (e) { /* ignore */ }
+      }, 3000);
+    })();
+  </script>
+</body>
+</html>
