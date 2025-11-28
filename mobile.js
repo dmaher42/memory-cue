@@ -997,6 +997,7 @@ const initMobileNotes = () => {
 
   const showSavedNotesSheet = () => {
     if (!savedNotesSheet) {
+      console.debug && console.debug('[savedNotes] showSavedNotesSheet called but savedNotesSheet is', savedNotesSheet);
       return;
     }
     if (savedNotesSheetHideTimeout) {
@@ -1006,6 +1007,7 @@ const initMobileNotes = () => {
     savedNotesSheet.classList.remove('hidden');
     savedNotesSheet.dataset.open = 'true';
     savedNotesSheet.setAttribute('aria-hidden', 'false');
+    console.debug && console.debug('[savedNotes] opened, dataset.open=', savedNotesSheet.dataset.open);
     // Ensure folder chips are built and notes are rendered when opening the sheet
     try {
       buildFolderChips();
@@ -1079,6 +1081,7 @@ const initMobileNotes = () => {
   if (typeof window !== 'undefined') {
     try {
       window.hideSavedNotesSheet = hideSavedNotesSheet;
+      window.showSavedNotesSheet = showSavedNotesSheet;
       window.closeMoveFolderSheet = closeMoveFolderSheet;
       window.closeOverflowMenu = closeOverflowMenu;
       // closeAddTask is already exported elsewhere but ensure it's available
