@@ -6089,7 +6089,8 @@
           try { ev.preventDefault(); } catch {}
           try { window.__mcTriggerSignIn && window.__mcTriggerSignIn(); } catch (e) { /* ignore */ }
         });
-        btn.__mcFallbackWired = true;
+        try { btn.__mcFallbackWired = true; } catch {}
+        try { btn._mcAuthWired = true; } catch {}
       }
     })();
   </script>
