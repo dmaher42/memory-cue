@@ -1898,6 +1898,36 @@
       <span id="mcStatusText" class="sr-only">Offline</span>
     </div>
 
+    <!-- Mobile authentication UI (email magic link + user badge) -->
+    <div id="auth-section" class="auth-container ml-2">
+      <form id="auth-form" class="auth-form" aria-label="Sign in with email">
+        <div class="form-group">
+          <label for="auth-email" class="sr-only">Email</label>
+          <input
+            id="auth-email"
+            type="email"
+            placeholder="Enter your email"
+            required
+            class="input input-bordered w-full"
+            aria-label="Email address"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-full">
+          Sign In with Magic Link
+        </button>
+      </form>
+      <div id="auth-feedback" class="auth-feedback hidden" aria-live="polite"></div>
+
+      <!-- User profile (hidden when not authenticated) -->
+      <div id="user-badge" class="user-badge hidden" role="region" aria-label="User profile">
+        <div class="flex items-center gap-2">
+          <span id="user-badge-initial" class="avatar" aria-hidden="true"></span>
+          <span id="user-badge-email" class="text-sm"></span>
+        </div>
+        <button id="sign-out-btn" class="btn btn-ghost btn-sm" aria-label="Sign out">Sign Out</button>
+      </div>
+    </div>
+
     .minimal-editor textarea:focus {
       outline: 2px solid rgba(81, 38, 99, 0.25);
     }
@@ -8437,6 +8467,43 @@
           }
         }
       }
+    });
+  </script>
+
+  <!-- Supabase auth wiring for mobile: config + auth initializer -->
+  <script type="module" src="./assets/config-supabase-UH2FHEHM.js"></script>
+  <script type="module">
+    import { initSupabaseAuth } from './assets/supabase-auth-MYSAZA54.js';
+
+    function whenSupabaseReady(timeout = 5000) {
+      return new Promise((resolve, reject) => {
+        if (window.supabase) return resolve(window.supabase);
+        let elapsed = 0;
+        const interval = 150;
+        const iv = setInterval(() => {
+          if (window.supabase) {
+            clearInterval(iv);
+            return resolve(window.supabase);
+          }
+          elapsed += interval;
+          if (elapsed >= timeout) {
+            clearInterval(iv);
+            return reject(new Error('supabase-ready-timeout'));
+          }
+        }, interval);
+      });
+    }
+
+    whenSupabaseReady(5000).then((supabase) => {
+      try {
+        initSupabaseAuth({ supabase });
+        window._mcAuthWired = true;
+        console.info('[mobile] initSupabaseAuth wired');
+      } catch (err) {
+        console.warn('[mobile] initSupabaseAuth error', err);
+      }
+    }).catch((err) => {
+      console.warn('[mobile] supabase did not initialise in time', err);
     });
   </script>
 
