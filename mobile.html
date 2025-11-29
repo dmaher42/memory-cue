@@ -8470,85 +8470,9 @@
     });
   </script>
 
-  <!-- Supabase auth wiring for mobile: config + auth initializer -->
+  <!-- Supabase config (load once). Mobile-specific auth initialisation is handled
+       from `mobile.js` after the client becomes available to avoid duplicate inits. -->
   <script type="module" src="./js/config-supabase.js"></script>
-  <script type="module">
-    import { initSupabaseAuth } from './js/supabase-auth.js';
-
-    function whenSupabaseReady(timeout = 5000) {
-      return new Promise((resolve, reject) => {
-        if (window.supabase) return resolve(window.supabase);
-        let elapsed = 0;
-        const interval = 150;
-        const iv = setInterval(() => {
-          if (window.supabase) {
-            clearInterval(iv);
-            return resolve(window.supabase);
-          }
-          elapsed += interval;
-          if (elapsed >= timeout) {
-            clearInterval(iv);
-            return reject(new Error('supabase-ready-timeout'));
-          }
-        }, interval);
-      });
-    }
-
-    whenSupabaseReady(5000).then((supabase) => {
-      try {
-        initSupabaseAuth({ supabase });
-        window._mcAuthWired = true;
-        console.info('[mobile] initSupabaseAuth wired');
-      } catch (err) {
-        console.warn('[mobile] initSupabaseAuth error', err);
-      }
-    }).catch((err) => {
-      console.warn('[mobile] supabase did not initialise in time', err);
-    });
-  </script>
-  </script>
-
-    <!-- Quick-fix: include Supabase config + auth and attach header sign-in/out handlers -->
-    <script type="module" src="./js/config-supabase.js"></script>
-    <script type="module" src="./js/supabase-auth.js"></script>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        // Find all sign in buttons in header and overflow menu
-        const signInBtns = document.querySelectorAll('[data-action="sign-in"], #signInBtn');
-        const signOutBtns = document.querySelectorAll('[data-action="sign-out"], #signOutBtn');
-
-        // Add click handlers to sign in buttons
-        signInBtns.forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const email = prompt('Enter your email for sign in:');
-            if (email && window.supabase) {
-              window.supabase.auth.signInWithOtp({ email })
-                .then(({ error }) => {
-                  if (error) alert('Error: ' + error.message);
-                  else alert('Magic link sent! Check your email.');
-                })
-                .catch(err => alert('Error: ' + err.message));
-            } else if (!window.supabase) {
-              alert('Authentication not available. Supabase client not initialised.');
-            }
-          });
-        });
-
-        // Add click handlers to sign out buttons
-        signOutBtns.forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (window.supabase && window.supabase.auth) {
-              window.supabase.auth.signOut().catch(() => {});
-            } else {
-              console.warn('Supabase client not available for sign-out');
-            }
-          });
-        });
-      });
-    </script>
 
   </body>
 </html>

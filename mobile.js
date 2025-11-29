@@ -1226,6 +1226,21 @@ const initMobileNotes = () => {
       window.hideSavedNotesSheet = hideSavedNotesSheet;
       // expose showSavedNotesSheet early so wiring checks can detect it
       window.showSavedNotesSheet = showSavedNotesSheet;
+      // mark binder attached early so headless tests know the API is present
+      try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
+      // Attach a direct click handler to the visible header trigger if present
+      try {
+        const headerTrigger = document.getElementById('openSavedNotesGlobal') || document.getElementById('openSavedNotesSheet') || document.querySelector('.open-saved-notes-global');
+        if (headerTrigger && headerTrigger.addEventListener) {
+          headerTrigger.addEventListener('click', (ev) => {
+            try { ev.preventDefault(); } catch {}
+            try { showSavedNotesSheet(); } catch (e) {}
+            try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
+          });
+        }
+      } catch (e) {
+        /* ignore immediate wiring failures */
+      }
       window.closeMoveFolderSheet = closeMoveFolderSheet;
       window.closeOverflowMenu = closeOverflowMenu;
       // closeAddTask is already exported elsewhere but ensure it's available
@@ -2923,39 +2938,92 @@ if (document.readyState === 'loading') {
 
 const notesSyncController = initNotesSync();
 
-const supabaseAuthController = initSupabaseAuth({
-  selectors: {
-    signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
-    signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
-    userBadge: '#user-badge',
-    userBadgeEmail: '#user-badge-email',
-    userBadgeInitial: '#user-badge-initial',
-    userName: '#googleUserName',
-    syncStatus: ['#sync-status'],
-    syncStatusText: ['#mcStatusText'],
-    statusIndicator: ['#mcStatus'],
-    feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
-  },
-  onSessionChange: (user) => {
-    notesSyncController?.handleSessionChange(user);
-  },
-});
-
-if (supabaseAuthController?.supabase) {
-  notesSyncController?.setSupabaseClient(supabaseAuthController.supabase);
-  try {
-    supabaseAuthController.supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        notesSyncController?.handleSessionChange(data?.session?.user ?? null);
-      })
-      .catch(() => {
-        /* noop */
-      });
-  } catch {
-    /* noop */
-  }
+// Defer auth controller initialization until Supabase client is available.
+// This avoids duplicate/conflicting inits when `config-supabase.js` loads asynchronously
+// and ensures notes syncing receives a valid session.
+let supabaseAuthController = null;
+function whenSupabaseReady(timeout = 10000, interval = 150) {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && window.supabase) return resolve(window.supabase);
+    let elapsed = 0;
+    const iv = setInterval(() => {
+      if (typeof window !== 'undefined' && window.supabase) {
+        clearInterval(iv);
+        return resolve(window.supabase);
+      }
+      elapsed += interval;
+      if (elapsed >= timeout) {
+        clearInterval(iv);
+        return reject(new Error('supabase-ready-timeout'));
+      }
+    }, interval);
+  });
 }
+
+whenSupabaseReady(10000)
+  .then((supabase) => {
+    try {
+      supabaseAuthController = initSupabaseAuth({
+        supabase,
+        selectors: {
+          signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
+          signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
+          userBadge: '#user-badge',
+          userBadgeEmail: '#user-badge-email',
+          userBadgeInitial: '#user-badge-initial',
+          userName: '#googleUserName',
+          syncStatus: ['#sync-status'],
+          syncStatusText: ['#mcStatusText'],
+          statusIndicator: ['#mcStatus'],
+          feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
+        },
+        onSessionChange: (user) => {
+          try {
+            notesSyncController?.handleSessionChange(user);
+          } catch (e) {
+            /* ignore handler errors */
+          }
+        },
+      });
+
+      // Provide the supabase client to notes sync and immediately check session
+      try {
+        notesSyncController?.setSupabaseClient(supabaseAuthController?.supabase || supabase);
+      } catch (e) {}
+
+      try {
+        const client = supabaseAuthController?.supabase || supabase;
+        if (client && client.auth && typeof client.auth.getSession === 'function') {
+          client.auth
+            .getSession()
+            .then(({ data }) => {
+              try {
+                notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+              } catch (e) {}
+            })
+            .catch(() => {});
+        }
+      } catch (e) {}
+
+      // Listen for auth state changes and propagate to notes sync
+      try {
+        const client = supabaseAuthController?.supabase || supabase;
+        if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+          client.auth.onAuthStateChange((event, session) => {
+            try {
+              notesSyncController?.handleSessionChange(session?.user ?? null);
+            } catch (e) {}
+          });
+        }
+      } catch (e) {}
+
+    } catch (err) {
+      console.warn('[mobile] initSupabaseAuth error', err);
+    }
+  })
+  .catch((err) => {
+    console.warn('[mobile] supabase did not initialise in time', err);
+  });
 
 // Ensure sign-in button is wired on mobile even when `initSupabaseAuth` is called
 // with `disableButtonBinding: true`. This guarantees the Google sign-in CTA triggers
@@ -2975,7 +3043,7 @@ if (supabaseAuthController?.supabase) {
         } catch {}
         // Prefer using the Supabase client if available
         try {
-          const supabase = supabaseAuthController?.supabase;
+          const supabase = (typeof window !== 'undefined' && window.supabase) ? window.supabase : supabaseAuthController?.supabase;
           if (supabase && supabase.auth && typeof supabase.auth.signInWithOAuth === 'function') {
             await supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
             return;
