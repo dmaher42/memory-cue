@@ -2959,6 +2959,73 @@ function whenSupabaseReady(timeout = 10000, interval = 150) {
     }, interval);
   });
 }
+// Helper: resolve the main app UI element. Prefer `#main-app-ui`, fallback to `#main` or `.mobile-panel--notes`.
+function getMainUiEl() {
+  try {
+    return document.getElementById('main-app-ui') || document.getElementById('main') || document.querySelector('.mobile-panel--notes') || document.querySelector('#view-notebook');
+  } catch (e) {
+    return null;
+  }
+}
+
+// Hide main UI temporarily to avoid flicker until session check completes.
+function ensureMainUiHidden() {
+  const el = getMainUiEl();
+  if (el && el.style) {
+    try {
+      el.style.display = 'none';
+    } catch (e) {}
+  }
+}
+
+// Reveal main UI with fade-in class.
+function revealMainUiWithFade() {
+  const el = getMainUiEl();
+  if (!el) return;
+  try {
+    el.style.display = '';
+    // Force reflow then add class
+    void el.offsetWidth;
+    el.classList.add('fade-in-auth-success');
+    // remove the class after animation to keep DOM clean
+    setTimeout(() => {
+      try { el.classList.remove('fade-in-auth-success'); } catch (e) {}
+    }, 700);
+  } catch (e) {}
+}
+
+// Lightweight toast for auth success
+function showAuthSuccessToast(message = '✅ Signed in successfully') {
+  try {
+    const existing = document.querySelector('.mc-auth-toast');
+    if (existing) {
+      existing.remove();
+    }
+    const toast = document.createElement('div');
+    toast.className = 'mc-auth-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    // allow styles to apply
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+    setTimeout(() => {
+      try { toast.classList.remove('show'); } catch (e) {}
+      setTimeout(() => { try { toast.remove(); } catch (e) {} }, 220);
+    }, 3000);
+  } catch (e) {
+    /* ignore toast errors */
+  }
+}
+
+// Ensure UI hidden early
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', ensureMainUiHidden, { once: true });
+} else {
+  ensureMainUiHidden();
+}
 
 whenSupabaseReady(10000)
   .then((supabase) => {
@@ -2998,10 +3065,23 @@ whenSupabaseReady(10000)
             .getSession()
             .then(({ data }) => {
               try {
-                notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+                const user = data?.session?.user ?? null;
+                notesSyncController?.handleSessionChange(user);
+                // reveal UI: if user signed in, show with fade and toast
+                if (user) {
+                  try { revealMainUiWithFade(); } catch (e) {}
+                  try { showAuthSuccessToast(); } catch (e) {}
+                } else {
+                  // if not signed in, still reveal UI (no auth-specific animation)
+                  try {
+                    const el = getMainUiEl(); if (el && el.style) el.style.display = '';
+                  } catch (e) {}
+                }
               } catch (e) {}
             })
-            .catch(() => {});
+            .catch(() => {
+              try { const el = getMainUiEl(); if (el && el.style) el.style.display = ''; } catch (e) {}
+            });
         }
       } catch (e) {}
 
@@ -3011,7 +3091,15 @@ whenSupabaseReady(10000)
         if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
           client.auth.onAuthStateChange((event, session) => {
             try {
-              notesSyncController?.handleSessionChange(session?.user ?? null);
+              const user = session?.user ?? null;
+              notesSyncController?.handleSessionChange(user);
+              // On sign in event, reveal UI and show toast
+              try {
+                if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                  revealMainUiWithFade();
+                  showAuthSuccessToast();
+                }
+              } catch (e) {}
             } catch (e) {}
           });
         }
