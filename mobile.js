@@ -1,6 +1,7 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
 import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';
+import { getSupabaseClient } from './js/supabase-client.js';
 import {
   loadAllNotes,
   saveAllNotes,
@@ -378,9 +379,30 @@ initViewportHeight();
       } catch {}
       try {
         console.log('[mobile] auth form submit triggered');
+        // persistent state log for sign-in flow
+        try { window.__mcLastSignInState = 'submit-triggered'; } catch {}
         const emailInput = document.getElementById('auth-email');
+        const passwordInput = document.getElementById('auth-password');
         const feedbackEl = document.getElementById('auth-feedback');
         const email = (emailInput && typeof emailInput.value === 'string') ? emailInput.value.trim() : '';
+        const password = (passwordInput && typeof passwordInput.value === 'string') ? passwordInput.value : '';
+
+        // Button/UX state
+        const submitBtn = form.querySelector('button[type="submit"]') || document.getElementById('sign-in-btn');
+        const setLoading = (loading) => {
+          try {
+            if (submitBtn && submitBtn instanceof HTMLElement) {
+              submitBtn.disabled = !!loading;
+              submitBtn.setAttribute('aria-busy', loading ? 'true' : 'false');
+              if (loading) {
+                submitBtn.dataset.__mcPrevText = submitBtn.textContent || '';
+                submitBtn.textContent = 'Signing in...';
+              } else {
+                try { submitBtn.textContent = submitBtn.dataset.__mcPrevText || submitBtn.textContent; } catch {}
+              }
+            }
+          } catch {}
+        };
 
         if (!email) {
           try {
@@ -409,28 +431,53 @@ initViewportHeight();
           }
           return;
         }
-
+        // If password input present and non-empty, attempt password sign-in. Otherwise, use magic link.
+        setLoading(true);
         try {
-          if (feedbackEl) {
-            feedbackEl.textContent = 'Sending magic link...';
-            feedbackEl.classList.remove('hidden');
-          }
-        } catch (e) {}
-
-        try {
-          const result = await client.auth.signInWithOtp({ email });
-          const error = result?.error ?? null;
-          if (error) {
-            console.error('[mobile] signInWithOtp error', error);
-            try { if (feedbackEl) { feedbackEl.textContent = error.message || 'Unable to send magic link.'; } } catch {}
+          if (password) {
+            console.log('[mobile] Attempting password sign-in for', email);
+            try { window.__mcLastSignInState = 'password-signin-started'; } catch {}
+            const res = await client.auth.signInWithPassword({ email, password });
+            console.log('[mobile] signInWithPassword response', res);
+            try { window.__mcLastSignInState = res?.error ? 'password-signin-failed' : 'password-signin-success'; } catch {}
+            if (res?.error) {
+              console.error('[mobile] signInWithPassword error', res.error);
+              if (feedbackEl) {
+                feedbackEl.textContent = res.error.message || 'Sign-in failed';
+                feedbackEl.classList.remove('hidden');
+              }
+            } else {
+              if (feedbackEl) {
+                feedbackEl.textContent = 'Signed in successfully.';
+                feedbackEl.classList.remove('hidden');
+              }
+              try { showAuthSuccessToast('Signed in'); } catch (e) {}
+            }
           } else {
-            console.log('[mobile] magic link sent for', email);
-            try { if (feedbackEl) { feedbackEl.textContent = 'Magic link sent. Check your email.'; } } catch {}
-            try { showAuthSuccessToast('Magic link sent'); } catch (e) {}
+            console.log('[mobile] No password provided — sending magic link to', email);
+            try { window.__mcLastSignInState = 'otp-started'; } catch {}
+            if (feedbackEl) {
+              feedbackEl.textContent = 'Sending magic link...';
+              feedbackEl.classList.remove('hidden');
+            }
+            const result = await client.auth.signInWithOtp({ email });
+            const error = result?.error ?? null;
+            console.log('[mobile] signInWithOtp response', result);
+            try { window.__mcLastSignInState = error ? 'otp-failed' : 'otp-success'; } catch {}
+            if (error) {
+              console.error('[mobile] signInWithOtp error', error);
+              if (feedbackEl) { feedbackEl.textContent = error.message || 'Unable to send magic link.'; }
+            } else {
+              console.log('[mobile] magic link sent for', email);
+              if (feedbackEl) { feedbackEl.textContent = 'Magic link sent. Check your email.'; }
+              try { showAuthSuccessToast('Magic link sent'); } catch (e) {}
+            }
           }
         } catch (err) {
           console.error('[mobile] auth submit failed', err);
           try { if (feedbackEl) { feedbackEl.textContent = err?.message || 'Sign-in failed'; } } catch {}
+        } finally {
+          setLoading(false);
         }
       } catch (err) {
         console.error('[mobile] auth form handler error', err);
