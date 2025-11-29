@@ -3333,38 +3333,104 @@ whenSupabaseReady(10000)
     // Wire both header and overflow menu sign-in buttons
     const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn, #googleSignInBtnMenu'));
     if (!signInButtons.length) return;
+
+    // Unified sign-in function used by header + menu buttons and form submit fallback
+    async function signIn({ fromButton = null } = {}) {
+      try {
+        console.log('[mobile] signIn() invoked', { fromButton });
+      } catch {}
+      const feedbackEl = document.getElementById('auth-feedback');
+      const emailInput = document.getElementById('auth-email');
+      const passwordInput = document.getElementById('auth-password');
+      const email = (emailInput && typeof emailInput.value === 'string') ? emailInput.value.trim() : '';
+      const password = (passwordInput && typeof passwordInput.value === 'string') ? passwordInput.value : '';
+
+      if (!email) {
+        try { if (feedbackEl) { feedbackEl.textContent = 'Please enter your email.'; feedbackEl.classList.remove('hidden'); } } catch {}
+        return null;
+      }
+
+      // Ensure supabase client is available
+      let client = null;
+      try {
+        client = getSupabaseClient() || (typeof window !== 'undefined' && window.supabase) || supabaseAuthController?.supabase;
+      } catch (e) {
+        console.error('[mobile] getSupabaseClient failed', e);
+      }
+
+      if (!client || !client.auth) {
+        try { if (feedbackEl) { feedbackEl.textContent = 'Authentication service unavailable.'; feedbackEl.classList.remove('hidden'); } } catch {}
+        console.warn('[mobile] supabase client not available for signIn');
+        try { await startSignInFlow(); } catch (e) { console.warn('[mobile] startSignInFlow fallback failed', e); }
+        return null;
+      }
+
+      // Disable any UI submit button while processing
+      try { window.__mcLastSignInState = 'started'; } catch {}
+
+      try {
+        if (password) {
+          console.log('[mobile] signInWithPassword for', email);
+          try { if (feedbackEl) { feedbackEl.textContent = 'Signing in...'; feedbackEl.classList.remove('hidden'); } } catch {}
+          const res = await client.auth.signInWithPassword({ email, password });
+          console.log('[mobile] signInWithPassword result', res);
+          if (res?.error) {
+            try { if (feedbackEl) { feedbackEl.textContent = res.error.message || 'Sign-in failed'; } } catch {}
+            try { window.__mcLastSignInState = 'failed'; } catch {}
+            return res;
+          }
+          try { if (feedbackEl) { feedbackEl.textContent = 'Signed in.'; } } catch {}
+          try { window.__mcLastSignInState = 'success'; } catch {}
+          try { showAuthSuccessToast && showAuthSuccessToast('Signed in'); } catch {}
+          return res;
+        }
+
+        // No password - prefer magic link
+        console.log('[mobile] No password provided; sending magic link to', email);
+        try { if (feedbackEl) { feedbackEl.textContent = 'Sending magic link...'; feedbackEl.classList.remove('hidden'); } } catch {}
+        const otp = await client.auth.signInWithOtp({ email });
+        console.log('[mobile] signInWithOtp result', otp);
+        if (otp?.error) {
+          try { if (feedbackEl) { feedbackEl.textContent = otp.error.message || 'Unable to send magic link.'; } } catch {}
+          try { window.__mcLastSignInState = 'otp-failed'; } catch {}
+          return otp;
+        }
+        try { if (feedbackEl) { feedbackEl.textContent = 'Magic link sent. Check your email.'; } } catch {}
+        try { window.__mcLastSignInState = 'otp-sent'; } catch {}
+        try { showAuthSuccessToast && showAuthSuccessToast('Magic link sent'); } catch {}
+        return otp;
+      } catch (err) {
+        console.error('[mobile] signIn() failed', err);
+        try { if (feedbackEl) { feedbackEl.textContent = err?.message || 'Sign-in failed'; } } catch {}
+        try { window.__mcLastSignInState = 'error'; } catch {}
+        return { error: err };
+      }
+    }
+
     signInButtons.forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
       // Prevent duplicate wiring
       if (btn.dataset.__signedInWired === 'true') return;
       btn.addEventListener('click', async (ev) => {
-        try {
-          ev.preventDefault();
-        } catch {}
-        // Prefer using the Supabase client if available
-        try {
-          const supabase = (typeof window !== 'undefined' && window.supabase) ? window.supabase : supabaseAuthController?.supabase;
-          if (supabase && supabase.auth && typeof supabase.auth.signInWithOAuth === 'function') {
-            await supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
-            return;
+        try { ev.preventDefault(); } catch {}
+        // Invoke unified signIn; if the button explicitly represents OAuth (Google), try OAuth first
+        const prefersOAuth = (btn.id === 'googleSignInBtn' || btn.id === 'googleSignInBtnMenu');
+        if (prefersOAuth) {
+          try {
+            const supabase = getSupabaseClient() || (typeof window !== 'undefined' && window.supabase) || supabaseAuthController?.supabase;
+            if (supabase && supabase.auth && typeof supabase.auth.signInWithOAuth === 'function') {
+              console.log('[mobile] triggering signInWithOAuth (google) via unified handler');
+              await supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
+              return;
+            }
+          } catch (err) {
+            console.warn('[mobile] OAuth attempt failed, falling back to unified password/OTP signIn', err);
           }
-        } catch (err) {
-          // Fall through to the generic startSignInFlow fallback
-          console.warn('Supabase signInWithOAuth attempt failed, falling back to startSignInFlow', err);
         }
-        try {
-          await startSignInFlow();
-        } catch (err) {
-          // no-op – errors are handled/logged by startSignInFlow
-        }
+        await signIn({ fromButton: btn.id || btn.className });
       });
-      try {
-        btn.dataset.__signedInWired = 'true';
-      } catch {}
-      try {
-        // Mark the canonical wiring flag used by other modules/tests
-        btn._mcAuthWired = true;
-      } catch {}
+      try { btn.dataset.__signedInWired = 'true'; } catch {}
+      try { btn._mcAuthWired = true; } catch {}
     });
   } catch (err) {
     /* noop */
