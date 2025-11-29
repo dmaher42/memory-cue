@@ -13,6 +13,95 @@ import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
 
+// --- Supabase CDN fallback initializer (safe & idempotent) ---
+// NOTE: replace the placeholders below with your project's values when testing locally.
+try {
+  const supabaseUrl = 'https://your-project-id.supabase.co'; // 🔁 Replace this
+  const supabaseKey = 'your-anon-key'; // 🔁 Replace this
+
+  if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      if (!window.supabaseClient) {
+        window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        console.log('✅ Supabase initialized (window.supabaseClient):', window.supabaseClient);
+      } else {
+        console.log('✅ Supabase client already present:', window.supabaseClient);
+      }
+    } catch (e) {
+      console.error('[mobile] Failed to create Supabase client from CDN:', e);
+    }
+  } else if (typeof window !== 'undefined' && typeof window.supabase === 'undefined') {
+    console.warn('[mobile] Supabase SDK not found on window; ensure CDN is included before mobile.js');
+  }
+} catch (e) {
+  /* swallow init errors to avoid breaking page */
+}
+
+// Wire a direct Google sign-in handler for a couple of possible button IDs
+const _mc_wire_google_signin = () => {
+  const signInHandler = async (ev) => {
+    try {
+      ev && ev.preventDefault && ev.preventDefault();
+    } catch {}
+    console.log('🔐 Signing in with Google...');
+    try {
+      const client = window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase.createClient : null) || window.supabase;
+      // If client is a factory (createClient), create one using placeholders
+      let authClient = client;
+      if (client && typeof client === 'function') {
+        try {
+          authClient = client('https://your-project-id.supabase.co', 'your-anon-key');
+        } catch (e) {
+          console.error('[mobile] Failed to instantiate supabase client from factory:', e);
+          authClient = null;
+        }
+      }
+      if (authClient && authClient.auth && typeof authClient.auth.signInWithOAuth === 'function') {
+        const { error } = await authClient.auth.signInWithOAuth({ provider: 'google' });
+        if (error) {
+          console.error('❌ Sign-in failed:', error);
+          try { alert('Sign-in error: ' + (error.message || error)); } catch {}
+        }
+        return;
+      }
+      // Fallback to startSignInFlow helper
+      if (typeof startSignInFlow === 'function') {
+        try {
+          await startSignInFlow();
+          return;
+        } catch (e) {
+          console.error('[mobile] startSignInFlow failed', e);
+        }
+      }
+      console.error('Supabase auth client not available for Google sign-in');
+      try { alert('Supabase auth client not available. Check console for details.'); } catch {}
+    } catch (e) {
+      console.error('Sign-in handler error', e);
+      try { alert('Sign-in error: ' + (e && e.message ? e.message : String(e))); } catch {}
+    }
+  };
+
+  const ids = ['sign-in-google', 'googleSignInBtn', 'googleSignInBtnMenu'];
+  ids.forEach((id) => {
+    try {
+      const el = document.getElementById(id);
+      if (el && !el.dataset?.__mcGoogleWired) {
+        el.addEventListener('click', signInHandler);
+        try { el.dataset.__mcGoogleWired = 'true'; } catch {}
+      }
+    } catch (e) {
+      /* ignore wiring errors */
+    }
+  });
+};
+try {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _mc_wire_google_signin, { once: true });
+  } else {
+    _mc_wire_google_signin();
+  }
+} catch (e) {}
+
 initViewportHeight();
 
 /* BEGIN GPT CHANGE: bottom sheet open/close */
