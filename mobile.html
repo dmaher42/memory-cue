@@ -8474,5 +8474,9 @@
        from `mobile.js` after the client becomes available to avoid duplicate inits. -->
   <script type="module" src="./assets/config-supabase-UH2FHEHM.js"></script>
 
-  </body>
+    <!-- Load Supabase SDK (CDN) and mobile entry. Ensure the SDK loads before `mobile.js`. -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/mobile.js"></script>
+
+    </body>
 </html>
