@@ -2149,7 +2149,8 @@ const initMobileNotes = () => {
     try {
       newFolderModalController.requestClose('created');
     } catch { /* ignore */ }
-    currentFolderId = folderId;
+    // Do NOT switch to the new folder automatically — keep the current view
+    // currentFolderId = folderId;
     clearSearchFilter();
     try {
       buildFolderChips();
