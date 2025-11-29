@@ -17,22 +17,50 @@ import { saveFolders } from './js/modules/notes-storage.js';
 // --- Supabase CDN fallback initializer (safe & idempotent) ---
 // NOTE: replace the placeholders below with your project's values when testing locally.
 try {
-  const supabaseUrl = 'https://your-project-id.supabase.co'; // 🔁 Replace this
-  const supabaseKey = 'your-anon-key'; // 🔁 Replace this
+  const SUPABASE_URL = 'https://yhfxsbeglqkmovokhiqg.supabase.co';
+  const SUPABASE_ANON = 'sb_publishable_gclEkIQ8Wdt9bJAvIcZWiQ_xvAzdXVh';
 
-  if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+  if (typeof window !== 'undefined') {
     try {
-      if (!window.supabaseClient) {
-        window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-        console.log('✅ Supabase initialized (window.supabaseClient):', window.supabaseClient);
-      } else {
-        console.log('✅ Supabase client already present:', window.supabaseClient);
+      // If the CDN is loaded it exposes a `supabase` global with `createClient`.
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        if (!window.supabaseClient) {
+          try {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+            // Also set window.supabase to the client for compatibility with other modules
+            try { window.supabase = window.supabaseClient; } catch {}
+            console.info('[mobile] Supabase client initialized from CDN', { url: SUPABASE_URL });
+          } catch (e) {
+            console.error('[mobile] Failed to create Supabase client from CDN', e);
+          }
+        } else {
+          console.info('[mobile] Supabase client already present');
+        }
+      } else if (typeof window.supabase === 'undefined') {
+        // If the CDN isn't present yet, attempt to create a script tag to load it.
+        // This provides resilience when markup didn't include the CDN script.
+        const existingScript = document.querySelector('script[src*="supabase-js@2"]');
+        if (!existingScript) {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+          s.onload = () => {
+            try {
+              if (window.supabase && typeof window.supabase.createClient === 'function') {
+                window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+                try { window.supabase = window.supabaseClient; } catch {}
+                console.info('[mobile] Supabase SDK loaded and client initialised (dynamic)');
+              }
+            } catch (e) {
+              console.error('[mobile] Failed to initialise Supabase dynamically', e);
+            }
+          };
+          s.onerror = (e) => console.warn('[mobile] Failed to load Supabase SDK dynamically', e);
+          try { document.head.appendChild(s); } catch (e) { console.warn('[mobile] Could not append Supabase script', e); }
+        }
       }
     } catch (e) {
-      console.error('[mobile] Failed to create Supabase client from CDN:', e);
+      console.warn('[mobile] Supabase init guard failed', e);
     }
-  } else if (typeof window !== 'undefined' && typeof window.supabase === 'undefined') {
-    console.warn('[mobile] Supabase SDK not found on window; ensure CDN is included before mobile.js');
   }
 } catch (e) {
   /* swallow init errors to avoid breaking page */
