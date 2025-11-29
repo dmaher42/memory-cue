@@ -366,6 +366,82 @@ initViewportHeight();
   }
 })();
 
+// Defensive wiring for the mobile auth form (magic-link/email).
+(() => {
+  try {
+    const form = document.getElementById('auth-form');
+    if (!form || form.dataset?.__mobileAuthFormWired === 'true') return;
+
+    form.addEventListener('submit', async (ev) => {
+      try {
+        ev.preventDefault();
+      } catch {}
+      try {
+        console.log('[mobile] auth form submit triggered');
+        const emailInput = document.getElementById('auth-email');
+        const feedbackEl = document.getElementById('auth-feedback');
+        const email = (emailInput && typeof emailInput.value === 'string') ? emailInput.value.trim() : '';
+
+        if (!email) {
+          try {
+            if (feedbackEl) {
+              feedbackEl.textContent = 'Enter an email address to continue.';
+              feedbackEl.classList.remove('hidden');
+            }
+          } catch (e) {}
+          return;
+        }
+
+        // Prefer the auth controller client if available, otherwise fall back to window globals
+        const client = (typeof supabaseAuthController !== 'undefined' && supabaseAuthController?.supabase)
+          || (typeof window !== 'undefined' && (window.supabase || window.supabaseClient));
+
+        if (!client || !client.auth) {
+          console.warn('[mobile] Supabase client not available for magic-link; falling back to startSignInFlow');
+          try { if (feedbackEl) { feedbackEl.textContent = 'Authentication service unavailable.'; feedbackEl.classList.remove('hidden'); } } catch {}
+          try {
+            if (typeof startSignInFlow === 'function') {
+              await startSignInFlow();
+            }
+          } catch (e) {
+            console.error('[mobile] startSignInFlow fallback failed', e);
+            try { if (feedbackEl) { feedbackEl.textContent = 'Sign-in failed. Check console for details.'; } } catch {}
+          }
+          return;
+        }
+
+        try {
+          if (feedbackEl) {
+            feedbackEl.textContent = 'Sending magic link...';
+            feedbackEl.classList.remove('hidden');
+          }
+        } catch (e) {}
+
+        try {
+          const result = await client.auth.signInWithOtp({ email });
+          const error = result?.error ?? null;
+          if (error) {
+            console.error('[mobile] signInWithOtp error', error);
+            try { if (feedbackEl) { feedbackEl.textContent = error.message || 'Unable to send magic link.'; } } catch {}
+          } else {
+            console.log('[mobile] magic link sent for', email);
+            try { if (feedbackEl) { feedbackEl.textContent = 'Magic link sent. Check your email.'; } } catch {}
+            try { showAuthSuccessToast('Magic link sent'); } catch (e) {}
+          }
+        } catch (err) {
+          console.error('[mobile] auth submit failed', err);
+          try { if (feedbackEl) { feedbackEl.textContent = err?.message || 'Sign-in failed'; } } catch {}
+        }
+      } catch (err) {
+        console.error('[mobile] auth form handler error', err);
+      }
+    });
+
+    try { form.dataset.__mobileAuthFormWired = 'true'; } catch (e) {}
+  } catch (e) {
+    /* swallow wiring errors */
+  }
+})();
 /* Top-level defensive wiring for new folder button.
  * This ensures the New Folder CTA will function even when initMobileNotes doesn't run
  * (e.g., minimal DOM environments or tests that don't initialise the full notes UI).
