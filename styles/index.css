@@ -262,6 +262,8 @@ html[data-theme="professional"] {
   flex: 1 1 auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  /* leave room on the right so the fixed New button doesn't cover chips */
+  padding-right: 92px;
 }
 
 .notebook-folder-scroll-wrap::after {
@@ -280,9 +282,14 @@ html[data-theme="professional"] {
 /* Ensure the New folder chip stays visible at the far right (outside the scroll area) */
 .notebook-folder-chip--new {
   margin-left: 8px;
-  z-index: 10;
+  z-index: 40;
   flex: 0 0 auto;
   align-self: center;
+  /* Pin the New button to the top-right of the folder bar */
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* Dark theme fade tweak */
@@ -652,7 +659,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   top: 8px;
   right: 8px;
   border: none;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
@@ -660,6 +667,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   transform: translateY(-4px);
   transition: opacity 0.16s ease, transform 0.16s ease;
   color: var(--text-main);
+  z-index: 60; /* ensure overflow button sits above other UI */
 }
 
 .premium-note-card:hover .note-card-action,
