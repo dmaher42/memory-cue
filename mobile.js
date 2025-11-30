@@ -1256,7 +1256,47 @@ const initMobileNotes = () => {
   };
 
   const openNewFolderDialog = () => {
-    if (!newFolderModalEl) return;
+    // If there's no dedicated modal in the DOM, fall back to a simple prompt.
+    if (!newFolderModalEl) {
+      try {
+        const inputName = window.prompt('New folder name:');
+        if (!inputName) return;
+        const raw = String(inputName || '');
+        const name = raw.trim();
+        if (!name) return;
+        // Reuse storage helpers
+        let folders = [];
+        try {
+          folders = Array.isArray(getFolders()) ? getFolders() : [];
+        } catch (e) {
+          folders = [];
+        }
+        const exists = folders.some((f) => String(f.name).toLowerCase() === name.toLowerCase());
+        if (exists) {
+          try { window.alert('You already have a folder with this name.'); } catch {}
+          return;
+        }
+        const folderId = `folder-${Date.now().toString(36)}`;
+        const newFolder = { id: folderId, name };
+        const updated = [...folders.filter(Boolean), newFolder];
+        const saved = saveFolders(updated);
+        if (!saved) {
+          try { window.alert('Unable to create folder. Please try again.'); } catch {}
+          return null;
+        }
+        // Rebuild chips to show the new folder; do NOT change current folder or filters
+        try { buildFolderChips(); } catch (e) { console.warn('[notebook] rebuild folder chips failed', e); }
+        if (typeof afterFolderCreated === 'function') {
+          try { afterFolderCreated(folderId, name); } catch (err) { console.warn('[notebook] post-create handler failed', err); }
+          afterFolderCreated = null;
+        }
+        return folderId;
+      } catch (err) {
+        console.warn('[notebook] new folder prompt failed', err);
+        return;
+      }
+    }
+
     if (!newFolderModalController) {
       newFolderModalController = new ModalController({
         modalElement: newFolderModalEl,
@@ -1303,18 +1343,16 @@ const initMobileNotes = () => {
       return null;
     }
 
-    // Close modal, set active folder and rebuild
+    // Close modal and rebuild folder chips. Do NOT switch view or alter filters.
     try {
       newFolderModalController.requestClose('created');
     } catch { /* ignore */ }
-    currentFolderId = folderId;
-    clearSearchFilter();
+    // Keep the current folder/filter state intact — do not auto-select the new folder
     try {
       buildFolderChips();
     } catch (e) {
       console.warn('[notebook] rebuild folder chips failed', e);
     }
-    renderFilteredNotes();
     if (typeof afterFolderCreated === 'function') {
       try {
         afterFolderCreated(folderId, name);
