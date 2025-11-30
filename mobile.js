@@ -1272,45 +1272,14 @@ const initMobileNotes = () => {
   };
 
   const openNewFolderDialog = () => {
-    // If there's no dedicated modal in the DOM, fall back to a simple prompt.
+    // Prefer the dedicated modal dialog for folder creation. The modal
+    // markup exists in `mobile.html` and is wired below; use the
+    // ModalController to handle focus trapping and accessibility.
     if (!newFolderModalEl) {
-      try {
-        const inputName = window.prompt('New folder name:');
-        if (!inputName) return;
-        const raw = String(inputName || '');
-        const name = raw.trim();
-        if (!name) return;
-        // Reuse storage helpers
-        let folders = [];
-        try {
-          folders = Array.isArray(getFolders()) ? getFolders() : [];
-        } catch (e) {
-          folders = [];
-        }
-        const exists = folders.some((f) => String(f.name).toLowerCase() === name.toLowerCase());
-        if (exists) {
-          try { window.alert('You already have a folder with this name.'); } catch {}
-          return;
-        }
-        const folderId = `folder-${Date.now().toString(36)}`;
-        const newFolder = { id: folderId, name };
-        const updated = [...folders.filter(Boolean), newFolder];
-        const saved = saveFolders(updated);
-        if (!saved) {
-          try { window.alert('Unable to create folder. Please try again.'); } catch {}
-          return null;
-        }
-        // Rebuild chips to show the new folder; do NOT change current folder or filters
-        try { buildFolderChips(); } catch (e) { console.warn('[notebook] rebuild folder chips failed', e); }
-        if (typeof afterFolderCreated === 'function') {
-          try { afterFolderCreated(folderId, name); } catch (err) { console.warn('[notebook] post-create handler failed', err); }
-          afterFolderCreated = null;
-        }
-        return folderId;
-      } catch (err) {
-        console.warn('[notebook] new folder prompt failed', err);
-        return;
-      }
+      // Safety fallback: if modal markup is missing, log and abort.
+      // Avoid using `prompt()` to provide a consistent, accessible UX.
+      console.warn('[notebook] #newFolderModal not found; create folder modal missing');
+      return;
     }
 
     if (!newFolderModalController) {
@@ -1322,8 +1291,21 @@ const initMobileNotes = () => {
         autoFocus: true,
       });
     }
+
     clearNewFolderError();
-    if (newFolderNameInput) newFolderNameInput.value = '';
+    if (newFolderNameInput) {
+      newFolderNameInput.value = '';
+      // autofocus will be handled by ModalController, but ensure selection
+      setTimeout(() => {
+        try {
+          newFolderNameInput.focus();
+          newFolderNameInput.select && newFolderNameInput.select();
+        } catch (e) {
+          /* ignore focus errors */
+        }
+      }, 20);
+    }
+
     newFolderModalController.show();
   };
 

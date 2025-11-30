@@ -334,6 +334,31 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   z-index: 60;
 }
 
+/* Responsive adjustments: avoid chips being covered by the pinned button on small screens */
+@media (max-width: 640px) {
+  .notebook-folder-scroll-wrap {
+    /* reduce right padding when the pinned button is snapped below the chips */
+    padding-right: 20px;
+  }
+
+  .notebook-folder-header {
+    /* allow wrapping so the button can fall below the chips */
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .new-folder-btn {
+    /* place the button below the chips on small screens */
+    position: static;
+    margin-left: auto;
+    margin-top: 6px;
+    align-self: center;
+    right: auto;
+    top: auto;
+  }
+}
+
 .new-folder-btn:hover {
   background: #f3e8ff;
 }
