@@ -1203,16 +1203,15 @@ const initMobileNotes = () => {
       filterBar.appendChild(createChip(folder));
     });
 
-    // Create a scroll wrapper for the chips so the New Folder button can live
-    // outside the scrollable area and remain visible.
+    // Create a scroll wrapper for the chips
     const scrollWrap = document.createElement('div');
     scrollWrap.className = 'notebook-folder-scroll-wrap';
     scrollWrap.appendChild(filterBar);
 
-    // Add + New folder button outside the scrollable chips container
+    // Add + New folder button (kept outside the scroll area so it's always visible)
     const newChip = document.createElement('button');
     newChip.type = 'button';
-    newChip.className = 'folder-chip outlined notebook-folder-chip notebook-folder-chip--new';
+    newChip.className = 'folder-chip outlined notebook-folder-chip notebook-folder-chip--new new-folder-btn';
     newChip.dataset.folderId = 'new-folder';
     newChip.innerHTML = '<span class="notebook-folder-chip-icon">+</span><span>New folder</span>';
     newChip.addEventListener('click', (e) => {
@@ -1224,9 +1223,18 @@ const initMobileNotes = () => {
       }
     });
 
-    // Append scrollable chips and the fixed New button to the folder bar
-    folderBar.appendChild(scrollWrap);
-    folderBar.appendChild(newChip);
+    // Build header container: chips on the left (scrollable), button fixed on the right
+    const header = document.createElement('div');
+    header.className = 'notebook-folder-header';
+
+    const chipsWrap = document.createElement('div');
+    chipsWrap.className = 'folder-chips';
+    chipsWrap.appendChild(scrollWrap);
+
+    header.appendChild(chipsWrap);
+    header.appendChild(newChip);
+
+    folderBar.appendChild(header);
 
     // ensure active chip is visually set and scrolled into view
     setActiveFolderChip(currentFolderId);
