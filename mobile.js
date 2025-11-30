@@ -1,7 +1,6 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
-import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';
-import { getSupabaseClient } from './js/supabase-client.js';
+import { initSupabaseAuth } from './js/supabase-auth.js';
 import {
   loadAllNotes,
   saveAllNotes,
@@ -13,123 +12,6 @@ import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storag
 import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
-
-// --- Supabase CDN fallback initializer (safe & idempotent) ---
-// NOTE: replace the placeholders below with your project's values when testing locally.
-try {
-  const SUPABASE_URL = 'https://yhfxsbeglqkmovokhiqg.supabase.co';
-  const SUPABASE_ANON = 'sb_publishable_gclEkIQ8Wdt9bJAvIcZWiQ_xvAzdXVh';
-
-  if (typeof window !== 'undefined') {
-    try {
-      // If the CDN is loaded it exposes a `supabase` global with `createClient`.
-      if (window.supabase && typeof window.supabase.createClient === 'function') {
-        if (!window.supabaseClient) {
-          try {
-            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-            // Also set window.supabase to the client for compatibility with other modules
-            try { window.supabase = window.supabaseClient; } catch {}
-            console.info('[mobile] Supabase client initialized from CDN', { url: SUPABASE_URL });
-          } catch (e) {
-            console.error('[mobile] Failed to create Supabase client from CDN', e);
-          }
-        } else {
-          console.info('[mobile] Supabase client already present');
-        }
-      } else if (typeof window.supabase === 'undefined') {
-        // If the CDN isn't present yet, attempt to create a script tag to load it.
-        // This provides resilience when markup didn't include the CDN script.
-        const existingScript = document.querySelector('script[src*="supabase-js@2"]');
-        if (!existingScript) {
-          const s = document.createElement('script');
-          s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-          s.onload = () => {
-            try {
-              if (window.supabase && typeof window.supabase.createClient === 'function') {
-                window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-                try { window.supabase = window.supabaseClient; } catch {}
-                console.info('[mobile] Supabase SDK loaded and client initialised (dynamic)');
-              }
-            } catch (e) {
-              console.error('[mobile] Failed to initialise Supabase dynamically', e);
-            }
-          };
-          s.onerror = (e) => console.warn('[mobile] Failed to load Supabase SDK dynamically', e);
-          try { document.head.appendChild(s); } catch (e) { console.warn('[mobile] Could not append Supabase script', e); }
-        }
-      }
-    } catch (e) {
-      console.warn('[mobile] Supabase init guard failed', e);
-    }
-  }
-} catch (e) {
-  /* swallow init errors to avoid breaking page */
-}
-
-// Wire a direct Google sign-in handler for a couple of possible button IDs
-const _mc_wire_google_signin = () => {
-  const signInHandler = async (ev) => {
-    try {
-      ev && ev.preventDefault && ev.preventDefault();
-    } catch {}
-    console.log('🔐 Signing in with Google...');
-    try {
-      const client = window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase.createClient : null) || window.supabase;
-      // If client is a factory (createClient), create one using placeholders
-      let authClient = client;
-      if (client && typeof client === 'function') {
-        try {
-          authClient = client('https://your-project-id.supabase.co', 'your-anon-key');
-        } catch (e) {
-          console.error('[mobile] Failed to instantiate supabase client from factory:', e);
-          authClient = null;
-        }
-      }
-      if (authClient && authClient.auth && typeof authClient.auth.signInWithOAuth === 'function') {
-        const { error } = await authClient.auth.signInWithOAuth({ provider: 'google' });
-        if (error) {
-          console.error('❌ Sign-in failed:', error);
-          try { alert('Sign-in error: ' + (error.message || error)); } catch {}
-        }
-        return;
-      }
-      // Fallback to startSignInFlow helper
-      if (typeof startSignInFlow === 'function') {
-        try {
-          await startSignInFlow();
-          return;
-        } catch (e) {
-          console.error('[mobile] startSignInFlow failed', e);
-        }
-      }
-      console.error('Supabase auth client not available for Google sign-in');
-      try { alert('Supabase auth client not available. Check console for details.'); } catch {}
-    } catch (e) {
-      console.error('Sign-in handler error', e);
-      try { alert('Sign-in error: ' + (e && e.message ? e.message : String(e))); } catch {}
-    }
-  };
-
-  const ids = ['sign-in-google', 'googleSignInBtn', 'googleSignInBtnMenu'];
-  ids.forEach((id) => {
-    try {
-      const el = document.getElementById(id);
-      if (el && !el.dataset?.__mcGoogleWired) {
-        el.addEventListener('click', signInHandler);
-        try { el.dataset.__mcGoogleWired = 'true'; } catch {}
-      }
-    } catch (e) {
-      /* ignore wiring errors */
-    }
-  });
-};
-try {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _mc_wire_google_signin, { once: true });
-  } else {
-    _mc_wire_google_signin();
-  }
-} catch (e) {}
 
 initViewportHeight();
 
@@ -394,330 +276,7 @@ initViewportHeight();
     setupSheet();
   }
 })();
-
-// Defensive wiring for the mobile auth form (magic-link/email).
-(() => {
-  try {
-    const form = document.getElementById('auth-form');
-    if (!form || form.dataset?.__mobileAuthFormWired === 'true') return;
-
-    form.addEventListener('submit', async (ev) => {
-      try {
-        ev.preventDefault();
-      } catch {}
-      try {
-        console.log('[mobile] auth form submit triggered');
-        // persistent state log for sign-in flow
-        try { window.__mcLastSignInState = 'submit-triggered'; } catch {}
-        const emailInput = document.getElementById('auth-email');
-        const passwordInput = document.getElementById('auth-password');
-        const feedbackEl = document.getElementById('auth-feedback');
-        const email = (emailInput && typeof emailInput.value === 'string') ? emailInput.value.trim() : '';
-        const password = (passwordInput && typeof passwordInput.value === 'string') ? passwordInput.value : '';
-
-        // Button/UX state
-        const submitBtn = form.querySelector('button[type="submit"]') || document.getElementById('sign-in-btn');
-        const setLoading = (loading) => {
-          try {
-            if (submitBtn && submitBtn instanceof HTMLElement) {
-              submitBtn.disabled = !!loading;
-              submitBtn.setAttribute('aria-busy', loading ? 'true' : 'false');
-              if (loading) {
-                submitBtn.dataset.__mcPrevText = submitBtn.textContent || '';
-                submitBtn.textContent = 'Signing in...';
-              } else {
-                try { submitBtn.textContent = submitBtn.dataset.__mcPrevText || submitBtn.textContent; } catch {}
-              }
-            }
-          } catch {}
-        };
-
-        if (!email) {
-          try {
-            if (feedbackEl) {
-              feedbackEl.textContent = 'Enter an email address to continue.';
-              feedbackEl.classList.remove('hidden');
-            }
-          } catch (e) {}
-          return;
-        }
-
-        // Prefer the auth controller client if available, otherwise fall back to window globals
-        const client = (typeof supabaseAuthController !== 'undefined' && supabaseAuthController?.supabase)
-          || (typeof window !== 'undefined' && (window.supabase || window.supabaseClient));
-
-        if (!client || !client.auth) {
-          console.warn('[mobile] Supabase client not available for magic-link; falling back to startSignInFlow');
-          try { if (feedbackEl) { feedbackEl.textContent = 'Authentication service unavailable.'; feedbackEl.classList.remove('hidden'); } } catch {}
-          try {
-            if (typeof startSignInFlow === 'function') {
-              await startSignInFlow();
-            }
-          } catch (e) {
-            console.error('[mobile] startSignInFlow fallback failed', e);
-            try { if (feedbackEl) { feedbackEl.textContent = 'Sign-in failed. Check console for details.'; } } catch {}
-          }
-          return;
-        }
-        // If password input present and non-empty, attempt password sign-in. Otherwise, use magic link.
-        setLoading(true);
-        try {
-          if (password) {
-            console.log('[mobile] Attempting password sign-in for', email);
-            try { window.__mcLastSignInState = 'password-signin-started'; } catch {}
-            const res = await client.auth.signInWithPassword({ email, password });
-            console.log('[mobile] signInWithPassword response', res);
-            try { window.__mcLastSignInState = res?.error ? 'password-signin-failed' : 'password-signin-success'; } catch {}
-            if (res?.error) {
-              console.error('[mobile] signInWithPassword error', res.error);
-              if (feedbackEl) {
-                feedbackEl.textContent = res.error.message || 'Sign-in failed';
-                feedbackEl.classList.remove('hidden');
-              }
-            } else {
-              if (feedbackEl) {
-                feedbackEl.textContent = 'Signed in successfully.';
-                feedbackEl.classList.remove('hidden');
-              }
-              try { showAuthSuccessToast('Signed in'); } catch (e) {}
-            }
-          } else {
-            console.log('[mobile] No password provided — sending magic link to', email);
-            try { window.__mcLastSignInState = 'otp-started'; } catch {}
-            if (feedbackEl) {
-              feedbackEl.textContent = 'Sending magic link...';
-              feedbackEl.classList.remove('hidden');
-            }
-            const result = await client.auth.signInWithOtp({ email });
-            const error = result?.error ?? null;
-            console.log('[mobile] signInWithOtp response', result);
-            try { window.__mcLastSignInState = error ? 'otp-failed' : 'otp-success'; } catch {}
-            if (error) {
-              console.error('[mobile] signInWithOtp error', error);
-              if (feedbackEl) { feedbackEl.textContent = error.message || 'Unable to send magic link.'; }
-            } else {
-              console.log('[mobile] magic link sent for', email);
-              if (feedbackEl) { feedbackEl.textContent = 'Magic link sent. Check your email.'; }
-              try { showAuthSuccessToast('Magic link sent'); } catch (e) {}
-            }
-          }
-        } catch (err) {
-          console.error('[mobile] auth submit failed', err);
-          try { if (feedbackEl) { feedbackEl.textContent = err?.message || 'Sign-in failed'; } } catch {}
-        } finally {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('[mobile] auth form handler error', err);
-      }
-    });
-
-    try { form.dataset.__mobileAuthFormWired = 'true'; } catch (e) {}
-  } catch (e) {
-    /* swallow wiring errors */
-  }
-})();
-/* Top-level defensive wiring for new folder button.
- * This ensures the New Folder CTA will function even when initMobileNotes doesn't run
- * (e.g., minimal DOM environments or tests that don't initialise the full notes UI).
- */
-(() => {
-  const attemptWire = (attempts = 0) => {
-    const newFolderBtn = document.getElementById('note-new-folder-button');
-    const newFolderModal = document.getElementById('newFolderModal');
-    const newFolderNameInput = document.getElementById('newFolderName');
-    const newFolderCreateBtn = document.getElementById('newFolderCreate');
-    const newFolderCancelBtn = document.getElementById('newFolderCancel');
-    if (!(newFolderBtn instanceof HTMLElement) || !(newFolderModal instanceof HTMLElement)) {
-      if (attempts > 20) return;
-      setTimeout(() => attemptWire(attempts + 1), 50);
-      return;
-    }
-    try {
-      if (newFolderBtn.dataset && newFolderBtn.dataset.__newFolderWired === 'true') return;
-    } catch {
-      /* ignore */
-    }
-    const ModalCtrl = typeof ModalController === 'function' ? ModalController : null;
-    let controller = null;
-    const openModal = () => {
-      if (!controller && ModalCtrl) {
-        controller = new ModalCtrl({
-          modalElement: newFolderModal,
-          closeButton: newFolderCancelBtn,
-          titleInput: newFolderNameInput,
-          modalTitle: document.getElementById('newFolderTitle'),
-          autoFocus: true,
-        });
-      }
-      try { controller?.show(); } catch {}
-    };
-    // attaching click listener to new folder button
-    newFolderBtn.addEventListener('click', (ev) => {
-      try { ev.preventDefault(); } catch {}
-      openModal();
-    });
-    try { if (newFolderCancelBtn) newFolderCancelBtn.addEventListener('click', () => { try { controller?.requestClose('user-dismissed'); } catch {} }); } catch {}
-    // expose a quick debug/open helper similar to the one created by ensureWireNewFolderButton
-    try { if (typeof window !== 'undefined') window.openNewFolderDialog = openModal; } catch {}
-    try { if (newFolderBtn.dataset) { newFolderBtn.dataset.__newFolderWired = 'true'; } } catch {}
-  };
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => attemptWire(), { once: true });
-  } else {
-    attemptWire();
-  }
-})();
 /* END GPT CHANGE */
-
-
-// Wire header overflow auth buttons (separate from reminder wiring)
-(function () {
-  function wireHeaderAuthButtons() {
-    function resolveSignIn() {
-      // Check for Supabase client with signInWithOAuth
-      if (typeof window !== 'undefined') {
-        // Check mock supabase client
-        if (window.__mobileMocks && typeof window.__mobileMocks.initSupabaseAuth === 'function') {
-          try {
-            const authController = window.__mobileMocks.initSupabaseAuth();
-            if (authController?.supabase?.auth && typeof authController.supabase.auth.signInWithOAuth === 'function') {
-              return () => authController.supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
-            }
-          } catch (err) {
-            console.debug('initSupabaseAuth check failed:', err);
-          }
-        }
-        // Check window.supabase client
-        if (window.supabase?.auth && typeof window.supabase.auth.signInWithOAuth === 'function') {
-          return () => window.supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
-        }
-      }
-      // Fall back to test-provided mock startSignInFlow
-      if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
-        return window.__mobileMocks.startSignInFlow;
-      }
-      if (typeof window !== 'undefined' && typeof window.startSignInFlow === 'function') {
-        return window.startSignInFlow;
-      }
-      // Try dynamic import at runtime
-      return async function dynamicStart() {
-        try {
-          const mod = await import('./js/supabase-auth.js');
-          if (mod && typeof mod.startSignInFlow === 'function') {
-            return mod.startSignInFlow();
-          }
-        } catch (e) {
-          console.warn('Dynamic import for startSignInFlow failed', e);
-        }
-        return null;
-      };
-    }
-
-    function resolveSignOut() {
-      if (typeof window !== 'undefined' && window.__mobileMocks && typeof window.__mobileMocks.startSignOutFlow === 'function') {
-        return window.__mobileMocks.startSignOutFlow;
-      }
-      if (typeof window !== 'undefined' && typeof window.startSignOutFlow === 'function') {
-        return window.startSignOutFlow;
-      }
-      return async function dynamicSignOut() {
-        try {
-          const mod = await import('./js/supabase-auth.js');
-          if (mod && typeof mod.startSignOutFlow === 'function') {
-            return mod.startSignOutFlow();
-          }
-        } catch (e) {
-          console.warn('Dynamic import for startSignOutFlow failed', e);
-        }
-        return null;
-      };
-    }
-
-    try {
-      // Wire both header buttons and overflow menu buttons. Use a defensive
-      // wait so the handlers attach even if the DOM is mutated after initial
-      // parsing (helps across different build outputs / load timings).
-      const waitForAny = (selectors, timeout = 3000) => {
-        return new Promise((resolve) => {
-          const found = selectors.map((s) => document.querySelector(s)).filter(Boolean);
-          if (found.length) return resolve(found);
-          const obs = new MutationObserver(() => {
-            const f = selectors.map((s) => document.querySelector(s)).filter(Boolean);
-            if (f.length) {
-              obs.disconnect();
-              resolve(f);
-            }
-          });
-          obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
-          if (typeof timeout === 'number') {
-            setTimeout(() => {
-              try { obs.disconnect(); } catch (e) {}
-              resolve([]);
-            }, timeout);
-          }
-        });
-      };
-
-      (async () => {
-        const signInSelectors = ['#googleSignInBtn', '#googleSignInBtnMenu'];
-        const signOutSelectors = ['#googleSignOutBtn', '#googleSignOutBtnMenu'];
-
-        const signInEls = await waitForAny(signInSelectors, 3000);
-        const signOutEls = await waitForAny(signOutSelectors, 3000);
-
-        signInEls.forEach((signIn) => {
-          try {
-            if (signIn && !signIn._mcAuthWired) {
-              signIn.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                try {
-                  const fn = resolveSignIn();
-                  const result = fn && fn();
-                  if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-in failed', e));
-                } catch (e) {
-                  console.error('Sign-in handler failed', e);
-                }
-              });
-              try { signIn._mcAuthWired = true; } catch (e) {}
-            }
-          } catch (e) {
-            /* ignore individual element errors */
-          }
-        });
-
-        signOutEls.forEach((signOut) => {
-          try {
-            if (signOut && !signOut._mcAuthWired) {
-              signOut.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                try {
-                  const fn = resolveSignOut();
-                  const result = fn && fn();
-                  if (result && typeof result.then === 'function') result.catch((e) => console.error('Sign-out failed', e));
-                } catch (e) {
-                  console.error('Sign-out handler failed', e);
-                }
-              });
-              try { signOut._mcAuthWired = true; } catch (e) {}
-            }
-          } catch (e) {
-            /* ignore individual element errors */
-          }
-        });
-      })();
-    } catch (e) {
-      console.error('Header auth wiring failed', e);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wireHeaderAuthButtons, { once: true });
-  } else {
-    wireHeaderAuthButtons();
-  }
-})();
-
 
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
@@ -805,238 +364,6 @@ const initMobileNotes = () => {
   const folderSelectorSheet = folderSelectorEl?.querySelector('.sheet-panel');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
-  const wireNewFolderButton = ({ ModalController, saveFolders, getFolders, getFolderNameById }) => {
-    const newFolderBtn = document.getElementById('note-new-folder-button');
-    const newFolderModal = document.getElementById('newFolderModal');
-    const newFolderNameInput = document.getElementById('newFolderName');
-    const newFolderCreateBtn = document.getElementById('newFolderCreate');
-    const newFolderCancelBtn = document.getElementById('newFolderCancel');
-    const newFolderError = document.getElementById('newFolderError');
-
-    if (!newFolderBtn || !newFolderModal) {
-      return false;
-    }
-
-    let modalController = null;
-    let pendingFolderCallback = null;
-
-    const clearError = () => {
-      if (newFolderError) {
-        newFolderError.classList.add('sr-only');
-        newFolderError.textContent = '';
-      }
-    };
-
-    const showError = (msg) => {
-      if (newFolderError) {
-        newFolderError.textContent = msg;
-        newFolderError.classList.remove('sr-only');
-      }
-    };
-
-    const openModal = () => {
-      if (!modalController) {
-        modalController = new ModalController({
-          modalElement: newFolderModal,
-          closeButton: newFolderCancelBtn,
-          titleInput: newFolderNameInput,
-          modalTitle: document.getElementById('newFolderTitle'),
-          autoFocus: true,
-        });
-      }
-      clearError();
-      if (newFolderNameInput) {
-        newFolderNameInput.value = '';
-      }
-      modalController.show();
-    };
-
-    const createFolder = () => {
-      if (!newFolderNameInput) return null;
-      const name = String(newFolderNameInput.value || '').trim();
-      clearError();
-
-      if (!name.length) {
-        showError("Folder name can't be empty.");
-        return null;
-      }
-
-      let folders = [];
-      try {
-        const loadedFolders = getFolders();
-        folders = Array.isArray(loadedFolders) ? loadedFolders : [];
-      } catch (e) {
-        folders = [];
-      }
-
-      const exists = folders.some(
-        (f) => String(f.name).toLowerCase() === name.toLowerCase()
-      );
-      if (exists) {
-        showError('You already have a folder with this name.');
-        return null;
-      }
-
-      // Generate folder ID with additional entropy to avoid collisions
-      const timestamp = Date.now().toString(36);
-      const randomPart = Math.random().toString(36).substring(2, 8);
-      const folderId = `folder-${timestamp}-${randomPart}`;
-      const newFolder = { id: folderId, name };
-      const updated = [...folders.filter(Boolean), newFolder];
-      const saved = saveFolders(updated);
-
-      if (!saved) {
-        showError('Unable to create folder. Please try again.');
-        return null;
-      }
-
-      try {
-        modalController.requestClose('created');
-      } catch {
-        /* ignore */
-      }
-
-      return { id: folderId, name };
-    };
-
-    // Shared handler for folder creation (used by both click and Enter key)
-    const handleFolderCreate = () => {
-      const folderData = createFolder();
-      if (folderData && typeof pendingFolderCallback === 'function') {
-        try {
-          pendingFolderCallback(folderData);
-        } catch (err) {
-          console.warn('[notebook] folder callback failed', err);
-        }
-        pendingFolderCallback = null;
-      }
-    };
-
-    // Prevent duplicate wiring
-    try {
-      if (newFolderBtn.dataset?.__newFolderWired === 'true') {
-        return true;
-      }
-    } catch {
-      /* ignore */
-    }
-
-    // Wire the "Create new folder" button in notebook editor header
-    newFolderBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      // Set up callback for when folder is created
-      pendingFolderCallback = (folderData) => {
-        if (!folderData) return;
-
-        // Update the folder label in the notebook editor header
-        const labelEl = document.getElementById('note-folder-label');
-        if (labelEl) {
-          labelEl.textContent =
-            getFolderNameById(folderData.id) || folderData.name || 'Unsorted';
-        }
-
-        // Dispatch custom event to notify notebook of folder change
-        try {
-          document.dispatchEvent(
-            new CustomEvent('memoryCue:folderCreatedFromEditor', {
-              detail: { folderId: folderData.id, folderName: folderData.name },
-            })
-          );
-        } catch (err) {
-          console.warn('[notebook] failed to dispatch folder created event', err);
-        }
-      };
-
-      openModal();
-    });
-      // mark wired immediately so duplicate wiring isn't applied
-      try {
-        if (newFolderBtn.dataset) newFolderBtn.dataset.__newFolderWired = 'true';
-      } catch {
-        /* ignore */
-      }
-
-    // Wire the create button inside the modal
-    if (newFolderCreateBtn) {
-      newFolderCreateBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleFolderCreate();
-      });
-    }
-
-    // Wire Enter key in the input
-    if (newFolderNameInput) {
-      newFolderNameInput.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') {
-          ev.preventDefault();
-          handleFolderCreate();
-        }
-      });
-    }
-
-    // Clear callback on cancel
-    if (newFolderCancelBtn) {
-      newFolderCancelBtn.addEventListener('click', () => {
-        pendingFolderCallback = null;
-      });
-    }
-
-    return true;
-  };
-
-  // Defensive retry: sometimes the DOM or the modal may be created after initMobileNotes
-  // In those cases, attempt to wire up to a few times (with short delays). This mirrors
-  // patterns used elsewhere in the codebase for dynamic DOM wiring.
-  const ensureWireNewFolderButton = ({ ModalController, saveFolders, getFolders, getFolderNameById }, attempts = 0) => {
-    const wired = wireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById });
-    // debug: wiring attempt logs removed in non-debug builds
-    if (wired) {
-      // wired ok
-      try {
-        const btn = document.getElementById('note-new-folder-button');
-        if (btn && btn.dataset) btn.dataset.__newFolderWired = 'true';
-      } catch {
-        /* ignore */
-      }
-      if (typeof window !== 'undefined') {
-        window.openNewFolderDialog = () => {
-          try {
-            const modalEl = document.getElementById('newFolderModal');
-            if (!modalEl) return;
-            const controller = new ModalController({ modalElement: modalEl, autoFocus: true });
-            controller.show();
-          } catch (err) {
-            /* ignore */
-          }
-        };
-      }
-      return true;
-    }
-    if (attempts >= 10) {
-      return false;
-    }
-    // Also attempt a MutationObserver-based fallback to catch dynamically added buttons
-    try {
-      const observer = new MutationObserver(() => {
-        const btn = document.getElementById('note-new-folder-button');
-        if (btn) {
-          try {
-            observer.disconnect();
-          } catch {}
-          ensureWireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById }, attempts + 1);
-        }
-      });
-      if (document.body) {
-        observer.observe(document.body, { childList: true, subtree: true });
-      }
-    } catch {
-      /* ignore */
-    }
-    setTimeout(() => ensureWireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById }, attempts + 1), 50);
-    return false;
-  };
-
   const createScratchNotesEditor = () => {
     if (!scratchNotesEditorElement) {
       return null;
@@ -1089,17 +416,21 @@ const initMobileNotes = () => {
   }
 
   const applyFormatCommand = (command) => {
-    if (!command) return;
+    if (!command || !scratchNotesEditorElement) return;
+    try {
+      scratchNotesEditorElement.focus();
+    } catch {
+      /* ignore focus errors */
+    }
     document.execCommand(command, false, null);
   };
 
-  // Wire up formatting toolbar (bold, italic, underline, ul, ol)
-  const toolbar = document.getElementById('scratchNotesToolbar');
-  if (toolbar) {
-    toolbar.addEventListener('click', (event) => {
-      const button = event.target.closest('button[data-format]');
+  // Wire up formatting toolbar (bold, italic, underline, ul, ol) for the rich text editor
+  const toolbarEl = document.getElementById('scratchNotesToolbar');
+  if (toolbarEl && scratchNotesEditorElement) {
+    toolbarEl.addEventListener('click', (event) => {
+      const button = event.target.closest('.notebook-format-button[data-format]');
       if (!button) return;
-
       const format = button.getAttribute('data-format');
       switch (format) {
         case 'bold':
@@ -1122,7 +453,6 @@ const initMobileNotes = () => {
       }
     });
   }
-
 
   const setEditorContent = (value = '') => {
     const normalizedValue = typeof value === 'string' ? value : '';
@@ -1267,7 +597,6 @@ const initMobileNotes = () => {
 
   const showSavedNotesSheet = () => {
     if (!savedNotesSheet) {
-      console.debug && console.debug('[savedNotes] showSavedNotesSheet called but savedNotesSheet is', savedNotesSheet);
       return;
     }
     if (savedNotesSheetHideTimeout) {
@@ -1277,7 +606,6 @@ const initMobileNotes = () => {
     savedNotesSheet.classList.remove('hidden');
     savedNotesSheet.dataset.open = 'true';
     savedNotesSheet.setAttribute('aria-hidden', 'false');
-    console.debug && console.debug('[savedNotes] opened, dataset.open=', savedNotesSheet.dataset.open);
     // Ensure folder chips are built and notes are rendered when opening the sheet
     try {
       buildFolderChips();
@@ -1309,43 +637,6 @@ const initMobileNotes = () => {
     if (!savedNotesSheet) {
       return;
     }
-    // Also wire an optionally visible global trigger (openSavedNotesGlobal)
-    // Use a defensive polling helper so this works reliably in the built bundle
-    const waitForAnyElement = (selectors, timeout = 5000, interval = 150) => {
-      if (!Array.isArray(selectors)) selectors = [selectors];
-      return new Promise((resolve) => {
-        const check = () => {
-          for (const s of selectors) {
-            try {
-              const el = document.querySelector(s);
-              if (el) return resolve(el);
-            } catch (e) {
-              // ignore bad selector
-            }
-          }
-          return null;
-        };
-
-        // immediate check
-        const found = check();
-        if (found) return resolve(found);
-
-        const start = Date.now();
-        const timer = setInterval(() => {
-          const now = Date.now();
-          const f = check();
-          if (f) {
-            clearInterval(timer);
-            return resolve(f);
-          }
-          if (now - start >= timeout) {
-            clearInterval(timer);
-            return resolve(null);
-          }
-        }, interval);
-      });
-    };
-
     openSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       showSavedNotesSheet();
@@ -1356,88 +647,6 @@ const initMobileNotes = () => {
         notesListMobileEl.scrollTop = 0;
       }
     });
-
-    // Try a couple of selectors that may correspond to the global trigger
-    // Log diagnostic info so E2E can detect when the binder runs
-    try {
-      console.info && console.info('[savedNotes] waiting for global trigger selectors', ['#openSavedNotesGlobal', '#openSavedNotesSheet', '.open-saved-notes-global'], { timeout: 5000, interval: 150 });
-    } catch (e) {
-      /* ignore */
-    }
-    waitForAnyElement(['#openSavedNotesGlobal', '#openSavedNotesSheet', '.open-saved-notes-global'], 5000, 150)
-      .then((openSavedNotesGlobal) => {
-        try {
-          if (openSavedNotesGlobal) {
-            try {
-              openSavedNotesGlobal.addEventListener('click', (event) => {
-                event.preventDefault();
-                showSavedNotesSheet();
-              });
-              console.info && console.info('[savedNotes] attached click handler to global trigger', openSavedNotesGlobal);
-              // mark for automated tests
-              try { window.__mcSavedNotesBinderAttached = true; } catch (e) {}
-            } catch (e) {
-              console.warn && console.warn('[savedNotes] failed to attach click handler to global trigger', e);
-            }
-          } else {
-            console.info && console.info('[savedNotes] no global trigger found within timeout');
-          }
-        } catch (e) {
-          /* ignore */
-        }
-      });
-
-    // Additionally, attach delegated listeners to header overflow menus so
-    // clicks inside the menu reliably open saved notes even if the specific
-    // trigger element wasn't present at initial bind time.
-    const overflowMenuSelectors = ['#headerMenu', '#headerMenuSlim', '.header-overflow-wrapper'];
-
-    const attachDelegatedToMenu = (menuEl) => {
-      if (!menuEl || menuEl.__mcSavedNotesMenuWired) return;
-      try {
-        menuEl.addEventListener('click', (ev) => {
-          try {
-            const trigger = ev.target && ev.target.closest ? ev.target.closest('#openSavedNotesGlobal, #openSavedNotesSheet, .open-saved-notes-global, [data-action="open-saved-notes"]') : null;
-            if (trigger) {
-              ev.preventDefault();
-              try { showSavedNotesSheet(); } catch (_) {}
-              try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
-            }
-          } catch (_) {}
-        });
-        menuEl.__mcSavedNotesMenuWired = true;
-      } catch (e) {
-        /* ignore wiring failures */
-      }
-    };
-
-    // Attempt to attach immediately if menus exist, otherwise observe DOM for insertion
-    overflowMenuSelectors.forEach((sel) => {
-      const found = document.querySelector(sel);
-      if (found) attachDelegatedToMenu(found);
-    });
-
-    try {
-      const menuObserver = new MutationObserver((mutations) => {
-        for (const m of mutations) {
-          for (const node of Array.from(m.addedNodes || [])) {
-            if (!(node instanceof Element)) continue;
-            overflowMenuSelectors.forEach((sel) => {
-              try {
-                const el = node.matches && node.matches(sel) ? node : node.querySelector && node.querySelector(sel);
-                if (el) attachDelegatedToMenu(el instanceof NodeList ? el[0] : el);
-              } catch (e) {
-                /* ignore */
-              }
-            });
-          }
-        }
-      });
-      menuObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
-    } catch (e) {
-      /* ignore observer failures */
-    }
-
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
       hideSavedNotesSheet();
@@ -1454,60 +663,7 @@ const initMobileNotes = () => {
     });
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindSavedNotesSheetEvents, { once: true });
-  } else {
-    bindSavedNotesSheetEvents();
-  }
-
-  // Expose helper functions early so external scripts or tests can call them
-  if (typeof window !== 'undefined') {
-    try {
-      window.hideSavedNotesSheet = hideSavedNotesSheet;
-      // expose showSavedNotesSheet early so wiring checks can detect it
-      window.showSavedNotesSheet = showSavedNotesSheet;
-      // mark binder attached early so headless tests know the API is present
-      try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
-      // Attach a direct click handler to the visible header trigger if present
-      try {
-        const headerTrigger = document.getElementById('openSavedNotesGlobal') || document.getElementById('openSavedNotesSheet') || document.querySelector('.open-saved-notes-global');
-        if (headerTrigger && headerTrigger.addEventListener) {
-          headerTrigger.addEventListener('click', (ev) => {
-            try { ev.preventDefault(); } catch {}
-            try { showSavedNotesSheet(); } catch (e) {}
-            try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
-          });
-        }
-      } catch (e) {
-        /* ignore immediate wiring failures */
-      }
-      window.closeMoveFolderSheet = closeMoveFolderSheet;
-      window.closeOverflowMenu = closeOverflowMenu;
-      // closeAddTask is already exported elsewhere but ensure it's available
-      if (typeof window.closeAddTask === 'function') {
-        window.closeAddTask = window.closeAddTask;
-      }
-    } catch (e) {
-      // no-op in restricted environments
-    }
-  }
-
-  // Delegated click listener as a resilient fallback for global saved-notes triggers.
-  // This avoids relying on querying for the exact element instance during startup.
-  try {
-    document.addEventListener('click', (event) => {
-      try {
-        const trigger = event.target && event.target.closest ? event.target.closest('#openSavedNotesGlobal, #openSavedNotesSheet, .open-saved-notes-global') : null;
-        if (trigger) {
-          event.preventDefault();
-          try { showSavedNotesSheet(); } catch (_) {}
-          try { window.__mcSavedNotesBinderAttached = true; } catch (_) {}
-        }
-      } catch (_) {}
-    });
-  } catch (e) {
-    // ignore if DOM not available or addEventListener fails
-  }
+  bindSavedNotesSheetEvents();
 
   const getNormalizedFilterQuery = () =>
     typeof filterQuery === 'string' ? filterQuery.trim().toLowerCase() : '';
@@ -1569,11 +725,11 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
-    // Defensive: ensure we handle a null/undefined note before reading its properties
+    if (currentNoteId === note.id) return;
     if (!note) {
       currentNoteId = null;
       titleInput.value = '';
-      scratchNotesEditorElement.innerHTML = '';
+      setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
       scratchNotesEditorElement.dataset.noteOriginalBody = '';
       const labelElClear = document.getElementById('note-folder-label');
@@ -1582,14 +738,16 @@ const initMobileNotes = () => {
       }
       return;
     }
-
-    // existing behavior for when note is present
-    if (currentNoteId === note.id) return;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const nextBody = note.bodyHtml || note.body || '';
+    const nextBody =
+      (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
+        ? note.bodyHtml
+        : typeof note.body === 'string'
+          ? note.body
+          : '') || '';
     titleInput.value = nextTitle;
-    scratchNotesEditorElement.innerHTML = nextBody;
+    setEditorContent(nextBody);
     titleInput.dataset.noteOriginalTitle = nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
     // set current editing folder for existing notes
@@ -1620,7 +778,7 @@ const initMobileNotes = () => {
   };
 
   const getEditorValues = () => {
-    const bodyHtml = scratchNotesEditorElement.innerHTML || '';
+    const bodyHtml = getEditorHTML();
     const bodyText = extractPlainText(bodyHtml);
     return {
       title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
@@ -2149,8 +1307,7 @@ const initMobileNotes = () => {
     try {
       newFolderModalController.requestClose('created');
     } catch { /* ignore */ }
-    // Do NOT switch to the new folder automatically — keep the current view
-    // currentFolderId = folderId;
+    currentFolderId = folderId;
     clearSearchFilter();
     try {
       buildFolderChips();
@@ -3167,8 +2324,6 @@ const initMobileNotes = () => {
       }, 2000);
     }
   }
-
-  ensureWireNewFolderButton({ ModalController, saveFolders, getFolders, getFolderNameById });
 };
 
 if (document.readyState === 'loading') {
@@ -3179,292 +2334,40 @@ if (document.readyState === 'loading') {
 
 const notesSyncController = initNotesSync();
 
-// Defer auth controller initialization until Supabase client is available.
-// This avoids duplicate/conflicting inits when `config-supabase.js` loads asynchronously
-// and ensures notes syncing receives a valid session.
-let supabaseAuthController = null;
-function whenSupabaseReady(timeout = 10000, interval = 150) {
-  return new Promise((resolve, reject) => {
-    if (typeof window !== 'undefined' && window.supabase) return resolve(window.supabase);
-    let elapsed = 0;
-    const iv = setInterval(() => {
-      if (typeof window !== 'undefined' && window.supabase) {
-        clearInterval(iv);
-        return resolve(window.supabase);
-      }
-      elapsed += interval;
-      if (elapsed >= timeout) {
-        clearInterval(iv);
-        return reject(new Error('supabase-ready-timeout'));
-      }
-    }, interval);
-  });
-}
-// Helper: resolve the main app UI element. Prefer `#main-app-ui`, fallback to `#main` or `.mobile-panel--notes`.
-function getMainUiEl() {
+const supabaseAuthController = initSupabaseAuth({
+  selectors: {
+    signInButtons: ['#googleSignInBtn'],
+    signOutButtons: ['#googleSignOutBtn'],
+    userBadge: '#user-badge',
+    userBadgeEmail: '#user-badge-email',
+    userBadgeInitial: '#user-badge-initial',
+    userName: '#googleUserName',
+    syncStatus: ['#sync-status'],
+    syncStatusText: ['#mcStatusText'],
+    statusIndicator: ['#mcStatus'],
+    feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
+  },
+  disableButtonBinding: true,
+  onSessionChange: (user) => {
+    notesSyncController?.handleSessionChange(user);
+  },
+});
+
+if (supabaseAuthController?.supabase) {
+  notesSyncController?.setSupabaseClient(supabaseAuthController.supabase);
   try {
-    return document.getElementById('main-app-ui') || document.getElementById('main') || document.querySelector('.mobile-panel--notes') || document.querySelector('#view-notebook');
-  } catch (e) {
-    return null;
-  }
-}
-
-// Hide main UI temporarily to avoid flicker until session check completes.
-function ensureMainUiHidden() {
-  const el = getMainUiEl();
-  if (el && el.style) {
-    try {
-      el.style.display = 'none';
-    } catch (e) {}
-  }
-}
-
-// Reveal main UI with fade-in class.
-function revealMainUiWithFade() {
-  const el = getMainUiEl();
-  if (!el) return;
-  try {
-    el.style.display = '';
-    // Force reflow then add class
-    void el.offsetWidth;
-    el.classList.add('fade-in-auth-success');
-    // remove the class after animation to keep DOM clean
-    setTimeout(() => {
-      try { el.classList.remove('fade-in-auth-success'); } catch (e) {}
-    }, 700);
-  } catch (e) {}
-}
-
-// Lightweight toast for auth success
-function showAuthSuccessToast(message = '✅ Signed in successfully') {
-  try {
-    const existing = document.querySelector('.mc-auth-toast');
-    if (existing) {
-      existing.remove();
-    }
-    const toast = document.createElement('div');
-    toast.className = 'mc-auth-toast';
-    toast.setAttribute('role', 'status');
-    toast.setAttribute('aria-live', 'polite');
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    // allow styles to apply
-    requestAnimationFrame(() => {
-      toast.classList.add('show');
-    });
-    setTimeout(() => {
-      try { toast.classList.remove('show'); } catch (e) {}
-      setTimeout(() => { try { toast.remove(); } catch (e) {} }, 220);
-    }, 3000);
-  } catch (e) {
-    /* ignore toast errors */
-  }
-}
-
-// Ensure UI hidden early
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', ensureMainUiHidden, { once: true });
-} else {
-  ensureMainUiHidden();
-}
-
-whenSupabaseReady(10000)
-  .then((supabase) => {
-    try {
-      supabaseAuthController = initSupabaseAuth({
-        supabase,
-        selectors: {
-          signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
-          signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
-          userBadge: '#user-badge',
-          userBadgeEmail: '#user-badge-email',
-          userBadgeInitial: '#user-badge-initial',
-          userName: '#googleUserName',
-          syncStatus: ['#sync-status'],
-          syncStatusText: ['#mcStatusText'],
-          statusIndicator: ['#mcStatus'],
-          feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
-        },
-        onSessionChange: (user) => {
-          try {
-            notesSyncController?.handleSessionChange(user);
-          } catch (e) {
-            /* ignore handler errors */
-          }
-        },
+    supabaseAuthController.supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+      })
+      .catch(() => {
+        /* noop */
       });
-
-      // Provide the supabase client to notes sync and immediately check session
-      try {
-        notesSyncController?.setSupabaseClient(supabaseAuthController?.supabase || supabase);
-      } catch (e) {}
-
-      try {
-        const client = supabaseAuthController?.supabase || supabase;
-        if (client && client.auth && typeof client.auth.getSession === 'function') {
-          client.auth
-            .getSession()
-            .then(({ data }) => {
-              try {
-                const user = data?.session?.user ?? null;
-                notesSyncController?.handleSessionChange(user);
-                // reveal UI: if user signed in, show with fade and toast
-                if (user) {
-                  try { revealMainUiWithFade(); } catch (e) {}
-                  try { showAuthSuccessToast(); } catch (e) {}
-                } else {
-                  // if not signed in, still reveal UI (no auth-specific animation)
-                  try {
-                    const el = getMainUiEl(); if (el && el.style) el.style.display = '';
-                  } catch (e) {}
-                }
-              } catch (e) {}
-            })
-            .catch(() => {
-              try { const el = getMainUiEl(); if (el && el.style) el.style.display = ''; } catch (e) {}
-            });
-        }
-      } catch (e) {}
-
-      // Listen for auth state changes and propagate to notes sync
-      try {
-        const client = supabaseAuthController?.supabase || supabase;
-        if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
-          client.auth.onAuthStateChange((event, session) => {
-            try {
-              const user = session?.user ?? null;
-              notesSyncController?.handleSessionChange(user);
-              // On sign in event, reveal UI and show toast
-              try {
-                if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-                  revealMainUiWithFade();
-                  showAuthSuccessToast();
-                }
-              } catch (e) {}
-            } catch (e) {}
-          });
-        }
-      } catch (e) {}
-
-    } catch (err) {
-      console.warn('[mobile] initSupabaseAuth error', err);
-    }
-  })
-  .catch((err) => {
-    console.warn('[mobile] supabase did not initialise in time', err);
-  });
-
-// Ensure sign-in button is wired on mobile even when `initSupabaseAuth` is called
-// with `disableButtonBinding: true`. This guarantees the Google sign-in CTA triggers
-// an auth flow either via the Supabase client or via the startSignInFlow helper.
-(() => {
-  try {
-    // Wire both header and overflow menu sign-in buttons
-    const signInButtons = Array.from(document.querySelectorAll('#googleSignInBtn, #googleSignInBtnMenu'));
-    if (!signInButtons.length) return;
-
-    // Unified sign-in function used by header + menu buttons and form submit fallback
-    async function signIn({ fromButton = null } = {}) {
-      try {
-        console.log('[mobile] signIn() invoked', { fromButton });
-      } catch {}
-      const feedbackEl = document.getElementById('auth-feedback');
-      const emailInput = document.getElementById('auth-email');
-      const passwordInput = document.getElementById('auth-password');
-      const email = (emailInput && typeof emailInput.value === 'string') ? emailInput.value.trim() : '';
-      const password = (passwordInput && typeof passwordInput.value === 'string') ? passwordInput.value : '';
-
-      if (!email) {
-        try { if (feedbackEl) { feedbackEl.textContent = 'Please enter your email.'; feedbackEl.classList.remove('hidden'); } } catch {}
-        return null;
-      }
-
-      // Ensure supabase client is available
-      let client = null;
-      try {
-        client = getSupabaseClient() || (typeof window !== 'undefined' && window.supabase) || supabaseAuthController?.supabase;
-      } catch (e) {
-        console.error('[mobile] getSupabaseClient failed', e);
-      }
-
-      if (!client || !client.auth) {
-        try { if (feedbackEl) { feedbackEl.textContent = 'Authentication service unavailable.'; feedbackEl.classList.remove('hidden'); } } catch {}
-        console.warn('[mobile] supabase client not available for signIn');
-        try { await startSignInFlow(); } catch (e) { console.warn('[mobile] startSignInFlow fallback failed', e); }
-        return null;
-      }
-
-      // Disable any UI submit button while processing
-      try { window.__mcLastSignInState = 'started'; } catch {}
-
-      try {
-        if (password) {
-          console.log('[mobile] signInWithPassword for', email);
-          try { if (feedbackEl) { feedbackEl.textContent = 'Signing in...'; feedbackEl.classList.remove('hidden'); } } catch {}
-          const res = await client.auth.signInWithPassword({ email, password });
-          console.log('[mobile] signInWithPassword result', res);
-          if (res?.error) {
-            try { if (feedbackEl) { feedbackEl.textContent = res.error.message || 'Sign-in failed'; } } catch {}
-            try { window.__mcLastSignInState = 'failed'; } catch {}
-            return res;
-          }
-          try { if (feedbackEl) { feedbackEl.textContent = 'Signed in.'; } } catch {}
-          try { window.__mcLastSignInState = 'success'; } catch {}
-          try { showAuthSuccessToast && showAuthSuccessToast('Signed in'); } catch {}
-          return res;
-        }
-
-        // No password - prefer magic link
-        console.log('[mobile] No password provided; sending magic link to', email);
-        try { if (feedbackEl) { feedbackEl.textContent = 'Sending magic link...'; feedbackEl.classList.remove('hidden'); } } catch {}
-        const otp = await client.auth.signInWithOtp({ email });
-        console.log('[mobile] signInWithOtp result', otp);
-        if (otp?.error) {
-          try { if (feedbackEl) { feedbackEl.textContent = otp.error.message || 'Unable to send magic link.'; } } catch {}
-          try { window.__mcLastSignInState = 'otp-failed'; } catch {}
-          return otp;
-        }
-        try { if (feedbackEl) { feedbackEl.textContent = 'Magic link sent. Check your email.'; } } catch {}
-        try { window.__mcLastSignInState = 'otp-sent'; } catch {}
-        try { showAuthSuccessToast && showAuthSuccessToast('Magic link sent'); } catch {}
-        return otp;
-      } catch (err) {
-        console.error('[mobile] signIn() failed', err);
-        try { if (feedbackEl) { feedbackEl.textContent = err?.message || 'Sign-in failed'; } } catch {}
-        try { window.__mcLastSignInState = 'error'; } catch {}
-        return { error: err };
-      }
-    }
-
-    signInButtons.forEach((btn) => {
-      if (!(btn instanceof HTMLElement)) return;
-      // Prevent duplicate wiring
-      if (btn.dataset.__signedInWired === 'true') return;
-      btn.addEventListener('click', async (ev) => {
-        try { ev.preventDefault(); } catch {}
-        // Invoke unified signIn; if the button explicitly represents OAuth (Google), try OAuth first
-        const prefersOAuth = (btn.id === 'googleSignInBtn' || btn.id === 'googleSignInBtnMenu');
-        if (prefersOAuth) {
-          try {
-            const supabase = getSupabaseClient() || (typeof window !== 'undefined' && window.supabase) || supabaseAuthController?.supabase;
-            if (supabase && supabase.auth && typeof supabase.auth.signInWithOAuth === 'function') {
-              console.log('[mobile] triggering signInWithOAuth (google) via unified handler');
-              await supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/oauth/consent` : undefined });
-              return;
-            }
-          } catch (err) {
-            console.warn('[mobile] OAuth attempt failed, falling back to unified password/OTP signIn', err);
-          }
-        }
-        await signIn({ fromButton: btn.id || btn.className });
-      });
-      try { btn.dataset.__signedInWired = 'true'; } catch {}
-      try { btn._mcAuthWired = true; } catch {}
-    });
-  } catch (err) {
+  } catch {
     /* noop */
   }
-})();
+}
 
 (() => {
   const menuBtn = document.getElementById('overflowMenuBtn');
