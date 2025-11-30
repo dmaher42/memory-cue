@@ -617,6 +617,12 @@ const initMobileNotes = () => {
     } catch (e) {
       /* ignore */
     }
+    // ensure floating FAB exists once the sheet is ready
+    try {
+      ensureFloatingNewFolderFab();
+    } catch (e) {
+      /* ignore */
+    }
   };
 
   const hideSavedNotesSheet = () => {
@@ -1208,22 +1214,7 @@ const initMobileNotes = () => {
     scrollWrap.className = 'notebook-folder-scroll-wrap';
     scrollWrap.appendChild(filterBar);
 
-    // Add + New folder button (kept outside the scroll area so it's always visible)
-    const newChip = document.createElement('button');
-    newChip.type = 'button';
-    newChip.className = 'folder-chip outlined notebook-folder-chip notebook-folder-chip--new new-folder-btn';
-    newChip.dataset.folderId = 'new-folder';
-    newChip.innerHTML = '<span class="notebook-folder-chip-icon">+</span><span>New folder</span>';
-    newChip.addEventListener('click', (e) => {
-      e.preventDefault();
-      try {
-        openNewFolderDialog();
-      } catch (err) {
-        console.warn('[notebook] failed to open new folder dialog', err);
-      }
-    });
-
-    // Build header container: chips on the left (scrollable), button fixed on the right
+    // Build header container: chips on the left (scrollable)
     const header = document.createElement('div');
     header.className = 'notebook-folder-header';
 
@@ -1232,7 +1223,6 @@ const initMobileNotes = () => {
     chipsWrap.appendChild(scrollWrap);
 
     header.appendChild(chipsWrap);
-    header.appendChild(newChip);
 
     folderBar.appendChild(header);
 
@@ -1248,6 +1238,52 @@ const initMobileNotes = () => {
       // If folder rendering fails, keep behavior unchanged
       console.warn('[notebook] Unable to build folder bar', e);
     }
+  };
+
+  // Ensure a floating action button (FAB) exists inside the saved notes sheet
+  const ensureFloatingNewFolderFab = () => {
+    if (!savedNotesSheet) return;
+
+    // remove any legacy new-chip that might remain
+    try {
+      const folderBar = document.getElementById('notebook-folder-bar');
+      if (folderBar) {
+        const legacy = folderBar.querySelector('[data-folder-id="new-folder"], .new-folder-btn, .notebook-folder-chip--new');
+        if (legacy) legacy.remove();
+      }
+    } catch (e) {
+      /* ignore */
+    }
+
+    if (document.getElementById('fabNewFolder')) return;
+
+    // ensure the sheet can anchor absolute children
+    try {
+      savedNotesSheet.style.position = savedNotesSheet.style.position || 'relative';
+    } catch (e) {
+      /* ignore */
+    }
+
+    const fab = document.createElement('button');
+    fab.id = 'fabNewFolder';
+    fab.type = 'button';
+    fab.className = 'fab-new-folder';
+    fab.setAttribute('aria-label', 'Create new folder');
+    fab.setAttribute('title', 'Create new folder');
+    fab.innerHTML = `
+      <span class="fab-icon" aria-hidden="true">+</span>
+      <span class="fab-label">New folder</span>
+    `;
+    fab.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      try {
+        openNewFolderDialog();
+      } catch (err) {
+        console.warn('[notebook] openNewFolderDialog() not available', err);
+      }
+    });
+
+    savedNotesSheet.appendChild(fab);
   };
 
   /* New Folder modal setup */

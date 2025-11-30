@@ -537,7 +537,8 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 0 0 14px;
+    /* leave extra bottom padding so floating FAB doesn't cover the last items */
+    padding: 0 0 82px;
   }
 
   .mobile-shell #notesListMobile .premium-note-card {
@@ -597,6 +598,57 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
   .mobile-shell #notesListMobile .note-card-action:hover {
     background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+/* Floating Action Button for New Folder */
+.fab-new-folder {
+  position: absolute;
+  bottom: 1rem; /* bottom-4 */
+  right: 1rem;  /* right-4 */
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem; /* p-3-ish */
+  border-radius: 9999px;
+  background: #ffffff; /* white background to match minimal theme */
+  color: #6b46c1; /* purple-600 */
+  border: 1px solid rgba(188, 164, 237, 0.9); /* purple-200-ish */
+  box-shadow: 0 8px 22px rgba(81, 38, 99, 0.12);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.fab-new-folder:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(81, 38, 99, 0.16);
+}
+
+.fab-new-folder .fab-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+.fab-new-folder .fab-label {
+  display: inline-block;
+}
+
+/* Icon-only on small screens to conserve space */
+@media (max-width: 640px) {
+  .fab-new-folder {
+    width: 44px;
+    height: 44px;
+    padding: 0.5rem;
+    justify-content: center;
+  }
+  .fab-new-folder .fab-label {
+    display: none;
   }
 }
 
