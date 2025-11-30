@@ -10,20 +10,6 @@ const vm = require('vm');
 function loadMobileModule() {
   const filePath = path.resolve(__dirname, '../../mobile.js');
   let source = fs.readFileSync(filePath, 'utf8');
-  // Strip out ES module import lines - we replace references with mocks below
-  source = source.replace(/^import[\s\S]*?;\s*$/mg, '');
-  // Prepend variable bindings that the module expects to exist in scope.
-  const preamble = `
-const initViewportHeight = window.__mobileMocks?.initViewportHeight || (() => () => {});
-const initReminders = window.__initReminders || window.__mobileMocks?.initReminders || (async () => {});
-const initSupabaseAuth = window.__initSupabaseAuth || window.__mobileMocks?.initSupabaseAuth || (() => {});
-const startSignInFlow = window.__startSignInFlow || window.__mobileMocks?.startSignInFlow || (async () => {});
-const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__notesModule || window.__mobileMocks || { loadAllNotes: () => [], saveAllNotes: () => {}, createNote: (n) => n, NOTES_STORAGE_KEY: 'memoryCue:notes' };
-const initNotesSync = window.__initNotesSync || window.__mobileMocks?.initNotesSync || (() => ({ handleSessionChange() {}, setSupabaseClient() {} }));
-const { getFolders, getFolderNameById, assignNoteToFolder, saveFolders } = window.__notesModule || window.__mobileMocks || { getFolders: () => [], getFolderNameById: () => '', assignNoteToFolder: () => {}, saveFolders: () => {} };
-const ModalController = window.__notesModule?.ModalController || window.__mobileMocks?.ModalController || class { constructor(){} show(){} hide(){} };
-`;
-  source = preamble + source;
   source = source.replace(
     "import { initViewportHeight } from './js/modules/viewport-height.js';",
     'const { initViewportHeight } = window.__mobileMocks;'
@@ -33,12 +19,8 @@ const ModalController = window.__notesModule?.ModalController || window.__mobile
     'const { initReminders } = window.__mobileMocks;'
   );
   source = source.replace(
-    "import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';",
-    "const { initSupabaseAuth, startSignInFlow } = window.__mobileMocks;"
-  );
-  source = source.replace(
     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    "const { initSupabaseAuth } = window.__mobileMocks;"
+    'const { initSupabaseAuth } = window.__mobileMocks;'
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -117,7 +99,6 @@ describe('mobile sheet opener events', () => {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
       initSupabaseAuth: jest.fn(),
-      startSignInFlow: jest.fn(),
       loadAllNotes: () => [],
       saveAllNotes: () => {},
       createNote: () => ({}),

@@ -333,15 +333,6 @@ export async function initReminders(sel = {}) {
   const $ = (s) => (s ? document.querySelector(s) : null);
   const $$ = (s) => (s ? Array.from(document.querySelectorAll(s)) : []);
 
-  // Debug: log initialization context to help diagnose mobile rendering issues
-  try {
-    if (typeof console !== 'undefined' && console.log) {
-      console.log('[reminders] initReminders()', { variant: sel.variant || 'unspecified', selectors: sel });
-    }
-  } catch (e) {
-    /* ignore logging errors */
-  }
-
   // Elements
   const title = $(sel.titleSel);
   const date = $(sel.dateSel);
@@ -562,15 +553,6 @@ export async function initReminders(sel = {}) {
   let mobileRemindersFilterMode = 'all';
   let mobileRemindersCache = [];
   let mobileRemindersTemperatureLabel = '';
-
-  // Debug: show how many items were hydrated before rendering
-  try {
-    if (typeof console !== 'undefined' && console.log) {
-      console.log('[reminders] hydrated items count at init:', Array.isArray(items) ? items.length : 0);
-    }
-  } catch (e) {
-    /* ignore logging errors */
-  }
 
   // Returns a short, user-facing label for "today", e.g. "Tue 18 Nov"
   function getTodayLabelForHeader() {
