@@ -241,6 +241,49 @@ html[data-theme="professional"] {
   box-shadow: 0 12px 24px rgba(96, 77, 129, 0.08);
 }
 
+/* Improve folder chip scrolling: keep chips in a horizontally scrollable row
+   and keep the +New folder chip visible at the far right with a subtle fade hint */
+.notebook-folder-bar {
+  position: relative;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 10px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.notebook-folder-bar::after {
+  /* right fade to indicate scrollability */
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+/* Ensure the New folder chip stays visible at the far right */
+.notebook-folder-chip--new {
+  position: sticky;
+  right: 6px;
+  margin-left: 8px;
+  z-index: 10;
+  flex: 0 0 auto;
+}
+
+/* Dark theme fade tweak */
+html[data-theme="night"] .notebook-folder-bar::after,
+html[data-theme="dracula"] .notebook-folder-bar::after {
+  background: linear-gradient(to left, rgba(4,7,18,0.85), rgba(4,7,18,0));
+}
+
 .notebook-folder-bar .folder-chip {
   /* legacy selector kept for compatibility; new class below */
 }
@@ -470,6 +513,33 @@ html[data-theme="professional"] {
   align-items: center;
   gap: 12px;
   width: 100%;
+}
+
+/* Visual polish for mobile note rows: spacing, separators and contrast */
+.premium-note-card {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.premium-note-card + .premium-note-card {
+  margin-top: 6px;
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.premium-note-card {
+  border-bottom: 1px solid rgba(220,215,235,0.55);
+}
+
+/* Touch feedback for note rows */
+.premium-note-card:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(81,63,140,0.06);
 }
 
 @media (min-width: 768px) {
