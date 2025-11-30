@@ -256,7 +256,15 @@ html[data-theme="professional"] {
   scroll-behavior: smooth;
 }
 
-.notebook-folder-bar::after {
+/* The scroll wrapper holds the chips and shows a right-side fade to hint scrollability */
+.notebook-folder-scroll-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notebook-folder-scroll-wrap::after {
   /* right fade to indicate scrollability */
   content: '';
   position: absolute;
@@ -269,18 +277,17 @@ html[data-theme="professional"] {
   border-radius: 999px;
 }
 
-/* Ensure the New folder chip stays visible at the far right */
+/* Ensure the New folder chip stays visible at the far right (outside the scroll area) */
 .notebook-folder-chip--new {
-  position: sticky;
-  right: 6px;
   margin-left: 8px;
   z-index: 10;
   flex: 0 0 auto;
+  align-self: center;
 }
 
 /* Dark theme fade tweak */
-html[data-theme="night"] .notebook-folder-bar::after,
-html[data-theme="dracula"] .notebook-folder-bar::after {
+html[data-theme="night"] .notebook-folder-scroll-wrap::after,
+html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   background: linear-gradient(to left, rgba(4,7,18,0.85), rgba(4,7,18,0));
 }
 

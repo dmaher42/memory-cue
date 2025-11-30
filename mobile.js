@@ -1203,7 +1203,13 @@ const initMobileNotes = () => {
       filterBar.appendChild(createChip(folder));
     });
 
-    // Add + New folder chip at the end
+    // Create a scroll wrapper for the chips so the New Folder button can live
+    // outside the scrollable area and remain visible.
+    const scrollWrap = document.createElement('div');
+    scrollWrap.className = 'notebook-folder-scroll-wrap';
+    scrollWrap.appendChild(filterBar);
+
+    // Add + New folder button outside the scrollable chips container
     const newChip = document.createElement('button');
     newChip.type = 'button';
     newChip.className = 'folder-chip outlined notebook-folder-chip notebook-folder-chip--new';
@@ -1211,16 +1217,16 @@ const initMobileNotes = () => {
     newChip.innerHTML = '<span class="notebook-folder-chip-icon">+</span><span>New folder</span>';
     newChip.addEventListener('click', (e) => {
       e.preventDefault();
-      // open the New Folder dialog (full flow exists elsewhere)
       try {
         openNewFolderDialog();
       } catch (err) {
         console.warn('[notebook] failed to open new folder dialog', err);
       }
     });
-    filterBar.appendChild(newChip);
 
-    folderBar.appendChild(filterBar);
+    // Append scrollable chips and the fixed New button to the folder bar
+    folderBar.appendChild(scrollWrap);
+    folderBar.appendChild(newChip);
 
     // ensure active chip is visually set and scrolled into view
     setActiveFolderChip(currentFolderId);
