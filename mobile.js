@@ -1083,6 +1083,8 @@ const initMobileNotes = () => {
       actionBtn.dataset.role = 'note-menu';
       actionBtn.className = 'note-card-action';
       actionBtn.setAttribute('aria-label', 'Note actions');
+      actionBtn.tabIndex = 0;
+      actionBtn.setAttribute('aria-haspopup', 'true');
       actionBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="5" cy="12" r="1.5" />
@@ -2178,6 +2180,26 @@ const initMobileNotes = () => {
             hideSavedNotesSheet();
           }
         }
+      }
+    });
+
+    // Touch devices: ensure the overflow menu opens reliably on touch.
+    listElement.addEventListener('pointerup', (event) => {
+      // Only handle touch pointers here to avoid duplicate activation with mouse clicks
+      if (!(event instanceof PointerEvent) || event.pointerType !== 'touch') return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (!target) return;
+
+      const menuTrigger = target.closest('button[data-role="note-menu"]');
+      if (menuTrigger && listElement.contains(menuTrigger)) {
+        event.preventDefault();
+        const noteId = menuTrigger.getAttribute('data-note-id');
+        if (!noteId) return;
+        const note = allNotes.find((item) => item.id === noteId);
+        if (note) {
+          openNoteOverflowMenu(note, menuTrigger);
+        }
+        return;
       }
     });
   }
