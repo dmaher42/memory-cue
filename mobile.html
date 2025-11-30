@@ -4,11 +4,8 @@
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
   <script type="module" src="./assets/init-env-MQHJLMJ2.js" defer></script>
   <script type="module" src="./assets/config-supabase-UH2FHEHM.js" defer></script>
-  <!-- Load Supabase JS SDK from CDN so `window.supabase.createClient` is available -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./js/firebase-config.js"></script>
   <!-- === /SUPABASE CONFIG === -->
-  <base href="./" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <style>
@@ -1890,55 +1887,13 @@
       outline: none;
     }
 
-  <header class="navbar sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-base-100/90 backdrop-blur">
-    <div class="flex items-center gap-2 min-w-0">
-      <a href="#" class="flex items-center min-w-0">
-        <img src="./icons/icon-192.png" alt="Memory Cue" class="h-6 w-6 mr-2" />
-        <span class="font-semibold truncate">MC</span>
-      </a>
-      <span id="mcStatus" class="sync-dot offline" role="status" aria-live="polite" aria-label="Offline">●</span>
-      <span id="mcStatusText" class="sr-only">Offline</span>
-    </div>
-
-    <!-- Mobile authentication UI (email magic link + user badge) -->
-    <div id="auth-section" class="auth-container ml-2">
-      <form id="auth-form" class="auth-form" aria-label="Sign in with email">
-        <div class="form-group">
-          <label for="auth-email" class="sr-only">Email</label>
-          <input
-            id="auth-email"
-            type="email"
-            placeholder="Enter your email"
-            required
-            class="input input-bordered w-full"
-            aria-label="Email address"
-          />
-        </div>
-        <div class="form-group mt-2">
-          <label for="auth-password" class="sr-only">Password</label>
-          <input
-            id="auth-password"
-            type="password"
-            placeholder="Password (optional)"
-            class="input input-bordered w-full"
-            aria-label="Password"
-          />
-        </div>
-        <button type="submit" class="btn btn-primary w-full">
-          Sign In
-        </button>
-      </form>
-      <div id="auth-feedback" class="auth-feedback hidden" aria-live="polite"></div>
-
-      <!-- User profile (hidden when not authenticated) -->
-      <div id="user-badge" class="user-badge hidden" role="region" aria-label="User profile">
-        <div class="flex items-center gap-2">
-          <span id="user-badge-initial" class="avatar" aria-hidden="true"></span>
-          <span id="user-badge-email" class="text-sm"></span>
-        </div>
-        <button id="sign-out-btn" class="btn btn-ghost btn-sm" aria-label="Sign out">Sign Out</button>
-      </div>
-    </div>
+    .minimal-editor textarea {
+      font-family: var(--font-primary);
+      font-size: var(--font-size-body);
+      font-weight: 400;
+      color: var(--text-body);
+      line-height: 1.45;
+    }
 
     .minimal-editor textarea:focus {
       outline: 2px solid rgba(81, 38, 99, 0.25);
@@ -5164,6 +5119,17 @@
       />
 
       <div class="header-icons header-actions flex items-center gap-2 flex-shrink-0">
+        <button
+          id="openSavedNotesSheet"
+          type="button"
+          class="header-action-btn icon-btn quick-add-action"
+          aria-label="Open Notebook"
+          title="Open Notebook"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
+          </svg>
+        </button>
 
         <button class="pill-voice-btn quick-add-mic" aria-label="Voice Input">
           <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24">
@@ -5194,48 +5160,10 @@
           </svg>
         </button>
 
-        <button
-          id="googleSignInBtn"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action"
-          aria-label="Sign in"
-          title="Sign in"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z" fill="currentColor"></path>
-          </svg>
-        </button>
-
-        <!-- Visible Open Notebook button (always shown in header) -->
-        <button
-          id="openSavedNotesGlobal"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action"
-          aria-label="Open Notebook"
-          title="Open Notebook"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
-            <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
-          </svg>
-          <span class="btn-label ml-2 hidden sm:inline">Notebook</span>
-        </button>
-
-        <button
-          id="googleSignOutBtn"
-          type="button"
-          class="header-action-btn icon-btn quick-add-action hidden"
-          aria-label="Sign out"
-          title="Sign out"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 17v-2H7V9h9V7l5 5-5 5z" fill="currentColor"></path>
-          </svg>
-        </button>
-
         <!-- Overflow menu -->
         <div class="relative header-overflow-wrapper">
           <button
-            id="headerMenuBtnSlim"
+            id="headerMenuBtn"
             type="button"
             class="header-action-btn icon-btn quick-add-action"
             aria-label="More options"
@@ -5251,10 +5179,10 @@
 
           <!-- Dropdown menu -->
           <div
-            id="headerMenuSlim"
+            id="headerMenu"
             class="overflow-menu hidden"
             role="menu"
-            aria-labelledby="headerMenuBtnSlim"
+            aria-labelledby="headerMenuBtn"
           >
             <button
               type="button"
@@ -5270,7 +5198,7 @@
             </button>
 
             <button
-              id="googleSignInBtnMenu"
+              id="googleSignInBtn"
               type="button"
               class="overflow-item w-full"
               role="menuitem"
@@ -5280,7 +5208,7 @@
             </button>
 
             <button
-              id="googleSignOutBtnMenu"
+              id="googleSignOutBtn"
               type="button"
               class="overflow-item w-full hidden"
               role="menuitem"
@@ -5381,39 +5309,8 @@
       const menu = document.getElementById('headerMenu');
 
       // The slim header script below binds the current overflow menu behavior.
-      // If we don't have required elements, skip wiring.
-      if (!menuBtn || !menu) return;
-
-      // Toggle the overflow menu visibility and keep ARIA attributes in sync
-      const closeMenu = () => {
-        menu.classList.add('hidden');
-        menu.setAttribute('aria-hidden', 'true');
-        menuBtn.setAttribute('aria-expanded', 'false');
-      };
-
-      const openMenu = () => {
-        menu.classList.remove('hidden');
-        menu.setAttribute('aria-hidden', 'false');
-        menuBtn.setAttribute('aria-expanded', 'true');
-      };
-
-      menuBtn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        const isOpen = menuBtn.getAttribute('aria-expanded') === 'true';
-        if (isOpen) closeMenu(); else openMenu();
-      });
-
-      // Close when clicking outside
-      document.addEventListener('click', (ev) => {
-        if (!menu.contains(ev.target) && ev.target !== menuBtn) {
-          closeMenu();
-        }
-      });
-
-      // Close on Escape
-      document.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape') closeMenu();
-      });
+      // Skip the legacy handler to avoid double toggles closing the menu.
+      if (menuBtn && menu) return;
     })();
   </script>
 
@@ -5489,21 +5386,7 @@
               <span class="sr-only">Notebook</span>
             </div>
 
-            <button id="openSavedNotesSheet" type="button" class="header-btn header-btn-icon" aria-label="Open Notebook" title="Open Notebook">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
-        </svg>
-      </button>
-          </div>
-
-          <!-- Visible global 'Open Notebook' action (always present in the header) -->
-          <div class="ml-2 block">
-            <button type="button" class="btn btn-sm btn-ghost open-saved-notes-global" aria-label="Open Notebook (saved notes)" title="Open Notebook (saved notes)">
-              <svg class="w-5 h-5 inline" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
-              </svg>
-              <span class="sr-only">Open Notebook</span>
-            </button>
+            <!-- saved notes button moved into the sub-header for compact layout -->
           </div>
 
           <!-- Seamless title field -->
@@ -5564,7 +5447,7 @@
           <!-- Minimal main editor with soft styling -->
           <div class="distraction-free-editor-container">
             <div
-                id="notebook-editor-body"
+              id="notebook-editor-body"
               class="note-editor-area notebook-editor-body minimal-editor px-1 py-1 text-base leading-relaxed focus:outline-none rounded-lg"
               contenteditable="true"
               spellcheck="true"
@@ -5635,7 +5518,21 @@
                   <!-- Note items are rendered here by JS -->
                 </div>
               </div>
-              <!-- New Folder Modal (moved to top-level below) -->
+              <!-- New Folder Modal -->
+              <dialog id="newFolderModal" class="memory-glass-card" aria-hidden="true">
+                <div class="p-4">
+                  <h3 id="newFolderTitle" class="text-lg font-semibold">New folder</h3>
+                  <div class="mt-3">
+                    <label for="newFolderName" class="sr-only">Folder name</label>
+                    <input id="newFolderName" type="text" class="input input-sm w-full" placeholder="Folder name" />
+                    <p id="newFolderError" class="text-xs text-error mt-2 sr-only">Error</p>
+                  </div>
+                  <div class="modal-actions mt-4 flex justify-end gap-3">
+                    <button id="newFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
+                    <button id="newFolderCreate" type="button" class="btn btn-primary">Create</button>
+                  </div>
+                </div>
+              </dialog>
               <!-- Pick Folder Modal -->
               <dialog id="pickFolderModal" class="memory-glass-card" aria-hidden="true">
                 <div class="p-4">
@@ -5707,7 +5604,7 @@
     </main>
   </div>
 
-  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 flex justify-center pointer-events-none px-2 pb-3" style="z-index:10001;">
+  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
     <div class="floating-footer">
       <button
         type="button"
@@ -5766,22 +5663,6 @@
       </button>
     </div>
   </div>
-
-  <!-- New Folder Modal moved out of savedNotesSheet and into top-level so it's always accessible -->
-  <dialog id="newFolderModal" class="memory-glass-card" aria-hidden="true">
-    <div class="p-4">
-      <h3 id="newFolderTitle" class="text-lg font-semibold">New folder</h3>
-      <div class="mt-3">
-        <label for="newFolderName" class="sr-only">Folder name</label>
-        <input id="newFolderName" type="text" class="input input-sm w-full" placeholder="Folder name" />
-        <p id="newFolderError" class="text-xs text-error mt-2 sr-only">Error</p>
-      </div>
-      <div class="modal-actions mt-4 flex justify-end gap-3">
-        <button id="newFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-        <button id="newFolderCreate" type="button" class="btn btn-primary">Create</button>
-      </div>
-    </div>
-  </dialog>
   <script>
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
@@ -5808,9 +5689,6 @@
         }
       };
 
-      // expose helper so other scripts (or inline event handlers) can call it
-      if (typeof window !== 'undefined') window.focusNotebookInputs = focusNotebookInputs;
-
       const setActiveFooterIcon = (buttonId) => {
         document
           .querySelectorAll('#mobile-nav-shell .floating-card')
@@ -5826,19 +5704,6 @@
 
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
-
-        // Close any open overlays before navigating so the view is visible
-        try { window.hideSavedNotesSheet?.(); } catch (e) { /* ignore */ }
-        try { window.closeMoveFolderSheet?.(); } catch (e) { /* ignore */ }
-        try { window.closeOverflowMenu?.(); } catch (e) { /* ignore */ }
-        try { if (typeof window.closeAddTask === 'function') window.closeAddTask(); } catch (e) { /* ignore */ }
-
-        // As a fallback, broadcast a generic `cue:close` event so individual
-        // controllers can respond by hiding open sheets and overlays.
-        try { document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'app:navigate' } })); } catch (e) { /* ignore */ }
-        // As a robustness fallback, dispatch a global "cue:close" event which
-        // modal/sheet controllers listen for and will close any open overlays.
-        try { document.dispatchEvent(new CustomEvent('cue:close', { detail: { reason: 'nav' } })); } catch (e) { /* ignore */ }
 
         setActiveFooterIcon(button.id);
 
@@ -5859,29 +5724,6 @@
           window.dispatchEvent(
             new CustomEvent('app:navigate', {
               detail: { view: 'notebook' }
-            })
-          );
-          focusNotebookInputs();
-          return;
-        }
-
-        if (view === 'notebook') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view }
-            })
-          );
-          focusNotebookInputs();
-          return;
-        }
-
-        // When clicking the notebook footer button, ensure the notebook view
-        // receives focus so the editor is active. This mirrors the behavior we
-        // trigger when the 'add-note' target is used to navigate to the notebook.
-        if (view === 'notebook') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view }
             })
           );
           focusNotebookInputs();
@@ -6059,10 +5901,9 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-TDVPIG43.js?v=2025-10-29-1"></script>
-  <script type="module" src="./assets/mobile-theme-toggle-CKY7BNGT.js"></script>
-  <!-- Inline fallbacks removed: relying on canonical bundled wiring -->
+  <script src="js/register-service-worker.js" defer></script>
+  <script type="module" src="mobile.js?v=2025-10-29-1"></script>
+  <script type="module" src="js/mobile-theme-toggle.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
       background: radial-gradient(circle at 50% 10%, rgba(104, 65, 144, 0.14), transparent 38%),
@@ -6411,6 +6252,16 @@
   <!-- END GPT CHANGE: settings modal -->
 
   <script id="mobile-enhancements">
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', (event) => {
+        const trigger = event.target;
+        const dialog = trigger?.closest?.('.sheet, .modal');
+        if (dialog) {
+          dialog.classList.add('hidden');
+        }
+      });
+    });
+
     (function () {
       const list = document.getElementById('reminderList');
       if (!list) return;
@@ -6924,9 +6775,8 @@
           const isActive = key === target;
 
           if (view) {
-            const shouldBeVisible = (key === target) || (target === 'new' && key === 'reminders');
-            view.classList.toggle('hidden', !shouldBeVisible);
-            view.setAttribute('aria-hidden', String(!shouldBeVisible));
+            view.classList.toggle('hidden', !isActive);
+            view.setAttribute('aria-hidden', String(!isActive));
           }
 
           if (button) {
@@ -7424,7 +7274,27 @@
           }
         });
 
-  
+        if (!reminders.length) {
+          for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index);
+            if (!key || triedKeys.has(key) || !/remind/i.test(key)) continue;
+            triedKeys.add(key);
+            try {
+              const value = localStorage.getItem(key);
+              if (!value) continue;
+              const parsed = JSON.parse(value);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((item) => reminders.push(item));
+              } else if (parsed && typeof parsed === 'object') {
+                if (Array.isArray(parsed.items)) parsed.items.forEach((item) => reminders.push(item));
+                if (Array.isArray(parsed.reminders)) parsed.reminders.forEach((item) => reminders.push(item));
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+
         return reminders.map(normaliseReminder).filter(Boolean);
       };
 
@@ -8395,8 +8265,8 @@
       if (!slimHeader) return;
 
       const addBtn = slimHeader.querySelector('#addReminderBtn');
-      const overflowBtn = slimHeader.querySelector('#headerMenuBtnSlim');
-      const overflowMenu = slimHeader.querySelector('#headerMenuSlim');
+      const overflowBtn = slimHeader.querySelector('#headerMenuBtn');
+      const overflowMenu = slimHeader.querySelector('#headerMenu');
 
       if (addBtn) {
         addBtn.addEventListener('click', function(event) {
@@ -8410,12 +8280,12 @@
 
       if (overflowBtn && overflowMenu) {
         const toggleMenu = (forceOpen) => {
-          // Ensure we're toggling the menu that belongs to this slim header instance
           const isHidden = overflowMenu.classList.contains('hidden');
           const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
           overflowMenu.classList.toggle('hidden', !shouldOpen);
           overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
           overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+          // debug log to help diagnose clicks not opening the menu
           try {
             console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
           } catch (e) {
@@ -8431,9 +8301,8 @@
 
         document.addEventListener('click', (event) => {
           if (overflowMenu.classList.contains('hidden')) return;
-          // Only close if the click was outside this slim header's overflow wrapper
           const wrapper = event.target instanceof Element ? event.target.closest('.header-overflow-wrapper') : null;
-          if (!wrapper || !slimHeader.contains(wrapper)) {
+          if (!wrapper) {
             toggleMenu(false);
           }
         });
@@ -8473,13 +8342,5 @@
     });
   </script>
 
-  <!-- Supabase config (load once). Mobile-specific auth initialisation is handled
-       from `mobile.js` after the client becomes available to avoid duplicate inits. -->
-  <script type="module" src="./assets/config-supabase-EKYI4FJE.js"></script>
-
-    <!-- Load Supabase SDK (CDN) and mobile entry. Ensure the SDK loads before `mobile.js`. -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="./js/mobile.js"></script>
-
-    </body>
+</body>
 </html>

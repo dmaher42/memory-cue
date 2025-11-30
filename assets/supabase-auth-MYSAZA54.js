@@ -1,1 +1,0 @@
-import{a,b,c,d,e,f,g,h,i}from"./chunk-WGNEU63O.js";import"./chunk-CTK42JWW.js";import"./chunk-GUVSRPRW.js";i();export{e as SUPABASE_AUTH_DEFAULT_MESSAGES,d as SUPABASE_AUTH_DEFAULT_SELECTORS,f as applyAuthState,h as getSupabaseAuthElements,g as initSupabaseAuth,a as setAuthContext,b as startSignInFlow,c as startSignOutFlow};

@@ -6,10 +6,10 @@
 <!-- BEGIN GPT CHANGE: supabase keys moved to env.js -->
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase env bootstrap -->
-<script type="module" src="./assets/init-env-IRVYRYK5.js" defer></script>
+<script type="module" src="./assets/init-env-MQHJLMJ2.js" defer></script>
 <!-- END GPT CHANGE -->
 <!-- BEGIN GPT CHANGE: supabase init via env module -->
-<script type="module" src="./assets/config-supabase-EKYI4FJE.js" defer></script>
+<script type="module" src="./assets/config-supabase-UH2FHEHM.js" defer></script>
 <!-- END GPT CHANGE -->
   <script defer src="./js/firebase-config.js"></script>
 <!-- === /SUPABASE CONFIG === -->
@@ -1189,25 +1189,30 @@
                   </button>
                 </div>
               </div>
-              <div class="planner-grid">
-                <div class="planner-main">
-                  <div id="plannerCards" class="planner-cards-grid"></div>
-                  <div id="plannerWeekView" class="hidden"></div>
-                </div>
-                <aside class="planner-sidebar">
-                  <div class="planner-notes">
-                    <div class="planner-notes-header">
-                      <p class="planner-notes-title">Teacher notes</p>
-                      <p class="planner-notes-subtitle">Weekly notes for follow ups, printing, and reminders.</p>
-                      <span id="plannerTeacherNotesStatus" class="planner-notes-status" data-status="idle">Notes save automatically.</span>
-                    </div>
-                    <textarea
-                      id="plannerTeacherNotes"
-                      class="planner-notes-textarea"
-                      placeholder="Capture behaviour notes, print jobs, and follow ups for this week."
-                      spellcheck="true"
-                    ></textarea>
+              <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] items-start">
+                <div class="space-y-4 planner-layout">
+                  <div class="planner-cards-scroll rounded-2xl border border-base-200/80 bg-base-100/80 p-4 shadow-sm h-full overflow-y-auto">
+                    <div
+                      id="plannerCards"
+                      class="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 [&_[data-planner-lesson]]:rounded-2xl [&_[data-planner-lesson]]:border [&_[data-planner-lesson]]:border-base-200 [&_[data-planner-lesson]]:bg-base-100 [&_[data-planner-lesson]]:px-5 [&_[data-planner-lesson]]:py-5 [&_[data-planner-lesson]]:text-base-content [&_[data-planner-lesson]]:text-left [&_[data-planner-lesson]]:shadow-md [&_[data-planner-lesson]]:space-y-3 [&_[data-planner-lesson]]:flex [&_[data-planner-lesson]]:flex-col [&_[data-planner-lesson]]:justify-between [&_[data-planner-lesson]_.badge]:text-[11px] [&_[data-planner-lesson]_.badge]:text-base-content/80 [&_[data-planner-lesson]_.label-text]:text-[11px] [&_[data-planner-lesson]_.label-text]:tracking-[0.2em] [&_[data-planner-lesson]_.label-text]:text-base-content/60 [&_[data-planner-lesson] textarea]:text-sm [&_[data-planner-lesson] textarea]:text-base-content [&_[data-planner-lesson] textarea]:placeholder:text-base-content/60 [&_[data-planner-lesson]>div:last-child]:mt-4 [&_[data-planner-lesson]>div:last-child]:flex [&_[data-planner-lesson]>div:last-child]:gap-2 [&_[data-planner-lesson]>div:last-child]:justify-start min-h-[12rem]"
+                    ></div>
+                    <div id="plannerWeekView" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 hidden"></div>
                   </div>
+                </div>
+                <aside class="space-y-3 rounded-2xl border border-base-200 bg-base-200/80 p-5 shadow-md lg:sticky lg:top-6">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1">
+                      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60">Teacher notes</p>
+                      <p class="text-sm text-base-content/80">Weekly notes for follow ups, printing, and reminders.</p>
+                    </div>
+                    <span id="plannerTeacherNotesStatus" class="text-xs font-medium text-base-content/70" data-status="idle">Notes save automatically.</span>
+                  </div>
+                  <textarea
+                    id="plannerTeacherNotes"
+                    class="textarea textarea-bordered w-full min-h-[12rem] resize-none text-sm text-base-content"
+                    placeholder="Capture behaviour notes, print jobs, and follow ups for this week."
+                    spellcheck="true"
+                  ></textarea>
                 </aside>
               </div>
             </div>
@@ -1611,7 +1616,7 @@
   <script src="./assets/router-OOUMFDE4.js" defer></script>
   <script type="module" src="./js/quick-actions.js" defer></script>
   <script type="module" src="./js/dashboard-insights.js" defer></script>
-  <script type="module" src="./assets/app-QHFY3XDD.js" defer></script>
+  <script type="module" src="./assets/app-RHJVEWVK.js" defer></script>
   <script src="./assets/update-footer-year-EFMYO4DK.js" defer></script>
   <script type="module" src="./js/supabase-auth-init.js" defer></script>
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>

@@ -1274,124 +1274,22 @@ html[data-theme="professional"] {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-.planner-grid {
+.desktop-panel.desktop-panel--planner #plannerCards {
   display: grid;
-  gap: 1.5rem;
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+  grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 1024px) {
-  .planner-grid {
-    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
-    align-items: start;
+@media (min-width: 768px) {
+  .desktop-panel.desktop-panel--planner #plannerCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.planner-main {
-  border-radius: 1rem;
-  border: 1px solid var(--planner-panel-border);
-  background-color: var(--planner-card-bg);
-  padding: 1rem;
-  box-shadow: var(--planner-card-shadow);
-  overflow-y: auto;
-}
-
-.planner-cards-grid {
-  display: grid;
-  gap: 1.25rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-}
-
-.planner-sidebar {
-  position: sticky;
-  top: 6rem;
-}
-
-.planner-notes {
-  border-radius: 1rem;
-  border: 1px solid var(--planner-panel-border);
-  background-color: var(--planner-card-bg);
-  padding: 1.25rem;
-  box-shadow: var(--planner-card-shadow);
-}
-
-.planner-notes-header {
-  margin-bottom: 1rem;
-}
-
-.planner-notes-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--desktop-text-muted);
-}
-
-.planner-notes-subtitle {
-  font-size: 0.875rem;
-  color: var(--desktop-text-muted);
-  margin-bottom: 0.5rem;
-}
-
-.planner-notes-status {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--desktop-text-muted);
-}
-
-.planner-notes-textarea {
-  width: 100%;
-  min-height: 12rem;
-  resize: none;
-  font-size: 0.875rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--planner-panel-border);
-  background-color: var(--b1);
-  padding: 0.75rem;
-}
-
-[data-planner-lesson] {
-  border-radius: 1rem;
-  border: 1px solid var(--planner-card-border);
-  background-color: var(--planner-card-bg);
-  padding: 1.25rem;
-  color: var(--desktop-text-main);
-  text-align: left;
-  box-shadow: var(--planner-card-shadow);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 12rem;
-}
-
-[data-planner-lesson] > div:not(:first-child) {
-  margin-top: 0.75rem;
-}
-
-[data-planner-lesson] .badge {
-  font-size: 11px;
-  color: var(--desktop-text-muted);
-}
-
-[data-planner-lesson] .label-text {
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--desktop-text-muted);
-}
-
-[data-planner-lesson] textarea {
-  font-size: 0.875rem;
-  color: var(--desktop-text-main);
-}
-
-[data-planner-lesson] textarea::placeholder {
-  color: var(--desktop-text-muted);
-}
-
-[data-planner-lesson] > div:last-child {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-start;
+@media (min-width: 1024px) {
+  .desktop-panel.desktop-panel--planner #plannerCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .desktop-panel.desktop-panel--planner .card {
