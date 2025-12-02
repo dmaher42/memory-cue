@@ -5964,6 +5964,10 @@
         linear-gradient(180deg, #f2e8ff 0%, #eae0ff 45%, #f7f3ff 100%);
     }
 
+    #create-sheet .sheet-backdrop {
+      z-index: 60;
+    }
+
     #create-sheet .sheet-panel {
       position: fixed;
       inset: 0;
@@ -5974,6 +5978,7 @@
       border: none;
       box-shadow: none;
       padding: calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
+      z-index: 70;
     }
 
     #create-sheet .reminder-editor-shell {
