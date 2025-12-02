@@ -447,37 +447,52 @@ const initMobileNotes = () => {
     });
   }
 
-  const setEditorContent = (value = '', options = {}) => {
-    const normalizedValue = typeof value === 'string' ? value : '';
-    const { forceHtml = false } = options;
-
-    if (scratchNotesEditor && typeof scratchNotesEditor.setContent === 'function') {
-      scratchNotesEditor.setContent(normalizedValue || '');
-      return;
+  const getEditorBodyHtml = () => {
+    if (
+      scratchNotesEditor &&
+      typeof scratchNotesEditor.getHtml === 'function'
+    ) {
+      return scratchNotesEditor.getHtml() || '';
     }
-
-    const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(normalizedValue);
-    scratchNotesEditorElement.innerHTML = '';
-    if (forceHtml || looksLikeHtml) {
-      scratchNotesEditorElement.innerHTML = normalizedValue || '';
-    } else {
-      scratchNotesEditorElement.textContent = normalizedValue || '';
-    }
-  };
-
-  const getEditorHTML = () => {
     if (scratchNotesEditor && typeof scratchNotesEditor.getHTML === 'function') {
       return scratchNotesEditor.getHTML() || '';
     }
     return scratchNotesEditorElement.innerHTML || '';
   };
 
-  const getEditorText = () => {
-    if (scratchNotesEditor && typeof scratchNotesEditor.getText === 'function') {
-      return scratchNotesEditor.getText() || '';
+  const setEditorBodyHtml = (html = '') => {
+    const normalizedHtml = typeof html === 'string' ? html : '';
+    if (
+      scratchNotesEditor &&
+      typeof scratchNotesEditor.setHtml === 'function'
+    ) {
+      scratchNotesEditor.setHtml(normalizedHtml);
+    } else if (
+      scratchNotesEditor &&
+      typeof scratchNotesEditor.setContent === 'function'
+    ) {
+      scratchNotesEditor.setContent(normalizedHtml);
+    } else {
+      scratchNotesEditorElement.innerHTML = normalizedHtml;
     }
-    return scratchNotesEditorElement.textContent || '';
   };
+
+  const getEditorBodyText = (html = '') => {
+    const temp = document.createElement('div');
+    temp.innerHTML = typeof html === 'string' ? html : '';
+    return (temp.textContent || temp.innerText || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const setEditorContent = (value = '') => {
+    const normalizedValue = typeof value === 'string' ? value : '';
+    setEditorBodyHtml(normalizedValue);
+  };
+
+  const getEditorHTML = () => getEditorBodyHtml();
+
+  const getEditorText = () => getEditorBodyText(getEditorBodyHtml());
 
   const getClosestBlock = (node) => {
     let current = node;
@@ -745,7 +760,7 @@ const initMobileNotes = () => {
     const fallbackBody = typeof note.body === 'string' ? note.body : '';
     const nextBody = (preferredHtml ?? fallbackBody) || '';
     titleInput.value = nextTitle;
-    setEditorContent(nextBody, { forceHtml: Boolean(preferredHtml) });
+    setEditorContent(nextBody);
     titleInput.dataset.noteOriginalTitle = nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
@@ -756,11 +771,7 @@ const initMobileNotes = () => {
     }
   };
 
-  const extractPlainText = (html = '') => {
-    const temp = document.createElement('div');
-    temp.innerHTML = typeof html === 'string' ? html : '';
-    return (temp.textContent || temp.innerText || '').trim();
-  };
+  const extractPlainText = (html = '') => getEditorBodyText(html);
 
   const getNoteBodyText = (note) => {
     if (!note) return '';
@@ -776,8 +787,8 @@ const initMobileNotes = () => {
   };
 
   const getEditorValues = () => {
-    const bodyHtml = getEditorHTML();
-    const bodyText = extractPlainText(bodyHtml);
+    const bodyHtml = getEditorBodyHtml();
+    const bodyText = getEditorBodyText(bodyHtml);
     return {
       title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
       bodyHtml,
@@ -832,7 +843,7 @@ const initMobileNotes = () => {
 
   const hasUnsavedChanges = () => {
     const currentTitle = typeof titleInput.value === 'string' ? titleInput.value : '';
-    const currentBody = getEditorHTML();
+    const currentBody = getEditorBodyHtml();
     const originalTitle = titleInput.dataset.noteOriginalTitle ?? '';
     const originalBody = scratchNotesEditorElement.dataset.noteOriginalBody ?? '';
     return currentTitle !== originalTitle || currentBody !== originalBody;
@@ -2416,7 +2427,7 @@ const initMobileNotes = () => {
     const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
     const { title, bodyHtml, bodyText } = getEditorValues();
     const noteBodyHtml = bodyHtml || '';
-    const noteBodyText = bodyText || extractPlainText(noteBodyHtml);
+    const noteBodyText = getEditorBodyText(noteBodyHtml);
     const sanitizedTitle = title || 'Untitled note';
     const timestamp = new Date().toISOString();
     const normalizedFolderId =

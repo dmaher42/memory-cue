@@ -114,6 +114,8 @@ export const initNotesSync = (options = {}) => {
       [userColumn]: currentUserId,
       title: note.title,
       body: typeof note.bodyHtml === 'string' && note.bodyHtml.length ? note.bodyHtml : note.body,
+      body_html: typeof note.bodyHtml === 'string' ? note.bodyHtml : null,
+      body_text: typeof note.bodyText === 'string' ? note.bodyText : null,
       folder_id: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
       [updatedAtColumn]: typeof note.updatedAt === 'string' && note.updatedAt
         ? note.updatedAt
@@ -153,7 +155,7 @@ export const initNotesSync = (options = {}) => {
     try {
       const { data, error } = await client
         .from(tableName)
-        .select(`id,title,body,folder_id,${updatedAtColumn}`)
+        .select(`id,title,body,body_html,body_text,folder_id,${updatedAtColumn}`)
         .eq(userColumn, currentUserId);
       if (error) {
         throw error;

@@ -57,7 +57,9 @@ const extractPlainText = (html = '') => {
   if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
     const temp = document.createElement('div');
     temp.innerHTML = typeof html === 'string' ? html : '';
-    return (temp.textContent || temp.innerText || '').trim();
+    return (temp.textContent || temp.innerText || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
   if (typeof html !== 'string') {
     return '';
@@ -73,17 +75,16 @@ const isValidDateString = (value) => {
   return !Number.isNaN(time);
 };
 
-export const createNote = (title, body, overrides = {}) => {
+export const createNote = (title, bodyHtml, overrides = {}) => {
   const trimmedTitle = typeof title === 'string' ? title.trim() : '';
   const rawBodyHtml =
     typeof overrides.bodyHtml === 'string' && overrides.bodyHtml.length
       ? overrides.bodyHtml
-      : body;
+      : bodyHtml;
   const normalizedBodyHtml = normalizeBodyValue(rawBodyHtml);
   const providedBodyText = typeof overrides.bodyText === 'string' ? overrides.bodyText : null;
-  const normalizedBodyText = providedBodyText && providedBodyText.trim().length
-    ? providedBodyText.trim()
-    : extractPlainText(normalizedBodyHtml);
+  const normalizedBodyText =
+    providedBodyText !== null ? providedBodyText.trim() : extractPlainText(normalizedBodyHtml);
   return {
     id: overrides.id && typeof overrides.id === 'string' ? overrides.id : generateId(),
     title: trimmedTitle || 'Untitled note',
@@ -109,26 +110,27 @@ const normalizeNotes = (value) => {
         const rawBodyHtml =
           typeof note.bodyHtml === 'string' && note.bodyHtml.length
             ? note.bodyHtml
-            : note.body;
-        const body = normalizeBodyValue(rawBodyHtml);
+            : typeof note.body === 'string'
+              ? note.body
+              : '';
+        const fallbackText = typeof note.bodyText === 'string' ? note.bodyText : '';
+        const body = normalizeBodyValue(rawBodyHtml || fallbackText);
         const bodyText =
-          typeof note.bodyText === 'string' && note.bodyText.trim().length
-            ? note.bodyText.trim()
+          fallbackText && fallbackText.trim().length
+            ? fallbackText.trim()
             : extractPlainText(body);
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
-        if (!title && !body && !note.body) {
+        if (!title && !body && !fallbackText) {
           return null;
         }
-        return {
+        return createNote(title || 'Untitled note', body, {
           id,
-          title: title || 'Untitled note',
-          body,
-          bodyHtml: body,
-          bodyText,
           updatedAt,
           folderId: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
-        };
+          bodyHtml: body,
+          bodyText,
+        });
       })
       .filter(Boolean);
   }
@@ -140,11 +142,12 @@ const normalizeNotes = (value) => {
       : typeof value.body === 'string'
         ? value.body
         : '';
-    const body = normalizeBodyValue(rawBodyHtml);
-    const bodyText = typeof value.bodyText === 'string' && value.bodyText.trim().length
-      ? value.bodyText.trim()
+    const fallbackText = typeof value.bodyText === 'string' ? value.bodyText : '';
+    const body = normalizeBodyValue(rawBodyHtml || fallbackText);
+    const bodyText = fallbackText && fallbackText.trim().length
+      ? fallbackText.trim()
       : extractPlainText(body);
-    if (!title && !body) {
+    if (!title && !body && !bodyText) {
       return [];
     }
     return [
