@@ -204,6 +204,30 @@ html[data-theme="professional"] {
   word-break: break-word;
 }
 
+#notebook-editor-body ul,
+#notebook-editor-body ol {
+  padding-left: 1.25rem;
+  margin: 0.2rem 0 0.4rem;
+}
+
+#notebook-editor-body li {
+  margin-bottom: 0.2rem;
+}
+
+#notebook-editor-body strong {
+  font-weight: 700;
+}
+
+#notebook-editor-body em {
+  font-style: italic;
+}
+
+#notebook-editor-body a {
+  color: var(--accent-color, #512663);
+  text-decoration: underline;
+  word-break: break-word;
+}
+
 /* Optional: smoother transitions for mobile header/title area */
 .mobile-note-header input,
 .mobile-note-header button {
