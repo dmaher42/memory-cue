@@ -1550,18 +1550,55 @@ const initMobileNotes = () => {
 
   /* Folder overflow menu + rename/delete handling */
   let activeOverflowMenu = null;
+  let activeOverflowTrigger = null;
   const closeOverflowMenu = () => {
     if (activeOverflowMenu && activeOverflowMenu.parentNode) {
       activeOverflowMenu.parentNode.removeChild(activeOverflowMenu);
     }
+    const focusTarget =
+      activeOverflowTrigger &&
+      document.body.contains(activeOverflowTrigger) &&
+      typeof activeOverflowTrigger.focus === 'function'
+        ? activeOverflowTrigger
+        : null;
     activeOverflowMenu = null;
+    activeOverflowTrigger = null;
     document.removeEventListener('click', closeOverflowMenu);
     document.removeEventListener('keydown', handleOverflowKeydown);
+    if (focusTarget) {
+      try {
+        focusTarget.focus();
+      } catch {
+        /* ignore focus restoration failures */
+      }
+    }
   };
 
   const handleOverflowKeydown = (ev) => {
     if (ev.key === 'Escape') {
+      ev.preventDefault();
       closeOverflowMenu();
+    }
+    if (ev.key === 'Tab') {
+      requestAnimationFrame(() => {
+        if (activeOverflowMenu && !activeOverflowMenu.contains(document.activeElement)) {
+          closeOverflowMenu();
+        }
+      });
+    }
+  };
+
+  const focusFirstOverflowItem = (menuEl) => {
+    if (!menuEl) return;
+    const firstItem = menuEl.querySelector('button');
+    if (firstItem instanceof HTMLElement) {
+      setTimeout(() => {
+        try {
+          firstItem.focus();
+        } catch {
+          /* ignore focus errors */
+        }
+      }, 0);
     }
   };
 
@@ -1832,11 +1869,13 @@ const initMobileNotes = () => {
     menu.style.position = 'absolute';
     menu.style.zIndex = 1200;
     menu.style.minWidth = '180px';
+    menu.setAttribute('role', 'menu');
 
     const moveBtn = document.createElement('button');
     moveBtn.type = 'button';
     moveBtn.className = 'w-full text-left px-3 py-2 btn-ghost rounded-xl';
     moveBtn.textContent = 'Move to folder…';
+    moveBtn.setAttribute('role', 'menuitem');
     moveBtn.addEventListener('click', (e) => {
       e.preventDefault();
       closeOverflowMenu();
@@ -1851,6 +1890,7 @@ const initMobileNotes = () => {
     deleteBtn.type = 'button';
     deleteBtn.className = 'w-full text-left px-3 py-2 btn-ghost text-error rounded-xl';
     deleteBtn.textContent = 'Delete note';
+    deleteBtn.setAttribute('role', 'menuitem');
     deleteBtn.addEventListener('click', (e) => {
       e.preventDefault();
       const confirmFn =
@@ -1871,6 +1911,14 @@ const initMobileNotes = () => {
 
     document.body.appendChild(menu);
     activeOverflowMenu = menu;
+    activeOverflowTrigger = anchorEl instanceof HTMLElement ? anchorEl : null;
+
+    menu.addEventListener('focusout', (event) => {
+      const next = event.relatedTarget;
+      if (!next || (activeOverflowMenu && !activeOverflowMenu.contains(next))) {
+        closeOverflowMenu();
+      }
+    });
 
     try {
       const rect = anchorEl.getBoundingClientRect();
@@ -1884,6 +1932,7 @@ const initMobileNotes = () => {
       menu.style.transform = 'translate(-50%, -50%)';
     }
 
+    focusFirstOverflowItem(menu);
     document.addEventListener('click', closeOverflowMenu);
     document.addEventListener('keydown', handleOverflowKeydown);
   };
@@ -2018,6 +2067,7 @@ const initMobileNotes = () => {
 
     document.body.appendChild(menu);
     activeOverflowMenu = menu;
+    activeOverflowTrigger = anchorEl instanceof HTMLElement ? anchorEl : null;
 
     // position menu under anchor
     try {
