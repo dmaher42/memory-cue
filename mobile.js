@@ -358,6 +358,7 @@ const initMobileNotes = () => {
   const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
   const folderSelectorEl = document.getElementById('moveFolderSheet');
+  const folderSelectorUnsortedBtn = document.getElementById('move-folder-unsorted');
   const folderSelectorListEl = document.getElementById('move-folder-list');
   const folderSelectorCreateBtn = document.getElementById('move-folder-create');
   const folderSelectorCancelBtn = document.getElementById('move-folder-cancel');
@@ -1674,6 +1675,22 @@ const initMobileNotes = () => {
     }
   };
 
+  const setActiveFolderRow = (folderId) => {
+    const targetId = String(folderId || 'unsorted');
+    const rows = folderSelectorListEl?.querySelectorAll('.folder-select-row') || [];
+    rows.forEach((row) => {
+      if (!(row instanceof HTMLElement)) return;
+      const isActive = row.dataset.folderId === targetId;
+      row.classList.toggle('active', isActive);
+      row.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    if (folderSelectorUnsortedBtn) {
+      const isUnsorted = targetId === 'unsorted';
+      folderSelectorUnsortedBtn.classList.toggle('active', isUnsorted);
+      folderSelectorUnsortedBtn.setAttribute('aria-selected', isUnsorted ? 'true' : 'false');
+    }
+  };
+
   const handleFolderSelectorKeydown = (event) => {
     if (!folderSelectorEl || folderSelectorEl.classList.contains('hidden')) return;
     if (event.key === 'Escape') {
@@ -1698,6 +1715,7 @@ const initMobileNotes = () => {
 
   const handleFolderSelection = (folderId) => {
     const normalized = folderId || 'unsorted';
+    setActiveFolderRow(normalized);
     if (folderSelectorOnSelect) {
       folderSelectorOnSelect(normalized);
     } else if (currentFolderMoveNoteId) {
@@ -1769,23 +1787,41 @@ const initMobileNotes = () => {
         ? activeNote.folderId
         : currentEditingNoteFolderId || 'unsorted');
 
-    folders.forEach((folder) => {
-      if (!folder || typeof folder.id === 'undefined') return;
+    const createFolderRow = (folder) => {
       const row = document.createElement('li');
       row.className = 'folder-select-row';
       row.dataset.folderId = folder.id;
       row.setAttribute('role', 'option');
       row.tabIndex = 0;
-      const isActive = String(folder.id) === String(activeFolderId);
-      if (isActive) {
-        row.classList.add('active');
-        row.setAttribute('aria-selected', 'true');
-      } else {
-        row.setAttribute('aria-selected', 'false');
-      }
-      row.textContent = folder.name || String(folder.id);
-      folderSelectorListEl.appendChild(row);
-    });
+      row.setAttribute('aria-selected', 'false');
+
+      const labels = document.createElement('div');
+      labels.className = 'folder-select-labels';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'folder-select-name';
+      nameEl.textContent = folder.name || String(folder.id);
+      labels.appendChild(nameEl);
+
+      row.appendChild(labels);
+
+      const checkEl = document.createElement('span');
+      checkEl.className = 'folder-select-check';
+      checkEl.textContent = '✓';
+      checkEl.setAttribute('aria-hidden', 'true');
+      row.appendChild(checkEl);
+
+      return row;
+    };
+
+    folders
+      .filter((folder) => folder && folder.id !== 'unsorted')
+      .forEach((folder) => {
+        if (typeof folder.id === 'undefined') return;
+        const row = createFolderRow(folder);
+        folderSelectorListEl.appendChild(row);
+      });
+
+    setActiveFolderRow(activeFolderId);
 
     folderSelectorEl.classList.remove('hidden');
     folderSelectorEl.setAttribute('aria-hidden', 'false');
@@ -1823,6 +1859,13 @@ const initMobileNotes = () => {
       if (!row || !folderSelectorListEl.contains(row)) return;
       event.preventDefault();
       handleFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+  }
+
+  if (folderSelectorUnsortedBtn) {
+    folderSelectorUnsortedBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      handleFolderSelection('unsorted');
     });
   }
 

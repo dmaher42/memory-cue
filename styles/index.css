@@ -4407,15 +4407,21 @@ body {
   padding-top: 6px;
 }
 
+.sheet-subtitle {
+  margin: 0;
+  color: var(--text-secondary, #4a4153);
+  font-size: 0.95rem;
+}
+
 .folder-select-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 2px 0 0;
   max-height: 50vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .folder-select-row {
@@ -4428,6 +4434,11 @@ body {
   border: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 80%, transparent);
   background: color-mix(in srgb, var(--surface-main, #f7f7fa) 92%, #ffffff 8%);
   color: var(--text-main, #231b2e);
+  width: 100%;
+  text-align: left;
+  border-width: 1px;
+  appearance: none;
+  text-decoration: none;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   outline: none;
@@ -4443,6 +4454,40 @@ body {
   border-color: var(--accent-color, #512663);
   background: color-mix(in srgb, var(--accent-color, #512663) 12%, var(--surface-elevated, #f9f9fb));
   box-shadow: 0 8px 18px rgba(81, 38, 99, 0.18);
+}
+
+.folder-select-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.folder-select-name {
+  font-weight: 600;
+  color: var(--text-main, #231b2e);
+}
+
+.folder-select-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.folder-select-check {
+  color: var(--accent-color, #512663);
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.12s ease;
+}
+
+.folder-select-row.active .folder-select-check {
+  opacity: 1;
+}
+
+.folder-select-row--unsorted {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent-color, #512663) 38%, transparent);
 }
 
 .sheet-secondary-action,
