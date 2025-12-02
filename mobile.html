@@ -5602,36 +5602,47 @@
                   aria-labelledby="move-folder-title"
                   tabindex="-1"
                 >
-                  <div class="sheet-header">
+                  <div class="sheet-header folder-select-header">
                     <h2 id="move-folder-title">Move to folder</h2>
-                  </div>
-                  <div class="sheet-body">
-                    <p class="sheet-subtitle">Choose where to keep this note.</p>
                     <button
-                      id="move-folder-unsorted"
-                      class="folder-select-row folder-select-row--unsorted"
+                      id="move-folder-cancel"
+                      class="folder-select-close"
                       type="button"
-                      data-folder-id="unsorted"
-                      role="option"
-                      aria-selected="false"
+                      aria-label="Close move to folder sheet"
                     >
-                      <div class="folder-select-labels">
-                        <span class="folder-select-name">Unsorted</span>
-                        <span class="folder-select-hint">Default list for uncategorized notes</span>
-                      </div>
-                      <span class="folder-select-check" aria-hidden="true">✓</span>
+                      ✕
                     </button>
-                    <ul
+                  </div>
+                  <div class="sheet-body folder-select-body">
+                    <div
                       id="move-folder-list"
                       class="folder-select-list"
                       role="listbox"
                       aria-label="Available folders"
-                    ></ul>
-                    <button id="move-folder-create" class="sheet-secondary-action" type="button">
-                      + Create new folder
+                    >
+                      <button
+                        id="move-folder-unsorted"
+                        class="folder-select-row"
+                        type="button"
+                        data-folder-id="unsorted"
+                        role="option"
+                        aria-selected="false"
+                      >
+                        <div class="folder-select-row__left">
+                          <span class="folder-select-row__dot" aria-hidden="true"></span>
+                          <span class="folder-select-row__name">Unsorted</span>
+                        </div>
+                        <span class="folder-select-row__count">0</span>
+                      </button>
+                      <!-- Folder rows will be injected here by JS -->
+                    </div>
+                    <button id="move-folder-create" class="folder-select-row folder-select-row--new" type="button">
+                      <div class="folder-select-row__left">
+                        <span class="folder-select-row__dot" aria-hidden="true">+</span>
+                        <span class="folder-select-row__name">New folder…</span>
+                      </div>
                     </button>
                   </div>
-                  <button id="move-folder-cancel" class="sheet-cancel" type="button">Cancel</button>
                 </div>
               </div>
               <!-- Rename Folder Modal -->
