@@ -350,7 +350,6 @@ const initMobileNotes = () => {
   const titleInput = document.getElementById('noteTitleMobile');
   const scratchNotesEditorElement = document.getElementById('notebook-editor-body');
   const saveButton = document.getElementById('noteSaveMobile');
-  const newButton = document.getElementById('noteNewMobile');
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notebook-search-input');
@@ -2431,13 +2430,6 @@ const initMobileNotes = () => {
       try { titleInput.focus(); } catch {}
     }
   };
-
-  if (newButton) {
-    newButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      prepareNewNote();
-    });
-  }
 
   // Also wire the footer 'New note' floating button to the same behavior
   const footerNewNoteBtn = document.getElementById('mobile-footer-new-note');
