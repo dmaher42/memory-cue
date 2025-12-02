@@ -4883,6 +4883,32 @@
 
       const order = ['reminders', 'new', 'notebook'];
 
+      const triggerReminderQuickAdd = window.triggerReminderQuickAdd || function triggerReminderQuickAdd() {
+        if (triggerReminderQuickAdd._locked) return;
+        triggerReminderQuickAdd._locked = true;
+        setTimeout(() => { triggerReminderQuickAdd._locked = false; }, 0);
+
+        const quickAddTrigger =
+          document.getElementById('mobile-footer-new-reminder') ||
+          document.querySelector('[data-open-add-task]');
+
+        if (quickAddTrigger) {
+          const detail = { mode: 'create', trigger: quickAddTrigger };
+          try {
+            document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
+            document.dispatchEvent(new CustomEvent('cue:open', { detail }));
+            return;
+          } catch (e) {
+            console.warn('Failed to dispatch cue events for quick add', e);
+          }
+        }
+
+        const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+        if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
+      };
+
+      window.triggerReminderQuickAdd = triggerReminderQuickAdd;
+
       function showViewFor(name) {
         // When navigating to 'new', we display the reminders view but keep the
         // body/main active view set to 'new' so the bottom-tab can be highlighted.
@@ -4902,14 +4928,7 @@
         // If this is the 'new' view, trigger the add reminder action so the
         // quick-add UI is ready.
         if (name === 'new') {
-          const addBtn = document.getElementById('addReminderBtn');
-          if (addBtn) {
-            try { addBtn.click(); } catch (e) { console.warn('Failed to trigger add reminder', e); }
-          } else {
-            // fallback: focus quick add input if present
-            const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
-            if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
-          }
+          triggerReminderQuickAdd();
         }
       }
 
@@ -5733,9 +5752,8 @@
         setActiveFooterIcon(button.id);
 
         const triggerAddReminder = () => {
-          const addBtn = document.getElementById('addReminderBtn');
-          if (addBtn) {
-            addBtn.click();
+          if (typeof window.triggerReminderQuickAdd === 'function') {
+            window.triggerReminderQuickAdd();
             return;
           }
 
@@ -6852,11 +6870,10 @@
         try {
           const view = ev?.detail?.view;
           if (!view) return;
-          // Map 'new' to the add reminder action (trigger addReminderBtn)
+          // Map 'new' to the add reminder action (trigger the quick-add)
           if (view === 'new') {
-            const addBtn = document.getElementById('addReminderBtn');
-            if (addBtn) {
-              addBtn.click();
+            if (typeof window.triggerReminderQuickAdd === 'function') {
+              window.triggerReminderQuickAdd();
             }
             // still set active state so the middle tab highlights
             if (order.includes(view)) {
