@@ -5407,27 +5407,29 @@
           <div
             id="scratchNotesToolbar"
             class="formatting-toolbar-strip flex items-center gap-2 px-0 py-0 bg-transparent rounded-lg border-0 shadow-none"
+            role="toolbar"
+            aria-label="Formatting options"
           >
-            <button type="button" class="formatting-btn notebook-format-button" data-format="bold" aria-label="Bold">
+            <button type="button" class="formatting-btn notebook-format-button" data-format="bold" aria-label="Bold" aria-controls="notebook-editor-body">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
               </svg>
             </button>
 
-            <button type="button" class="formatting-btn notebook-format-button" data-format="italic" aria-label="Italic">
+            <button type="button" class="formatting-btn notebook-format-button" data-format="italic" aria-label="Italic" aria-controls="notebook-editor-body">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M10 4h9v2h-3.6l-3.8 12H16v2H7v-2h3.6l3.8-12H10V4z" fill="currentColor" />
               </svg>
             </button>
 
-            <button type="button" class="formatting-btn notebook-format-button" data-format="underline" aria-label="Underline">
+            <button type="button" class="formatting-btn notebook-format-button" data-format="underline" aria-label="Underline" aria-controls="notebook-editor-body">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 4h2v7a3 3 0 0 0 6 0V4h2v7a5 5 0 0 1-10 0V4z" fill="currentColor" />
                 <path d="M5 19h14v2H5z" fill="currentColor" />
               </svg>
             </button>
 
-            <button type="button" class="formatting-btn notebook-format-button" data-format="bullet-list" aria-label="Bullet list">
+            <button type="button" class="formatting-btn notebook-format-button" data-format="bullet-list" aria-label="Bullet list" aria-controls="notebook-editor-body">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 6h13v2H7V6zm0 5h13v2H7v-2zm0 5h13v2H7v-2z" fill="currentColor" />
                 <circle cx="4" cy="7" r="1.25" fill="currentColor" />
@@ -5436,7 +5438,7 @@
               </svg>
             </button>
 
-            <button type="button" class="formatting-btn notebook-format-button" data-format="numbered-list" aria-label="Numbered list">
+            <button type="button" class="formatting-btn notebook-format-button" data-format="numbered-list" aria-label="Numbered list" aria-controls="notebook-editor-body">
               <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 6h11v2H9V6zm0 5h11v2H9v-2zm0 5h11v2H9v-2z" fill="currentColor" />
                 <path d="M4 6.5V8h2V4H4v1.5h1v1H4zm1.5 4H4a.5.5 0 0 0-.5.5v.75H4V12h1v2H3.5v1H6v-3.5a1 1 0 0 0-1-1Zm.5 5H4v1h1v1H4v1h2v-3Z" fill="currentColor" />
@@ -5452,6 +5454,9 @@
               contenteditable="true"
               spellcheck="true"
               data-placeholder="Start typing your note…"
+              role="textbox"
+              aria-label="Note body"
+              aria-multiline="true"
             ></div>
           </div>
         </div>

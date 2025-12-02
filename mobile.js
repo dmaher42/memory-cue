@@ -426,6 +426,14 @@ const initMobileNotes = () => {
     document.execCommand(command, false, null);
   };
 
+  const FORMAT_COMMANDS = {
+    bold: 'bold',
+    italic: 'italic',
+    underline: 'underline',
+    'bullet-list': 'insertUnorderedList',
+    'numbered-list': 'insertOrderedList',
+  };
+
   // Wire up formatting toolbar (bold, italic, underline, ul, ol) for the rich text editor
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
@@ -433,30 +441,17 @@ const initMobileNotes = () => {
       const button = event.target.closest('.notebook-format-button[data-format]');
       if (!button) return;
       const format = button.getAttribute('data-format');
-      switch (format) {
-        case 'bold':
-          applyFormatCommand('bold');
-          break;
-        case 'italic':
-          applyFormatCommand('italic');
-          break;
-        case 'underline':
-          applyFormatCommand('underline');
-          break;
-        case 'bullet-list':
-          applyFormatCommand('insertUnorderedList');
-          break;
-        case 'numbered-list':
-          applyFormatCommand('insertOrderedList');
-          break;
-        default:
-          break;
+      const command = format ? FORMAT_COMMANDS[format] : null;
+      if (command) {
+        applyFormatCommand(command);
       }
     });
   }
 
-  const setEditorContent = (value = '') => {
+  const setEditorContent = (value = '', options = {}) => {
     const normalizedValue = typeof value === 'string' ? value : '';
+    const { forceHtml = false } = options;
+
     if (scratchNotesEditor && typeof scratchNotesEditor.setContent === 'function') {
       scratchNotesEditor.setContent(normalizedValue || '');
       return;
@@ -464,7 +459,7 @@ const initMobileNotes = () => {
 
     const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(normalizedValue);
     scratchNotesEditorElement.innerHTML = '';
-    if (looksLikeHtml) {
+    if (forceHtml || looksLikeHtml) {
       scratchNotesEditorElement.innerHTML = normalizedValue || '';
     } else {
       scratchNotesEditorElement.textContent = normalizedValue || '';
@@ -732,13 +727,13 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note) => {
-    if (currentNoteId === note.id) return;
+    if (note && currentNoteId === note.id) return;
     if (!note) {
       currentNoteId = null;
       titleInput.value = '';
       setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
-      scratchNotesEditorElement.dataset.noteOriginalBody = '';
+      scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
       const labelElClear = document.getElementById('note-folder-label');
       if (labelElClear) {
         labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
@@ -747,16 +742,13 @@ const initMobileNotes = () => {
     }
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const nextBody =
-      (typeof note.bodyHtml === 'string' && note.bodyHtml.trim().length
-        ? note.bodyHtml
-        : typeof note.body === 'string'
-          ? note.body
-          : '') || '';
+    const preferredHtml = typeof note.bodyHtml === 'string' ? note.bodyHtml : null;
+    const fallbackBody = typeof note.body === 'string' ? note.body : '';
+    const nextBody = (preferredHtml ?? fallbackBody) || '';
     titleInput.value = nextTitle;
-    setEditorContent(nextBody);
+    setEditorContent(nextBody, { forceHtml: Boolean(preferredHtml) });
     titleInput.dataset.noteOriginalTitle = nextTitle;
-    scratchNotesEditorElement.dataset.noteOriginalBody = nextBody;
+    scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
     currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
     const labelEl = document.getElementById('note-folder-label');
