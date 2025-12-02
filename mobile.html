@@ -6035,7 +6035,7 @@
     .reminder-editor-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 12px;
       margin-bottom: 10px;
     }
@@ -6091,7 +6091,7 @@
     .reminder-editor-form {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     .reminder-field {
@@ -6193,106 +6193,132 @@
             <span class="reminder-header-eyebrow">Reminder</span>
             <h2 class="reminder-header-title" id="createSheetTitle">New reminder</h2>
           </div>
-          <button
-            type="submit"
-            form="createReminderForm"
-            id="saveReminder"
-            class="reminder-header-save"
-          >
-            Save
-          </button>
         </header>
+        <!-- Stack the reminder editor into grouped sections for a mobile-first flow -->
         <form id="createReminderForm" class="reminder-editor-form">
-          <div class="reminder-field">
-            <label for="reminderText" class="reminder-field-label">Title</label>
-            <input
-              id="reminderText"
-              type="text"
-              placeholder="What do you need to remember?"
-              class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content"
-              autocomplete="off"
-            />
+          <div class="reminder-sheet-content">
+            <div class="reminder-sheet-card card bg-base-100 border border-base-200 shadow-xl">
+              <!-- Group reminder basics together for quick scanning -->
+              <section class="reminder-section" aria-labelledby="reminderDetailsHeading">
+                <div class="reminder-section-heading">
+                  <p id="reminderDetailsHeading" class="reminder-section-title">Reminder details</p>
+                  <p class="reminder-section-hint">Add a clear title and any optional notes.</p>
+                </div>
+                <div class="reminder-field-group">
+                  <div class="reminder-field">
+                    <label for="reminderText" class="reminder-field-label">Title</label>
+                    <input
+                      id="reminderText"
+                      type="text"
+                      placeholder="Reminder title..."
+                      class="reminder-field-input reminder-title-input input input-bordered input-sm w-full text-sm text-base-content"
+                      autocomplete="off"
+                    />
+                  </div>
+
+                  <div class="reminder-field">
+                    <label for="reminderDetails" class="reminder-field-label">Notes (optional)</label>
+                    <textarea
+                      id="reminderDetails"
+                      class="reminder-field-textarea textarea textarea-bordered w-full min-h-[6rem] text-sm text-base-content"
+                      rows="3"
+                      placeholder="Add any helpful context or steps"
+                    ></textarea>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Group date and time fields under a "When" section for clarity -->
+              <section class="reminder-section" aria-labelledby="reminderWhenHeading">
+                <div class="reminder-section-heading">
+                  <p id="reminderWhenHeading" class="reminder-section-title">When</p>
+                  <p class="reminder-section-hint">Choose the date and time for this reminder.</p>
+                </div>
+                <div class="reminder-field-group reminder-datetime-grid">
+                  <div class="reminder-field">
+                    <label class="reminder-field-label" for="reminderDate">Date</label>
+                    <input id="reminderDate" type="date" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
+                  </div>
+                  <div class="reminder-field">
+                    <label class="reminder-field-label" for="reminderTime">Time</label>
+                    <input id="reminderTime" type="time" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
+                  </div>
+                </div>
+                <div id="dateFeedback" class="text-xs text-info"></div>
+              </section>
+
+              <!-- Keep optional controls together in a compact options stack -->
+              <section class="reminder-section" aria-labelledby="reminderOptionsHeading">
+                <div class="reminder-section-heading">
+                  <p id="reminderOptionsHeading" class="reminder-section-title">Options</p>
+                  <p class="reminder-section-hint">Adjust priority, category, and notifications.</p>
+                </div>
+                <div class="reminder-field-group">
+                  <div class="reminder-field">
+                    <label class="reminder-field-label" for="priority">Priority</label>
+                    <select id="priority" class="select select-bordered select-sm w-full text-sm text-base-content hidden" aria-hidden="true" tabindex="-1">
+                      <option value="High">High</option>
+                      <option value="Medium" selected>Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                    <fieldset id="priorityChips" aria-label="Priority" class="priority-pill-row reminder-chip-row" role="radiogroup">
+                      <input class="priority-input" type="radio" id="priority-high" name="priority" value="High" aria-label="High priority">
+                      <label class="priority-pill reminder-chip" for="priority-high">High</label>
+
+                      <input class="priority-input" type="radio" id="priority-medium" name="priority" value="Medium" checked aria-label="Medium priority">
+                      <label class="priority-pill reminder-chip" for="priority-medium">Medium</label>
+
+                      <input class="priority-input" type="radio" id="priority-low" name="priority" value="Low" aria-label="Low priority">
+                      <label class="priority-pill reminder-chip" for="priority-low">Low</label>
+                    </fieldset>
+                  </div>
+                  <div class="reminder-field">
+                    <label class="reminder-field-label" for="category">Category</label>
+                    <input
+                      id="category"
+                      class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content"
+                      list="categorySuggestions"
+                      placeholder="General"
+                      value="General"
+                    />
+                    <datalist id="categorySuggestions">
+                      <option value="General"></option>
+                      <option value="General Appointments"></option>
+                      <option value="Home &amp; Personal"></option>
+                      <option value="School – Appointments/Meetings"></option>
+                      <option value="School – Communication &amp; Families"></option>
+                      <option value="School – Excursions &amp; Events"></option>
+                      <option value="School – Grading &amp; Assessment"></option>
+                      <option value="School – Prep &amp; Resources"></option>
+                      <option value="School – To-Do"></option>
+                      <option value="Wellbeing &amp; Support"></option>
+                    </datalist>
+                  </div>
+                  <div class="reminder-field">
+                    <span class="reminder-field-label">Notifications</span>
+                    <div class="notif-switch-row">
+                      <label class="ios-switch" for="notifBtn">
+                        <input type="checkbox" id="notifBtn" class="notif-toggle" role="switch" aria-checked="false" />
+                        <span class="switch-track"><span class="switch-thumb" aria-hidden="true"></span></span>
+                        <span class="sr-only">Enable notifications</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
           </div>
 
-          <div class="reminder-field">
-            <label for="reminderDetails" class="reminder-field-label">Notes</label>
-            <textarea
-              id="reminderDetails"
-              class="reminder-field-textarea textarea textarea-bordered w-full min-h-[6rem] text-sm text-base-content"
-              rows="3"
-              placeholder="Optional context for the reminder"
-            ></textarea>
-          </div>
-
-          <div class="reminder-field reminder-field--row">
-            <div class="reminder-field">
-              <label class="reminder-field-label" for="reminderDate">Date</label>
-              <input id="reminderDate" type="date" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
-            </div>
-            <div class="reminder-field">
-              <label class="reminder-field-label" for="reminderTime">Time</label>
-              <input id="reminderTime" type="time" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
-            </div>
-          </div>
-
-          <div id="dateFeedback" class="text-xs text-info"></div>
-
-          <div class="reminder-field reminder-field--row">
-            <div class="reminder-field">
-              <label class="reminder-field-label" for="priority">Priority</label>
-              <select id="priority" class="select select-bordered select-sm w-full text-sm text-base-content hidden" aria-hidden="true" tabindex="-1">
-                <option value="High">High</option>
-                <option value="Medium" selected>Medium</option>
-                <option value="Low">Low</option>
-              </select>
-              <fieldset id="priorityChips" aria-label="Priority" class="priority-pill-row reminder-chip-row" role="radiogroup">
-                <input class="priority-input" type="radio" id="priority-high" name="priority" value="High" aria-label="High priority">
-                <label class="priority-pill reminder-chip" for="priority-high">High</label>
-
-                <input class="priority-input" type="radio" id="priority-medium" name="priority" value="Medium" checked aria-label="Medium priority">
-                <label class="priority-pill reminder-chip" for="priority-medium">Medium</label>
-
-                <input class="priority-input" type="radio" id="priority-low" name="priority" value="Low" aria-label="Low priority">
-                <label class="priority-pill reminder-chip" for="priority-low">Low</label>
-              </fieldset>
-            </div>
-            <div class="reminder-field">
-              <label class="reminder-field-label" for="category">Category</label>
-              <input
-                id="category"
-                class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content"
-                list="categorySuggestions"
-                placeholder="General"
-                value="General"
-              />
-              <datalist id="categorySuggestions">
-                <option value="General"></option>
-                <option value="General Appointments"></option>
-                <option value="Home &amp; Personal"></option>
-                <option value="School – Appointments/Meetings"></option>
-                <option value="School – Communication &amp; Families"></option>
-                <option value="School – Excursions &amp; Events"></option>
-                <option value="School – Grading &amp; Assessment"></option>
-                <option value="School – Prep &amp; Resources"></option>
-                <option value="School – To-Do"></option>
-                <option value="Wellbeing &amp; Support"></option>
-              </datalist>
-            </div>
-          </div>
-
-          <div class="reminder-field">
-            <span class="reminder-field-label">Notifications</span>
-            <div class="notif-switch-row">
-              <label class="ios-switch" for="notifBtn">
-                <input type="checkbox" id="notifBtn" class="notif-toggle" role="switch" aria-checked="false" />
-                <span class="switch-track"><span class="switch-thumb" aria-hidden="true"></span></span>
-                <span class="sr-only">Enable notifications</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="reminder-actions">
-            <button id="cancelEditBtn" class="btn btn-premium-secondary btn-sm hidden" type="button">Cancel</button>
+          <div class="reminder-sheet-actions">
+            <button
+              type="submit"
+              form="createReminderForm"
+              id="saveReminder"
+              class="btn btn-primary w-full reminder-save-cta"
+            >
+              Save reminder
+            </button>
+            <button id="cancelEditBtn" class="btn btn-ghost w-full btn-sm hidden" type="button">Cancel</button>
           </div>
 
           <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
