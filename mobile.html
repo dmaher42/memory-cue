@@ -5813,7 +5813,19 @@
               detail: { view }
             })
           );
-          triggerAddReminder();
+
+          const sheet = document.getElementById('create-sheet');
+          if (sheet) {
+            document.dispatchEvent(
+              new CustomEvent('cue:prepare', { detail: { mode: 'create', trigger: button } })
+            );
+            document.dispatchEvent(
+              new CustomEvent('cue:open', { detail: { mode: 'create', trigger: button } })
+            );
+          } else {
+            triggerAddReminder();
+          }
+
           return;
         }
 
