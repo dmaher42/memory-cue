@@ -902,10 +902,12 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
+  border: none;
   border-radius: 999px;
   background: rgba(92, 76, 123, 0.08);
   color: #4f3b78;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .note-card-folder::before {
