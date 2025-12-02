@@ -932,17 +932,23 @@ const initMobileNotes = () => {
 
   const NOTEBOOK_LIST_TRANSITION_MS = 160;
 
-  const showMoveToast = (folderName) => {
-    const name = folderName || 'folder';
+  const showNoteToast = (message) => {
+    if (!message) return null;
     const toast = document.createElement('div');
     toast.className = 'note-toast';
-    toast.textContent = `Moved to ${name}`;
+    toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => {
       if (toast && toast.parentNode) {
         toast.parentNode.removeChild(toast);
       }
     }, 2800);
+    return toast;
+  };
+
+  const showMoveToast = (folderName) => {
+    const name = folderName || 'folder';
+    showNoteToast(`Moved to ${name}`);
   };
   const scheduleNotebookFrame =
     typeof requestAnimationFrame === 'function'
@@ -1897,9 +1903,22 @@ const initMobileNotes = () => {
         typeof window !== 'undefined' && typeof window.confirm === 'function'
           ? window.confirm
           : null;
-      const shouldDelete = confirmFn
-        ? confirmFn('Delete this note? This cannot be undone.')
-        : true;
+      if (!confirmFn) {
+        showNoteToast('Delete cancelled: confirmation is not available here.');
+        closeOverflowMenu();
+        return;
+      }
+
+      let shouldDelete = false;
+      try {
+        shouldDelete = confirmFn('Delete this note? This cannot be undone.');
+      } catch (confirmError) {
+        console.warn('Delete confirmation failed', confirmError);
+        showNoteToast('Delete cancelled: confirmation is not available here.');
+        closeOverflowMenu();
+        return;
+      }
+
       if (shouldDelete) {
         handleDeleteNote(note.id);
       }
