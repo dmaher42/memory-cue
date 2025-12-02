@@ -677,20 +677,28 @@
   .notebook-folder-filter-bar {
     display: flex;
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: 8px;
     margin-bottom: 10px;
     overflow-x: auto;
-    padding-bottom: 2px;
+    padding: 4px 2px 6px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .notebook-folder-filter-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .notebook-folder-chip {
     border-radius: 999px;
     border: 1px solid rgba(47, 27, 63, 0.12);
     background: rgba(255, 255, 255, 0.85);
-    padding: 4px 10px;
-    font-size: 0.75rem;
+    padding: 6px 12px;
+    font-size: 0.8rem;
     color: var(--primary-dark);
     white-space: nowrap;
+    scroll-snap-align: start;
     cursor: pointer;
     transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, color 0.14s ease;
   }
@@ -5513,16 +5521,22 @@
 
               <div class="px-2 pb-3 overflow-y-auto">
                 <div id="notebook-folder-bar" class="notebook-folder-bar px-3 py-2">
-                  <div class="notebook-folder-filter-bar">
-                    <button
-                      type="button"
-                      class="notebook-folder-chip notebook-folder-chip--active"
-                      data-folder-id="all"
-                    >
-                      <span class="notebook-folder-chip-label">All notes</span>
-                      <span class="notebook-folder-chip-count">0</span>
-                    </button>
-                    <!-- Folder chips will be populated dynamically by JS -->
+                  <div class="notebook-folder-header">
+                    <div class="folder-chips">
+                      <div class="notebook-folder-scroll-wrap">
+                        <div class="notebook-folder-filter-bar">
+                          <button
+                            type="button"
+                            class="notebook-folder-chip notebook-folder-chip--active"
+                            data-folder-id="all"
+                          >
+                            <span class="notebook-folder-chip-label">All notes</span>
+                            <span class="notebook-folder-chip-count">0</span>
+                          </button>
+                          <!-- Folder chips will be populated dynamically by JS -->
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
