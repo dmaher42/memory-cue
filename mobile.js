@@ -66,6 +66,16 @@ initViewportHeight();
       sheet.setAttribute('aria-hidden', 'true');
       sheet.removeAttribute('open');
       sheet.classList.remove('open');
+      if (backdrop instanceof HTMLElement) {
+        backdrop.classList.add('hidden');
+        backdrop.setAttribute('hidden', '');
+        backdrop.setAttribute('aria-hidden', 'true');
+      }
+      if (sheetContent instanceof HTMLElement) {
+        sheetContent.classList.add('hidden');
+        sheetContent.setAttribute('hidden', '');
+        sheetContent.setAttribute('aria-hidden', 'true');
+      }
     };
 
     ensureHidden();
@@ -140,6 +150,16 @@ initViewportHeight();
 
     const openSheet = (trigger) => {
       lastTrigger = trigger instanceof HTMLElement ? trigger : null;
+      if (backdrop instanceof HTMLElement) {
+        backdrop.classList.remove('hidden');
+        backdrop.removeAttribute('hidden');
+        backdrop.setAttribute('aria-hidden', 'false');
+      }
+      if (sheetContent instanceof HTMLElement) {
+        sheetContent.classList.remove('hidden');
+        sheetContent.removeAttribute('hidden');
+        sheetContent.setAttribute('aria-hidden', 'false');
+      }
       sheet.classList.remove('hidden');
       sheet.removeAttribute('hidden');
       sheet.setAttribute('aria-hidden', 'false');
