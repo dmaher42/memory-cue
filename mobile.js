@@ -1060,7 +1060,9 @@ const initMobileNotes = () => {
 
     notes.forEach((note) => {
       const listItem = document.createElement('article');
+      const isActiveNote = String(note.id) === String(currentNoteId);
       listItem.className = 'premium-note-card note-item-mobile notebook-note-card';
+      listItem.classList.toggle('notebook-note-card--active', isActiveNote);
       listItem.dataset.noteId = note.id;
       listItem.dataset.role = 'open-note';
       listItem.setAttribute('role', 'button');
