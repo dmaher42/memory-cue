@@ -3147,18 +3147,18 @@
     [data-add-task-dialog] {
       position: fixed;
       inset: 0;
-      z-index: 60;
+      z-index: 70;
     }
     [data-add-task-dialog] [data-dialog-content] {
       position: relative;
-      z-index: 61;
+      z-index: 71;
       pointer-events: auto;
     }
     /* Backdrop element (if you have one) should sit under content but accept clicks */
     [data-add-task-dialog] .backdrop {
       position: absolute;
       inset: 0;
-      z-index: 59;
+      z-index: 69;
     }
   </style>
   <!-- END GPT CHANGE: bottom sheet styles -->
@@ -5965,7 +5965,7 @@
     }
 
     #create-sheet .sheet-backdrop {
-      z-index: 60;
+      z-index: 70;
     }
 
     #create-sheet .sheet-panel {
@@ -5978,7 +5978,7 @@
       border: none;
       box-shadow: none;
       padding: calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
-      z-index: 70;
+      z-index: 80;
     }
 
     #create-sheet .reminder-editor-shell {
@@ -6158,9 +6158,9 @@
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
   <div id="create-sheet" role="dialog" aria-modal="true" aria-labelledby="createSheetTitle" class="sheet hidden" tabindex="-1" data-add-task-dialog>
-    <div class="sheet-backdrop backdrop fixed inset-0 z-30 bg-black/40" data-close></div>
+    <div class="sheet-backdrop backdrop fixed inset-0 z-[60] bg-black/40" data-close></div>
     <div
-      class="sheet-panel reminder-sheet-panel fixed inset-x-0 bottom-0 z-40"
+      class="sheet-panel reminder-sheet-panel fixed inset-x-0 bottom-0 z-[70]"
       data-dialog-content
     >
       <div id="new-reminder-shell" class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
