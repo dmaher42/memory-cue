@@ -4592,3 +4592,91 @@ body {
   width: 18px;
   height: 18px;
 }
+
+/* Mobile-friendly reminder sheet layout */
+.reminder-sheet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reminder-sheet-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(81, 38, 99, 0.08);
+  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .reminder-sheet-card,
+[data-theme="dark"] .reminder-sheet-card {
+  background: rgba(17, 24, 39, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.reminder-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.reminder-section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.reminder-section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--primary-dark, #231b2e);
+}
+
+.dark .reminder-section-title,
+[data-theme="dark"] .reminder-section-title {
+  color: #f1ecff;
+}
+
+.reminder-section-hint {
+  font-size: 0.8rem;
+  color: rgba(47, 27, 63, 0.7);
+}
+
+.dark .reminder-section-hint,
+[data-theme="dark"] .reminder-section-hint {
+  color: rgba(229, 231, 235, 0.75);
+}
+
+.reminder-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.reminder-datetime-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+}
+
+.reminder-title-input {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reminder-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.reminder-save-cta {
+  min-height: 48px;
+  font-weight: 700;
+}
