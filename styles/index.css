@@ -4511,15 +4511,48 @@ body {
   font-size: 0.95rem;
 }
 
+
+.folder-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 0;
+}
+
+.folder-select-body {
+  padding-top: 4px;
+  gap: 8px;
+}
+
+.folder-select-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-main, #f7f7fa) 70%, transparent);
+  color: var(--text-secondary, #4a4153);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.folder-select-close:hover,
+.folder-select-close:focus-visible {
+  background: color-mix(in srgb, var(--surface-elevated, #f9f9fb) 85%, var(--accent-color, #512663) 12%);
+  color: var(--text-main, #231b2e);
+}
+
 .folder-select-list {
-  list-style: none;
-  margin: 0;
-  padding: 2px 0 0;
-  max-height: 50vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  width: 100%;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-main, #f7f7fa) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 78%, transparent);
+  overflow: hidden;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .folder-select-row {
@@ -4528,64 +4561,65 @@ body {
   justify-content: space-between;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 80%, transparent);
-  background: color-mix(in srgb, var(--surface-main, #f7f7fa) 92%, #ffffff 8%);
-  color: var(--text-main, #231b2e);
   width: 100%;
-  text-align: left;
-  border-width: 1px;
-  appearance: none;
-  text-decoration: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-  outline: none;
-}
-
-.folder-select-row:hover,
-.folder-select-row:focus-visible {
-  border-color: color-mix(in srgb, var(--accent-color, #512663) 45%, transparent);
-  box-shadow: 0 10px 24px rgba(81, 38, 99, 0.14);
-}
-
-.folder-select-row.active {
-  border-color: var(--accent-color, #512663);
-  background: color-mix(in srgb, var(--accent-color, #512663) 12%, var(--surface-elevated, #f9f9fb));
-  box-shadow: 0 8px 18px rgba(81, 38, 99, 0.18);
-}
-
-.folder-select-labels {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: left;
-}
-
-.folder-select-name {
-  font-weight: 600;
+  min-height: 48px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 78%, transparent);
   color: var(--text-main, #231b2e);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
-.folder-select-hint {
+.folder-select-row:last-child {
+  border-bottom: none;
+}
+
+.folder-select-row__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.folder-select-row__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-color, #512663) 70%, transparent);
+  display: inline-block;
+}
+
+.folder-select-row__name {
+  font-weight: 600;
+  font-size: 0.97rem;
+}
+
+.folder-select-row__count {
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated, #f9f9fb) 80%, var(--accent-color, #512663) 8%);
+  color: var(--text-secondary, #4a4153);
   font-size: 0.85rem;
-  color: var(--text-muted, #9a8bb0);
+  text-align: center;
 }
 
-.folder-select-check {
-  color: var(--accent-color, #512663);
-  font-weight: 700;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity 0.12s ease;
+.folder-select-row:active {
+  background: color-mix(in srgb, var(--accent-color, #512663) 10%, var(--surface-elevated, #f9f9fb) 90%);
 }
 
-.folder-select-row.active .folder-select-check {
-  opacity: 1;
+.folder-select-row--active {
+  background: color-mix(in srgb, var(--accent-color, #512663) 12%, var(--surface-elevated, #f9f9fb));
+  border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 85%, var(--accent-soft, #7c3aed));
+  padding-left: 10px;
 }
 
-.folder-select-row--unsorted {
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--accent-color, #512663) 38%, transparent);
+.folder-select-row--new {
+  margin-top: 8px;
+  border: 1px dashed color-mix(in srgb, var(--accent-color, #512663) 50%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-elevated, #f9f9fb) 90%, transparent);
 }
 
 .sheet-secondary-action,
