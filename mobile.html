@@ -5551,6 +5551,29 @@
                   aria-label="Saved scratch notes"
                 >
                   <!-- Note items are rendered here by JS -->
+                  <template id="notesListMobileItemTemplate">
+                    <article
+                      class="premium-note-card note-item-mobile notebook-note-card"
+                      data-role="open-note"
+                      tabindex="0"
+                    >
+                      <div class="note-card-main">
+                        <div class="note-card-header">
+                          <h4 class="note-card-title line-clamp-2">Untitled</h4>
+                          <button type="button" class="note-card-action" aria-label="Note actions">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="5" cy="12" r="1.5" />
+                              <circle cx="12" cy="12" r="1.5" />
+                              <circle cx="19" cy="12" r="1.5" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div class="note-card-meta-row">
+                          <span class="note-card-folder">Folder</span>
+                        </div>
+                      </div>
+                    </article>
+                  </template>
                 </div>
               </div>
               <!-- New Folder Modal -->
