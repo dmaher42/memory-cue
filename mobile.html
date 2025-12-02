@@ -5776,6 +5776,36 @@
           });
       };
 
+      const openReminderSheetDirectly = (trigger) => {
+        const sheet = document.getElementById('create-sheet');
+        if (!(sheet instanceof HTMLElement)) return false;
+
+        sheet.classList.remove('hidden');
+        sheet.removeAttribute('hidden');
+        sheet.setAttribute('aria-hidden', 'false');
+        sheet.setAttribute('open', '');
+        sheet.classList.add('open');
+
+        const backdrop = sheet.querySelector('.sheet-backdrop');
+        backdrop?.classList.remove('hidden');
+
+        const panel = sheet.querySelector('.sheet-panel');
+        panel?.classList.remove('hidden');
+
+        if (trigger instanceof HTMLElement) {
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+
+        const focusTarget = sheet.querySelector(
+          'input, textarea, select, button, [contenteditable="true"]'
+        );
+        if (focusTarget instanceof HTMLElement) {
+          setTimeout(() => focusTarget.focus(), 0);
+        }
+
+        return true;
+      };
+
       navFooter.addEventListener('click', (event) => {
         const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
         if (!button) return;
@@ -5813,7 +5843,24 @@
               detail: { view }
             })
           );
-          triggerAddReminder();
+
+          const sheet = document.getElementById('create-sheet');
+          if (sheet) {
+            document.dispatchEvent(
+              new CustomEvent('cue:prepare', { detail: { mode: 'create', trigger: button } })
+            );
+            document.dispatchEvent(
+              new CustomEvent('cue:open', { detail: { mode: 'create', trigger: button } })
+            );
+
+            const isOpen = !sheet.classList.contains('hidden');
+            if (!isOpen) {
+              openReminderSheetDirectly(button);
+            }
+          } else {
+            triggerAddReminder();
+          }
+
           return;
         }
 
