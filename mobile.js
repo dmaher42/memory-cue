@@ -1101,10 +1101,21 @@ const initMobileNotes = () => {
       metaRow.className = 'note-card-meta-row';
 
       const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
-      const folderPill = document.createElement('span');
+      const folderPill = document.createElement('button');
+      folderPill.type = 'button';
       folderPill.className = 'note-card-folder';
+      folderPill.setAttribute('aria-label', 'Move note to folder');
       const folderName = getFolderNameById(folderId) || 'Unsorted';
       folderPill.textContent = folderName;
+
+      folderPill.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openFolderSelectorForNote(note.id, {
+          initialFolderId: folderId,
+          triggerEl: folderPill,
+        });
+      });
 
       metaRow.appendChild(folderPill);
 
