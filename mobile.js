@@ -1694,12 +1694,12 @@ const initMobileNotes = () => {
     rows.forEach((row) => {
       if (!(row instanceof HTMLElement)) return;
       const isActive = row.dataset.folderId === targetId;
-      row.classList.toggle('active', isActive);
+      row.classList.toggle('folder-select-row--active', isActive);
       row.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
     if (folderSelectorUnsortedBtn) {
       const isUnsorted = targetId === 'unsorted';
-      folderSelectorUnsortedBtn.classList.toggle('active', isUnsorted);
+      folderSelectorUnsortedBtn.classList.toggle('folder-select-row--active', isUnsorted);
       folderSelectorUnsortedBtn.setAttribute('aria-selected', isUnsorted ? 'true' : 'false');
     }
   };
@@ -1750,7 +1750,12 @@ const initMobileNotes = () => {
       folderSelectorEl.setAttribute('aria-hidden', 'true');
     }
     if (folderSelectorListEl) {
-      folderSelectorListEl.innerHTML = '';
+      const rows = folderSelectorListEl.querySelectorAll('.folder-select-row');
+      rows.forEach((row) => {
+        if (row.id !== 'move-folder-unsorted') {
+          row.remove();
+        }
+      });
     }
     currentFolderMoveNoteId = null;
     folderSelectorOnSelect = null;
@@ -1780,7 +1785,12 @@ const initMobileNotes = () => {
     currentFolderMoveNoteId = noteId || null;
     folderSelectorOnSelect = typeof onSelect === 'function' ? onSelect : null;
     activeFolderSheetOpener = triggerEl || document.activeElement;
-    folderSelectorListEl.innerHTML = '';
+    const rows = folderSelectorListEl.querySelectorAll('.folder-select-row');
+    rows.forEach((row) => {
+      if (row.id !== 'move-folder-unsorted') {
+        row.remove();
+      }
+    });
 
     let folders = [];
     try {
@@ -1789,8 +1799,10 @@ const initMobileNotes = () => {
       folders = [];
     }
 
-    if (!folders.some((f) => f && f.id === 'unsorted')) {
-      folders.unshift({ id: 'unsorted', name: 'Unsorted' });
+    const unsortedFolder = { id: 'unsorted', name: 'Unsorted' };
+    const hasUnsorted = folders.some((f) => f && f.id === 'unsorted');
+    if (!hasUnsorted) {
+      folders.unshift(unsortedFolder);
     }
 
     const activeNote = noteId ? allNotes.find((n) => n.id === noteId) || null : null;
@@ -1800,39 +1812,58 @@ const initMobileNotes = () => {
         ? activeNote.folderId
         : currentEditingNoteFolderId || 'unsorted');
 
+    const sortedFolders = folders
+      .filter((folder) => folder && folder.id !== 'unsorted')
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    const counts = getNoteCountsByFolder(allNotes, [unsortedFolder, ...sortedFolders]);
+
+    if (folderSelectorUnsortedBtn) {
+      const countEl = folderSelectorUnsortedBtn.querySelector('.folder-select-row__count');
+      if (countEl) {
+        countEl.textContent = counts.unsorted || 0;
+      }
+      const nameEl = folderSelectorUnsortedBtn.querySelector('.folder-select-row__name');
+      if (nameEl) {
+        nameEl.textContent = hasUnsorted ? getFolderNameById('unsorted') || 'Unsorted' : 'Unsorted';
+      }
+    }
+
     const createFolderRow = (folder) => {
-      const row = document.createElement('li');
+      const row = document.createElement('button');
       row.className = 'folder-select-row';
       row.dataset.folderId = folder.id;
       row.setAttribute('role', 'option');
-      row.tabIndex = 0;
+      row.type = 'button';
       row.setAttribute('aria-selected', 'false');
 
-      const labels = document.createElement('div');
-      labels.className = 'folder-select-labels';
+      const left = document.createElement('div');
+      left.className = 'folder-select-row__left';
+
+      const dot = document.createElement('span');
+      dot.className = 'folder-select-row__dot';
+      dot.setAttribute('aria-hidden', 'true');
+      left.appendChild(dot);
+
       const nameEl = document.createElement('span');
-      nameEl.className = 'folder-select-name';
+      nameEl.className = 'folder-select-row__name';
       nameEl.textContent = folder.name || String(folder.id);
-      labels.appendChild(nameEl);
+      left.appendChild(nameEl);
 
-      row.appendChild(labels);
+      row.appendChild(left);
 
-      const checkEl = document.createElement('span');
-      checkEl.className = 'folder-select-check';
-      checkEl.textContent = '✓';
-      checkEl.setAttribute('aria-hidden', 'true');
-      row.appendChild(checkEl);
+      const countEl = document.createElement('span');
+      countEl.className = 'folder-select-row__count';
+      countEl.textContent = counts[folder.id] || 0;
+      row.appendChild(countEl);
 
       return row;
     };
 
-    folders
-      .filter((folder) => folder && folder.id !== 'unsorted')
-      .forEach((folder) => {
-        if (typeof folder.id === 'undefined') return;
-        const row = createFolderRow(folder);
-        folderSelectorListEl.appendChild(row);
-      });
+    sortedFolders.forEach((folder) => {
+      if (typeof folder.id === 'undefined') return;
+      const row = createFolderRow(folder);
+      folderSelectorListEl.appendChild(row);
+    });
 
     setActiveFolderRow(activeFolderId);
 
@@ -1877,6 +1908,7 @@ const initMobileNotes = () => {
 
   if (folderSelectorUnsortedBtn) {
     folderSelectorUnsortedBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
       event.preventDefault();
       handleFolderSelection('unsorted');
     });
