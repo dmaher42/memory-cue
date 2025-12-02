@@ -5558,7 +5558,27 @@
                     <h2 id="move-folder-title">Move to folder</h2>
                   </div>
                   <div class="sheet-body">
-                    <ul id="move-folder-list" class="folder-select-list" role="listbox" aria-label="Available folders"></ul>
+                    <p class="sheet-subtitle">Choose where to keep this note.</p>
+                    <button
+                      id="move-folder-unsorted"
+                      class="folder-select-row folder-select-row--unsorted"
+                      type="button"
+                      data-folder-id="unsorted"
+                      role="option"
+                      aria-selected="false"
+                    >
+                      <div class="folder-select-labels">
+                        <span class="folder-select-name">Unsorted</span>
+                        <span class="folder-select-hint">Default list for uncategorized notes</span>
+                      </div>
+                      <span class="folder-select-check" aria-hidden="true">✓</span>
+                    </button>
+                    <ul
+                      id="move-folder-list"
+                      class="folder-select-list"
+                      role="listbox"
+                      aria-label="Available folders"
+                    ></ul>
                     <button id="move-folder-create" class="sheet-secondary-action" type="button">
                       + Create new folder
                     </button>
