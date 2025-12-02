@@ -1067,20 +1067,17 @@ const initMobileNotes = () => {
       listItem.setAttribute('role', 'button');
       listItem.tabIndex = 0;
 
-      const noteRow = document.createElement('div');
-      noteRow.className = 'notebook-note-row';
+      const cardMain = document.createElement('div');
+      cardMain.className = 'note-card-main';
+
+      const headerRow = document.createElement('div');
+      headerRow.className = 'note-card-header';
 
       const noteTitle = note.title || 'Untitled';
       const titleEl = document.createElement('h4');
       titleEl.className = 'note-card-title line-clamp-2';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
-
-      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
-      const folderPill = document.createElement('span');
-      folderPill.className = 'note-card-folder';
-      const folderName = getFolderNameById(folderId) || 'Unsorted';
-      folderPill.textContent = folderName;
 
       const actionBtn = document.createElement('button');
       actionBtn.type = 'button';
@@ -1098,11 +1095,23 @@ const initMobileNotes = () => {
         </svg>
       `;
 
-      noteRow.appendChild(titleEl);
-      noteRow.appendChild(folderPill);
-      noteRow.appendChild(actionBtn);
+      headerRow.appendChild(titleEl);
+      headerRow.appendChild(actionBtn);
 
-      listItem.appendChild(noteRow);
+      const metaRow = document.createElement('div');
+      metaRow.className = 'note-card-meta-row';
+
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      const folderPill = document.createElement('span');
+      folderPill.className = 'note-card-folder';
+      const folderName = getFolderNameById(folderId) || 'Unsorted';
+      folderPill.textContent = folderName;
+
+      metaRow.appendChild(folderPill);
+
+      cardMain.appendChild(headerRow);
+      cardMain.appendChild(metaRow);
+      listItem.appendChild(cardMain);
       listElement.appendChild(listItem);
     });
 

@@ -568,16 +568,16 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   .mobile-shell #notesListMobile .premium-note-card {
     width: 100%;
     margin: 0;
-    padding: 12px 14px;
+    padding: 10px 12px;
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(230, 224, 242, 0.5);
     box-shadow: none;
     border-radius: 0;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
     transition: background-color 0.18s ease, box-shadow 0.16s ease;
   }
 
@@ -597,6 +597,25 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
     color: var(--text-strong, #34163f);
   }
 
+  .mobile-shell #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mobile-shell #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   .mobile-shell #notesListMobile .note-card-preview,
   .mobile-shell #notesListMobile .note-card-meta,
   .mobile-shell #notesListMobile .notebook-note-timestamp {
@@ -605,8 +624,8 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
   .mobile-shell #notesListMobile .note-card-folder {
     flex-shrink: 0;
-    padding: 3px 10px;
-    font-size: 0.75rem;
+    padding: 2px 8px;
+    font-size: 0.72rem;
     background: rgba(81, 38, 99, 0.08);
     color: var(--primary-dark, #3E1D4C);
     border-radius: 999px;
@@ -720,9 +739,9 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
   #notesListMobile .premium-note-card {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 11px 14px;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
     margin: 0;
     background: transparent;
     border: none;
@@ -748,10 +767,29 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
     color: var(--text-strong, #34163f);
   }
 
+  #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   #notesListMobile .note-card-folder {
     flex-shrink: 0;
-    padding: 3px 10px;
-    font-size: 0.75rem;
+    padding: 2px 8px;
+    font-size: 0.72rem;
     background: rgba(81, 38, 99, 0.08);
     color: var(--primary-dark, #3E1D4C);
     border-radius: 999px;
