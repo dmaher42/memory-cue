@@ -3864,7 +3864,7 @@ export async function initReminders(sel = {}) {
 
       const desktopCardClasses =
         'reminder-item task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
-      const mobileCardClasses = 'reminder-row w-full text-base-content';
+      const mobileCardClasses = 'reminder-row reminder-card w-full text-base-content';
 
       const itemEl = document.createElement(elementTag);
       itemEl.className = isMobile ? mobileCardClasses : desktopCardClasses;
@@ -3976,10 +3976,10 @@ export async function initReminders(sel = {}) {
 
       if (isMobile) {
         const rowMain = document.createElement('div');
-        rowMain.className = 'reminder-row-main';
+        rowMain.className = 'reminder-card-main reminder-row-main';
 
         const titleWrapper = document.createElement('div');
-        titleWrapper.className = 'reminder-row-title';
+        titleWrapper.className = 'reminder-title reminder-row-title';
         titleWrapper.dataset.reminderTitle = 'true';
         const titleToggle = document.createElement('span');
         titleToggle.dataset.role = 'reminder-today-toggle';
@@ -3993,7 +3993,7 @@ export async function initReminders(sel = {}) {
 
         if (dueLabel) {
           const metaText = document.createElement('div');
-          metaText.className = 'reminder-row-meta';
+          metaText.className = 'reminder-date reminder-row-meta';
           metaText.textContent = dueLabel;
           rowMain.appendChild(metaText);
         }
@@ -4004,7 +4004,7 @@ export async function initReminders(sel = {}) {
           itemEl.classList.add('reminder-row-overdue');
         }
 
-        toggleBtn.classList.add('reminder-row-complete');
+        toggleBtn.classList.add('reminder-row-complete', 'reminder-complete-btn');
         itemEl.append(toggleBtn, rowMain);
 
         itemEl.addEventListener('click', (event) => {
