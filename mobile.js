@@ -877,6 +877,7 @@ const initMobileNotes = () => {
       } else {
         button.removeAttribute('data-state');
       }
+      button.classList.toggle('selected', isActive);
       button.classList.toggle('active', isActive);
       button.classList.toggle('outline', isActive);
       button.classList.toggle('outline-2', isActive);
@@ -1136,32 +1137,66 @@ const initMobileNotes = () => {
     }
 
     notes.forEach((note) => {
-      const listItem = document.createElement('article');
+      const listItem = document.createElement('div');
       const isActiveNote = String(note.id) === String(currentNoteId);
-      listItem.className = 'premium-note-card note-item-mobile notebook-note-card';
-      listItem.classList.toggle('notebook-note-card--active', isActiveNote);
+      listItem.className = 'note-row';
+      listItem.classList.toggle('selected', isActiveNote);
       listItem.dataset.noteId = note.id;
       listItem.dataset.role = 'open-note';
       listItem.setAttribute('role', 'button');
       listItem.tabIndex = 0;
 
       const cardMain = document.createElement('div');
-      cardMain.className = 'note-card-main';
-
-      const headerRow = document.createElement('div');
-      headerRow.className = 'note-card-header';
+      cardMain.className = 'note-row-main';
+      cardMain.dataset.role = 'open-note';
+      cardMain.dataset.noteId = note.id;
 
       const noteTitle = note.title || 'Untitled';
-      const titleEl = document.createElement('h4');
-      titleEl.className = 'note-card-title line-clamp-2';
+      const titleEl = document.createElement('div');
+      titleEl.className = 'note-row-title';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
+
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      const folderName = getFolderNameById(folderId) || 'Unsorted';
+      const timestamp = formatNoteTimestamp(note.updatedAt);
+
+      const metaRow = document.createElement('div');
+      metaRow.className = 'note-row-meta';
+
+      const folderButton = document.createElement('button');
+      folderButton.type = 'button';
+      folderButton.className = 'note-row-folder';
+      folderButton.textContent = folderName;
+      folderButton.setAttribute('aria-label', 'Move note to folder');
+      folderButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openFolderSelectorForNote(note.id, {
+          initialFolderId: folderId,
+          triggerEl: folderButton,
+        });
+      });
+
+      metaRow.appendChild(folderButton);
+      if (timestamp) {
+        const separator = document.createElement('span');
+        separator.textContent = ' · ';
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'note-row-timestamp';
+        timeSpan.textContent = timestamp;
+        metaRow.appendChild(separator);
+        metaRow.appendChild(timeSpan);
+      }
+
+      cardMain.appendChild(titleEl);
+      cardMain.appendChild(metaRow);
 
       const actionBtn = document.createElement('button');
       actionBtn.type = 'button';
       actionBtn.dataset.noteId = note.id;
       actionBtn.dataset.role = 'note-menu';
-      actionBtn.className = 'note-card-action';
+      actionBtn.className = 'note-row-overflow';
       actionBtn.setAttribute('aria-label', 'Note actions');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
@@ -1173,34 +1208,8 @@ const initMobileNotes = () => {
         </svg>
       `;
 
-      headerRow.appendChild(titleEl);
-      headerRow.appendChild(actionBtn);
-
-      const metaRow = document.createElement('div');
-      metaRow.className = 'note-card-meta-row';
-
-      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
-      const folderPill = document.createElement('button');
-      folderPill.type = 'button';
-      folderPill.className = 'note-card-folder';
-      folderPill.setAttribute('aria-label', 'Move note to folder');
-      const folderName = getFolderNameById(folderId) || 'Unsorted';
-      folderPill.textContent = folderName;
-
-      folderPill.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openFolderSelectorForNote(note.id, {
-          initialFolderId: folderId,
-          triggerEl: folderPill,
-        });
-      });
-
-      metaRow.appendChild(folderPill);
-
-      cardMain.appendChild(headerRow);
-      cardMain.appendChild(metaRow);
       listItem.appendChild(cardMain);
+      listItem.appendChild(actionBtn);
       listElement.appendChild(listItem);
     });
 
@@ -1261,7 +1270,7 @@ const initMobileNotes = () => {
       const chip = document.createElement('button');
       chip.type = 'button';
       // keep legacy `folder-chip` for existing code paths, add new premium class
-      chip.className = 'folder-chip notebook-folder-chip';
+      chip.className = 'folder-chip notebook-folder-chip notebook-tab';
       chip.dataset.folderId = folder.id;
 
       const nameSpan = document.createElement('span');
