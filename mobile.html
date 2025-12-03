@@ -2529,21 +2529,18 @@
 
     /* Responsive reminder grid - default grid layout */
     #reminderList {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
       align-content: start;
       width: 100%;
     }
 
     /* List view override */
     #reminderList.space-y-3 {
-      display: block;
-      gap: 0;
-    }
-
-    #reminderList.space-y-3 .task-item {
-      margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
     }
 
     /* Horizontal single-row layout */
@@ -2565,6 +2562,7 @@
     /* 2-column grid layout on wider screens */
     @media (min-width: 380px) {
       #reminderList.grid-cols-2 {
+        display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 4px;
       }
@@ -2820,19 +2818,16 @@
 
     .cue-item,
     #reminderList [data-reminder] {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
-      column-gap: 10px;
-      row-gap: 2px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      background: rgba(255, 255, 255, 0.74);
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 14px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.6rem;
+      padding: 0.55rem 0.9rem;
+      margin-bottom: 0;
+      background: var(--surface-soft, rgba(255, 255, 255, 0.7));
+      border: 1px solid rgba(0, 0, 0, 0.02);
+      border-radius: 0.9rem;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02);
       transition: all 0.2s ease;
       font-size: var(--reminder-card-font-size);
       line-height: 1.25;
@@ -2862,45 +2857,6 @@
       border-color: color-mix(in srgb, var(--accent-color) 65%, transparent);
     }
 
-    .cue-item[data-priority="High"],
-    #reminderList [data-reminder][data-priority="High"] {
-      border-left: 3px solid var(--priority-high-border);
-      background: var(--priority-high-bg);
-      padding-left: calc(14px - 1.5px);
-    }
-
-    .cue-item[data-priority="Medium"],
-    #reminderList [data-reminder][data-priority="Medium"] {
-      border-left: 3px solid var(--priority-medium-border);
-      background: var(--priority-medium-bg);
-      padding-left: calc(14px - 1.5px);
-    }
-
-    .cue-item[data-priority="Low"],
-    #reminderList [data-reminder][data-priority="Low"] {
-      border-left: 3px solid var(--priority-low-border);
-      background: var(--priority-low-bg);
-      padding-left: calc(14px - 1.5px);
-    }
-
-    .dark .cue-item[data-priority="High"],
-    .dark #reminderList [data-reminder][data-priority="High"] {
-      background: color-mix(in srgb, var(--priority-high-border) 28%, rgba(15, 23, 42, 0.92) 72%);
-      border-left-color: color-mix(in srgb, var(--priority-high-border) 80%, transparent);
-    }
-
-    .dark .cue-item[data-priority="Medium"],
-    .dark #reminderList [data-reminder][data-priority="Medium"] {
-      background: color-mix(in srgb, var(--priority-medium-border) 26%, rgba(15, 23, 42, 0.92) 74%);
-      border-left-color: color-mix(in srgb, var(--priority-medium-border) 80%, transparent);
-    }
-
-    .dark .cue-item[data-priority="Low"],
-    .dark #reminderList [data-reminder][data-priority="Low"] {
-      background: color-mix(in srgb, var(--priority-low-border) 26%, rgba(15, 23, 42, 0.92) 74%);
-      border-left-color: color-mix(in srgb, var(--priority-low-border) 80%, transparent);
-    }
-
     .cue-name,
     #reminderList [data-reminder] h3,
     #reminderList [data-reminder] h4,
@@ -2911,15 +2867,10 @@
       font-weight: 500;
       line-height: 1.25;
       font-size: 0.95rem;
-      margin-bottom: 0;
-      grid-column: 1;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      line-clamp: 2;
+      white-space: nowrap;
     }
 
     .cue-meta,
@@ -2927,18 +2878,14 @@
     #reminderList [data-reminder] .reminder-meta {
       color: rgba(47, 27, 63, 0.55);
       font-size: 0.78rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-top: 0;
+      display: block;
+      margin-top: 0.1rem;
       line-height: 1.25;
-      grid-column: 1 / -1;
+      text-align: left;
     }
 
     #reminderList [data-reminder] time {
-      justify-content: flex-end;
-      text-align: right;
+      text-align: left;
     }
 
     .cue-content,
@@ -5152,7 +5099,7 @@
                 <p id="reminderReorderHint" class="sr-only">
                   Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
                 </p>
-                <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
+                <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
               </div>
             </section>
           </div>

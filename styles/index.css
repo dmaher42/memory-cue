@@ -2145,15 +2145,27 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
+/* Reminders list container */
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 /* Mobile reminder rows */
 .reminder-row {
   display: flex;
   align-items: center;
-  padding: 0.6rem 0.9rem;
-  border-radius: 999px;
+  justify-content: flex-start;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.9rem;
   background: var(--surface-soft, rgba(255, 255, 255, 0.7));
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02);
   gap: 0.6rem;
+}
+
+.reminder-row * {
+  text-align: left;
 }
 
 .reminder-row-complete {
