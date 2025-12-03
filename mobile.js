@@ -207,14 +207,36 @@ initViewportHeight();
       lastTrigger = null;
     };
 
+    const triggerCueOpen = (trigger) => {
+      const detail = { mode: 'create', trigger };
+      dispatchSheetEvent('cue:prepare', detail);
+      dispatchSheetEvent('cue:open', detail);
+    };
+
+    const bindOpener = (trigger, options = undefined) => {
+      if (!(trigger instanceof HTMLElement)) return;
+      const listenerOptions = options || false;
+      trigger.addEventListener(
+        'click',
+        (event) => {
+          event.preventDefault();
+          triggerCueOpen(trigger);
+        },
+        listenerOptions,
+      );
+    };
+
+    const primaryCta = document.getElementById('mobile-footer-new-reminder');
+
     openers.forEach((trigger) => {
-      trigger.addEventListener('click', (event) => {
-        event.preventDefault();
-        const detail = { mode: 'create', trigger };
-        dispatchSheetEvent('cue:prepare', detail);
-        dispatchSheetEvent('cue:open', detail);
-      });
+      const isFooterCta = trigger === primaryCta;
+      const options = isFooterCta ? { capture: true } : undefined;
+      bindOpener(trigger, options);
     });
+
+    if (primaryCta && !openers.includes(primaryCta)) {
+      bindOpener(primaryCta, { capture: true });
+    }
 
     closeBtn.addEventListener('click', (event) => {
       event.preventDefault();
