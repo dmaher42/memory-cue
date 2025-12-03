@@ -4958,8 +4958,8 @@
     class="mobile-header px-3 py-2 pt-safe-top"
     role="banner"
   >
-    <div class="reminders-topbar">
-      <div class="reminders-topbar-left">
+    <div class="reminders-top-bar">
+      <div class="reminders-top-primary">
         <div class="reminders-quick-input header-pill">
           <input
             id="quickAddInput"
@@ -4976,7 +4976,7 @@
               title="Open Notebook"
             >
               <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
+                <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor"/>
               </svg>
             </button>
 
@@ -4999,11 +4999,11 @@
           </div>
         </div>
       </div>
-      <div class="reminders-topbar-center">
-        <div class="reminders-tabs" role="tablist" aria-label="Reminder filters">
+      <div class="reminders-top-controls">
+        <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
           <button
             type="button"
-            class="reminders-tab reminder-tab reminders-tab-active active"
+            class="reminder-tab reminders-tab reminders-tab-active active"
             data-reminders-tab="all"
             data-filter="all"
             aria-pressed="true"
@@ -5012,7 +5012,7 @@
           </button>
           <button
             type="button"
-            class="reminders-tab reminder-tab"
+            class="reminder-tab reminders-tab"
             data-reminders-tab="today"
             data-filter="today"
             aria-pressed="false"
@@ -5020,13 +5020,11 @@
             Today
           </button>
         </div>
-      </div>
-      <div class="reminders-topbar-right">
         <div class="relative header-overflow-wrapper">
           <button
             id="headerMenuBtn"
             type="button"
-            class="header-action-btn icon-btn quick-add-action"
+            class="header-action-btn icon-btn quick-add-action reminders-top-overflow"
             aria-label="More options"
             aria-expanded="false"
             aria-haspopup="true"
