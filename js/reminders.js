@@ -1480,9 +1480,39 @@ export async function initReminders(sel = {}) {
   let userId = null;
   let unsubscribe = null;
   let editingId = null;
+  let currentReminderMode = null;
+  let currentReminderId = null;
   const reminderTimers = {};
   const reminderNotifyTimers = {};
   let scheduledReminders = {};
+  const reminderSheetTitle =
+    typeof document !== 'undefined'
+      ? document.getElementById('createSheetTitle')
+      : null;
+
+  const focusTitleField = () => {
+    if (!(title instanceof HTMLElement)) {
+      return;
+    }
+    setTimeout(() => {
+      try {
+        title.focus();
+      } catch {
+        /* ignore focus errors */
+      }
+    }, 0);
+  };
+
+  const setReminderMode = (mode, reminderId = null) => {
+    currentReminderMode = mode || null;
+    currentReminderId = reminderId || null;
+    editingId = currentReminderMode === 'edit' ? currentReminderId : null;
+
+    if (reminderSheetTitle instanceof HTMLElement) {
+      reminderSheetTitle.textContent =
+        currentReminderMode === 'edit' ? 'Edit reminder' : 'New reminder';
+    }
+  };
 
   function sortItemsByOrder(target = items) {
     if (!Array.isArray(target)) {
@@ -2842,7 +2872,7 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm({ preserveDetail = false } = {}){
+  function resetForm({ preserveDetail = false, resetMode = true } = {}){
     if(title) title.value='';
     if(date) date.value='';
     if(time) time.value='';
@@ -2850,7 +2880,11 @@ export async function initReminders(sel = {}) {
     setPriorityInputValue('Medium');
     if(categoryInput) categoryInput.value = DEFAULT_CATEGORY;
     applyStoredDefaultsToInputs();
-    editingId=null;
+    if (resetMode) {
+      setReminderMode(null);
+    } else {
+      editingId = currentReminderMode === 'edit' ? currentReminderId : null;
+    }
     if(saveBtn) saveBtn.textContent='Save';
     cancelEditBtn?.classList.add('hidden');
     clearPlannerReminderContext();
@@ -2861,6 +2895,7 @@ export async function initReminders(sel = {}) {
   function loadForEdit(id){
     const it = items.find(x=>x.id===id);
     if(!it) return;
+    setReminderMode('edit', id);
     if(title) title.value=it.title||'';
     if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } }
     setPriorityInputValue(it?.priority || 'Medium');
@@ -2869,12 +2904,34 @@ export async function initReminders(sel = {}) {
     if(plannerLessonInput) plannerLessonInput.value = typeof it.plannerLessonId === 'string' ? it.plannerLessonId : '';
     clearPlannerReminderContext();
     applyDetailSelection(it);
-    editingId=id;
     if(saveBtn) saveBtn.textContent='Update';
     cancelEditBtn?.classList.remove('hidden');
     window.scrollTo({top:0,behavior:'smooth'});
-    title?.focus();
+    focusTitleField();
     dispatchCueEvent('cue:open', { mode: 'edit' });
+  }
+
+  function openEditReminderSheet(reminder) {
+    const reminderId = reminder?.id || reminder;
+    if (!reminderId) {
+      return;
+    }
+    setReminderMode('edit', reminderId);
+    loadForEdit(reminderId);
+  }
+
+  function openNewReminderSheet(trigger = null) {
+    resetForm({ resetMode: false });
+    setReminderMode('new');
+    const detail = { mode: 'create', trigger };
+    dispatchCueEvent('cue:prepare', detail);
+    dispatchCueEvent('cue:open', detail);
+    focusTitleField();
+  }
+
+  if (typeof window !== 'undefined') {
+    window.openNewReminderSheet = openNewReminderSheet;
+    window.openEditReminderSheet = openEditReminderSheet;
   }
 
   function createReminderFromPayload(payload = {}, options = {}) {
@@ -4004,7 +4061,7 @@ export async function initReminders(sel = {}) {
       controls.append(toggleBtn, deleteBtn);
       itemEl.appendChild(controls);
 
-      const openReminder = () => loadForEdit(summary.id);
+      const openReminder = () => openEditReminderSheet(reminder);
       itemEl.addEventListener('click', (event) => {
         if (event.defaultPrevented) return;
         const target = event.target;
@@ -4130,7 +4187,7 @@ export async function initReminders(sel = {}) {
     const timeValue = typeof time?.value === 'string' ? time.value : '';
     const plannerLinkId = typeof plannerLessonInput?.value === 'string' ? plannerLessonInput.value.trim() : '';
 
-    if(editingId){
+    if(currentReminderMode === 'edit' && editingId){
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }
       if(!trimmedTitle){ toast('Add a reminder title'); return; }
@@ -4206,7 +4263,12 @@ export async function initReminders(sel = {}) {
   cancelEditBtn?.addEventListener('click', () => { resetForm(); toast('Edit cancelled'); dispatchCueEvent('cue:close', { reason: 'edit-cancelled' }); });
   detailClearBtn?.addEventListener('click', () => { resetForm(); });
   document.addEventListener('cue:cancelled', () => { resetForm(); });
-  document.addEventListener('cue:prepare', () => { resetForm(); });
+  document.addEventListener('cue:prepare', (event) => {
+    const requestedMode = event?.detail?.mode === 'edit' ? 'edit' : 'new';
+    resetForm({ resetMode: false });
+    setReminderMode(requestedMode, requestedMode === 'edit' ? currentReminderId : null);
+  });
+  document.addEventListener('cue:close', () => { setReminderMode(null); });
   document.addEventListener('planner:prefillReminder', (event) => {
     applyPlannerReminderPrefill(event?.detail || {});
   });

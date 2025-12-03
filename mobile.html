@@ -5823,14 +5823,18 @@
         }
 
         if (view === 'new') {
-          const detail = { mode: 'create', trigger: button };
-          const sheet = document.getElementById('create-sheet');
-
-          if (sheet) {
-            document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
-            document.dispatchEvent(new CustomEvent('cue:open', { detail }));
+          if (typeof window.openNewReminderSheet === 'function') {
+            window.openNewReminderSheet(button);
           } else {
-            triggerAddReminder();
+            const detail = { mode: 'create', trigger: button };
+            const sheet = document.getElementById('create-sheet');
+
+            if (sheet) {
+              document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
+              document.dispatchEvent(new CustomEvent('cue:open', { detail }));
+            } else {
+              triggerAddReminder();
+            }
           }
 
           return;
