@@ -3863,7 +3863,7 @@ export async function initReminders(sel = {}) {
       const desktopCardClasses =
         'reminder-item task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
       const mobileCardClasses =
-        'reminder-item task-item reminder-card w-full bg-base-100 rounded-xl border border-base-200 border-l-4 shadow-sm p-4 mb-3 flex items-start justify-between gap-2 text-sm text-base-content transition hover:border-base-300 hover:bg-base-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[.98]';
+        'reminder-item task-item reminder-row w-full text-base-content';
 
       const itemEl = document.createElement(elementTag);
       itemEl.className = isMobile ? mobileCardClasses : desktopCardClasses;
@@ -3915,67 +3915,8 @@ export async function initReminders(sel = {}) {
         delete itemEl.dataset.today;
       }
 
-      const content = document.createElement('div');
-      content.className = 'flex min-w-0 flex-1 flex-col gap-2';
-      if (isMobile) {
-        content.classList.add('text-sm', 'text-base-content');
-      }
-
-      const titleEl = document.createElement('p');
-      titleEl.className = isMobile
-        ? 'text-base font-semibold leading-tight text-base-content'
-        : 'text-lg font-bold leading-snug text-base-content';
-      titleEl.classList.add('desktop-reminder-title');
-      if (!isMobile) {
-        titleEl.classList.add('sm:text-[0.95rem]');
-      }
-      if (summary.done) {
-        titleEl.classList.add('line-through', 'text-base-content/60');
-      }
-      if (isMobile) {
-        titleEl.dataset.reminderTitle = 'true';
-        titleEl.textContent = '';
-        const titleToggle = document.createElement('span');
-        titleToggle.dataset.role = 'reminder-today-toggle';
-        titleToggle.className = 'reminder-title-toggle cursor-pointer';
-        titleToggle.setAttribute('role', 'button');
-        titleToggle.tabIndex = 0;
-        titleToggle.textContent = reminder.title;
-        updatePinToggleVisualState(titleToggle, summary.pinToToday);
-        titleEl.appendChild(titleToggle);
-      } else {
-        titleEl.textContent = reminder.title;
-      }
-
-      let titleSlot = titleEl;
-      if (isMobile) {
-        titleSlot = document.createElement('div');
-        titleSlot.className = 'reminder-title-slot';
-        titleSlot.appendChild(titleEl);
-      }
-      content.appendChild(titleSlot);
-
-      const metaRow = document.createElement('div');
-      metaRow.className = isMobile
-        ? 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-sm text-base-content/70'
-        : 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70';
-
       const dueLabelRaw = formatDesktopDue(reminder);
       const dueLabel = dueLabelRaw && dueLabelRaw !== 'No due date' ? dueLabelRaw : '';
-      if (dueLabel) {
-        metaRow.appendChild(createMetaChip(dueLabel, 'due'));
-      }
-
-      const hasCustomCategory = Boolean(catName && catName !== DEFAULT_CATEGORY);
-      if (hasCustomCategory) {
-        metaRow.appendChild(createMetaChip(catName, 'category'));
-      }
-
-      if (metaRow.children.length) {
-        content.appendChild(metaRow);
-      }
-
-      itemEl.appendChild(content);
 
       const controls = document.createElement('div');
       controls.className = 'task-toolbar flex items-start gap-1';
@@ -4031,7 +3972,96 @@ export async function initReminders(sel = {}) {
         toggleDone(summary.id);
       });
 
-      // Delete icon button (mobile reminders)
+      const openReminder = () => openEditReminderSheet(reminder);
+
+      if (isMobile) {
+        const rowMain = document.createElement('div');
+        rowMain.className = 'reminder-row-main';
+
+        const titleWrapper = document.createElement('div');
+        titleWrapper.className = 'reminder-row-title';
+        titleWrapper.dataset.reminderTitle = 'true';
+        const titleToggle = document.createElement('span');
+        titleToggle.dataset.role = 'reminder-today-toggle';
+        titleToggle.className = 'reminder-title-toggle cursor-pointer';
+        titleToggle.setAttribute('role', 'button');
+        titleToggle.tabIndex = 0;
+        titleToggle.textContent = reminder.title;
+        updatePinToggleVisualState(titleToggle, summary.pinToToday);
+        titleWrapper.appendChild(titleToggle);
+        rowMain.appendChild(titleWrapper);
+
+        if (dueLabel) {
+          const metaText = document.createElement('div');
+          metaText.className = 'reminder-row-meta';
+          metaText.textContent = dueLabel;
+          rowMain.appendChild(metaText);
+        }
+
+        if (summary.done) {
+          itemEl.classList.add('reminder-row-completed');
+        } else if (dueDate && dueDate < now) {
+          itemEl.classList.add('reminder-row-overdue');
+        }
+
+        toggleBtn.classList.add('reminder-row-complete');
+        itemEl.append(toggleBtn, rowMain);
+
+        itemEl.addEventListener('click', (event) => {
+          if (event.defaultPrevented) return;
+          const target = event.target;
+          if (target && typeof target.closest === 'function' && target.closest('[data-reminder-control]')) {
+            return;
+          }
+          openReminder();
+        });
+        itemEl.addEventListener('keydown', (event) => {
+          if (event.defaultPrevented) return;
+          if (event.target !== itemEl) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openReminder();
+          }
+        });
+
+        if (isMobile) {
+          enableSwipeToDelete(itemEl, () => removeItem(summary.id));
+        }
+
+        return itemEl;
+      }
+
+      const content = document.createElement('div');
+      content.className = 'flex min-w-0 flex-1 flex-col gap-2';
+      const titleEl = document.createElement('p');
+      titleEl.className = 'text-lg font-bold leading-snug text-base-content';
+      titleEl.classList.add('desktop-reminder-title');
+      titleEl.classList.add('sm:text-[0.95rem]');
+      if (summary.done) {
+        titleEl.classList.add('line-through', 'text-base-content/60');
+      }
+      titleEl.textContent = reminder.title;
+
+      content.appendChild(titleEl);
+
+      const metaRow = document.createElement('div');
+      metaRow.className = 'desktop-reminder-meta reminder-meta flex flex-wrap items-center gap-1 text-xs text-base-content/70';
+
+      if (dueLabel) {
+        metaRow.appendChild(createMetaChip(dueLabel, 'due'));
+      }
+
+      const hasCustomCategory = Boolean(catName && catName !== DEFAULT_CATEGORY);
+      if (hasCustomCategory) {
+        metaRow.appendChild(createMetaChip(catName, 'category'));
+      }
+
+      if (metaRow.children.length) {
+        content.appendChild(metaRow);
+      }
+
+      itemEl.appendChild(content);
+
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
       deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn reminder-icon-btn';
@@ -4040,8 +4070,8 @@ export async function initReminders(sel = {}) {
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-          <line x1="10" y1="11" x2="10" y2="17"/>
-          <line x1="14" y1="11" x2="14" y2="17"/>
+          <line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/>
+          <line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/>
         </svg>`;
       deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
       deleteBtn.setAttribute('data-action', 'delete');
@@ -4061,7 +4091,6 @@ export async function initReminders(sel = {}) {
       controls.append(toggleBtn, deleteBtn);
       itemEl.appendChild(controls);
 
-      const openReminder = () => openEditReminderSheet(reminder);
       itemEl.addEventListener('click', (event) => {
         if (event.defaultPrevented) return;
         const target = event.target;
