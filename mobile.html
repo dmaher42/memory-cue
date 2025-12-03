@@ -6021,6 +6021,9 @@
       box-shadow: none;
       padding: calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
       z-index: 80;
+      /* Ensure the panel is visible (base .sheet-panel sets opacity: 0) */
+      opacity: 1;
+      transform: translateY(0);
     }
 
     #create-sheet .reminder-editor-shell {
