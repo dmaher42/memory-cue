@@ -6904,19 +6904,22 @@
       const setActiveView = (target) => {
         if (!order.includes(target)) return;
 
+        const displayTarget = target === 'new' ? 'reminders' : target;
+
         order.forEach((key, index) => {
           const view = views[key];
           const button = buttons[index];
-          const isActive = key === target;
+          const isViewActive = key === displayTarget;
+          const isButtonActive = key === target;
 
           if (view) {
-            view.classList.toggle('hidden', !isActive);
-            view.setAttribute('aria-hidden', String(!isActive));
+            view.classList.toggle('hidden', !isViewActive);
+            view.setAttribute('aria-hidden', String(!isViewActive));
           }
 
           if (button) {
-            button.setAttribute('aria-current', isActive ? 'page' : 'false');
-            button.classList.toggle('active', Boolean(isActive));
+            button.setAttribute('aria-current', isButtonActive ? 'page' : 'false');
+            button.classList.toggle('active', Boolean(isButtonActive));
           }
         });
 
