@@ -148,6 +148,18 @@ initViewportHeight();
 
     const openSheet = (trigger) => {
       lastTrigger = trigger instanceof HTMLElement ? trigger : null;
+      if (!(sheet instanceof HTMLElement)) {
+        console.warn('cue:open skipped: sheet element missing');
+        return;
+      }
+
+      const missingElements = [];
+      if (!(backdrop instanceof HTMLElement)) missingElements.push('backdrop');
+      if (!(sheetContent instanceof HTMLElement)) missingElements.push('content');
+      if (missingElements.length) {
+        console.warn(`cue:open incomplete: missing ${missingElements.join(', ')}`);
+      }
+
       if (backdrop instanceof HTMLElement) {
         backdrop.classList.remove('hidden');
         backdrop.removeAttribute('hidden');
