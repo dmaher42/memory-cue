@@ -46,21 +46,24 @@ const mergeNotes = (localNotes = [], remoteNotes = []) => {
   return Array.from(merged.values()).sort((a, b) => toTimestamp(b?.updatedAt) - toTimestamp(a?.updatedAt));
 };
 
-  const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
-    if (!row || typeof row !== 'object') {
-      return null;
-    }
-    const rawBodyHtml =
-      (typeof row.body_html === 'string' && row.body_html.length ? row.body_html : null) ?? row.body;
-    const overrides = {
-      id: typeof row.id === 'string' && row.id ? row.id : undefined,
-      updatedAt: typeof row[updatedAtColumn] === 'string' ? row[updatedAtColumn] : undefined,
-      folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
-      bodyHtml: rawBodyHtml,
-      bodyText: typeof row.body_text === 'string' ? row.body_text : undefined,
-    };
-  return createNote(row.title, rawBodyHtml, overrides);
+const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
+  if (!row || typeof row !== 'object') {
+    return null;
+  }
+  const fallbackText = typeof row.body_text === 'string' ? row.body_text : undefined;
+  const rawBodyHtml =
+    (typeof row.body_html === 'string' && row.body_html.length ? row.body_html : null) ??
+    (typeof row.body === 'string' && row.body.length ? row.body : null) ??
+    fallbackText;
+  const overrides = {
+    id: typeof row.id === 'string' && row.id ? row.id : undefined,
+    updatedAt: typeof row[updatedAtColumn] === 'string' ? row[updatedAtColumn] : undefined,
+    folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
+    bodyHtml: rawBodyHtml,
+    bodyText: fallbackText,
   };
+  return createNote(row.title, rawBodyHtml, overrides);
+};
 
 export const initNotesSync = (options = {}) => {
   const {

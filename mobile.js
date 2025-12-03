@@ -858,16 +858,6 @@ const initMobileNotes = () => {
     return extractPlainText(source);
   };
 
-  const getEditorValues = () => {
-    const bodyHtml = getEditorBodyHtml();
-    const bodyText = getEditorBodyText(bodyHtml);
-    return {
-      title: typeof titleInput.value === 'string' ? titleInput.value.trim() : '',
-      bodyHtml,
-      bodyText,
-    };
-  };
-
   const updateListSelection = () => {
     if (!listElement) {
       return;
@@ -2497,10 +2487,10 @@ const initMobileNotes = () => {
   saveButton.addEventListener('click', () => {
     const existingNotes = loadAllNotes();
     const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
-    const { title, bodyHtml, bodyText } = getEditorValues();
-    const noteBodyHtml = bodyHtml || '';
+    const noteBodyHtml = getEditorBodyHtml() || '';
     const noteBodyText = getEditorBodyText(noteBodyHtml);
-    const sanitizedTitle = title || 'Untitled note';
+    const rawTitle = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
+    const sanitizedTitle = rawTitle || 'Untitled note';
     const timestamp = new Date().toISOString();
     const normalizedFolderId =
       currentEditingNoteFolderId && currentEditingNoteFolderId !== 'all'
@@ -2523,7 +2513,6 @@ const initMobileNotes = () => {
         const newNote = createNote(sanitizedTitle, noteBodyHtml, {
           updatedAt: timestamp,
           folderId: normalizedFolderId,
-          bodyHtml: noteBodyHtml,
           bodyText: noteBodyText,
         });
         currentNoteId = newNote.id;
@@ -2532,7 +2521,6 @@ const initMobileNotes = () => {
     } else {
       const newNote = createNote(sanitizedTitle, noteBodyHtml, {
         folderId: normalizedFolderId,
-        bodyHtml: noteBodyHtml,
         bodyText: noteBodyText,
       });
       currentNoteId = newNote.id;
