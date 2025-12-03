@@ -5166,95 +5166,96 @@
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
         <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-body);">
-          <!-- Header Row -->
-          <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
-            <div class="flex flex-col">
-              <span class="sr-only">Notebook</span>
+          <div class="note-editor-card">
+            <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
+              <div class="flex flex-col">
+                <span class="sr-only">Notebook</span>
+              </div>
+
+              <!-- saved notes button moved into the sub-header for compact layout -->
             </div>
 
-            <!-- saved notes button moved into the sub-header for compact layout -->
-          </div>
+            <!-- Seamless title field -->
+              <div class="flex flex-col items-stretch gap-2 px-1 py-1 rounded-md notebook-actions-row">
+                <input
+                  id="noteTitleMobile"
+                  type="text"
+                  placeholder="Note title"
+                  autocomplete="off"
+                  class="seamless-title-input note-title-input flex-1 text-lg font-medium focus:outline-none focus:ring-0 text-base-content placeholder:text-base-content/70"
+                />
+                <button id="note-folder-button" class="note-folder-chip self-start" type="button" aria-haspopup="dialog" aria-expanded="false">
+                  <span id="note-folder-label">Unsorted</span>
+                </button>
+              </div>
 
-          <!-- Seamless title field -->
-            <div class="flex flex-col items-stretch gap-1 px-1 py-1 rounded-md notebook-actions-row">
-              <input
-                id="noteTitleMobile"
-                type="text"
-                placeholder="Note title"
-                autocomplete="off"
-                class="seamless-title-input flex-1 text-lg font-medium border-0 focus:outline-none focus:ring-0 text-base-content placeholder:text-base-content/70"
-              />
-              <button id="note-folder-button" class="note-folder-chip self-start" type="button" aria-haspopup="dialog" aria-expanded="false">
-                <span id="note-folder-label">Unsorted</span>
+            <!-- Single-row formatting toolbar with reduced spacing -->
+            <div
+              id="scratchNotesToolbar"
+              class="formatting-toolbar-strip flex items-center gap-2 px-0 py-0 bg-transparent rounded-lg border-0 shadow-none"
+              role="toolbar"
+              aria-label="Formatting options"
+            >
+              <button type="button" class="formatting-btn notebook-format-button" data-format="bold" aria-label="Bold" aria-controls="notebook-editor-body">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
+                </svg>
+              </button>
+
+              <button type="button" class="formatting-btn notebook-format-button" data-format="italic" aria-label="Italic" aria-controls="notebook-editor-body">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M10 4h9v2h-3.6l-3.8 12H16v2H7v-2h3.6l3.8-12H10V4z" fill="currentColor" />
+                </svg>
+              </button>
+
+              <button type="button" class="formatting-btn notebook-format-button" data-format="underline" aria-label="Underline" aria-controls="notebook-editor-body">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 4h2v7a3 3 0 0 0 6 0V4h2v7a5 5 0 0 1-10 0V4z" fill="currentColor" />
+                  <path d="M5 19h14v2H5z" fill="currentColor" />
+                </svg>
+              </button>
+
+              <button type="button" class="formatting-btn notebook-format-button" data-format="bullet-list" aria-label="Bullet list" aria-controls="notebook-editor-body">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 6h13v2H7V6zm0 5h13v2H7v-2zm0 5h13v2H7v-2z" fill="currentColor" />
+                  <circle cx="4" cy="7" r="1.25" fill="currentColor" />
+                  <circle cx="4" cy="12" r="1.25" fill="currentColor" />
+                  <circle cx="4" cy="17" r="1.25" fill="currentColor" />
+                </svg>
+              </button>
+
+              <button type="button" class="formatting-btn notebook-format-button" data-format="numbered-list" aria-label="Numbered list" aria-controls="notebook-editor-body">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 6h11v2H9V6zm0 5h11v2H9v-2zm0 5h11v2H9v-2z" fill="currentColor" />
+                  <path d="M4 6.5V8h2V4H4v1.5h1v1H4zm1.5 4H4a.5.5 0 0 0-.5.5v.75H4V12h1v2H3.5v1H6v-3.5a1 1 0 0 0-1-1Zm.5 5H4v1h1v1H4v1h2v-3Z" fill="currentColor" />
+                </svg>
               </button>
             </div>
 
-          <!-- Single-row formatting toolbar with reduced spacing -->
-          <div
-            id="scratchNotesToolbar"
-            class="formatting-toolbar-strip flex items-center gap-2 px-0 py-0 bg-transparent rounded-lg border-0 shadow-none"
-            role="toolbar"
-            aria-label="Formatting options"
-          >
-            <button type="button" class="formatting-btn notebook-format-button" data-format="bold" aria-label="Bold" aria-controls="notebook-editor-body">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 4h6a4 4 0 0 1 0 8H7V4zm0 8h7a4 4 0 0 1 0 8H7v-8z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="italic" aria-label="Italic" aria-controls="notebook-editor-body">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M10 4h9v2h-3.6l-3.8 12H16v2H7v-2h3.6l3.8-12H10V4z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="underline" aria-label="Underline" aria-controls="notebook-editor-body">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 4h2v7a3 3 0 0 0 6 0V4h2v7a5 5 0 0 1-10 0V4z" fill="currentColor" />
-                <path d="M5 19h14v2H5z" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="bullet-list" aria-label="Bullet list" aria-controls="notebook-editor-body">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 6h13v2H7V6zm0 5h13v2H7v-2zm0 5h13v2H7v-2z" fill="currentColor" />
-                <circle cx="4" cy="7" r="1.25" fill="currentColor" />
-                <circle cx="4" cy="12" r="1.25" fill="currentColor" />
-                <circle cx="4" cy="17" r="1.25" fill="currentColor" />
-              </svg>
-            </button>
-
-            <button type="button" class="formatting-btn notebook-format-button" data-format="numbered-list" aria-label="Numbered list" aria-controls="notebook-editor-body">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 6h11v2H9V6zm0 5h11v2H9v-2zm0 5h11v2H9v-2z" fill="currentColor" />
-                <path d="M4 6.5V8h2V4H4v1.5h1v1H4zm1.5 4H4a.5.5 0 0 0-.5.5v.75H4V12h1v2H3.5v1H6v-3.5a1 1 0 0 0-1-1Zm.5 5H4v1h1v1H4v1h2v-3Z" fill="currentColor" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Minimal main editor with soft styling -->
-          <div class="distraction-free-editor-container">
-            <div
-              id="notebook-editor-body"
-              class="note-editor-area notebook-editor-body minimal-editor px-1 py-1 text-base leading-relaxed focus:outline-none rounded-lg"
-              contenteditable="true"
-              spellcheck="true"
-              data-placeholder="Start typing your note…"
-              role="textbox"
-              aria-label="Note body"
-              aria-multiline="true"
-            ></div>
+            <!-- Minimal main editor with soft styling -->
+            <div class="distraction-free-editor-container">
+              <div
+                id="notebook-editor-body"
+                class="note-editor-area notebook-editor-body minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg"
+                contenteditable="true"
+                spellcheck="true"
+                data-placeholder="Start typing your note…"
+                role="textbox"
+                aria-label="Note body"
+                aria-multiline="true"
+              ></div>
+            </div>
           </div>
         </div>
-        <div
-          id="savedNotesSheet"
-          class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
-          aria-hidden="true"
-          aria-modal="true"
-          role="dialog"
-          aria-labelledby="savedNotesSheetTitle"
-          data-open="false"
-        >
+          <div
+            id="savedNotesSheet"
+            class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
+            aria-hidden="true"
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="savedNotesSheetTitle"
+            data-open="false"
+          >
           <div
             id="saved-notes-panel"
             class="saved-notes-panel fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] max-w-md flex-col space-y-2 rounded-3xl border border-base-300 bg-base-100 px-4 py-3 shadow-xl transition-transform"
@@ -5264,41 +5265,53 @@
                 <div class="h-1.5 w-10 rounded-full bg-base-300"></div>
               </div>
 
-              <div class="flex items-center justify-between px-4 pb-2">
-                <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
-                <button
-                  id="closeSavedNotesSheet"
-                  class="btn btn-xs btn-ghost"
-                  type="button"
-                  data-action="close-saved-notes"
-                  aria-label="Close Notebook"
-                >
-                  Close
-                </button>
-              </div>
-
-              <div class="px-2 pb-3 overflow-y-auto">
-                <div id="notebook-folder-bar" class="notebook-folder-bar px-3 py-2">
-                  <div class="notebook-folder-header">
-                    <div class="folder-chips">
-                      <div class="notebook-folder-scroll-wrap">
-                        <div class="notebook-folder-filter-bar">
-                          <button
-                            type="button"
-                            class="notebook-folder-chip notebook-folder-chip--active"
-                            data-folder-id="all"
-                          >
-                            <span class="notebook-folder-chip-label">All notes</span>
-                            <span class="notebook-folder-chip-count">0</span>
-                          </button>
-                          <!-- Folder chips will be populated dynamically by JS -->
+              <div class="px-2 pb-3 overflow-y-auto space-y-3">
+                <div class="notebook-top-bar">
+                  <div class="notebook-top-left">
+                    <button
+                      id="closeSavedNotesSheet"
+                      class="btn btn-xs btn-ghost"
+                      type="button"
+                      data-action="close-saved-notes"
+                      aria-label="Close Notebook"
+                    >
+                      Close
+                    </button>
+                    <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
+                  </div>
+                  <div class="notebook-top-center">
+                    <div class="notebook-tabs">
+                      <div id="notebook-folder-bar" class="notebook-folder-bar px-0 py-0">
+                        <div class="notebook-folder-header">
+                          <div class="folder-chips">
+                            <div class="notebook-folder-scroll-wrap">
+                              <div class="notebook-folder-filter-bar">
+                                <button
+                                  type="button"
+                                  class="notebook-folder-chip notebook-folder-chip--active notebook-tab"
+                                  data-folder-id="all"
+                                >
+                                  <span class="notebook-folder-chip-label">All notes</span>
+                                  <span class="notebook-folder-chip-count">0</span>
+                                </button>
+                                <!-- Folder chips will be populated dynamically by JS -->
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  <button class="notebook-top-overflow" type="button" aria-label="Notebook options">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="5" cy="12" r="1.5" />
+                      <circle cx="12" cy="12" r="1.5" />
+                      <circle cx="19" cy="12" r="1.5" />
+                    </svg>
+                  </button>
                 </div>
 
-                <div class="px-3 pb-3">
+                <div class="px-3 pb-2">
                   <input
                     id="notebook-search-input"
                     type="search"
@@ -5314,27 +5327,19 @@
                 >
                   <!-- Note items are rendered here by JS -->
                   <template id="notesListMobileItemTemplate">
-                    <article
-                      class="premium-note-card note-item-mobile notebook-note-card"
-                      data-role="open-note"
-                      tabindex="0"
-                    >
-                      <div class="note-card-main">
-                        <div class="note-card-header">
-                          <h4 class="note-card-title line-clamp-2">Untitled</h4>
-                          <button type="button" class="note-card-action" aria-label="Note actions">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <circle cx="5" cy="12" r="1.5" />
-                              <circle cx="12" cy="12" r="1.5" />
-                              <circle cx="19" cy="12" r="1.5" />
-                            </svg>
-                          </button>
-                        </div>
-                        <div class="note-card-meta-row">
-                          <button type="button" class="note-card-folder" aria-label="Move note to folder">Folder</button>
-                        </div>
+                    <div class="note-row" data-note-id="" data-role="open-note">
+                      <div class="note-row-main" data-note-id="" data-role="open-note">
+                        <div class="note-row-title">Untitled</div>
+                        <div class="note-row-meta">Folder · Date</div>
                       </div>
-                    </article>
+                      <button type="button" class="note-row-overflow" aria-label="More" data-role="note-menu">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="5" cy="12" r="1.5" />
+                          <circle cx="12" cy="12" r="1.5" />
+                          <circle cx="19" cy="12" r="1.5" />
+                        </svg>
+                      </button>
+                    </div>
                   </template>
                 </div>
               </div>
