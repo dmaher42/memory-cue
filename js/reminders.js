@@ -813,21 +813,15 @@ export async function initReminders(sel = {}) {
   let stopQuickAddVoiceListening = null;
 
   function buildQuickReminder(titleText, dueOverride) {
-    const now = Date.now();
     const d = loadLastDefaults();
     const dueIso = typeof dueOverride === 'string' && dueOverride ? dueOverride : null;
 
     return {
-      id: uid(),
       title: (titleText || '').trim(),
       priority: d.priority || getPriorityInputValue(),
       category: normalizeCategory(d.category || categoryInput?.value || DEFAULT_CATEGORY),
       notes: '',
-      done: false,
-      createdAt: now,
-      updatedAt: now,
       due: dueIso,
-      pendingSync: !userId,
       pinToToday: false,
     };
   }
@@ -864,47 +858,23 @@ export async function initReminders(sel = {}) {
       }
     }
 
-    const entry = buildQuickReminder(t, quickDue);
+    const payload = buildQuickReminder(t, quickDue);
     if (
       options.notifyAt instanceof Date &&
       !Number.isNaN(options.notifyAt.getTime())
     ) {
       try {
-        entry.notifyAt = new Date(options.notifyAt).toISOString();
+        payload.notifyAt = new Date(options.notifyAt).toISOString();
       } catch {
-        entry.notifyAt = null;
+        payload.notifyAt = null;
       }
     }
-    assignOrderIndexForNewItem(entry, { position: 'start' });
-    items.unshift(entry);
-    sortItemsByOrder(items);
-    const rebalanced = maybeRebalanceOrderSpacing(items);
-    suppressRenderMemoryEvent = true;
-    render();
-    persistItems();
-    if (rebalanced) {
-      items.forEach((item) => saveToFirebase(item));
-    } else {
-      saveToFirebase(entry);
-    }
-    tryCalendarSync(entry);
-    scheduleReminder(entry);
-    rescheduleAllReminders();
+    const entry = createReminderFromPayload(payload, {
+      closeSheet: false,
+    });
 
-    updateDefaultsFrom(entry);
-
-    emitReminderUpdates();
-    try {
-      document.dispatchEvent(
-        new CustomEvent('memoryCue:remindersUpdated', { detail: { items } }),
-      );
-    } catch {}
-
-    emitActivity({ action: 'created', label: `Reminder added · ${entry.title}` });
-
-    quickInput.value = '';
-
-    if (typeof document !== 'undefined') {
+    if (entry && typeof document !== 'undefined') {
+      quickInput.value = '';
       try {
         document.dispatchEvent(
           new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
@@ -914,7 +884,7 @@ export async function initReminders(sel = {}) {
       }
     }
 
-    return entry;
+    return entry || null;
   }
 
   if (typeof window !== 'undefined') {
@@ -2907,27 +2877,59 @@ export async function initReminders(sel = {}) {
     dispatchCueEvent('cue:open', { mode: 'edit' });
   }
 
-  function addItem(obj){
+  function createReminderFromPayload(payload = {}, options = {}) {
+    const {
+      closeSheet = true,
+      activityAction = 'created',
+      activityLabelPrefix = 'Reminder added',
+    } = options;
+
+    const titleText = typeof payload.title === 'string' ? payload.title.trim() : '';
+    if (!titleText) {
+      return null;
+    }
+
     const nowMs = Date.now();
-    const note = obj.notes == null ? '' : (typeof obj.notes === 'string' ? obj.notes.trim() : String(obj.notes).trim());
-    const categoryValue = normalizeCategory(obj.category ?? (categoryInput ? categoryInput.value : ''));
+    const note = payload.notes == null
+      ? ''
+      : (typeof payload.notes === 'string' ? payload.notes.trim() : String(payload.notes).trim());
+    const categoryValue = normalizeCategory(
+      payload.category ?? (categoryInput ? categoryInput.value : DEFAULT_CATEGORY),
+    );
+    let dueValue = null;
+    if (payload.due instanceof Date) {
+      const isoDue = payload.due.toISOString();
+      dueValue = isoDue;
+    } else if (typeof payload.due === 'string' && payload.due.trim()) {
+      dueValue = payload.due;
+    }
+
+    let notifyAtValue = null;
+    if (payload.notifyAt instanceof Date) {
+      notifyAtValue = payload.notifyAt.toISOString();
+    } else if (typeof payload.notifyAt === 'string' && payload.notifyAt.trim()) {
+      notifyAtValue = payload.notifyAt;
+    }
+
     const item = {
       id: uid(),
-      title: obj.title.trim(),
-      priority: obj.priority||'Medium',
+      title: titleText,
+      priority: payload.priority || getPriorityInputValue(),
       category: categoryValue,
       notes: note,
       done:false,
       createdAt: nowMs,
       updatedAt: nowMs,
-      due: obj.due || null,
+      due: dueValue,
       pendingSync: !userId,
       plannerLessonId:
-        typeof obj.plannerLessonId === 'string' && obj.plannerLessonId.trim()
-          ? obj.plannerLessonId.trim()
+        typeof payload.plannerLessonId === 'string' && payload.plannerLessonId.trim()
+          ? payload.plannerLessonId.trim()
           : null,
-      pinToToday: !!obj.pinToToday,
+      pinToToday: !!payload.pinToToday,
+      notifyAt: notifyAtValue,
     };
+
     assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
     sortItemsByOrder(items);
@@ -2943,14 +2945,21 @@ export async function initReminders(sel = {}) {
     }
     tryCalendarSync(item);
     scheduleReminder(item);
+    rescheduleAllReminders();
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
-    closeCreateSheetIfOpen();
+    if (closeSheet) {
+      closeCreateSheetIfOpen();
+    }
     emitActivity({
-      action: 'created',
-      label: `Reminder added · ${item.title}`,
+      action: activityAction,
+      label: `${activityLabelPrefix} · ${item.title}`,
     });
     return item;
+  }
+
+  function addItem(obj){
+    return createReminderFromPayload(obj, { closeSheet: true });
   }
   function addNoteToReminder(id, noteText){
     if(!userId){ toast('Sign in to add notes'); return null; }
