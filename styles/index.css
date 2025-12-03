@@ -4082,54 +4082,58 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 
 .reminder-tabs,
 .reminders-tabs {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0;
-  justify-content: center;
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  background: transparent;
-  border: 0;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.12rem;
+  background: color-mix(in srgb, var(--card-bg, #fff) 92%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  border: 1px solid color-mix(in srgb, var(--text-muted, #6b7280) 14%, transparent);
 }
 
 .reminder-tab,
 .reminders-tab {
   border: none;
   background: transparent;
-  padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.8rem;
-  cursor: pointer;
+  padding: 0.2rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--text-muted);
-  transition: background 0.15s ease, color 0.15s ease;
-  flex: 0 0 auto;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .reminder-tab:hover,
 .reminders-tab:hover {
-  background: var(--hover-bg);
+  background: color-mix(in srgb, var(--accent-color, #4c1d95) 8%, transparent);
   color: var(--text-main);
 }
 
 .reminder-tab:focus-visible,
 .reminders-tab:focus-visible {
-  outline: 2px solid var(--accent-color);
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #4c1d95) 40%, transparent);
   outline-offset: 2px;
 }
 
 .reminder-tab.reminders-tab-active,
 .reminder-tab.active,
 .reminders-tab.active {
-  background: var(--primary-soft, rgba(81, 38, 99, 0.12));
-  color: var(--primary-on-soft, #fff);
-  font-weight: 600;
+  background: var(--accent-color, #4c1d95);
+  color: #fff;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-color, #4c1d95) 35%, transparent);
 }
 
-@media (max-width: 360px) {
+@media (max-width: 640px) {
   .reminder-tabs,
   .reminders-tabs {
-    overflow-x: auto;
+    font-size: 0.8rem;
   }
 }
 /* Reminder list: premium SVG icon buttons */
