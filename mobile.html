@@ -1014,169 +1014,104 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     width: 100%;
-    grid-auto-rows: auto;
   }
 
-    /* Each reminder item uses the premium soft elevated card styling */
     #reminderList > * {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
-      column-gap: 10px;
-      row-gap: 2px;
-      padding: 10px 14px;
-      margin: 0 0 10px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      font-size: var(--reminder-card-font-size);
-      line-height: 1.25;
-      background: rgba(255, 255, 255, 0.74);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 14px;
-      box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
-      transition: box-shadow 0.18s ease, transform 0.18s ease;
-      width: 100%;
+      margin: 0 0 0.35rem;
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
       max-width: 100%;
       box-sizing: border-box;
-      position: static;
-      border-left: 4px solid var(--cat-violet);
     }
 
-    #reminderList > *:hover {
+    #reminderList > *:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Minimal reminder row styling */
+    .reminder-row {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.9rem;
+      border-radius: 999px;
+      background: var(--surface-soft, rgba(255, 255, 255, 0.7));
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02);
+      gap: 0.6rem;
+      transition: box-shadow 0.15s ease, transform 0.12s ease;
+    }
+
+    .reminder-row:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(81, 38, 99, 0.12);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* --- Priority Tints & Borders --- */
-
-    /* Update the base card to include a default border */
-    .reminder-card {
-      border-left: 4px solid var(--cat-violet);
-      transition: box-shadow 0.18s ease, transform 0.18s ease;
-    }
-
-    /* High priority: Bio Orange tint + border */
-    .reminder-card.priority-high {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
-      border-left-color: var(--priority-high-border);
-    }
-
-    /* Medium priority: Quantum Blue tint + border */
-    .reminder-card.priority-medium {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
-      border-left-color: var(--priority-medium-border);
-    }
-
-    /* Low priority: Digital Sage accent */
-    .reminder-card.priority-low {
-      background-color: var(--card-bg);
-      background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
-      background-repeat: no-repeat;
-      border-left-color: var(--priority-low-border);
-    }
-
-    /* If reminders are wrapped in DaisyUI cards, ensure they inherit the new look */
-    #reminderList > * .card,
-    #reminderList > * .card-body {
-      background: transparent;
-      border-radius: inherit;
-      box-shadow: none;
-      padding: 0;
-      margin: 0;
+    .reminder-row-complete {
       border: none;
+      background: transparent;
+      cursor: pointer;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.1rem;
     }
 
-    @media (max-width: 640px) {
-      #reminderList > .reminder-card {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-        column-gap: 10px;
-        row-gap: 2px;
-        padding: 10px 14px;
-        margin-bottom: 10px;
-        background: rgba(255, 255, 255, 0.74);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(81, 38, 99, 0.1);
-        font-size: var(--reminder-card-font-size);
-        line-height: 1.25;
-        border-left: 4px solid var(--cat-violet);
-      }
+    .reminder-row-main {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
 
-      #reminderList > .reminder-card.priority-high {
-        background-color: var(--card-bg);
-        background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
-        background-repeat: no-repeat;
-        border-left: 3px solid var(--priority-high-border);
-      }
+    .reminder-row-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-      #reminderList > .reminder-card.priority-medium {
-        background-color: var(--card-bg);
-        background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
-        background-repeat: no-repeat;
-        border-left: 3px solid var(--priority-medium-border);
-      }
+    .reminder-row-meta {
+      margin-top: 0.1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
 
-      #reminderList > .reminder-card.priority-low {
-        background-color: var(--card-bg);
-        background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
-        background-repeat: no-repeat;
-        border-left: 3px solid var(--priority-low-border);
-      }
+    .reminder-row-overflow {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem;
+      border-radius: 999px;
+    }
 
-      #reminderList > .reminder-card:last-child {
-        margin-bottom: 0;
-      }
+    .reminder-row-overflow:hover,
+    .reminder-row-overflow:focus-visible {
+      background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    }
 
-      #reminderList > .reminder-card h3,
-      #reminderList > .reminder-card h4,
-      #reminderList > .reminder-card strong,
-      #reminderList > .reminder-card [data-reminder-title] {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: var(--primary-dark);
-        line-height: 1.25;
-      }
+    .reminder-row.reminder-row-completed {
+      opacity: 0.6;
+    }
 
-      #reminderList > .reminder-card time,
-      #reminderList > .reminder-card .reminder-meta {
-        font-size: 0.78rem;
-        color: rgba(47, 27, 63, 0.55);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-top: 0;
-        line-height: 1.25;
-      }
+    .reminder-row.reminder-row-completed .reminder-row-title {
+      text-decoration: line-through;
+    }
 
-      #reminderList > .reminder-card .priority-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-      }
-
-      .priority-pill {
-        display: inline-flex;
-        align-items: center;
-        border-radius: 9999px;
-        padding: 0.15rem 0.4rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        line-height: 1;
-      }
+    .reminder-row.reminder-row-overdue .reminder-row-meta {
+      color: var(--text-danger, #c62828);
+    }
 
       .priority-pill.priority-high {
         background: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);

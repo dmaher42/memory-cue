@@ -2006,6 +2006,78 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
+/* Mobile reminder rows */
+.reminder-row {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.7));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02);
+  gap: 0.6rem;
+}
+
+.reminder-row-complete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reminder-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.reminder-row-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reminder-row-meta {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.reminder-row-overflow {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 999px;
+}
+
+.reminder-row-overflow:hover,
+.reminder-row-overflow:focus-visible {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+}
+
+.reminder-row.reminder-row-completed {
+  opacity: 0.6;
+}
+
+.reminder-row.reminder-row-completed .reminder-row-title {
+  text-decoration: line-through;
+}
+
+.reminder-row.reminder-row-overdue .reminder-row-meta {
+  color: var(--text-danger, #c62828);
+}
+
  .desktop-shell .reminder-title {
   font-weight: 600;
   color: var(--desktop-text-main, var(--color-base-content, #0f172a));
