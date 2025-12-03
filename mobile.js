@@ -184,6 +184,26 @@ initViewportHeight();
       focusFirstField();
       playEnterAnimation();
 
+      const hiddenLayers = [
+        { name: 'sheet', el: sheet },
+        { name: 'backdrop', el: backdrop },
+        { name: 'content', el: sheetContent },
+      ]
+        .filter(({ el }) => el instanceof HTMLElement)
+        .filter(({ el }) =>
+          el.classList.contains('hidden') ||
+          el.hasAttribute('hidden') ||
+          el.getAttribute('aria-hidden') === 'true'
+        );
+
+      if (hiddenLayers.length) {
+        console.warn(
+          `cue:open visibility issue: ${hiddenLayers
+            .map(({ name }) => name)
+            .join(', ')}`
+        );
+      }
+
       dispatchSheetEvent('reminder:sheet-opened', { trigger: lastTrigger });
     };
 
