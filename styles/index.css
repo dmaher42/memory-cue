@@ -3712,6 +3712,55 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   display: none !important;
 }
 
+/* ====================== */
+/* Reminder Tabs (Pill) */
+/* ====================== */
+
+.reminders-tabs-wrapper {
+  width: 100%;
+}
+
+.reminder-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  background: transparent;
+  border: 0;
+}
+
+.reminder-tab {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.reminder-tab:hover {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
+
+.reminder-tab:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.reminder-tab.reminders-tab-active,
+.reminder-tab.active {
+  background: var(--accent-color);
+  color: #fff;
+  font-weight: 600;
+}
+
 /* Reminder list: premium SVG icon buttons */
 .reminder-icon-btn {
   min-width: 40px;
