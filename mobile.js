@@ -240,6 +240,10 @@ initViewportHeight();
     };
 
     const triggerCueOpen = (trigger) => {
+      if (typeof window !== 'undefined' && typeof window.openNewReminderSheet === 'function') {
+        window.openNewReminderSheet(trigger);
+        return;
+      }
       const detail = { mode: 'create', trigger };
       dispatchSheetEvent('cue:prepare', detail);
       dispatchSheetEvent('cue:open', detail);
