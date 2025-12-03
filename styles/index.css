@@ -3713,43 +3713,28 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 }
 
 /* ====================== */
-/* Reminders Top Bar      */
+/* ====================== */
+/* Reminders Unified Top Bar */
 /* ====================== */
 
-.reminders-topbar {
+.reminders-top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 999px;
-  background: var(--topbar-bg, rgba(255, 255, 255, 0.86));
-  box-shadow: var(--topbar-shadow, 0 8px 24px rgba(0, 0, 0, 0.04));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.25rem;
+  width: 100%;
 }
 
-.reminders-topbar-left,
-.reminders-topbar-center,
-.reminders-topbar-right {
-  display: flex;
-  align-items: center;
-}
-
-.reminders-topbar-left {
+.reminders-top-primary {
   flex: 1 1 auto;
   min-width: 0;
-  gap: 0.4rem;
 }
 
-.reminders-topbar-center {
-  flex: 0 1 auto;
-}
-
-.reminders-topbar-right {
+.reminders-top-controls {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .reminders-quick-input {
@@ -3757,8 +3742,8 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.6rem;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-subtle);
@@ -3766,9 +3751,10 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 
 .reminders-quick-input input {
   width: 100%;
+  min-width: 0;
   border-radius: 999px;
   border: none;
-  padding: 0.35rem 0.4rem;
+  padding: 0.3rem 0.35rem;
   font-size: 0.9rem;
   background: transparent;
   color: var(--text-main);
@@ -3785,42 +3771,28 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   flex-shrink: 0;
 }
 
-.reminders-topbar .header-action-btn,
-.reminders-topbar .pill-voice-btn {
+.reminders-top-overflow {
   border: none;
   background: transparent;
-  padding: 0.35rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0.3rem;
   border-radius: 999px;
-  color: var(--accent-color, #512663);
   cursor: pointer;
-  transition: background-color 0.16s ease, transform 0.14s ease, color 0.16s ease;
+  transition: background 0.15s ease;
 }
 
-.reminders-topbar .header-action-btn:hover,
-.reminders-topbar .pill-voice-btn:hover {
-  background-color: rgba(81, 38, 99, 0.06);
-  transform: translateY(-1px);
+.reminders-top-overflow:hover,
+.reminders-top-overflow:focus-visible {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.04));
 }
 
-.reminders-topbar .header-action-btn:focus-visible,
-.reminders-topbar .pill-voice-btn:focus-visible {
-  outline: 2px solid rgba(81, 38, 99, 0.26);
-  outline-offset: 2px;
-}
-
-.reminders-topbar .header-action-btn:active,
-.reminders-topbar .pill-voice-btn:active {
-  transform: scale(0.96);
-}
-
-.reminders-topbar .header-overflow-wrapper {
+.header-overflow-wrapper {
   position: relative;
 }
 
-.reminders-topbar .overflow-menu {
+.header-overflow-wrapper .overflow-menu {
   position: absolute;
   top: 100%;
   right: 0;
@@ -3837,13 +3809,13 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   z-index: 60;
 }
 
-.reminders-topbar .overflow-menu.hidden {
+.header-overflow-wrapper .overflow-menu.hidden {
   display: none;
 }
 
-.reminders-topbar .overflow-menu button,
-.reminders-topbar .overflow-menu a,
-.reminders-topbar .overflow-menu .overflow-item {
+.header-overflow-wrapper .overflow-menu button,
+.header-overflow-wrapper .overflow-menu a,
+.header-overflow-wrapper .overflow-menu .overflow-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -3857,19 +3829,18 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   white-space: nowrap;
 }
 
-.reminders-topbar .overflow-menu button:hover,
-.reminders-topbar .overflow-menu a:hover,
-.reminders-topbar .overflow-menu .overflow-item:hover {
-  background-color: rgba(81, 38, 99, 0.06);
+.header-overflow-wrapper .overflow-menu button:hover,
+.header-overflow-wrapper .overflow-menu a:hover,
+.header-overflow-wrapper .overflow-menu .overflow-item:hover {
+  background: rgba(81, 38, 99, 0.06);
 }
 
-.reminders-topbar .overflow-menu svg {
+.header-overflow-wrapper .overflow-menu svg {
   width: 18px;
   height: 18px;
   color: var(--accent-color);
   flex-shrink: 0;
 }
-
 /* ====================== */
 /* Reminder Tabs (Pill) */
 /* ====================== */
@@ -3881,7 +3852,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .reminder-tabs,
 .reminders-tabs {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.25rem;
   padding: 0;
   justify-content: center;
   align-items: center;
@@ -3894,12 +3865,12 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .reminders-tab {
   border: none;
   background: transparent;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
   color: var(--text-muted);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
   flex: 0 0 auto;
   white-space: nowrap;
 }
@@ -3919,11 +3890,17 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .reminder-tab.reminders-tab-active,
 .reminder-tab.active,
 .reminders-tab.active {
-  background: var(--accent-color);
-  color: #fff;
+  background: var(--primary-soft, rgba(81, 38, 99, 0.12));
+  color: var(--primary-on-soft, #fff);
   font-weight: 600;
 }
 
+@media (max-width: 360px) {
+  .reminder-tabs,
+  .reminders-tabs {
+    overflow-x: auto;
+  }
+}
 /* Reminder list: premium SVG icon buttons */
 .reminder-icon-btn {
   min-width: 40px;
