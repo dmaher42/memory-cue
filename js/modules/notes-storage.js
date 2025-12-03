@@ -67,6 +67,17 @@ const extractPlainText = (html = '') => {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 };
 
+const deriveBodyText = (html = '', fallbackText = '') => {
+  const textFromHtml = extractPlainText(html);
+  if (textFromHtml) {
+    return textFromHtml;
+  }
+  if (typeof fallbackText === 'string') {
+    return fallbackText.trim();
+  }
+  return '';
+};
+
 const isValidDateString = (value) => {
   if (typeof value !== 'string') {
     return false;
@@ -84,7 +95,7 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
   const normalizedBodyHtml = normalizeBodyValue(rawBodyHtml);
   const providedBodyText = typeof overrides.bodyText === 'string' ? overrides.bodyText : null;
   const normalizedBodyText =
-    providedBodyText !== null ? providedBodyText.trim() : extractPlainText(normalizedBodyHtml);
+    providedBodyText !== null ? providedBodyText.trim() : deriveBodyText(normalizedBodyHtml);
   return {
     id: overrides.id && typeof overrides.id === 'string' ? overrides.id : generateId(),
     title: trimmedTitle || 'Untitled note',
@@ -112,13 +123,12 @@ const normalizeNotes = (value) => {
             ? note.bodyHtml
             : typeof note.body === 'string'
               ? note.body
-              : '';
+              : typeof note.bodyText === 'string'
+                ? note.bodyText
+                : '';
         const fallbackText = typeof note.bodyText === 'string' ? note.bodyText : '';
         const body = normalizeBodyValue(rawBodyHtml || fallbackText);
-        const bodyText =
-          fallbackText && fallbackText.trim().length
-            ? fallbackText.trim()
-            : extractPlainText(body);
+        const bodyText = deriveBodyText(body, fallbackText);
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
         if (!title && !body && !fallbackText) {
@@ -141,12 +151,12 @@ const normalizeNotes = (value) => {
       ? value.bodyHtml
       : typeof value.body === 'string'
         ? value.body
-        : '';
+        : typeof value.bodyText === 'string'
+          ? value.bodyText
+          : '';
     const fallbackText = typeof value.bodyText === 'string' ? value.bodyText : '';
     const body = normalizeBodyValue(rawBodyHtml || fallbackText);
-    const bodyText = fallbackText && fallbackText.trim().length
-      ? fallbackText.trim()
-      : extractPlainText(body);
+    const bodyText = deriveBodyText(body, fallbackText);
     if (!title && !body && !bodyText) {
       return [];
     }
