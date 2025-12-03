@@ -6212,18 +6212,19 @@
       class="sheet-panel reminder-sheet-panel fixed inset-x-0 bottom-0 z-[70]"
       data-dialog-content
     >
-      <div id="new-reminder-shell" class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
-        <header class="reminder-editor-header">
-          <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
-          <div class="reminder-header-title-group">
-            <span class="reminder-header-eyebrow">Reminder</span>
-            <h2 class="reminder-header-title" id="createSheetTitle">New reminder</h2>
-          </div>
-        </header>
-        <!-- Stack the reminder editor into grouped sections for a mobile-first flow -->
-        <form id="createReminderForm" class="reminder-editor-form">
-          <div class="reminder-sheet-content">
-            <div class="reminder-sheet-card card bg-base-100 border border-base-200 shadow-xl">
+      <div class="reminder-sheet-inner">
+        <div id="new-reminder-shell" class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
+          <header class="reminder-editor-header reminder-sheet-header">
+            <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
+            <div class="reminder-header-title-group">
+              <span class="reminder-header-eyebrow">Reminder</span>
+              <h2 class="reminder-header-title" id="createSheetTitle">New reminder</h2>
+            </div>
+          </header>
+          <!-- Stack the reminder editor into grouped sections for a mobile-first flow -->
+          <form id="createReminderForm" class="reminder-editor-form">
+            <div class="reminder-sheet-content">
+              <div class="reminder-sheet-card card bg-base-100 border border-base-200 shadow-xl">
               <!-- Group reminder basics together for quick scanning -->
               <section class="reminder-section" aria-labelledby="reminderDetailsHeading">
                 <div class="reminder-section-heading">
@@ -6332,23 +6333,24 @@
                   </div>
                 </div>
               </section>
+              </div>
             </div>
-          </div>
 
-          <div class="reminder-sheet-actions">
-            <button
-              type="submit"
-              form="createReminderForm"
-              id="saveReminder"
-              class="btn btn-primary w-full reminder-save-cta"
-            >
-              Save reminder
-            </button>
-            <button id="cancelEditBtn" class="btn btn-ghost w-full btn-sm hidden" type="button">Cancel</button>
-          </div>
+            <div class="reminder-sheet-actions">
+              <button
+                type="submit"
+                form="createReminderForm"
+                id="saveReminder"
+                class="btn btn-primary reminder-save-cta"
+              >
+                Save reminder
+              </button>
+              <button id="cancelEditBtn" class="btn btn-ghost btn-sm w-full hidden" type="button">Cancel</button>
+            </div>
 
-          <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
-        </form>
+            <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
+          </form>
+        </div>
       </div>
     </div>
   </div>
