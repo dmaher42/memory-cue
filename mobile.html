@@ -5362,19 +5362,21 @@
       <div class="mobile-view-inner mx-auto w-full px-4 pt-4 pb-4 space-y-2" style="background: var(--mobile-quick-surface);">
         <!-- header removed to keep view minimal -->
         <div class="reminders-tabs-wrapper">
-          <div class="tabs tabs-boxed w-full text-sm">
+          <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
             <button
               type="button"
-              class="tab flex-1 reminders-tab-active"
+              class="reminder-tab reminders-tab-active active"
               data-reminders-tab="all"
+              data-filter="all"
               aria-pressed="true"
             >
               All
             </button>
             <button
               type="button"
-              class="tab flex-1"
+              class="reminder-tab"
               data-reminders-tab="today"
+              data-filter="today"
               aria-pressed="false"
             >
               Today

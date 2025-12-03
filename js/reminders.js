@@ -3640,9 +3640,9 @@ export async function initReminders(sel = {}) {
         const isActive = mode === mobileRemindersFilterMode;
         button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         if (isActive) {
-          button.classList.add('reminders-tab-active');
+          button.classList.add('reminders-tab-active', 'active');
         } else {
-          button.classList.remove('reminders-tab-active');
+          button.classList.remove('reminders-tab-active', 'active');
         }
       });
     };
