@@ -3864,8 +3864,7 @@ export async function initReminders(sel = {}) {
 
       const desktopCardClasses =
         'reminder-item task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
-      const mobileCardClasses =
-        'reminder-item task-item reminder-row w-full text-base-content';
+      const mobileCardClasses = 'reminder-row w-full text-base-content';
 
       const itemEl = document.createElement(elementTag);
       itemEl.className = isMobile ? mobileCardClasses : desktopCardClasses;
@@ -3892,7 +3891,6 @@ export async function initReminders(sel = {}) {
       itemEl.dataset.reminder = JSON.stringify(summary);
       itemEl.dataset.orderIndex = Number.isFinite(reminder.orderIndex) ? String(reminder.orderIndex) : '';
       itemEl.dataset.reminderItem = 'true';
-      itemEl.dataset.compact = 'true';
       itemEl.classList.add('reminder-draggable');
       itemEl.setAttribute('draggable', 'true');
       itemEl.setAttribute('role', 'button');
