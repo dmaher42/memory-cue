@@ -4899,6 +4899,21 @@ body {
   box-shadow: 0 18px 45px rgba(15, 0, 65, 0.08);
 }
 
+.note-editor-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.note-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(76, 29, 149, 0.04);
+}
+
 .note-title-input {
   width: 100%;
   padding: 0.5rem 0.65rem;
@@ -4914,12 +4929,16 @@ body {
   outline-offset: 1px;
 }
 
+.note-editor-content,
 .note-editor-card .note-editor-area {
-  border: 1px solid var(--border-subtle, #e3d9f4);
-  border-radius: 0.9rem;
+  min-height: 220px;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(76, 29, 149, 0.12);
   background: #fff;
-  padding: 0.85rem 0.9rem;
-  min-height: 180px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 /* Move-to-folder bottom sheet */
