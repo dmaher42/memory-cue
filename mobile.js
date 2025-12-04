@@ -1196,7 +1196,7 @@ const initMobileNotes = () => {
       actionBtn.type = 'button';
       actionBtn.dataset.noteId = note.id;
       actionBtn.dataset.role = 'note-menu';
-      actionBtn.className = 'note-row-overflow';
+      actionBtn.className = 'note-row-overflow note-options-button';
       actionBtn.setAttribute('aria-label', 'Note actions');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
@@ -2426,10 +2426,12 @@ const initMobileNotes = () => {
         return;
       }
 
-      const menuTrigger = target.closest('button[data-role="note-menu"]');
+      const menuTrigger = target.closest('.note-options-button, button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
-        const noteId = menuTrigger.getAttribute('data-note-id');
+        const noteId =
+          menuTrigger.getAttribute('data-note-id')
+          || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) {
           return;
         }
@@ -2465,10 +2467,12 @@ const initMobileNotes = () => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (!target) return;
 
-      const menuTrigger = target.closest('button[data-role="note-menu"]');
+      const menuTrigger = target.closest('.note-options-button, button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
-        const noteId = menuTrigger.getAttribute('data-note-id');
+        const noteId =
+          menuTrigger.getAttribute('data-note-id')
+          || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) return;
         const note = allNotes.find((item) => item.id === noteId);
         if (note) {
