@@ -815,6 +815,19 @@ const initMobileNotes = () => {
     });
   };
 
+  const sortNotesForDisplay = (notes = []) => {
+    return [...notes].sort((a, b) => {
+      const aPinned = Boolean(a?.pinned);
+      const bPinned = Boolean(b?.pinned);
+
+      if (aPinned !== bPinned) {
+        return aPinned ? -1 : 1;
+      }
+
+      return getNoteTimestamp(b) - getNoteTimestamp(a);
+    });
+  };
+
   const getVisibleNotes = (source = allNotes) => {
     if (!Array.isArray(source)) return [];
     // Apply folder filtering first
@@ -827,7 +840,7 @@ const initMobileNotes = () => {
       filteredByFolder = source.filter((note) => note.folderId === currentFolderId);
     }
     // Then apply search filter
-    return getFilteredNotes(filteredByFolder);
+    return sortNotesForDisplay(getFilteredNotes(filteredByFolder));
   };
 
   const getNoteCountsByFolder = (allNotesArray = [], folders = []) => {
@@ -1204,6 +1217,7 @@ const initMobileNotes = () => {
     notes.forEach((note) => {
       const listItem = document.createElement('div');
       const isActiveNote = String(note.id) === String(currentNoteId);
+      const isPinned = Boolean(note?.pinned);
       listItem.className = 'note-row note-list-item';
       listItem.classList.toggle('selected', isActiveNote);
       listItem.classList.toggle('is-active', isActiveNote);
@@ -1222,6 +1236,18 @@ const initMobileNotes = () => {
       titleEl.className = 'note-row-title note-list-title';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'note-row-title-row note-list-title-row';
+      titleRow.appendChild(titleEl);
+
+      if (isPinned) {
+        const pinIcon = document.createElement('span');
+        pinIcon.className = 'note-list-pin-icon';
+        pinIcon.textContent = '📌';
+        pinIcon.setAttribute('aria-hidden', 'true');
+        titleRow.appendChild(pinIcon);
+      }
 
       const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
       const folderName = getFolderNameById(folderId) || 'Unsorted';
@@ -1256,7 +1282,7 @@ const initMobileNotes = () => {
         metaRow.appendChild(timeSpan);
       }
 
-      cardMain.appendChild(titleEl);
+      cardMain.appendChild(titleRow);
       cardMain.appendChild(metaRow);
 
       const actionBtn = document.createElement('button');
@@ -1772,6 +1798,7 @@ const initMobileNotes = () => {
   const noteOptionsOverlay = document.getElementById('note-options-overlay');
   const noteOptionsSheet = document.getElementById('note-options-sheet');
   const noteActionMoveBtn = noteOptionsSheet?.querySelector('.note-action-move');
+  const noteActionTogglePinBtn = noteOptionsSheet?.querySelector('.note-action-toggle-pin');
   const noteActionDeleteBtn = noteOptionsSheet?.querySelector('.note-action-delete');
   let currentNoteOptionsNoteId = null;
 
@@ -1805,6 +1832,11 @@ const initMobileNotes = () => {
     closeNoteOptionsMenu();
     closeOverflowMenu();
     currentNoteOptionsNoteId = noteId;
+    const note = allNotes.find((item) => item.id === noteId);
+    if (noteActionTogglePinBtn) {
+      const isPinned = Boolean(note?.pinned);
+      noteActionTogglePinBtn.textContent = isPinned ? 'Unpin note' : 'Pin note';
+    }
     noteOptionsSheet.classList.add('open');
     noteOptionsSheet.setAttribute('aria-hidden', 'false');
     noteOptionsSheet.setAttribute('data-note-id', noteId);
@@ -1832,6 +1864,30 @@ const initMobileNotes = () => {
             : 'unsorted',
         triggerEl: noteActionMoveBtn,
       });
+    });
+  }
+
+  if (noteOptionsSheet && noteActionTogglePinBtn) {
+    noteActionTogglePinBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (!currentNoteOptionsNoteId) {
+        return;
+      }
+      const existingNotes = loadAllNotes();
+      let changed = false;
+      const updatedNotes = (Array.isArray(existingNotes) ? existingNotes : []).map((note) => {
+        if (note && note.id === currentNoteOptionsNoteId) {
+          changed = true;
+          const nextPinned = !Boolean(note.pinned);
+          return { ...note, pinned: nextPinned, updatedAt: new Date().toISOString() };
+        }
+        return note;
+      });
+      if (changed) {
+        saveAllNotes(updatedNotes);
+        refreshFromStorage({ preserveDraft: true });
+      }
+      closeNoteOptionsMenu();
     });
   }
 

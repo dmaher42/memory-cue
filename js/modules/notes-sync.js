@@ -61,6 +61,7 @@ const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
     folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
     bodyHtml: rawBodyHtml,
     bodyText: fallbackText,
+    pinned: typeof row.pinned === 'boolean' ? row.pinned : undefined,
   };
   return createNote(row.title, rawBodyHtml, overrides);
 };
