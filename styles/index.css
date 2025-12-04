@@ -662,12 +662,12 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: 0.7rem 0.95rem;
   margin-bottom: 0.35rem;
-  background: var(--surface-1);
+  background: var(--surface-1, rgba(255, 255, 255, 0.9));
   border-radius: 0.9rem;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
 }
 
 .note-row-main,
@@ -682,7 +682,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 .note-list-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-primary, #2f1456);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -690,12 +690,13 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
 .note-row-meta,
 .note-list-meta {
-  margin-top: 0.2rem;
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  margin-top: 0.18rem;
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted, #8a7fa3);
 }
 
 .note-row-folder,
@@ -713,11 +714,13 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 .note-row-dot,
 .note-list-dot {
   opacity: 0.7;
+  font-size: 0.8em;
 }
 
 .note-row-timestamp,
 .note-list-date {
   color: inherit;
+  white-space: nowrap;
 }
 
 .note-row-overflow,
@@ -740,13 +743,37 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   background: rgba(80, 20, 120, 0.1);
 }
 
+.note-list-item:focus-within,
+.note-row:focus-within {
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.35);
+}
+
+.note-list-overflow:focus-visible,
+.note-row-overflow:focus-visible {
+  outline: 2px solid rgba(76, 29, 149, 0.5);
+  outline-offset: 2px;
+}
+
 .note-row:hover {
   background: rgba(80, 20, 120, 0.06);
 }
 
+@media (hover: hover) {
+  .note-list-item:hover {
+    background: rgba(76, 29, 149, 0.04);
+  }
+}
+
 .note-row.selected,
-.note-row.is-active {
-  background: rgba(76, 29, 149, 0.06);
+.note-row.is-active,
+.note-list-item.is-active {
+  background: rgba(76, 29, 149, 0.08);
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.25);
+}
+
+.note-list-item.is-active .note-list-title {
+  color: var(--text-primary-strong, #3b0764);
+  font-weight: 650;
 }
 
 .notebook-notes-list {
