@@ -9,6 +9,9 @@ body.mobile-theme {
 
 body.mobile-shell {
   overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 body.mobile-theme main,
@@ -16,6 +19,20 @@ body.mobile-theme section,
 body.mobile-theme header,
 body.mobile-theme footer {
   color: inherit;
+}
+
+#mobile-shell {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#mobile-shell #main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-bottom: 80px;
 }
 
 /* Header / Top Bar */
@@ -160,16 +177,46 @@ body.mobile-theme .text-secondary {
 
 /* Notebook editor layout */
 
+
 .note-editor-card {
   position: relative;
   width: 100%;
   max-width: 600px;
-  margin: 0 auto;
+  margin: 24px 0;
   padding: 16px;
   border-radius: 18px;
   box-sizing: border-box;
   background: var(--surface-soft, #fff);
   box-shadow: 0 18px 45px rgba(15, 0, 65, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.note-sheet-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.mobile-panel--notes {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-panel--notes .mobile-view-inner {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: 16px;
+  padding-right: 16px;
+  box-sizing: border-box;
 }
 
 .mobile-shell #view-notebook .mobile-view-inner,
@@ -183,6 +230,9 @@ body.mobile-theme .text-secondary {
 
 .mobile-shell #view-notebook #scratch-notes-card {
   max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 }
 
 .mobile-shell #savedNotesSheet {
@@ -267,6 +317,8 @@ body.mobile-theme .text-secondary {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .note-editor-toolbar {
@@ -357,6 +409,9 @@ body.mobile-theme .text-secondary {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
 }
 
 .note-editor-content {
@@ -375,6 +430,9 @@ body.mobile-theme .text-secondary {
   padding: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  flex: 1 1 auto;
+  min-height: 100%;
+  overflow-y: auto;
 }
 
 .note-editor-content textarea {
