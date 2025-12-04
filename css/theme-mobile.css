@@ -54,6 +54,55 @@ body.mobile-theme footer {
   overflow-y: auto;
 }
 
+body.mobile-shell .app-main {
+  align-items: stretch;
+}
+
+/* Reminders layout (mobile) */
+.mobile-shell #view-reminders,
+.mobile-shell #view-reminders .mobile-view-inner,
+.mobile-shell #view-reminders .reminders-content-shell,
+.mobile-shell #reminderListSection,
+.mobile-shell #remindersWrapper {
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.mobile-shell #view-reminders .mobile-view-inner,
+.mobile-shell #view-reminders .reminders-content-shell {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.mobile-shell #reminderListSection {
+  padding: 0;
+}
+
+.mobile-shell #remindersWrapper {
+  overflow-x: hidden;
+}
+
+body.mobile-shell #mobile-shell #reminderList {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 12px 16px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (min-width: 900px) {
+  .mobile-shell #view-reminders .mobile-view-inner,
+  .mobile-shell #view-reminders .reminders-content-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
 .bottom-nav,
 #mobile-nav-shell {
   flex: 0 0 auto;
@@ -136,11 +185,13 @@ body.mobile-theme .reminder-card {
   align-items: center !important;
   justify-content: flex-start !important;
   gap: 0.55rem;
-  padding: 0.45rem 0.85rem;
-  border-radius: 0.8rem;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-sizing: border-box;
   background: var(--surface-soft, rgba(255, 255, 255, 0.7));
   border-left: 3px solid color-mix(in srgb, var(--accent-color, #5080BF) 55%, transparent);
-  margin-bottom: 0.35rem;
+  margin: 0 0 8px;
   text-align: left !important;
 }
 
@@ -843,9 +894,9 @@ body.mobile-theme :focus-visible {
   }
 
   body.mobile-theme .reminder-card {
-    padding: 0.5rem 0.95rem;
+    padding: 10px 14px;
     gap: 0.55rem;
-    border-radius: 0.8rem;
+    border-radius: 14px;
   }
   body.mobile-theme .btn-primary,
   body.mobile-theme button.btn-primary,
