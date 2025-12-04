@@ -665,13 +665,16 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .notebook-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 8px 0 16px;
+    gap: 0.15rem;
+    padding: 0;
+    margin: 0;
   }
 
   .notebook-folder-filter-bar {
@@ -878,6 +881,10 @@
     padding: 0.5rem 0.75rem 0.75rem;
   }
 
+  .mobile-shell #savedNotesSheet .notebook-top-bar {
+    margin-bottom: 0.4rem;
+  }
+
   .mobile-shell #savedNotesSheet .notebook-folder-filter-bar {
     padding: 3px;
     gap: 6px;
@@ -903,6 +910,7 @@
     font-size: 0.85rem;
     color: var(--text-main, #231b2e);
     transition: border-color 0.18s ease, background-color 0.18s ease;
+    margin-bottom: 0.4rem;
   }
 
   .mobile-shell #savedNotesSheet .notebook-search-bar:focus {
@@ -5292,19 +5300,23 @@
 
                 <div
                   id="notesListMobile"
-                  class="notebook-list text-sm"
+                  class="notebook-list notebook-notes-list text-sm"
                   aria-label="Saved scratch notes"
                 >
                   <!-- Note items are rendered here by JS -->
                   <template id="notesListMobileItemTemplate">
-                    <div class="note-row" data-note-id="" data-role="open-note">
-                      <div class="note-row-main" data-note-id="" data-role="open-note">
-                        <div class="note-row-title">Untitled</div>
-                        <div class="note-row-meta">Folder · Date</div>
+                    <div class="note-row note-list-item" data-note-id="" data-role="open-note">
+                      <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
+                        <div class="note-row-title note-list-title">Untitled</div>
+                        <div class="note-row-meta note-list-meta">
+                          <button class="note-row-folder note-list-folder" type="button">Folder</button>
+                          <span class="note-row-dot note-list-dot">·</span>
+                          <span class="note-row-timestamp note-list-date">Date</span>
+                        </div>
                       </div>
                       <button
                         type="button"
-                        class="note-row-overflow note-options-button"
+                        class="note-row-overflow note-list-overflow note-options-button"
                         aria-label="More"
                         data-role="note-menu"
                         data-note-id=""
