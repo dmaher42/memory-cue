@@ -272,36 +272,44 @@ body.mobile-theme .text-secondary {
 .note-editor-toolbar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  background: #f8f5ff;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  gap: 6px;
+  padding: 4px 6px;
+  margin: 4px 0 6px;
+  background: transparent;
+  border-radius: 0;
   overflow-x: auto;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .rte-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  min-width: 32px;
   height: 32px;
-  padding: 0;
+  padding: 0 8px;
   background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #4b286d;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
   cursor: pointer;
   flex: 0 0 auto;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  opacity: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 
 .rte-btn:hover {
-  background: rgba(76, 29, 149, 0.04);
+  background: rgba(76, 29, 149, 0.08);
 }
 
 .rte-btn.active {
-  background: rgba(76, 29, 149, 0.12);
-  border-color: rgba(76, 29, 149, 0.35);
+  background: rgba(76, 29, 149, 0.08);
+  border-color: rgba(76, 29, 149, 0.4);
   color: #4c1d95;
 }
 
@@ -309,6 +317,8 @@ body.mobile-theme .text-secondary {
   font-size: 0.85rem;
   line-height: 1;
   pointer-events: none;
+  color: inherit;
+  opacity: 1;
 }
 
 .rte-divider {
@@ -321,6 +331,7 @@ body.mobile-theme .text-secondary {
 .note-editor-toolbar span {
   text-decoration: none;
   color: inherit;
+  opacity: 1;
 }
 
 .note-toolbar {
