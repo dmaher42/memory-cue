@@ -311,7 +311,7 @@
     flex-direction: column;
     gap: 0;
     max-width: 640px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 0.75rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0.75rem));
     position: relative;
     border-radius: 18px;
@@ -5156,18 +5156,19 @@
   </script>
 
   <!-- quickAddBar is now integrated in the header -->
-  <div
-    id="mobile-shell"
-    class="mobile-shell mx-auto w-full px-4 pb-16"
-    style="background: #FBFBFB; padding-top: env(safe-area-inset-top, 0);"
-  >
-    <main
-      id="main"
-      class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
-      tabindex="-1"
-      data-active-view="reminders"
-      style="background: #FBFBFB;"
+  <div class="app-main">
+    <div
+      id="mobile-shell"
+      class="mobile-shell mx-auto w-full px-4 pb-16"
+      style="background: #FBFBFB; padding-top: env(safe-area-inset-top, 0);"
     >
+      <main
+        id="main"
+        class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
+        tabindex="-1"
+        data-active-view="reminders"
+        style="background: #FBFBFB;"
+      >
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -5196,11 +5197,12 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0 note-sheet-wrapper">
+        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3">
-          <div class="note-editor-card">
+        <div class="note-sheet-wrapper">
+          <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3">
+            <div class="note-editor-card">
             <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
               <div class="flex flex-col">
                 <span class="sr-only">Notebook</span>
@@ -5269,7 +5271,7 @@
               </div>
 
               <!-- Minimal main editor with soft styling -->
-              <div class="distraction-free-editor-container note-content-wrapper">
+              <div class="distraction-free-editor-container note-content-wrapper note-editor-content-wrapper">
                 <div
                   id="notebook-editor-body"
                   class="note-editor-content note-editor-area notebook-editor-body minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg"
@@ -5283,6 +5285,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
           <div
             id="savedNotesSheet"
@@ -5523,6 +5526,7 @@
       </section>
       <!-- END GPT CHANGE -->
       </main>
+    </div>
   </div>
 
   <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">

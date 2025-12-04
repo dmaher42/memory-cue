@@ -1,4 +1,10 @@
 /* Base Styles */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 body.mobile-theme {
   background-color: #F3F4F6;
   color: #111827;
@@ -9,9 +15,6 @@ body.mobile-theme {
 
 body.mobile-shell {
   overflow-x: hidden;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 body.mobile-theme main,
@@ -19,6 +22,11 @@ body.mobile-theme section,
 body.mobile-theme header,
 body.mobile-theme footer {
   color: inherit;
+}
+
+.mobile-header,
+.app-header {
+  flex: 0 0 auto;
 }
 
 #mobile-shell {
@@ -33,6 +41,22 @@ body.mobile-theme footer {
   flex-direction: column;
   box-sizing: border-box;
   padding-bottom: 80px;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.bottom-nav,
+#mobile-nav-shell {
+  flex: 0 0 auto;
 }
 
 /* Header / Top Bar */
@@ -181,8 +205,8 @@ body.mobile-theme .text-secondary {
 .note-editor-card {
   position: relative;
   width: 100%;
-  max-width: 600px;
-  margin: 24px 0;
+  max-width: 640px;
+  margin: 0;
   padding: 16px;
   border-radius: 18px;
   box-sizing: border-box;
@@ -192,15 +216,18 @@ body.mobile-theme .text-secondary {
   flex-direction: column;
   min-height: 0;
   flex: 1 1 auto;
+  max-height: calc(100vh - var(--header-height, 120px) - var(--bottom-nav-height, 96px) - 32px);
 }
 
 .note-sheet-wrapper {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 0 16px;
   box-sizing: border-box;
   flex: 1 1 auto;
   width: 100%;
+  min-height: 0;
 }
 
 .mobile-panel--notes {
@@ -229,10 +256,13 @@ body.mobile-theme .text-secondary {
 }
 
 .mobile-shell #view-notebook #scratch-notes-card {
-  max-width: 600px;
+  width: 100%;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .mobile-shell #savedNotesSheet {
@@ -319,6 +349,12 @@ body.mobile-theme .text-secondary {
   gap: 0.6rem;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.note-editor-content-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .note-editor-toolbar {
