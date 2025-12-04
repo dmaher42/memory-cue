@@ -438,6 +438,11 @@ const initMobileNotes = () => {
   const folderSelectorCreateBtn = document.getElementById('move-folder-create');
   const folderSelectorCancelBtn = document.getElementById('move-folder-cancel');
   const folderSelectorSheet = folderSelectorEl?.querySelector('.sheet-panel');
+  const noteFolderSheet = document.getElementById('note-folder-sheet');
+  const noteFolderSheetBackdrop = document.getElementById('note-folder-sheet-backdrop');
+  const noteFolderSheetList = noteFolderSheet?.querySelector('.note-folder-sheet-list');
+  const noteFolderSheetClose = noteFolderSheet?.querySelector('.note-folder-sheet-close');
+  const noteFolderSheetNewBtn = noteFolderSheet?.querySelector('.note-folder-new-btn');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
   const createScratchNotesEditor = () => {
@@ -665,6 +670,7 @@ const initMobileNotes = () => {
   let currentFolderId = 'all';
   let currentEditingNoteFolderId = 'unsorted';
   let currentFolderMoveNoteId = null;
+  let currentMoveFolderSheetNoteId = null;
   let folderSelectorOnSelect = null;
   let activeFolderSheetOpener = null;
   let filterQuery = '';
@@ -1822,6 +1828,169 @@ const initMobileNotes = () => {
     closeOverflowMenu();
   };
 
+  const closeNoteFolderSheet = () => {
+    if (noteFolderSheet) {
+      noteFolderSheet.classList.remove('open');
+      noteFolderSheet.setAttribute('aria-hidden', 'true');
+    }
+    if (noteFolderSheetBackdrop) {
+      noteFolderSheetBackdrop.classList.remove('open');
+      noteFolderSheetBackdrop.setAttribute('aria-hidden', 'true');
+    }
+    currentMoveFolderSheetNoteId = null;
+    document.removeEventListener('keydown', handleNoteFolderSheetKeydown);
+    if (noteFolderSheetList) {
+      noteFolderSheetList.innerHTML = '';
+    }
+  };
+
+  const handleNoteFolderSelection = (folderId) => {
+    const targetNoteId = currentMoveFolderSheetNoteId || currentNoteId;
+    if (targetNoteId) {
+      handleMoveNoteToFolder(targetNoteId, folderId || 'unsorted');
+    }
+    closeNoteFolderSheet();
+  };
+
+  const handleNoteFolderSheetKeydown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeNoteFolderSheet();
+    }
+  };
+
+  const renderNoteFolderRows = (noteId) => {
+    if (!noteFolderSheetList) return;
+    noteFolderSheetList.innerHTML = '';
+
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch {
+      folders = [];
+    }
+
+    const unsortedFolder = { id: 'unsorted', name: getFolderNameById('unsorted') || 'Unsorted' };
+    const hasUnsorted = folders.some((f) => f && f.id === 'unsorted');
+    const normalizedFolders = hasUnsorted ? folders.filter(Boolean) : [unsortedFolder, ...folders.filter(Boolean)];
+
+    const sortedFolders = normalizedFolders
+      .filter((folder) => folder && folder.id !== 'unsorted')
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+    const folderListForCounts = [unsortedFolder, ...sortedFolders];
+    const counts = getNoteCountsByFolder(allNotes, folderListForCounts);
+
+    const activeNote = noteId ? allNotes.find((n) => n.id === noteId) || null : null;
+    const currentFolder =
+      activeNote && typeof activeNote.folderId === 'string' && activeNote.folderId
+        ? activeNote.folderId
+        : 'unsorted';
+
+    const createRow = (folder) => {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'note-folder-row';
+      row.dataset.folderId = folder.id || 'unsorted';
+      row.setAttribute('role', 'listitem');
+      row.tabIndex = 0;
+
+      const label = document.createElement('div');
+      label.className = 'note-folder-row-label';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'note-folder-row-name';
+      nameEl.textContent = folder.name || String(folder.id);
+      label.appendChild(nameEl);
+
+      const countEl = document.createElement('span');
+      countEl.className = 'note-folder-row-count';
+      countEl.textContent = counts[folder.id] ?? 0;
+      label.appendChild(countEl);
+
+      row.appendChild(label);
+
+      const indicator = document.createElement('span');
+      indicator.className = 'note-folder-row-indicator';
+      indicator.textContent = folder.id === currentFolder ? '✓' : '';
+      row.appendChild(indicator);
+
+      if (folder.id === currentFolder) {
+        row.classList.add('is-current');
+        row.setAttribute('aria-current', 'true');
+      } else {
+        row.removeAttribute('aria-current');
+      }
+
+      return row;
+    };
+
+    const rows = [unsortedFolder, ...sortedFolders];
+    rows.forEach((folder) => {
+      if (!folder || typeof folder.id === 'undefined') return;
+      const row = createRow(folder);
+      noteFolderSheetList.appendChild(row);
+    });
+  };
+
+  const openMoveNoteToFolderSheet = (noteId) => {
+    if (!noteFolderSheet || !noteFolderSheetList) return;
+    currentMoveFolderSheetNoteId = noteId || null;
+    renderNoteFolderRows(noteId);
+    noteFolderSheet.classList.add('open');
+    noteFolderSheet.setAttribute('aria-hidden', 'false');
+    if (noteFolderSheetBackdrop) {
+      noteFolderSheetBackdrop.classList.add('open');
+      noteFolderSheetBackdrop.setAttribute('aria-hidden', 'false');
+    }
+    document.addEventListener('keydown', handleNoteFolderSheetKeydown);
+  };
+
+  if (noteFolderSheetList) {
+    noteFolderSheetList.addEventListener('click', (event) => {
+      const row = event.target instanceof HTMLElement ? event.target.closest('.note-folder-row') : null;
+      if (!row || !noteFolderSheetList.contains(row)) return;
+      event.preventDefault();
+      handleNoteFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+
+    noteFolderSheetList.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const row = event.target instanceof HTMLElement ? event.target.closest('.note-folder-row') : null;
+      if (!row || !noteFolderSheetList.contains(row)) return;
+      event.preventDefault();
+      handleNoteFolderSelection(row.dataset.folderId || 'unsorted');
+    });
+  }
+
+  if (noteFolderSheetClose) {
+    noteFolderSheetClose.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeNoteFolderSheet();
+    });
+  }
+
+  if (noteFolderSheetBackdrop) {
+    noteFolderSheetBackdrop.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeNoteFolderSheet();
+    });
+  }
+
+  if (noteFolderSheetNewBtn) {
+    noteFolderSheetNewBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      const targetNoteId = currentMoveFolderSheetNoteId || currentNoteId;
+      afterFolderCreated = (createdId) => {
+        if (targetNoteId) {
+          handleMoveNoteToFolder(targetNoteId, createdId || 'unsorted');
+        }
+        closeNoteFolderSheet();
+      };
+      openNewFolderDialog();
+    });
+  }
+
   const FOLDER_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
   const getFolderSelectorFocusables = () => {
@@ -2122,11 +2291,89 @@ const initMobileNotes = () => {
   }
 
   const openNoteOverflowMenu = (note, anchorEl) => {
-    const noteId =
-      (note && note.id) ||
-      (anchorEl instanceof HTMLElement && anchorEl.getAttribute('data-note-id'));
-    if (!noteId) return;
-    openNoteOptionsMenu(noteId);
+    if (!note || !anchorEl) return;
+    closeOverflowMenu();
+    const menu = document.createElement('div');
+    menu.className =
+      'memory-glass-card p-2 rounded-2xl shadow-xl backdrop-blur-md border border-base-200/80';
+    menu.style.position = 'absolute';
+    menu.style.zIndex = 1200;
+    menu.style.minWidth = '180px';
+    menu.setAttribute('role', 'menu');
+
+    const moveBtn = document.createElement('button');
+    moveBtn.type = 'button';
+    moveBtn.className = 'note-action-btn note-action-move-folder w-full text-left px-3 py-2 btn-ghost rounded-xl';
+    moveBtn.textContent = 'Move to folder';
+    moveBtn.setAttribute('role', 'menuitem');
+    moveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeOverflowMenu();
+      openMoveNoteToFolderSheet(note.id);
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'w-full text-left px-3 py-2 btn-ghost text-error rounded-xl';
+    deleteBtn.textContent = 'Delete note';
+    deleteBtn.setAttribute('role', 'menuitem');
+    deleteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const confirmFn =
+        typeof window !== 'undefined' && typeof window.confirm === 'function'
+          ? window.confirm
+          : null;
+      if (!confirmFn) {
+        showNoteToast('Delete cancelled: confirmation is not available here.');
+        closeOverflowMenu();
+        return;
+      }
+
+      let shouldDelete = false;
+      try {
+        shouldDelete = confirmFn('Delete this note? This cannot be undone.');
+      } catch (confirmError) {
+        console.warn('Delete confirmation failed', confirmError);
+        showNoteToast('Delete cancelled: confirmation is not available here.');
+        closeOverflowMenu();
+        return;
+      }
+
+      if (shouldDelete) {
+        handleDeleteNote(note.id);
+      }
+      closeOverflowMenu();
+    });
+
+    menu.appendChild(moveBtn);
+    menu.appendChild(deleteBtn);
+
+    document.body.appendChild(menu);
+    activeOverflowMenu = menu;
+    activeOverflowTrigger = anchorEl instanceof HTMLElement ? anchorEl : null;
+
+    menu.addEventListener('focusout', (event) => {
+      const next = event.relatedTarget;
+      if (!next || (activeOverflowMenu && !activeOverflowMenu.contains(next))) {
+        closeOverflowMenu();
+      }
+    });
+
+    try {
+      const rect = anchorEl.getBoundingClientRect();
+      const top = rect.bottom + window.scrollY + 6;
+      const left = rect.right + window.scrollX - menu.offsetWidth;
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    } catch (e) {
+      menu.style.top = '50%';
+      menu.style.left = '50%';
+      menu.style.transform = 'translate(-50%, -50%)';
+    }
+
+    focusFirstOverflowItem(menu);
+    document.addEventListener('click', closeOverflowMenu);
+    document.addEventListener('keydown', handleOverflowKeydown);
   };
 
   // Reorder folders by swapping `order` with neighbor and normalizing

@@ -465,3 +465,117 @@ body.mobile-theme :focus-visible {
     padding: 0.5rem 1rem;
   }
 }
+
+.note-folder-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+
+  max-height: 70vh;
+  background: var(--surface-1, #ffffff);
+  border-top-left-radius: 1.2rem;
+  border-top-right-radius: 1.2rem;
+  box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.18);
+
+  padding: 0.75rem 1rem 1rem;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+
+.note-folder-sheet.open {
+  transform: translateY(0);
+}
+
+.note-folder-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.note-folder-sheet-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.note-folder-sheet-list {
+  margin-top: 0.35rem;
+  padding: 0.25rem 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.note-folder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0.55rem 0.1rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.note-folder-row:hover {
+  background: rgba(76, 29, 149, 0.04);
+}
+
+.note-folder-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.note-folder-row-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.note-folder-row-count {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.note-folder-row-indicator {
+  font-size: 0.9rem;
+  color: var(--accent, #4c1d95);
+}
+
+.note-folder-row.is-current {
+  background: rgba(76, 29, 149, 0.06);
+}
+
+.note-folder-sheet-footer {
+  margin-top: 0.6rem;
+}
+
+.note-folder-new-btn {
+  width: 100%;
+  padding: 0.7rem 0.6rem;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(76, 29, 149, 0.35);
+  background: transparent;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.note-folder-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 39;
+}
+
+.note-folder-sheet-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
