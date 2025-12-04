@@ -1139,21 +1139,22 @@ const initMobileNotes = () => {
     notes.forEach((note) => {
       const listItem = document.createElement('div');
       const isActiveNote = String(note.id) === String(currentNoteId);
-      listItem.className = 'note-row';
+      listItem.className = 'note-row note-list-item';
       listItem.classList.toggle('selected', isActiveNote);
+      listItem.classList.toggle('is-active', isActiveNote);
       listItem.dataset.noteId = note.id;
       listItem.dataset.role = 'open-note';
       listItem.setAttribute('role', 'button');
       listItem.tabIndex = 0;
 
       const cardMain = document.createElement('div');
-      cardMain.className = 'note-row-main';
+      cardMain.className = 'note-row-main note-list-main';
       cardMain.dataset.role = 'open-note';
       cardMain.dataset.noteId = note.id;
 
       const noteTitle = note.title || 'Untitled';
       const titleEl = document.createElement('div');
-      titleEl.className = 'note-row-title';
+      titleEl.className = 'note-row-title note-list-title';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
 
@@ -1162,11 +1163,11 @@ const initMobileNotes = () => {
       const timestamp = formatNoteTimestamp(note.updatedAt);
 
       const metaRow = document.createElement('div');
-      metaRow.className = 'note-row-meta';
+      metaRow.className = 'note-row-meta note-list-meta';
 
       const folderButton = document.createElement('button');
       folderButton.type = 'button';
-      folderButton.className = 'note-row-folder';
+      folderButton.className = 'note-row-folder note-list-folder';
       folderButton.textContent = folderName;
       folderButton.setAttribute('aria-label', 'Move note to folder');
       folderButton.addEventListener('click', (event) => {
@@ -1181,9 +1182,10 @@ const initMobileNotes = () => {
       metaRow.appendChild(folderButton);
       if (timestamp) {
         const separator = document.createElement('span');
-        separator.textContent = ' · ';
+        separator.className = 'note-row-dot note-list-dot';
+        separator.textContent = '·';
         const timeSpan = document.createElement('span');
-        timeSpan.className = 'note-row-timestamp';
+        timeSpan.className = 'note-row-timestamp note-list-date';
         timeSpan.textContent = timestamp;
         metaRow.appendChild(separator);
         metaRow.appendChild(timeSpan);
@@ -1196,7 +1198,7 @@ const initMobileNotes = () => {
       actionBtn.type = 'button';
       actionBtn.dataset.noteId = note.id;
       actionBtn.dataset.role = 'note-menu';
-      actionBtn.className = 'note-row-overflow note-options-button';
+      actionBtn.className = 'note-row-overflow note-list-overflow note-options-button';
       actionBtn.setAttribute('aria-label', 'Note actions');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
