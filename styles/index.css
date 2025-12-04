@@ -652,25 +652,28 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   color: var(--text-main);
 }
 
-.note-row {
+.note-row,
+.note-list-item {
   display: flex;
   align-items: center;
-  padding: 0.55rem 0.9rem;
-  border-radius: 0.9rem;
-  background: var(--surface-soft, rgba(255,255,255,0.7));
-  margin-bottom: 0.3rem;
-  gap: 0.6rem;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.8rem;
   cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.note-row-main {
+.note-row-main,
+.note-list-main {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.note-row-title {
+.note-row-title,
+.note-list-title {
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-primary);
@@ -679,13 +682,18 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   text-overflow: ellipsis;
 }
 
-.note-row-meta {
+.note-row-meta,
+.note-list-meta {
   margin-top: 0.1rem;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-.note-row-folder {
+.note-row-folder,
+.note-list-folder {
   border: none;
   background: transparent;
   padding: 0;
@@ -696,11 +704,18 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   text-decoration-thickness: from-font;
 }
 
-.note-row-timestamp {
+.note-row-dot,
+.note-list-dot {
+  opacity: 0.7;
+}
+
+.note-row-timestamp,
+.note-list-date {
   color: inherit;
 }
 
-.note-row-overflow {
+.note-row-overflow,
+.note-list-overflow {
   border: none;
   background: transparent;
   padding: 0.25rem;
@@ -708,11 +723,26 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
 }
 
-.note-row.selected {
-  box-shadow: 0 0 0 1px var(--primary-soft, rgba(81, 38, 99, 0.18));
-  background: var(--surface-selected, rgba(0,0,0,0.02));
+.note-row + .note-row,
+.note-list-item + .note-list-item {
+  margin-top: 0.15rem;
+}
+
+.note-row:hover {
+  background: rgba(76, 29, 149, 0.03);
+}
+
+.note-row.selected,
+.note-row.is-active {
+  background: rgba(76, 29, 149, 0.06);
+}
+
+.notebook-notes-list {
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
