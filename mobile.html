@@ -568,17 +568,25 @@
     transition: opacity 0.25s ease;
   }
 
+  #savedNotesSheet:not(.hidden) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
   #savedNotesSheet[data-open="true"] {
     opacity: 1;
     pointer-events: auto;
   }
 
   #savedNotesSheet .saved-notes-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
+    position: relative;
     width: min(92vw, 28rem);
-    transform: translate(-50%, calc(-50% + 24px)) scale(0.96);
+    max-width: 100vw;
+    box-sizing: border-box;
+    margin: 0 auto;
+    transform: translateY(24px) scale(0.96);
     opacity: 0;
     transition:
       transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -586,7 +594,7 @@
   }
 
   #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 
@@ -861,6 +869,9 @@
   .mobile-shell #savedNotesSheet {
     transition: opacity 0.25s ease;
     opacity: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
   }
 
   .mobile-shell #savedNotesSheet[data-open="true"] {
@@ -868,11 +879,12 @@
   }
 
   .mobile-shell #savedNotesSheet .saved-notes-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
+    position: relative;
     width: min(92vw, 28rem);
-    transform: translate(-50%, calc(-50% + 24px)) scale(0.96);
+    max-width: 100vw;
+    box-sizing: border-box;
+    margin: 0 auto;
+    transform: translateY(24px) scale(0.96);
     opacity: 0;
     transition:
       transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -886,7 +898,7 @@
   }
 
   .mobile-shell #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 
