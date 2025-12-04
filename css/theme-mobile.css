@@ -47,15 +47,11 @@ body.mobile-theme footer {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 16px 0;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 8px 0 80px;
   box-sizing: border-box;
   overflow-y: auto;
-}
-
-body.mobile-shell .app-main {
-  align-items: stretch;
 }
 
 /* Reminders layout (mobile) */
@@ -273,12 +269,20 @@ body.mobile-theme .text-secondary {
 .note-sheet-wrapper {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   padding: 0 16px;
   box-sizing: border-box;
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
+}
+
+.scratch-notes-wrapper {
+  margin: 0;
+  padding: 0 16px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
 }
 
 .mobile-panel--notes {
@@ -291,9 +295,11 @@ body.mobile-theme .text-secondary {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   padding-left: 16px;
   padding-right: 16px;
+  padding-top: 8px;
+  padding-bottom: 80px;
   box-sizing: border-box;
 }
 
@@ -312,8 +318,14 @@ body.mobile-theme .text-secondary {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0;
+  max-height: calc(100vh - var(--header-height, 120px) - var(--bottom-nav-height, 96px) - 16px);
+}
+
+.scratch-notes-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .mobile-shell #savedNotesSheet {
@@ -402,10 +414,25 @@ body.mobile-theme .text-secondary {
   min-height: 0;
 }
 
+.scratch-notes-header-block {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .note-editor-content-wrapper {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+}
+
+.scratch-notes-body-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 12px;
+  box-sizing: border-box;
+  display: flex;
 }
 
 .note-editor-toolbar {
@@ -520,6 +547,10 @@ body.mobile-theme .text-secondary {
   flex: 1 1 auto;
   min-height: 100%;
   overflow-y: auto;
+}
+
+.scratch-notes-body {
+  max-height: 100%;
 }
 
 .note-editor-content textarea {
