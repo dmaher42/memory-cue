@@ -1124,24 +1124,15 @@ const initMobileNotes = () => {
 
     if (!notes.length) {
       const hasFilter = Boolean(getNormalizedFilterQuery());
-      const isAllFolder = !currentFolderId || currentFolderId === 'all';
-      const isCustomFolder = currentFolderId && currentFolderId !== 'all' && currentFolderId !== 'unsorted';
-      const emptyTitle = hasFilter
-        ? 'No notes match this filter'
-        : isAllFolder
-          ? "You don't have any notes yet."
-          : isCustomFolder
-            ? 'Empty folder'
-            : 'No notes here yet';
+      const emptyTitle = hasFilter ? 'No notes found' : 'No notes yet';
       const emptyBody = hasFilter
-        ? 'Try adjusting your search or filters.'
-        : 'Create your first note in this folder to get started.';
+        ? 'Try a different search term or clear the search.'
+        : 'Create a new note to start capturing your ideas.';
 
       listElement.innerHTML = `
-        <div class="notebook-empty-state">
-          <div class="notebook-empty-illustration" aria-hidden="true">📂</div>
-          <h3 class="notebook-empty-title">${emptyTitle}</h3>
-          <p class="notebook-empty-body">${emptyBody}</p>
+        <div class="notebook-empty">
+          <div class="notebook-empty-title">${emptyTitle}</div>
+          <div class="notebook-empty-body">${emptyBody}</div>
         </div>
       `;
       return notes;
@@ -2731,9 +2722,9 @@ const initMobileNotes = () => {
 
   if (filterInput) {
     const handleFilterInput = debounce(() => {
-      filterQuery = typeof filterInput.value === 'string' ? filterInput.value : '';
+      filterQuery = typeof filterInput.value === 'string' ? filterInput.value.trim() : '';
       renderFilteredNotes();
-    }, 180);
+    }, 200);
 
     filterInput.addEventListener('input', handleFilterInput);
     filterInput.addEventListener('search', handleFilterInput);

@@ -584,6 +584,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   border-radius: 0.9rem;
   background: var(--surface-soft, rgba(255, 255, 255, 0.8));
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  margin-bottom: 0.4rem;
 }
 
 .notebook-top-left {
@@ -604,7 +605,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   gap: 0.35rem;
   overflow-x: auto;
   padding: 0.1rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
 
 .notebook-tab,
@@ -643,7 +644,41 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 }
 
 .notebook-notes-search {
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.45rem;
+}
+
+.notebook-notes-search input[type="search"],
+.notebook-notes-search input[type="text"],
+input.notebook-notes-search[type="search"],
+input.notebook-notes-search[type="text"] {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(76, 29, 149, 0.16);
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+}
+
+.notebook-notes-search input::placeholder,
+input.notebook-notes-search::placeholder {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.86rem;
+}
+
+.notebook-empty {
+  padding: 1rem 0.4rem;
+  text-align: center;
+  color: var(--text-muted, #9ca3af);
+}
+
+.notebook-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.notebook-empty-body {
+  font-size: 0.85rem;
 }
 
 .notebook-top-overflow {
