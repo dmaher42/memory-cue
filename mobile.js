@@ -1715,6 +1715,86 @@ const initMobileNotes = () => {
     }
   };
 
+  const noteOptionsOverlay = document.getElementById('note-options-overlay');
+  const noteOptionsSheet = document.getElementById('note-options-sheet');
+  const noteActionMoveBtn = noteOptionsSheet?.querySelector('.note-action-move');
+  const noteActionDeleteBtn = noteOptionsSheet?.querySelector('.note-action-delete');
+  let currentNoteOptionsNoteId = null;
+
+  const isNoteOptionsOpen = () =>
+    noteOptionsSheet && noteOptionsSheet.classList.contains('open');
+
+  const closeNoteOptionsMenu = () => {
+    currentNoteOptionsNoteId = null;
+    if (noteOptionsSheet) {
+      noteOptionsSheet.classList.remove('open');
+      noteOptionsSheet.setAttribute('aria-hidden', 'true');
+      noteOptionsSheet.removeAttribute('data-note-id');
+    }
+    if (noteOptionsOverlay) {
+      noteOptionsOverlay.classList.remove('open');
+      noteOptionsOverlay.setAttribute('aria-hidden', 'true');
+    }
+  };
+
+  const handleNoteOptionsKeydown = (event) => {
+    if (event.key === 'Escape' && isNoteOptionsOpen()) {
+      event.preventDefault();
+      closeNoteOptionsMenu();
+    }
+  };
+
+  const openNoteOptionsMenu = (noteId) => {
+    if (!noteId || !noteOptionsSheet || !noteOptionsOverlay) {
+      return;
+    }
+    closeNoteOptionsMenu();
+    closeOverflowMenu();
+    currentNoteOptionsNoteId = noteId;
+    noteOptionsSheet.classList.add('open');
+    noteOptionsSheet.setAttribute('aria-hidden', 'false');
+    noteOptionsSheet.setAttribute('data-note-id', noteId);
+    noteOptionsOverlay.classList.add('open');
+    noteOptionsOverlay.setAttribute('aria-hidden', 'false');
+  };
+
+  if (noteOptionsOverlay) {
+    noteOptionsOverlay.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeNoteOptionsMenu();
+    });
+  }
+
+  if (noteOptionsSheet && noteActionMoveBtn) {
+    noteActionMoveBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      const note = allNotes.find((item) => item.id === currentNoteOptionsNoteId);
+      closeNoteOptionsMenu();
+      if (!currentNoteOptionsNoteId) return;
+      openFolderSelectorForNote(currentNoteOptionsNoteId, {
+        initialFolderId:
+          note && note.folderId && typeof note.folderId === 'string'
+            ? note.folderId
+            : 'unsorted',
+        triggerEl: noteActionMoveBtn,
+      });
+    });
+  }
+
+  if (noteOptionsSheet && noteActionDeleteBtn) {
+    noteActionDeleteBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (currentNoteOptionsNoteId) {
+        handleDeleteNote(currentNoteOptionsNoteId);
+      }
+      closeNoteOptionsMenu();
+    });
+  }
+
+  if (noteOptionsSheet && noteOptionsOverlay) {
+    document.addEventListener('keydown', handleNoteOptionsKeydown);
+  }
+
   const handleMoveNoteToFolder = (noteId, targetFolderId) => {
     if (!noteId) return;
     const normalizedTarget = targetFolderId === 'unsorted' ? null : targetFolderId;
@@ -2595,16 +2675,14 @@ const initMobileNotes = () => {
       const menuTrigger = target.closest('.note-options-button, button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
+        event.stopPropagation();
         const noteId =
           menuTrigger.getAttribute('data-note-id')
           || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) {
           return;
         }
-        const note = allNotes.find((item) => item.id === noteId);
-        if (note) {
-          openNoteOverflowMenu(note, menuTrigger);
-        }
+        openNoteOptionsMenu(noteId);
         return;
       }
 
@@ -2636,14 +2714,12 @@ const initMobileNotes = () => {
       const menuTrigger = target.closest('.note-options-button, button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
+        event.stopPropagation();
         const noteId =
           menuTrigger.getAttribute('data-note-id')
           || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) return;
-        const note = allNotes.find((item) => item.id === noteId);
-        if (note) {
-          openNoteOverflowMenu(note, menuTrigger);
-        }
+        openNoteOptionsMenu(noteId);
         return;
       }
     });

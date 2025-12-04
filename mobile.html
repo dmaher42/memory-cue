@@ -5451,25 +5451,33 @@
               </dialog>
 
               <!-- Delete Folder Confirmation Modal -->
-              <dialog id="deleteFolderModal" class="memory-glass-card" aria-hidden="true">
-                <div class="p-4">
-                  <h3 id="deleteFolderTitle" class="text-lg font-semibold">Delete folder</h3>
-                  <div class="mt-3 text-sm">
-                    Deleting this folder won’t delete your notes. They will be moved to “Unsorted”.
+                <dialog id="deleteFolderModal" class="memory-glass-card" aria-hidden="true">
+                  <div class="p-4">
+                    <h3 id="deleteFolderTitle" class="text-lg font-semibold">Delete folder</h3>
+                    <div class="mt-3 text-sm">
+                      Deleting this folder won’t delete your notes. They will be moved to “Unsorted”.
+                    </div>
+                    <div class="modal-actions mt-4 flex justify-end gap-3">
+                      <button id="deleteFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
+                      <button id="deleteFolderConfirm" type="button" class="btn btn-outline">Delete</button>
+                    </div>
                   </div>
-                  <div class="modal-actions mt-4 flex justify-end gap-3">
-                    <button id="deleteFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
-                    <button id="deleteFolderConfirm" type="button" class="btn btn-outline">Delete</button>
-                  </div>
-                </div>
-              </dialog>
+                </dialog>
+              </div>
+            </div>
+            <div id="note-options-overlay" class="note-options-overlay" aria-hidden="true"></div>
+            <div id="note-options-sheet" class="note-options-sheet" role="menu" aria-hidden="true">
+              <div class="note-options-grip" aria-hidden="true"></div>
+              <div class="note-options-actions">
+                <button type="button" class="note-action-btn note-action-move">Move to folder</button>
+                <button type="button" class="note-action-btn note-action-delete">Delete note</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
-    <!-- END GPT CHANGE -->
-    </main>
+      </section>
+      <!-- END GPT CHANGE -->
+      </main>
   </div>
 
   <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
