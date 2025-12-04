@@ -1709,6 +1709,86 @@ const initMobileNotes = () => {
     }
   };
 
+  const noteOptionsOverlay = document.getElementById('note-options-overlay');
+  const noteOptionsSheet = document.getElementById('note-options-sheet');
+  const noteActionMoveBtn = noteOptionsSheet?.querySelector('.note-action-move');
+  const noteActionDeleteBtn = noteOptionsSheet?.querySelector('.note-action-delete');
+  let currentNoteOptionsNoteId = null;
+
+  const isNoteOptionsOpen = () =>
+    noteOptionsSheet && noteOptionsSheet.classList.contains('open');
+
+  const closeNoteOptionsMenu = () => {
+    currentNoteOptionsNoteId = null;
+    if (noteOptionsSheet) {
+      noteOptionsSheet.classList.remove('open');
+      noteOptionsSheet.setAttribute('aria-hidden', 'true');
+      noteOptionsSheet.removeAttribute('data-note-id');
+    }
+    if (noteOptionsOverlay) {
+      noteOptionsOverlay.classList.remove('open');
+      noteOptionsOverlay.setAttribute('aria-hidden', 'true');
+    }
+  };
+
+  const handleNoteOptionsKeydown = (event) => {
+    if (event.key === 'Escape' && isNoteOptionsOpen()) {
+      event.preventDefault();
+      closeNoteOptionsMenu();
+    }
+  };
+
+  const openNoteOptionsMenu = (noteId) => {
+    if (!noteId || !noteOptionsSheet || !noteOptionsOverlay) {
+      return;
+    }
+    closeNoteOptionsMenu();
+    closeOverflowMenu();
+    currentNoteOptionsNoteId = noteId;
+    noteOptionsSheet.classList.add('open');
+    noteOptionsSheet.setAttribute('aria-hidden', 'false');
+    noteOptionsSheet.setAttribute('data-note-id', noteId);
+    noteOptionsOverlay.classList.add('open');
+    noteOptionsOverlay.setAttribute('aria-hidden', 'false');
+  };
+
+  if (noteOptionsOverlay) {
+    noteOptionsOverlay.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeNoteOptionsMenu();
+    });
+  }
+
+  if (noteOptionsSheet && noteActionMoveBtn) {
+    noteActionMoveBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      const note = allNotes.find((item) => item.id === currentNoteOptionsNoteId);
+      closeNoteOptionsMenu();
+      if (!currentNoteOptionsNoteId) return;
+      openFolderSelectorForNote(currentNoteOptionsNoteId, {
+        initialFolderId:
+          note && note.folderId && typeof note.folderId === 'string'
+            ? note.folderId
+            : 'unsorted',
+        triggerEl: noteActionMoveBtn,
+      });
+    });
+  }
+
+  if (noteOptionsSheet && noteActionDeleteBtn) {
+    noteActionDeleteBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (currentNoteOptionsNoteId) {
+        handleDeleteNote(currentNoteOptionsNoteId);
+      }
+      closeNoteOptionsMenu();
+    });
+  }
+
+  if (noteOptionsSheet && noteOptionsOverlay) {
+    document.addEventListener('keydown', handleNoteOptionsKeydown);
+  }
+
   const handleMoveNoteToFolder = (noteId, targetFolderId) => {
     if (!noteId) return;
     const normalizedTarget = targetFolderId === 'unsorted' ? null : targetFolderId;
@@ -2042,93 +2122,11 @@ const initMobileNotes = () => {
   }
 
   const openNoteOverflowMenu = (note, anchorEl) => {
-    if (!note || !anchorEl) return;
-    closeOverflowMenu();
-    const menu = document.createElement('div');
-    menu.className =
-      'memory-glass-card p-2 rounded-2xl shadow-xl backdrop-blur-md border border-base-200/80';
-    menu.style.position = 'absolute';
-    menu.style.zIndex = 1200;
-    menu.style.minWidth = '180px';
-    menu.setAttribute('role', 'menu');
-
-    const moveBtn = document.createElement('button');
-    moveBtn.type = 'button';
-    moveBtn.className = 'w-full text-left px-3 py-2 btn-ghost rounded-xl';
-    moveBtn.textContent = 'Move to folder…';
-    moveBtn.setAttribute('role', 'menuitem');
-    moveBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeOverflowMenu();
-      openFolderSelectorForNote(note.id, {
-        initialFolderId:
-          note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted',
-        triggerEl: moveBtn,
-      });
-    });
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'w-full text-left px-3 py-2 btn-ghost text-error rounded-xl';
-    deleteBtn.textContent = 'Delete note';
-    deleteBtn.setAttribute('role', 'menuitem');
-    deleteBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const confirmFn =
-        typeof window !== 'undefined' && typeof window.confirm === 'function'
-          ? window.confirm
-          : null;
-      if (!confirmFn) {
-        showNoteToast('Delete cancelled: confirmation is not available here.');
-        closeOverflowMenu();
-        return;
-      }
-
-      let shouldDelete = false;
-      try {
-        shouldDelete = confirmFn('Delete this note? This cannot be undone.');
-      } catch (confirmError) {
-        console.warn('Delete confirmation failed', confirmError);
-        showNoteToast('Delete cancelled: confirmation is not available here.');
-        closeOverflowMenu();
-        return;
-      }
-
-      if (shouldDelete) {
-        handleDeleteNote(note.id);
-      }
-      closeOverflowMenu();
-    });
-
-    menu.appendChild(moveBtn);
-    menu.appendChild(deleteBtn);
-
-    document.body.appendChild(menu);
-    activeOverflowMenu = menu;
-    activeOverflowTrigger = anchorEl instanceof HTMLElement ? anchorEl : null;
-
-    menu.addEventListener('focusout', (event) => {
-      const next = event.relatedTarget;
-      if (!next || (activeOverflowMenu && !activeOverflowMenu.contains(next))) {
-        closeOverflowMenu();
-      }
-    });
-
-    try {
-      const rect = anchorEl.getBoundingClientRect();
-      const top = rect.bottom + window.scrollY + 6;
-      const left = rect.right + window.scrollX - menu.offsetWidth;
-      menu.style.top = `${top}px`;
-      menu.style.left = `${left}px`;
-    } catch (e) {
-      menu.style.top = '50%';
-      menu.style.left = '50%';
-      menu.style.transform = 'translate(-50%, -50%)';
-    }
-
-    focusFirstOverflowItem(menu);
-    document.addEventListener('click', closeOverflowMenu);
-    document.addEventListener('keydown', handleOverflowKeydown);
+    const noteId =
+      (note && note.id) ||
+      (anchorEl instanceof HTMLElement && anchorEl.getAttribute('data-note-id'));
+    if (!noteId) return;
+    openNoteOptionsMenu(noteId);
   };
 
   // Reorder folders by swapping `order` with neighbor and normalizing
@@ -2430,16 +2428,14 @@ const initMobileNotes = () => {
       const menuTrigger = target.closest('.note-options-button, button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
+        event.stopPropagation();
         const noteId =
           menuTrigger.getAttribute('data-note-id')
           || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) {
           return;
         }
-        const note = allNotes.find((item) => item.id === noteId);
-        if (note) {
-          openNoteOverflowMenu(note, menuTrigger);
-        }
+        openNoteOptionsMenu(noteId);
         return;
       }
 
@@ -2471,14 +2467,12 @@ const initMobileNotes = () => {
       const menuTrigger = target.closest('.note-options-button, button[data-role="note-menu"]');
       if (menuTrigger && listElement.contains(menuTrigger)) {
         event.preventDefault();
+        event.stopPropagation();
         const noteId =
           menuTrigger.getAttribute('data-note-id')
           || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) return;
-        const note = allNotes.find((item) => item.id === noteId);
-        if (note) {
-          openNoteOverflowMenu(note, menuTrigger);
-        }
+        openNoteOptionsMenu(noteId);
         return;
       }
     });
