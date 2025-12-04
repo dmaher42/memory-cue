@@ -5322,7 +5322,10 @@
                   <template id="notesListMobileItemTemplate">
                     <div class="note-row note-list-item" data-note-id="" data-role="open-note">
                       <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
-                        <div class="note-row-title note-list-title">Untitled</div>
+                        <div class="note-row-title-row note-list-title-row">
+                          <div class="note-row-title note-list-title">Untitled</div>
+                          <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
+                        </div>
                         <div class="note-row-meta note-list-meta">
                           <button class="note-row-folder note-list-folder" type="button">Folder</button>
                           <span class="note-row-dot note-list-dot">•</span>
@@ -5469,6 +5472,7 @@
             <div id="note-options-sheet" class="note-options-sheet" role="menu" aria-hidden="true">
               <div class="note-options-grip" aria-hidden="true"></div>
               <div class="note-options-actions">
+                <button type="button" class="note-action-btn note-action-toggle-pin">Pin note</button>
                 <button type="button" class="note-action-btn note-action-move">Move to folder</button>
                 <button type="button" class="note-action-btn note-action-delete">Delete note</button>
               </div>

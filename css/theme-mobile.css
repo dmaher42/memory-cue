@@ -423,6 +423,22 @@ body.mobile-theme :focus-visible {
   gap: 0.5rem;
 }
 
+.note-list-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.note-list-title {
+  flex: 1 1 auto;
+}
+
+.note-list-pin-icon {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
 .note-options-button,
 .note-list-overflow {
   display: inline-flex;
