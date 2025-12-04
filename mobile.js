@@ -442,7 +442,6 @@ const initMobileNotes = () => {
   const noteFolderSheetBackdrop = document.getElementById('note-folder-sheet-backdrop');
   const noteFolderSheetList = noteFolderSheet?.querySelector('.note-folder-sheet-list');
   const noteFolderSheetClose = noteFolderSheet?.querySelector('.note-folder-sheet-close');
-  const noteFolderSheetNewBtn = noteFolderSheet?.querySelector('.note-folder-new-btn');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
   const createScratchNotesEditor = () => {
@@ -1962,6 +1961,22 @@ const initMobileNotes = () => {
     closeNoteFolderSheet();
   };
 
+  const handleCreateNewFolderFromSheet = (event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    const targetNoteId = currentMoveFolderSheetNoteId || currentNoteId;
+    afterFolderCreated = (createdId) => {
+      if (targetNoteId) {
+        handleMoveNoteToFolder(targetNoteId, createdId || 'unsorted');
+      }
+      closeNoteFolderSheet();
+    };
+    openNewFolderDialog();
+  };
+
   const handleNoteFolderSheetKeydown = (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -2041,6 +2056,30 @@ const initMobileNotes = () => {
       const row = createRow(folder);
       noteFolderSheetList.appendChild(row);
     });
+
+    const newRow = document.createElement('button');
+    newRow.type = 'button';
+    newRow.className = 'note-folder-row note-folder-row-new';
+    newRow.setAttribute('role', 'listitem');
+    newRow.tabIndex = 0;
+
+    const prefix = document.createElement('span');
+    prefix.className = 'note-folder-row-prefix';
+    prefix.textContent = '+';
+    newRow.appendChild(prefix);
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'note-folder-row-name';
+    nameEl.textContent = 'New folder';
+    newRow.appendChild(nameEl);
+
+    newRow.addEventListener('click', handleCreateNewFolderFromSheet);
+    newRow.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      handleCreateNewFolderFromSheet(event);
+    });
+
+    noteFolderSheetList.appendChild(newRow);
   };
 
   const openMoveNoteToFolderSheet = (noteId) => {
@@ -2060,6 +2099,10 @@ const initMobileNotes = () => {
     noteFolderSheetList.addEventListener('click', (event) => {
       const row = event.target instanceof HTMLElement ? event.target.closest('.note-folder-row') : null;
       if (!row || !noteFolderSheetList.contains(row)) return;
+      if (row.classList.contains('note-folder-row-new')) {
+        handleCreateNewFolderFromSheet(event);
+        return;
+      }
       event.preventDefault();
       handleNoteFolderSelection(row.dataset.folderId || 'unsorted');
     });
@@ -2068,6 +2111,10 @@ const initMobileNotes = () => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       const row = event.target instanceof HTMLElement ? event.target.closest('.note-folder-row') : null;
       if (!row || !noteFolderSheetList.contains(row)) return;
+      if (row.classList.contains('note-folder-row-new')) {
+        handleCreateNewFolderFromSheet(event);
+        return;
+      }
       event.preventDefault();
       handleNoteFolderSelection(row.dataset.folderId || 'unsorted');
     });
@@ -2084,20 +2131,6 @@ const initMobileNotes = () => {
     noteFolderSheetBackdrop.addEventListener('click', (event) => {
       event.preventDefault();
       closeNoteFolderSheet();
-    });
-  }
-
-  if (noteFolderSheetNewBtn) {
-    noteFolderSheetNewBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      const targetNoteId = currentMoveFolderSheetNoteId || currentNoteId;
-      afterFolderCreated = (createdId) => {
-        if (targetNoteId) {
-          handleMoveNoteToFolder(targetNoteId, createdId || 'unsorted');
-        }
-        closeNoteFolderSheet();
-      };
-      openNewFolderDialog();
     });
   }
 

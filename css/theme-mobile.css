@@ -671,18 +671,31 @@ body.mobile-theme :focus-visible {
   background: rgba(76, 29, 149, 0.06);
 }
 
-.note-folder-sheet-footer {
-  margin-top: 0.6rem;
+.note-folder-row-new {
+  border: 1px dashed rgba(76, 29, 149, 0.35);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  margin-top: 0.5rem;
+
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-start;
 }
 
-.note-folder-new-btn {
-  width: 100%;
-  padding: 0.7rem 0.6rem;
-  border-radius: 0.75rem;
-  border: 1px dashed rgba(76, 29, 149, 0.35);
-  background: transparent;
-  font-size: 0.88rem;
+.note-folder-row-new .note-folder-row-prefix {
+  font-size: 0.9rem;
+  color: var(--accent, #4c1d95);
+}
+
+.note-folder-row-new .note-folder-row-name {
+  font-size: 0.9rem;
   font-weight: 500;
+}
+
+.note-folder-row-new:hover {
+  background: rgba(76, 29, 149, 0.04);
 }
 
 .note-folder-sheet-backdrop {
