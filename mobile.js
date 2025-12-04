@@ -1183,7 +1183,7 @@ const initMobileNotes = () => {
       if (timestamp) {
         const separator = document.createElement('span');
         separator.className = 'note-row-dot note-list-dot';
-        separator.textContent = '·';
+        separator.textContent = '•';
         const timeSpan = document.createElement('span');
         timeSpan.className = 'note-row-timestamp note-list-date';
         timeSpan.textContent = timestamp;
@@ -1202,13 +1202,7 @@ const initMobileNotes = () => {
       actionBtn.setAttribute('aria-label', 'Note actions');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
-      actionBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="5" cy="12" r="1.5" />
-          <circle cx="12" cy="12" r="1.5" />
-          <circle cx="19" cy="12" r="1.5" />
-        </svg>
-      `;
+      actionBtn.textContent = '⋯';
 
       listItem.appendChild(cardMain);
       listItem.appendChild(actionBtn);
