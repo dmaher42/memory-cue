@@ -884,6 +884,11 @@ const initMobileNotes = () => {
       button.classList.toggle('outline-accent', isActive);
       button.classList.toggle(ACTIVE_NOTE_SHADOW_CLASS, isActive);
       button.setAttribute('aria-current', isActive ? 'true' : 'false');
+      const parentItem = button.closest('.note-list-item, .note-row');
+      if (parentItem) {
+        parentItem.classList.toggle('is-active', isActive);
+        parentItem.classList.toggle('selected', isActive);
+      }
     });
   };
 
