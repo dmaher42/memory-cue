@@ -496,6 +496,33 @@ const initMobileNotes = () => {
     return;
   }
 
+  const TOGGLE_COMMANDS = new Set([
+    'bold',
+    'italic',
+    'underline',
+    'insertunorderedlist',
+    'insertorderedlist',
+    'indent',
+    'outdent',
+  ]);
+
+  function updateToolbarState() {
+    const buttons = document.querySelectorAll('.rte-btn[data-cmd]');
+    buttons.forEach((button) => {
+      const command = (button.dataset.cmd || '').toLowerCase();
+      if (!command || !TOGGLE_COMMANDS.has(command)) {
+        button.classList.remove('active');
+        return;
+      }
+      try {
+        const active = document.queryCommandState(command);
+        button.classList.toggle('active', !!active);
+      } catch (err) {
+        button.classList.remove('active');
+      }
+    });
+  }
+
   const applyFormatCommand = (command) => {
     if (!command || !scratchNotesEditorElement) return;
     try {
@@ -503,25 +530,29 @@ const initMobileNotes = () => {
     } catch {
       /* ignore focus errors */
     }
-    document.execCommand(command, false, null);
+    try {
+      document.execCommand(command, false, null);
+    } catch (err) {
+      /* ignore execCommand errors */
+    }
+    updateToolbarState();
+    try {
+      const syntheticInput = new Event('input', { bubbles: true });
+      scratchNotesEditorElement.dispatchEvent(syntheticInput);
+    } catch {
+      /* ignore synthetic event errors */
+    }
   };
 
-  const FORMAT_COMMANDS = {
-    bold: 'bold',
-    italic: 'italic',
-    underline: 'underline',
-    'bullet-list': 'insertUnorderedList',
-    'numbered-list': 'insertOrderedList',
-  };
-
-  // Wire up formatting toolbar (bold, italic, underline, ul, ol) for the rich text editor
+  // Wire up formatting toolbar (bold, italic, underline, lists, indent/outdent, undo/redo)
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
     toolbarEl.addEventListener('click', (event) => {
-      const button = event.target.closest('.notebook-format-button[data-format]');
+      const button = event.target.closest('.rte-btn[data-cmd]');
       if (!button) return;
-      const format = button.getAttribute('data-format');
-      const command = format ? FORMAT_COMMANDS[format] : null;
+      event.preventDefault();
+      event.stopPropagation();
+      const command = button.getAttribute('data-cmd');
       if (command) {
         applyFormatCommand(command);
       }
@@ -569,6 +600,7 @@ const initMobileNotes = () => {
   const setEditorContent = (value = '') => {
     const normalizedValue = typeof value === 'string' ? value : '';
     setEditorBodyHtml(normalizedValue);
+    updateToolbarState();
   };
 
   const getEditorHTML = () => getEditorBodyHtml();
@@ -2921,7 +2953,10 @@ const initMobileNotes = () => {
 
   try {
     // contenteditable should emit input events
-    scratchNotesEditorElement.addEventListener('input', handleNoteEditorInput);
+    scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
+    scratchNotesEditorElement.addEventListener('input', updateToolbarState);
+    scratchNotesEditorElement.addEventListener('keyup', updateToolbarState);
+    scratchNotesEditorElement.addEventListener('mouseup', updateToolbarState);
     scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
     scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
     // also save on blur (user leaving editor)
@@ -2948,6 +2983,7 @@ const initMobileNotes = () => {
     });
   }
 
+  updateToolbarState();
   applyInitialSelection();
 
   if (typeof window !== 'undefined') {
