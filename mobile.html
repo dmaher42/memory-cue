@@ -5177,10 +5177,10 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-body);">
+        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-body);">
+        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3">
           <div class="note-editor-card">
             <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
               <div class="flex flex-col">
@@ -5249,7 +5249,7 @@
         </div>
           <div
             id="savedNotesSheet"
-            class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
+            class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm flex items-end justify-center"
             aria-hidden="true"
             aria-modal="true"
             role="dialog"
@@ -5258,15 +5258,15 @@
           >
           <div
             id="saved-notes-panel"
-            class="saved-notes-panel fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] max-w-md flex-col space-y-2 rounded-3xl border border-base-300 bg-base-100 px-4 py-3 shadow-xl transition-transform"
+            class="saved-notes-panel notebook-sheet"
           >
             <div class="flex flex-col max-h-[70vh]">
               <div class="flex justify-center pt-2 pb-1">
                 <div class="h-1.5 w-10 rounded-full bg-base-300"></div>
               </div>
 
-              <div class="px-2 pb-3 overflow-y-auto">
-                <div class="notebook-top-bar">
+              <div class="overflow-y-auto">
+                <div class="notebook-top-bar notebook-header">
                   <div class="notebook-top-left">
                     <button
                       id="closeSavedNotesSheet"
@@ -5311,7 +5311,7 @@
                   </button>
                 </div>
 
-                <div class="px-3 pb-1">
+                <div class="notebook-search-container">
                   <input
                     id="notebook-search-input"
                     type="search"
@@ -5322,7 +5322,7 @@
 
                 <div
                   id="notesListMobile"
-                  class="notebook-list notebook-notes-list text-sm"
+                  class="notebook-list notebook-notes-list saved-notes-list text-sm"
                   aria-label="Saved scratch notes"
                 >
                   <!-- Note items are rendered here by JS -->
@@ -5341,7 +5341,7 @@
                       </div>
                       <button
                         type="button"
-                        class="note-row-overflow note-list-overflow note-options-button"
+                        class="note-row-overflow note-list-overflow note-options-button note-actions"
                         aria-label="More"
                         data-role="note-menu"
                         data-note-id=""
