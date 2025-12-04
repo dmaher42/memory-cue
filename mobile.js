@@ -666,6 +666,8 @@ const initMobileNotes = () => {
   };
 
   let currentNoteId = null;
+  let currentNoteIsNew = false;
+  let currentNoteHasChanged = false;
   let allNotes = [];
   let currentFolderId = 'all';
   let currentEditingNoteFolderId = 'unsorted';
@@ -822,9 +824,12 @@ const initMobileNotes = () => {
     return counts;
   };
 
-  const setEditorValues = (note) => {
-    if (note && currentNoteId === note.id) return;
+  const setEditorValues = (note, options = {}) => {
+    const { isNew = false } = options;
+    if (note && currentNoteId === note.id && !isNew) return;
     if (!note) {
+      currentNoteIsNew = false;
+      currentNoteHasChanged = false;
       currentNoteId = null;
       titleInput.value = '';
       setEditorContent('');
@@ -836,14 +841,16 @@ const initMobileNotes = () => {
       }
       return;
     }
+    currentNoteIsNew = Boolean(isNew);
+    currentNoteHasChanged = false;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
     const preferredHtml = typeof note.bodyHtml === 'string' ? note.bodyHtml : null;
     const fallbackBody = typeof note.body === 'string' ? note.body : '';
     const nextBody = (preferredHtml ?? fallbackBody) || '';
-    titleInput.value = nextTitle;
-    setEditorContent(nextBody);
-    titleInput.dataset.noteOriginalTitle = nextTitle;
+    titleInput.value = isNew ? '' : nextTitle;
+    setEditorContent(isNew ? '' : nextBody);
+    titleInput.dataset.noteOriginalTitle = isNew ? '' : nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
     currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
@@ -920,12 +927,36 @@ const initMobileNotes = () => {
   };
 
   const hasUnsavedChanges = () => {
+    if (currentNoteIsNew && !currentNoteHasChanged) {
+      return false;
+    }
     const currentTitle = typeof titleInput.value === 'string' ? titleInput.value : '';
     const currentBody = getEditorBodyHtml();
     const originalTitle = titleInput.dataset.noteOriginalTitle ?? '';
     const originalBody = scratchNotesEditorElement.dataset.noteOriginalBody ?? '';
     return currentTitle !== originalTitle || currentBody !== originalBody;
   };
+
+  const hasMeaningfulContent = () => {
+    const currentTitle = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
+    const bodyText = getEditorText();
+    return Boolean(currentTitle) || Boolean(bodyText);
+  };
+
+  const resetEditorScroll = () => {
+    const editorContainer = document.querySelector('.note-editor-card');
+    if (editorContainer) {
+      editorContainer.scrollTop = 0;
+    }
+    const editorInner = document.querySelector('.note-editor-inner');
+    if (editorInner) {
+      editorInner.scrollTop = 0;
+    }
+  };
+
+  const isMobileViewport = () =>
+    (typeof window !== 'undefined' && window.innerWidth < 768)
+    || /Mobi|Android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '');
 
   const getNoteTimestamp = (note) => {
     if (!note) return 0;
@@ -1154,7 +1185,7 @@ const initMobileNotes = () => {
       cardMain.dataset.role = 'open-note';
       cardMain.dataset.noteId = note.id;
 
-      const noteTitle = note.title || 'Untitled';
+      const noteTitle = (typeof note.title === 'string' && note.title.trim()) || 'Untitled';
       const titleEl = document.createElement('div');
       titleEl.className = 'note-row-title note-list-title';
       titleEl.textContent = noteTitle;
@@ -2734,7 +2765,54 @@ const initMobileNotes = () => {
     refreshFromStorage({ preserveDraft: false });
   };
 
+  const openNoteEditorForNewNote = (note) => {
+    if (!note) return;
+    currentEditingNoteFolderId =
+      note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+    resetEditorScroll();
+    setEditorValues(note, { isNew: true });
+    updateListSelection();
+    const labelElNew = document.getElementById('note-folder-label');
+    if (labelElNew) {
+      labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
+    }
+    const shouldFocusBody = isMobileViewport();
+    if (shouldFocusBody) {
+      try {
+        if (scratchNotesEditor && typeof scratchNotesEditor.focus === 'function') {
+          scratchNotesEditor.focus();
+        } else if (
+          scratchNotesEditorElement &&
+          typeof scratchNotesEditorElement.focus === 'function'
+        ) {
+          scratchNotesEditorElement.focus();
+        }
+      } catch {}
+    } else if (typeof titleInput.focus === 'function') {
+      try { titleInput.focus(); } catch {}
+    }
+  };
+
+  const startNewNoteFromUI = () => {
+    const timestamp = new Date().toISOString();
+    const activeFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'unsorted';
+    const draftNote = createNote('', '', { folderId: activeFolderId, updatedAt: timestamp });
+    const newNote = {
+      ...draftNote,
+      title: '',
+      body: '',
+      bodyHtml: '',
+      bodyText: '',
+      updatedAt: timestamp,
+      folderId: activeFolderId,
+    };
+    openNoteEditorForNewNote(newNote);
+  };
+
   saveButton.addEventListener('click', () => {
+    if (currentNoteIsNew && !currentNoteHasChanged && !hasMeaningfulContent()) {
+      return;
+    }
     const existingNotes = loadAllNotes();
     const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
     const noteBodyHtml = getEditorBodyHtml() || '';
@@ -2779,23 +2857,10 @@ const initMobileNotes = () => {
 
     saveAllNotes(notesArray);
     updateStoredSnapshot();
+    currentNoteIsNew = false;
+    currentNoteHasChanged = false;
     refreshFromStorage({ preserveDraft: false });
   });
-
-  const prepareNewNote = () => {
-    // Prepare editor for creating a new note. Default folder depends on selected folder chip.
-    setEditorValues(null);
-    // default editing folder: if a folder is selected in folder bar, use that; otherwise 'unsorted'
-    currentEditingNoteFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'unsorted';
-    const labelElNew = document.getElementById('note-folder-label');
-    if (labelElNew) {
-      labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
-    }
-    updateListSelection();
-    if (typeof titleInput.focus === 'function') {
-      try { titleInput.focus(); } catch {}
-    }
-  };
 
   // Also wire the footer 'New note' floating button to the same behavior
   const footerNewNoteBtn = document.getElementById('mobile-footer-new-note');
@@ -2814,7 +2879,7 @@ const initMobileNotes = () => {
       } catch (err) {
         /* ignore nav activation errors */
       }
-      prepareNewNote();
+      startNewNoteFromUI();
     });
   }
 
@@ -2822,6 +2887,9 @@ const initMobileNotes = () => {
   const AUTOSAVE_DELAY = 1500; // ms
   const debouncedAutoSave = debounce(() => {
     try {
+      if (currentNoteIsNew && !currentNoteHasChanged) {
+        return;
+      }
       if (!hasUnsavedChanges()) return;
       if (saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
         saveButton.click();
@@ -2831,16 +2899,29 @@ const initMobileNotes = () => {
     }
   }, AUTOSAVE_DELAY);
 
+  const handleNoteEditorInput = () => {
+    if (currentNoteIsNew) {
+      if (!hasMeaningfulContent()) {
+        currentNoteHasChanged = false;
+        return;
+      }
+      currentNoteHasChanged = true;
+    } else {
+      currentNoteHasChanged = true;
+    }
+    debouncedAutoSave();
+  };
+
   // Listen for input changes on title and editor
   try {
-    titleInput.addEventListener('input', debouncedAutoSave);
+    titleInput.addEventListener('input', handleNoteEditorInput);
   } catch (e) {
     /* ignore */
   }
 
   try {
     // contenteditable should emit input events
-    scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
+    scratchNotesEditorElement.addEventListener('input', handleNoteEditorInput);
     scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
     scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
     // also save on blur (user leaving editor)
