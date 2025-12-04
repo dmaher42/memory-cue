@@ -272,44 +272,55 @@ body.mobile-theme .text-secondary {
 .note-editor-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.45rem 0.4rem;
-  background: var(--surface-2, #f7f7fa);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 4px;
+  padding: 6px 10px;
+  background: #f8f5ff;
+  border-radius: 10px;
+  margin-bottom: 10px;
   overflow-x: auto;
-  position: sticky;
-  top: 0;
-  z-index: 20;
 }
 
 .rte-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.55rem;
-  font-size: 0.85rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   background: #ffffff;
-  border-radius: 0.55rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  flex: 0 0 auto;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .rte-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(76, 29, 149, 0.04);
 }
 
 .rte-btn.active {
   background: rgba(76, 29, 149, 0.12);
-  border-color: rgba(76, 29, 149, 0.3);
-  color: var(--accent, #4c1d95);
+  border-color: rgba(76, 29, 149, 0.35);
+  color: #4c1d95;
+}
+
+.rte-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .rte-divider {
   width: 1px;
-  height: 1.2rem;
+  height: 20px;
   background: rgba(0, 0, 0, 0.12);
-  margin: 0 0.2rem;
+  margin: 0 2px;
+}
+
+.note-editor-toolbar span {
+  text-decoration: none;
+  color: inherit;
 }
 
 .note-toolbar {
