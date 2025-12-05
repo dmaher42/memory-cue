@@ -577,6 +577,8 @@ export async function initReminders(sel = {}) {
     let baseText;
     if (mobileRemindersFilterMode === 'today') {
       baseText = `Today\u2019s reminders \u2022 ${todayLabel}`;
+    } else if (mobileRemindersFilterMode === 'completed') {
+      baseText = `Completed reminders \u2022 ${todayLabel}`;
     } else {
       baseText = `All reminders \u2022 ${todayLabel}`;
     }
@@ -3613,12 +3615,31 @@ export async function initReminders(sel = {}) {
   }
 
   function filterMobileReminderRows(rows, filterMode, todayRange) {
-    if (filterMode !== 'today') {
-      return rows;
+    if (!Array.isArray(rows)) {
+      return [];
     }
-    return Array.isArray(rows)
-      ? rows.filter((entry) => isReminderForTodayMobile(entry, todayRange))
-      : [];
+
+    const isCompletedMode = filterMode === 'completed';
+    const filteredByStatus = rows.filter((entry) => !!entry?.done === isCompletedMode);
+
+    if (filterMode === 'today') {
+      return filteredByStatus.filter((entry) => isReminderForTodayMobile(entry, todayRange));
+    }
+
+    return filteredByStatus;
+  }
+
+  function applyMobileRemindersFilter(mode) {
+    if (!mode || mode === mobileRemindersFilterMode) {
+      return false;
+    }
+
+    if (!['all', 'today', 'completed'].includes(mode)) {
+      return false;
+    }
+
+    mobileRemindersFilterMode = mode;
+    return true;
   }
 
   function setupMobileReminderTabs() {
@@ -3655,10 +3676,9 @@ export async function initReminders(sel = {}) {
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => {
         const mode = button.getAttribute('data-reminders-tab');
-        if (!mode || mode === mobileRemindersFilterMode) {
+        if (!applyMobileRemindersFilter(mode)) {
           return;
         }
-        mobileRemindersFilterMode = mode;
         syncTabUiState();
         if (Array.isArray(mobileRemindersCache)) {
           render();
