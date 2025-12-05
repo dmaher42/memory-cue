@@ -136,6 +136,21 @@ body.mobile-theme .top-bar h2 {
   font-weight: 600;
 }
 
+.header-pill {
+  padding: 6px 12px !important;
+  margin-right: 4px !important;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.header-pill.active {
+  font-weight: 600;
+}
+
+.header-filter-container {
+  gap: 4px !important;
+}
+
 body.mobile-theme .app-header button,
 body.mobile-theme .top-bar button,
 body.mobile-theme header button,
