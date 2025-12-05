@@ -577,8 +577,6 @@ export async function initReminders(sel = {}) {
     let baseText;
     if (mobileRemindersFilterMode === 'today') {
       baseText = `Today\u2019s reminders \u2022 ${todayLabel}`;
-    } else if (mobileRemindersFilterMode === 'completed') {
-      baseText = `Completed reminders \u2022 ${todayLabel}`;
     } else {
       baseText = `All reminders \u2022 ${todayLabel}`;
     }
@@ -3620,7 +3618,9 @@ export async function initReminders(sel = {}) {
     }
 
     const isCompletedMode = filterMode === 'completed';
-    const filteredByStatus = rows.filter((entry) => !!entry?.done === isCompletedMode);
+    const filteredByStatus = isCompletedMode
+      ? rows.filter((entry) => !!entry?.done)
+      : rows.filter((entry) => !entry?.done);
 
     if (filterMode === 'today') {
       return filteredByStatus.filter((entry) => isReminderForTodayMobile(entry, todayRange));
@@ -3634,7 +3634,7 @@ export async function initReminders(sel = {}) {
       return false;
     }
 
-    if (!['all', 'today', 'completed'].includes(mode)) {
+    if (!['all', 'today'].includes(mode)) {
       return false;
     }
 
