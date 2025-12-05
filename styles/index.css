@@ -4924,6 +4924,18 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   box-shadow: 0 10px 24px rgba(81, 38, 99, 0.12);
 }
 
+/* Ensure reminder tab text stays visible on the mobile header */
+.mobile-header .reminder-tab,
+.mobile-header .reminders-tab {
+  color: var(--text-main) !important;
+}
+
+.mobile-header .reminder-tab.reminders-tab-active,
+.mobile-header .reminder-tab.active,
+.mobile-header .reminders-tab.active {
+  color: #fff !important;
+}
+
 .header-pill .quick-reminder {
   background: transparent !important;
   color: var(--text-main);
