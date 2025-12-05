@@ -4202,7 +4202,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   padding: 0.2rem 0.9rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-main, #0f172a);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -4922,6 +4922,18 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   color: var(--text-main);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 10px 24px rgba(81, 38, 99, 0.12);
+}
+
+/* Ensure reminder tab text stays visible on the mobile header */
+.mobile-header .reminder-tab,
+.mobile-header .reminders-tab {
+  color: var(--text-main) !important;
+}
+
+.mobile-header .reminder-tab.reminders-tab-active,
+.mobile-header .reminder-tab.active,
+.mobile-header .reminders-tab.active {
+  color: #fff !important;
 }
 
 .header-pill .quick-reminder {

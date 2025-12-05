@@ -311,7 +311,7 @@
     flex-direction: column;
     gap: 0;
     max-width: 640px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 0.75rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0.75rem));
     position: relative;
     border-radius: 18px;
@@ -1849,12 +1849,16 @@
     }
 
     .distraction-free-editor-container {
-      margin-top: 0;
-      background: rgba(249, 249, 252, 0.66);
-      border: 1px solid rgba(230, 225, 240, 0.75);
-      color: var(--text-body);
+      margin-top: 8px;
       border-radius: 14px;
-      padding: 0.35rem;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #f9f7ff;
+      padding: 10px 12px;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      color: var(--text-body);
       transition: box-shadow 0.18s ease, border-color 0.18s ease;
     }
 
@@ -1865,35 +1869,40 @@
     }
 
     .minimal-editor {
-      border: 1px solid rgba(220, 214, 233, 0.9);
+      width: 100%;
+      max-width: 100%;
+      min-height: 140px;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
       box-shadow: none;
       transition: all 0.2s ease;
-      line-height: 1.45;
-      min-height: 220px;
+      line-height: 1.5;
       max-height: none;
       overflow-y: auto;
-      background: rgba(249, 249, 252, 0.96);
-      color: var(--text-body, #4a3c57);
+      color: #1f1633;
       border-radius: 12px;
       font-family: var(--font-primary);
-      font-size: var(--font-size-body);
+      font-size: 15px;
       font-weight: 400;
-      padding: 10px 12px;
+      padding: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .minimal-editor:focus,
     .minimal-editor[contenteditable="true"]:focus {
-      border-color: rgba(81, 38, 99, 0.22);
+      border-color: transparent;
       box-shadow: none;
       outline: none;
     }
 
     .minimal-editor textarea {
       font-family: var(--font-primary);
-      font-size: var(--font-size-body);
+      font-size: 15px;
       font-weight: 400;
-      color: var(--text-body);
-      line-height: 1.45;
+      color: #1f1633;
+      line-height: 1.5;
     }
 
     .minimal-editor textarea:focus {
@@ -1903,12 +1912,12 @@
     .minimal-editor textarea,
     .minimal-editor[contenteditable="true"] {
       background-color: transparent;
-      color: var(--text-body);
+      color: #1f1633;
     }
 
     .minimal-editor:empty::before {
       content: attr(data-placeholder);
-      color: var(--text-muted, #9a8bb0);
+      color: rgba(31, 22, 51, 0.35);
       font-style: italic;
     }
 
@@ -4981,6 +4990,15 @@
           >
             Today
           </button>
+          <button
+            type="button"
+            class="reminder-tab reminders-tab"
+            data-reminders-tab="completed"
+            data-filter="completed"
+            aria-pressed="false"
+          >
+            Completed
+          </button>
         </div>
         <div class="relative header-overflow-wrapper">
           <button
@@ -5049,6 +5067,18 @@
             >
               <span aria-hidden="true">🔓</span>
               Sign out
+            </button>
+
+            <button
+              type="button"
+              class="overflow-item w-full"
+              role="menuitem"
+              data-reminders-tab="completed"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Completed
             </button>
 
             <button
@@ -5149,18 +5179,19 @@
   </script>
 
   <!-- quickAddBar is now integrated in the header -->
-  <div
-    id="mobile-shell"
-    class="mobile-shell mx-auto w-full px-4 pb-16"
-    style="background: #FBFBFB; padding-top: env(safe-area-inset-top, 0);"
-  >
-    <main
-      id="main"
-      class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
-      tabindex="-1"
-      data-active-view="reminders"
-      style="background: #FBFBFB;"
+  <div class="app-main">
+    <div
+      id="mobile-shell"
+      class="mobile-shell mx-auto w-full px-4 pb-16"
+      style="background: #FBFBFB; padding-top: env(safe-area-inset-top, 0);"
     >
+      <main
+        id="main"
+        class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
+        tabindex="-1"
+        data-active-view="reminders"
+        style="background: #FBFBFB;"
+      >
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -5189,20 +5220,22 @@
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
-        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="background: var(--mobile-quick-surface); color: var(--text-body);">
+        <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3" style="color: var(--text-body);">
-          <div class="note-editor-card">
-            <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
-              <div class="flex flex-col">
-                <span class="sr-only">Notebook</span>
+        <div class="note-sheet-wrapper scratch-notes-wrapper">
+          <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3">
+            <div class="note-editor-card">
+            <div class="scratch-notes-header-block">
+              <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
+                <div class="flex flex-col">
+                  <span class="sr-only">Notebook</span>
+                </div>
+
+                <!-- saved notes button moved into the sub-header for compact layout -->
               </div>
 
-              <!-- saved notes button moved into the sub-header for compact layout -->
-            </div>
-
-            <!-- Seamless title field -->
+              <!-- Seamless title field -->
               <div class="flex flex-col items-stretch gap-2 px-1 py-1 rounded-md notebook-actions-row">
                 <input
                   id="noteTitleMobile"
@@ -5216,38 +5249,57 @@
                 </button>
               </div>
 
-            <div class="note-editor-inner">
               <div
                 id="scratchNotesToolbar"
                 class="note-editor-toolbar"
                 role="toolbar"
                 aria-label="Formatting options"
               >
-                <button class="rte-btn" data-cmd="bold"><span class="icon">B</span></button>
-                <button class="rte-btn" data-cmd="italic"><span class="icon">I</span></button>
-                <button class="rte-btn" data-cmd="underline"><span class="icon">U</span></button>
+                <button class="rte-btn" data-cmd="bold" type="button">
+                  <span class="rte-icon">B</span>
+                </button>
+                <button class="rte-btn" data-cmd="italic" type="button">
+                  <span class="rte-icon">I</span>
+                </button>
+                <button class="rte-btn" data-cmd="underline" type="button">
+                  <span class="rte-icon">U</span>
+                </button>
 
                 <div class="rte-divider"></div>
 
-                <button class="rte-btn" data-cmd="insertUnorderedList"><span class="icon">• List</span></button>
-                <button class="rte-btn" data-cmd="insertOrderedList"><span class="icon">1.</span></button>
+                <button class="rte-btn" data-cmd="insertUnorderedList" type="button">
+                  <span class="rte-icon">•</span>
+                </button>
+                <button class="rte-btn" data-cmd="insertOrderedList" type="button">
+                  <span class="rte-icon">1.</span>
+                </button>
 
                 <div class="rte-divider"></div>
 
-                <button class="rte-btn" data-cmd="indent"><span class="icon">→</span></button>
-                <button class="rte-btn" data-cmd="outdent"><span class="icon">←</span></button>
+                <button class="rte-btn" data-cmd="indent" type="button">
+                  <span class="rte-icon">→</span>
+                </button>
+                <button class="rte-btn" data-cmd="outdent" type="button">
+                  <span class="rte-icon">←</span>
+                </button>
 
                 <div class="rte-divider"></div>
 
-                <button class="rte-btn" data-cmd="undo"><span class="icon">↺</span></button>
-                <button class="rte-btn" data-cmd="redo"><span class="icon">↻</span></button>
+                <button class="rte-btn" data-cmd="undo" type="button">
+                  <span class="rte-icon">↺</span>
+                </button>
+                <button class="rte-btn" data-cmd="redo" type="button">
+                  <span class="rte-icon">↻</span>
+                </button>
               </div>
+            </div>
 
+            <div class="note-editor-inner">
               <!-- Minimal main editor with soft styling -->
-              <div class="distraction-free-editor-container">
+              <div class="distraction-free-editor-container note-content-wrapper note-editor-content-wrapper scratch-notes-body-wrapper">
                 <div
                   id="notebook-editor-body"
-                  class="note-editor-content note-editor-area notebook-editor-body minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg"
+                  class="note-editor-content note-editor-area notebook-editor-body minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg scratch-notes-body"
                   contenteditable="true"
                   spellcheck="true"
                   data-placeholder="Start typing your note…"
@@ -5259,9 +5311,10 @@
             </div>
           </div>
         </div>
+        </div>
           <div
             id="savedNotesSheet"
-            class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm"
+            class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm flex items-end justify-center"
             aria-hidden="true"
             aria-modal="true"
             role="dialog"
@@ -5270,15 +5323,15 @@
           >
           <div
             id="saved-notes-panel"
-            class="saved-notes-panel fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] max-w-md flex-col space-y-2 rounded-3xl border border-base-300 bg-base-100 px-4 py-3 shadow-xl transition-transform"
+            class="saved-notes-panel notebook-sheet"
           >
             <div class="flex flex-col max-h-[70vh]">
               <div class="flex justify-center pt-2 pb-1">
                 <div class="h-1.5 w-10 rounded-full bg-base-300"></div>
               </div>
 
-              <div class="px-2 pb-3 overflow-y-auto">
-                <div class="notebook-top-bar">
+              <div class="overflow-y-auto">
+                <div class="notebook-top-bar notebook-header">
                   <div class="notebook-top-left">
                     <button
                       id="closeSavedNotesSheet"
@@ -5323,7 +5376,7 @@
                   </button>
                 </div>
 
-                <div class="px-3 pb-1">
+                <div class="notebook-search-container">
                   <input
                     id="notebook-search-input"
                     type="search"
@@ -5334,7 +5387,7 @@
 
                 <div
                   id="notesListMobile"
-                  class="notebook-list notebook-notes-list text-sm"
+                  class="notebook-list notebook-notes-list saved-notes-list text-sm"
                   aria-label="Saved scratch notes"
                 >
                   <!-- Note items are rendered here by JS -->
@@ -5353,7 +5406,7 @@
                       </div>
                       <button
                         type="button"
-                        class="note-row-overflow note-list-overflow note-options-button"
+                        class="note-row-overflow note-list-overflow note-options-button note-actions"
                         aria-label="More"
                         data-role="note-menu"
                         data-note-id=""
@@ -5498,6 +5551,7 @@
       </section>
       <!-- END GPT CHANGE -->
       </main>
+    </div>
   </div>
 
   <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
