@@ -104,6 +104,7 @@
       flex: 1 1 auto;
       min-width: 0;
       padding: 0.45rem 0.7rem;
+      margin-bottom: 0;
       background: color-mix(in srgb, #f4f1fb 88%, #ffffff);
       border: 1px solid color-mix(in srgb, #dcd3ec 65%, transparent);
       border-radius: 999px;
@@ -145,6 +146,12 @@
       cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease;
       white-space: nowrap;
+    }
+
+    .reminders-summary,
+    #remindersSummary,
+    #mobileRemindersHeaderSubtitle {
+      margin-top: 0.25rem !important;
     }
 
     .reminder-tab.reminders-tab-active,
@@ -637,7 +644,7 @@
 
   .menu-heading {
     margin: 0;
-    padding: 0.75rem 1rem 0.25rem;
+    padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
     font-size: 0.75rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3953,7 +3960,7 @@
               </ul>
             </div>
 
-            <p id="mobileRemindersHeaderSubtitle" class="mt-2 text-xs text-slate-500"></p>
+            <p id="mobileRemindersHeaderSubtitle" class="text-xs text-slate-500"></p>
           </div>
         </header>
 

@@ -71,8 +71,10 @@ body.mobile-theme footer {
 
 .mobile-shell #view-reminders .mobile-view-inner,
 .mobile-shell #view-reminders .reminders-content-shell {
+  padding-top: 0 !important;
   padding-left: 0;
   padding-right: 0;
+  margin-top: 0 !important;
 }
 
 .mobile-shell #reminderListSection {
