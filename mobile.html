@@ -145,6 +145,26 @@
       outline: none;
     }
 
+    @media (max-width: 380px) {
+      .reminders-top-row {
+        gap: 0.35rem;
+        padding: 0.35rem 0.15rem;
+      }
+
+      .reminders-quick-bar {
+        padding: 0.38rem 0.6rem;
+      }
+
+      .reminder-tab {
+        padding: 0.18rem 0.55rem;
+        font-size: 0.78rem;
+      }
+
+      .reminders-quick-actions .icon-btn {
+        padding: 0.28rem;
+      }
+    }
+
     /* Mobile reminder cards coloured by priority using existing tokens */
     .task-item,
     .cue-task-card {
@@ -4841,30 +4861,32 @@
   </script>
 
   <!-- Mobile header matching screenshot -->
-  <header
+    <header
     id="reminders-slim-header"
-    class="mobile-header px-3 py-2 pt-safe-top"
+    class="w-full px-4 pt-3 pb-3 mobile-header pt-safe-top"
     role="banner"
   >
-    <!-- REMINDERS TOP BAR - START -->
-    <div class="reminders-top-row">
-      <form id="quickAddForm" class="reminders-quick-bar" onsubmit="return false;">
+    <div class="max-w-3xl mx-auto">
+      <form
+        id="quickReminderForm"
+        class="reminders-top-row"
+        autocomplete="off"
+      >
+        <div class="reminders-quick-bar">
+          <input
+            id="quickAddInput"
+            type="text"
+            inputmode="text"
+            placeholder="Quick reminder..."
+            aria-label="Quick reminder"
+          />
+        </div>
 
-        <!-- Left: quick reminder text field -->
-        <input
-          id="quickAddInput"
-          type="text"
-          placeholder="Quick reminder..."
-          autocomplete="off"
-        />
-
-        <!-- Center: All / Today segmented control -->
-        <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
+        <div class="reminder-tabs" role="tablist" aria-label="Filter reminders">
           <button
             type="button"
             class="reminder-tab reminders-tab reminders-tab-active"
             data-reminders-tab="all"
-            data-filter="all"
             aria-pressed="true"
           >
             All
@@ -4873,164 +4895,105 @@
             type="button"
             class="reminder-tab reminders-tab"
             data-reminders-tab="today"
-            data-filter="today"
             aria-pressed="false"
           >
             Today
           </button>
         </div>
 
-        <!-- Right: saved, mic, save, overflow -->
         <div class="reminders-quick-actions">
-          <!-- Saved notes / bookmark -->
-          <button id="savedNotesShortcut" type="button" class="icon-btn" aria-label="Saved notes">📑</button>
-          <!-- Microphone -->
-          <button id="quickAddVoice" type="button" class="icon-btn" aria-label="Dictate">🎤</button>
-          <!-- Save quick reminder -->
-          <button id="quickAddSubmit" type="button" class="icon-btn" aria-label="Save reminder">✔</button>
-          <!-- Overflow menu -->
-          <button id="headerMenuBtn" type="button" class="icon-btn" aria-label="More options">⋮</button>
+          <button
+            type="button"
+            id="openSavedNotesSheetButton"
+            class="icon-btn"
+            aria-label="Open saved notes"
+          >
+            <span class="material-symbols-rounded">chrome_reader_mode</span>
+          </button>
+
+          <button
+            type="button"
+            id="voiceBtn"
+            class="icon-btn"
+            aria-label="Start voice reminder"
+          >
+            <span class="material-symbols-rounded">mic</span>
+          </button>
+
+          <button
+            type="submit"
+            id="quickAddSaveButton"
+            class="icon-btn"
+            aria-label="Save reminder"
+          >
+            <span class="material-symbols-rounded">done</span>
+          </button>
         </div>
-
       </form>
-    </div>
-    <!-- REMINDERS TOP BAR - END -->
 
-      <!-- Dropdown menu -->
-      <div
-        id="headerMenu"
-        class="overflow-menu hidden"
-        role="menu"
-        aria-labelledby="headerMenuBtn"
-      >
-        <button
-          id="notifHeaderBtn"
-          type="button"
-          class="overflow-item w-full"
-          role="menuitem"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-            <path d="m13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          Notifications
-        </button>
-
-        <button
-          type="button"
-          class="overflow-item w-full"
-          role="menuitem"
-          onclick="window.location.href='/'"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9,22 9,12 15,12 15,22"/>
-          </svg>
-          Home
-        </button>
-
-        <button
-          id="googleSignInBtn"
-          type="button"
-          class="overflow-item w-full"
-          role="menuitem"
-        >
-          <span aria-hidden="true">🔐</span>
-          Sign in
-        </button>
-
-        <button
-          id="googleSignOutBtn"
-          type="button"
-          class="overflow-item w-full hidden"
-          role="menuitem"
-        >
-          <span aria-hidden="true">🔓</span>
-          Sign out
-        </button>
-
-        <button
-          id="openSettings"
-          type="button"
-          class="overflow-item w-full"
-          role="menuitem"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          Settings
-        </button>
-
-        <button
-          id="viewToggleMenu"
-          type="button"
-          class="overflow-item w-full justify-between"
-          role="menuitem"
-          aria-pressed="false"
-          aria-live="polite"
-        >
-          <span class="flex items-center gap-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="7" height="6" rx="1" />
-              <rect x="14" y="4" width="7" height="6" rx="1" />
-              <rect x="3" y="14" width="7" height="6" rx="1" />
-              <rect x="14" y="14" width="7" height="6" rx="1" />
-            </svg>
-            Layout
-          </span>
-          <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide text-gray-600">View layout: Stacked</span>
-        </button>
-
-        <button
-          id="btn-theme"
-          type="button"
-          class="overflow-item w-full"
-          role="menuitem"
-        >
-          <svg
-            id="icon-sun"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.657-7.657-1.414 1.414M7.757 16.243l-1.414 1.414m0-12.728 1.414 1.414m8.486 8.486 1.414 1.414" />
-          </svg>
-          <svg
-            id="icon-moon"
-            class="hidden"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-          Toggle theme
-        </button>
-
-        <button
-          type="button"
-          class="overflow-item w-full"
-          role="menuitem"
-          onclick="window.open('https://github.com/dmaher42/memory-cue', '_blank')"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <path d="M12 17h.01"/>
-          </svg>
-          About
-        </button>
-      </div>
+      <p id="mobileRemindersHeaderSubtitle" class="mt-2 text-xs text-slate-500"></p>
     </div>
   </header>
+
+  <script>
+    (function wireQuickReminderShortcut() {
+      const focusQuickInput = (input) => {
+        if (!input) return;
+        try {
+          input.focus({ preventScroll: true });
+        } catch (e) {
+          input.focus();
+        }
+      };
+
+      const syncQuickInputToForm = (event) => {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
+        const quickInput = document.getElementById('quickAddInput');
+        const titleInput = document.getElementById('reminderText');
+        const saveBtn = document.getElementById('saveReminder');
+
+        if (!(quickInput instanceof HTMLInputElement) || !(titleInput instanceof HTMLInputElement) || !(saveBtn instanceof HTMLElement)) {
+          return;
+        }
+
+        const text = (quickInput.value || '').trim();
+        if (!text) {
+          focusQuickInput(quickInput);
+          return;
+        }
+
+        titleInput.value = text;
+        titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+        titleInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+        saveBtn.click();
+
+        quickInput.value = '';
+        focusQuickInput(quickInput);
+      };
+
+      const init = () => {
+        const quickForm = document.getElementById('quickReminderForm');
+        const quickSaveBtn =
+          document.getElementById('quickAddSaveButton') || document.getElementById('quickAddSubmit');
+
+        if (!quickForm) return;
+
+        quickForm.addEventListener('submit', syncQuickInputToForm);
+        quickSaveBtn?.addEventListener('click', syncQuickInputToForm);
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+      } else {
+        init();
+      }
+    })();
+  </script>
 
   <script>
     // Header menu functionality

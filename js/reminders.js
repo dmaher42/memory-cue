@@ -809,7 +809,9 @@ export async function initReminders(sel = {}) {
   const quickBtn =
     typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
   const quickVoiceBtn =
-    typeof document !== 'undefined' ? document.getElementById('quickAddVoice') : null;
+    typeof document !== 'undefined'
+      ? document.getElementById('quickAddVoice') || document.getElementById('voiceBtn')
+      : null;
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   let stopQuickAddVoiceListening = null;
