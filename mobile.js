@@ -389,7 +389,7 @@ const bootstrapReminders = () => {
     testSyncSel: '#testSync',
     openSettingsSel: '[data-open="settings"]',
     dateFeedbackSel: '#dateFeedback',
-    voiceBtnSel: '#voiceBtn',
+    voiceBtnSel: '#quickAddVoice',
   }).catch((error) => {
     console.error('Failed to initialise reminders:', error);
   });
@@ -431,9 +431,7 @@ const initMobileNotes = () => {
   const filterInput = document.getElementById('notebook-search-input');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
-    document.getElementById('openSavedNotesSheetButton') ||
-    document.getElementById('savedNotesShortcut') ||
-    document.getElementById('openSavedNotesSheet');
+    document.getElementById('savedNotesShortcut');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
   const folderSelectorEl = document.getElementById('moveFolderSheet');
   const folderSelectorUnsortedBtn = document.getElementById('move-folder-unsorted');
@@ -3307,7 +3305,7 @@ if (supabaseAuthController?.supabase) {
   }
 
   const getVoiceBtn = () => {
-    const el = document.getElementById('voiceBtn');
+    const el = document.getElementById('quickAddVoice');
     return el instanceof HTMLElement ? el : null;
   };
 
