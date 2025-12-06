@@ -4169,15 +4169,12 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
-    /* NEW: Sticky lilac header with centered pill */
-    #reminders-slim-header,
-    #reminders-slim-header .header-shell {
+    /* NEW: Sticky lilac header with separated shell layout */
+    #reminders-slim-header {
       position: sticky;
       top: 0;
       z-index: 999;
       width: 100%;
-      display: flex;
-      justify-content: center;
       padding: 6px 14px;
       background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(14px);
@@ -4187,7 +4184,12 @@
       color: var(--text-strong, #34163f);
     }
 
+    /* Make the header-shell a full-width flex container that spaces children */
     #reminders-slim-header .header-shell {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
       max-width: 1080px;
     }
 
