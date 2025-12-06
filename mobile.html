@@ -4134,6 +4134,36 @@
       }
     }
 
+    /* Tighter header sizing for small mobile viewports */
+    @media (max-width: 420px) {
+      /* Reduce gaps and overall pill sizes */
+      .reminders-top-bar { gap: 0.35rem; }
+      .reminders-quick-add { padding: 0.3rem 0.5rem; border-radius: 20px; }
+      .reminders-quick-add .quick-icon { width: 36px; height: 36px; }
+      .reminders-quick-add input { font-size: 0.88rem; padding: 0.45rem 0.6rem; }
+
+      /* Shrink action buttons (mic, save, notebook) */
+      .header-action-btn, .header-action-btn.icon-btn, .reminders-quick-add .quick-icon,
+      #reminders-slim-header .header-action-btn, .mc-quick-submit, .mc-quick-voice {
+        width: 36px; height: 36px; min-width: 36px; min-height: 36px; padding: 6px;
+      }
+
+      /* Make reminder tabs slightly smaller to match */
+      #reminders-slim-header .reminder-tab,
+      #reminders-slim-header .reminders-tab {
+        padding: 4px 10px;
+        min-height: 36px;
+        min-width: 36px;
+        font-size: 0.85rem;
+      }
+
+      /* Reduce gap between tabs and overflow */
+      #reminders-slim-header .reminder-tabs { gap: 0.25rem; }
+
+      /* Ensure header actions don't push layout vertically */
+      #reminders-slim-header .header-actions { gap: 0.25rem; }
+    }
+
     /* Header shadow when scrolled */
     .header-shadow {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
