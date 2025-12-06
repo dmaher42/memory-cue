@@ -4214,15 +4214,18 @@
     .reminders-top-bar {
       display: flex;
       align-items: center;
+      justify-content: space-between; /* ensure controls sit on right */
       width: 100%;
       gap: 0.5rem;
+      flex-wrap: nowrap;
     }
 
     .reminders-top-primary {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      width: 100%;
+      flex: 1 1 auto; /* allow quick-add to take remaining space */
+      min-width: 0;
     }
 
     /* Make the quick-add take at least 50% of the header width (use 60% preferred)
@@ -4236,10 +4239,12 @@
 
     /* Push the tabs/overflow to the right end of the header row */
     .reminders-top-controls {
-      margin-left: auto;
+      /* keep controls on the same row; no auto margin required when parent uses space-between */
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      flex: 0 0 auto;
+      margin-left: 0;
     }
 
     /* Ensure reminder tabs visually match the quick-add height */
