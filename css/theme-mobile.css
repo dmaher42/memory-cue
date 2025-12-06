@@ -523,12 +523,13 @@ body.mobile-theme .text-secondary {
 /* Make the scratch-notes wrapper fill and the card extend properly */
 #view-notebook .scratch-notes-wrapper {
   margin-top: 0;
-  padding-top: 4px;
+  padding-top: 0.25rem;
 }
 
-/* Cap the scratch-notes card height properly */
+/* Cap the scratch-notes card height properly 
+   160px accounts for: header (80px) + bottom nav (80px) approximately */
 .mobile-shell #view-notebook #scratch-notes-card {
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 10rem);
 }
 
 .note-editor-content.is-placeholder,
