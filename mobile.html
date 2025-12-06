@@ -4441,7 +4441,10 @@
     .reminders-content-shell {
       background-color: transparent;
       border-radius: 1.25rem;
-      padding: 1rem;
+      /* remove top padding so content sits flush under the sticky header */
+      padding: 0 1rem 1rem;
+      padding-top: 0 !important;
+      margin-top: 0 !important;
       width: 100%;
     }
 
