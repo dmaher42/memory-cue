@@ -424,6 +424,117 @@ body.mobile-theme .text-secondary {
   background: rgba(76, 29, 149, 0.04);
 }
 
+/* Mobile-specific: tighten filter bar spacing and stretch scratch-notes panel */
+@media (max-width: 899px) {
+  /* Header that contains quick reminder + filter tabs */
+  .reminders-top-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 8px;
+    gap: 0;
+  }
+
+  /* Filter bar container – All / Today */
+  .reminder-tabs {
+    width: 100%;
+    max-width: 100vw;
+    display: flex;
+    justify-content: center; /* center the tab group */
+    gap: 8px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    margin-top: 8px;    /* small gap under quick reminder bar */
+    margin-bottom: 8px; /* small gap above scratch notes */
+  }
+
+  /* Individual tab pill */
+  .reminder-tab {
+    flex: 0 0 auto;
+    min-width: 56px;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+
+  /* Normalise any accidental large top spacing */
+  .mobile-view-inner .reminders-content-shell,
+  .reminders-content-shell {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  /* Scratch notes wrapper adjustments */
+  .scratch-notes-wrapper,
+  .note-sheet-wrapper {
+    margin-top: 0;
+    padding-top: 4px; /* tiny separation only */
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* Make the scratch-notes card stretch and allow internal scrolling */
+  #scratch-notes-card,
+  .scratch-notes-card {
+    flex: 1 1 auto;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding-bottom: 0;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  .note-editor-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+
+  .scratch-notes-header-block {
+    flex: 0 0 auto;
+  }
+
+  /* Outer panel around the contenteditable area */
+  .scratch-notes-body-wrapper,
+  .note-editor-content-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    background: #fbf9ff;
+    overflow: hidden; /* scroll happens inside .scratch-notes-body */
+  }
+
+  /* Editable area */
+  .scratch-notes-body,
+  .note-editor-area,
+  .notebook-editor-body,
+  .note-editor-content {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto; /* internal scroll for long notes */
+    padding-right: 6px;
+  }
+
+  /* Reserve space for bottom nav to avoid content behind footer */
+  #mobile-shell #main {
+    padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
+  }
+
+  /* Cap overall card height so it doesn't disappear behind the footer */
+  #scratch-notes-card {
+    max-height: calc(100vh - 120px);
+  }
+}
+
 .note-content-wrapper {
   margin-top: 8px;
   border-radius: 14px;
