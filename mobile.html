@@ -4849,16 +4849,16 @@
     <!-- REMINDERS TOP BAR - START -->
     <div class="reminders-top-row">
       <form id="quickAddForm" class="reminders-quick-bar" onsubmit="return false;">
-        <!-- Left: quick reminder field -->
+
+        <!-- Left: quick reminder text field -->
         <input
           id="quickAddInput"
           type="text"
           placeholder="Quick reminder..."
           autocomplete="off"
-          aria-label="Quick reminder"
         />
 
-        <!-- Middle: All / Today segmented control -->
+        <!-- Center: All / Today segmented control -->
         <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
           <button
             type="button"
@@ -4883,64 +4883,15 @@
         <!-- Right: saved, mic, save, overflow -->
         <div class="reminders-quick-actions">
           <!-- Saved notes / bookmark -->
-          <button
-            id="savedNotesShortcut"
-            type="button"
-            class="icon-btn"
-            aria-label="Saved notes"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v17l-7-4-7 4V4z" />
-            </svg>
-          </button>
-
+          <button id="savedNotesShortcut" type="button" class="icon-btn" aria-label="Saved notes">📑</button>
           <!-- Microphone -->
-          <button
-            id="quickAddVoice"
-            type="button"
-            class="icon-btn"
-            aria-label="Dictate quick reminder"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="22" />
-              <line x1="8"  y1="22" x2="16" y2="22" />
-            </svg>
-          </button>
-
-          <!-- Save reminder -->
-          <button
-            id="quickAddSubmit"
-            type="button"
-            class="icon-btn"
-            aria-label="Save reminder"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </button>
-
+          <button id="quickAddVoice" type="button" class="icon-btn" aria-label="Dictate">🎤</button>
+          <!-- Save quick reminder -->
+          <button id="quickAddSubmit" type="button" class="icon-btn" aria-label="Save reminder">✔</button>
           <!-- Overflow menu -->
-          <button
-            id="headerMenuBtn"
-            type="button"
-            class="icon-btn"
-            aria-label="More options"
-            aria-expanded="false"
-            aria-haspopup="true"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="5" r="1.5" />
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="12" cy="19" r="1.5" />
-            </svg>
-          </button>
+          <button id="headerMenuBtn" type="button" class="icon-btn" aria-label="More options">⋮</button>
         </div>
+
       </form>
     </div>
     <!-- REMINDERS TOP BAR - END -->
@@ -6005,6 +5956,75 @@
 
     #dateFeedback {
       min-height: 1em;
+    }
+
+    .reminders-top-row {
+      display: flex;
+      padding: 0.75rem 1rem 0.25rem;
+    }
+
+    .reminders-quick-bar {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      gap: 0.5rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 999px;
+      background: #f8f6ff;
+      border: 1px solid rgba(81,38,99,0.08);
+      box-shadow: 0 6px 18px rgba(15, 10, 41, 0.10);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    #quickAddInput {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .reminder-tabs {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      background: #eee6ff;
+      padding: 3px;
+      border-radius: 999px;
+    }
+
+    .reminder-tab {
+      border: none;
+      background: transparent;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #5c4b75;
+    }
+
+    .reminder-tab.reminders-tab-active,
+    .reminder-tab[aria-pressed="true"] {
+      background: #512663;
+      color: #fff;
+    }
+
+    .reminders-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      padding: 0.35rem;
+      border-radius: 999px;
     }
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet for Create Reminder -->
