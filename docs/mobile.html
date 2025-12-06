@@ -3159,27 +3159,27 @@
           <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
           <span class="mc-add-btn-label">Add reminder</span>
         </button>
-        <div class="relative">
+        <div class="relative header-overflow-wrapper">
           <button
-            id="overflowMenuBtn"
+            id="headerMenuBtn"
             type="button"
             class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
             aria-label="Open quick settings"
             aria-haspopup="menu"
-            aria-controls="overflowMenu"
+            aria-controls="headerMenu"
             aria-expanded="false"
           >
             <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
           </button>
 
           <div
-            id="overflowMenu"
-            class="hidden quick-actions-panel absolute right-0 mt-2"
+            id="headerMenu"
+            class="overflow-menu hidden quick-actions-panel absolute right-0 mt-2"
             role="menu"
             aria-hidden="true"
-            aria-labelledby="overflowMenuHeading"
+            aria-labelledby="headerMenuHeading"
           >
-            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+            <h2 id="headerMenuHeading" class="sr-only">Quick settings</h2>
             <ul class="quick-actions" role="presentation">
               <li role="none">
                 <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
@@ -3622,18 +3622,18 @@
     </div>
     <div class="header-actions">
       <div class="header-overflow-wrapper">
-        <button id="overflowMenuBtn" type="button" class="header-btn header-btn-icon" aria-label="Open quick settings" aria-haspopup="menu" aria-controls="overflowMenu" aria-expanded="false">
+        <button id="headerMenuBtn" type="button" class="header-btn header-btn-icon" aria-label="Open quick settings" aria-haspopup="menu" aria-controls="headerMenu" aria-expanded="false">
           <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
         </button>
 
         <div
-          id="overflowMenu"
-          class="hidden quick-actions-panel absolute right-0 mt-2"
+          id="headerMenu"
+          class="overflow-menu hidden quick-actions-panel absolute right-0 mt-2"
           role="menu"
           aria-hidden="true"
-          aria-labelledby="overflowMenuHeading"
+          aria-labelledby="headerMenuHeading"
         >
-          <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
+          <h2 id="headerMenuHeading" class="sr-only">Quick settings</h2>
           <ul class="quick-actions" role="presentation">
             <li role="none">
               <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
@@ -6510,6 +6510,7 @@
 
         // Look for Overflow/More menu button
         const overflowBtnSelectors = [
+          '#headerMenuBtn',
           '#overflowMenuBtn',
           'button[aria-label*="settings" i]',
           'button[aria-label*="menu" i]',
@@ -6560,6 +6561,45 @@
         document.body.insertBefore(fallbackHeader, document.body.firstChild);
       }
     });
+  </script>
+
+  <script>
+    (function () {
+      const menuBtn = document.getElementById('headerMenuBtn');
+      const menu    = document.getElementById('headerMenu');
+      if (!menuBtn || !menu) return;
+
+      const closeMenu = () => {
+        menu.classList.add('hidden');
+        menu.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      const openMenu = () => {
+        menu.classList.remove('hidden');
+        menu.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+      };
+
+      // expose a closer for other code (footer nav, etc.)
+      window.closeOverflowMenu = closeMenu;
+
+      menuBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const isOpen = menuBtn.getAttribute('aria-expanded') === 'true';
+        if (isOpen) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      });
+
+      document.addEventListener('click', (ev) => {
+        if (!menu.contains(ev.target) && ev.target !== menuBtn) {
+          closeMenu();
+        }
+      }, true);
+    })();
   </script>
 
 </body>
