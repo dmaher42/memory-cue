@@ -802,6 +802,8 @@ export async function initReminders(sel = {}) {
 
   applyStoredDefaultsToInputs();
 
+  const quickForm =
+    typeof document !== 'undefined' ? document.getElementById('quickAddForm') : null;
   const quickInput =
     typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
   const quickBtn =
@@ -896,10 +898,15 @@ export async function initReminders(sel = {}) {
   });
 
   quickInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === 'NumpadEnter') {
       e.preventDefault();
       quickAddNow();
     }
+  });
+
+  quickForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    quickAddNow();
   });
 
   function setupQuickAddVoiceSupport() {
