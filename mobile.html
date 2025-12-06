@@ -5272,6 +5272,48 @@
         <!-- header removed to keep view minimal -->
         <div class="reminders-content-shell space-y-2">
 
+          <!-- Quick-add bar for reminders -->
+          <div class="mt-3 px-4" id="remindersQuickAddBar">
+            <form id="quickAddForm" class="flex items-center gap-2" onsubmit="return false;">
+              <!-- Text input -->
+              <div class="flex-1">
+                <input
+                  id="quickAddInput"
+                  type="text"
+                  class="input input-sm w-full"
+                  placeholder="Add a reminder…"
+                  autocomplete="off"
+                  aria-label="Quick add reminder"
+                />
+              </div>
+
+              <!-- Voice (microphone) button -->
+              <button
+                id="quickAddVoice"
+                type="button"
+                class="icon-btn quick-add-action"
+                aria-label="Dictate quick reminder"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="22"/>
+                  <line x1="8" y1="22" x2="16" y2="22"/>
+                </svg>
+              </button>
+
+              <!-- Save reminder button -->
+              <button
+                id="quickAddSubmit"
+                type="button"
+                class="btn btn-sm btn-primary"
+              >
+                Save
+              </button>
+            </form>
+          </div>
+
           <div id="remindersListMobile" class="space-y-2">
             <section
               id="reminderListSection"
@@ -5297,6 +5339,16 @@
         <!-- Enhanced Notebook Card -->
         <div class="note-sheet-wrapper scratch-notes-wrapper">
           <div id="scratch-notes-card" class="writing-panel premium-gradient scratch-notes-card memory-glass-card p-4 space-y-3 pb-3">
+            <!-- Top-right Saved notes pill in notebook view -->
+            <div class="note-actions-top">
+              <button
+                id="openSavedNotesSheet"
+                type="button"
+                class="btn btn-xs btn-ghost"
+              >
+                Saved notes
+              </button>
+            </div>
             <div class="note-editor-card">
             <div class="scratch-notes-header-block">
               <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
@@ -5381,10 +5433,29 @@
                 ></div>
               </div>
             </div>
+            </div>
+
+          <!-- Fixed bottom action bar for notebook -->
+          <div class="note-actions fixed-bottom flex items-center justify-between gap-2">
+            <button
+              type="button"
+              id="newNoteMobile"
+              class="btn btn-sm"
+            >
+              New
+            </button>
+
+            <button
+              type="button"
+              id="noteSaveMobile"
+              class="btn btn-primary btn-sm"
+            >
+              Save
+            </button>
           </div>
-        </div>
-        </div>
-          <div
+          </div>
+          </div>
+            <div
             id="savedNotesSheet"
             class="fixed inset-0 z-40 hidden bg-base-300/40 backdrop-blur-sm flex items-end justify-center"
             aria-hidden="true"
@@ -5432,12 +5503,13 @@
                                   <span class="notebook-folder-chip-count">0</span>
                                 </button>
                                 <!-- Folder chips will be populated dynamically by JS -->
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      </div>
                   </div>
                   <button class="notebook-top-overflow" type="button" aria-label="Notebook options">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
