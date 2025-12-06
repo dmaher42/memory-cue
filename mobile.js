@@ -1537,6 +1537,11 @@ const initMobileNotes = () => {
     newFolderModalController.show();
   };
 
+    // Expose helper globally for other scripts or tests that expect a window-level API
+    if (typeof window !== 'undefined' && typeof window.openNewFolderDialog === 'undefined') {
+      window.openNewFolderDialog = openNewFolderDialog;
+    }
+
   const createNewFolder = () => {
     if (!newFolderNameInput) return;
     const raw = String(newFolderNameInput.value || '');

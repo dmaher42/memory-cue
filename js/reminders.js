@@ -1209,7 +1209,27 @@ export async function initReminders(sel = {}) {
   const reminderLandingPath = sel.reminderLandingPath || (variant === 'desktop' ? 'index.html#reminders' : 'mobile.html');
 
   const dispatchCueEvent = (name, detail = {}) => {
-    document.dispatchEvent(new CustomEvent(name, { detail }));
+    // Prefer the native CustomEvent if available; fall back to window.CustomEvent or a
+    // lightweight Event-based shim so code running inside VMs (vm.runInNewContext)
+    // or unusual test sandboxes don't throw ReferenceError.
+    let CE = null;
+    try {
+      CE = typeof CustomEvent !== 'undefined' ? CustomEvent : null;
+    } catch (e) {
+      CE = null;
+    }
+    if (!CE && typeof window !== 'undefined' && typeof window.CustomEvent !== 'undefined') {
+      CE = window.CustomEvent;
+    }
+    if (!CE) {
+      CE = function (t, opts) {
+        opts = opts || { bubbles: false, cancelable: false, detail: null };
+        const ev = new Event(t, opts);
+        ev.detail = opts.detail;
+        return ev;
+      };
+    }
+    document.dispatchEvent(new CE(name, { detail }));
   };
 
   function closeCreateSheetIfOpen() {
@@ -3884,7 +3904,7 @@ export async function initReminders(sel = {}) {
 
       const desktopCardClasses =
         'reminder-item task-item reminder-card desktop-task-card grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-base-200 bg-base-100 p-4 text-sm shadow-sm transition hover:border-base-300 hover:bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60';
-      const mobileCardClasses = 'reminder-row reminder-card w-full text-base-content';
+      const mobileCardClasses = 'task-item reminder-row reminder-card w-full text-base-content';
 
       const itemEl = document.createElement(elementTag);
       itemEl.className = isMobile ? mobileCardClasses : desktopCardClasses;
