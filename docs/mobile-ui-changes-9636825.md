@@ -17,6 +17,7 @@ Files/areas touched (high level)
 --------------------------------
 
 - `mobile.html`: removed the `data-reminders-tab="completed"` button from the visible tabs row; left the overflow menu item in place.
+- `mobile.html` (runtime entrypoint): removed the `data-reminders-tab="completed"` button from the visible tabs row; left the overflow menu item in place. Note: the program runs from the top-level `mobile.html` (root), not `/docs/mobile.html`.
 - `css/theme-mobile.css`: added mobile-scoped rules to center the tab row and make the scratch-notes card stretch and scroll internally.
 - `404.html`, `docs/404.html`, `dist/404.html`: earlier small edits removed an explicit "Clear Completed" button in some static pages.
 
