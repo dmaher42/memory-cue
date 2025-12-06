@@ -85,6 +85,122 @@
       line-height: 1.5;
     }
 
+    /* Single-row iOS-style reminders top bar */
+    .reminders-top-row {
+      display: flex;
+      align-items: center;
+      padding: 0.4rem 0.2rem;
+      gap: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      flex-wrap: nowrap;
+      position: relative;
+    }
+
+    .reminders-quick-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0.45rem 0.7rem;
+      background: color-mix(in srgb, #f4f1fb 88%, #ffffff);
+      border: 1px solid color-mix(in srgb, #dcd3ec 65%, transparent);
+      border-radius: 999px;
+      box-shadow: 0 10px 25px rgba(81, 38, 99, 0.07);
+    }
+
+    .reminders-quick-bar input#quickAddInput {
+      flex: 1 1 auto;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      padding: 0.3rem 0.2rem;
+    }
+
+    .reminders-quick-bar input#quickAddInput::placeholder {
+      color: var(--text-muted);
+    }
+
+    .reminder-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.12rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, #e8e1f4 78%, #ffffff);
+      flex-shrink: 0;
+    }
+
+    .reminder-tab {
+      border: none;
+      background: transparent;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: color-mix(in srgb, var(--accent-color) 55%, #7b6a8b);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .reminder-tab.reminders-tab-active,
+    .reminder-tab.active,
+    .reminder-tab[aria-pressed="true"] {
+      background: var(--accent-color);
+      color: #ffffff;
+    }
+
+    .reminders-quick-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .reminders-quick-actions .icon-btn {
+      border: none;
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.32rem;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--accent-color);
+      transition: background-color 0.15s ease, transform 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .reminders-quick-actions .icon-btn:hover,
+    .reminders-quick-actions .icon-btn:focus-visible {
+      background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+      outline: none;
+    }
+
+    @media (max-width: 380px) {
+      .reminders-top-row {
+        gap: 0.35rem;
+        padding: 0.35rem 0.15rem;
+      }
+
+      .reminders-quick-bar {
+        padding: 0.38rem 0.6rem;
+      }
+
+      .reminder-tab {
+        padding: 0.18rem 0.55rem;
+        font-size: 0.78rem;
+      }
+
+      .reminders-quick-actions .icon-btn {
+        padding: 0.28rem;
+      }
+    }
+
     /* Mobile reminder cards coloured by priority using existing tokens */
     .task-item,
     .cue-task-card {
@@ -3717,40 +3833,129 @@
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2">
-        <header class="mobile-header flex flex-col gap-1">
-          <div class="flex items-center justify-between">
-            <h1 class="text-lg font-semibold">Reminders</h1>
+        <header
+          id="reminders-slim-header"
+          class="w-full px-4 pt-3 pb-3 mobile-header pt-safe-top"
+          role="banner"
+        >
+          <div class="max-w-3xl mx-auto">
+            <div class="reminders-top-row">
+              <form id="quickAddForm" class="reminders-quick-bar" onsubmit="return false;">
+
+                <!-- Left: quick reminder text field -->
+                <input
+                  id="quickAddInput"
+                  type="text"
+                  placeholder="Quick reminder..."
+                  autocomplete="off"
+                />
+
+                <!-- Middle: existing All / Today segmented control -->
+                <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
+                  <button
+                    type="button"
+                    class="reminder-tab reminders-tab reminders-tab-active"
+                    data-reminders-tab="all"
+                    data-filter="all"
+                    aria-pressed="true"
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    class="reminder-tab reminders-tab"
+                    data-reminders-tab="today"
+                    data-filter="today"
+                    aria-pressed="false"
+                  >
+                    Today
+                  </button>
+                </div>
+
+                <!-- Right: saved, mic, save, overflow -->
+                <div class="reminders-quick-actions">
+                  <button
+                    id="openSavedNotesGlobal"
+                    type="button"
+                    class="icon-btn"
+                    aria-label="Open saved notes"
+                  ><span class="material-symbols-rounded">auto_stories</span></button>
+                  <button
+                    id="startVoiceCaptureGlobal"
+                    type="button"
+                    class="icon-btn"
+                    aria-label="Start voice capture"
+                  ><span class="material-symbols-rounded">mic</span></button>
+                  <button
+                    id="quickAddReminderGlobal"
+                    type="button"
+                    class="icon-btn"
+                    aria-label="Add reminder"
+                  ><span class="material-symbols-rounded">add_circle</span></button>
+                  <button
+                    id="headerMenuBtnSlim"
+                    type="button"
+                    class="icon-btn"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-controls="headerMenuSlim"
+                    aria-label="More options"
+                  ><span class="material-symbols-rounded">more_vert</span></button>
+                </div>
+
+              </form>
+            </div>
+
+            <div
+              id="headerMenuSlim"
+              class="overflow-menu hidden quick-actions-panel"
+              aria-hidden="true"
+              role="menu"
+            >
+              <h2 id="headerMenuSlimHeading" class="sr-only">Quick settings</h2>
+              <ul class="quick-actions" role="presentation">
+                <li role="none">
+                  <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                    <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                    <span class="sr-only">Dictate reminder</span>
+                  </button>
+                </li>
+                <li role="none">
+                  <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+                    <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                    <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+                  </button>
+                </li>
+                <li role="none">
+                  <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                    <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                    <span class="sr-only">Open settings</span>
+                  </button>
+                </li>
+                <li role="none">
+                  <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                    <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                    <span class="sr-only">Toggle theme</span>
+                  </button>
+                </li>
+                <li role="none">
+                  <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                    <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                    <span class="sr-only">Sign in</span>
+                  </button>
+                </li>
+                <li role="none">
+                  <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                    <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                    <span class="sr-only">Sign out</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <p id="mobileRemindersHeaderSubtitle" class="mt-2 text-xs text-slate-500"></p>
           </div>
         </header>
-
-        <div class="reminders-tabs-wrapper">
-          <div class="tabs tabs-boxed w-full text-sm">
-            <button
-              type="button"
-              class="tab flex-1 reminders-tab-active"
-              data-reminders-tab="all"
-              aria-pressed="true"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              class="tab flex-1"
-              data-reminders-tab="today"
-              aria-pressed="false"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              class="tab flex-1"
-              data-reminders-tab="completed"
-              aria-pressed="false"
-            >
-              Completed
-            </button>
-          </div>
-        </div>
 
         <div class="reminders-content-shell space-y-2">
 
@@ -5624,6 +5829,62 @@
   </script>
 
   <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Support both original and slim variants
+      var menuBtn =
+        document.getElementById('headerMenuBtnSlim') ||
+        document.getElementById('headerMenuBtn');
+      var menu =
+        document.getElementById('headerMenuSlim') ||
+        document.getElementById('headerMenu');
+
+      if (!menuBtn || !menu) return;
+
+      var isOpen = function () {
+        return menuBtn.getAttribute('aria-expanded') === 'true';
+      };
+
+      var openMenu = function () {
+        menu.classList.remove('hidden');
+        menu.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+      };
+
+      var closeMenu = function () {
+        menu.classList.add('hidden');
+        menu.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      // Toggle on button click (tap)
+      menuBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (isOpen()) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      });
+
+      // Close when tapping outside the menu
+      document.addEventListener('click', function (ev) {
+        var target = ev.target;
+        if (!menu.contains(target) && target !== menuBtn) {
+          closeMenu();
+        }
+      });
+
+      // Optional: close on Escape for accessibility
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && isOpen()) {
+          closeMenu();
+        }
+      });
+    });
+  </script>
+
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
       /* home button removed: no scroll-home handler needed */
     });
@@ -6276,7 +6537,10 @@
       // Voice notes (integrate with existing voice functionality)
       document.getElementById('voiceNotes')?.addEventListener('click', () => {
         // Trigger existing voice functionality if available
-        const voiceBtn = document.getElementById('voiceBtn') || document.getElementById('quickAddVoice');
+        const voiceBtn =
+          document.getElementById('voiceBtn') ||
+          document.getElementById('startVoiceCaptureGlobal') ||
+          document.getElementById('quickAddVoice');
         if (voiceBtn) {
           voiceBtn.click();
         } else {
