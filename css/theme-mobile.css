@@ -426,34 +426,19 @@ body.mobile-theme .text-secondary {
 
 /* Mobile-specific: tighten filter bar spacing and stretch scratch-notes panel */
 @media (max-width: 899px) {
-  /* Header that contains quick reminder + filter tabs */
-  .reminders-top-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-bottom: 8px;
-    gap: 0;
+  /* Ensure the new iOS-style header tabs behave correctly on mobile */
+  .reminders-top-row .reminder-tabs {
+    width: auto;
+    max-width: none;
+    padding: 0.12rem;
+    margin: 0;
+    justify-content: flex-start;
+    gap: 0.2rem;
   }
 
-  /* Filter bar container – All / Today */
-  .reminder-tabs {
-    width: 100%;
-    max-width: 100vw;
-    display: flex;
-    justify-content: center; /* center the tab group */
-    gap: 8px;
-    padding: 0 16px;
-    box-sizing: border-box;
-    margin-top: 8px;    /* small gap under quick reminder bar */
-    margin-bottom: 8px; /* small gap above scratch notes */
-  }
-
-  /* Individual tab pill */
-  .reminder-tab {
+  .reminders-top-row .reminder-tab {
     flex: 0 0 auto;
-    min-width: 56px;
-    padding: 6px 10px;
-    border-radius: 999px;
+    min-width: auto;
   }
 
   /* Normalise any accidental large top spacing */
