@@ -4971,13 +4971,83 @@
 
           <!-- Right: saved, mic, save, overflow -->
           <div class="reminders-quick-actions">
-            <button id="savedNotesShortcut" type="button" class="icon-btn" aria-label="Saved notes"><span class="material-symbols-rounded">auto_stories</span></button>
-            <button id="quickAddVoice"       type="button" class="icon-btn" aria-label="Dictate"><span class="material-symbols-rounded">mic</span></button>
-            <button id="quickAddSubmit"     type="button" class="icon-btn" aria-label="Save reminder"><span class="material-symbols-rounded">add_circle</span></button>
-            <button id="headerMenuBtn"      type="button" class="icon-btn" aria-label="More options"><span class="material-symbols-rounded">more_vert</span></button>
+            <button
+              id="openSavedNotesGlobal"
+              type="button"
+              class="icon-btn"
+              aria-label="Open saved notes"
+            ><span class="material-symbols-rounded">auto_stories</span></button>
+            <button
+              id="startVoiceCaptureGlobal"
+              type="button"
+              class="icon-btn"
+              aria-label="Start voice capture"
+            ><span class="material-symbols-rounded">mic</span></button>
+            <button
+              id="quickAddReminderGlobal"
+              type="button"
+              class="icon-btn"
+              aria-label="Add reminder"
+            ><span class="material-symbols-rounded">add_circle</span></button>
+            <button
+              id="headerMenuBtnSlim"
+              type="button"
+              class="icon-btn"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="headerMenuSlim"
+              aria-label="More options"
+            ><span class="material-symbols-rounded">more_vert</span></button>
           </div>
 
         </form>
+      </div>
+
+      <div
+        id="headerMenuSlim"
+        class="overflow-menu hidden quick-actions-panel"
+        aria-hidden="true"
+        role="menu"
+      >
+        <h2 id="headerMenuSlimHeading" class="sr-only">Quick settings</h2>
+        <ul class="quick-actions" role="presentation">
+          <li role="none">
+            <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+              <span class="quick-action-icon" aria-hidden="true">🎤</span>
+              <span class="sr-only">Dictate reminder</span>
+            </button>
+          </li>
+          <li role="none">
+            <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
+              <span class="quick-action-icon" aria-hidden="true">🗂</span>
+              <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
+            </button>
+          </li>
+          <li role="none">
+            <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+              <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+              <span class="sr-only">Open settings</span>
+            </button>
+          </li>
+          <li role="none">
+            <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+              <span class="quick-action-icon" aria-hidden="true">🌗</span>
+              <span class="sr-only">Toggle theme</span>
+            </button>
+          </li>
+          <li role="none">
+            <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+              <span class="quick-action-icon" aria-hidden="true">🔐</span>
+              <span class="sr-only">Sign in</span>
+            </button>
+          </li>
+          <li role="none">
+            <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+              <span class="quick-action-icon" aria-hidden="true">🔓</span>
+              <span class="sr-only">Sign out</span>
+            </button>
+          </li>
+        </ul>
       </div>
 
       <p id="mobileRemindersHeaderSubtitle" class="mt-2 text-xs text-slate-500"></p>
@@ -5028,6 +5098,7 @@
       const init = () => {
         const quickForm = document.getElementById('quickAddForm');
         const quickSaveBtn =
+          document.getElementById('quickAddReminderGlobal') ||
           document.getElementById('quickAddSubmit');
 
         if (!quickForm) return;
@@ -5041,18 +5112,6 @@
       } else {
         init();
       }
-    })();
-  </script>
-
-  <script>
-    // Header menu functionality
-    (function() {
-      const menuBtn = document.getElementById('headerMenuBtn');
-      const menu = document.getElementById('headerMenu');
-
-      // The slim header script below binds the current overflow menu behavior.
-      // Skip the legacy handler to avoid double toggles closing the menu.
-      if (menuBtn && menu) return;
     })();
   </script>
 
@@ -8231,64 +8290,59 @@
   </script>
 
   <script>
-    // Wire up slim header buttons now that they live inline
-    const initSlimHeaderButtons = function() {
-      const slimHeader = document.getElementById('reminders-slim-header');
-      if (!slimHeader) return;
+    document.addEventListener('DOMContentLoaded', function () {
+      // Support both original and slim variants
+      var menuBtn =
+        document.getElementById('headerMenuBtnSlim') ||
+        document.getElementById('headerMenuBtn');
+      var menu =
+        document.getElementById('headerMenuSlim') ||
+        document.getElementById('headerMenu');
 
-      const addBtn = slimHeader.querySelector('#addReminderBtn');
-      const overflowBtn = slimHeader.querySelector('#headerMenuBtn');
-      const overflowMenu = slimHeader.querySelector('#headerMenu');
+      if (!menuBtn || !menu) return;
 
-      if (addBtn) {
-        addBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          const cueEvent = new CustomEvent('cue:open', {
-            detail: { mode: 'create', trigger: addBtn }
-          });
-          document.dispatchEvent(cueEvent);
-        });
-      }
+      var isOpen = function () {
+        return menuBtn.getAttribute('aria-expanded') === 'true';
+      };
 
-      if (overflowBtn && overflowMenu) {
-        const toggleMenu = (forceOpen) => {
-          const isHidden = overflowMenu.classList.contains('hidden');
-          const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
-          overflowMenu.classList.toggle('hidden', !shouldOpen);
-          overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
-          overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-          // debug log to help diagnose clicks not opening the menu
-          try {
-            console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
-          } catch (e) {
-            /* ignore */
-          }
-        };
+      var openMenu = function () {
+        menu.classList.remove('hidden');
+        menu.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+      };
 
-        overflowBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          toggleMenu();
-        });
+      var closeMenu = function () {
+        menu.classList.add('hidden');
+        menu.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      };
 
-        document.addEventListener('click', (event) => {
-          if (overflowMenu.classList.contains('hidden')) return;
-          const wrapper = event.target instanceof Element ? event.target.closest('.header-overflow-wrapper') : null;
-          if (!wrapper) {
-            toggleMenu(false);
-          }
-        });
-      }
+      // Toggle on button click (tap)
+      menuBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (isOpen()) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      });
 
-      /* home button removed: no scroll-home handler needed */
-    };
+      // Close when tapping outside the menu
+      document.addEventListener('click', function (ev) {
+        var target = ev.target;
+        if (!menu.contains(target) && target !== menuBtn) {
+          closeMenu();
+        }
+      });
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initSlimHeaderButtons, { once: true });
-    } else {
-      initSlimHeaderButtons();
-    }
-
+      // Optional: close on Escape for accessibility
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && isOpen()) {
+          closeMenu();
+        }
+      });
+    });
   </script>
 
   <script>
