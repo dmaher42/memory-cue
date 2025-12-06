@@ -4178,6 +4178,50 @@
       width: 100%;
     }
 
+    /* Layout: place quick-add and reminder controls on the same row */
+    .reminders-top-bar {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 0.5rem;
+    }
+
+    .reminders-top-primary {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    /* Make the quick-add take at least 50% of the header width (use 60% preferred)
+       so the control pills can live to the right and still align with the bar. */
+    .reminders-quick-add {
+      flex: 0 1 60%;
+      min-width: 50%;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Push the tabs/overflow to the right end of the header row */
+    .reminders-top-controls {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Ensure reminder tabs visually match the quick-add height */
+    #reminders-slim-header .reminder-tab,
+    #reminders-slim-header .reminders-tab {
+      padding: 6px 12px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      box-sizing: border-box;
+    }
+
     .reminders-quick-add {
       width: 100%;
       max-width: 820px;
