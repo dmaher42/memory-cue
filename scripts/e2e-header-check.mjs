@@ -100,6 +100,21 @@ const URL = process.env.URL || 'http://localhost:3000/mobile.html';
         console.log('Fallback #openSavedNotesSheet click failed:', e && e.message ? e.message : e);
       }
     }
+
+    if (!savedOpen) {
+      try {
+        const shortcutBtn = await page.$('#savedNotesShortcut');
+        if (shortcutBtn) {
+          console.log('Clicking fallback #savedNotesShortcut');
+          await shortcutBtn.click();
+          await page.waitForTimeout(200);
+          savedOpen = await page.$eval('#savedNotesSheet', (el) => el.dataset.open === 'true');
+          console.log('savedNotesSheet open after fallback shortcutBtn:', savedOpen);
+        }
+      } catch (e) {
+        console.log('Fallback #savedNotesShortcut click failed:', e && e.message ? e.message : e);
+      }
+    }
     if (!savedOpen) {
       try {
         const globalAlt = await page.$('.open-saved-notes-global');

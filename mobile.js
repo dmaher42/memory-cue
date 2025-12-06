@@ -430,7 +430,9 @@ const initMobileNotes = () => {
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notebook-search-input');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
-  const openSavedNotesButton = document.getElementById('openSavedNotesSheet');
+  const openSavedNotesButton =
+    document.getElementById('savedNotesShortcut') ||
+    document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
   const folderSelectorEl = document.getElementById('moveFolderSheet');
   const folderSelectorUnsortedBtn = document.getElementById('move-folder-unsorted');
