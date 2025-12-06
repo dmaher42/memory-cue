@@ -4974,7 +4974,73 @@
             <button id="savedNotesShortcut" type="button" class="icon-btn" aria-label="Saved notes"><span class="material-symbols-rounded">auto_stories</span></button>
             <button id="quickAddVoice"       type="button" class="icon-btn" aria-label="Dictate"><span class="material-symbols-rounded">mic</span></button>
             <button id="quickAddSubmit"     type="button" class="icon-btn" aria-label="Save reminder"><span class="material-symbols-rounded">add_circle</span></button>
-            <button id="headerMenuBtn"      type="button" class="icon-btn" aria-label="More options"><span class="material-symbols-rounded">more_vert</span></button>
+            <div class="header-overflow-wrapper">
+              <button
+                id="headerMenuBtn"
+                type="button"
+                class="icon-btn"
+                aria-label="More options"
+                aria-expanded="false"
+              >
+                <span class="material-symbols-rounded">more_vert</span>
+              </button>
+
+              <div
+                id="headerMenu"
+                class="overflow-menu hidden quick-actions-panel absolute right-0 mt-2"
+                role="menu"
+                aria-hidden="true"
+                aria-labelledby="headerMenuHeading"
+              >
+                <h2 id="headerMenuHeading" class="sr-only">Quick settings</h2>
+                <ul class="quick-actions" role="presentation">
+                  <li role="none">
+                    <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
+                      <span class="quick-action-icon" aria-hidden="true">🎤</span>
+                      <span class="sr-only">Dictate reminder</span>
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button
+                      id="viewToggleMenu"
+                      type="button"
+                      class="quick-action-btn"
+                      title="Toggle layout"
+                      role="menuitem"
+                      aria-pressed="false"
+                      data-layout="list"
+                    >
+                      <span class="quick-action-icon" aria-hidden="true">🗂</span>
+                      <span id="viewToggleLabel" class="sr-only">View layout: Stacked</span>
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
+                      <span class="quick-action-icon" aria-hidden="true">⚙️</span>
+                      <span class="sr-only">Open settings</span>
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
+                      <span class="quick-action-icon" aria-hidden="true">🌗</span>
+                      <span class="sr-only">Toggle theme</span>
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
+                      <span class="quick-action-icon" aria-hidden="true">🔐</span>
+                      <span class="sr-only">Sign in</span>
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
+                      <span class="quick-action-icon" aria-hidden="true">🔓</span>
+                      <span class="sr-only">Sign out</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
 
         </form>
@@ -8251,33 +8317,9 @@
       }
 
       if (overflowBtn && overflowMenu) {
-        const toggleMenu = (forceOpen) => {
-          const isHidden = overflowMenu.classList.contains('hidden');
-          const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
-          overflowMenu.classList.toggle('hidden', !shouldOpen);
-          overflowMenu.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
-          overflowBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-          // debug log to help diagnose clicks not opening the menu
-          try {
-            console.debug('[slimHeader] overflowMenu toggled:', shouldOpen);
-          } catch (e) {
-            /* ignore */
-          }
-        };
-
-        overflowBtn.addEventListener('click', function(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          toggleMenu();
-        });
-
-        document.addEventListener('click', (event) => {
-          if (overflowMenu.classList.contains('hidden')) return;
-          const wrapper = event.target instanceof Element ? event.target.closest('.header-overflow-wrapper') : null;
-          if (!wrapper) {
-            toggleMenu(false);
-          }
-        });
+        const isHidden = overflowMenu.classList.contains('hidden');
+        overflowMenu.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+        overflowBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
       }
 
       /* home button removed: no scroll-home handler needed */
@@ -8312,6 +8354,45 @@
         }
       }
     });
+  </script>
+
+  <script>
+    (function () {
+      const menuBtn = document.getElementById('headerMenuBtn');
+      const menu    = document.getElementById('headerMenu');
+      if (!menuBtn || !menu) return;
+
+      const closeMenu = () => {
+        menu.classList.add('hidden');
+        menu.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      const openMenu = () => {
+        menu.classList.remove('hidden');
+        menu.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+      };
+
+      // expose a closer for other code (footer nav, etc.)
+      window.closeOverflowMenu = closeMenu;
+
+      menuBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const isOpen = menuBtn.getAttribute('aria-expanded') === 'true';
+        if (isOpen) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      });
+
+      document.addEventListener('click', (ev) => {
+        if (!menu.contains(ev.target) && ev.target !== menuBtn) {
+          closeMenu();
+        }
+      }, true);
+    })();
   </script>
 
 </body>

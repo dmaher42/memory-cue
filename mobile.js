@@ -3145,8 +3145,9 @@ if (supabaseAuthController?.supabase) {
 }
 
 (() => {
-  const menuBtn = document.getElementById('overflowMenuBtn');
-  const menu = document.getElementById('overflowMenu');
+  const menuBtn =
+    document.getElementById('headerMenuBtn') || document.getElementById('overflowMenuBtn');
+  const menu = document.getElementById('headerMenu') || document.getElementById('overflowMenu');
 
   if (!(menuBtn instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
     return;
