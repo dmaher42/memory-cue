@@ -4051,22 +4051,26 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 
 .reminders-top-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.5rem 0.75rem 0.25rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.5rem;
   width: 100%;
 }
 
 .reminders-top-primary {
-  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
 .reminders-top-controls {
-  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .reminders-quick-input {
@@ -4186,12 +4190,13 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.12rem;
+  gap: 0.5rem;
   padding: 0.12rem;
   background: color-mix(in srgb, var(--card-bg, #fff) 92%, transparent);
   border-radius: 999px;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
   border: 1px solid color-mix(in srgb, var(--text-muted, #6b7280) 14%, transparent);
+  margin: 0;
 }
 
 .reminder-tab,

@@ -34,6 +34,7 @@ body.mobile-theme footer {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #mobile-shell #main {
@@ -42,6 +43,7 @@ body.mobile-theme footer {
   flex-direction: column;
   box-sizing: border-box;
   padding-bottom: 80px;
+  overflow-y: auto;
 }
 
 .app-main {
@@ -52,7 +54,7 @@ body.mobile-theme footer {
   align-items: stretch;
   padding: 8px 0 80px;
   box-sizing: border-box;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* Reminders layout (mobile) */
@@ -459,14 +461,74 @@ body.mobile-theme .text-secondary {
 }
 
 .scratch-notes-body {
-  max-height: 100%;
   width: 100%;
   max-width: 100%;
+  height: 100%;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .note-editor-content textarea {
   resize: none;
+}
+
+/* Scratch-notes section layout */
+.scratch-notes-wrapper,
+.note-sheet-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 16px;
+  box-sizing: border-box;
+}
+
+.scratch-notes-card,
+#scratch-notes-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Make note-editor-card fill its container */
+.note-editor-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* View-notebook section should fill available height */
+#view-notebook {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#view-notebook .mobile-view-inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px !important;
+  padding-bottom: 8px !important;
+}
+
+/* Make the scratch-notes wrapper fill and the card extend properly */
+#view-notebook .scratch-notes-wrapper {
+  margin-top: 0;
+  padding-top: 4px;
+}
+
+/* Cap the scratch-notes card height properly */
+.mobile-shell #view-notebook #scratch-notes-card {
+  max-height: calc(100vh - 160px);
 }
 
 .note-editor-content.is-placeholder,
