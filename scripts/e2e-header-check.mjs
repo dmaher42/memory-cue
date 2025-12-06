@@ -88,7 +88,9 @@ const URL = process.env.URL || 'http://localhost:3000/mobile.html';
     // If the global header trigger didn't open the sheet, try fallback triggers
     if (!savedOpen) {
       try {
-        const sheetBtn = await page.$('#openSavedNotesSheet');
+        const sheetBtn =
+          (await page.$('#openSavedNotesSheetButton')) ||
+          (await page.$('#openSavedNotesSheet'));
         if (sheetBtn) {
           console.log('Clicking fallback #openSavedNotesSheet');
           await sheetBtn.click();
@@ -103,7 +105,9 @@ const URL = process.env.URL || 'http://localhost:3000/mobile.html';
 
     if (!savedOpen) {
       try {
-        const shortcutBtn = await page.$('#savedNotesShortcut');
+        const shortcutBtn =
+          (await page.$('#openSavedNotesSheetButton')) ||
+          (await page.$('#savedNotesShortcut'));
         if (shortcutBtn) {
           console.log('Clicking fallback #savedNotesShortcut');
           await shortcutBtn.click();

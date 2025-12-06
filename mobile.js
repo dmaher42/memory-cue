@@ -431,6 +431,7 @@ const initMobileNotes = () => {
   const filterInput = document.getElementById('notebook-search-input');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
+    document.getElementById('openSavedNotesSheetButton') ||
     document.getElementById('savedNotesShortcut') ||
     document.getElementById('openSavedNotesSheet');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
