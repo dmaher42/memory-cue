@@ -54,7 +54,7 @@
       display: flex;
       align-items: center;
       padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-      margin-bottom: 0 !important;
+      margin-bottom: 2px !important; /* tiny controlled gap below header */
       gap: 0.5rem;
       white-space: nowrap;
       overflow: hidden;
@@ -159,7 +159,7 @@
       .reminders-top-row {
         gap: 0.35rem;
         padding: 0.35rem 0.15rem 0;
-        margin-bottom: 0 !important;
+        margin-bottom: 2px !important;
       }
 
       .reminders-quick-bar {
@@ -1074,7 +1074,7 @@
 
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
-    margin-top: 0 !important;
+    margin-top: 3px !important;
     padding-top: 0 !important;
   }
 
@@ -1462,7 +1462,7 @@
     .reminders-top-row {
       display: flex;
       padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-      margin-bottom: 0 !important;
+      margin-bottom: 2px !important; /* tiny controlled gap below header */
     }
 
     .reminders-quick-bar {
@@ -1543,7 +1543,7 @@
 .reminders-top-row {
   display: flex;
   padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-  margin-bottom: 0 !important;
+  margin-bottom: 2px !important; /* tiny controlled gap below header */
 }
 
 .reminders-quick-bar {
@@ -1613,11 +1613,15 @@
 }
 
 /* Remove gap between header bar and first reminder */
-#reminderList,
-#remindersWrapper,
-.reminders-list-container {
-  margin-top: 0 !important;
+#reminderList {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.reminders-list-container,
+.mobile-view-inner .reminders-content-shell {
   padding-top: 0 !important;
+  margin-top: 0 !important;
 }
   </style>
   <meta charset="UTF-8" />
@@ -4332,7 +4336,7 @@
     @media (max-width: 420px) {
       .reminders-top-row {
         padding: 0.25rem 0.1rem 0;
-        margin-bottom: 0 !important;
+        margin-bottom: 2px !important;
       }
 
       .reminders-quick-bar {
@@ -6122,7 +6126,7 @@
     .reminders-top-row {
       display: flex;
       padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-      margin-bottom: 0 !important;
+      margin-bottom: 2px !important; /* tiny controlled gap below header */
     }
 
     .reminders-quick-bar {
