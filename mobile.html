@@ -123,13 +123,13 @@
     .reminders-quick-actions {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.18rem; /* tighter, cleaner spacing */
     }
 
     .icon-btn {
       border: none;
       background: transparent;
-      padding: 0.35rem;
+      padding: 0.25rem; /* reduced from 0.35rem */
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
@@ -138,9 +138,11 @@
     }
 
     .icon-btn svg {
-      stroke: var(--accent-color, #512663);
+      stroke: #3C3A40; /* Graphite Neutral */
       opacity: 0.9;
-      transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+      width: 20px;
+      height: 20px;
+      transition: opacity 0.15s ease, transform 0.15s ease;
     }
 
     .icon-btn:hover svg,
@@ -150,7 +152,7 @@
     }
 
     .icon-btn:active {
-      background-color: rgba(81, 38, 99, 0.06);
+      background-color: rgba(74, 46, 96, 0.08);
     }
 
     @media (max-width: 380px) {
