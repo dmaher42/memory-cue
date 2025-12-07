@@ -286,6 +286,16 @@
     padding-bottom: 0;
   }
 
+  /* Ensure notebook content hugs the header with a micro-gap */
+  body[data-active-view="notebook"] #main {
+    padding-top: 3px !important;
+    margin-top: 0 !important;
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card-body {
+    margin-top: 0 !important;
+  }
+
   body[data-active-view="notebook"] #view-notebook {
     background: var(--card-bg);
   }
@@ -306,6 +316,11 @@
     padding: clamp(1.25rem, 5vw, 2rem);
     padding-bottom: clamp(5rem, 10vw, 6rem);
     min-height: calc(100dvh - 4rem);
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card-body {
+    padding-top: 0.25rem !important; /* micro gap inside notebook card */
+    margin-top: 0 !important;
   }
 
   .mobile-shell #view-notebook .card {
@@ -3851,7 +3866,7 @@
     </div>
   </div>
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
-    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
+    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders" style="background: rgb(251, 251, 251); padding-top: 3px;">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
