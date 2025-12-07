@@ -185,6 +185,31 @@ body.mobile-theme .top-bar .icon-button {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+.icon-btn svg {
+  stroke: currentColor;
+  fill: none;
+  width: 20px;
+  height: 20px;
+  opacity: 1;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover svg,
+.icon-btn:active svg {
+  transform: scale(1.04);
+}
+
+.icon-btn:active {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.reminders-quick-actions .icon-btn,
+.mobile-footer-nav button,
+.mobile-footer-nav .footer-button,
+.footer-nav button {
+  color: #111111;
+}
+
 body.mobile-theme .app-header button:focus-visible,
 body.mobile-theme .top-bar button:focus-visible,
 body.mobile-theme header button:focus-visible {
