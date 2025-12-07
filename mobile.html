@@ -334,10 +334,6 @@
     background: var(--background-gradient);
   }
 
-  .mobile-panel--notes #scratch-notes-card {
-    background: var(--background-gradient);
-  }
-
   [data-view="notebook"] .textarea {
     min-height: 0 !important;
   }
@@ -351,6 +347,24 @@
   body[data-active-view="notebook"] #view-notebook .card-body {
     padding-top: 0.25rem !important; /* micro gap inside notebook card */
     margin-top: 0 !important;
+  }
+
+  .mobile-panel--notes #scratch-notes-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0.6rem 0.8rem 1.0rem; /* tighter, no reserved space for New/Save */
+    position: relative;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.7);
   }
 
   .mobile-panel--notes {
@@ -371,33 +385,15 @@
     flex-shrink: 0;
   }
 
-  .mobile-panel--notes #scratch-notes-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 0.75rem 1rem 1.25rem; /* normal bottom padding, no extra space */
-    position: relative;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.08),
-      0 0 0 1px rgba(255, 255, 255, 0.7);
-  }
-
   #view-notebook #scratch-notes-card > * + * {
-    margin-top: 0.35rem;
+    margin-top: 0.25rem;
   }
 
   .mobile-panel--notes #scratch-notes-card .notes-editor {
-    flex: 1;
-    min-height: clamp(9rem, 32vh, 18rem);
-    max-height: clamp(12rem, 40vh, 22rem);
-    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;       /* allow it to use available height */
+    overflow-y: auto;       /* scroll inside the text area on very long notes */
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
