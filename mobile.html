@@ -138,8 +138,8 @@
     }
 
     .icon-btn svg {
-      stroke: #3C3A40; /* Graphite Neutral */
-      opacity: 0.9;
+      stroke: #000000 !important;
+      opacity: 1;
       width: 20px;
       height: 20px;
       transition: opacity 0.15s ease, transform 0.15s ease;
@@ -147,6 +147,7 @@
 
     .icon-btn:hover svg,
     .icon-btn:active svg {
+      stroke: #000000 !important;
       opacity: 1;
       transform: scale(1.04);
     }
@@ -1548,8 +1549,8 @@
     }
 
     .icon-btn svg {
-      stroke: var(--accent-color, #512663);
-      opacity: 0.9;
+      stroke: #000000 !important;
+      opacity: 1;
       transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
     }
 .reminders-top-row {
@@ -2636,6 +2637,21 @@
     width: 20px;
     height: 20px;
     display: block;
+  }
+
+  .floating-footer .floating-card svg {
+    stroke: #000000 !important;
+    fill: #000000 !important;
+    opacity: 1 !important;
+  }
+
+  .floating-footer .floating-card:hover svg,
+  .floating-footer .floating-card:active svg,
+  .floating-footer .floating-card.active svg,
+  .floating-footer .floating-card.is-active svg {
+    stroke: #000000 !important;
+    fill: none !important;
+    opacity: 1 !important;
   }
 
   #mobile-nav-shell .floating-fab {
