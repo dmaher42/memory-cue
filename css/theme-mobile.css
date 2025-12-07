@@ -46,6 +46,11 @@ body.mobile-theme footer {
   overflow-y: auto;
 }
 
+/* Micro-gap under the mobile header so content sits just below the quick bar */
+body.mobile-shell #mobile-shell #main {
+  padding-top: 3px !important;
+}
+
 .app-main {
   flex: 1 1 auto;
   display: flex;
