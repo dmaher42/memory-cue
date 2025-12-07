@@ -445,9 +445,10 @@ body.mobile-theme .text-secondary {
 
   /* Normalise any accidental large top spacing */
   .mobile-view-inner .reminders-content-shell,
-  .reminders-content-shell {
-    margin-top: 0;
-    padding-top: 0;
+  .reminders-content-shell,
+  .reminders-list-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 
   #remindersSummary,
