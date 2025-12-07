@@ -357,7 +357,7 @@ body.mobile-theme .text-secondary {
 .scratch-notes-body-wrapper {
   flex: 1 1 auto;
   min-height: 0;
-  margin-top: 12px;
+  margin-top: 6px;
   box-sizing: border-box;
   display: flex;
   width: 100%;
@@ -515,8 +515,8 @@ body.mobile-theme .text-secondary {
   .note-editor-content-wrapper {
     flex: 1 1 auto;
     min-height: 0;
-    margin-top: 12px;
-    padding: 12px;
+    margin-top: 6px;
+    padding: 8px;
     border-radius: 12px;
     box-sizing: border-box;
     background: #fbf9ff;
