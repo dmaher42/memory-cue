@@ -90,6 +90,7 @@
       display: flex;
       align-items: center;
       padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
+      margin-bottom: 0 !important;
       gap: 0.5rem;
       white-space: nowrap;
       overflow: hidden;
@@ -148,12 +149,6 @@
       white-space: nowrap;
     }
 
-    .reminders-summary,
-    #remindersSummary,
-    #mobileRemindersHeaderSubtitle {
-      margin-top: 0.25rem !important;
-    }
-
     .reminder-tab.reminders-tab-active,
     .reminder-tab.active,
     .reminder-tab[aria-pressed="true"] {
@@ -192,6 +187,7 @@
       .reminders-top-row {
         gap: 0.35rem;
         padding: 0.35rem 0.15rem 0;
+        margin-bottom: 0 !important;
       }
 
       .reminders-quick-bar {
@@ -984,6 +980,14 @@
       #slimMobileHeader .header-btn .btn-label {
         display: none;
       }
+    }
+
+    /* Remove gap between header bar and first reminder */
+    #reminderList,
+    #remindersWrapper,
+    .reminders-list-container {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
     }
   </style>
   <meta charset="UTF-8" />
@@ -3960,7 +3964,6 @@
               </ul>
             </div>
 
-            <p id="mobileRemindersHeaderSubtitle" class="text-xs text-slate-500"></p>
           </div>
         </header>
 
