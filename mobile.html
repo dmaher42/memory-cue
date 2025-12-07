@@ -1744,7 +1744,12 @@
     #view-notebook #noteTitleMobile,
     #view-notebook .seamless-title-input {
       color: var(--text-strong, #34163f);
-      font-weight: 600;
+    }
+
+    #noteTitleMobile {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.4;
     }
 
     #view-notebook #noteTitleMobile::placeholder {
@@ -5295,28 +5300,25 @@
               </button>
             </div>
             <div class="note-editor-card">
-            <div class="scratch-notes-header-block">
-              <div class="flex items-center justify-between gap-2 pb-0 border-b border-base-200/70">
-                <div class="flex flex-col">
-                  <span class="sr-only">Notebook</span>
-                </div>
-
-                <!-- saved notes button moved into the sub-header for compact layout -->
-              </div>
-
-              <!-- Seamless title field -->
-              <div class="flex flex-col items-stretch gap-2 px-1 py-1 rounded-md notebook-actions-row">
+            <div class="scratch-notes-header-block space-y-2 mb-3">
+              <div class="flex items-center justify-between gap-3">
                 <input
                   id="noteTitleMobile"
                   type="text"
+                  class="input input-sm w-full bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[color-mix(in_srgb,var(--accent-color,_#512663)_65%,#ffffff_35%)]"
                   placeholder="Note title"
                   autocomplete="off"
-                  class="seamless-title-input note-title-input flex-1 text-lg font-medium focus:outline-none focus:ring-0 text-base-content placeholder:text-base-content/70"
                 />
-                <button id="note-folder-button" class="note-folder-chip self-start" type="button" aria-haspopup="dialog" aria-expanded="false">
-                  <span id="note-folder-label">Unsorted</span>
-                </button>
               </div>
+              <button
+                type="button"
+                id="noteFolderPillMobile"
+                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[rgba(81,38,99,0.06)] text-[rgba(47,27,63,0.85)] hover:bg-[rgba(81,38,99,0.12)] transition notebook-folder-pill"
+                data-action="open-note-folder-sheet"
+              >
+                Unsorted
+              </button>
+            </div>
 
               <div
                 id="scratchNotesToolbar"
@@ -5361,7 +5363,6 @@
                   <span class="rte-icon">↻</span>
                 </button>
               </div>
-            </div>
 
             <div class="note-editor-inner">
               <!-- Minimal main editor with soft styling -->

@@ -1736,7 +1736,9 @@ const initMobileNotes = () => {
   }
 
   // wire folder button to open picker
-  const noteFolderBtn = document.getElementById('note-folder-button');
+  const noteFolderBtn =
+    document.getElementById('note-folder-button') ||
+    document.getElementById('noteFolderPillMobile');
   if (noteFolderBtn) {
     noteFolderBtn.addEventListener('click', (e) => {
       e.preventDefault();
