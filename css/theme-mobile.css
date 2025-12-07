@@ -450,6 +450,14 @@ body.mobile-theme .text-secondary {
     padding-top: 0;
   }
 
+  #remindersSummary,
+  .reminders-summary,
+  .reminders-top-controls,
+  .reminders-list-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
   /* Scratch notes wrapper adjustments */
   .scratch-notes-wrapper,
   .note-sheet-wrapper {

@@ -54,6 +54,7 @@
       display: flex;
       align-items: center;
       padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
+      margin-bottom: 0 !important;
       gap: 0.5rem;
       white-space: nowrap;
       overflow: hidden;
@@ -150,6 +151,7 @@
       .reminders-top-row {
         gap: 0.35rem;
         padding: 0.35rem 0.15rem 0;
+        margin-bottom: 0 !important;
       }
 
       .reminders-quick-bar {
@@ -1451,6 +1453,7 @@
     .reminders-top-row {
       display: flex;
       padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
+      margin-bottom: 0 !important;
     }
 
     .reminders-quick-bar {
@@ -1500,12 +1503,6 @@
       transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .reminders-summary,
-    #remindersSummary,
-    #mobileRemindersHeaderSubtitle {
-      margin-top: 0.25rem !important;
-    }
-
     .reminder-tab.reminders-tab-active,
     .reminder-tab[aria-pressed="true"] {
       background: #512663;
@@ -1534,6 +1531,7 @@
 .reminders-top-row {
   display: flex;
   padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
+  margin-bottom: 0 !important;
 }
 
 .reminders-quick-bar {
@@ -1598,6 +1596,14 @@
   font-size: 1rem;
   padding: 0.35rem;
   border-radius: 999px;
+}
+
+/* Remove gap between header bar and first reminder */
+#reminderList,
+#remindersWrapper,
+.reminders-list-container {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
   </style>
   <meta charset="UTF-8" />
@@ -4312,6 +4318,7 @@
     @media (max-width: 420px) {
       .reminders-top-row {
         padding: 0.25rem 0.1rem 0;
+        margin-bottom: 0 !important;
       }
 
       .reminders-quick-bar {
@@ -5057,7 +5064,6 @@
         </ul>
       </div>
 
-      <p id="mobileRemindersHeaderSubtitle" class="text-xs text-slate-500"></p>
     </div>
   </header>
 
@@ -6039,6 +6045,7 @@
     .reminders-top-row {
       display: flex;
       padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
+      margin-bottom: 0 !important;
     }
 
     .reminders-quick-bar {
