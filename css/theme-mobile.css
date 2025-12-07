@@ -69,6 +69,17 @@ body.mobile-theme footer {
   box-sizing: border-box;
 }
 
+.mobile-shell #remindersWrapper {
+  margin-top: 3px !important;
+  padding-top: 0 !important;
+}
+
+.reminders-list-container,
+.mobile-view-inner .reminders-content-shell {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
 .mobile-shell #view-reminders .mobile-view-inner,
 .mobile-shell #view-reminders .reminders-content-shell {
   padding-top: 0 !important;
