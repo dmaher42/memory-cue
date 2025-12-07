@@ -157,30 +157,36 @@
     }
 
     .reminders-quick-actions {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.25rem;
-      flex-shrink: 0;
+      gap: 0.35rem;
     }
 
-    .reminders-quick-actions .icon-btn {
+    .icon-btn {
       border: none;
       background: transparent;
+      padding: 0.35rem;
+      border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.32rem;
-      border-radius: 999px;
       cursor: pointer;
-      color: var(--accent-color);
-      transition: background-color 0.15s ease, transform 0.15s ease;
-      flex-shrink: 0;
     }
 
-    .reminders-quick-actions .icon-btn:hover,
-    .reminders-quick-actions .icon-btn:focus-visible {
-      background: color-mix(in srgb, var(--accent-color) 12%, transparent);
-      outline: none;
+    .icon-btn svg {
+      stroke: var(--accent-color, #512663);
+      opacity: 0.9;
+      transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .icon-btn:hover svg,
+    .icon-btn:active svg {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+
+    .icon-btn:active {
+      background-color: rgba(81, 38, 99, 0.06);
     }
 
     @media (max-width: 380px) {
@@ -3890,19 +3896,66 @@
                     type="button"
                     class="icon-btn"
                     aria-label="Open saved notes"
-                  ><span class="material-symbols-rounded">auto_stories</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6.25 3.5H13.75C14.44 3.5 15 4.06 15 4.75V16.5L10 13.8 5 16.5V4.75C5 4.06 5.56 3.5 6.25 3.5Z" />
+                    </svg>
+                  </button>
                   <button
                     id="startVoiceCaptureGlobal"
                     type="button"
                     class="icon-btn"
                     aria-label="Start voice capture"
-                  ><span class="material-symbols-rounded">mic</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="6.5" y="3.5" width="7" height="9" rx="3.5" />
+                      <path d="M5.5 9.75V10c0 2.48 2 4.5 4.5 4.5s4.5-2.02 4.5-4.5V9.75" />
+                      <path d="M10 14.5V17" />
+                      <path d="M7.5 17h5" />
+                    </svg>
+                  </button>
                   <button
                     id="quickAddReminderGlobal"
                     type="button"
                     class="icon-btn"
                     aria-label="Add reminder"
-                  ><span class="material-symbols-rounded">add_circle</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10" cy="10" r="7.1" />
+                      <path d="M10 6.25v7.5" />
+                      <path d="M6.25 10h7.5" />
+                    </svg>
+                  </button>
                   <button
                     id="headerMenuBtnSlim"
                     type="button"
@@ -3911,7 +3964,23 @@
                     aria-expanded="false"
                     aria-controls="headerMenuSlim"
                     aria-label="More options"
-                  ><span class="material-symbols-rounded">more_vert</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10" cy="4.75" r="1.05" />
+                      <circle cx="10" cy="10" r="1.05" />
+                      <circle cx="10" cy="15.25" r="1.05" />
+                    </svg>
+                  </button>
                 </div>
 
               </form>
