@@ -296,6 +296,13 @@
     margin-top: 0 !important;
   }
 
+  /* Hide notebook action buttons: top "Saved notes" pill and bottom New/Save bar */
+  #view-notebook .note-actions-top,
+  #view-notebook .note-actions.fixed-bottom,
+  #view-notebook .notebook-actions-row {
+    display: none !important;
+  }
+
   body[data-active-view="notebook"] #view-notebook {
     background: var(--card-bg);
   }
@@ -306,6 +313,24 @@
     border-radius: 0;
     box-shadow: none;
     background: transparent;
+  }
+
+  .mobile-panel--notes #scratch-notes-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0.75rem 1rem 1.25rem; /* normal bottom padding, no extra space */
+    position: relative;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.7);
   }
 
   [data-view="notebook"] .textarea {

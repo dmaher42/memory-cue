@@ -306,6 +306,13 @@
     margin-top: 0 !important;
   }
 
+  /* Hide notebook action buttons: top "Saved notes" pill and bottom New/Save bar */
+  #view-notebook .note-actions-top,
+  #view-notebook .note-actions.fixed-bottom,
+  #view-notebook .notebook-actions-row {
+    display: none !important;
+  }
+
   body[data-active-view="notebook"] #view-notebook {
     background: #FBFBFB;
   }
@@ -371,7 +378,7 @@
     gap: 0;
     max-width: 640px;
     margin: 0 auto;
-    padding: 0.75rem 1rem calc(1.35rem + env(safe-area-inset-bottom, 0.75rem));
+    padding: 0.75rem 1rem 1.25rem; /* normal bottom padding, no extra space */
     position: relative;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.78);
@@ -391,12 +398,6 @@
     min-height: clamp(9rem, 32vh, 18rem);
     max-height: clamp(12rem, 40vh, 22rem);
     overflow-y: auto;
-  }
-
-  /* Keep note action buttons fixed and accessible without scrolling on all viewports */
-  .mobile-panel--notes #scratch-notes-card {
-    /* make room for the fixed action bar so content isn't hidden */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 4.5rem);
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
