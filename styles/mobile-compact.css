@@ -50,8 +50,8 @@
   }
 
   .editor, .note-editor {
-    flex: 0 0 auto;
-    max-height: 46vh; /* editor gets most of the remaining height */
+    flex: 1 1 auto;
+    height: auto;
     overflow: hidden;
   }
 
@@ -59,9 +59,10 @@
   .editor textarea, .note-editor textarea, textarea.note-body {
     width: 100%;
     box-sizing: border-box;
-    height: calc(46vh - 16px);
+    height: 100%;
     min-height: 72px;
     resize: none;
+    flex: 1;
   }
 
   /* Action bar with Save / New Note pinned inside viewport */
