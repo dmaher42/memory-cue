@@ -585,7 +585,7 @@ body.mobile-theme .text-secondary {
   flex-direction: column;
   justify-content: flex-start;  /* no centering that creates big gaps */
   align-items: stretch;
-  padding: 0 8px 6px;           /* reduce side + bottom padding */
+  padding: 0 8px 8px;   /* small left/right inset */
   margin-top: 0;
   box-sizing: border-box;
 }
