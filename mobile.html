@@ -389,9 +389,10 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 0.5rem; /* widened writing surface */
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.6rem 0.8rem 1.0rem; /* tighter, no reserved space for New/Save */
     position: relative;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.78);
@@ -1923,9 +1924,9 @@ body, main, section, div, p, span, li {
     }
 
     #view-notebook .mobile-view-inner {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 0.75rem 0.75rem 1rem;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
     }
 
     #view-notebook .notebook-actions-row {
