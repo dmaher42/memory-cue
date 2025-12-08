@@ -185,22 +185,22 @@ body.mobile-theme .top-bar .icon-button {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Unified outline icons: SF Symbols style */
-.toolbar-icon,
+/* Unified outline icons: SF Symbols–style */
 .icon-btn svg {
-  width: 18px;
-  height: 18px;
   stroke: currentColor;
   fill: none;
+  width: 18px;
+  height: 18px;
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: transform 0.15s ease;
+  opacity: 1;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .icon-btn:hover svg,
 .icon-btn:active svg {
-  transform: scale(1.03);
+  transform: scale(1.04);
 }
 
 .icon-btn:active {
@@ -211,7 +211,7 @@ body.mobile-theme .top-bar .icon-button {
 .mobile-footer-nav button,
 .mobile-footer-nav .footer-button,
 .footer-nav button {
-  color: #111111;
+  color: var(--text-primary, #1f1633);
 }
 
 body.mobile-theme .app-header button:focus-visible,
@@ -416,9 +416,9 @@ body.mobile-theme .text-secondary {
   height: 28px;
   padding: 0 8px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.16);   /* neutral outline */
+  border: 1px solid rgba(15, 23, 42, 0.16);
   background: #ffffff;
-  color: #111827;
+  color: var(--text-primary, #1f1633);
   font-size: 0.78rem;
   font-weight: 500;
   line-height: 1;
@@ -433,7 +433,7 @@ body.mobile-theme .text-secondary {
     color 0.15s ease;
 }
 
-/* Subtle hover state */
+/* Subtle hover + active states */
 .note-editor-toolbar .rte-btn:hover {
   background: rgba(15, 23, 42, 0.04);
 }
@@ -441,16 +441,17 @@ body.mobile-theme .text-secondary {
 /* Active formatting state (e.g., B/I/U on) */
 .note-editor-toolbar .rte-btn.active {
   background: rgba(15, 23, 42, 0.07);
-  border-color: rgba(15, 23, 42, 0.50);
-  color: #111827;
+  border-color: rgba(80, 128, 191, 0.7); /* use app accent for active */
+  color: rgba(17, 24, 39, 1);
 }
 
-/* Text-based icons inside toolbar buttons */
+/* Glyph inside toolbar pill (B/I/U/•/1./arrows) */
 .rte-icon {
   font-size: 0.8rem;
   line-height: 1;
   pointer-events: none;
-  color: inherit;    /* matches the button color */
+  color: inherit;
+  opacity: 1;
 }
 
 .rte-divider {
@@ -470,14 +471,14 @@ body.mobile-theme .text-secondary {
   display: none;
 }
 
-/* Notebook toolbar: minimal, inline group */
+/* Notebook toolbar: minimal inline group */
 .note-toolbar {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0;
   border-radius: 999px;
-  background: transparent; /* remove colored blob background */
+  background: transparent; /* no purple chip background */
 }
 
 /* Mobile-specific: tighten filter bar spacing and stretch scratch-notes panel */
