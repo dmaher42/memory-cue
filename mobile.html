@@ -903,21 +903,22 @@
     margin: 0;
   }
 
-  /* ===== Move to folder sheet ===== */
+  /* ===== Move to folder sheet – right-side sidebar ===== */
   #note-folder-sheet,
   #moveFolderSheet {
     position: fixed;
     inset: 0;
     z-index: 90;
     display: flex;
-    align-items: flex-end;
-    justify-content: center;
+    align-items: stretch;          /* stretch top-to-bottom */
+    justify-content: flex-end;     /* push panel to the right edge */
     opacity: 0;
     pointer-events: none;
-    background: rgba(15, 23, 42, 0.26);
+    background: rgba(15, 23, 42, 0.26);  /* dimmed backdrop */
     transition: opacity 0.25s ease;
   }
 
+  /* Visible state controlled by JS via data-open / hidden */
   #note-folder-sheet[data-open="true"],
   #note-folder-sheet.open,
   #moveFolderSheet[data-open="true"],
@@ -929,18 +930,39 @@
   #note-folder-sheet .sheet-panel,
   #moveFolderSheet .sheet-panel {
     position: relative;
-    width: 100%;
+    height: 100dvh;
+    width: min(360px, 94vw);       /* works on Pixel 8a and larger screens */
     max-width: 100vw;
     margin: 0;
     box-sizing: border-box;
-    border-radius: 18px 18px 0 0;
+    border-radius: 16px 0 0 16px;  /* rounded only on the left edge */
     background: #ffffff;
-    box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
-    padding: 0.7rem 0.9rem env(safe-area-inset-bottom, 0.7rem);
-    max-height: 70dvh;
+    box-shadow: -6px 0 24px rgba(15, 23, 42, 0.2);
+    padding: 0.9rem 1rem env(safe-area-inset-bottom, 0.9rem);
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+
+    /* slide-in animation */
+    transform: translateX(100%);
+    transition:
+      transform 0.26s ease-out,
+      box-shadow 0.18s ease-out;
+  }
+
+  /* When overlay is open, slide the panel into view */
+  #note-folder-sheet[data-open="true"] .sheet-panel,
+  #note-folder-sheet.open .sheet-panel,
+  #moveFolderSheet[data-open="true"] .sheet-panel,
+  #moveFolderSheet:not(.hidden) .sheet-panel {
+    transform: translateX(0);
+  }
+
+  /* Allow internal scrolling for long folder lists */
+  .note-folder-sheet-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .note-folder-sheet-header {
