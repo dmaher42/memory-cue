@@ -420,6 +420,12 @@ if (document.readyState === 'loading') {
 
 let requestNotesRefresh = null;
 
+function mobileNotesSyncDidPullFromRemote() {
+  if (typeof requestNotesRefresh === 'function') {
+    requestNotesRefresh({ preserveDraft: true });
+  }
+}
+
 const initMobileNotes = () => {
   if (typeof document === 'undefined') {
     return;
@@ -3121,44 +3127,65 @@ if (document.readyState === 'loading') {
   initMobileNotes();
 }
 
-const notesSyncController = initNotesSync();
+const mobileNotesSyncController = initNotesSync({});
 
-const supabaseAuthController = initSupabaseAuth({
+const originalSyncFromRemote = mobileNotesSyncController.syncFromRemote;
+mobileNotesSyncController.syncFromRemote = async (...args) => {
+  const result = await originalSyncFromRemote?.(...args);
+  try {
+    mobileNotesSyncDidPullFromRemote();
+  } catch {
+    /* ignore */
+  }
+  return result;
+};
+
+const mobileSupabaseAuthController = initSupabaseAuth({
   selectors: {
-    signInButtons: ['#googleSignInBtn'],
-    signOutButtons: ['#googleSignOutBtn'],
+    signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
+    signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
     userBadge: '#user-badge',
     userBadgeEmail: '#user-badge-email',
     userBadgeInitial: '#user-badge-initial',
     userName: '#googleUserName',
-    syncStatus: ['#sync-status'],
+    syncStatus: ['#sync-status', '#mcStatusText'],
     syncStatusText: ['#mcStatusText'],
     statusIndicator: ['#mcStatus'],
     feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
   },
   disableButtonBinding: true,
-  onSessionChange: async (user) => {
+  onSessionChange: (user) => {
     try {
-      await notesSyncController?.handleSessionChange(user);
+      mobileNotesSyncController?.handleSessionChange(user);
     } catch (error) {
       console.warn('[notebook] notes sync session handler failed', error);
     }
-    requestNotesRefresh?.({ preserveDraft: true });
+    if (user) {
+      try {
+        mobileNotesSyncController?.syncFromRemote?.();
+      } catch {
+        /* noop */
+      }
+    }
+    mobileNotesSyncDidPullFromRemote();
   },
 });
 
-if (supabaseAuthController?.supabase) {
-  notesSyncController?.setSupabaseClient(supabaseAuthController.supabase);
+if (mobileSupabaseAuthController?.supabase) {
+  mobileNotesSyncController?.setSupabaseClient(mobileSupabaseAuthController.supabase);
   try {
-    supabaseAuthController.supabase.auth
+    mobileSupabaseAuthController.supabase.auth
       .getSession()
-      .then(async ({ data }) => {
-        try {
-          await notesSyncController?.handleSessionChange(data?.session?.user ?? null);
-        } catch (error) {
-          console.warn('[notebook] initial notes sync session check failed', error);
+      .then(({ data }) => {
+        const sessionUser = data?.session?.user ?? null;
+        mobileNotesSyncController?.handleSessionChange(sessionUser);
+        if (sessionUser) {
+          try {
+            mobileNotesSyncController?.syncFromRemote?.();
+          } catch {
+            /* noop */
+          }
         }
-        requestNotesRefresh?.({ preserveDraft: true });
       })
       .catch(() => {
         /* noop */
