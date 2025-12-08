@@ -50,8 +50,8 @@
   }
 
   .editor, .note-editor {
-    flex: 0 0 auto;
-    max-height: 46vh; /* editor gets most of the remaining height */
+    flex: 1 1 auto;
+    max-height: none; /* editor gets most of the remaining height */
     overflow: hidden;
   }
 
