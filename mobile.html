@@ -3847,26 +3847,27 @@ body, main, section, div, p, span, li {
       display: none !important;
     }
   </style>
-  <style>
-  /* FIX: Hide the top header when in Notebook view */
-  body[data-active-view="notebook"] #reminders-slim-header {
-    display: none !important;
-  }
+ <style>
+  /* 1. KEEP HEADER VISIBLE (Removed the 'display: none' rule) */
 
-  /* FIX: Remove the automatic page padding */
+  /* 2. REMOVE GAP: Strip padding from the main container */
   body[data-active-view="notebook"] #main {
     padding-top: 0 !important;
     margin-top: 0 !important;
   }
 
-  /* FIX: Remove inner spacing */
+  /* 3. REMOVE GAP: Strip padding from the inner view */
   body[data-active-view="notebook"] .mobile-view-inner {
     padding-top: 0 !important;
+    margin-top: 0 !important;
   }
 
-  /* FIX: Add safe-area spacing so the title doesn't go under the phone notch */
+  /* 4. ENSURE FULL WIDTH: Keep the card settings */
   body[data-active-view="notebook"] #scratch-notes-card {
-    padding-top: max(12px, env(safe-area-inset-top)) !important;
+    /* No top padding needed here because the header is visible */
+    padding-top: 0 !important; 
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 </style>
 </head>
