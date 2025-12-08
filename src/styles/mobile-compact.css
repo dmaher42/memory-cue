@@ -56,12 +56,15 @@
   }
 
   /* Textarea / editing area tuned to fit */
-  .editor textarea, .note-editor textarea, textarea.note-body {
+  .editor textarea,
+  .note-editor textarea,
+  textarea.note-body {
     width: 100%;
     box-sizing: border-box;
-    height: calc(46vh - 16px);
-    min-height: 72px;
+    height: auto;
+    min-height: 0;
     resize: none;
+    flex: 1 1 auto;
   }
 
   /* Action bar with Save / New Note pinned inside viewport */
