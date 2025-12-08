@@ -375,7 +375,7 @@
 
   body[data-active-view="notebook"] #view-notebook .card-body {
     padding: clamp(0.75rem, 4vw, 1.25rem);
-    padding-bottom: clamp(3rem, 8vw, 4.5rem);
+    padding-bottom: 0.5rem;
     min-height: calc(100dvh - 4rem);
   }
 
@@ -2256,6 +2256,9 @@ body, main, section, div, p, span, li {
       overflow-x: hidden;
       color: var(--text-body);
       transition: box-shadow 0.18s ease, border-color 0.18s ease;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .distraction-free-editor-container:focus-within {
@@ -2284,6 +2287,8 @@ body, main, section, div, p, span, li {
       padding: 0;
       white-space: pre-wrap;
       word-wrap: break-word;
+      flex: 1;
+      height: 100%;
     }
 
     .minimal-editor:focus,
@@ -2299,6 +2304,8 @@ body, main, section, div, p, span, li {
       font-weight: 400;
       color: #1f1633;
       line-height: 1.5;
+      flex: 1;
+      height: 100%;
     }
 
     .minimal-editor textarea:focus {
