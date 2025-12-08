@@ -603,18 +603,19 @@
     transform: none;
   }
 
+  /* ===== Saved notes bottom sheet – flat, notebook-aligned ===== */
   #savedNotesSheet {
     position: fixed;
     inset: 0;
     z-index: 80;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
     display: flex;
     align-items: flex-end;
     justify-content: center;
     padding: 0;
-    background: rgba(15, 23, 42, 0.26);
+    background: rgba(15, 23, 42, 0.26);  /* dimmed backdrop */
+    transition: opacity 0.25s ease;
   }
 
   #savedNotesSheet[data-open="true"] {
@@ -631,16 +632,268 @@
     border-radius: 18px 18px 0 0;
     background: #ffffff;
     box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
-    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+    padding: 0.65rem 0.9rem env(safe-area-inset-bottom, 0.7rem);
     max-height: 88dvh;
-    transform: translateY(100%);
-    opacity: 1;
-    transition:
-      transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
   }
 
-  #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translateY(0);
+  /* Header area: handle, title, search, folder chips */
+  .saved-notes-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .saved-notes-handle {
+    align-self: center;
+    width: 2.5rem;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.14);
+    opacity: 0.8;
+  }
+
+  .saved-notes-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .saved-notes-title-row h2 {
+    font-size: 0.98rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-strong, #1f2933);
+  }
+
+  .saved-notes-title-row button[data-action="close-saved-notes"] {
+    padding: 0.2rem;
+    border-radius: 999px;
+  }
+
+  .saved-notes-title-row button[data-action="close-saved-notes"] svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Search input row inside the sheet */
+  .saved-notes-search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .saved-notes-search-row input[type="search"],
+  .saved-notes-search-row input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    border-radius: 999px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.86rem;
+  }
+
+  /* Folder chips row */
+  .notebook-folder-filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 0.15rem 0 0.05rem;
+    overflow-x: auto;
+    padding: 4px 2px 6px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .notebook-folder-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notebook-folder-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(47, 27, 63, 0.12);
+    background: rgba(255, 255, 255, 0.96);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    color: var(--primary-dark);
+    white-space: nowrap;
+    scroll-snap-align: start;
+    cursor: pointer;
+    transition:
+      background-color 0.14s ease,
+      border-color 0.14s ease,
+      box-shadow 0.14s ease,
+      color 0.14s ease;
+  }
+
+  .notebook-folder-chip--active {
+    background: var(--accent-color, #512663);
+    border-color: var(--accent-color, #512663);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
+  }
+
+  /* Scrollable list area */
+  .saved-notes-list-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 0.15rem;
+  }
+
+  .mobile-shell #notesListMobile {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Each note row – flat, full-width, compact */
+  .mobile-shell #notesListMobile .note-item-mobile {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+  .mobile-shell #notesListMobile .note-item-mobile:last-child {
+    border-bottom: none;
+  }
+
+  .note-list-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0.7rem 0.1rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .note-list-title {
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--text-strong, #231B2E);
+    margin-bottom: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .note-list-preview {
+    font-size: 0.84rem;
+    color: var(--text-body, #4a3c57);
+    line-height: 1.3;
+    max-height: 2.6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .note-list-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 2px;
+    font-size: 0.74rem;
+    color: var(--text-muted, #9a8bb0);
+  }
+
+  .note-list-meta-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .note-list-meta-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.65;
+  }
+
+  .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
+    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 18%, transparent);
+  }
+
+  .mobile-shell #notesListMobile .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Remove old “glass” card styling from legacy notebook-note-card */
+  .notebook-note-card {
+    background: transparent;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* ===== Move to folder sheet ===== */
+  #note-folder-sheet,
+  #moveFolderSheet {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.26);
+    transition: opacity 0.25s ease;
+  }
+
+  #note-folder-sheet[data-open="true"],
+  #note-folder-sheet.open,
+  #moveFolderSheet[data-open="true"],
+  #moveFolderSheet:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #note-folder-sheet .sheet-panel,
+  #moveFolderSheet .sheet-panel {
+    position: relative;
+    width: 100%;
+    max-width: 100vw;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 18px 18px 0 0;
+    background: #ffffff;
+    box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
+    padding: 0.7rem 0.9rem env(safe-area-inset-bottom, 0.7rem);
+    max-height: 70dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .note-folder-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .note-folder-sheet-header h3 {
+    font-size: 0.96rem;
+    font-weight: 600;
+  }
+
+  .note-folder-sheet-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 0.25rem;
   }
 
   .note-body-field {
@@ -701,306 +954,6 @@
     opacity: 0.8;
   }
 
-  .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
-    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 18%, transparent);
-  }
-
-  .mobile-shell #notesListMobile .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .mobile-shell #notesListMobile {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .notebook-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 0.25rem 0 0;
-    margin: 0;
-  }
-
-  .notebook-folder-filter-bar {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    margin-bottom: 10px;
-    overflow-x: auto;
-    padding: 4px 2px 6px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .notebook-folder-filter-bar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .notebook-folder-chip {
-    border-radius: 999px;
-    border: 1px solid rgba(47, 27, 63, 0.12);
-    background: rgba(255, 255, 255, 0.85);
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    color: var(--primary-dark);
-    white-space: nowrap;
-    scroll-snap-align: start;
-    cursor: pointer;
-    transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, color 0.14s ease;
-  }
-
-  .notebook-folder-chip--active {
-    background: var(--accent-color, #512663);
-    border-color: var(--accent-color, #512663);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
-  }
-
-  .notebook-note-card {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 4px 18px rgba(81, 38, 99, 0.1);
-    padding: 10px 14px;
-    margin-bottom: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .notebook-note-title {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--primary-dark);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
-  .notebook-note-snippet {
-    font-size: 0.8rem;
-    color: rgba(47, 27, 63, 0.7);
-    max-height: 2.4em;
-    overflow: hidden;
-  }
-
-  .notebook-note-meta-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .notebook-note-timestamp {
-    font-size: 0.72rem;
-    color: rgba(47, 27, 63, 0.55);
-  }
-
-  .notebook-note-folder-pill {
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: 0.7rem;
-    background: rgba(81, 38, 99, 0.06);
-    color: rgba(47, 27, 63, 0.85);
-    max-width: 40%;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    cursor: pointer;
-  }
-
-
-  .mobile-shell #notesListMobile .note-item-mobile {
-    margin: 0;
-  }
-
-  .note-list-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    margin: 0;
-    width: 100%;
-    background: transparent;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
-    transition: background 0.15s ease;
-    cursor: pointer;
-  }
-
-  .note-list-item:hover {
-    background: rgba(80, 20, 120, 0.06);
-  }
-
-  .note-list-main {
-    flex: 1 1 auto;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .note-list-title {
-    font-size: 0.94rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.25;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .note-list-subtitle {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-top: 1px;
-  }
-
-  .note-list-meta {
-    margin-top: 2px;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.3;
-  }
-
-  .note-list-folder {
-    text-decoration: underline;
-  }
-
-  .note-list-dot {
-    opacity: 0.7;
-  }
-
-  .note-list-overflow {
-    background: none;
-    border: none;
-    padding: 0.35rem;
-    font-size: 1.1rem;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 0.75rem;
-    flex-shrink: 0;
-    border-radius: 50%;
-    transition: background 0.12s ease;
-  }
-
-  .note-list-overflow:hover {
-    background: rgba(80, 20, 120, 0.1);
-  }
-
-  .note-list-right {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    gap: 0.25rem;
-  }
-
-  .mobile-shell #savedNotesSheet {
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    align-items: flex-end;
-    justify-content: center;
-  }
-
-  .mobile-shell #savedNotesSheet .saved-notes-panel {
-    width: 100%;
-    max-width: 100vw;
-    margin: 0;
-    border-radius: 18px 18px 0 0;
-    background: #ffffff;
-    box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
-  }
-
-  /* Saved Notes Sheet Title Styling */
-  .mobile-shell #savedNotesSheet #savedNotesSheetTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-strong, #34163f);
-    letter-spacing: 0.01em;
-  }
-
-  /* Reduce spacing in saved notes sheet */
-  .mobile-shell #savedNotesSheet .saved-notes-panel > div {
-    gap: 0.5rem;
-  }
-
-  .mobile-shell #savedNotesSheet .flex.justify-center {
-    padding-top: 0.75rem;
-    padding-bottom: 0.5rem;
-  }
-
-  .mobile-shell #savedNotesSheet .flex.items-center.justify-between {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-bottom: 0.5rem;
-  }
-
-  /* Tighten spacing between folder chips and search bar */
-  .mobile-shell #savedNotesSheet .notebook-folder-bar {
-    padding: 0.5rem 0.75rem 0.75rem;
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-top-bar {
-    margin-bottom: 0.4rem;
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-folder-filter-bar {
-    padding: 3px;
-    gap: 6px;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-
-  /* Reduce padding around search input */
-  .mobile-shell #savedNotesSheet .px-3.pb-3 {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-
-  /* Style the search input */
-  .mobile-shell #savedNotesSheet .notebook-search-bar {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 999px;
-    border: 1px solid rgba(230, 224, 242, 0.8);
-    background: rgba(248, 245, 252, 0.6);
-    font-size: 0.85rem;
-    color: var(--text-main, #231b2e);
-    transition: border-color 0.18s ease, background-color 0.18s ease;
-    margin-bottom: 0.4rem;
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-search-bar:focus {
-    outline: none;
-    border-color: var(--primary-dark, #3E1D4C);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.1);
-  }
-
-  .mobile-shell #savedNotesSheet .notebook-search-bar::placeholder {
-    color: rgba(47, 27, 63, 0.5);
-  }
 
   .quick-actions-panel {
     background: var(--mobile-quick-surface);
@@ -5702,36 +5655,38 @@ body, main, section, div, p, span, li {
                   />
                 </div>
 
-                <div
-                  id="notesListMobile"
-                  class="notebook-list notebook-notes-list saved-notes-list text-sm"
-                  aria-label="Saved scratch notes"
-                >
-                  <!-- Note items are rendered here by JS -->
-                  <template id="notesListMobileItemTemplate">
-                    <div class="note-row note-list-item" data-note-id="" data-role="open-note">
-                      <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
-                        <div class="note-row-title-row note-list-title-row">
-                          <div class="note-row-title note-list-title">Untitled</div>
-                          <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
+                <div class="saved-notes-list-shell">
+                  <ul
+                    id="notesListMobile"
+                    class="notebook-list notebook-notes-list saved-notes-list text-sm"
+                    aria-label="Saved scratch notes"
+                  >
+                    <!-- Note items are rendered here by JS -->
+                    <template id="notesListMobileItemTemplate">
+                      <div class="note-row note-list-item" data-note-id="" data-role="open-note">
+                        <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
+                          <div class="note-row-title-row note-list-title-row">
+                            <div class="note-row-title note-list-title">Untitled</div>
+                            <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
+                          </div>
+                          <div class="note-row-meta note-list-meta">
+                            <button class="note-row-folder note-list-folder" type="button">Folder</button>
+                            <span class="note-row-dot note-list-dot">•</span>
+                            <span class="note-row-timestamp note-list-date">Date</span>
+                          </div>
                         </div>
-                        <div class="note-row-meta note-list-meta">
-                          <button class="note-row-folder note-list-folder" type="button">Folder</button>
-                          <span class="note-row-dot note-list-dot">•</span>
-                          <span class="note-row-timestamp note-list-date">Date</span>
-                        </div>
+                        <button
+                          type="button"
+                          class="note-row-overflow note-list-overflow note-options-button note-actions"
+                          aria-label="More"
+                          data-role="note-menu"
+                          data-note-id=""
+                        >
+                          ⋯
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        class="note-row-overflow note-list-overflow note-options-button note-actions"
-                        aria-label="More"
-                        data-role="note-menu"
-                        data-note-id=""
-                      >
-                        ⋯
-                      </button>
-                    </div>
-                  </template>
+                    </template>
+                  </ul>
                 </div>
               </div>
               <!-- New Folder Modal -->
