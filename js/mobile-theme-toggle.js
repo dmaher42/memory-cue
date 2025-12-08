@@ -1,47 +1,27 @@
-(function () {
-  const html = document.documentElement;
-  const STORAGE_KEY = 'theme';
+const themeToggleButton = document.getElementById('theme-toggle-button');
+const htmlElement = document.documentElement;
+const themeStorageKey = 'memory-cue-theme';
 
-  const fallbackApplyTheme = (theme) => {
-    const next = theme === 'dark' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    html.classList.toggle('dark', next === 'dark');
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      /* storage might be unavailable */
+if (themeToggleButton) {
+  const themeIcon = themeToggleButton.querySelector('.material-symbols-rounded');
+
+  const updateIcon = (theme) => {
+    if (theme === 'professional-dark') {
+      themeIcon.textContent = 'light_mode';
+    } else {
+      themeIcon.textContent = 'dark_mode';
     }
   };
 
-  const applyTheme =
-    typeof window !== 'undefined' && typeof window.__mcApplyTheme === 'function'
-      ? window.__mcApplyTheme
-      : fallbackApplyTheme;
+  // Load saved theme
+  const savedTheme = localStorage.getItem(themeStorageKey) || 'light';
+  htmlElement.setAttribute('data-theme', savedTheme);
+  updateIcon(savedTheme);
 
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      applyTheme(stored);
-    }
-  } catch {
-    /* ignore storage read failures */
-  }
-
-  const toggleTheme = () => {
-    const current = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-    applyTheme(current === 'dark' ? 'light' : 'dark');
-  };
-
-  const themeToggleBtns = Array.from(document.querySelectorAll('#themeToggle')).filter(
-    (btn) => btn instanceof HTMLElement
-  );
-  if (themeToggleBtns.length) {
-    const handleToggle = (event) => {
-      event.preventDefault();
-      toggleTheme();
-    };
-    themeToggleBtns.forEach((btn) => {
-      btn.addEventListener('click', handleToggle);
-    });
-  }
-})();
+  themeToggleButton.addEventListener('click', () => {
+    const newTheme = htmlElement.getAttribute('data-theme') === 'light' ? 'professional-dark' : 'light';
+    htmlElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem(themeStorageKey, newTheme);
+    updateIcon(newTheme);
+  });
+}

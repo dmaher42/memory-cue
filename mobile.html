@@ -44,6 +44,28 @@
       --true-blue: #0073cf;
     }
 
+    [data-theme="professional-dark"] {
+      --card-bg: #1f2937;
+      --cauliflower-blue: #111827;
+      --card-border: #374151;
+      --text-primary: #d1d5db;
+      --text-secondary: #9ca3af;
+      --text-strong: #f9fafb;
+      --text-body: #d1d5db;
+      --text-muted: #6b7280;
+      --text-main: #f9fafb;
+      --text-placeholder: #6b7280;
+      --surface-main: #111827;
+      --surface-elevated: #1f2937;
+      --border-subtle: #374151;
+      --background-color: #111827;
+      --background-gradient: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      --hover-bg: rgba(209, 213, 219, 0.1);
+      --shadow-color: rgba(0, 0, 0, 0.2);
+      --icon-inactive: #9ca3af;
+      --icon-active: #a5b4fc;
+    }
+
     body {
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       line-height: 1.5;
@@ -2543,7 +2565,7 @@
   /* Comprehensive Soft Pale Lilac background application */
   body {
     background: var(--background-gradient) !important;
-    color: #2f1b3f;
+    color: var(--text-primary);
   }
 
   /* Floating footer buttons */
@@ -3661,7 +3683,7 @@
     }
   </style>
 </head>
-<body class="min-h-full bg-base-200 text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
+<body class="min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
@@ -5059,6 +5081,9 @@
 
           <!-- Right: saved, mic, save, overflow -->
           <div class="reminders-quick-actions">
+            <button id="theme-toggle-button" class="icon-btn" aria-label="Toggle theme">
+              <span class="material-symbols-rounded">dark_mode</span>
+            </button>
             <button
               id="openSavedNotesGlobal"
               type="button"
@@ -5270,19 +5295,17 @@
     <div
       id="mobile-shell"
       class="mobile-shell mx-auto w-full px-4 pb-16"
-      style="background: #FBFBFB; padding-top: env(safe-area-inset-top, 0);"
     >
       <main
         id="main"
         class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
         tabindex="-1"
         data-active-view="reminders"
-        style="background: rgb(251, 251, 251);"
       >
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel" style="background: #FBFBFB;">
+    <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="mobile-view-inner mx-auto w-full px-4 pt-2 pb-4 space-y-2" style="background: var(--mobile-quick-surface);">
         <!-- header removed to keep view minimal -->
         <div class="reminders-content-shell space-y-2">
@@ -6024,9 +6047,9 @@
     }
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
-  <script src="js/register-service-worker.js" defer></script>
-  <script type="module" src="mobile.js?v=2025-10-29-1"></script>
-  <script type="module" src="js/mobile-theme-toggle.js"></script>
+  <script src="./js/register-service-worker.js" defer></script>
+  <script type="module" src="./mobile.js"></script>
+  <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
       background: radial-gradient(circle at 50% 10%, rgba(104, 65, 144, 0.14), transparent 38%),
