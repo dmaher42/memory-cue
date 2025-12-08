@@ -3848,26 +3848,37 @@ body, main, section, div, p, span, li {
     }
   </style>
  <style>
-  /* 1. KEEP HEADER VISIBLE (Removed the 'display: none' rule) */
-
-  /* 2. REMOVE GAP: Strip padding from the main container */
+  /* 1. Force the page padding to EXACTLY match the header (removing the 6px JS gap) */
   body[data-active-view="notebook"] #main {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
+    padding-top: var(--mobile-header-height, 60px) !important;
+    margin-top: -6px !important; /* Pulls content up to kill the safety gap */
   }
 
-  /* 3. REMOVE GAP: Strip padding from the inner view */
+  /* 2. Strip inner layout padding */
   body[data-active-view="notebook"] .mobile-view-inner {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
-  /* 4. ENSURE FULL WIDTH: Keep the card settings */
+  /* 3. Card Reset: Full width, no shadow, no rounded corners */
   body[data-active-view="notebook"] #scratch-notes-card {
-    /* No top padding needed here because the header is visible */
-    padding-top: 0 !important; 
+    padding: 0 !important;
+    margin: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    background: transparent !important; /* Let the white container show through */
+    width: 100% !important;
+  }
+
+  /* 4. Remove internal card padding so Title touches the top */
+  body[data-active-view="notebook"] .note-editor-card {
+    padding-top: 4px !important; /* Tiny breathing room only */
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 </style>
 </head>
