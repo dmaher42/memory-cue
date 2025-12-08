@@ -46,6 +46,11 @@ body.mobile-theme footer {
   overflow-y: auto;
 }
 
+/* Micro-gap under the mobile header so content sits just below the quick bar */
+body.mobile-shell #mobile-shell #main {
+  padding-top: 3px !important;
+}
+
 .app-main {
   flex: 1 1 auto;
   display: flex;
@@ -67,6 +72,17 @@ body.mobile-theme footer {
   max-width: 100vw;
   margin: 0;
   box-sizing: border-box;
+}
+
+.mobile-shell #remindersWrapper {
+  margin-top: 3px !important;
+  padding-top: 0 !important;
+}
+
+.reminders-list-container,
+.mobile-view-inner .reminders-content-shell {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 .mobile-shell #view-reminders .mobile-view-inner,
@@ -167,6 +183,31 @@ body.mobile-theme .top-bar .icon-button {
   padding: 0.35rem;
   border-radius: 999px;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.icon-btn svg {
+  stroke: currentColor;
+  fill: none;
+  width: 20px;
+  height: 20px;
+  opacity: 1;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover svg,
+.icon-btn:active svg {
+  transform: scale(1.04);
+}
+
+.icon-btn:active {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.reminders-quick-actions .icon-btn,
+.mobile-footer-nav button,
+.mobile-footer-nav .footer-button,
+.footer-nav button {
+  color: #111111;
 }
 
 body.mobile-theme .app-header button:focus-visible,
@@ -332,20 +373,16 @@ body.mobile-theme .text-secondary {
   gap: 0.35rem;
 }
 
+.scratch-notes-body-wrapper,
 .note-editor-content-wrapper {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-}
-
-.scratch-notes-body-wrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-  margin-top: 12px;
+  margin-top: 6px;
+  padding: 6px;              /* already fairly tight */
+  border-radius: 12px;
   box-sizing: border-box;
-  display: flex;
-  width: 100%;
-  max-width: 100%;
+  background: #fbf9ff;
+  overflow: hidden;          /* scroll happens inside body */
 }
 
 .note-editor-toolbar {
@@ -445,32 +482,18 @@ body.mobile-theme .text-secondary {
 
   /* Normalise any accidental large top spacing */
   .mobile-view-inner .reminders-content-shell,
-  .reminders-content-shell {
-    margin-top: 0;
-    padding-top: 0;
+  .reminders-content-shell,
+  .reminders-list-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 
-  /* Scratch notes wrapper adjustments */
-  .scratch-notes-wrapper,
-  .note-sheet-wrapper {
-    margin-top: 0;
-    padding-top: 4px; /* tiny separation only */
-    display: flex;
-    justify-content: center;
-    box-sizing: border-box;
-  }
-
-  /* Make the scratch-notes card stretch and allow internal scrolling */
-  #scratch-notes-card,
-  .scratch-notes-card {
-    flex: 1 1 auto;
-    max-width: 640px;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    padding-bottom: 0;
-    margin-left: 12px;
-    margin-right: 12px;
+  #remindersSummary,
+  .reminders-summary,
+  .reminders-top-controls,
+  .reminders-list-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 
   .note-editor-card {
@@ -483,19 +506,6 @@ body.mobile-theme .text-secondary {
 
   .scratch-notes-header-block {
     flex: 0 0 auto;
-  }
-
-  /* Outer panel around the contenteditable area */
-  .scratch-notes-body-wrapper,
-  .note-editor-content-wrapper {
-    flex: 1 1 auto;
-    min-height: 0;
-    margin-top: 12px;
-    padding: 12px;
-    border-radius: 12px;
-    box-sizing: border-box;
-    background: #fbf9ff;
-    overflow: hidden; /* scroll happens inside .scratch-notes-body */
   }
 
   /* Editable area */
@@ -516,10 +526,6 @@ body.mobile-theme .text-secondary {
     padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
   }
 
-  /* Cap overall card height so it doesn't disappear behind the footer */
-  #scratch-notes-card {
-    max-height: calc(100vh - 120px);
-  }
 }
 
 .note-content-wrapper {
@@ -577,17 +583,21 @@ body.mobile-theme .text-secondary {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 0 16px 16px;
+  justify-content: flex-start;  /* no centering that creates big gaps */
+  align-items: stretch;
+  padding: 0 8px 6px;           /* reduce side + bottom padding */
+  margin-top: 0;
   box-sizing: border-box;
 }
 
 .scratch-notes-card,
 #scratch-notes-card {
   flex: 1 1 auto;
-  min-height: 0;
-  max-width: 640px;
-  margin: 0 auto;
+  min-height: calc(100vh - 120px); /* header + bottom nav allowance */
+  max-height: none;
   width: 100%;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -624,10 +634,9 @@ body.mobile-theme .text-secondary {
   padding-top: 0.25rem;
 }
 
-/* Cap the scratch-notes card height properly 
-   160px accounts for: header (80px) + bottom nav (80px) approximately */
+/* Allow the scratch-notes card to use the full vertical space */
 .mobile-shell #view-notebook #scratch-notes-card {
-  max-height: calc(100vh - 10rem);
+  max-height: none;
 }
 
 .note-editor-content.is-placeholder,

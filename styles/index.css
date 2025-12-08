@@ -4949,14 +4949,14 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 
 .header-pill .header-icons svg,
 .header-pill .header-icons button {
-  color: var(--accent-color) !important;
+  color: #000000 !important;
 }
 
 .header-pill svg,
 .nav-card svg,
 .fab-card svg,
 .floating-card svg {
-  color: var(--accent-color);
+  color: #000000 !important;
 }
 
 .header-pill svg {
@@ -4969,6 +4969,24 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .floating-card svg {
   width: 24px;
   height: 24px;
+}
+
+.mobile-footer svg,
+.floating-footer svg,
+.footer-nav svg,
+.mobile-footer-nav svg,
+.footer-button svg {
+  stroke: #000000 !important;
+  fill: #000000 !important;
+  opacity: 1 !important;
+}
+
+.mobile-footer .mobile-footer-item--active svg,
+.floating-footer .floating-card.active svg,
+.floating-footer .floating-card.is-active svg {
+  stroke: #000000 !important;
+  fill: none !important;
+  opacity: 1 !important;
 }
 
 .header-pill {

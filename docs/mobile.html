@@ -89,7 +89,8 @@
     .reminders-top-row {
       display: flex;
       align-items: center;
-      padding: 0.5rem 1rem 0rem; /* reduce bottom padding to zero */
+      padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
+      margin-bottom: 2px !important; /* tiny controlled gap below header */
       gap: 0.5rem;
       white-space: nowrap;
       overflow: hidden;
@@ -148,12 +149,6 @@
       white-space: nowrap;
     }
 
-    .reminders-summary,
-    #remindersSummary,
-    #mobileRemindersHeaderSubtitle {
-      margin-top: 0.25rem !important;
-    }
-
     .reminder-tab.reminders-tab-active,
     .reminder-tab.active,
     .reminder-tab[aria-pressed="true"] {
@@ -162,36 +157,58 @@
     }
 
     .reminders-quick-actions {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.25rem;
-      flex-shrink: 0;
+      gap: 0.18rem; /* tighter, cleaner spacing */
     }
 
-    .reminders-quick-actions .icon-btn {
+    .icon-btn {
       border: none;
       background: transparent;
+      padding: 0.25rem; /* reduced from 0.35rem */
+      border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.32rem;
-      border-radius: 999px;
       cursor: pointer;
-      color: var(--accent-color);
-      transition: background-color 0.15s ease, transform 0.15s ease;
-      flex-shrink: 0;
     }
 
-    .reminders-quick-actions .icon-btn:hover,
-    .reminders-quick-actions .icon-btn:focus-visible {
-      background: color-mix(in srgb, var(--accent-color) 12%, transparent);
-      outline: none;
+    .icon-btn svg {
+      stroke: currentColor;
+      fill: none;
+      opacity: 1;
+      width: 20px;
+      height: 20px;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .icon-btn:hover svg,
+    .icon-btn:active svg {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+
+    .icon-btn:active {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    .reminders-quick-actions .icon-btn,
+    .mobile-footer-nav button,
+    .mobile-footer-nav .footer-button,
+    .footer-nav button {
+      color: #111111;
+    }
+
+    .mobile-footer-nav button.active,
+    .footer-button.active {
+      color: #111111;
     }
 
     @media (max-width: 380px) {
       .reminders-top-row {
         gap: 0.35rem;
         padding: 0.35rem 0.15rem 0;
+        margin-bottom: 2px !important;
       }
 
       .reminders-quick-bar {
@@ -282,6 +299,23 @@
     padding-bottom: 0;
   }
 
+  /* Ensure notebook content hugs the header with a micro-gap */
+  body[data-active-view="notebook"] #main {
+    padding-top: 3px !important;
+    margin-top: 0 !important;
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card-body {
+    margin-top: 0 !important;
+  }
+
+  /* Hide notebook action buttons: top "Saved notes" pill and bottom New/Save bar */
+  #view-notebook .note-actions-top,
+  #view-notebook .note-actions.fixed-bottom,
+  #view-notebook .notebook-actions-row {
+    display: none !important;
+  }
+
   body[data-active-view="notebook"] #view-notebook {
     background: var(--card-bg);
   }
@@ -294,6 +328,24 @@
     background: transparent;
   }
 
+  .mobile-panel--notes #scratch-notes-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0.6rem 0.8rem 1.0rem; /* tighter, no reserved space for New/Save */
+    position: relative;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.7);
+  }
+
   [data-view="notebook"] .textarea {
     min-height: 0 !important;
   }
@@ -302,6 +354,11 @@
     padding: clamp(1.25rem, 5vw, 2rem);
     padding-bottom: clamp(5rem, 10vw, 6rem);
     min-height: calc(100dvh - 4rem);
+  }
+
+  body[data-active-view="notebook"] #view-notebook .card-body {
+    padding-top: 0.25rem !important; /* micro gap inside notebook card */
+    margin-top: 0 !important;
   }
 
   .mobile-shell #view-notebook .card {
@@ -658,7 +715,8 @@
 
   /* Reminders wrapper spacing on mobile */
   #remindersWrapper {
-    margin-top: 0.75rem;
+    margin-top: 3px !important;
+    padding-top: 0 !important;
   }
 
   /* Main reminders list container */
@@ -984,6 +1042,18 @@
       #slimMobileHeader .header-btn .btn-label {
         display: none;
       }
+    }
+
+    /* Remove gap between header bar and first reminder */
+    #reminderList {
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    .reminders-list-container,
+    .mobile-view-inner .reminders-content-shell {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
     }
   </style>
   <meta charset="UTF-8" />
@@ -3366,7 +3436,17 @@
         aria-label="Close menu"
         data-close-drawer
       >
-        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-5"
+        >
           <path d="M6 6l12 12M6 18 18 6" />
         </svg>
       </button>
@@ -3799,15 +3879,40 @@
       </div>
       <!-- Notebook opener + Save (check) button moved into header for quick access -->
       <button id="openSavedNotesSheet" type="button" class="header-btn header-btn-icon" aria-label="Open Notebook" title="Open Notebook">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6 2h9a2 2 0 012 2v16a1 1 0 01-1.5.86L12 19l-3.5 1.86A1 1 0 017 20V4a2 2 0 012-2z" fill="currentColor" />
+        <svg
+          class="w-5 h-5"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M7 3.5h8.5a1.5 1.5 0 0 1 1.5 1.5v14.5L12 17.7 6.5 19.5V5a1.5 1.5 0 0 1 1.5-1.5Z" />
         </svg>
       </button>
 
       <!-- Save (check) button moved into header for quick access -->
       <button id="noteSaveMobile" type="button" class="header-btn header-btn-icon" aria-label="Save note">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416L9 15.164l-3.871-3.87a1 1 0 1 0-1.414 1.415l4.578 4.579a1 1 0 0 0 1.414 0l10.478-10.479z" fill="currentColor" />
+        <svg
+          class="w-5 h-5"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M5.5 12.5 10 17l8.5-8.5" />
         </svg>
       </button>
 
@@ -3834,7 +3939,7 @@
     </div>
   </div>
   <div id="mobile-shell" class="mobile-shell max-w-md mx-auto w-full px-4 pb-16">
-    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders">
+    <main id="main" class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg" tabindex="-1" data-active-view="reminders" style="background: rgb(251, 251, 251);">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -3886,19 +3991,66 @@
                     type="button"
                     class="icon-btn"
                     aria-label="Open saved notes"
-                  ><span class="material-symbols-rounded">auto_stories</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6.25 3.5H13.75C14.44 3.5 15 4.06 15 4.75V16.5L10 13.8 5 16.5V4.75C5 4.06 5.56 3.5 6.25 3.5Z" />
+                    </svg>
+                  </button>
                   <button
                     id="startVoiceCaptureGlobal"
                     type="button"
                     class="icon-btn"
                     aria-label="Start voice capture"
-                  ><span class="material-symbols-rounded">mic</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="6.5" y="3.5" width="7" height="9" rx="3.5" />
+                      <path d="M5.5 9.75V10c0 2.48 2 4.5 4.5 4.5s4.5-2.02 4.5-4.5V9.75" />
+                      <path d="M10 14.5V17" />
+                      <path d="M7.5 17h5" />
+                    </svg>
+                  </button>
                   <button
                     id="quickAddReminderGlobal"
                     type="button"
                     class="icon-btn"
                     aria-label="Add reminder"
-                  ><span class="material-symbols-rounded">add_circle</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10" cy="10" r="7.1" />
+                      <path d="M10 6.25v7.5" />
+                      <path d="M6.25 10h7.5" />
+                    </svg>
+                  </button>
                   <button
                     id="headerMenuBtnSlim"
                     type="button"
@@ -3907,7 +4059,23 @@
                     aria-expanded="false"
                     aria-controls="headerMenuSlim"
                     aria-label="More options"
-                  ><span class="material-symbols-rounded">more_vert</span></button>
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10" cy="4.75" r="1.05" />
+                      <circle cx="10" cy="10" r="1.05" />
+                      <circle cx="10" cy="15.25" r="1.05" />
+                    </svg>
+                  </button>
                 </div>
 
               </form>
@@ -3960,7 +4128,6 @@
               </ul>
             </div>
 
-            <p id="mobileRemindersHeaderSubtitle" class="text-xs text-slate-500"></p>
           </div>
         </header>
 

@@ -418,6 +418,14 @@ if (document.readyState === 'loading') {
   wireHeaderIconShortcuts();
 }
 
+let requestNotesRefresh = null;
+
+function mobileNotesSyncDidPullFromRemote() {
+  if (typeof requestNotesRefresh === 'function') {
+    requestNotesRefresh({ preserveDraft: true });
+  }
+}
+
 const initMobileNotes = () => {
   if (typeof document === 'undefined') {
     return;
@@ -1088,6 +1096,15 @@ const initMobileNotes = () => {
     return visibleNotes;
   };
 
+  requestNotesRefresh = (options = {}) => {
+    const { preserveDraft = true } = options || {};
+    try {
+      refreshFromStorage({ preserveDraft });
+    } catch (error) {
+      console.warn('[notebook] refresh after sync failed', error);
+    }
+  };
+
   const NOTEBOOK_LIST_TRANSITION_MS = 160;
 
   const showNoteToast = (message) => {
@@ -1736,7 +1753,9 @@ const initMobileNotes = () => {
   }
 
   // wire folder button to open picker
-  const noteFolderBtn = document.getElementById('note-folder-button');
+  const noteFolderBtn =
+    document.getElementById('note-folder-button') ||
+    document.getElementById('noteFolderPillMobile');
   if (noteFolderBtn) {
     noteFolderBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -3108,34 +3127,65 @@ if (document.readyState === 'loading') {
   initMobileNotes();
 }
 
-const notesSyncController = initNotesSync();
+const mobileNotesSyncController = initNotesSync({});
 
-const supabaseAuthController = initSupabaseAuth({
+const originalSyncFromRemote = mobileNotesSyncController.syncFromRemote;
+mobileNotesSyncController.syncFromRemote = async (...args) => {
+  const result = await originalSyncFromRemote?.(...args);
+  try {
+    mobileNotesSyncDidPullFromRemote();
+  } catch {
+    /* ignore */
+  }
+  return result;
+};
+
+const mobileSupabaseAuthController = initSupabaseAuth({
   selectors: {
-    signInButtons: ['#googleSignInBtn'],
-    signOutButtons: ['#googleSignOutBtn'],
+    signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
+    signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
     userBadge: '#user-badge',
     userBadgeEmail: '#user-badge-email',
     userBadgeInitial: '#user-badge-initial',
     userName: '#googleUserName',
-    syncStatus: ['#sync-status'],
+    syncStatus: ['#sync-status', '#mcStatusText'],
     syncStatusText: ['#mcStatusText'],
     statusIndicator: ['#mcStatus'],
     feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
   },
   disableButtonBinding: true,
   onSessionChange: (user) => {
-    notesSyncController?.handleSessionChange(user);
+    try {
+      mobileNotesSyncController?.handleSessionChange(user);
+    } catch (error) {
+      console.warn('[notebook] notes sync session handler failed', error);
+    }
+    if (user) {
+      try {
+        mobileNotesSyncController?.syncFromRemote?.();
+      } catch {
+        /* noop */
+      }
+    }
+    mobileNotesSyncDidPullFromRemote();
   },
 });
 
-if (supabaseAuthController?.supabase) {
-  notesSyncController?.setSupabaseClient(supabaseAuthController.supabase);
+if (mobileSupabaseAuthController?.supabase) {
+  mobileNotesSyncController?.setSupabaseClient(mobileSupabaseAuthController.supabase);
   try {
-    supabaseAuthController.supabase.auth
+    mobileSupabaseAuthController.supabase.auth
       .getSession()
       .then(({ data }) => {
-        notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+        const sessionUser = data?.session?.user ?? null;
+        mobileNotesSyncController?.handleSessionChange(sessionUser);
+        if (sessionUser) {
+          try {
+            mobileNotesSyncController?.syncFromRemote?.();
+          } catch {
+            /* noop */
+          }
+        }
       })
       .catch(() => {
         /* noop */
