@@ -185,18 +185,22 @@ body.mobile-theme .top-bar .icon-button {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Unified outline icons: SF Symbols style */
+.toolbar-icon,
 .icon-btn svg {
+  width: 18px;
+  height: 18px;
   stroke: currentColor;
   fill: none;
-  width: 20px;
-  height: 20px;
-  opacity: 1;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
 }
 
 .icon-btn:hover svg,
 .icon-btn:active svg {
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
 .icon-btn:active {
@@ -384,6 +388,13 @@ body.mobile-theme .text-secondary {
   overflow: hidden;          /* scroll happens inside body */
 }
 
+/* Notebook body text: document-like */
+.note-body-field textarea {
+  font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
 .note-editor-toolbar {
   display: flex;
   align-items: center;
@@ -401,39 +412,45 @@ body.mobile-theme .text-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
-  height: 30px;
+  min-width: 28px;
+  height: 28px;
   padding: 0 8px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(15, 23, 42, 0.16);   /* neutral outline */
   background: #ffffff;
-  color: #4b286d;
-  font-size: 0.8rem;
+  color: #111827;
+  font-size: 0.78rem;
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
   flex: 0 0 auto;
   box-sizing: border-box;
   opacity: 1;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
 }
 
+/* Subtle hover state */
 .note-editor-toolbar .rte-btn:hover {
-  background: rgba(76, 29, 149, 0.08);
+  background: rgba(15, 23, 42, 0.04);
 }
 
+/* Active formatting state (e.g., B/I/U on) */
 .note-editor-toolbar .rte-btn.active {
-  background: rgba(76, 29, 149, 0.08);
-  border-color: rgba(76, 29, 149, 0.4);
-  color: #4c1d95;
+  background: rgba(15, 23, 42, 0.07);
+  border-color: rgba(15, 23, 42, 0.50);
+  color: #111827;
 }
 
+/* Text-based icons inside toolbar buttons */
 .rte-icon {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   line-height: 1;
   pointer-events: none;
-  color: inherit;
-  opacity: 1;
+  color: inherit;    /* matches the button color */
 }
 
 .rte-divider {
@@ -453,13 +470,14 @@ body.mobile-theme .text-secondary {
   display: none;
 }
 
+/* Notebook toolbar: minimal, inline group */
 .note-toolbar {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.25rem 0;
   border-radius: 999px;
-  background: rgba(76, 29, 149, 0.04);
+  background: transparent; /* remove colored blob background */
 }
 
 /* Mobile-specific: tighten filter bar spacing and stretch scratch-notes panel */
