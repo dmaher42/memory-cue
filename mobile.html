@@ -1718,6 +1718,117 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* ================================
+   Full iOS Typography Mode
+   ================================ */
+
+/* 1) Global font + smoothing (SF-style) */
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+               system-ui, -system-ui, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color: #111111;
+}
+
+/* Ensure controls inherit the same typography */
+button, input, textarea, select {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: inherit;
+}
+
+/* 2) Primary body text – crisp + confident */
+body, main, section, div, p, span, li {
+  font-weight: 500;              /* iOS-style "Medium" as default */
+  letter-spacing: -0.01em;       /* subtle tightening */
+}
+
+/* 3) Reminders list – make items pop */
+.reminder-title,
+.reminder-list-item,
+.reminder-notes-preview {
+  color: #000000 !important;
+  font-weight: 600 !important;   /* semi-bold for titles */
+  letter-spacing: -0.011em;
+}
+
+/* Reminders meta text (times, small labels) */
+.reminder-meta,
+.reminder-time,
+.reminder-tag-label {
+  color: #444444 !important;
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: -0.006em;
+}
+
+/* 4) Top segmented control (All / Today) */
+.reminder-tab {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+  font-size: 0.86rem;
+}
+
+/* 5) Quick reminder input in header */
+#quickAddInput {
+  color: #000000 !important;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-size: 0.95rem;
+}
+
+/* 6) Note title – like iOS Notes heading */
+#noteTitleMobile {
+  color: #000000 !important;
+  font-weight: 700 !important;   /* bold */
+  letter-spacing: -0.012em;
+  font-size: 1.08rem;
+}
+
+/* 7) Note body – comfortable reading weight */
+.note-editor-content,
+.scratch-notes-body,
+.notebook-editor-body,
+.note-editor-area,
+.note-editor-content-wrapper textarea {
+  color: #111111 !important;
+  font-weight: 500 !important;   /* "Medium" */
+  letter-spacing: -0.009em;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+/* 8) Toolbar labels / buttons in notebook */
+.notes-toolbar button,
+.notes-toolbar .toolbar-button,
+.notes-toolbar .btn {
+  font-weight: 500;
+  letter-spacing: -0.008em;
+  font-size: 0.85rem;
+}
+
+/* 9) Bottom nav labels */
+#mobile-nav-shell .btm-nav button {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-size: 0.9rem;
+}
+
+/* 10) Small helper text (hints, descriptions) */
+.helper-text,
+.caption,
+.text-xs {
+  font-size: 0.8rem;
+  color: #666666 !important;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
   </style>
   <meta charset="UTF-8" />
   <meta
