@@ -3847,6 +3847,28 @@ body, main, section, div, p, span, li {
       display: none !important;
     }
   </style>
+  <style>
+  /* FIX: Hide the top header when in Notebook view */
+  body[data-active-view="notebook"] #reminders-slim-header {
+    display: none !important;
+  }
+
+  /* FIX: Remove the automatic page padding */
+  body[data-active-view="notebook"] #main {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  /* FIX: Remove inner spacing */
+  body[data-active-view="notebook"] .mobile-view-inner {
+    padding-top: 0 !important;
+  }
+
+  /* FIX: Add safe-area spacing so the title doesn't go under the phone notch */
+  body[data-active-view="notebook"] #scratch-notes-card {
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+  }
+</style>
 </head>
 <body class="min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
