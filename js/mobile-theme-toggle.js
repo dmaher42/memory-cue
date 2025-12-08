@@ -1,15 +1,19 @@
-const themeToggleButton = document.getElementById('theme-toggle-button');
+const themeToggleButton =
+  document.getElementById('themeToggle') || document.getElementById('theme-toggle-button');
 const htmlElement = document.documentElement;
 const themeStorageKey = 'memory-cue-theme';
 
 if (themeToggleButton) {
-  const themeIcon = themeToggleButton.querySelector('.material-symbols-rounded');
+  const themeIcon =
+    themeToggleButton.querySelector('.quick-action-icon') ||
+    themeToggleButton.querySelector('.material-symbols-rounded');
 
   const updateIcon = (theme) => {
+    if (!themeIcon) return;
     if (theme === 'professional-dark') {
-      themeIcon.textContent = 'light_mode';
+      themeIcon.textContent = themeIcon.classList.contains('quick-action-icon') ? '🌞' : 'light_mode';
     } else {
-      themeIcon.textContent = 'dark_mode';
+      themeIcon.textContent = themeIcon.classList.contains('quick-action-icon') ? '🌗' : 'dark_mode';
     }
   };
 
@@ -19,7 +23,8 @@ if (themeToggleButton) {
   updateIcon(savedTheme);
 
   themeToggleButton.addEventListener('click', () => {
-    const newTheme = htmlElement.getAttribute('data-theme') === 'light' ? 'professional-dark' : 'light';
+    const newTheme =
+      htmlElement.getAttribute('data-theme') === 'light' ? 'professional-dark' : 'light';
     htmlElement.setAttribute('data-theme', newTheme);
     localStorage.setItem(themeStorageKey, newTheme);
     updateIcon(newTheme);
