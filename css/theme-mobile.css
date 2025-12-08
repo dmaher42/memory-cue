@@ -376,11 +376,11 @@ body.mobile-theme .text-secondary {
 .note-editor-content-wrapper {
   flex: 1 1 auto;
   min-height: 0;
-  margin-top: 0px;
-  padding: 0px;              /* already fairly tight */
-  border-radius: 12px;
+  margin-top: 0;
+  padding: 0;
+  border-radius: 0;
   box-sizing: border-box;
-  background: #fbf9ff;
+  background: #ffffff;
   overflow: hidden;          /* scroll happens inside body */
 }
 
@@ -528,11 +528,11 @@ body.mobile-theme .text-secondary {
 }
 
 .note-content-wrapper {
-  margin-top: 8px;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #f9f7ff;
-  padding: 10px 12px;
+  margin-top: 6px;
+  border-radius: 0;
+  border: none;
+  background: #ffffff;
+  padding: 0.5rem 0;
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
@@ -555,7 +555,7 @@ body.mobile-theme .text-secondary {
   line-height: 1.5;
   font-weight: 400;
   color: #1f1633;
-  padding: 0;
+  padding: 0.75rem 1rem;
   white-space: pre-wrap;
   word-wrap: break-word;
   flex: 1 1 auto;

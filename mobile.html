@@ -349,7 +349,7 @@
   }
 
   body[data-active-view="notebook"] #view-notebook {
-    background: #FBFBFB;
+    background: #ffffff;
   }
 
   body[data-active-view="notebook"] #view-notebook .card {
@@ -360,30 +360,27 @@
     background: transparent;
   }
 
-  /* Distraction-free writing environment background */
+  /* Notebook view: flat white background */
   .mobile-panel--notes {
-    background: var(--background-gradient);
+    background: #ffffff;
   }
 
   .mobile-panel--notes .mobile-view-inner {
-    background: var(--background-gradient);
+    background: #ffffff;
   }
 
   [data-view="notebook"] .textarea {
     min-height: 0 !important;
   }
 
+  /* Let notebook content run almost edge-to-edge */
   body[data-active-view="notebook"] #view-notebook .card-body {
-    padding: clamp(0.75rem, 4vw, 1.25rem);
-    padding-bottom: 0.5rem;
-    min-height: calc(100dvh - 4rem);
-  }
-
-  body[data-active-view="notebook"] #view-notebook .card-body {
-    padding-top: 0.25rem !important; /* micro gap inside notebook card */
+    padding: 0.4rem 0.75rem 0.6rem;
     margin-top: 0 !important;
+    min-height: calc(100dvh - var(--mobile-bottom-nav-height, 80px));
   }
 
+  /* Notebook “sheet”: full-width, flat, no card chrome */
   .mobile-panel--notes #scratch-notes-card {
     flex: 1;
     display: flex;
@@ -392,15 +389,14 @@
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding: 0.6rem 0.8rem 1.0rem; /* tighter, no reserved space for New/Save */
+    padding: 0.75rem 0.9rem 1rem;
     position: relative;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.08),
-      0 0 0 1px rgba(255, 255, 255, 0.7);
+
+    border-radius: 0;
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
   }
 
   .mobile-panel--notes {
@@ -566,19 +562,15 @@
     margin: 2px;
   }
 
+  /* Plain white textarea */
   .mobile-shell #noteBodyMobile {
-    background: radial-gradient(
-        circle at top,
-        rgba(148, 163, 184, 0.06),
-        transparent 55%
-      ),
-      var(--b1);
+    background: #ffffff;
   }
 
   .mobile-shell #noteBodyMobile:focus-visible {
-    outline: 2px solid var(--accent-color, var(--mobile-quick-surface));
+    outline: 1px solid rgba(0, 0, 0, 0.18);
     outline-offset: 0;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color, var(--mobile-quick-surface)) 25%, transparent);
+    box-shadow: none;
   }
 
   .mobile-shell #view-notebook .note-body-wrapper {
@@ -587,37 +579,22 @@
 
   .mobile-shell #view-notebook .note-body-wrapper::before,
   .mobile-shell #view-notebook .note-body-wrapper::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 14px;
-    pointer-events: none;
-    z-index: 10;
+    content: none;
   }
 
-  .mobile-shell #view-notebook .note-body-wrapper::before {
-    top: 0;
-    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.08), transparent);
-  }
-
-  .mobile-shell #view-notebook .note-body-wrapper::after {
-    bottom: 0;
-    background: linear-gradient(to top, rgba(15, 23, 42, 0.08), transparent);
-  }
-
+  /* In notebook view, cards should not look like elevated cards */
   #view-notebook .card {
-    background: var(--card-bg);
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    padding: 24px;
-    margin-bottom: 20px;
-    transition: var(--transition);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    transition: none;
   }
 
   #view-notebook .card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    box-shadow: none;
+    transform: none;
   }
 
   #savedNotesSheet {
@@ -672,8 +649,8 @@
   }
 
   .mobile-panel--notes #scratch-notes-card {
-    border: 1.5px solid var(--card-border-strong);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    border: none;
+    box-shadow: none;
   }
 
   .note-body-field::before {
