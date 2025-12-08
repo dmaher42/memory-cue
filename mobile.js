@@ -418,6 +418,8 @@ if (document.readyState === 'loading') {
   wireHeaderIconShortcuts();
 }
 
+let requestNotesRefresh = null;
+
 const initMobileNotes = () => {
   if (typeof document === 'undefined') {
     return;
@@ -1086,6 +1088,15 @@ const initMobileNotes = () => {
     updateListSelection();
     updateStoredSnapshot();
     return visibleNotes;
+  };
+
+  requestNotesRefresh = (options = {}) => {
+    const { preserveDraft = true } = options || {};
+    try {
+      refreshFromStorage({ preserveDraft });
+    } catch (error) {
+      console.warn('[notebook] refresh after sync failed', error);
+    }
   };
 
   const NOTEBOOK_LIST_TRANSITION_MS = 160;
@@ -3126,8 +3137,13 @@ const supabaseAuthController = initSupabaseAuth({
     feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
   },
   disableButtonBinding: true,
-  onSessionChange: (user) => {
-    notesSyncController?.handleSessionChange(user);
+  onSessionChange: async (user) => {
+    try {
+      await notesSyncController?.handleSessionChange(user);
+    } catch (error) {
+      console.warn('[notebook] notes sync session handler failed', error);
+    }
+    requestNotesRefresh?.({ preserveDraft: true });
   },
 });
 
@@ -3136,8 +3152,13 @@ if (supabaseAuthController?.supabase) {
   try {
     supabaseAuthController.supabase.auth
       .getSession()
-      .then(({ data }) => {
-        notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+      .then(async ({ data }) => {
+        try {
+          await notesSyncController?.handleSessionChange(data?.session?.user ?? null);
+        } catch (error) {
+          console.warn('[notebook] initial notes sync session check failed', error);
+        }
+        requestNotesRefresh?.({ preserveDraft: true });
       })
       .catch(() => {
         /* noop */
