@@ -738,7 +738,7 @@
   }
 
   /* Scrollable list area */
-  .saved-notes-list-shell {
+  #savedNotesSheet .saved-notes-list-shell {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
@@ -753,12 +753,21 @@
     flex-direction: column;
   }
 
-  /* Each note row – flat, full-width, compact */
-  .mobile-shell #notesListMobile .note-item-mobile {
+  /* Saved notes list inside bottom sheet: flat, dense rows */
+  #savedNotesSheet .note-list-item,
+  #savedNotesSheet .note-row {
+    background: transparent;
+    border-radius: 0;
+    margin: 0;
+    padding: 0.65rem 0;
+    box-shadow: none;
+  }
+
+  #savedNotesSheet .note-item-mobile {
     border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   }
 
-  .mobile-shell #notesListMobile .note-item-mobile:last-child {
+  #savedNotesSheet .note-item-mobile:last-child {
     border-bottom: none;
   }
 
@@ -771,6 +780,52 @@
     width: 100%;
   }
 
+  #savedNotesSheet .note-list-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  #savedNotesSheet .note-list-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--text-strong, #231B2E);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #savedNotesSheet .note-list-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: 0;
+  }
+
+  #savedNotesSheet .note-list-overflow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--text-secondary, #4A4153);
+  }
+
+  #savedNotesSheet .note-list-overflow:hover,
+  #savedNotesSheet .note-list-overflow:focus-visible {
+    background: rgba(15, 23, 42, 0.06);
+  }
+
   .note-list-title {
     font-size: 0.96rem;
     font-weight: 600;
@@ -781,7 +836,7 @@
     text-overflow: ellipsis;
   }
 
-  .note-list-preview {
+  #savedNotesSheet .note-list-preview {
     font-size: 0.84rem;
     color: var(--text-body, #4a3c57);
     line-height: 1.3;
@@ -790,7 +845,7 @@
     text-overflow: ellipsis;
   }
 
-  .note-list-meta {
+  #savedNotesSheet .note-list-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -800,18 +855,29 @@
     color: var(--text-muted, #9a8bb0);
   }
 
-  .note-list-meta-left {
+  #savedNotesSheet .note-list-meta-left {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
   }
 
-  .note-list-meta-dot {
+  #savedNotesSheet .note-list-meta-dot {
     width: 3px;
     height: 3px;
     border-radius: 999px;
     background: currentColor;
     opacity: 0.65;
+  }
+
+  #savedNotesSheet .note-list-item.is-active,
+  #savedNotesSheet .note-item-mobile.is-active {
+    background: rgba(15, 23, 42, 0.03);
+    box-shadow: none;
+  }
+
+  #savedNotesSheet .note-list-item.is-active .note-list-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 600;
   }
 
   .mobile-shell #notesListMobile .note-item-mobile button[data-role="delete-note"]:focus-visible {
