@@ -364,7 +364,7 @@ body.mobile-theme .text-secondary {
 .note-editor-inner {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.4rem;   /* tighter vertical rhythm */
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -373,7 +373,7 @@ body.mobile-theme .text-secondary {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.22rem;  /* title → folder label → toolbar closer together */
 }
 
 .scratch-notes-body-wrapper,
@@ -399,8 +399,8 @@ body.mobile-theme .text-secondary {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 0;
-  margin: 6px 0;
+  padding: 2px 0;   /* less internal padding */
+  margin: 3px 0;    /* less space above/below */
   background: transparent;
   border-radius: 0;
   overflow-x: auto;
@@ -648,7 +648,7 @@ body.mobile-theme .text-secondary {
 /* Make the scratch-notes wrapper fill and the card extend properly */
 #view-notebook .scratch-notes-wrapper {
   margin-top: 0;
-  padding-top: 0.25rem;
+  padding-top: 0.12rem;
 }
 
 /* Allow the scratch-notes card to use the full vertical space */
