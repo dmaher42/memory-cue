@@ -50,17 +50,19 @@
   }
 
   .editor, .note-editor {
-  flex: 1 1 auto;        /* Was: 0 0 auto */
-  max-height: none;      /* Was: 46vh */
-  overflow: visible;
-}
-.editor textarea, .note-editor textarea, textarea.note-body {
-  width: 100%;
-  box-sizing: border-box;
-  height: 100%;          /* Was: calc(46vh - 16px) */
-  min-height: 60vh;
-  resize: none;
-}
+    flex: 1 1 auto;
+    max-height: none; /* editor gets most of the remaining height */
+    overflow: hidden;
+  }
+
+  /* Textarea / editing area tuned to fit */
+  .editor textarea, .note-editor textarea, textarea.note-body {
+    width: 100%;
+    box-sizing: border-box;
+    height: calc(46vh - 16px);
+    min-height: 72px;
+    resize: none;
+  }
 
   /* Action bar with Save / New Note pinned inside viewport */
   .action-bar, .toolbar, .editor-actions {
