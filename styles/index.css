@@ -172,10 +172,10 @@ html[data-theme="professional"] {
   min-width: 0;
 }
 
-/* Toolbar icon sizing for mobile notebook */
+/* Toolbar icon sizing for mobile notebook (match .icon-btn svg) */
 .toolbar-icon {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   display: block;
 }
 
