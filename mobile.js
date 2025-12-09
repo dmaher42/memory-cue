@@ -390,9 +390,14 @@ const bootstrapReminders = () => {
     openSettingsSel: '[data-open="settings"]',
     dateFeedbackSel: '#dateFeedback',
     voiceBtnSel: '#startVoiceCaptureGlobal, #quickAddVoice',
-  }).catch((error) => {
-    console.error('Failed to initialise reminders:', error);
-  });
+  })
+    .then(() => {
+      // Wire Supabase auth + notes sync for mobile
+      wireMobileNotesSupabaseAuth();
+    })
+    .catch((error) => {
+      console.error('Failed to initialise reminders:', error);
+    });
 };
 
 if (document.readyState === 'loading') {
@@ -3127,72 +3132,71 @@ if (document.readyState === 'loading') {
   initMobileNotes();
 }
 
-const mobileNotesSyncController = initNotesSync({});
-
-const originalSyncFromRemote = mobileNotesSyncController.syncFromRemote;
-mobileNotesSyncController.syncFromRemote = async (...args) => {
-  const result = await originalSyncFromRemote?.(...args);
-  try {
-    mobileNotesSyncDidPullFromRemote();
-  } catch {
-    /* ignore */
-  }
-  return result;
-};
-
-const mobileSupabaseAuthController = initSupabaseAuth({
-  selectors: {
-    signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
-    signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
-    userBadge: '#user-badge',
-    userBadgeEmail: '#user-badge-email',
-    userBadgeInitial: '#user-badge-initial',
-    userName: '#googleUserName',
-    syncStatus: ['#sync-status', '#mcStatusText'],
-    syncStatusText: ['#mcStatusText'],
-    statusIndicator: ['#mcStatus'],
-    feedback: ['#auth-feedback-header', '#auth-feedback-rail'],
-  },
-  disableButtonBinding: true,
-  onSessionChange: (user) => {
-    try {
-      mobileNotesSyncController?.handleSessionChange(user);
-    } catch (error) {
-      console.warn('[notebook] notes sync session handler failed', error);
-    }
-    if (user) {
+function wireMobileNotesSupabaseAuth() {
+  // 1. Initialise the notes sync controller for mobile
+  const notesSync = initNotesSync?.();
+  if (!notesSync) {
+    console.warn('[notes-sync] initNotesSync() did not return a controller; notes will remain local-only.');
+  } else if (typeof notesSync.syncFromRemote === 'function') {
+    // Wrap syncFromRemote so the UI is notified when fresh data arrives
+    const originalSyncFromRemote = notesSync.syncFromRemote.bind(notesSync);
+    notesSync.syncFromRemote = async (...args) => {
+      const result = await originalSyncFromRemote(...args);
       try {
-        mobileNotesSyncController?.syncFromRemote?.();
+        mobileNotesSyncDidPullFromRemote();
       } catch {
-        /* noop */
+        // ignore UI refresh errors
       }
-    }
-    mobileNotesSyncDidPullFromRemote();
-  },
-});
-
-if (mobileSupabaseAuthController?.supabase) {
-  mobileNotesSyncController?.setSupabaseClient(mobileSupabaseAuthController.supabase);
-  try {
-    mobileSupabaseAuthController.supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        const sessionUser = data?.session?.user ?? null;
-        mobileNotesSyncController?.handleSessionChange(sessionUser);
-        if (sessionUser) {
-          try {
-            mobileNotesSyncController?.syncFromRemote?.();
-          } catch {
-            /* noop */
-          }
-        }
-      })
-      .catch(() => {
-        /* noop */
-      });
-  } catch {
-    /* noop */
+      return result;
+    };
   }
+
+  // 2. Initialise Supabase auth, binding to mobile sign-in / sign-out buttons
+  const supabaseAuth = initSupabaseAuth({
+    selectors: {
+      // Main sign-in button in the UI, if present
+      signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
+      signOutButtons: ['#googleSignOutBtn', '#googleSignOutBtnMenu'],
+      // The rest are optional; only wire if these elements exist in the DOM
+      userBadge: '#user-badge',
+      userBadgeEmail: '#user-badge-email',
+      userBadgeInitial: '#user-badge-initial',
+      userName: '#googleUserName',
+      syncStatus: ['#notesSyncStatus'],
+      feedback: ['#notesSyncMessage'],
+    },
+    disableButtonBinding: false,
+    onSessionChange(user, session) {
+      if (notesSync && typeof notesSync.handleSessionChange === 'function') {
+        notesSync.handleSessionChange(user ?? null, session ?? null);
+      }
+    },
+  });
+
+  const supabase = supabaseAuth?.supabase;
+  if (!supabase || !notesSync) {
+    // If Supabase is not configured, notes will stay local; nothing else to do.
+    return;
+  }
+
+  // 3. Hand the Supabase client to the notes sync controller
+  if (typeof notesSync.setSupabaseClient === 'function') {
+    notesSync.setSupabaseClient(supabase);
+  }
+
+  // 4. Prime notes sync with the current session (if there is one)
+  supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      const session = data?.session ?? null;
+      const user = session?.user ?? null;
+      if (typeof notesSync.handleSessionChange === 'function') {
+        notesSync.handleSessionChange(user, session);
+      }
+    })
+    .catch((err) => {
+      console.warn('[notes-sync] Failed to get initial Supabase session on mobile:', err);
+    });
 }
 
 (() => {
