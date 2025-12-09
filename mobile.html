@@ -903,6 +903,81 @@
     margin: 0;
   }
 
+  /* Ensure notebook overlay + list share the same white background */
+  #savedNotesSheet,
+  #savedNotesSheet .saved-notes-panel,
+  #savedNotesSheet .saved-notes-list-shell {
+    background-color: #ffffff;
+  }
+
+  /* ===== Notebook sidebar + grid layout on wide screens ===== */
+  @media (min-width: 900px) {
+
+    /* Let the overlay cover the screen but push the panel to the right */
+    body:not(.mobile-shell) #savedNotesSheet {
+      align-items: stretch;
+      justify-content: flex-end;
+    }
+
+    body:not(.mobile-shell) #savedNotesSheet .saved-notes-panel {
+      width: min(420px, 38vw);
+      max-width: 420px;
+      height: 100dvh;
+      max-height: 100dvh;
+      border-radius: 0;                  /* flush with top/bottom */
+      border-left: 1px solid rgba(15,23,42,0.08);
+      box-shadow: -10px 0 28px rgba(15,23,42,0.16);
+      padding: 0.9rem 1rem 1rem;
+      gap: 0.5rem;
+    }
+
+    /* Make header compact inside sidebar */
+    body:not(.mobile-shell) #savedNotesSheet .saved-notes-header {
+      gap: 0.25rem;
+      margin-bottom: 0.15rem;
+    }
+
+    /* The list shell fills sidebar height and scrolls */
+    body:not(.mobile-shell) #savedNotesSheet .saved-notes-list-shell {
+      margin-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+
+    /* Turn the notes list into a responsive grid */
+    body:not(.mobile-shell) #savedNotesSheet #notesListMobile {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 0.6rem;
+      padding: 0;
+    }
+
+    /* Grid tiles: remove row dividers; use card borders instead */
+    body:not(.mobile-shell) #savedNotesSheet .note-item-mobile {
+      border-bottom: none;
+    }
+
+    body:not(.mobile-shell) #savedNotesSheet .note-list-item {
+      background: #ffffff;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 0.65rem 0.75rem 0.6rem;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    /* Compact title row in cards */
+    body:not(.mobile-shell) #savedNotesSheet .note-list-title-row {
+      margin-bottom: 0.15rem;
+    }
+
+    /* Active card: subtle tint, not a full grey band */
+    body:not(.mobile-shell) #savedNotesSheet .note-list-item.is-active,
+    body:not(.mobile-shell) #savedNotesSheet .note-item-mobile.is-active {
+      background: color-mix(in srgb, #ffffff 88%, var(--accent-color, #6b46c1) 12%);
+      border-color: color-mix(in srgb, var(--accent-color, #6b46c1) 55%, #e5e7eb 45%);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-color, #6b46c1) 45%, transparent);
+    }
+  }
+
       /* ===== Move to folder sheet – right-side sidebar ===== */
   #note-folder-sheet,
   #moveFolderSheet {
