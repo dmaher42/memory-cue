@@ -746,6 +746,9 @@ const initMobileNotes = () => {
     savedNotesSheet.classList.remove('hidden');
     savedNotesSheet.dataset.open = 'true';
     savedNotesSheet.setAttribute('aria-hidden', 'false');
+    document.body.dataset.savedNotesOpen = 'true';
+    document.documentElement.dataset.savedNotesOpen = 'true';
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' || 'auto' });
     // Sidebar is now the primary folder selector; just render notes and ensure FAB exists
     try {
       renderFilteredNotes();
@@ -766,6 +769,8 @@ const initMobileNotes = () => {
     }
     savedNotesSheet.dataset.open = 'false';
     savedNotesSheet.setAttribute('aria-hidden', 'true');
+    delete document.body.dataset.savedNotesOpen;
+    delete document.documentElement.dataset.savedNotesOpen;
     if (savedNotesSheetHideTimeout) {
       clearTimeout(savedNotesSheetHideTimeout);
     }
