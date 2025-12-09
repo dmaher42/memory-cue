@@ -5643,12 +5643,12 @@ body, main, section, div, p, span, li {
               </svg>
             </button>
             <button
-              id="headerMenuBtnSlim"
+              id="overflowMenuBtn"
               type="button"
               class="icon-btn"
               aria-haspopup="true"
               aria-expanded="false"
-              aria-controls="headerMenuSlim"
+              aria-controls="overflowMenu"
               aria-label="More options"
             >
               <svg
@@ -5672,14 +5672,15 @@ body, main, section, div, p, span, li {
         </form>
       </div>
 
-      <div id="headerMenuSlim" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
+      <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <!-- Reminders -->
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">Reminders</div>
           <button
-            id="viewCompletedBtnMenu"
             type="button"
+            id="menuCompletedReminders"
             class="overflow-menu-item"
+            data-menu-action="completed-reminders"
           >
             Completed reminders
           </button>
@@ -5689,9 +5690,10 @@ body, main, section, div, p, span, li {
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">Notes</div>
           <button
-            id="savedNotesBtnMenu"
             type="button"
+            id="menuSavedNotes"
             class="overflow-menu-item"
+            data-menu-action="saved-notes"
           >
             Saved notes library
           </button>
@@ -5704,6 +5706,7 @@ body, main, section, div, p, span, li {
             id="googleSignInBtnMenu"
             type="button"
             class="overflow-menu-item"
+            data-menu-action="sign-in"
           >
             Sign in
           </button>
@@ -5711,6 +5714,8 @@ body, main, section, div, p, span, li {
             id="googleSignOutBtnMenu"
             type="button"
             class="overflow-menu-item hidden"
+            data-menu-action="sign-out"
+            hidden
           >
             Sign out
           </button>
@@ -5720,16 +5725,18 @@ body, main, section, div, p, span, li {
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">App</div>
           <button
-            id="syncNowBtnMenu"
+            id="menuSyncNow"
             type="button"
             class="overflow-menu-item"
+            data-menu-action="sync-now"
           >
             Sync now
           </button>
           <button
-            id="aboutBtnMenu"
+            id="menuAbout"
             type="button"
             class="overflow-menu-item"
+            data-menu-action="about"
           >
             About Memory Cue
           </button>
@@ -6578,7 +6585,7 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-5FPVC6HU.js"></script>
+  <script type="module" src="./assets/mobile-MSGAI4GG.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
@@ -9044,9 +9051,11 @@ body, main, section, div, p, span, li {
     document.addEventListener('DOMContentLoaded', function () {
       // Support both original and slim variants
       var menuBtn =
+        document.getElementById('overflowMenuBtn') ||
         document.getElementById('headerMenuBtnSlim') ||
         document.getElementById('headerMenuBtn');
       var menu =
+        document.getElementById('overflowMenu') ||
         document.getElementById('headerMenuSlim') ||
         document.getElementById('headerMenu');
 
