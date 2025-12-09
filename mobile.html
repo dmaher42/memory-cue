@@ -603,58 +603,60 @@
     transform: none;
   }
 
-  /* ===== Notebook / Saved notes overlay ===== */
-
-  /* Full-screen overlay, always fixed over the app */
+  /* ===== Saved notes bottom sheet – overlay with slide-up animation ===== */
   #savedNotesSheet {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;                     /* explicit inset to the viewport */
     z-index: 80;
-    display: flex;
-    align-items: stretch;
-    justify-content: flex-end;
     opacity: 0;
     pointer-events: none;
-    background: rgba(15, 23, 42, 0.26);
+    display: flex;
+    align-items: flex-end;       /* panel anchored to bottom */
+    justify-content: center;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.26);  /* dimmed backdrop */
     transition: opacity 0.25s ease;
   }
 
-  /* When JS opens the notebook */
-  #savedNotesSheet[data-open="true"],
-  #savedNotesSheet:not(.hidden)[data-open="true"] {
+  /* Open state – JS sets data-open="true" */
+  #savedNotesSheet[data-open="true"] {
     opacity: 1;
     pointer-events: auto;
   }
 
-  /* Sidebar panel that sits on top of notes */
   #savedNotesSheet .saved-notes-panel {
     position: relative;
-    height: 100dvh;
-    width: min(420px, 100vw); /* sidebar on desktop, full width on very small screens */
+    width: 100%;
     max-width: 100vw;
-    margin: 0;
     box-sizing: border-box;
-    border-radius: 0; /* default; adjusted below in mobile media query */
+    margin: 0;
+    border-radius: 18px 18px 0 0;
     background: #ffffff;
-    box-shadow: -10px 0 28px rgba(15, 23, 42, 0.18);
-    padding: 0.9rem 1rem env(safe-area-inset-bottom, 0.9rem);
+    box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
+    padding: 0.65rem 0.9rem env(safe-area-inset-bottom, 0.7rem);
+    max-height: 88dvh;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.35rem;
 
-    transform: translateX(100%);
+    /* slide-up animation: start fully off-screen at the bottom */
+    transform: translateY(100%);
     transition:
-      transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+      transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1),
       box-shadow 0.18s ease-out;
   }
 
-  /* Slide the sidebar in when open */
+  /* When the sheet is open, slide the panel into view */
   #savedNotesSheet[data-open="true"] .saved-notes-panel {
-    transform: translateX(0);
+    transform: translateY(0);
   }
 
-  /* Ensure header + list use the same white background */
+  /* Ensure notebook overlay + list share the same white background */
   #savedNotesSheet,
+  #savedNotesSheet .saved-notes-panel,
   #savedNotesSheet .saved-notes-list-shell {
     background-color: #ffffff;
   }
