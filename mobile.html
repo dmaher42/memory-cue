@@ -2,6 +2,11 @@
 <html lang="en" data-theme="light" class="h-full">
 <head>
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
+  <script>
+    window.__ENV = {
+      GOOGLE_SCRIPT_ENDPOINT: "https://script.google.com/macros/s/AKfycbylH5GmqeojNoZ-MA9WRg-w1S-ei9cv8Jo1M0qL7t5cn59LBRCCJ779WOyLi7qQwkSx/exec"
+    };
+  </script>
   <script type="module" src="./js/init-env.js" defer></script>
   <script type="module" src="./js/config-supabase.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
@@ -7555,6 +7560,10 @@ body, main, section, div, p, span, li {
     })();
 
     (function () {
+      const GOOGLE_SCRIPT_ENDPOINT =
+        (window.__ENV && window.__ENV.GOOGLE_SCRIPT_ENDPOINT) ||
+        "https://script.google.com/macros/s/AKfycbylH5GmqeojNoZ-MA9WRg-w1S-ei9cv8Jo1M0qL7t5cn59LBRCCJ779WOyLi7qQwkSx/exec";
+
       const statusContainer = document.getElementById('syncStatus');
       const statusDotEl = document.getElementById('mcStatus');
       const statusTextEl = document.getElementById('mcStatusText');
@@ -7832,7 +7841,7 @@ body, main, section, div, p, span, li {
       };
 
       const updateButtonState = () => {
-        const hasUrl = Boolean((syncUrlInput?.value || '').trim() || getStoredUrl());
+        const hasUrl = true; // Always enable since we have a default/env endpoint
         if (hasUrl) {
           syncAllBtn?.removeAttribute('disabled');
           testSyncBtn?.removeAttribute('disabled');
@@ -7880,11 +7889,7 @@ body, main, section, div, p, span, li {
       });
 
       testSyncBtn?.addEventListener('click', async () => {
-        const url = (syncUrlInput?.value || getStoredUrl()).trim();
-        if (!url) {
-          setStatus('error', 'Add your sync URL in Settings first.');
-          return;
-        }
+        const url = GOOGLE_SCRIPT_ENDPOINT;
 
         toggleBusy(true);
         setStatus('syncing', 'Testing connection…');
@@ -7909,11 +7914,7 @@ body, main, section, div, p, span, li {
       });
 
       syncAllBtn?.addEventListener('click', async () => {
-        const url = (syncUrlInput?.value || getStoredUrl()).trim();
-        if (!url) {
-          setStatus('error', 'Add your sync URL in Settings first.');
-          return;
-        }
+        const url = GOOGLE_SCRIPT_ENDPOINT;
 
         const reminders = collectReminders();
         if (!reminders.length) {
