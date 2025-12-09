@@ -741,12 +741,7 @@ const initMobileNotes = () => {
     savedNotesSheet.classList.remove('hidden');
     savedNotesSheet.dataset.open = 'true';
     savedNotesSheet.setAttribute('aria-hidden', 'false');
-    // Ensure folder chips are built and notes are rendered when opening the sheet
-    try {
-      buildFolderChips();
-    } catch (e) {
-      /* ignore */
-    }
+    // Sidebar is now the primary folder selector; just render notes and ensure FAB exists
     try {
       renderFilteredNotes();
     } catch (e) {

@@ -679,27 +679,6 @@
     overflow: hidden;
   }
 
-  /* Stack on very small screens */
-  @media (max-width: 640px) {
-    .notebook-sidebar-layout {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr;
-    }
-
-    .notebook-sidebar-nav {
-      display: flex;
-      flex-direction: row;
-      overflow-x: auto;
-      padding-bottom: 0.25rem;
-      width: 100%;
-    }
-
-    .notebook-nav-item {
-      min-width: 140px;
-      flex-shrink: 0;
-    }
-  }
-
   /* Left sidebar nav (like screenshot) */
   .notebook-sidebar-nav {
     display: flex;
@@ -965,6 +944,11 @@
     border-color: var(--accent-color, #512663);
     color: #fff;
     box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
+  }
+
+  /* Sidebar is now the only folder selector; hide the old chip row */
+  .notebook-folder-filter-bar {
+    display: none !important;
   }
 
   /* Scrollable area inside the sidebar */
@@ -6033,29 +6017,19 @@ body, main, section, div, p, span, li {
                     </button>
                     <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
                   </div>
-                  <div class="notebook-top-center">
-                    <div class="notebook-tabs">
-                      <div id="notebook-folder-bar" class="notebook-folder-bar px-0 py-0">
-                        <div class="notebook-folder-header">
-                          <div class="folder-chips">
-                            <div class="notebook-folder-scroll-wrap">
-                              <div class="notebook-folder-filter-bar">
-                                <button
-                                  type="button"
-                                  class="notebook-folder-chip notebook-folder-chip--active notebook-tab"
-                                  data-folder-id="all"
-                                >
-                                  <span class="notebook-folder-chip-label">All notes</span>
-                                  <span class="notebook-folder-chip-count">0</span>
-                                </button>
-                                <!-- Folder chips will be populated dynamically by JS -->
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      </div>
+                    <div class="notebook-top-center">
+                      <div class="notebook-tabs">
+                        <div id="notebook-folder-bar" class="notebook-folder-bar px-0 py-0">
+                          <div class="notebook-folder-header">
+                            <div class="folder-chips">
+                              <div class="notebook-folder-scroll-wrap">
+                                <!-- Folder chip bar removed; sidebar handles folder selection -->
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <button class="notebook-top-overflow" type="button" aria-label="Notebook options">
                     <svg
