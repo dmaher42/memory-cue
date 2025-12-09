@@ -3308,6 +3308,118 @@ function wireMobileNotesSupabaseAuth() {
     }
   });
 
+  const getMenuActionTarget = (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return null;
+    return target.closest('[data-menu-action]');
+  };
+
+  const handleMenuAction = (event) => {
+    const button = getMenuActionTarget(event);
+    if (!button) return;
+
+    const action = button.getAttribute('data-menu-action');
+    if (!action) return;
+
+    // Always close the menu after a selection
+    try {
+      closeMenu();
+    } catch (e) {
+      // ignore
+    }
+
+    switch (action) {
+      case 'completed-reminders': {
+        // Reuse the existing reminders filter logic.
+        // Find a button with data-reminders-tab="completed" and click it,
+        // or fall back to a helper if one exists.
+        const completedTab =
+          document.querySelector('[data-reminders-tab="completed"]') ||
+          document.querySelector('[data-reminders-filter="completed"]');
+        if (completedTab instanceof HTMLElement) {
+          completedTab.click();
+        } else if (typeof window.setMobileRemindersFilter === 'function') {
+          window.setMobileRemindersFilter('completed');
+        }
+        break;
+      }
+
+      case 'saved-notes': {
+        // Prefer the global helper if available, otherwise click the global button
+        try {
+          if (typeof window.showSavedNotesSheet === 'function') {
+            window.showSavedNotesSheet();
+          } else {
+            const trigger =
+              document.getElementById('openSavedNotesGlobal') ||
+              document.getElementById('openSavedNotesSheetButton') ||
+              document.getElementById('openSavedNotesSheet') ||
+              document.getElementById('savedNotesShortcut') ||
+              document.querySelector('.open-saved-notes-global');
+            if (trigger instanceof HTMLElement) {
+              trigger.click();
+            }
+          }
+        } catch (e) {
+          console.warn('[overflow-menu] failed to open saved notes sheet', e);
+        }
+        break;
+      }
+
+      case 'sign-in': {
+        // Let Supabase auth handle this. Either click the main sign-in button
+        // or fall back to a global startSignInFlow helper if present.
+        const primarySignInBtn = document.getElementById('googleSignInBtn');
+        if (primarySignInBtn instanceof HTMLElement) {
+          primarySignInBtn.click();
+        } else if (typeof window.startSignInFlow === 'function') {
+          window.startSignInFlow();
+        }
+        break;
+      }
+
+      case 'sign-out': {
+        const primarySignOutBtn = document.getElementById('googleSignOutBtn');
+        if (primarySignOutBtn instanceof HTMLElement) {
+          primarySignOutBtn.click();
+        }
+        break;
+      }
+
+      case 'sync-now': {
+        // Trigger the existing reminders sync-all control
+        const syncBtn = document.getElementById('syncAll');
+        if (syncBtn instanceof HTMLElement) {
+          syncBtn.click();
+        } else if (typeof window.syncAllReminders === 'function') {
+          window.syncAllReminders();
+        }
+        break;
+      }
+
+      case 'about': {
+        // Open About dialog if one exists; otherwise this is a safe no-op
+        const aboutTrigger =
+          document.querySelector('[data-open="about"]') ||
+          document.getElementById('aboutMemoryCueBtn');
+        if (aboutTrigger instanceof HTMLElement) {
+          aboutTrigger.click();
+        } else if (typeof window.showAboutMemoryCue === 'function') {
+          window.showAboutMemoryCue();
+        }
+        break;
+      }
+
+      default:
+        break;
+    }
+  };
+
+  // Delegate clicks inside the menu to the handler above
+  if (menu instanceof HTMLElement) {
+    menu.addEventListener('click', handleMenuAction);
+  }
+
   menu.addEventListener('click', (event) => {
     event.stopPropagation();
     if (event.target instanceof HTMLElement && event.target.closest('button')) {
