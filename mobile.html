@@ -3510,6 +3510,64 @@ body, main, section, div, p, span, li {
     #reminderList [data-reminder] audio::-webkit-media-controls-panel {
       background-color: var(--hover-bg);
     }
+
+/* Overflow menu container */
+.overflow-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.4rem;
+  min-width: 220px;
+  max-width: 280px;
+  padding: 0.4rem 0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  z-index: 50;
+}
+
+/* Each section wrapper */
+.overflow-menu-section + .overflow-menu-section {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+}
+
+/* Section label */
+.overflow-menu-section-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.55);
+  padding: 0.15rem 0.9rem 0.1rem;
+}
+
+/* Menu item rows */
+.overflow-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 0.88rem;
+  color: #111827 !important;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.overflow-menu-item:hover,
+.overflow-menu-item:focus-visible {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.overflow-menu-item:active {
+  background: rgba(15, 23, 42, 0.08);
+}
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
   <style>
@@ -5434,68 +5492,66 @@ body, main, section, div, p, span, li {
         </form>
       </div>
 
-      <div
-        id="headerMenuSlim"
-        class="overflow-menu hidden quick-actions-panel"
-        aria-hidden="true"
-        role="menu"
-      >
-        <h2 id="headerMenuSlimHeading" class="sr-only">Quick settings</h2>
-        <ul class="quick-actions" role="presentation">
-          <li role="none">
-            <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-              <span class="quick-action-icon" aria-hidden="true">🎤</span>
-              <span class="sr-only">Dictate reminder</span>
-            </button>
-          </li>
-          <li role="none">
-            <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-              <span class="quick-action-icon" aria-hidden="true">🗂</span>
-              <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-            </button>
-          </li>
-          <li role="none">
-            <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-              <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-              <span class="sr-only">Open settings</span>
-            </button>
-          </li>
-          <li role="none">
-            <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-              <span class="quick-action-icon" aria-hidden="true">🌗</span>
-              <span class="sr-only">Toggle theme</span>
-            </button>
-          </li>
-          <li role="none">
-            <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-              <span class="quick-action-icon" aria-hidden="true">🔐</span>
-              <span class="sr-only">Sign in</span>
-            </button>
-          </li>
-          <li role="none">
-            <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-              <span class="quick-action-icon" aria-hidden="true">🔓</span>
-              <span class="sr-only">Sign out</span>
-            </button>
-          </li>
-        </ul>
+      <div id="headerMenuSlim" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
+        <!-- Reminders -->
+        <div class="overflow-menu-section">
+          <div class="overflow-menu-section-label">Reminders</div>
+          <button
+            id="viewCompletedBtnMenu"
+            type="button"
+            class="overflow-menu-item"
+          >
+            Completed reminders
+          </button>
+        </div>
 
-        <!-- Auth section in overflow menu -->
-        <div class="border-t border-gray-200 mt-2 pt-2">
+        <!-- Notes -->
+        <div class="overflow-menu-section">
+          <div class="overflow-menu-section-label">Notes</div>
+          <button
+            id="savedNotesBtnMenu"
+            type="button"
+            class="overflow-menu-item"
+          >
+            Saved notes library
+          </button>
+        </div>
+
+        <!-- Account -->
+        <div class="overflow-menu-section">
+          <div class="overflow-menu-section-label">Account</div>
           <button
             id="googleSignInBtnMenu"
             type="button"
-            class="overflow-menu-item w-full text-left text-sm py-2 px-4"
+            class="overflow-menu-item"
           >
             Sign in
           </button>
-
           <button
             id="googleSignOutBtnMenu"
             type="button"
-            class="overflow-menu-item w-full text-left text-sm py-2 px-4 hidden"
+            class="overflow-menu-item hidden"
           >
             Sign out
+          </button>
+        </div>
+
+        <!-- App -->
+        <div class="overflow-menu-section">
+          <div class="overflow-menu-section-label">App</div>
+          <button
+            id="syncNowBtnMenu"
+            type="button"
+            class="overflow-menu-item"
+          >
+            Sync now
+          </button>
+          <button
+            id="aboutBtnMenu"
+            type="button"
+            class="overflow-menu-item"
+          >
+            About Memory Cue
           </button>
         </div>
       </div>
