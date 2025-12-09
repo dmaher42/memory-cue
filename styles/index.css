@@ -12,12 +12,12 @@ html {
 }
 
 :root {
-  --font-heading: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading-weight: 600;
-  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: "Poppins", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading-weight: 700;
+  --font-body: "Poppins", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body-weight: 400;
-  --font-body-size: clamp(1rem, 0.97rem + 0.2vw, 1.1rem);
-  --font-heading-size: clamp(1.35rem, 1rem + 1vw, 2.5rem);
+  --font-body-size: clamp(1rem, 0.95rem + 0.25vw, 1.12rem);
+  --font-heading-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.65rem);
   --accent-color: #512663;
   --surface-main: #F7F7FA;
   --surface-elevated: #F9F9FB;
@@ -94,6 +94,107 @@ body {
     linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
   background-attachment: fixed;
   color: var(--desktop-text-main, #0f172a);
+}
+
+h1,
+h2,
+h3,
+h4,
+.desktop-panel-title,
+.section-heading {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  color: var(--desktop-text-main, var(--text-main));
+  letter-spacing: -0.015em;
+}
+
+h1,
+.page-title {
+  font-size: clamp(2.4rem, 1.4rem + 2vw, 3rem);
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+h2,
+.section-title {
+  font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.15rem);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+h3,
+.eyebrow-title {
+  font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.6rem);
+  font-weight: 600;
+}
+
+p,
+label,
+small,
+.label-text,
+.desktop-reminder-meta,
+.desktop-reminder-detail-meta,
+.desktop-panel-body,
+li {
+  color: color-mix(in srgb, var(--desktop-text-main, #0f172a) 90%, #3f3f46 10%);
+  font-weight: 400;
+}
+
+.btn,
+.btn * {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.btn {
+  border-radius: 0.85rem;
+  padding-inline: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.btn-primary,
+.btn-neutral {
+  background: linear-gradient(135deg, var(--mc-grad-from), var(--mc-grad-mid));
+  border-color: color-mix(in srgb, var(--mc-grad-from) 60%, transparent);
+  color: #f8fafc;
+  box-shadow: 0 10px 30px rgba(79, 70, 229, 0.22);
+}
+
+.btn-primary:hover,
+.btn-neutral:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 36px rgba(79, 70, 229, 0.3);
+  background: linear-gradient(135deg, var(--mc-grad-mid), var(--mc-grad-to));
+}
+
+.btn-ghost,
+.btn-outline {
+  border-color: color-mix(in srgb, var(--desktop-border-subtle, #d7def1) 60%, transparent);
+  color: var(--desktop-text-main, #0f172a);
+  background: color-mix(in srgb, var(--page-bg-base) 80%, transparent);
+}
+
+.btn-ghost:hover,
+.btn-outline:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--page-bg-accent) 35%, #ffffff 65%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.tagline,
+.eyebrow-title,
+.label-text {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--desktop-text-main, #0f172a) 65%, transparent);
+}
+
+.content-lede {
+  font-size: clamp(1.05rem, 1rem + 0.35vw, 1.25rem);
+  color: color-mix(in srgb, var(--desktop-text-main, #0f172a) 85%, #3f3f46 15%);
+  max-width: 65ch;
 }
 
 html[data-theme="night"],
