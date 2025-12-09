@@ -76,6 +76,11 @@
       line-height: 1.5;
     }
 
+    body[data-saved-notes-open="true"],
+    html[data-saved-notes-open="true"] {
+      overflow: hidden;
+    }
+
     /* Single-row iOS-style reminders top bar */
     .reminders-top-row {
       display: flex;
@@ -615,7 +620,7 @@
     right: 0;
     bottom: 0;
     left: 0;                     /* cover full viewport */
-    z-index: 80;
+    z-index: 95;
     opacity: 0;
     pointer-events: none;
     display: flex;
@@ -6585,7 +6590,7 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-GYEQRX37.js"></script>
+  <script type="module" src="./assets/mobile-67GVUBTK.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
