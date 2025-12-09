@@ -780,6 +780,81 @@
     font-weight: 600;
   }
 
+/* ============================
+   IMPROVED SIDEBAR UI
+   ============================ */
+
+/* Sidebar container */
+.notebook-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.8rem 0.6rem;
+  width: 190px;              /* narrower sidebar */
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+/* NAV ITEM */
+.notebook-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: #1f1f1f;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Hover state */
+.notebook-nav-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+/* ICON (currently a simple dot inside a circle) */
+.notebook-nav-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.nav-icon-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* ACTIVE STATE */
+.notebook-nav-item.is-active {
+  background: #f9f5ff;                 /* subtle lavender tint */
+  border-left: 4px solid #6b21a8;      /* left highlight bar */
+  padding-left: calc(0.65rem - 4px);   /* keep content aligned */
+  color: #5b21b6;
+}
+
+.notebook-nav-item.is-active .notebook-nav-icon {
+  background: #6d28d9;
+  border-color: #6d28d9;
+}
+
+.notebook-nav-item.is-active .nav-icon-dot {
+  background: #ffffff;
+}
+
   /* On very small screens, soften edges & shadow but still slide from right */
   @media (max-width: 640px) {
     #savedNotesSheet .saved-notes-panel {
