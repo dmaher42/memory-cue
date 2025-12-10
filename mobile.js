@@ -2863,10 +2863,16 @@ function wireMobileNotesSupabaseAuth() {
 }
 
 (() => {
-  const menuBtn = document.getElementById('overflowMenuBtn');
-  const menu = document.getElementById('overflowMenu');
+  const menuBtn =
+    document.getElementById('headerMenuBtn') ||
+    document.getElementById('overflowMenuBtn') ||
+    document.getElementById('headerMenuBtnSlim');
+  const menu =
+    document.getElementById('headerMenu') ||
+    document.getElementById('overflowMenu') ||
+    document.getElementById('headerMenuSlim');
 
-  if (!(menuBtn instanceof HTMLElement) || !(menu instanceof HTMLElement)) { 
+  if (!(menuBtn instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
     return;
   }
 
@@ -2952,6 +2958,33 @@ function wireMobileNotesSupabaseAuth() {
     }
   };
 
+  const applyTheme = (theme) => {
+    const root = document.documentElement;
+    if (!root) return;
+
+    if (theme) {
+      root.setAttribute('data-theme', theme);
+    } else {
+      root.removeAttribute('data-theme');
+    }
+
+    try {
+      window.localStorage?.setItem('mc-theme', theme || '');
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const applyLayout = (variant) => {
+    const body = document.body;
+    if (!body) return;
+
+    body.classList.remove('layout-cozy', 'layout-compact');
+    if (variant) {
+      body.classList.add(`layout-${variant}`);
+    }
+  };
+
   menuBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     if (menu.classList.contains('hidden')) {
@@ -2990,34 +3023,36 @@ function wireMobileNotesSupabaseAuth() {
     const button = getMenuActionTarget(event);
     if (!button) return;
 
+    event.stopPropagation();
+
     const action = button.getAttribute('data-menu-action');
     if (!action) return;
 
-    // Always close the menu after a selection
-    try {
-      closeMenu();
-    } catch (e) {
-      // ignore
-    }
-
     switch (action) {
+      case 'completed':
       case 'completed-reminders': {
-        // Reuse the existing reminders filter logic.
-        // Find a button with data-reminders-tab="completed" and click it,
-        // or fall back to a helper if one exists.
         const completedTab =
           document.querySelector('[data-reminders-tab="completed"]') ||
           document.querySelector('[data-reminders-filter="completed"]');
         if (completedTab instanceof HTMLElement) {
           completedTab.click();
+        } else if (window.remindersController && typeof window.remindersController.setFilter === 'function') {
+          window.remindersController.setFilter('completed');
         } else if (typeof window.setMobileRemindersFilter === 'function') {
           window.setMobileRemindersFilter('completed');
         }
         break;
       }
 
+      case 'settings': {
+        const settingsTrigger = document.querySelector('[data-open="settings"]');
+        if (settingsTrigger instanceof HTMLElement) {
+          settingsTrigger.click();
+        }
+        break;
+      }
+
       case 'saved-notes': {
-        // Prefer the global helper if available, otherwise click the global button
         try {
           if (typeof window.showSavedNotesSheet === 'function') {
             window.showSavedNotesSheet();
@@ -3039,8 +3074,6 @@ function wireMobileNotesSupabaseAuth() {
       }
 
       case 'sign-in': {
-        // Let Supabase auth handle this. Either click the main sign-in button
-        // or fall back to a global startSignInFlow helper if present.
         const primarySignInBtn = document.getElementById('googleSignInBtn');
         if (primarySignInBtn instanceof HTMLElement) {
           primarySignInBtn.click();
@@ -3054,23 +3087,48 @@ function wireMobileNotesSupabaseAuth() {
         const primarySignOutBtn = document.getElementById('googleSignOutBtn');
         if (primarySignOutBtn instanceof HTMLElement) {
           primarySignOutBtn.click();
+        } else if (
+          window.__supabaseAuth &&
+          window.__supabaseAuth.supabase &&
+          window.__supabaseAuth.supabase.auth &&
+          typeof window.__supabaseAuth.supabase.auth.signOut === 'function'
+        ) {
+          window.__supabaseAuth.supabase.auth.signOut().catch(() => {});
         }
         break;
       }
 
+      case 'sync-all':
       case 'sync-now': {
-        // Trigger the existing reminders sync-all control
         const syncBtn = document.getElementById('syncAll');
         if (syncBtn instanceof HTMLElement) {
           syncBtn.click();
+        } else if (window.remindersController && typeof window.remindersController.syncAll === 'function') {
+          window.remindersController.syncAll().catch(() => {});
         } else if (typeof window.syncAllReminders === 'function') {
           window.syncAllReminders();
         }
         break;
       }
 
+      case 'theme-light':
+        applyTheme('light');
+        break;
+      case 'theme-dark':
+        applyTheme('dark');
+        break;
+      case 'theme-professional-dark':
+        applyTheme('professional-dark');
+        break;
+
+      case 'layout-cozy':
+        applyLayout('cozy');
+        break;
+      case 'layout-compact':
+        applyLayout('compact');
+        break;
+
       case 'about': {
-        // Open About dialog if one exists; otherwise this is a safe no-op
         const aboutTrigger =
           document.querySelector('[data-open="about"]') ||
           document.getElementById('aboutMemoryCueBtn');
@@ -3084,6 +3142,12 @@ function wireMobileNotesSupabaseAuth() {
 
       default:
         break;
+    }
+
+    try {
+      closeMenu();
+    } catch (e) {
+      /* ignore */
     }
   };
 
