@@ -971,125 +971,95 @@
     padding: 0;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   /* Wider screens: grid of cards */
   @media (min-width: 640px) {
     #savedNotesSheet #notesListMobile {
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   /* Remove old row dividers & stripes; use cards instead */
   #savedNotesSheet .note-item-mobile {
     border-bottom: none;
+    margin: 0;
   }
 
-  #savedNotesSheet .note-list-item {
-    background: #ffffff;
-    border-radius: 0.75rem;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    padding: 0.65rem 0.75rem 0.6rem;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
-  }
-
-  .note-list-item {
+  #savedNotesSheet .note-card {
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: var(--note-card-bg, rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding: 0.7rem 0.1rem;
-    text-align: left;
+    gap: 0.35rem;
     width: 100%;
+    transition: transform 0.1s ease, background 0.1s ease;
   }
 
-  #savedNotesSheet .note-list-title-row {
+  #savedNotesSheet .note-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  #savedNotesSheet .note-card-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 0.5rem;
     min-width: 0;
   }
 
-  #savedNotesSheet .note-list-title {
+  #savedNotesSheet .note-card-title {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: 0.96rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: var(--text-strong, #231B2E);
+    color: var(--text-primary, #e5e7eb);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin: 0;
   }
 
-  #savedNotesSheet .note-list-right {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.15rem;
-    margin-left: 0;
-  }
-
-  #savedNotesSheet .note-list-overflow {
+  #savedNotesSheet .note-card-action {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 999px;
     border: 0;
     background: transparent;
     padding: 0;
     font-size: 1.1rem;
     line-height: 1;
-    color: var(--text-secondary, #4A4153);
+    color: var(--text-secondary, #cbd5e1);
   }
 
-  #savedNotesSheet .note-list-overflow:hover,
-  #savedNotesSheet .note-list-overflow:focus-visible {
-    background: rgba(15, 23, 42, 0.06);
+  #savedNotesSheet .note-card-action:hover,
+  #savedNotesSheet .note-card-action:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .note-list-title {
-    font-size: 0.96rem;
-    font-weight: 600;
-    color: var(--text-strong, #231B2E);
-    margin-bottom: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  #savedNotesSheet .note-list-preview {
-    font-size: 0.84rem;
-    color: var(--text-body, #4a3c57);
-    line-height: 1.3;
-    max-height: 2.6em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  #savedNotesSheet .note-list-meta {
+  #savedNotesSheet .note-card-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-top: 2px;
-    font-size: 0.74rem;
-    color: var(--text-muted, #9a8bb0);
+    font-size: 0.85rem;
+    color: var(--text-secondary, #cbd5e1);
   }
 
-  #savedNotesSheet .note-list-meta-left {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-
-  #savedNotesSheet .note-list-meta-dot {
-    width: 3px;
-    height: 3px;
+  #savedNotesSheet .note-card-meta-dot {
+    width: 4px;
+    height: 4px;
     border-radius: 999px;
     background: currentColor;
-    opacity: 0.65;
+    opacity: 0.7;
   }
 
   /* Selected note card: subtle accent, no heavy band */
@@ -6113,33 +6083,35 @@ body, main, section, div, p, span, li {
                   <div class="saved-notes-list">
                     <ul
                       id="notesListMobile"
-                      class="notebook-list notebook-notes-list text-sm"
+                      class="saved-notes-list notebook-list notebook-notes-list text-sm"
                       aria-label="Saved scratch notes"
                     >
                       <!-- Note items are rendered here by JS -->
                       <template id="notesListMobileItemTemplate">
-                        <div class="note-row note-list-item" data-note-id="" data-role="open-note">
-                          <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
-                            <div class="note-row-title-row note-list-title-row">
-                              <div class="note-row-title note-list-title">Untitled</div>
-                              <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
-                            </div>
-                            <div class="note-row-meta note-list-meta">
-                              <button class="note-row-folder note-list-folder" type="button">Folder</button>
-                              <span class="note-row-dot note-list-dot">•</span>
-                              <span class="note-row-timestamp note-list-date">Date</span>
+                        <li class="note-item-mobile">
+                          <div class="note-card note-row note-list-item" data-note-id="" data-role="open-note">
+                            <div class="note-row-main note-list-main note-card-main" data-note-id="" data-role="open-note">
+                              <div class="note-row-title-row note-list-title-row note-card-header">
+                                <div class="note-row-title note-list-title note-card-title">Untitled</div>
+                                <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
+                                <button
+                                  type="button"
+                                  class="note-row-overflow note-list-overflow note-card-action note-options-button note-actions"
+                                  aria-label="More"
+                                  data-role="note-menu"
+                                  data-note-id=""
+                                >
+                                  ⋯
+                                </button>
+                              </div>
+                              <div class="note-row-meta note-list-meta note-card-meta">
+                                <button class="note-row-folder note-list-folder note-card-folder" type="button">Folder</button>
+                                <span class="note-row-dot note-list-dot note-card-meta-dot">•</span>
+                                <span class="note-row-timestamp note-list-date note-card-timestamp">Date</span>
+                              </div>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            class="note-row-overflow note-list-overflow note-options-button note-actions"
-                            aria-label="More"
-                            data-role="note-menu"
-                            data-note-id=""
-                          >
-                            ⋯
-                          </button>
-                        </div>
+                        </li>
                       </template>
                     </ul>
                   </div>
