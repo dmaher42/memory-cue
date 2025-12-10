@@ -1233,30 +1233,33 @@ const initMobileNotes = () => {
     }
 
     notes.forEach((note) => {
-      const listItem = document.createElement('div');
+      const listItem = document.createElement('li');
       const isActiveNote = String(note.id) === String(currentNoteId);
       const isPinned = Boolean(note?.pinned);
-      listItem.className = 'note-row note-list-item';
-      listItem.classList.toggle('selected', isActiveNote);
-      listItem.classList.toggle('is-active', isActiveNote);
-      listItem.dataset.noteId = note.id;
-      listItem.dataset.role = 'open-note';
-      listItem.setAttribute('role', 'button');
-      listItem.tabIndex = 0;
+      listItem.className = 'note-item-mobile';
+
+      const noteCard = document.createElement('div');
+      noteCard.className = 'note-card note-row note-list-item';
+      noteCard.classList.toggle('selected', isActiveNote);
+      noteCard.classList.toggle('is-active', isActiveNote);
+      noteCard.dataset.noteId = note.id;
+      noteCard.dataset.role = 'open-note';
+      noteCard.setAttribute('role', 'button');
+      noteCard.tabIndex = 0;
 
       const cardMain = document.createElement('div');
-      cardMain.className = 'note-row-main note-list-main';
+      cardMain.className = 'note-row-main note-list-main note-card-main';
       cardMain.dataset.role = 'open-note';
       cardMain.dataset.noteId = note.id;
 
       const noteTitle = (typeof note.title === 'string' && note.title.trim()) || 'Untitled';
       const titleEl = document.createElement('div');
-      titleEl.className = 'note-row-title note-list-title';
+      titleEl.className = 'note-row-title note-list-title note-card-title';
       titleEl.textContent = noteTitle;
       titleEl.setAttribute('title', noteTitle);
 
       const titleRow = document.createElement('div');
-      titleRow.className = 'note-row-title-row note-list-title-row';
+      titleRow.className = 'note-row-title-row note-list-title-row note-card-header';
       titleRow.appendChild(titleEl);
 
       if (isPinned) {
@@ -1272,11 +1275,11 @@ const initMobileNotes = () => {
       const timestamp = formatNoteTimestamp(note.updatedAt);
 
       const metaRow = document.createElement('div');
-      metaRow.className = 'note-row-meta note-list-meta';
+      metaRow.className = 'note-row-meta note-list-meta note-card-meta';
 
       const folderButton = document.createElement('button');
       folderButton.type = 'button';
-      folderButton.className = 'note-row-folder note-list-folder';
+      folderButton.className = 'note-row-folder note-list-folder note-card-folder';
       folderButton.textContent = folderName;
       folderButton.setAttribute('aria-label', 'Move note to folder');
       folderButton.addEventListener('click', (event) => {
@@ -1291,10 +1294,10 @@ const initMobileNotes = () => {
       metaRow.appendChild(folderButton);
       if (timestamp) {
         const separator = document.createElement('span');
-        separator.className = 'note-row-dot note-list-dot';
+        separator.className = 'note-row-dot note-list-dot note-card-meta-dot';
         separator.textContent = '•';
         const timeSpan = document.createElement('span');
-        timeSpan.className = 'note-row-timestamp note-list-date';
+        timeSpan.className = 'note-row-timestamp note-list-date note-card-timestamp';
         timeSpan.textContent = timestamp;
         metaRow.appendChild(separator);
         metaRow.appendChild(timeSpan);
@@ -1307,14 +1310,16 @@ const initMobileNotes = () => {
       actionBtn.type = 'button';
       actionBtn.dataset.noteId = note.id;
       actionBtn.dataset.role = 'note-menu';
-      actionBtn.className = 'note-row-overflow note-list-overflow note-options-button';
+      actionBtn.className = 'note-row-overflow note-list-overflow note-options-button note-card-action';
       actionBtn.setAttribute('aria-label', 'Note actions');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
       actionBtn.textContent = '⋯';
 
-      listItem.appendChild(cardMain);
-      listItem.appendChild(actionBtn);
+      titleRow.appendChild(actionBtn);
+
+      noteCard.appendChild(cardMain);
+      listItem.appendChild(noteCard);
       listElement.appendChild(listItem);
     });
 
