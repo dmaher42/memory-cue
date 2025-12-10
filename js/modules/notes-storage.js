@@ -1,6 +1,6 @@
 const NOTES_STORAGE_KEY = 'memoryCueNotes';
 const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
-const LEGACY_NOTE_KEYS = ['mobileNotes'];
+const LEGACY_NOTE_KEYS = ['mobileNotes', 'memory-cue-notes'];
 
 const hasLocalStorage = () => typeof localStorage !== 'undefined';
 
