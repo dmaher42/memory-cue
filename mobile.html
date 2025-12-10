@@ -6592,7 +6592,7 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-67GVUBTK.js"></script>
+  <script type="module" src="./assets/mobile-XKWOWVCU.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
@@ -9066,7 +9066,9 @@ body, main, section, div, p, span, li {
         document.getElementById('headerMenuSlim') ||
         document.getElementById('headerMenu');
 
-      if (!menuBtn || !menu) return;
+      // Skip binding if the mobile.js controller has already taken over to
+      // prevent duplicate toggle listeners firing on tap.
+      if (!menuBtn || !menu || menuBtn.dataset.overflowMenuHandled === 'mobile-js') return;
 
       var isOpen = function () {
         return menuBtn.getAttribute('aria-expanded') === 'true';
