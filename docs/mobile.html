@@ -628,7 +628,7 @@
     margin-top: 0.15rem;
   }
 
-  .mobile-shell #notesListMobile {
+  .saved-notes-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -638,7 +638,7 @@
   }
 
   @media (min-width: 640px) {
-    .mobile-shell #notesListMobile {
+    .saved-notes-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
@@ -657,8 +657,9 @@
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.25rem;
     width: 100%;
+    margin-bottom: 10px;
     transition: transform 0.1s ease, background 0.1s ease;
   }
 
