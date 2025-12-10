@@ -2866,9 +2866,13 @@ function wireMobileNotesSupabaseAuth() {
   const menuBtn = document.getElementById('overflowMenuBtn');
   const menu = document.getElementById('overflowMenu');
 
-  if (!(menuBtn instanceof HTMLElement) || !(menu instanceof HTMLElement)) {
+  if (!(menuBtn instanceof HTMLElement) || !(menu instanceof HTMLElement)) { 
     return;
   }
+
+  // Mark that the robust overflow menu controller is active so inline fallbacks
+  // avoid double-binding click handlers that cause immediate close-on-open.
+  menuBtn.dataset.overflowMenuHandled = 'mobile-js';
 
   const FOCUSABLE_SELECTOR =
     'button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
