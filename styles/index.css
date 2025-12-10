@@ -11,6 +11,30 @@ html {
   scroll-behavior: smooth;
 }
 
+.saved-notes-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--saved-notes-panel-bg, rgba(255, 255, 255, 0.92));
+  backdrop-filter: var(--saved-notes-panel-blur, blur(14px));
+}
+
+.saved-notes-controls {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: inherit;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.saved-notes-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
 :root {
   --font-heading: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-heading-weight: 600;

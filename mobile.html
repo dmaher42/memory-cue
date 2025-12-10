@@ -6069,26 +6069,28 @@ body, main, section, div, p, span, li {
 
               <!-- Main notebook content -->
               <div class="notebook-sidebar-main">
-                <div class="notebook-top-bar notebook-header">
-                  <div class="notebook-top-left">
-                    <button
-                      id="closeSavedNotesSheet"
-                      class="btn btn-xs btn-ghost"
-                      type="button"
-                      data-action="close-saved-notes"
-                      aria-label="Close Notebook"
-                    >
-                      Close
-                    </button>
-                    <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
-                  </div>
-                    <div class="notebook-top-center">
-                      <div class="notebook-tabs">
-                        <div id="notebook-folder-bar" class="notebook-folder-bar px-0 py-0">
-                          <div class="notebook-folder-header">
-                            <div class="folder-chips">
-                              <div class="notebook-folder-scroll-wrap">
-                                <!-- Folder chip bar removed; sidebar handles folder selection -->
+                <div class="saved-notes-controls">
+                  <div class="notebook-top-bar notebook-header">
+                    <div class="notebook-top-left">
+                      <button
+                        id="closeSavedNotesSheet"
+                        class="btn btn-xs btn-ghost"
+                        type="button"
+                        data-action="close-saved-notes"
+                        aria-label="Close Notebook"
+                      >
+                        Close
+                      </button>
+                      <h3 class="text-sm font-semibold" id="savedNotesSheetTitle">Notebook</h3>
+                    </div>
+                      <div class="notebook-top-center">
+                        <div class="notebook-tabs">
+                          <div id="notebook-folder-bar" class="notebook-folder-bar px-0 py-0">
+                            <div class="notebook-folder-header">
+                              <div class="folder-chips">
+                                <div class="notebook-folder-scroll-wrap">
+                                  <!-- Folder chip bar removed; sidebar handles folder selection -->
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -6096,49 +6098,51 @@ body, main, section, div, p, span, li {
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div class="notebook-search-container">
-                  <input
-                    id="notebook-search-input"
-                    type="search"
-                    placeholder="Search notes…"
-                    class="notebook-search-bar notebook-notes-search"
-                  />
+                  <div class="notebook-search-container">
+                    <input
+                      id="notebook-search-input"
+                      type="search"
+                      placeholder="Search notes…"
+                      class="notebook-search-bar notebook-notes-search"
+                    />
+                  </div>
                 </div>
 
                 <div class="saved-notes-list-shell">
-                  <ul
-                    id="notesListMobile"
-                    class="notebook-list notebook-notes-list saved-notes-list text-sm"
-                    aria-label="Saved scratch notes"
-                  >
-                    <!-- Note items are rendered here by JS -->
-                    <template id="notesListMobileItemTemplate">
-                      <div class="note-row note-list-item" data-note-id="" data-role="open-note">
-                        <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
-                          <div class="note-row-title-row note-list-title-row">
-                            <div class="note-row-title note-list-title">Untitled</div>
-                            <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
+                  <div class="saved-notes-list">
+                    <ul
+                      id="notesListMobile"
+                      class="notebook-list notebook-notes-list text-sm"
+                      aria-label="Saved scratch notes"
+                    >
+                      <!-- Note items are rendered here by JS -->
+                      <template id="notesListMobileItemTemplate">
+                        <div class="note-row note-list-item" data-note-id="" data-role="open-note">
+                          <div class="note-row-main note-list-main" data-note-id="" data-role="open-note">
+                            <div class="note-row-title-row note-list-title-row">
+                              <div class="note-row-title note-list-title">Untitled</div>
+                              <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
+                            </div>
+                            <div class="note-row-meta note-list-meta">
+                              <button class="note-row-folder note-list-folder" type="button">Folder</button>
+                              <span class="note-row-dot note-list-dot">•</span>
+                              <span class="note-row-timestamp note-list-date">Date</span>
+                            </div>
                           </div>
-                          <div class="note-row-meta note-list-meta">
-                            <button class="note-row-folder note-list-folder" type="button">Folder</button>
-                            <span class="note-row-dot note-list-dot">•</span>
-                            <span class="note-row-timestamp note-list-date">Date</span>
-                          </div>
+                          <button
+                            type="button"
+                            class="note-row-overflow note-list-overflow note-options-button note-actions"
+                            aria-label="More"
+                            data-role="note-menu"
+                            data-note-id=""
+                          >
+                            ⋯
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          class="note-row-overflow note-list-overflow note-options-button note-actions"
-                          aria-label="More"
-                          data-role="note-menu"
-                          data-note-id=""
-                        >
-                          ⋯
-                        </button>
-                      </div>
-                    </template>
-                  </ul>
+                      </template>
+                    </ul>
+                  </div>
                 </div>
               </div>
               <!-- New Folder Modal -->
