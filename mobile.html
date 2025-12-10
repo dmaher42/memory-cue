@@ -5683,24 +5683,32 @@ body, main, section, div, p, span, li {
           <div class="overflow-menu-section-label">Reminders</div>
           <button
             type="button"
-            id="menuCompletedReminders"
+            id="menuShowCompleted"
             class="overflow-menu-item"
-            data-menu-action="completed-reminders"
+            data-menu-action="completed"
           >
             Completed reminders
           </button>
         </div>
 
-        <!-- Notes -->
+        <!-- Settings / App -->
         <div class="overflow-menu-section">
-          <div class="overflow-menu-section-label">Notes</div>
+          <div class="overflow-menu-section-label">App</div>
           <button
             type="button"
-            id="menuSavedNotes"
+            id="menuOpenSettings"
             class="overflow-menu-item"
-            data-menu-action="saved-notes"
+            data-menu-action="settings"
           >
-            Saved notes library
+            Settings
+          </button>
+          <button
+            type="button"
+            id="menuSyncAll"
+            class="overflow-menu-item"
+            data-menu-action="sync-all"
+          >
+            Sync all
           </button>
         </div>
 
@@ -5726,24 +5734,46 @@ body, main, section, div, p, span, li {
           </button>
         </div>
 
-        <!-- App -->
-        <div class="overflow-menu-section">
-          <div class="overflow-menu-section-label">App</div>
+        <div class="overflow-menu-section" aria-label="Theme">
+          <p class="overflow-menu-section-label">Theme</p>
           <button
-            id="menuSyncNow"
             type="button"
             class="overflow-menu-item"
-            data-menu-action="sync-now"
+            data-menu-action="theme-light"
           >
-            Sync now
+            Light
           </button>
           <button
-            id="menuAbout"
             type="button"
             class="overflow-menu-item"
-            data-menu-action="about"
+            data-menu-action="theme-dark"
           >
-            About Memory Cue
+            Dark
+          </button>
+          <button
+            type="button"
+            class="overflow-menu-item"
+            data-menu-action="theme-professional-dark"
+          >
+            Pro dark
+          </button>
+        </div>
+
+        <div class="overflow-menu-section" aria-label="Layout">
+          <p class="overflow-menu-section-label">Layout</p>
+          <button
+            type="button"
+            class="overflow-menu-item"
+            data-menu-action="layout-cozy"
+          >
+            Cozy
+          </button>
+          <button
+            type="button"
+            class="overflow-menu-item"
+            data-menu-action="layout-compact"
+          >
+            Compact
           </button>
         </div>
       </div>
@@ -6592,7 +6622,7 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-2NNCVLG6.js"></script>
+  <script type="module" src="./assets/mobile-4SII7ISN.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
