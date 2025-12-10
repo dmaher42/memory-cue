@@ -1058,11 +1058,6 @@ const initMobileNotes = () => {
   const refreshFromStorage = ({ preserveDraft = true } = {}) => {
     const sortedNotes = getSortedNotes();
     allNotes = Array.isArray(sortedNotes) ? [...sortedNotes] : [];
-    try {
-      buildFolderChips();
-    } catch (e) {
-      /* ignore chip render failures */
-    }
     const shouldPreserveEditor = preserveDraft && hasUnsavedChanges();
     const hasAnyNotes = allNotes.length > 0;
     const visibleNotes = getVisibleNotes();
@@ -1101,12 +1096,12 @@ const initMobileNotes = () => {
     return visibleNotes;
   };
 
+  // Expose the refresh helper via the shared notes refresh hook
   requestNotesRefresh = (options = {}) => {
-    const { preserveDraft = true } = options || {};
     try {
-      refreshFromStorage({ preserveDraft });
+      refreshFromStorage(options);
     } catch (error) {
-      console.warn('[notebook] refresh after sync failed', error);
+      console.warn('[notebook] requestNotesRefresh failed', error);
     }
   };
 
@@ -2786,6 +2781,12 @@ const initMobileNotes = () => {
         }
       }, 2000);
     }
+  }
+
+  try {
+    refreshFromStorage({ preserveDraft: true });
+  } catch (error) {
+    console.warn('[notebook] initial refreshFromStorage failed', error);
   }
 };
 
