@@ -5936,45 +5936,55 @@ body, main, section, div, p, span, li {
 
               <div
                 id="scratchNotesToolbar"
-                class="note-editor-toolbar"
+                class="formatting-toolbar"
                 role="toolbar"
                 aria-label="Formatting options"
               >
-                <button class="rte-btn" data-cmd="bold" type="button">
-                  <span class="rte-icon">B</span>
+                <button class="rte-btn" data-cmd="bold" type="button" title="Bold">
+                  <b>B</b>
                 </button>
-                <button class="rte-btn" data-cmd="italic" type="button">
-                  <span class="rte-icon">I</span>
+                <button class="rte-btn" data-cmd="italic" type="button" title="Italic">
+                  <i>I</i>
                 </button>
-                <button class="rte-btn" data-cmd="underline" type="button">
-                  <span class="rte-icon">U</span>
-                </button>
-
-                <div class="rte-divider"></div>
-
-                <button class="rte-btn" data-cmd="insertUnorderedList" type="button">
-                  <span class="rte-icon">•</span>
-                </button>
-                <button class="rte-btn" data-cmd="insertOrderedList" type="button">
-                  <span class="rte-icon">1.</span>
+                <button class="rte-btn" data-cmd="underline" type="button" title="Underline">
+                  <u>U</u>
                 </button>
 
-                <div class="rte-divider"></div>
+                <div class="rte-divider" aria-hidden="true"></div>
 
-                <button class="rte-btn" data-cmd="indent" type="button">
-                  <span class="rte-icon">→</span>
+                <button
+                  class="rte-btn"
+                  data-cmd="insertUnorderedList"
+                  type="button"
+                  title="Bulleted list"
+                >
+                  •
                 </button>
-                <button class="rte-btn" data-cmd="outdent" type="button">
-                  <span class="rte-icon">←</span>
+                <button
+                  class="rte-btn"
+                  data-cmd="insertOrderedList"
+                  type="button"
+                  title="Numbered list"
+                >
+                  1.
                 </button>
 
-                <div class="rte-divider"></div>
+                <div class="rte-divider" aria-hidden="true"></div>
 
-                <button class="rte-btn" data-cmd="undo" type="button">
-                  <span class="rte-icon">↺</span>
+                <button class="rte-btn" data-cmd="indent" type="button" title="Indent">
+                  →
                 </button>
-                <button class="rte-btn" data-cmd="redo" type="button">
-                  <span class="rte-icon">↻</span>
+                <button class="rte-btn" data-cmd="outdent" type="button" title="Outdent">
+                  ←
+                </button>
+
+                <div class="rte-divider" aria-hidden="true"></div>
+
+                <button class="rte-btn" data-cmd="undo" type="button" title="Undo">
+                  ↺
+                </button>
+                <button class="rte-btn" data-cmd="redo" type="button" title="Redo">
+                  ↻
                 </button>
               </div>
 
