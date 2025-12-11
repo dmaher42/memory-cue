@@ -5678,6 +5678,16 @@ body, main, section, div, p, span, li {
           >
             Completed reminders
           </button>
+          <button
+            type="button"
+            id="viewToggleMenu"
+            class="overflow-menu-item"
+            aria-pressed="false"
+            aria-live="polite"
+            data-layout="list"
+          >
+            <span id="viewToggleLabel">View layout: Stacked</span>
+          </button>
         </div>
 
         <!-- Settings / App -->
@@ -5850,24 +5860,6 @@ body, main, section, div, p, span, li {
       <div class="mobile-view-inner mx-auto w-full px-4 pt-2 pb-4 space-y-2" style="background: var(--mobile-quick-surface);">
         <!-- header removed to keep view minimal -->
         <div class="reminders-content-shell space-y-2">
-
-          <div class="flex items-center justify-between gap-2 px-1">
-            <div class="flex items-center gap-2 text-base-content/70">
-              <span class="text-sm font-semibold text-base-content">Reminders</span>
-            </div>
-            <button
-              type="button"
-              id="viewToggleMenu"
-              class="btn btn-ghost btn-xs"
-              aria-pressed="false"
-              aria-live="polite"
-              data-layout="list"
-            >
-              <span class="flex items-center gap-2 text-xs font-semibold text-base-content" id="viewToggleLabel">
-                View layout: Stacked
-              </span>
-            </button>
-          </div>
 
           <div id="remindersListMobile" class="space-y-2">
             <section
