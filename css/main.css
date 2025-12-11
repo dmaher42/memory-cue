@@ -211,8 +211,8 @@
 /* Ensure the inner svg/icon contrasts when active */
 #mobile-footer-new-reminder[aria-expanded="true"] svg,
 .floating-footer #mobile-footer-new-reminder[aria-expanded="true"] svg {
-  stroke: #000000 !important;
-  fill: #000000 !important;
+  stroke: var(--icon-color, #512663) !important;
+  fill: none !important;
   opacity: 1 !important;
   filter: none !important;
 }
@@ -222,15 +222,15 @@
 .footer-nav svg,
 .mobile-footer-nav svg,
 .footer-button svg {
-  stroke: #000000 !important;
-  fill: #000000 !important;
+  stroke: var(--icon-color, #512663) !important;
+  fill: none !important;
   opacity: 1 !important;
 }
 
 .mobile-footer .mobile-footer-item--active svg,
 .floating-footer .floating-card.active svg,
 .floating-footer .floating-card.is-active svg {
-  stroke: #000000 !important;
+  stroke: var(--icon-color, #512663) !important;
   fill: none !important;
   opacity: 1 !important;
 }
