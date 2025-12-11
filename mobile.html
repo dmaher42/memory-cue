@@ -5550,128 +5550,119 @@ body, main, section, div, p, span, li {
   >
     <div class="max-w-3xl mx-auto">
       <div class="reminders-top-row">
-        <form id="quickAddForm" class="reminders-quick-bar" onsubmit="return false;">
-
-          <!-- Left: quick reminder text field -->
+        <form id="quickAddForm" class="header-bar" onsubmit="return false;">
           <input
             id="quickAddInput"
             type="text"
-            placeholder="Quick reminder..."
+            placeholder="Quick reminder…"
             autocomplete="off"
           />
 
-          <!-- Middle: existing All / Today segmented control -->
-          <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
-            <button
-              type="button"
-              class="reminder-tab reminders-tab reminders-tab-active"
-              data-reminders-tab="all"
-              data-filter="all"
-              aria-pressed="true"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              class="reminder-tab reminders-tab"
-              data-reminders-tab="today"
-              data-filter="today"
-              aria-pressed="false"
-            >
-              Today
-            </button>
-          </div>
+          <button
+            type="button"
+            class="filter-toggle reminder-tab reminders-tab reminders-tab-active"
+            data-reminders-tab="all"
+            data-filter="all"
+            aria-pressed="true"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            class="filter-toggle reminder-tab reminders-tab"
+            data-reminders-tab="today"
+            data-filter="today"
+            aria-pressed="false"
+          >
+            Today
+          </button>
 
-          <!-- Right: saved, mic, save, overflow -->
-          <div class="reminders-quick-actions">
-            <button
-              id="openSavedNotesGlobal"
-              type="button"
-              class="icon-btn"
-              aria-label="Open saved notes"
+          <button
+            id="openSavedNotesGlobal"
+            type="button"
+            class="icon-button"
+            aria-label="Open saved notes"
+          >
+            <svg
+              class="header-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <svg
-                class="icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M6.25 3.5H13.75C14.44 3.5 15 4.06 15 4.75V16.5L10 13.8 5 16.5V4.75C5 4.06 5.56 3.5 6.25 3.5Z" />
-              </svg>
-            </button>
-            <button
-              id="startVoiceCaptureGlobal"
-              type="button"
-              class="icon-btn"
-              aria-label="Start voice capture"
+              <path d="M6.25 3.5H13.75C14.44 3.5 15 4.06 15 4.75V16.5L10 13.8 5 16.5V4.75C5 4.06 5.56 3.5 6.25 3.5Z" />
+            </svg>
+          </button>
+          <button
+            id="startVoiceCaptureGlobal"
+            type="button"
+            class="icon-button"
+            aria-label="Start voice capture"
+          >
+            <svg
+              class="header-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <svg
-                class="icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="6.5" y="3.5" width="7" height="9" rx="3.5" />
-                <path d="M5.5 9.75V10c0 2.48 2 4.5 4.5 4.5s4.5-2.02 4.5-4.5V9.75" />
-                <path d="M10 14.5V17" />
-                <path d="M7.5 17h5" />
-              </svg>
-            </button>
-            <button
-              id="quickAddReminderGlobal"
-              type="button"
-              class="icon-btn"
-              aria-label="Add reminder"
+              <rect x="6.5" y="3.5" width="7" height="9" rx="3.5" />
+              <path d="M5.5 9.75V10c0 2.48 2 4.5 4.5 4.5s4.5-2.02 4.5-4.5V9.75" />
+              <path d="M10 14.5V17" />
+              <path d="M7.5 17h5" />
+            </svg>
+          </button>
+          <button
+            id="quickAddReminderGlobal"
+            type="button"
+            class="icon-button"
+            aria-label="Add reminder"
+          >
+            <svg
+              class="header-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <svg
-                class="icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="10" cy="10" r="7.1" />
-                <path d="M10 6.25v7.5" />
-                <path d="M6.25 10h7.5" />
-              </svg>
-            </button>
-            <button
-              id="overflowMenuBtn"
-              type="button"
-              class="icon-btn"
-              aria-haspopup="true"
-              aria-expanded="false"
-              aria-controls="overflowMenu"
-              aria-label="More options"
+              <circle cx="10" cy="10" r="7.1" />
+              <path d="M10 6.25v7.5" />
+              <path d="M6.25 10h7.5" />
+            </svg>
+          </button>
+          <button
+            id="overflowMenuBtn"
+            type="button"
+            class="icon-button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="overflowMenu"
+            aria-label="More options"
+          >
+            <svg
+              class="header-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <svg
-                class="icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="10" cy="4.75" r="1.05" />
-                <circle cx="10" cy="10" r="1.05" />
-                <circle cx="10" cy="15.25" r="1.05" />
-              </svg>
-            </button>
-          </div>
-
+              <circle cx="10" cy="4.75" r="1.05" />
+              <circle cx="10" cy="10" r="1.05" />
+              <circle cx="10" cy="15.25" r="1.05" />
+            </svg>
+          </button>
         </form>
       </div>
 
