@@ -130,6 +130,7 @@ body.mobile-shell #mobile-shell #reminderList {
 .bottom-nav,
 #mobile-nav-shell {
   flex: 0 0 auto;
+  z-index: 60;
 }
 
 /* Header / Top Bar */
@@ -654,6 +655,11 @@ body.mobile-theme .text-secondary {
 /* Allow the scratch-notes card to use the full vertical space */
 .mobile-shell #view-notebook #scratch-notes-card {
   max-height: none;
+}
+
+/* Ensure notebook content doesn't sit under the floating footer */
+body.mobile-shell[data-active-view="notebook"] #scratch-notes-card {
+  padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + env(safe-area-inset-bottom, 0px));
 }
 
 .note-editor-content.is-placeholder,
