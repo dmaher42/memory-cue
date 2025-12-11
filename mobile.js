@@ -442,6 +442,7 @@ const initMobileNotes = () => {
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notebook-search-input');
+  const folderFilterDropdown = document.querySelector('.folder-filter');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
     document.getElementById('openSavedNotesGlobal') ||
@@ -2574,6 +2575,20 @@ const initMobileNotes = () => {
 
     filterInput.addEventListener('input', handleFilterInput);
     filterInput.addEventListener('search', handleFilterInput);
+  }
+
+  if (folderFilterDropdown) {
+    folderFilterDropdown.addEventListener('change', (event) => {
+      const target = event?.target;
+      if (!(target instanceof HTMLSelectElement)) {
+        return;
+      }
+      const selectedFolderId = (target.value || '').toLowerCase() === 'all'
+        ? 'all'
+        : target.value;
+      currentFolderId = selectedFolderId || 'all';
+      renderFilteredNotes();
+    });
   }
 
   const applyInitialSelection = () => {
