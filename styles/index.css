@@ -5164,6 +5164,38 @@ body {
   height: 18px;
 }
 
+.formatting-toolbar {
+  display: flex;
+  justify-content: start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.formatting-toolbar button {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.formatting-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.formatting-toolbar button.active {
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .note-editor-card {
   border-radius: 1rem;
   background: var(--surface-soft, #fff);
