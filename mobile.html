@@ -5423,63 +5423,39 @@ body, main, section, div, p, span, li {
     })();
   </script>
 
-  <script>
-    // Ensure the mobile header is fixed and content slides under it
-    (function keepHeaderFixed() {
-      function init() {
-        const header = document.getElementById('reminders-slim-header');
-        const main = document.getElementById('main') || document.querySelector('main');
-        if (!header) return;
+  <script id="keep-header-fixed">
+    const header = document.getElementById('reminders-slim-header');
+    const main = document.querySelector('main');
 
-        function applyFixedHeader() {
-          // Strongly enforce fixed positioning so it doesn't move during scroll
-          header.classList.add('force-fixed');
-          try {
-            // ensure the header gets its own compositor layer and no transitions
-            header.style.backdropFilter = header.style.backdropFilter || 'blur(10px)';
-            header.style.transition = 'none';
-            if (!header.style.transform) header.style.transform = 'translateZ(0)';
-            header.style.willChange = 'transform, top';
-          } catch (e) {
-            /* ignore styling failures */
-          }
+    // Store the initial measured header height
+    let initialHeaderHeight = null;
 
-          // Ensure the main content doesn't sit underneath the header
-          const h = Math.ceil(header.getBoundingClientRect().height);
-          // small gap under header so content doesn't touch it directly
-          const extraGap = 6; // px
-          const desired = h + extraGap;
+    function applyFixedHeader() {
+      if (!header || !main) return;
 
-          // Always set the CSS variable used elsewhere for layout calculations
-          document.documentElement.style.setProperty('--mobile-header-height', desired + 'px');
+      // Add sticky header class
+      header.classList.add('force-fixed');
+      header.style.backdropFilter = 'blur(14px)';
+      header.style.willChange = 'transform, top';
 
-          if (main) {
-            // Only update padding-top if it differs to avoid unnecessary layout churn
-            const current = parseInt(window.getComputedStyle(main).paddingTop, 10) || 0;
-            if (current !== desired) main.style.paddingTop = desired + 'px';
-          }
-        }
-
-        // Initial apply
-        applyFixedHeader();
-
-        // Re-apply on resize and orientation change
-        window.addEventListener('resize', applyFixedHeader);
-        window.addEventListener('orientationchange', applyFixedHeader);
-
-        // Watch for header size changes (dynamic content) and reapply spacing
-        if (window.ResizeObserver) {
-          const ro = new ResizeObserver(applyFixedHeader);
-          ro.observe(header);
-        }
+      // Measure header height only once
+      if (initialHeaderHeight === null) {
+        initialHeaderHeight = Math.ceil(header.getBoundingClientRect().height);
       }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
-      } else {
-        init();
-      }
-    })();
+      // Apply a small visual padding (6px gap)
+      const finalHeight = initialHeaderHeight + 6;
+
+      // Set the header height CSS variable once
+      document.documentElement.style.setProperty('--mobile-header-height', `${finalHeight}px`);
+
+      // Apply top padding to main content so it doesn't go under the header
+      main.style.paddingTop = `${finalHeight}px`;
+    }
+
+    // Only call this once on DOM load and on orientation change
+    document.addEventListener('DOMContentLoaded', applyFixedHeader);
+    window.addEventListener('orientationchange', applyFixedHeader);
   </script>
 
   <script>
