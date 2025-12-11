@@ -15,6 +15,20 @@ import { saveFolders } from './js/modules/notes-storage.js';
 
 initViewportHeight();
 
+document.querySelector('.fab-button')?.addEventListener('click', () => {
+  openEditor();
+});
+
+function openEditor() {
+  const editorSheet = document.querySelector('#noteEditorSheet');
+  editorSheet.classList.remove('hidden');
+
+  setTimeout(() => {
+    editorSheet.querySelector('.note-title')?.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 50);
+}
+
 /* BEGIN GPT CHANGE: bottom sheet open/close */
 (function () {
   const setupSheet = () => {

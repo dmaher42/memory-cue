@@ -5230,6 +5230,15 @@ body {
   line-height: 1.5;
 }
 
+.sheet {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.sheet.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Move-to-folder bottom sheet */
 .sheet-backdrop {
   position: fixed;
