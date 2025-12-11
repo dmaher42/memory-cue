@@ -1612,7 +1612,10 @@ const initMobileNotes = () => {
 
     // ensure the sheet can anchor absolute children
     try {
-      savedNotesSheet.style.position = savedNotesSheet.style.position || 'fixed';
+      const currentPosition = savedNotesSheet.style?.position;
+      if (!currentPosition || currentPosition === 'relative') {
+        savedNotesSheet.style.position = 'fixed';
+      }
     } catch (e) {
       /* ignore */
     }
@@ -3919,7 +3922,7 @@ document.addEventListener('click', (ev) => {
 /* END GPT CHANGE */
 // DIAGNOSIS (HTML): #savedNotesSheet is a fixed, full-viewport overlay (z-index 95) with no top padding; nothing else in the markup has a higher z-index in this scope.
 // DIAGNOSIS (CSS): The sheet is styled to cover the viewport with a 100dvh panel and no top margin; scrolling is meant to occur inside .saved-notes-list-shell, not on the body.
-// DIAGNOSIS (JS): showSavedNotesSheet() marks the overlay open but ensureFloatingNewFolderFab() later forces savedNotesSheet.style.position = 'relative', removing its fixed overlay behavior; window.scrollTo uses a behavior value ('instant') that browsers ignore.
+// DIAGNOSIS (JS): showSavedNotesSheet() marks the overlay open but ensureFloatingNewFolderFab() later forces savedNotesSheet.style.position = 'relative', removing its fixed overlay behavior; window.scrollTo uses an unsupported behavior value that browsers ignore.
 // ROOT CAUSE:
 // 1) ensureFloatingNewFolderFab() overrides the #savedNotesSheet position to relative, pulling the overlay into normal flow so it appears lower on the page when the body is scrolled.
 // 2) The attempted scrollTo uses an unsupported behavior value and may not reliably reset scroll before opening, reinforcing the impression that the sheet opens from the current scroll position.
