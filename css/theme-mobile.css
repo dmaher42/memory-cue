@@ -648,7 +648,7 @@ body.mobile-theme .text-secondary {
 /* Make the scratch-notes wrapper fill and the card extend properly */
 #view-notebook .scratch-notes-wrapper {
   margin-top: 0;
-  padding-top: 0.12rem;
+  padding-top: 3.5rem;
 }
 
 /* Allow the scratch-notes card to use the full vertical space */
