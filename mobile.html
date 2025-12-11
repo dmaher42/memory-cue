@@ -389,11 +389,11 @@
   }
 
   /* Notebook: no extra top padding from card-body */
-  body[data-active-view="notebook"] #view-notebook .card-body {
-    padding: 0rem 0.75rem 0.6rem;
-    margin-top: 0 !important;
-    min-height: calc(100dvh - var(--mobile-bottom-nav-height, 80px));
-  }
+body[data-active-view="notebook"] #view-notebook .card-body {
+  padding: 0rem 0.75rem 0.6rem;
+  margin-top: 0 !important;
+  min-height: auto;
+}
 
   /* Notebook “sheet”: full-width, flat, no card chrome */
   .mobile-panel--notes #scratch-notes-card {
@@ -414,20 +414,20 @@
     box-shadow: none;
   }
 
-  .mobile-panel--notes {
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
+.mobile-panel--notes {
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+}
 
   /* Single intentional gap between header + notebook */
-  .mobile-panel--notes .mobile-view-inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem; /* ~4px breathing space */
-    padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
-  }
+.mobile-panel--notes .mobile-view-inner {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* ~4px breathing space */
+  padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
+}
 
   .mobile-panel--notes header.mobile-header {
     flex-shrink: 0;
@@ -437,12 +437,12 @@
     margin-top: 0.18rem;
   }
 
-  .mobile-panel--notes #scratch-notes-card .notes-editor {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: none;       /* allow it to use available height */
-    overflow-y: auto;       /* scroll inside the text area on very long notes */
-  }
+.mobile-panel--notes #scratch-notes-card .notes-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;       /* allow it to use available height */
+  overflow-y: visible;    /* allow the page to scroll to the footer */
+}
 
   .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
     position: fixed;
