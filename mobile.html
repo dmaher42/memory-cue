@@ -4905,6 +4905,18 @@ body, main, section, div, p, span, li {
       color: var(--text-strong, #34163f);
     }
 
+    .force-fixed {
+      position: sticky;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 999;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
     /* Tighter header sizing for small mobile viewports */
     @media (max-width: 420px) {
       .reminders-top-row {
