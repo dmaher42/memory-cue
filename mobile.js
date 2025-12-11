@@ -442,6 +442,7 @@ const initMobileNotes = () => {
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notebook-search-input');
+  const folderFilterSelect = document.getElementById('folderFilterSelect');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
     document.getElementById('openSavedNotesGlobal') ||
@@ -1348,12 +1349,8 @@ const initMobileNotes = () => {
       }
     });
   };
-  const buildFolderChips = () => {
-    const folderBar = getFolderBarEl();
-    if (!folderBar) return;
-    folderBar.innerHTML = '';
-    const filterBar = document.createElement('div');
-    filterBar.className = 'notebook-folder-filter-bar';
+
+  const getFolderModel = () => {
     let folders = [];
     try {
       folders = Array.isArray(getFolders()) ? getFolders() : [];
@@ -1367,14 +1364,44 @@ const initMobileNotes = () => {
       .filter((f) => f && f.id !== 'unsorted')
       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
 
-    const folderListForCounts = [unsortedFolder, ...extraFolders];
-    const noteCounts = getNoteCountsByFolder(allNotes, folderListForCounts);
-
     const chipModel = [
       { id: 'all', name: 'All notes', isVirtual: true },
       { ...unsortedFolder, isVirtual: false },
       ...extraFolders.map((f) => ({ ...f, isVirtual: false })),
     ];
+
+    return { chipModel, unsortedFolder, extraFolders };
+  };
+
+  const setActiveFolderFilter = (folderId) => {
+    if (!folderFilterSelect) return;
+    const normalized = folderId || 'all';
+    folderFilterSelect.value = normalized;
+  };
+
+  const buildFolderFilterSelect = (chipModelOverride = null) => {
+    if (!folderFilterSelect) return;
+    const model = Array.isArray(chipModelOverride) ? chipModelOverride : getFolderModel().chipModel;
+    folderFilterSelect.innerHTML = '';
+
+    model.forEach((folder) => {
+      const option = document.createElement('option');
+      option.value = folder.id || 'unsorted';
+      option.textContent = folder.name || 'Folder';
+      folderFilterSelect.appendChild(option);
+    });
+
+    setActiveFolderFilter(currentFolderId);
+  };
+  const buildFolderChips = () => {
+    const folderBar = getFolderBarEl();
+    if (!folderBar) return;
+    folderBar.innerHTML = '';
+    const filterBar = document.createElement('div');
+    filterBar.className = 'notebook-folder-filter-bar';
+    const { chipModel, unsortedFolder, extraFolders } = getFolderModel();
+    const folderListForCounts = [unsortedFolder, ...extraFolders];
+    const noteCounts = getNoteCountsByFolder(allNotes, folderListForCounts);
 
     const createChip = (folder) => {
       const chip = document.createElement('button');
@@ -1444,6 +1471,7 @@ const initMobileNotes = () => {
 
     // ensure active chip is visually set and scrolled into view
     setActiveFolderChip(currentFolderId);
+    buildFolderFilterSelect(chipModel);
   };
 
   // Ensure a floating action button (FAB) exists inside the saved notes sheet
@@ -2576,6 +2604,17 @@ const initMobileNotes = () => {
     filterInput.addEventListener('search', handleFilterInput);
   }
 
+  if (folderFilterSelect) {
+    folderFilterSelect.addEventListener('change', (event) => {
+      const value = event?.target?.value || 'all';
+      currentFolderId = value || 'all';
+      setActiveFolderChip(currentFolderId);
+      setActiveFolderFilter(currentFolderId);
+      clearSearchFilter();
+      renderFilteredNotes();
+    });
+  }
+
   const applyInitialSelection = () => {
     refreshFromStorage({ preserveDraft: false });
   };
@@ -2768,6 +2807,7 @@ const initMobileNotes = () => {
 
   updateToolbarState();
   applyInitialSelection();
+  buildFolderFilterSelect();
 
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (event) => {
