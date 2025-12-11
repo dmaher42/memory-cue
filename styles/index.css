@@ -56,6 +56,7 @@ html {
   margin-bottom: 8px;
   font-size: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
 }
 
 .saved-notes-list .note-card-header {
@@ -64,6 +65,7 @@ html {
   justify-content: space-between;
   gap: 0.5rem;
   min-width: 0;
+  padding-right: 40px;
 }
 
 .saved-notes-list .note-card-title {
@@ -91,11 +93,55 @@ html {
   font-size: 1.1rem;
   line-height: 1;
   color: var(--text-secondary, #cbd5e1);
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
 }
 
 .saved-notes-list .note-card-action:hover,
 .saved-notes-list .note-card-action:focus-visible {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.saved-notes-list .note-card-menu {
+  position: absolute;
+  top: 46px;
+  right: 10px;
+  min-width: 160px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(12, 12, 16, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 3;
+}
+
+.saved-notes-list .note-card-menu.open {
+  display: flex;
+}
+
+.saved-notes-list .note-card-menu-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--text-primary, #e5e7eb);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.saved-notes-list .note-card-menu-item:hover,
+.saved-notes-list .note-card-menu-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.saved-notes-list .note-card-menu-danger {
+  color: #fca5a5;
 }
 
 .saved-notes-list .note-card-meta {
