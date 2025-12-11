@@ -669,8 +669,8 @@
   /* ===== Notebook sidebar layout ===== */
   .notebook-sidebar-layout {
     display: grid;
-    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
     align-items: stretch;
     height: 100%;
     overflow: hidden;
@@ -968,6 +968,22 @@
     padding: 12px;
     flex: 1;
     min-height: 0;
+  }
+
+  .folder-filter-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .folder-filter {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: #ffffff;
+    color: #111827;
+    min-width: 160px;
   }
 
   /* Scrollable area inside the sidebar */
@@ -6003,37 +6019,6 @@ body, main, section, div, p, span, li {
             class="saved-notes-panel notebook-sheet saved-notes-container"
           >
             <div class="notebook-sidebar-layout">
-              <!-- Left sidebar nav -->
-              <nav class="notebook-sidebar-nav" aria-label="Notebook sections">
-                <button class="notebook-nav-item is-active" data-folder-filter="all">
-                  <span class="notebook-nav-icon">
-                    <span class="nav-icon-dot"></span>
-                  </span>
-                  <span class="notebook-nav-label">All notes</span>
-                </button>
-
-                <button class="notebook-nav-item" data-folder-filter="unsorted">
-                  <span class="notebook-nav-icon">
-                    <span class="nav-icon-dot"></span>
-                  </span>
-                  <span class="notebook-nav-label">Unsorted</span>
-                </button>
-
-                <button class="notebook-nav-item" data-folder-filter="school">
-                  <span class="notebook-nav-icon">
-                    <span class="nav-icon-dot"></span>
-                  </span>
-                  <span class="notebook-nav-label">School</span>
-                </button>
-
-                <button class="notebook-nav-item" data-folder-filter="shopping">
-                  <span class="notebook-nav-icon">
-                    <span class="nav-icon-dot"></span>
-                  </span>
-                  <span class="notebook-nav-label">Shopping</span>
-                </button>
-              </nav>
-
               <!-- Main notebook content -->
               <div class="notebook-sidebar-main">
                 <div class="saved-notes-controls">
@@ -6069,6 +6054,15 @@ body, main, section, div, p, span, li {
                 </div>
 
                 <div class="saved-notes-list-container saved-notes-list-shell">
+                  <div class="folder-filter-row">
+                    <label class="sr-only" for="folderFilterSelect">Filter by folder</label>
+                    <select id="folderFilterSelect" class="folder-filter">
+                      <option value="all">All notes</option>
+                      <option value="unsorted">Unsorted</option>
+                      <option value="school">School</option>
+                      <option value="shopping">Shopping</option>
+                    </select>
+                  </div>
                   <div class="saved-notes-list">
                     <ul
                       id="notesListMobile"
@@ -6590,7 +6584,7 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-4X3DCUB7.js"></script>
+  <script type="module" src="./assets/mobile-6T6WYFWA.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
