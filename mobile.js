@@ -442,7 +442,8 @@ const initMobileNotes = () => {
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
   const filterInput = document.getElementById('notebook-search-input');
-  const folderFilterDropdown = document.querySelector('.folder-filter');
+  const folderFilterSelect = document.getElementById('folderFilterSelect');
+  const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
     document.getElementById('openSavedNotesGlobal') ||
@@ -1579,10 +1580,17 @@ const initMobileNotes = () => {
     newFolderModalController.show();
   };
 
-    // Expose helper globally for other scripts or tests that expect a window-level API
-    if (typeof window !== 'undefined' && typeof window.openNewFolderDialog === 'undefined') {
-      window.openNewFolderDialog = openNewFolderDialog;
-    }
+  // Expose helper globally for other scripts or tests that expect a window-level API
+  if (typeof window !== 'undefined' && typeof window.openNewFolderDialog === 'undefined') {
+    window.openNewFolderDialog = openNewFolderDialog;
+  }
+
+  if (folderFilterNewButton) {
+    folderFilterNewButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      openNewFolderDialog();
+    });
+  }
 
   const createNewFolder = () => {
     if (!newFolderNameInput) return;
@@ -1625,6 +1633,11 @@ const initMobileNotes = () => {
       buildFolderChips();
     } catch (e) {
       console.warn('[notebook] rebuild folder chips failed', e);
+    }
+    try {
+      buildFolderFilterSelect();
+    } catch (e) {
+      console.warn('[notebook] rebuild folder filter failed', e);
     }
     if (typeof afterFolderCreated === 'function') {
       try {
