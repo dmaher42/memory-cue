@@ -5285,6 +5285,42 @@ body {
   color: var(--text-main, #231b2e);
 }
 
+.move-to-folder-sheet {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  z-index: 50;
+}
+
+.move-to-folder-sheet .sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.move-to-folder-sheet .sheet-body {
+  background: var(--surface, var(--surface-elevated, #f9f9fb));
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 16px;
+  width: 100%;
+  max-height: 50%;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.move-to-folder-sheet .folder-option-list li {
+  padding: 12px;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+
+.move-to-folder-sheet .folder-option-list li:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .folder-select-list {
   display: flex;
   flex-direction: column;
