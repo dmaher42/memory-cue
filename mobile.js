@@ -379,8 +379,8 @@ const bootstrapReminders = () => {
     notifBtnSel: '#notifBtn',
     categoryOptionsSel: '#categorySuggestions',
     countTotalSel: '#totalCount',
-    googleSignInBtnSel: '#googleSignInBtn',
-    googleSignOutBtnSel: '#googleSignOutBtn',
+    googleSignInBtnSel: '#googleSignInBtn, #googleSignInBtnMenu',
+    googleSignOutBtnSel: '#googleSignOutBtn, #googleSignOutBtnMenu',
     googleAvatarSel: '#googleAvatar',
     googleUserNameSel: '#googleUserName',
     syncAllBtnSel: '#syncAll',
@@ -3000,7 +3000,7 @@ function wireMobileNotesSupabaseAuth() {
 
   const getMenuActionTarget = (event) => {
     const target = event.target;
-    if (!(target instanceof Element)) return null;
+    if (typeof Element === 'undefined' || !(target instanceof Element)) return null;
     return target.closest('[data-menu-action]');
   };
 
@@ -3021,8 +3021,6 @@ function wireMobileNotesSupabaseAuth() {
           document.querySelector('[data-reminders-filter="completed"]');
         if (completedTab instanceof HTMLElement) {
           completedTab.click();
-        } else if (window.remindersController && typeof window.remindersController.setFilter === 'function') {
-          window.remindersController.setFilter('completed');
         } else if (typeof window.setMobileRemindersFilter === 'function') {
           window.setMobileRemindersFilter('completed');
         }
@@ -3033,6 +3031,12 @@ function wireMobileNotesSupabaseAuth() {
         const settingsTrigger = document.querySelector('[data-open="settings"]');
         if (settingsTrigger instanceof HTMLElement) {
           settingsTrigger.click();
+        } else {
+          const settingsModal = document.getElementById('settingsModal');
+          if (settingsModal instanceof HTMLElement) {
+            settingsModal.classList.remove('hidden');
+            settingsModal.removeAttribute('aria-hidden');
+          }
         }
         break;
       }

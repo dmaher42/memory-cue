@@ -577,6 +577,8 @@ export async function initReminders(sel = {}) {
     let baseText;
     if (mobileRemindersFilterMode === 'today') {
       baseText = `Today\u2019s reminders \u2022 ${todayLabel}`;
+    } else if (mobileRemindersFilterMode === 'completed') {
+      baseText = `Completed reminders \u2022 ${todayLabel}`;
     } else {
       baseText = `All reminders \u2022 ${todayLabel}`;
     }
@@ -3658,17 +3660,49 @@ export async function initReminders(sel = {}) {
     return filteredByStatus;
   }
 
+  function syncMobileReminderTabUiState() {
+    const tabButtons = document.querySelectorAll(
+      '#view-reminders [data-reminders-tab], #reminders-slim-header [data-reminders-tab]'
+    );
+    if (!tabButtons.length) {
+      return;
+    }
+
+    tabButtons.forEach((button) => {
+      const mode = button.getAttribute('data-reminders-tab');
+      const isActive = mode === mobileRemindersFilterMode;
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      if (isActive) {
+        button.classList.add('reminders-tab-active', 'active');
+      } else {
+        button.classList.remove('reminders-tab-active', 'active');
+      }
+    });
+  }
+
   function applyMobileRemindersFilter(mode) {
     if (!mode || mode === mobileRemindersFilterMode) {
       return false;
     }
 
-    if (!['all', 'today'].includes(mode)) {
+    if (!['all', 'today', 'completed'].includes(mode)) {
       return false;
     }
 
     mobileRemindersFilterMode = mode;
+    syncMobileReminderTabUiState();
     return true;
+  }
+
+  function setMobileRemindersFilter(mode) {
+    if (!applyMobileRemindersFilter(mode)) {
+      return;
+    }
+
+    if (Array.isArray(mobileRemindersCache)) {
+      render();
+    }
+    updateMobileRemindersHeaderSubtitle();
   }
 
   function setupMobileReminderTabs() {
@@ -3678,29 +3712,12 @@ export async function initReminders(sel = {}) {
     if (setupMobileReminderTabs._wired) {
       return;
     }
+    syncMobileReminderTabUiState();
+    updateMobileRemindersHeaderSubtitle();
+
     const tabButtons = document.querySelectorAll(
       '#view-reminders [data-reminders-tab], #reminders-slim-header [data-reminders-tab]'
     );
-    if (!tabButtons.length) {
-      return;
-    }
-    setupMobileReminderTabs._wired = true;
-
-    const syncTabUiState = () => {
-      tabButtons.forEach((button) => {
-        const mode = button.getAttribute('data-reminders-tab');
-        const isActive = mode === mobileRemindersFilterMode;
-        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        if (isActive) {
-          button.classList.add('reminders-tab-active', 'active');
-        } else {
-          button.classList.remove('reminders-tab-active', 'active');
-        }
-      });
-    };
-
-    syncTabUiState();
-    updateMobileRemindersHeaderSubtitle();
 
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => {
@@ -3708,11 +3725,7 @@ export async function initReminders(sel = {}) {
         if (!applyMobileRemindersFilter(mode)) {
           return;
         }
-        syncTabUiState();
-        if (Array.isArray(mobileRemindersCache)) {
-          render();
-        }
-        updateMobileRemindersHeaderSubtitle();
+        setMobileRemindersFilter(mode);
       });
     });
   }
@@ -4493,6 +4506,11 @@ export async function initReminders(sel = {}) {
   rescheduleAllReminders();
   render();
   persistItems();
+
+  if (variant === 'mobile') {
+    window.setMobileRemindersFilter = setMobileRemindersFilter;
+  }
+
   return {
     cancelReminder,
     scheduleReminder,
