@@ -2970,7 +2970,7 @@ body, main, section, div, p, span, li {
 
     /* Mobile-first optimizations */
     :root {
-      --mobile-header-height: calc(35px / 4);
+      --mobile-header-height: 56px;
       --mobile-safe-area-top: env(safe-area-inset-top, 0px);
       --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
@@ -2990,86 +2990,38 @@ body, main, section, div, p, span, li {
   }
 
   #mobile-nav-shell .floating-footer {
-    position: relative;
-    pointer-events: auto;
+    height: var(--mobile-header-height, 56px);
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
-    gap: 24px;
-    width: min(640px, 100%);
-    padding: 6px 1rem 12px;
-    margin-bottom: calc(env(safe-area-inset-bottom, 0.5rem));
-    background: transparent;
-    backdrop-filter: none;
-    border-radius: 1rem;
-    box-shadow: none;
-  }
-
-  #mobile-nav-shell .floating-footer::before {
-    content: "";
-    position: absolute;
-    inset: 0.25rem 0.75rem;
-    border-radius: 999px;
-
-    background: rgba(255, 255, 255, 0.78);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-
-    border: 1px solid var(--border-subtle);
-    z-index: 0;
+    padding: 0 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    pointer-events: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   #mobile-nav-shell .floating-footer .floating-card {
-    flex-shrink: 0;
-  }
-
-  #mobile-nav-shell .floating-card {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-subtle);
-    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.08);
-    font-size: 0.85rem;
-    font-family: var(--font-primary);
-    font-weight: 500;
-    color: #111111;
-    transition:
-      background-color 0.18s ease,
-      transform 0.15s ease,
-      box-shadow 0.22s ease,
-      color 0.18s ease;
+    background: transparent;
+    border: none;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.1s ease;
   }
 
-  #mobile-nav-shell .floating-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(81, 38, 99, 0.12);
-  }
-
-  #mobile-nav-shell .floating-card:focus-visible {
-    outline: none;
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(81, 38, 99, 0.12);
-  }
-
-  #mobile-nav-shell .floating-card:active {
-    transform: scale(0.94);
-  }
-
-  #mobile-nav-shell .floating-card.active,
-  #mobile-nav-shell .floating-card.is-active {
-    background-color: rgba(255, 255, 255, 0.94);
-    border-color: var(--icon-active);
-    color: var(--icon-active);
-    box-shadow:
-      0 8px 20px rgba(81, 38, 99, 0.16),
-      0 0 0 1px color-mix(in srgb, var(--icon-active) 20%, transparent);
+  #mobile-nav-shell .floating-footer .floating-card:hover {
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .icon {
@@ -3093,17 +3045,11 @@ body, main, section, div, p, span, li {
   }
 
   .floating-footer .floating-card svg {
-    stroke: currentColor;
+    width: 22px;
+    height: 22px;
+    stroke: var(--icon-color, #512663);
     fill: none;
-    opacity: 1 !important;
-  }
-
-  .floating-footer .floating-card:hover svg,
-  .floating-footer .floating-card:active svg,
-  .floating-footer .floating-card.active svg,
-  .floating-footer .floating-card.is-active svg {
-    stroke: currentColor;
-    fill: none;
+    stroke-width: 1.75;
     opacity: 1 !important;
   }
 
