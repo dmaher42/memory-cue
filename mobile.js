@@ -1473,12 +1473,12 @@ const initMobileNotes = () => {
     const fab = document.createElement('button');
     fab.id = 'fabNewFolder';
     fab.type = 'button';
-    fab.className = 'fab-new-folder';
+    fab.className = 'fab-new-folder fab-button';
     fab.setAttribute('aria-label', 'Create new folder');
     fab.setAttribute('title', 'Create new folder');
     fab.innerHTML = `
-      <span class="fab-icon" aria-hidden="true">+</span>
-      <span class="fab-label">New folder</span>
+      <span aria-hidden="true">+</span>
+      <span class="sr-only">New folder</span>
     `;
     fab.addEventListener('click', (ev) => {
       ev.preventDefault();
