@@ -1198,6 +1198,57 @@ const initMobileNotes = () => {
     refreshFromStorage({ preserveDraft: false });
   };
 
+  let activeNoteCardMenu = null;
+  let activeNoteCardMenuButton = null;
+
+  const closeActiveNoteMenu = () => {
+    if (activeNoteCardMenu) {
+      activeNoteCardMenu.classList.remove('open');
+    }
+    if (activeNoteCardMenuButton) {
+      activeNoteCardMenuButton.setAttribute('aria-expanded', 'false');
+    }
+    activeNoteCardMenu = null;
+    activeNoteCardMenuButton = null;
+  };
+
+  const openNoteCardMenu = (menuEl, triggerEl) => {
+    if (!menuEl || !triggerEl) return;
+    if (activeNoteCardMenu === menuEl) {
+      closeActiveNoteMenu();
+      return;
+    }
+    closeActiveNoteMenu();
+    activeNoteCardMenu = menuEl;
+    activeNoteCardMenuButton = triggerEl;
+    triggerEl.setAttribute('aria-expanded', 'true');
+    menuEl.classList.add('open');
+  };
+
+  const handleGlobalNoteMenuClose = (event) => {
+    if (!activeNoteCardMenu || !activeNoteCardMenuButton) {
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (
+      activeNoteCardMenu.contains(target)
+      || activeNoteCardMenuButton.contains(target)
+    ) {
+      return;
+    }
+    closeActiveNoteMenu();
+  };
+
+  document.addEventListener('click', handleGlobalNoteMenuClose);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeActiveNoteMenu();
+    }
+  });
+
   const renderNotesList = (notes = [], { withTransition = true } = {}) => {
     if (withTransition) {
       runNotebookListTransition(() => renderNotesList(notes, { withTransition: false }));
@@ -1208,6 +1259,7 @@ const initMobileNotes = () => {
       return notes;
     }
 
+    closeActiveNoteMenu();
     listElement.innerHTML = '';
 
     if (countElement) {
@@ -1314,13 +1366,54 @@ const initMobileNotes = () => {
       actionBtn.dataset.role = 'note-menu';
       actionBtn.className = 'note-row-overflow note-list-overflow note-options-button note-card-action';
       actionBtn.setAttribute('aria-label', 'Note actions');
+      actionBtn.setAttribute('aria-expanded', 'false');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
-      actionBtn.textContent = '⋯';
+      actionBtn.textContent = '⋮';
 
-      titleRow.appendChild(actionBtn);
+      const actionMenu = document.createElement('div');
+      actionMenu.className = 'note-card-menu';
+      actionMenu.setAttribute('role', 'menu');
 
+      const moveMenuItem = document.createElement('button');
+      moveMenuItem.type = 'button';
+      moveMenuItem.className = 'note-card-menu-item';
+      moveMenuItem.textContent = 'Move to Folder';
+      moveMenuItem.setAttribute('role', 'menuitem');
+      moveMenuItem.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeActiveNoteMenu();
+        openFolderSelectorForNote(note.id, {
+          initialFolderId: folderId,
+          triggerEl: actionBtn,
+        });
+      });
+
+      const deleteMenuItem = document.createElement('button');
+      deleteMenuItem.type = 'button';
+      deleteMenuItem.className = 'note-card-menu-item note-card-menu-danger';
+      deleteMenuItem.textContent = 'Delete';
+      deleteMenuItem.setAttribute('role', 'menuitem');
+      deleteMenuItem.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeActiveNoteMenu();
+        handleDeleteNote(note.id);
+      });
+
+      actionBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openNoteCardMenu(actionMenu, actionBtn);
+      });
+
+      actionMenu.appendChild(moveMenuItem);
+      actionMenu.appendChild(deleteMenuItem);
+
+      noteCard.appendChild(actionBtn);
       noteCard.appendChild(cardMain);
+      noteCard.appendChild(actionMenu);
       listItem.appendChild(noteCard);
       listElement.appendChild(listItem);
     });
