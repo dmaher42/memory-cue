@@ -1944,6 +1944,18 @@ input.notebook-notes-search::placeholder {
   }
 }
 
+[data-route="notes"] .section-columns {
+  align-items: flex-start;
+}
+
+@media (min-width: 1024px) {
+  [data-route="notes"] .section-column {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
  .desktop-shell .desktop-main-region {
   display: flex;
   flex-direction: column;
