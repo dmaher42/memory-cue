@@ -11,6 +11,12 @@ html {
   scroll-behavior: smooth;
 }
 
+.saved-notes-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .saved-notes-panel {
   display: flex;
   flex-direction: column;
@@ -34,6 +40,7 @@ html {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+  padding-bottom: 12px;
 }
 
 @media (min-width: 640px) {
