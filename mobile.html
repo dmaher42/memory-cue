@@ -986,6 +986,27 @@
     min-width: 160px;
   }
 
+  .folder-filter-action-row {
+    margin: -2px 0 12px;
+  }
+
+  .folder-filter-new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+    font-size: 0.85rem;
+    color: var(--accent-color, #512663);
+    background: transparent;
+    border: none;
+    text-decoration: none;
+  }
+
+  .folder-filter-new-btn:hover,
+  .folder-filter-new-btn:focus-visible {
+    text-decoration: underline;
+  }
+
   /* Scrollable area inside the sidebar */
   .saved-notes-list-shell {
     flex: 1 1 auto;
@@ -6063,6 +6084,12 @@ body, main, section, div, p, span, li {
                       <option value="shopping">Shopping</option>
                     </select>
                   </div>
+                  <div class="folder-filter-action-row">
+                    <button id="folderFilterNewFolder" class="folder-filter-new-btn" type="button">
+                      <span aria-hidden="true">+</span>
+                      <span>New Folder</span>
+                    </button>
+                  </div>
                   <div class="saved-notes-list">
                     <ul
                       id="notesListMobile"
@@ -6584,7 +6611,7 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./assets/register-service-worker-J3ZRTHIR.js" defer></script>
-  <script type="module" src="./assets/mobile-ZHPYNSK5.js"></script>
+  <script type="module" src="./assets/mobile-HXE2O6TU.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
