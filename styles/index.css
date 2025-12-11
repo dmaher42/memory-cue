@@ -5201,6 +5201,23 @@ body {
   outline-offset: 1px;
 }
 
+.note-title {
+  width: 100%;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 0;
+  margin-bottom: 8px;
+  color: inherit;
+}
+
+.note-title:focus {
+  outline: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
 .note-editor-content,
 .note-editor-card .note-editor-area {
   min-height: 220px;
