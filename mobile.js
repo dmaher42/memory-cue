@@ -449,12 +449,9 @@ const initMobileNotes = () => {
     document.getElementById('openSavedNotesGlobal') ||
     document.getElementById('savedNotesShortcut');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
-  const folderSelectorEl = document.getElementById('moveFolderSheet');
-  const folderSelectorUnsortedBtn = document.getElementById('move-folder-unsorted');
-  const folderSelectorListEl = document.getElementById('move-folder-list');
-  const folderSelectorCreateBtn = document.getElementById('move-folder-create');
-  const folderSelectorCancelBtn = document.getElementById('move-folder-cancel');
-  const folderSelectorSheet = folderSelectorEl?.querySelector('.sheet-panel');
+  const folderSelectorEl = document.querySelector('.move-to-folder-sheet');
+  const folderSelectorListEl = folderSelectorEl?.querySelector('.folder-option-list');
+  const folderSelectorBackdrop = folderSelectorEl?.querySelector('.sheet-backdrop');
   const noteFolderSheet = document.getElementById('note-folder-sheet');
   const noteFolderSheetBackdrop = document.getElementById('note-folder-sheet-backdrop');
   const noteFolderSheetList = noteFolderSheet?.querySelector('.note-folder-sheet-list');
@@ -2048,80 +2045,8 @@ const initMobileNotes = () => {
     });
   }
 
-  const FOLDER_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-  const getFolderSelectorFocusables = () => {
-    if (!folderSelectorSheet) return [];
-    const nodes = folderSelectorSheet.querySelectorAll(FOLDER_FOCUSABLE_SELECTOR);
-    return Array.from(nodes).filter(
-      (node) =>
-        node instanceof HTMLElement &&
-        !node.hasAttribute('disabled') &&
-        node.tabIndex !== -1 &&
-        node.offsetParent !== null,
-    );
-  };
-
-  const focusFirstFolderSelectorItem = () => {
-    const focusables = getFolderSelectorFocusables();
-    if (focusables.length) {
-      try {
-        focusables[0].focus({ preventScroll: true });
-      } catch {
-        /* ignore */
-      }
-      return;
-    }
-    if (folderSelectorSheet) {
-      try {
-        folderSelectorSheet.focus({ preventScroll: true });
-      } catch {
-        /* ignore */
-      }
-    }
-  };
-
-  const setActiveFolderRow = (folderId) => {
-    const targetId = String(folderId || 'unsorted');
-    const rows = folderSelectorListEl?.querySelectorAll('.folder-select-row') || [];
-    rows.forEach((row) => {
-      if (!(row instanceof HTMLElement)) return;
-      const isActive = row.dataset.folderId === targetId;
-      row.classList.toggle('folder-select-row--active', isActive);
-      row.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
-    if (folderSelectorUnsortedBtn) {
-      const isUnsorted = targetId === 'unsorted';
-      folderSelectorUnsortedBtn.classList.toggle('folder-select-row--active', isUnsorted);
-      folderSelectorUnsortedBtn.setAttribute('aria-selected', isUnsorted ? 'true' : 'false');
-    }
-  };
-
-  const handleFolderSelectorKeydown = (event) => {
-    if (!folderSelectorEl || folderSelectorEl.classList.contains('hidden')) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeMoveFolderSheet();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const focusables = getFolderSelectorFocusables();
-    if (!focusables.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const activeEl = document.activeElement;
-    if (event.shiftKey && activeEl === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && activeEl === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
-
   const handleFolderSelection = (folderId) => {
     const normalized = folderId || 'unsorted';
-    setActiveFolderRow(normalized);
     if (folderSelectorOnSelect) {
       folderSelectorOnSelect(normalized);
     } else if (currentFolderMoveNoteId) {
@@ -2130,32 +2055,23 @@ const initMobileNotes = () => {
       currentEditingNoteFolderId = normalized;
       const labelEl = document.getElementById('note-folder-label');
       if (labelEl) {
-        labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
+        labelEl.textContent = getFolderNameById(currentEditingNoteFolderId) || 'Unsorted';
       }
     }
     closeMoveFolderSheet();
   };
 
-  const closeMoveFolderSheet = (options = {}) => {
-    const { preserveCreateHandler = false } = options || {};
+  const closeMoveFolderSheet = () => {
     if (folderSelectorEl) {
       folderSelectorEl.classList.add('hidden');
       folderSelectorEl.setAttribute('aria-hidden', 'true');
     }
     if (folderSelectorListEl) {
-      const rows = folderSelectorListEl.querySelectorAll('.folder-select-row');
-      rows.forEach((row) => {
-        if (row.id !== 'move-folder-unsorted') {
-          row.remove();
-        }
-      });
+      folderSelectorListEl.innerHTML = '';
     }
     currentFolderMoveNoteId = null;
     folderSelectorOnSelect = null;
-    if (!preserveCreateHandler) {
-      afterFolderCreated = null;
-    }
-    document.removeEventListener('keydown', handleFolderSelectorKeydown);
+    afterFolderCreated = null;
     if (noteFolderBtn) {
       noteFolderBtn.setAttribute('aria-expanded', 'false');
     }
@@ -2178,12 +2094,6 @@ const initMobileNotes = () => {
     currentFolderMoveNoteId = noteId || null;
     folderSelectorOnSelect = typeof onSelect === 'function' ? onSelect : null;
     activeFolderSheetOpener = triggerEl || document.activeElement;
-    const rows = folderSelectorListEl.querySelectorAll('.folder-select-row');
-    rows.forEach((row) => {
-      if (row.id !== 'move-folder-unsorted') {
-        row.remove();
-      }
-    });
 
     let folders = [];
     try {
@@ -2192,12 +2102,7 @@ const initMobileNotes = () => {
       folders = [];
     }
 
-    const unsortedFolder = { id: 'unsorted', name: 'Unsorted' };
-    const hasUnsorted = folders.some((f) => f && f.id === 'unsorted');
-    if (!hasUnsorted) {
-      folders.unshift(unsortedFolder);
-    }
-
+    const unsortedFolder = { id: 'unsorted', name: getFolderNameById('unsorted') || 'Unsorted' };
     const activeNote = noteId ? allNotes.find((n) => n.id === noteId) || null : null;
     const activeFolderId =
       initialFolderId ||
@@ -2206,82 +2111,32 @@ const initMobileNotes = () => {
         : currentEditingNoteFolderId || 'unsorted');
 
     const sortedFolders = folders
-      .filter((folder) => folder && folder.id !== 'unsorted')
+      .filter((folder) => folder && folder.id && folder.id !== 'unsorted')
       .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
-    const counts = getNoteCountsByFolder(allNotes, [unsortedFolder, ...sortedFolders]);
-
-    if (folderSelectorUnsortedBtn) {
-      const countEl = folderSelectorUnsortedBtn.querySelector('.folder-select-row__count');
-      if (countEl) {
-        countEl.textContent = counts.unsorted || 0;
-      }
-      const nameEl = folderSelectorUnsortedBtn.querySelector('.folder-select-row__name');
-      if (nameEl) {
-        nameEl.textContent = hasUnsorted ? getFolderNameById('unsorted') || 'Unsorted' : 'Unsorted';
-      }
-    }
-
-    const createFolderRow = (folder) => {
-      const row = document.createElement('button');
-      row.className = 'folder-select-row';
-      row.dataset.folderId = folder.id;
+    const folderOptions = [unsortedFolder, ...sortedFolders];
+    folderSelectorListEl.innerHTML = '';
+    folderOptions.forEach((folder) => {
+      const row = document.createElement('li');
+      row.dataset.folderId = folder.id || 'unsorted';
+      row.textContent = folder.name || String(folder.id);
       row.setAttribute('role', 'option');
-      row.type = 'button';
-      row.setAttribute('aria-selected', 'false');
-
-      const left = document.createElement('div');
-      left.className = 'folder-select-row__left';
-
-      const dot = document.createElement('span');
-      dot.className = 'folder-select-row__dot';
-      dot.setAttribute('aria-hidden', 'true');
-      left.appendChild(dot);
-
-      const nameEl = document.createElement('span');
-      nameEl.className = 'folder-select-row__name';
-      nameEl.textContent = folder.name || String(folder.id);
-      left.appendChild(nameEl);
-
-      row.appendChild(left);
-
-      const countEl = document.createElement('span');
-      countEl.className = 'folder-select-row__count';
-      countEl.textContent = counts[folder.id] || 0;
-      row.appendChild(countEl);
-
-      return row;
-    };
-
-    sortedFolders.forEach((folder) => {
-      if (typeof folder.id === 'undefined') return;
-      const row = createFolderRow(folder);
+      if (row.dataset.folderId === String(activeFolderId)) {
+        row.setAttribute('aria-current', 'true');
+      }
       folderSelectorListEl.appendChild(row);
     });
 
-    setActiveFolderRow(activeFolderId);
-
     folderSelectorEl.classList.remove('hidden');
     folderSelectorEl.setAttribute('aria-hidden', 'false');
-    if (folderSelectorSheet) {
-      try {
-        folderSelectorSheet.focus({ preventScroll: true });
-      } catch {
-        /* ignore */
-      }
-    }
     if (triggerEl === noteFolderBtn) {
       noteFolderBtn.setAttribute('aria-expanded', 'true');
     }
-    document.addEventListener('keydown', handleFolderSelectorKeydown);
-    focusFirstFolderSelectorItem();
   };
 
   if (folderSelectorListEl) {
     folderSelectorListEl.addEventListener('click', (event) => {
       const row =
-        event.target instanceof HTMLElement
-          ? event.target.closest('.folder-select-row')
-          : null;
+        event.target instanceof HTMLElement ? event.target.closest('li') : null;
       if (!row || !folderSelectorListEl.contains(row)) return;
       event.preventDefault();
       handleFolderSelection(row.dataset.folderId || 'unsorted');
@@ -2289,63 +2144,26 @@ const initMobileNotes = () => {
 
     folderSelectorListEl.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
-      const row =
-        event.target instanceof HTMLElement
-          ? event.target.closest('.folder-select-row')
-          : null;
+      const row = event.target instanceof HTMLElement ? event.target.closest('li') : null;
       if (!row || !folderSelectorListEl.contains(row)) return;
       event.preventDefault();
       handleFolderSelection(row.dataset.folderId || 'unsorted');
     });
   }
 
-  if (folderSelectorUnsortedBtn) {
-    folderSelectorUnsortedBtn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      handleFolderSelection('unsorted');
-    });
-  }
-
-  if (folderSelectorEl) {
-    folderSelectorEl.addEventListener('click', (ev) => {
-      if (ev.target === folderSelectorEl) {
-        ev.preventDefault();
-        closeMoveFolderSheet();
-      }
-    });
-  }
-
-  if (folderSelectorCancelBtn) {
-    folderSelectorCancelBtn.addEventListener('click', (event) => {
+  if (folderSelectorBackdrop) {
+    folderSelectorBackdrop.addEventListener('click', (event) => {
       event.preventDefault();
       closeMoveFolderSheet();
     });
   }
 
-  if (folderSelectorCreateBtn) {
-    folderSelectorCreateBtn.addEventListener('click', (event) => {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && folderSelectorEl && !folderSelectorEl.classList.contains('hidden')) {
       event.preventDefault();
-      const pendingNoteId = currentFolderMoveNoteId || currentNoteId;
-      const pendingSelectHandler = folderSelectorOnSelect;
-      afterFolderCreated = (createdId) => {
-        if (pendingSelectHandler) {
-          pendingSelectHandler(createdId);
-        } else if (pendingNoteId) {
-          handleMoveNoteToFolder(pendingNoteId, createdId);
-        } else {
-          currentEditingNoteFolderId = createdId || 'unsorted';
-          const labelEl = document.getElementById('note-folder-label');
-          if (labelEl) {
-            labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
-          }
-        }
-        closeMoveFolderSheet();
-      };
-      closeMoveFolderSheet({ preserveCreateHandler: true });
-      openNewFolderDialog();
-    });
-  }
+      closeMoveFolderSheet();
+    }
+  });
 
   // Reorder folders by swapping `order` with neighbor and normalizing
   const reorderFolder = (folderId, direction) => {
