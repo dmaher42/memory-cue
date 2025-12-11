@@ -2617,13 +2617,16 @@ const initMobileNotes = () => {
     filterInput.addEventListener('search', handleFilterInput);
   }
 
-  if (folderFilterSelect) {
-    folderFilterSelect.addEventListener('change', (event) => {
-      const value = event?.target?.value || 'all';
-      currentFolderId = value || 'all';
-      setActiveFolderChip(currentFolderId);
-      setActiveFolderFilter(currentFolderId);
-      clearSearchFilter();
+  if (folderFilterDropdown) {
+    folderFilterDropdown.addEventListener('change', (event) => {
+      const target = event?.target;
+      if (!(target instanceof HTMLSelectElement)) {
+        return;
+      }
+      const selectedFolderId = (target.value || '').toLowerCase() === 'all'
+        ? 'all'
+        : target.value;
+      currentFolderId = selectedFolderId || 'all';
       renderFilteredNotes();
     });
   }
