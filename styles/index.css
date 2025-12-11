@@ -21,11 +21,13 @@ html {
 .header-bar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 999;
   display: flex;
   align-items: center;
   padding: 6px 12px;
-  background: var(--surface-elevated);
+  background: var(--surface-elevated, rgba(255, 255, 255, 0.75));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-radius: 12px;
   gap: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
