@@ -813,6 +813,16 @@ const initMobileNotes = () => {
   const getNormalizedFilterQuery = () =>
     typeof filterQuery === 'string' ? filterQuery.trim().toLowerCase() : '';
 
+  const normalizeFolderId = (value, { fallback = 'unsorted' } = {}) => {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed.toLowerCase();
+      }
+    }
+    return fallback;
+  };
+
   const getFilteredNotes = (source = allNotes) => {
     if (!Array.isArray(source)) {
       return [];
@@ -844,13 +854,17 @@ const initMobileNotes = () => {
   const getVisibleNotes = (source = allNotes) => {
     if (!Array.isArray(source)) return [];
     // Apply folder filtering first
+    const activeFolder = normalizeFolderId(currentFolderId, { fallback: 'all' });
     let filteredByFolder;
-    if (currentFolderId === null || currentFolderId === 'all') {
+    if (activeFolder === 'all') {
       filteredByFolder = [...source];
-    } else if (currentFolderId === 'unsorted') {
-      filteredByFolder = source.filter((note) => !note.folderId || note.folderId === 'unsorted');
+    } else if (activeFolder === 'unsorted') {
+      filteredByFolder = source.filter((note) => {
+        const noteFolder = normalizeFolderId(note?.folderId);
+        return noteFolder === 'unsorted';
+      });
     } else {
-      filteredByFolder = source.filter((note) => note.folderId === currentFolderId);
+      filteredByFolder = source.filter((note) => normalizeFolderId(note?.folderId) === activeFolder);
     }
     // Then apply search filter
     return sortNotesForDisplay(getFilteredNotes(filteredByFolder));
@@ -2528,15 +2542,13 @@ const initMobileNotes = () => {
     filterInput.addEventListener('search', handleFilterInput);
   }
 
-  if (folderFilterDropdown) {
-    folderFilterDropdown.addEventListener('change', (event) => {
+  if (folderFilterSelect) {
+    folderFilterSelect.addEventListener('change', (event) => {
       const target = event?.target;
       if (!(target instanceof HTMLSelectElement)) {
         return;
       }
-      const selectedFolderId = (target.value || '').toLowerCase() === 'all'
-        ? 'all'
-        : target.value;
+      const selectedFolderId = normalizeFolderId(target.value, { fallback: 'all' });
       currentFolderId = selectedFolderId || 'all';
       renderFilteredNotes();
     });
