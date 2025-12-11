@@ -1755,6 +1755,9 @@ input.notebook-notes-search::placeholder {
 
  .desktop-shell .desktop-header {
   grid-area: header;
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0) + 0.5rem);
+  z-index: 50;
  }
 
  .desktop-shell .desktop-header.desktop-header-bar {
