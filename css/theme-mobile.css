@@ -178,9 +178,9 @@ body.mobile-theme .app-header .icon-button,
 body.mobile-theme .top-bar .icon-button {
   background: transparent;
   border: none;
-  color: #FFFFFF;
+  color: #141010;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.2rem;
   border-radius: 999px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
@@ -189,8 +189,8 @@ body.mobile-theme .top-bar .icon-button {
 .icon-btn svg {
   stroke: currentColor;
   fill: none;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
