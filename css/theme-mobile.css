@@ -189,8 +189,8 @@ body.mobile-theme .top-bar .icon-button {
 .icon-btn svg {
   stroke: currentColor;
   fill: none;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -833,7 +833,7 @@ body.mobile-theme .card-grid {
 
 /* Accessibility Helpers */
 body.mobile-theme :focus-visible {
-  outline: 2px solid #5080BF;
+  outline: 2px solid #424242;
   outline-offset: 2px;
 }
 
