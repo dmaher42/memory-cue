@@ -49,6 +49,17 @@
     overflow: hidden;
   }
 
+  .saved-notes-controls {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+  }
+
+  .saved-notes-list-shell {
+    margin-top: 0;
+  }
+
   .editor, .note-editor {
     flex: 1 1 auto;
     height: auto;
