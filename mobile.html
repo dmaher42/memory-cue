@@ -338,7 +338,7 @@
   body[data-active-view="notebook"] #main {
     max-width: none;
     margin: 0;
-    padding-bottom: 0;
+    padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
   }
 
   /* Ensure notebook content hugs the header with a micro-gap */
@@ -6366,6 +6366,29 @@ body, main, section, div, p, span, li {
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
       if (!navFooter) return;
+
+      const updateBottomNavHeight = () => {
+        const footerRect = navFooter.getBoundingClientRect();
+        const styles = getComputedStyle(navFooter);
+        const marginBottom = parseFloat(styles.marginBottom) || 0;
+        const totalHeight = footerRect.height + marginBottom;
+
+        if (totalHeight > 0) {
+          document.documentElement.style.setProperty(
+            '--mobile-bottom-nav-height',
+            `${Math.ceil(totalHeight)}px`
+          );
+        }
+      };
+
+      updateBottomNavHeight();
+
+      if (typeof ResizeObserver === 'function') {
+        const observer = new ResizeObserver(updateBottomNavHeight);
+        observer.observe(navFooter);
+      } else {
+        window.addEventListener('resize', updateBottomNavHeight, { passive: true });
+      }
 
       const focusNotebookInputs = () => {
         const focusField = () => {
