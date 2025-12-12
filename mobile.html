@@ -616,17 +616,17 @@ body[data-active-view="notebook"] #view-notebook .card-body {
   /* ===== Saved notes sheet – slide in from right side ===== */
   #savedNotesSheet {
     position: fixed;
-    top: 0;
+    top: 58;
     right: 0;
     bottom: 0;
-    left: 0;                     /* cover full viewport */
+    left: -10;                     /* cover full viewport */
     z-index: 90;
     opacity: 0;
     pointer-events: none;
     display: flex;
     align-items: stretch;        /* stretch vertically */
     justify-content: flex-end;   /* push panel to right edge */
-    padding: 15;
+    padding: 0;
     background: rgba(15, 23, 42, 0.26);  /* dimmed backdrop */
     transition: opacity 0.25s ease;
   }
