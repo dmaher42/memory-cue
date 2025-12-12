@@ -2990,15 +2990,16 @@ body, main, section, div, p, span, li {
   }
 
   #mobile-nav-shell .floating-footer {
-    height: var(--mobile-header-height, 56px);
+    height: 56px;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background: rgba(255, 255, 255, 0.75);
+    background: var(--surface-elevated, rgba(255, 255, 255, 0.75));
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    padding: 0 12px;
+    padding: 6px 12px;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     position: fixed;
     bottom: 0;
     left: 0;
@@ -3047,7 +3048,7 @@ body, main, section, div, p, span, li {
   .floating-footer .floating-card svg {
     width: 22px;
     height: 22px;
-    stroke: var(--icon-color, #512663);
+    stroke: currentColor;
     fill: none;
     stroke-width: 1.75;
     opacity: 1 !important;
