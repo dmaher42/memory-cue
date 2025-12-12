@@ -7,9 +7,11 @@ async def main():
         page = await browser.new_page()
         try:
             await page.goto("http://localhost:8000/mobile.html")
-            await page.wait_for_selector("#mobile-footer-new-reminder", timeout=5000)
+            await page.wait_for_selector("#mobile-fab-button", timeout=5000)
 
-            # Click the "New Reminder" button in the footer
+            # Open the FAB menu and tap "New Reminder"
+            await page.click("#mobile-fab-button")
+            await page.wait_for_selector("#mobile-footer-new-reminder", timeout=3000)
             await page.click("#mobile-footer-new-reminder")
 
             # The "reminders" view should be visible
