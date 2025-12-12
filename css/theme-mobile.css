@@ -130,7 +130,7 @@ body.mobile-shell #mobile-shell #reminderList {
 .bottom-nav,
 #mobile-nav-shell {
   flex: 0 0 auto;
-  z-index: 60;
+  z-index: 90;
 }
 
 /* Header / Top Bar */
