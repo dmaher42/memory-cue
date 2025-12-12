@@ -3009,6 +3009,93 @@ body, main, section, div, p, span, li {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  #mobile-nav-shell .fab-container {
+    position: fixed;
+    left: 50%;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    pointer-events: none;
+  }
+
+  #mobile-nav-shell .fab-button {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08);
+    color: var(--icon-active, #111111);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  #mobile-nav-shell .fab-button:hover,
+  #mobile-nav-shell .fab-button:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.12);
+    outline: none;
+    background: rgba(255, 255, 255, 0.88);
+  }
+
+  #mobile-nav-shell .fab-button svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  #mobile-nav-shell .fab-menu {
+    pointer-events: auto;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16), 0 6px 18px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  #mobile-nav-shell .fab-menu[data-open="true"] {
+    display: flex;
+  }
+
+  #mobile-nav-shell .fab-menu .fab-menu-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 10px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+
+  #mobile-nav-shell .fab-menu .fab-menu-item:hover,
+  #mobile-nav-shell .fab-menu .fab-menu-item:focus-visible {
+    background: color-mix(in srgb, #e8e1f4 45%, #ffffff);
+    outline: none;
+  }
+
   #mobile-nav-shell .floating-footer .floating-card {
     display: flex;
     align-items: center;
@@ -6195,6 +6282,50 @@ body, main, section, div, p, span, li {
   </div>
 
   <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
+    <div class="fab-container" id="mobile-fab-container">
+      <button
+        type="button"
+        class="fab-button"
+        id="mobile-fab-button"
+        aria-label="Create new item"
+        aria-expanded="false"
+        aria-controls="mobile-fab-menu"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+      </button>
+
+      <div class="fab-menu" id="mobile-fab-menu" role="menu" aria-hidden="true" hidden>
+        <button
+          type="button"
+          class="fab-menu-item"
+          id="mobile-footer-new-reminder"
+          data-fab-action="new-reminder"
+          data-open-add-task
+          aria-label="New reminder"
+          role="menuitem"
+        >
+          New reminder
+        </button>
+        <button
+          type="button"
+          class="fab-menu-item"
+          id="mobile-fab-new-note"
+          data-fab-action="new-note"
+          aria-label="New note"
+          role="menuitem"
+        >
+          New note
+        </button>
+      </div>
+    </div>
+
     <div class="floating-footer">
       <button
         type="button"
@@ -6217,56 +6348,6 @@ body, main, section, div, p, span, li {
         >
           <circle cx="12" cy="12" r="7" />
           <path d="M12 9v3.5l2 1.5" />
-        </svg>
-      </button>
-
-      <button
-        type="button"
-        class="floating-card btn-new-reminder"
-        id="mobile-footer-new-reminder"
-        data-nav-target="new"
-        data-open-add-task
-        aria-label="Add reminder"
-      >
-        <svg
-          class="icon icon-plus"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="7" />
-          <path d="M12 9v6" />
-          <path d="M9 12h6" />
-        </svg>
-      </button>
-
-      <button
-        type="button"
-        class="floating-card btn-new-note"
-        id="mobile-footer-new-note"
-        data-nav-target="add-note"
-        aria-label="Add note"
-      >
-        <svg
-          class="icon icon-pencil"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M6 17.5 6.7 14l6.9-6.9a1.6 1.6 0 0 1 2.3 0l1.9 1.9a1.6 1.6 0 0 1 0 2.3L11 18.1 7.5 18.8z" />
-          <path d="M13.2 7.8 16.2 10.8" />
         </svg>
       </button>
 
@@ -6295,14 +6376,39 @@ body, main, section, div, p, span, li {
           <path d="M10 11.5h4" />
         </svg>
       </button>
+
+      <button
+        type="button"
+        class="floating-card btn-saved-notes"
+        id="mobile-footer-saved-notes"
+        data-nav-target="saved-notes"
+        aria-label="Open saved notes"
+      >
+        <svg
+          class="icon icon-bookmark"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M6.25 4.5H17.75C18.44 4.5 19 5.06 19 5.75V20L12 16.2 5 20V5.75C5 5.06 5.56 4.5 6.25 4.5Z" />
+        </svg>
+      </button>
     </div>
   </div>
   <script>
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
-      if (!navFooter) return;
+      const fabButton = document.getElementById('mobile-fab-button');
+      const fabMenu = document.getElementById('mobile-fab-menu');
 
       const updateBottomNavHeight = () => {
+        if (!navFooter) return;
         const footerRect = navFooter.getBoundingClientRect();
         const styles = getComputedStyle(navFooter);
         const marginBottom = parseFloat(styles.marginBottom) || 0;
@@ -6318,11 +6424,13 @@ body, main, section, div, p, span, li {
 
       updateBottomNavHeight();
 
-      if (typeof ResizeObserver === 'function') {
-        const observer = new ResizeObserver(updateBottomNavHeight);
-        observer.observe(navFooter);
-      } else {
-        window.addEventListener('resize', updateBottomNavHeight, { passive: true });
+      if (navFooter) {
+        if (typeof ResizeObserver === 'function') {
+          const observer = new ResizeObserver(updateBottomNavHeight);
+          observer.observe(navFooter);
+        } else {
+          window.addEventListener('resize', updateBottomNavHeight, { passive: true });
+        }
       }
 
       const focusNotebookInputs = () => {
@@ -6346,6 +6454,16 @@ body, main, section, div, p, span, li {
         }
       };
 
+      const closeSavedNotesSheet = () => {
+        try {
+          if (typeof window.hideSavedNotesSheet === 'function') {
+            window.hideSavedNotesSheet();
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+      };
+
       const setActiveFooterIcon = (buttonId) => {
         document
           .querySelectorAll('#mobile-nav-shell .floating-card')
@@ -6355,16 +6473,8 @@ body, main, section, div, p, span, li {
           });
       };
 
-      navFooter.addEventListener('click', (event) => {
-        const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
-        if (!button) return;
-
-        const view = button.getAttribute('data-nav-target');
-        if (!view) return;
-
-        setActiveFooterIcon(button.id);
-
-        const triggerAddReminder = () => {
+      const triggerAddReminder = (trigger) => {
+        const openQuickAddFallback = () => {
           if (typeof window.triggerReminderQuickAdd === 'function') {
             window.triggerReminderQuickAdd();
             return;
@@ -6376,34 +6486,135 @@ body, main, section, div, p, span, li {
           }
         };
 
-        if (view === 'add-note') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view: 'notebook' }
-            })
-          );
-          focusNotebookInputs();
-          return;
-        }
+        if (typeof window.openNewReminderSheet === 'function') {
+          window.openNewReminderSheet(trigger || null);
+        } else {
+          const detail = { mode: 'create', trigger: trigger || null };
+          const sheet = document.getElementById('create-sheet');
 
-        if (view === 'new') {
-          if (typeof window.openNewReminderSheet === 'function') {
-            window.openNewReminderSheet(button);
+          if (sheet) {
+            document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
+            document.dispatchEvent(new CustomEvent('cue:open', { detail }));
           } else {
-            const detail = { mode: 'create', trigger: button };
-            const sheet = document.getElementById('create-sheet');
+            openQuickAddFallback();
+          }
+        }
+      };
 
-            if (sheet) {
-              document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
-              document.dispatchEvent(new CustomEvent('cue:open', { detail }));
-            } else {
-              triggerAddReminder();
-            }
+      const navigateToNotebook = () => {
+        window.dispatchEvent(
+          new CustomEvent('app:navigate', {
+            detail: { view: 'notebook' }
+          })
+        );
+        setActiveFooterIcon('mobile-footer-notebook');
+        focusNotebookInputs();
+        closeSavedNotesSheet();
+      };
+
+      const openSavedNotes = () => {
+        setActiveFooterIcon('mobile-footer-saved-notes');
+        try {
+          if (typeof window.showSavedNotesSheet === 'function') {
+            window.showSavedNotesSheet();
+            return;
           }
 
+          const savedTrigger =
+            document.getElementById('openSavedNotesGlobal') ||
+            document.getElementById('savedNotesShortcut');
+          if (savedTrigger instanceof HTMLElement) {
+            savedTrigger.click();
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+      };
+
+      const closeFabMenu = () => {
+        if (fabMenu instanceof HTMLElement) {
+          fabMenu.dataset.open = 'false';
+          fabMenu.setAttribute('aria-hidden', 'true');
+          fabMenu.setAttribute('hidden', '');
+        }
+        if (fabButton instanceof HTMLElement) {
+          fabButton.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const openFabMenu = () => {
+        if (fabMenu instanceof HTMLElement) {
+          fabMenu.dataset.open = 'true';
+          fabMenu.setAttribute('aria-hidden', 'false');
+          fabMenu.removeAttribute('hidden');
+        }
+        if (fabButton instanceof HTMLElement) {
+          fabButton.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      fabButton?.addEventListener('click', (event) => {
+        event.preventDefault();
+        const isOpen = fabMenu?.dataset.open === 'true';
+        if (isOpen) {
+          closeFabMenu();
+        } else {
+          openFabMenu();
+        }
+      });
+
+      fabMenu?.addEventListener('click', (event) => {
+        const actionButton = event.target instanceof Element ? event.target.closest('[data-fab-action]') : null;
+        if (!actionButton) return;
+
+        event.preventDefault();
+        const action = actionButton.getAttribute('data-fab-action');
+        closeFabMenu();
+
+        if (action === 'new-reminder') {
+          triggerAddReminder(actionButton);
           return;
         }
 
+        if (action === 'new-note') {
+          navigateToNotebook();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (fabMenu?.dataset.open !== 'true') return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (target && target.closest('#mobile-fab-container')) return;
+        closeFabMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeFabMenu();
+        }
+      });
+
+      navFooter?.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
+        if (!button) return;
+
+        const view = button.getAttribute('data-nav-target');
+        if (!view) return;
+
+        closeFabMenu();
+        setActiveFooterIcon(button.id);
+
+        if (view === 'saved-notes') {
+          openSavedNotes();
+          return;
+        }
+
+        if (view === 'notebook') {
+          navigateToNotebook();
+          return;
+        }
+
+        closeSavedNotesSheet();
         window.dispatchEvent(
           new CustomEvent('app:navigate', {
             detail: { view }
