@@ -112,7 +112,7 @@ describe('mobile footer navigation', () => {
     window.addEventListener('app:navigate', (ev) => events.push(ev.detail));
 
     // Attach a navFooter handler (simulate inline script; just to ensure closers get called
-    // and focus moves to the notebook editor when the notebook nav button is clicked)
+    // when the notebook nav button is clicked)
     navFooter.addEventListener('click', (event) => {
       const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
       if (!button) return;
@@ -128,14 +128,13 @@ describe('mobile footer navigation', () => {
       if (!view) return;
       // Simulate the actual mobile nav behavior for the notebook button
       if (view === 'notebook') {
-        try { document.getElementById('noteTitleMobile')?.focus(); } catch (e) {}
         window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view } }));
         return;
       }
       window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view } }));
     });
 
-    // add a fake notebook input to assert focus behavior
+    // add a fake notebook input to assert focus behavior does not trigger automatically
     const fakeNoteInput = document.createElement('input');
     fakeNoteInput.setAttribute('id', 'noteTitleMobile');
     fakeNoteInput.focus = jest.fn();
@@ -149,7 +148,7 @@ describe('mobile footer navigation', () => {
     expect(closeAddSheetSpy).toHaveBeenCalled();
     expect(events.length).toBe(1);
     expect(events[0]).toEqual({ view: 'notebook' });
-    expect(fakeNoteInput.focus).toHaveBeenCalled();
+    expect(fakeNoteInput.focus).not.toHaveBeenCalled();
     expect(window.focusNotebookInputs).toHaveBeenCalled();
     expect(cueCloseSpy).toHaveBeenCalled();
   });
