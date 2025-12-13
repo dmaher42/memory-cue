@@ -4200,10 +4200,10 @@ body, main, section, div, p, span, li {
     }
   </style>
  <style>
-  /* 1. Force the page padding to EXACTLY match the header (removing the 6px JS gap) */
+  /* 1. Match the page padding to the header so content starts just below it */
   body[data-active-view="notebook"] #main {
     padding-top: var(--mobile-header-height, 60px) !important;
-    margin-top: -6px !important; /* Pulls content up to kill the safety gap */
+    margin-top: 0 !important; /* Keep content immediately below the header */
   }
 
   /* 2. Strip inner layout padding */
