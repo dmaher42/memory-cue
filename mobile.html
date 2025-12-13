@@ -341,9 +341,9 @@
     padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
   }
 
-  /* Ensure notebook content hugs the header with a micro-gap */
+  /* Ensure notebook content sits comfortably beneath the header */
   body[data-active-view="notebook"] #main {
-    padding-top: 3px !important;
+    padding-top: 12px !important;
     margin-top: 0 !important;
   }
 
@@ -434,13 +434,18 @@ body[data-active-view="notebook"] #view-notebook .card-body {
 }
 
   /* Single intentional gap between header + notebook */
-.mobile-panel--notes .mobile-view-inner {
-  flex: 0 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem; /* ~4px breathing space */
-  padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
-}
+  .mobile-panel--notes .mobile-view-inner {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* ~12px breathing space between header + title */
+    padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
+  }
+
+  .mobile-panel--notes #noteEditorSheet {
+    padding-top: 0.75rem;
+    border-top: 1px solid color-mix(in srgb, var(--mobile-header-border, rgba(99, 102, 241, 0.22)) 55%, transparent);
+  }
 
   .mobile-panel--notes header.mobile-header {
     flex-shrink: 0;
@@ -448,6 +453,20 @@ body[data-active-view="notebook"] #view-notebook .card-body {
 
   #view-notebook #scratch-notes-card > * + * {
     margin-top: 0.18rem;
+  }
+
+  .mobile-panel--notes .scratch-notes-header-block {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    margin-top: 0.35rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.16)) 80%, transparent);
+    background: color-mix(in srgb, #ffffff 92%, #f2ecff 8%);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  }
+
+  .mobile-panel--notes .scratch-notes-header-block input#noteTitleMobile {
+    padding: 0.65rem 0.9rem;
   }
 
 .mobile-panel--notes #scratch-notes-card .notes-editor {
