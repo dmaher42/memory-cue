@@ -348,9 +348,9 @@ body.mobile-theme .text-secondary {
 
 .mobile-shell #savedNotesSheet {
   width: 100%;
-  max-width: 100vw;
+  max-width: 98vw;
   box-sizing: border-box;
-  margin: 0;
+  margin: 7px;
 }
 
 @media (min-width: 900px) {
