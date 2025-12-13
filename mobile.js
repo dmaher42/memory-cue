@@ -24,7 +24,6 @@ function openEditor() {
   editorSheet.classList.remove('hidden');
 
   setTimeout(() => {
-    editorSheet.querySelector('.note-title')?.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, 50);
 }
@@ -2585,21 +2584,6 @@ const initMobileNotes = () => {
     const labelElNew = document.getElementById('note-folder-label');
     if (labelElNew) {
       labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
-    }
-    const shouldFocusBody = isMobileViewport();
-    if (shouldFocusBody) {
-      try {
-        if (scratchNotesEditor && typeof scratchNotesEditor.focus === 'function') {
-          scratchNotesEditor.focus();
-        } else if (
-          scratchNotesEditorElement &&
-          typeof scratchNotesEditorElement.focus === 'function'
-        ) {
-          scratchNotesEditorElement.focus();
-        }
-      } catch {}
-    } else if (typeof titleInput.focus === 'function') {
-      try { titleInput.focus(); } catch {}
     }
   };
 

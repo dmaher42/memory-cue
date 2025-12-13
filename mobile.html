@@ -6447,24 +6447,7 @@ body, main, section, div, p, span, li {
       }
 
       const focusNotebookInputs = () => {
-        const focusField = () => {
-          const titleInput = document.getElementById('noteTitleMobile');
-          if (titleInput) {
-            titleInput.focus();
-            return;
-          }
-
-          const noteEditor = document.getElementById('notebook-editor-body');
-          if (noteEditor) {
-            noteEditor.focus();
-          }
-        };
-
-        if (typeof queueMicrotask === 'function') {
-          queueMicrotask(focusField);
-        } else {
-          setTimeout(focusField, 0);
-        }
+        // Do not auto-focus notebook fields on navigation to avoid opening mobile keyboards.
       };
 
       const closeSavedNotesSheet = () => {
