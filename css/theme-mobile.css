@@ -1674,6 +1674,14 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   overflow: hidden;          /* scroll happens inside body */
 }
 
+/* Prevent utility max-height helpers from constraining the notebook editor */
+.scratch-notes-body-wrapper,
+.note-editor-content-wrapper,
+.editor,
+.note-editor {
+  max-height: none !important;
+}
+
 /* Notebook body text: document-like */
 .note-body-field textarea {
   font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
