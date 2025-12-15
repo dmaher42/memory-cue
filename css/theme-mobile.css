@@ -116,17 +116,15 @@ body.mobile-shell #mobile-shell #reminderList,
   max-width: 100%;
   margin: 0 auto;
   padding-inline: 0;
-  padding-top: 55px;
-  padding-left: 0rem;
-  padding-right: 0rem;
+  padding-top: 3px;
   box-sizing: border-box;
   overflow-x: hidden;
   list-style: none;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0rem;
-
+  gap: 0.5rem;
+}
 
 .mobile-shell #reminderList.space-y-3 {
   display: flex;
@@ -337,6 +335,28 @@ body.mobile-theme .reminder-card {
 .reminder-card {
   border-radius: 0.75rem;
   overflow: hidden;
+  position: relative;
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-high {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-high-color, var(--priority-high-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-medium {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-medium-color, var(--priority-medium-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-low {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-low-color, var(--priority-low-border));
 }
 
 .mobile-shell #reminderList > .reminder-card.priority-high {
