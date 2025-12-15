@@ -63,6 +63,7 @@ body.mobile-shell #mobile-shell #main {
 }
 
 /* Reminders layout (mobile) */
+
 .mobile-shell #view-reminders,
 .mobile-shell #view-reminders .mobile-view-inner,
 .mobile-shell #view-reminders .reminders-content-shell,
@@ -70,7 +71,7 @@ body.mobile-shell #mobile-shell #main {
 .mobile-shell #remindersWrapper {
   width: 100%;
   max-width: 100vw;
-  margin: -2px;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
@@ -99,6 +100,7 @@ body.mobile-shell #mobile-shell #main {
 
 .mobile-shell #remindersWrapper {
   overflow-x: hidden;
+  padding-inline: 0.5rem;
 }
 
 .mobile-shell #view-reminders .reminder-tabs {
@@ -111,8 +113,9 @@ body.mobile-shell #mobile-shell #main {
 body.mobile-shell #mobile-shell #reminderList {
   width: 100%;
   max-width: 100%;
-  margin: 21px;
-  padding: 34px 0px 0px 0px;
+  margin-inline: auto;
+  padding-inline: 0.5rem;
+  padding-top: 0;
   box-sizing: border-box;
   overflow-x: hidden;
 }
@@ -262,6 +265,14 @@ body.mobile-theme .reminder-card {
   border-left: 3px solid color-mix(in srgb, var(--accent-color, #5080BF) 55%, transparent);
   margin: 0 0 8px;
   text-align: left !important;
+}
+
+/* Ensure reminder cards stay rounded on all corners */
+.task-item,
+.cue-task-card,
+.reminder-card {
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
 .reminder-card-main {
