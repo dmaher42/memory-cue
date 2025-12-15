@@ -3506,9 +3506,9 @@ body {
   display: flex;
   justify-content: start;
   gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 12px;
+  padding: 8px 0px 0px;
+  border-bottom: 0px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 2px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
