@@ -114,12 +114,12 @@ body.mobile-shell #mobile-shell #reminderList,
 .mobile-shell #reminderList {
   width: 100%;
   max-width: 100%;
-  margin: 0.8rem auto 0;
+  margin: 0 auto;
   padding-inline: 0.75rem;
   padding-top: 0;
   box-sizing: border-box;
   overflow-x: hidden;
-  gap: 0.9rem;
+  gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
@@ -337,6 +337,1268 @@ body.mobile-theme .note-card .meta,
 body.mobile-theme .reminder-card .meta,
 body.mobile-theme .text-secondary {
   color: #6B7280;
+}
+
+/* ========================
+   Notebook / Scratch Notes
+   Source of truth
+   ======================== */
+/* Glassy gradient card style used for notebook and saved notes */
+.memory-glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.96),
+    rgba(168, 85, 247, 0.94),
+    rgba(236, 72, 153, 0.92)
+  );
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 1.25rem;
+  color: #f9fafb; /* near-white text */
+}
+
+/* Notebook card – apply gradient + soften inner spacing */
+.scratch-notes-card {
+  background: none; /* clear old solid bg if present */
+}
+
+/* Ensure any scratch-notes-card using Tailwind bg/border still looks glassy */
+.scratch-notes-card.memory-glass-card {
+  border: none;
+}
+/* New header layout (chips left, new-button right) */
+.notebook-folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 0.5rem 1rem;
+  gap: 0.5rem;
+  /* allow absolutely positioned new button to anchor to this container */
+  position: relative;
+}
+
+.folder-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex-grow: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.new-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(214, 188, 250, 0.8);
+  border-radius: 9999px;
+  color: #6b46c1;
+  background: transparent;
+  transition: background 0.2s ease;
+  /* Pin the actionable Add button to the header's top-right corner */
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  z-index: 60;
+}
+
+/* Responsive adjustments: avoid chips being covered by the pinned button on small screens */
+@media (max-width: 640px) {
+  .notebook-folder-scroll-wrap {
+    /* reduce right padding when the pinned button is snapped below the chips */
+    padding-right: 20px;
+  }
+
+  .notebook-folder-header {
+    /* allow wrapping so the button can fall below the chips */
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .new-folder-btn {
+    /* place the button below the chips on small screens */
+    position: static;
+    margin-left: auto;
+    margin-top: 6px;
+    align-self: center;
+    right: auto;
+    top: auto;
+  }
+}
+
+.new-folder-btn:hover {
+  background: #f3e8ff;
+}
+
+/* ensure fade hint remains when chips overflow inside folder-chips */
+.folder-chips .notebook-folder-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+.notebook-folder-bar .folder-chip {
+  /* legacy selector kept for compatibility; new class below */
+}
+
+/* Premium notebook folder chip styles */
+.notebook-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  border: 1px solid rgba(230, 224, 242, 0.8);
+  background: rgba(248, 245, 252, 0.85);
+  color: var(--primary-dark, #3E1D4C);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.16s ease,
+    border-color 0.18s ease;
+}
+
+.notebook-folder-chip:hover {
+  background: rgba(243, 238, 250, 0.95);
+  border-color: rgba(200, 185, 230, 0.9);
+  box-shadow: 0 6px 14px rgba(81, 38, 99, 0.12);
+}
+
+.notebook-folder-chip--active {
+  background: var(--primary-dark, #3E1D4C);
+  color: #ffffff;
+  border-color: var(--primary-dark, #3E1D4C);
+  box-shadow: 0 8px 18px rgba(81, 38, 99, 0.24);
+}
+
+.notebook-folder-chip-count {
+  min-width: 18px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  background: rgba(81, 38, 99, 0.12);
+  color: var(--primary-dark, #3E1D4C);
+}
+
+.notebook-folder-chip--active .notebook-folder-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.notebook-folder-chip:active {
+  transform: scale(0.96);
+  box-shadow: 0 3px 8px rgba(81, 38, 99, 0.16);
+}
+
+/* grip indicator (visual only) */
+.notebook-folder-chip-grip {
+  width: 6px;
+  height: 12px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.12),
+    rgba(0,0,0,0.04)
+  );
+  opacity: 0.45;
+}
+.notebook-folder-chip--active .notebook-folder-chip-grip {
+  background: rgba(255,255,255,0.7);
+  opacity: 0.85;
+}
+
+.notebook-folder-bar .folder-chip:active {
+  transform: translateY(1px);
+}
+
+.notebook-folder-bar .folder-chip.active {
+  background: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(79,70,229,0.12);
+}
+
+.notebook-folder-bar .folder-chip.outlined {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.notebook-folder-chip--new {
+  background: linear-gradient(120deg, #f5f0ff, #e7ddff);
+  border: 1px solid rgba(188, 164, 237, 0.9);
+  color: #4f387a;
+  font-weight: 700;
+  padding-inline: 14px;
+  box-shadow:
+    0 10px 22px rgba(132, 98, 181, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.notebook-folder-chip--new:hover {
+  box-shadow:
+    0 14px 26px rgba(132, 98, 181, 0.22),
+    0 0 0 1px rgba(188, 164, 237, 0.55);
+  transform: translateY(-1px);
+}
+
+.notebook-folder-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(79, 56, 122, 0.08);
+  color: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Notebook list transitions */
+.notebook-list-transition-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.notebook-list-transition-in {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.notebook-list-transition-in-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+/* Notebook grid layout */
+.notebook-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.notebook-list.note-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.notebook-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.9rem;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  margin-bottom: 0.4rem;
+}
+
+.notebook-top-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.notebook-top-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.notebook-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.notebook-tab,
+.notebook-folder-chip.notebook-tab {
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  height: auto;
+}
+
+.notebook-tab:hover,
+.notebook-folder-chip.notebook-tab:hover {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
+
+.notebook-tab.active,
+.notebook-folder-chip.notebook-tab.active,
+.notebook-folder-chip.notebook-tab.notebook-folder-chip--active {
+  background: var(--primary-soft, rgba(81, 38, 99, 0.12));
+  color: var(--text-main);
+  box-shadow: none;
+  border: 1px solid color-mix(in srgb, var(--accent-color) 22%, transparent);
+}
+
+.notebook-tab .notebook-folder-chip-count,
+.notebook-folder-chip.notebook-tab .notebook-folder-chip-count {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.notebook-notes-search {
+  margin-bottom: 0.45rem;
+}
+
+.notebook-notes-search input[type="search"],
+.notebook-notes-search input[type="text"],
+input.notebook-notes-search[type="search"],
+input.notebook-notes-search[type="text"] {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(76, 29, 149, 0.16);
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+}
+
+.notebook-notes-search input::placeholder,
+input.notebook-notes-search::placeholder {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.86rem;
+}
+
+.notebook-empty {
+  padding: 1rem 0.4rem;
+  text-align: center;
+  color: var(--text-muted, #9ca3af);
+}
+
+.notebook-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.notebook-empty-body {
+  font-size: 0.85rem;
+}
+
+.notebook-top-overflow {
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+}
+
+.note-row,
+.note-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.95rem;
+  margin-bottom: 0.35rem;
+  background: var(--surface-1, rgba(255, 255, 255, 0.9));
+  border-radius: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.note-row-main,
+.note-list-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-row-title,
+.note-list-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #2f1456);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-row-meta,
+.note-list-meta {
+  margin-top: 0.18rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted, #8a7fa3);
+}
+
+.note-row-folder,
+.note-list-folder {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+}
+
+.note-row-dot,
+.note-list-dot {
+  opacity: 0.7;
+  font-size: 0.8em;
+}
+
+.note-row-timestamp,
+.note-list-date {
+  color: inherit;
+  white-space: nowrap;
+}
+
+.note-row-overflow,
+.note-list-overflow {
+  border: none;
+  background: transparent;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: background 0.12s ease;
+}
+
+.note-row-overflow:hover,
+.note-list-overflow:hover {
+  background: rgba(80, 20, 120, 0.1);
+}
+
+.note-list-item:focus-within,
+.note-row:focus-within {
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.35);
+}
+
+.note-list-overflow:focus-visible,
+.note-row-overflow:focus-visible {
+  outline: 2px solid rgba(76, 29, 149, 0.5);
+  outline-offset: 2px;
+}
+
+.note-row:hover {
+  background: rgba(80, 20, 120, 0.06);
+}
+
+@media (hover: hover) {
+  .note-list-item:hover {
+    background: rgba(76, 29, 149, 0.04);
+  }
+}
+
+.note-row.selected,
+.note-row.is-active,
+.note-list-item.is-active {
+  background: rgba(76, 29, 149, 0.08);
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.25);
+}
+
+.note-list-item.is-active .note-list-title {
+  color: var(--text-primary-strong, #3b0764);
+  font-weight: 650;
+}
+
+.notebook-notes-list {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .mobile-shell #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* leave extra bottom padding so floating FAB doesn't cover the last items */
+    padding: 0 0 82px;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card {
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(230, 224, 242, 0.5);
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    transition: background-color 0.18s ease, box-shadow 0.16s ease, transform 0.14s ease;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card:hover {
+    background: rgba(248, 245, 252, 0.65);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.08);
+  }
+
+  .mobile-shell #notesListMobile .notebook-note-card--active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 8%, var(--surface-elevated, #f9f9fb));
+    border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 75%, transparent);
+    box-shadow: 0 4px 14px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .notebook-note-card--active .note-card-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 700;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card:active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 6%, rgba(248, 245, 252, 0.9));
+    transform: scale(0.985);
+    box-shadow: 0 2px 10px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-strong, #34163f);
+  }
+
+  .mobile-shell #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mobile-shell #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-preview,
+  .mobile-shell #notesListMobile .note-card-meta,
+  .mobile-shell #notesListMobile .notebook-note-timestamp {
+    display: none;
+  }
+
+  .mobile-shell #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: var(--primary-dark, #3E1D4C);
+    border-radius: 999px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-action {
+    flex-shrink: 0;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+    opacity: 1;
+  }
+
+  .mobile-shell #notesListMobile .note-card-action:hover {
+    background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+/* Floating Action Button for New Folder */
+.fab-new-folder {
+  z-index: 1100;
+  box-shadow: 0 8px 22px rgba(81, 38, 99, 0.12);
+  border: none;
+}
+
+.notebook-note-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Visual polish for mobile note rows: spacing, separators and contrast */
+.premium-note-card {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.premium-note-card + .premium-note-card {
+  margin-top: 6px;
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.premium-note-card {
+  border-bottom: 1px solid rgba(220,215,235,0.55);
+}
+
+/* Touch feedback for note rows */
+.premium-note-card:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(81,63,140,0.06);
+}
+
+@media (min-width: 768px) {
+  #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 0 12px;
+  }
+
+  #notesListMobile .premium-note-card {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(230, 224, 242, 0.5);
+    box-shadow: none;
+    border-radius: 0;
+    transition: background-color 0.18s ease, box-shadow 0.16s ease, transform 0.14s ease;
+  }
+
+  #notesListMobile .premium-note-card:hover {
+    background: rgba(248, 245, 252, 0.65);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.08);
+  }
+
+  #notesListMobile .notebook-note-card--active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 8%, var(--surface-elevated, #f9f9fb));
+    border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 75%, transparent);
+    box-shadow: 0 4px 14px rgba(81, 38, 99, 0.12);
+  }
+
+  #notesListMobile .notebook-note-card--active .note-card-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 700;
+  }
+
+  #notesListMobile .premium-note-card:active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 6%, rgba(248, 245, 252, 0.9));
+    transform: scale(0.985);
+    box-shadow: 0 2px 10px rgba(81, 38, 99, 0.12);
+  }
+
+  #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-strong, #34163f);
+  }
+
+  #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: var(--primary-dark, #3E1D4C);
+    border-radius: 999px;
+  }
+
+  #notesListMobile .note-card-action {
+    flex-shrink: 0;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 6px;
+    margin-left: 4px;
+    border-radius: 8px;
+  }
+
+  #notesListMobile .note-card-action:hover,
+  #notesListMobile .note-card-action:focus-visible {
+    background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+.premium-note-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(229, 223, 244, 0.95);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow:
+    0 10px 28px rgba(81, 63, 140, 0.12),
+    0 2px 6px rgba(46, 38, 68, 0.06);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  cursor: pointer;
+}
+
+.premium-note-card:hover,
+.premium-note-card:focus-within {
+  transform: translateY(-4px);
+  border-color: rgba(178, 154, 232, 0.9);
+  box-shadow:
+    0 14px 32px rgba(81, 63, 140, 0.18),
+    0 4px 10px rgba(46, 38, 68, 0.08);
+}
+
+.premium-note-card.active {
+  border-color: rgba(178, 154, 232, 0.95);
+  box-shadow:
+    0 14px 32px rgba(81, 63, 140, 0.2),
+    0 0 0 2px rgba(178, 154, 232, 0.25);
+}
+
+.premium-note-card:focus-visible {
+  outline: 2px solid rgba(178, 154, 232, 0.8);
+  outline-offset: 2px;
+}
+
+.note-card-action {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  color: var(--text-main);
+  z-index: 60; /* ensure overflow button sits above other UI */
+}
+
+.premium-note-card:hover .note-card-action,
+.premium-note-card:focus-within .note-card-action {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .note-card-action {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.note-card-preview {
+  margin-top: 6px;
+  color: var(--text-muted, #5b5568);
+  line-height: 1.5;
+}
+
+.note-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted, #756c88);
+}
+
+.note-card-folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(92, 76, 123, 0.08);
+  color: #4f3b78;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-card-folder::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.notebook-empty-state {
+  text-align: center;
+  padding: 32px 12px;
+  border: 1px dashed rgba(178, 154, 232, 0.4);
+  border-radius: 16px;
+  background: rgba(248, 245, 255, 0.6);
+  color: var(--text-muted, #5b5568);
+}
+
+.notebook-empty-illustration {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.note-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: rgba(47, 36, 77, 0.95);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(26, 17, 48, 0.3);
+  font-size: 0.9rem;
+  z-index: 2000;
+  opacity: 0;
+  animation: toast-in 0.24s ease forwards, toast-out 0.3s ease 2.4s forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+
+.pick-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+  cursor: pointer;
+}
+
+.pick-folder-row:hover {
+  background: rgba(244, 236, 255, 0.6);
+  border-color: rgba(188, 164, 237, 0.5);
+}
+
+.pick-folder-row.is-active {
+  background: linear-gradient(120deg, #f3edff, #e4dbff);
+  border-color: rgba(188, 164, 237, 0.8);
+  box-shadow: 0 10px 22px rgba(101, 74, 155, 0.12);
+}
+
+/* New folder modal tweaks */
+#newFolderModal {
+  border: none;
+  max-width: 420px;
+  width: calc(100% - 36px);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+#newFolderModal .modal-actions .btn {
+  min-width: 84px;
+}
+
+#newFolderError {
+  color: #e11d48; /* text-error */
+}
+
+/* Note editor folder chip */
+.note-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  color: var(--primary-dark);
+  cursor: pointer;
+  gap: 6px;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.note-folder-chip:hover {
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.note-folder-chip:active {
+  transform: scale(0.96);
+}
+
+.notebook-empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.notebook-empty-title {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.notebook-empty-body {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, rgba(0, 0, 0, 0.6));
+}
+
+/* Folder badge in the notes list */
+.note-folder-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  background: rgba(81, 38, 99, 0.06);
+  color: var(--primary-dark);
+}
+
+/* Overflow icon inside folder chip */
+.folder-chip { position: relative; }
+.folder-chip .notebook-folder-chip-overflow {
+  border: none;
+  background: transparent;
+  padding: 0 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notebook-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px; /* fixed width to keep uniform */
+  height: 40px; /* fixed height to keep uniform */
+  border-radius: 8px; /* slightly rounded corners */
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+  border: 0;
+  cursor: pointer;
+  box-shadow: none;
+  padding: 0 0.6rem;
+}
+
+.notebook-action-btn:focus {
+  outline: 3px solid color-mix(in srgb, #2E6171 18%, transparent);
+  outline-offset: 2px;
+}
+
+.notebook-action-btn.save {
+  background: #2E6171; /* Save button color */
+  color: #ffffff;
+}
+
+.notebook-action-btn.new {
+  background: #D4AFCD; /* New button color */
+  color: #102027; /* darker text for contrast on light background */
+}
+
+.notebook-action-btn.saved {
+  background: #798086; /* Saved Notes button color */
+  color: #ffffff;
+}
+
+/* Ensure any framework btn classes don't override our sizing */
+.notebook-action-btn,
+.notebook-action-btn * {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Saved notes list item helpers */
+.saved-note-item {
+  text-decoration: none;
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.96),
+    rgba(168, 85, 247, 0.94)
+  );
+  border: none;
+  color: #f9fafb;
+}
+
+.saved-note-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: rgba(249, 250, 251, 0.9);
+}
+
+/* Notebook header subtitle helper */
+.notebook-header-subtitle {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header divider + subtitle color polish for mobile notebook */
+#scratch-notes-card > .flex.items-center {
+  border-bottom-color: color-mix(in srgb, var(--mobile-header-border, rgba(99,102,241,0.22)) 40%, var(--color-base-200, #eef2ff) 60%);
+}
+
+.notebook-header-subtitle {
+  color: color-mix(in srgb, var(--mobile-header-button-color, #556F7A) 12%, var(--color-base-content, #0f172a) 88%);
+}
+
+ 
+/* Notebook editor layout */
+
+/* Toolbar icon sizing for mobile notebook (match .icon-btn svg) */
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Notebook editor polish */
+/* Placeholder styling */
+#notebook-editor-body:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* Soft focus ring for editor container */
+.notes-editor-container:focus-within {
+  border-color: var(--mobile-header-button-color, var(--fallback-bc, #a5b4fc));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mobile-header-button-color, #6495ed) 30%, transparent);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Smooth scrolling inside the editor */
+#notebook-editor-body {
+  scroll-behavior: smooth;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  min-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#notebook-editor-body ul,
+#notebook-editor-body ol {
+  padding-left: 1.2rem;
+  margin: 0.25rem 0 0.45rem;
+}
+
+#notebook-editor-body ul {
+  list-style: disc;
+}
+
+#notebook-editor-body ol {
+  list-style: decimal;
+}
+
+#notebook-editor-body li {
+  margin-bottom: 0.2rem;
+}
+
+#notebook-editor-body strong {
+  font-weight: 700;
+}
+
+#notebook-editor-body em {
+  font-style: italic;
+}
+
+#notebook-editor-body a {
+  color: var(--accent-color, #512663);
+  text-decoration: underline;
+  word-break: break-word;
+}
+
+/* Optional: smoother transitions for mobile header/title area */
+.mobile-note-header input,
+.mobile-note-header button {
+  transition: all 0.15s ease;
+}
+.mobile-note-header input:focus {
+  box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.25);
+}
+
+/* Notebook action buttons: New, Save, Saved Notes */
+.notebook-actions-row {
+  background: #f9f9f9; /* soft off-white background */
+  padding: 0.4rem; /* slight padding for breathing room */
+  border-radius: 10px;
+  border: 1px solid #e6dff0;
+}
+
+/* Notebook folder chip bar (mobile) */
+
+.notebook-folder-bar {
+  display: flex;
+  gap: 10px;
+  padding: 6px 12px 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 4px 8px;
+  background: linear-gradient(120deg, rgba(244, 240, 252, 0.9), rgba(235, 229, 248, 0.9));
+  border: 1px solid rgba(214, 197, 241, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 12px 24px rgba(96, 77, 129, 0.08);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.notebook-folder-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Improve folder chip scrolling: keep chips in a horizontally scrollable row
+   and keep the +New folder chip visible at the far right with a subtle fade hint */
+.notebook-folder-bar {
+  position: relative;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  flex-wrap: nowrap;
+  scroll-snap-type: x mandatory;
+}
+
+/* The scroll wrapper holds the chips and shows a right-side fade to hint scrollability */
+.notebook-folder-scroll-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* leave room on the right so the fixed New button doesn't cover chips */
+  padding-right: 92px;
+}
+
+.notebook-folder-scroll-wrap::after {
+  /* right fade to indicate scrollability */
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+/* Ensure the New folder chip stays visible at the far right (outside the scroll area) */
+.notebook-folder-chip--new {
+  margin-left: 8px;
+  z-index: 40;
+  flex: 0 0 auto;
+  align-self: center;
+  /* keep layout/visual styles only; positioning is handled by the header-pinned button */
+  position: static;
+  transform: none;
 }
 
 /* ========================
