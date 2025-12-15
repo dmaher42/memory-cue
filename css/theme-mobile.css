@@ -115,18 +115,56 @@ body.mobile-shell #mobile-shell #reminderList,
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  padding-inline: 0.75rem;
-  padding-top: 55px;
+  padding-inline: 0;
+  padding-top: 3px;
   box-sizing: border-box;
   overflow-x: hidden;
-  gap: 0rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
 }
 
-@media (min-width: 640px) {
-  body.mobile-shell #mobile-shell #reminderList,
-  .mobile-shell #reminderList {
-    padding-inline: 1rem;
+.mobile-shell #reminderList.space-y-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-shell #reminderList.reminder-single-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  grid-template-columns: none;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x proximity;
+}
+
+.mobile-shell #reminderList.reminder-single-row > * {
+  scroll-snap-align: start;
+}
+
+@media (min-width: 380px) {
+  .mobile-shell #reminderList.grid-cols-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
   }
+}
+
+.mobile-shell #reminderList .task-item {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-shell #reminderList > * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 900px) {
@@ -276,12 +314,49 @@ body.mobile-theme .reminder-card {
   text-align: left !important;
 }
 
+.mobile-shell .reminder-card,
+.mobile-shell .reminder-card:hover,
+.mobile-shell .reminder-card:active {
+  transition: all 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-shell .reminder-card,
+  .mobile-shell .reminder-card:hover,
+  .mobile-shell .reminder-card:active {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 /* Ensure reminder cards stay rounded on all corners */
 .task-item,
 .cue-task-card,
 .reminder-card {
   border-radius: 0.75rem;
   overflow: hidden;
+  position: relative;
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-high {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-high-color, var(--priority-high-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-medium {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-medium-color, var(--priority-medium-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-low {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-low-color, var(--priority-low-border));
 }
 
 .reminder-card-main {
@@ -307,6 +382,108 @@ body.mobile-theme .reminder-card {
 
 .reminder-card * {
   text-align: left !important;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-primary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-control-slot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-title-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mobile-shell .reminder-card .title,
+.mobile-shell #reminderList > .reminder-card .reminder-title-slot > *,
+.mobile-shell #reminderList > .reminder-card [data-reminder-title] {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--primary-dark);
+  line-height: 1.25;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: break-word;
+}
+
+.mobile-shell .reminder-card .meta,
+.mobile-shell #reminderList > .reminder-card .reminder-meta-slot,
+.mobile-shell #reminderList > .reminder-card .reminder-secondary-row,
+.mobile-shell #reminderList > .reminder-card .reminder-due,
+.mobile-shell #reminderList > .reminder-card .task-meta-text,
+.mobile-shell #reminderList > .reminder-card time {
+  font-size: 0.78rem;
+  color: rgba(47, 27, 63, 0.55);
+  line-height: 1.25;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-meta-slot.reminder-meta-slot--empty {
+  display: none;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  width: 100%;
+}
+
+.mobile-shell #reminderList > .reminder-card .task-toolbar {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.mobile-shell #reminderList > .reminder-card .task-toolbar-btn {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border-radius: 999px;
+}
+
+.mobile-shell #reminderList .task-toolbar-btn .task-toolbar-label {
+  display: none;
+}
+
+.mobile-shell #reminderList > .reminder-card .task-notes {
+  flex-basis: 100%;
+  margin: 0;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in srgb, var(--card-border) 35%, transparent);
+  font-size: 0.8rem;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.mobile-shell #reminderList > .reminder-card .priority-pill,
+.mobile-shell #reminderList > .reminder-card [data-chip="priority"],
+.mobile-shell #reminderList > .reminder-card .priority-chip-dot {
+  display: none !important;
 }
 
 .reminder-complete-btn {
