@@ -1,5 +1,6 @@
 /* Mobile/short-viewport adjustments to fit entire UI on one screen without scrolling.
-   Drop this file into src/styles/ and import it from your entry JS or link from your HTML.
+   Keep this file in styles/ (or import from your entry JS / link from HTML).
+   Compact overrides only; do not set notebook max-height caps (no 46vh).
 */
 
 @media (max-width: 480px), (max-height: 760px) {
@@ -63,6 +64,7 @@
   .editor, .note-editor {
     flex: 1 1 auto;
     height: auto;
+    max-height: none; /* editor gets most of the remaining height */
     overflow: hidden;
   }
 
