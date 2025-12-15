@@ -114,7 +114,7 @@ body.mobile-shell #mobile-shell #reminderList,
 .mobile-shell #reminderList {
   width: 100%;
   max-width: 100%;
-  margin: 50 auto;
+  margin: 50px auto;
   padding-inline: 0;
   padding-top: 4px;
   box-sizing: border-box;
