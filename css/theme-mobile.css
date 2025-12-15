@@ -359,6 +359,27 @@ body.mobile-theme .reminder-card {
   border-left-color: var(--priority-low-color, var(--priority-low-border));
 }
 
+.mobile-shell #reminderList > .reminder-card.priority-high {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-high-color, var(--priority-high-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-medium {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-medium-color, var(--priority-medium-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-low {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-low-color, var(--priority-low-border));
+}
+
 .reminder-card-main {
   display: flex;
   flex-direction: column;
