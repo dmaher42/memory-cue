@@ -3121,7 +3121,8 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.22rem;  /* title → folder label → toolbar closer together */
+  gap: 0rem;  /* title → folder label → toolbar closer together */
+  align-items: stretch;
 }
 
 .scratch-notes-body-wrapper,
