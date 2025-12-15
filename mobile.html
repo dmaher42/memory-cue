@@ -1393,37 +1393,6 @@ body[data-active-view="notebook"] #view-notebook .card-body {
     color: rgba(226, 232, 240, 0.65);
   }
 
-  /* Reminders wrapper spacing on mobile */
-  #remindersWrapper {
-    margin-top: 3px !important;
-    padding-top: 0 !important;
-  }
-
-  /* Main reminders list container */
-  #reminderList {
-    list-style: none;
-    margin: 0 auto;
-    padding: 0 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    width: 100%;
-  }
-
-    #reminderList > * {
-      margin: 0 0 0.35rem;
-      padding: 0;
-      border: none;
-      background: transparent;
-      box-shadow: none;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-
-    #reminderList > *:last-child {
-      margin-bottom: 0;
-    }
-
     /* Minimal reminder row styling */
     .reminder-row {
       display: flex;
@@ -3347,6 +3316,9 @@ body, main, section, div, p, span, li {
 
     /* Responsive reminder grid - default grid layout */
     #reminderList {
+      list-style: none;
+      margin: 0 auto;
+      padding: 0;
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
@@ -4043,49 +4015,6 @@ body, main, section, div, p, span, li {
     #emptyState .empty-state-actions > * {
       flex: 1 1 auto;
     }
-  </style>
-  <style id="mobile-reminder-card-refresh">
-    .mobile-shell #reminderList,
-    .mobile-shell .reminder-list {
-      padding: 0;
-      margin-top: 0.8rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    @media (min-width: 640px) {
-      .mobile-shell #reminderList,
-      .mobile-shell .reminder-list {
-        padding: 0 0.8rem;
-      }
-    }
-
-    .mobile-shell #reminderList {
-      gap: 0.9rem;
-    }
-
-    .mobile-shell #reminderList.grid-cols-2 {
-      gap: 0.9rem;
-    }
-
-    .mobile-shell #reminderList.space-y-3 {
-      gap: 0;
-    }
-
-    .mobile-shell .reminder-card {
-      position: relative;
-      width: 100%;
-      min-height: 48px;
-      line-height: 1.4;
-      touch-action: manipulation;
-    }
-
-    .mobile-shell #reminderList.space-y-3 > .reminder-card:last-child,
-    .mobile-shell #reminderList > .reminder-card:last-child {
-      margin-bottom: 0;
-    }
-
-    .mobile-shell #reminderList > .reminder-card:focus-visible {
       outline: 2px solid color-mix(in srgb, var(--accent-color) 55%, transparent);
       outline-offset: 2px;
     }

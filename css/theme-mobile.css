@@ -110,14 +110,23 @@ body.mobile-shell #mobile-shell #main {
   gap: 0.35rem;
 }
 
-body.mobile-shell #mobile-shell #reminderList {
+body.mobile-shell #mobile-shell #reminderList,
+.mobile-shell #reminderList {
   width: 100%;
   max-width: 100%;
-  margin-inline: auto;
-  padding-inline: 0.5rem;
+  margin: 0.8rem auto 0;
+  padding-inline: 0.75rem;
   padding-top: 0;
   box-sizing: border-box;
   overflow-x: hidden;
+  gap: 0.9rem;
+}
+
+@media (min-width: 640px) {
+  body.mobile-shell #mobile-shell #reminderList,
+  .mobile-shell #reminderList {
+    padding-inline: 1rem;
+  }
 }
 
 @media (min-width: 900px) {
