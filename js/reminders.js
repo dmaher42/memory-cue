@@ -3722,9 +3722,6 @@ export async function initReminders(sel = {}) {
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => {
         const mode = button.getAttribute('data-reminders-tab');
-        if (!applyMobileRemindersFilter(mode)) {
-          return;
-        }
         setMobileRemindersFilter(mode);
       });
     });
