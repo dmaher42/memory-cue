@@ -114,16 +114,16 @@ body.mobile-shell #mobile-shell #reminderList,
 .mobile-shell #reminderList {
   width: 100%;
   max-width: 100%;
-  margin: 0 auto;
+  margin: 50 auto;
   padding-inline: 0;
-  padding-top: 3px;
+  padding-top: 4px;
   box-sizing: border-box;
   overflow-x: hidden;
   list-style: none;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.5rem;
+  gap: 0.08rem;
 }
 
 .mobile-shell #reminderList.space-y-3 {
