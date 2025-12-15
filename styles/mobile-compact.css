@@ -1,5 +1,6 @@
 /* Mobile/short-viewport adjustments to fit entire UI on one screen without scrolling.
    Keep this file in styles/ (or import from your entry JS / link from HTML).
+   Compact overrides only; do not set notebook max-height caps (no 46vh).
 */
 
 @media (max-width: 480px), (max-height: 760px) {
