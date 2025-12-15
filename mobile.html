@@ -1903,17 +1903,6 @@ body[data-active-view="notebook"] #view-notebook .card-body {
   cursor: pointer;
 }
 
-/* Remove gap between header bar and first reminder */
-#reminderList {
-  margin-top: 0;
-  padding-top: 0;
-}
-
-.reminders-list-container,
-.mobile-view-inner .reminders-content-shell {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
     /* Global crisp, confident text */
 body {
   color: #111 !important;            /* deep, neutral black */
@@ -3317,11 +3306,8 @@ body, main, section, div, p, span, li {
     /* Responsive reminder grid - default grid layout */
     #reminderList {
       list-style: none;
-      margin: 0 auto;
-      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
       align-content: start;
       width: 100%;
     }
@@ -3330,7 +3316,6 @@ body, main, section, div, p, span, li {
     #reminderList.space-y-3 {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
     }
 
     /* Horizontal single-row layout */
