@@ -117,6 +117,8 @@ body.mobile-shell #mobile-shell #reminderList,
   margin: 0 auto;
   padding-inline: 0;
   padding-top: 55px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
   box-sizing: border-box;
   overflow-x: hidden;
   list-style: none;
