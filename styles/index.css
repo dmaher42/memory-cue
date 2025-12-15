@@ -93,8 +93,8 @@ html {
   top: 0;
   z-index: 5;
   background: inherit;
-  padding-bottom: 4px;
-  margin-bottom: 8px;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
 }
 
 .saved-notes-list-container {
