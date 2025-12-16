@@ -3628,7 +3628,9 @@ export async function initReminders(sel = {}) {
     if (setupMobileReminderTabs._wired) {
       return;
     }
-    const tabButtons = document.querySelectorAll('#view-reminders [data-reminders-tab]');
+    const tabButtons = document.querySelectorAll(
+      '#reminders-slim-header [data-reminders-tab], #view-reminders [data-reminders-tab]'
+    );
     if (!tabButtons.length) {
       return;
     }
