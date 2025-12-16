@@ -3677,8 +3677,8 @@ body.mobile-theme textarea,
 body.mobile-theme .form-control {
   width: 100%;
   background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
+  border: 2px solid #E5E7EB;
+  border-radius: 1.5rem;
   padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
   color: #111827;
