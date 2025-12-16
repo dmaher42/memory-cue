@@ -3684,18 +3684,10 @@ export async function initReminders(sel = {}) {
     if (!mode || mode === mobileRemindersFilterMode) {
       return false;
     }
-
-    if (!['all', 'today', 'completed'].includes(mode)) {
-      return false;
-    }
-
-    mobileRemindersFilterMode = mode;
-    syncMobileReminderTabUiState();
-    return true;
-  }
-
-  function setMobileRemindersFilter(mode) {
-    if (!applyMobileRemindersFilter(mode)) {
+    const tabButtons = document.querySelectorAll(
+      '#reminders-slim-header [data-reminders-tab], #view-reminders [data-reminders-tab]'
+    );
+    if (!tabButtons.length) {
       return;
     }
 
