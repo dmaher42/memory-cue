@@ -3684,9 +3684,7 @@ export async function initReminders(sel = {}) {
     if (!mode || mode === mobileRemindersFilterMode) {
       return false;
     }
-    const tabButtons = document.querySelectorAll(
-      '#reminders-slim-header [data-reminders-tab], #view-reminders [data-reminders-tab]'
-    );
+    const tabButtons = document.querySelectorAll('[data-reminders-tab]');
     if (!tabButtons.length) {
       return;
     }
@@ -3707,9 +3705,7 @@ export async function initReminders(sel = {}) {
     syncMobileReminderTabUiState();
     updateMobileRemindersHeaderSubtitle();
 
-    const tabButtons = document.querySelectorAll(
-      '#view-reminders [data-reminders-tab], #reminders-slim-header [data-reminders-tab]'
-    );
+    const tabButtons = document.querySelectorAll('[data-reminders-tab]');
 
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => {
