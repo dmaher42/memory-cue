@@ -84,7 +84,6 @@ function setupDailyDom() {
         </form>
         <div id="daily-list-permission-notice" class="hidden">Permission required</div>
         <div id="daily-tasks-container"></div>
-        <button id="clear-completed-btn" type="button">Clear</button>
       </section>
     </div>
   `;
@@ -98,8 +97,7 @@ function setupDailyDom() {
     quickAddInput: document.getElementById('quick-add-input'),
     voiceButton: document.getElementById('daily-voice-btn'),
     permissionNotice: document.getElementById('daily-list-permission-notice'),
-    container: document.getElementById('daily-tasks-container'),
-    clearButton: document.getElementById('clear-completed-btn')
+    container: document.getElementById('daily-tasks-container')
   };
 }
 
@@ -116,7 +114,6 @@ function createManager(overrides = {}) {
     quickAddInput: elements.quickAddInput,
     quickAddVoiceButton: elements.voiceButton,
     dailyTasksContainer: elements.container,
-    clearCompletedButton: elements.clearButton,
     dailyListPermissionNotice: elements.permissionNotice,
     storage,
     window,

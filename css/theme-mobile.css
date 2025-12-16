@@ -1,4 +1,11 @@
 /* Base Styles */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
 body.mobile-theme {
   background-color: #F3F4F6;
   color: #111827;
@@ -7,11 +14,173 @@ body.mobile-theme {
   padding: 0;
 }
 
+body.mobile-shell {
+  overflow-x: hidden;
+}
+
 body.mobile-theme main,
 body.mobile-theme section,
 body.mobile-theme header,
 body.mobile-theme footer {
   color: inherit;
+}
+
+.mobile-header,
+.app-header {
+  flex: 0 0 auto;
+}
+
+#mobile-shell {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#mobile-shell #main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-bottom: 80px;
+  overflow-y: auto;
+}
+
+/* Micro-gap under the mobile header so content sits just below the quick bar */
+body.mobile-shell #mobile-shell #main {
+  padding-top: 3px !important;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 8px 0 80px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Reminders layout (mobile) */
+
+.mobile-shell #view-reminders,
+.mobile-shell #view-reminders .mobile-view-inner,
+.mobile-shell #view-reminders .reminders-content-shell,
+.mobile-shell #reminderListSection,
+.mobile-shell #remindersWrapper {
+  width: 100%;
+  max-width: 100vw;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.mobile-shell #remindersWrapper {
+  margin-top: 0px !important;
+  padding-top: 0 !important;
+}
+
+.reminders-list-container,
+.mobile-view-inner .reminders-content-shell {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.mobile-shell #view-reminders .mobile-view-inner,
+.mobile-shell #view-reminders .reminders-content-shell {
+  padding-top: 0 !important;
+  padding-left: 0;
+  padding-right: 0;
+  margin-top: 0 !important;
+}
+
+.mobile-shell #reminderListSection {
+  padding: 0;
+}
+
+.mobile-shell #remindersWrapper {
+  overflow-x: hidden;
+  padding-inline: 0.5rem;
+}
+
+.mobile-shell #view-reminders .reminder-tabs {
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 0.35rem;
+}
+
+body.mobile-shell #mobile-shell #reminderList,
+.mobile-shell #reminderList {
+  width: 100%;
+  max-width: 100%;
+  margin: 50px auto;
+  padding-inline: 0;
+  padding-top: 5px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+}
+
+.mobile-shell #reminderList.space-y-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-shell #reminderList.reminder-single-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  grid-template-columns: none;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x proximity;
+}
+
+.mobile-shell #reminderList.reminder-single-row > * {
+  scroll-snap-align: start;
+}
+
+@media (min-width: 380px) {
+  .mobile-shell #reminderList.grid-cols-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+}
+
+.mobile-shell #reminderList .task-item {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-shell #reminderList > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+  .mobile-shell #view-reminders .mobile-view-inner,
+  .mobile-shell #view-reminders .reminders-content-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.bottom-nav,
+#mobile-nav-shell {
+  flex: 0 0 auto;
+  z-index: 90;
 }
 
 /* Header / Top Bar */
@@ -38,6 +207,21 @@ body.mobile-theme .top-bar h2 {
   font-weight: 600;
 }
 
+.header-pill {
+  padding: 6px 12px !important;
+  margin-right: 6px !important;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.header-pill.active {
+  font-weight: 600;
+}
+
+.header-filter-container {
+  gap: 6px !important;
+}
+
 body.mobile-theme .app-header button,
 body.mobile-theme .top-bar button,
 body.mobile-theme header button,
@@ -45,11 +229,40 @@ body.mobile-theme .app-header .icon-button,
 body.mobile-theme .top-bar .icon-button {
   background: transparent;
   border: none;
-  color: #FFFFFF;
+  color: #141010;
   cursor: pointer;
-  padding: 0.35rem;
+  padding: 0.2rem;
   border-radius: 999px;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Unified outline icons: SF Symbols–style */
+.icon-btn svg {
+  stroke: currentColor;
+  fill: none;
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 1;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover svg,
+.icon-btn:active svg {
+  transform: scale(1.04);
+}
+
+.icon-btn:active {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.reminders-quick-actions .icon-btn,
+.mobile-footer-nav button,
+.mobile-footer-nav .footer-button,
+.footer-nav button {
+  color: var(--text-primary, #1f1633);
 }
 
 body.mobile-theme .app-header button:focus-visible,
@@ -73,8 +286,7 @@ body.mobile-theme .top-bar button.is-active {
 
 /* Card Styles */
 body.mobile-theme .card,
-body.mobile-theme .note-card,
-body.mobile-theme .reminder-card {
+body.mobile-theme .note-card {
   background-color: #FFFFFF;
   border: 1px solid #E5E7EB;
   border-radius: 0.75rem;
@@ -84,6 +296,222 @@ body.mobile-theme .reminder-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+body.mobile-theme .reminder-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-sizing: border-box;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.7));
+  border-left: 3px solid color-mix(in srgb, var(--accent-color, #5080BF) 55%, transparent);
+  margin: 0 0 8px;
+  text-align: left !important;
+}
+
+.mobile-shell .reminder-card,
+.mobile-shell .reminder-card:hover,
+.mobile-shell .reminder-card:active {
+  transition: all 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-shell .reminder-card,
+  .mobile-shell .reminder-card:hover,
+  .mobile-shell .reminder-card:active {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* Ensure reminder cards stay rounded on all corners */
+.task-item,
+.cue-task-card,
+.reminder-card {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-high {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-high-color, var(--priority-high-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-medium {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-medium-color, var(--priority-medium-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-low {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-low-color, var(--priority-low-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-high {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-high-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-high-color, var(--priority-high-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-medium {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-medium-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-medium-color, var(--priority-medium-border));
+}
+
+.mobile-shell #reminderList > .reminder-card.priority-low {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(150deg, var(--priority-low-bg) 0%, transparent 68%);
+  background-repeat: no-repeat;
+  border-left-color: var(--priority-low-color, var(--priority-low-border));
+}
+
+.reminder-card-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.reminder-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reminder-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.reminder-card * {
+  text-align: left !important;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-primary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-control-slot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-title-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mobile-shell .reminder-card .title,
+.mobile-shell #reminderList > .reminder-card .reminder-title-slot > *,
+.mobile-shell #reminderList > .reminder-card [data-reminder-title] {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--primary-dark);
+  line-height: 1.25;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: break-word;
+}
+
+.mobile-shell .reminder-card .meta,
+.mobile-shell #reminderList > .reminder-card .reminder-meta-slot,
+.mobile-shell #reminderList > .reminder-card .reminder-secondary-row,
+.mobile-shell #reminderList > .reminder-card .reminder-due,
+.mobile-shell #reminderList > .reminder-card .task-meta-text,
+.mobile-shell #reminderList > .reminder-card time {
+  font-size: 0.78rem;
+  color: rgba(47, 27, 63, 0.55);
+  line-height: 1.25;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-meta-slot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-meta-slot.reminder-meta-slot--empty {
+  display: none;
+}
+
+.mobile-shell #reminderList > .reminder-card .reminder-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  width: 100%;
+}
+
+.mobile-shell #reminderList > .reminder-card .task-toolbar {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.mobile-shell #reminderList > .reminder-card .task-toolbar-btn {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border-radius: 999px;
+}
+
+.mobile-shell #reminderList .task-toolbar-btn .task-toolbar-label {
+  display: none;
+}
+
+.mobile-shell #reminderList > .reminder-card .task-notes {
+  flex-basis: 100%;
+  margin: 0;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in srgb, var(--card-border) 35%, transparent);
+  font-size: 0.8rem;
+  color: var(--text-muted, #9a8bb0);
+}
+
+.mobile-shell #reminderList > .reminder-card .priority-pill,
+.mobile-shell #reminderList > .reminder-card [data-chip="priority"],
+.mobile-shell #reminderList > .reminder-card .priority-chip-dot {
+  display: none !important;
+}
+
+.reminder-complete-btn {
+  flex: 0 0 auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 body.mobile-theme .card h2,
@@ -109,7 +537,3069 @@ body.mobile-theme .text-secondary {
   color: #6B7280;
 }
 
+/* ========================
+   Notebook / Scratch Notes
+   Source of truth
+   ======================== */
+/* Glassy gradient card style used for notebook and saved notes */
+.memory-glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.96),
+    rgba(168, 85, 247, 0.94),
+    rgba(236, 72, 153, 0.92)
+  );
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 1.25rem;
+  color: #f9fafb; /* near-white text */
+}
+
+/* Notebook card – apply gradient + soften inner spacing */
+.scratch-notes-card {
+  background: none; /* clear old solid bg if present */
+}
+
+/* Ensure any scratch-notes-card using Tailwind bg/border still looks glassy */
+.scratch-notes-card.memory-glass-card {
+  border: none;
+}
+/* New header layout (chips left, new-button right) */
+.notebook-folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 0.5rem 1rem;
+  gap: 0.5rem;
+  /* allow absolutely positioned new button to anchor to this container */
+  position: relative;
+}
+
+.folder-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex-grow: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.new-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(214, 188, 250, 0.8);
+  border-radius: 9999px;
+  color: #6b46c1;
+  background: transparent;
+  transition: background 0.2s ease;
+  /* Pin the actionable Add button to the header's top-right corner */
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  z-index: 60;
+}
+
+/* Responsive adjustments: avoid chips being covered by the pinned button on small screens */
+@media (max-width: 640px) {
+  .notebook-folder-scroll-wrap {
+    /* reduce right padding when the pinned button is snapped below the chips */
+    padding-right: 20px;
+  }
+
+  .notebook-folder-header {
+    /* allow wrapping so the button can fall below the chips */
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .new-folder-btn {
+    /* place the button below the chips on small screens */
+    position: static;
+    margin-left: auto;
+    margin-top: 6px;
+    align-self: center;
+    right: auto;
+    top: auto;
+  }
+}
+
+.new-folder-btn:hover {
+  background: #f3e8ff;
+}
+
+/* ensure fade hint remains when chips overflow inside folder-chips */
+.folder-chips .notebook-folder-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+.notebook-folder-bar .folder-chip {
+  /* legacy selector kept for compatibility; new class below */
+}
+
+/* Premium notebook folder chip styles */
+.notebook-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  border: 1px solid rgba(230, 224, 242, 0.8);
+  background: rgba(248, 245, 252, 0.85);
+  color: var(--primary-dark, #3E1D4C);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.16s ease,
+    border-color 0.18s ease;
+}
+
+.notebook-folder-chip:hover {
+  background: rgba(243, 238, 250, 0.95);
+  border-color: rgba(200, 185, 230, 0.9);
+  box-shadow: 0 6px 14px rgba(81, 38, 99, 0.12);
+}
+
+.notebook-folder-chip--active {
+  background: var(--primary-dark, #3E1D4C);
+  color: #ffffff;
+  border-color: var(--primary-dark, #3E1D4C);
+  box-shadow: 0 8px 18px rgba(81, 38, 99, 0.24);
+}
+
+.notebook-folder-chip-count {
+  min-width: 18px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  background: rgba(81, 38, 99, 0.12);
+  color: var(--primary-dark, #3E1D4C);
+}
+
+.notebook-folder-chip--active .notebook-folder-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.notebook-folder-chip:active {
+  transform: scale(0.96);
+  box-shadow: 0 3px 8px rgba(81, 38, 99, 0.16);
+}
+
+/* grip indicator (visual only) */
+.notebook-folder-chip-grip {
+  width: 6px;
+  height: 12px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.12),
+    rgba(0,0,0,0.04)
+  );
+  opacity: 0.45;
+}
+.notebook-folder-chip--active .notebook-folder-chip-grip {
+  background: rgba(255,255,255,0.7);
+  opacity: 0.85;
+}
+
+.notebook-folder-bar .folder-chip:active {
+  transform: translateY(1px);
+}
+
+.notebook-folder-bar .folder-chip.active {
+  background: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(79,70,229,0.12);
+}
+
+.notebook-folder-bar .folder-chip.outlined {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.notebook-folder-chip--new {
+  background: linear-gradient(120deg, #f5f0ff, #e7ddff);
+  border: 1px solid rgba(188, 164, 237, 0.9);
+  color: #4f387a;
+  font-weight: 700;
+  padding-inline: 14px;
+  box-shadow:
+    0 10px 22px rgba(132, 98, 181, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.notebook-folder-chip--new:hover {
+  box-shadow:
+    0 14px 26px rgba(132, 98, 181, 0.22),
+    0 0 0 1px rgba(188, 164, 237, 0.55);
+  transform: translateY(-1px);
+}
+
+.notebook-folder-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(79, 56, 122, 0.08);
+  color: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Notebook list transitions */
+.notebook-list-transition-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.notebook-list-transition-in {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.notebook-list-transition-in-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+/* Notebook grid layout */
+.notebook-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.notebook-list.note-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.notebook-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.9rem;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  margin-bottom: 0.4rem;
+}
+
+.notebook-top-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.notebook-top-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.notebook-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.notebook-tab,
+.notebook-folder-chip.notebook-tab {
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  height: auto;
+}
+
+.notebook-tab:hover,
+.notebook-folder-chip.notebook-tab:hover {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
+
+.notebook-tab.active,
+.notebook-folder-chip.notebook-tab.active,
+.notebook-folder-chip.notebook-tab.notebook-folder-chip--active {
+  background: var(--primary-soft, rgba(81, 38, 99, 0.12));
+  color: var(--text-main);
+  box-shadow: none;
+  border: 1px solid color-mix(in srgb, var(--accent-color) 22%, transparent);
+}
+
+.notebook-tab .notebook-folder-chip-count,
+.notebook-folder-chip.notebook-tab .notebook-folder-chip-count {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.notebook-notes-search {
+  margin-bottom: 0.45rem;
+}
+
+.notebook-notes-search input[type="search"],
+.notebook-notes-search input[type="text"],
+input.notebook-notes-search[type="search"],
+input.notebook-notes-search[type="text"] {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(76, 29, 149, 0.16);
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+}
+
+.notebook-notes-search input::placeholder,
+input.notebook-notes-search::placeholder {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.86rem;
+}
+
+.notebook-empty {
+  padding: 1rem 0.4rem;
+  text-align: center;
+  color: var(--text-muted, #9ca3af);
+}
+
+.notebook-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.notebook-empty-body {
+  font-size: 0.85rem;
+}
+
+.notebook-top-overflow {
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+}
+
+.note-row,
+.note-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.95rem;
+  margin-bottom: 0.35rem;
+  background: var(--surface-1, rgba(255, 255, 255, 0.9));
+  border-radius: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.note-row-main,
+.note-list-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-row-title,
+.note-list-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #2f1456);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-row-meta,
+.note-list-meta {
+  margin-top: 0.18rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted, #8a7fa3);
+}
+
+.note-row-folder,
+.note-list-folder {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+}
+
+.note-row-dot,
+.note-list-dot {
+  opacity: 0.7;
+  font-size: 0.8em;
+}
+
+.note-row-timestamp,
+.note-list-date {
+  color: inherit;
+  white-space: nowrap;
+}
+
+.note-row-overflow,
+.note-list-overflow {
+  border: none;
+  background: transparent;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: background 0.12s ease;
+}
+
+.note-row-overflow:hover,
+.note-list-overflow:hover {
+  background: rgba(80, 20, 120, 0.1);
+}
+
+.note-list-item:focus-within,
+.note-row:focus-within {
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.35);
+}
+
+.note-list-overflow:focus-visible,
+.note-row-overflow:focus-visible {
+  outline: 2px solid rgba(76, 29, 149, 0.5);
+  outline-offset: 2px;
+}
+
+.note-row:hover {
+  background: rgba(80, 20, 120, 0.06);
+}
+
+@media (hover: hover) {
+  .note-list-item:hover {
+    background: rgba(76, 29, 149, 0.04);
+  }
+}
+
+.note-row.selected,
+.note-row.is-active,
+.note-list-item.is-active {
+  background: rgba(76, 29, 149, 0.08);
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.25);
+}
+
+.note-list-item.is-active .note-list-title {
+  color: var(--text-primary-strong, #3b0764);
+  font-weight: 650;
+}
+
+.notebook-notes-list {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .mobile-shell #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* leave extra bottom padding so floating FAB doesn't cover the last items */
+    padding: 0 0 82px;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card {
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(230, 224, 242, 0.5);
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    transition: background-color 0.18s ease, box-shadow 0.16s ease, transform 0.14s ease;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card:hover {
+    background: rgba(248, 245, 252, 0.65);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.08);
+  }
+
+  .mobile-shell #notesListMobile .notebook-note-card--active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 8%, var(--surface-elevated, #f9f9fb));
+    border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 75%, transparent);
+    box-shadow: 0 4px 14px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .notebook-note-card--active .note-card-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 700;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card:active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 6%, rgba(248, 245, 252, 0.9));
+    transform: scale(0.985);
+    box-shadow: 0 2px 10px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-strong, #34163f);
+  }
+
+  .mobile-shell #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mobile-shell #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-preview,
+  .mobile-shell #notesListMobile .note-card-meta,
+  .mobile-shell #notesListMobile .notebook-note-timestamp {
+    display: none;
+  }
+
+  .mobile-shell #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: var(--primary-dark, #3E1D4C);
+    border-radius: 999px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-action {
+    flex-shrink: 0;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+    opacity: 1;
+  }
+
+  .mobile-shell #notesListMobile .note-card-action:hover {
+    background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+/* Floating Action Button for New Folder */
+.fab-new-folder {
+  z-index: 1100;
+  box-shadow: 0 8px 22px rgba(81, 38, 99, 0.12);
+  border: none;
+}
+
+.notebook-note-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Visual polish for mobile note rows: spacing, separators and contrast */
+.premium-note-card {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.premium-note-card + .premium-note-card {
+  margin-top: 6px;
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.premium-note-card {
+  border-bottom: 1px solid rgba(220,215,235,0.55);
+}
+
+/* Touch feedback for note rows */
+.premium-note-card:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(81,63,140,0.06);
+}
+
+@media (min-width: 768px) {
+  #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 0 12px;
+  }
+
+  #notesListMobile .premium-note-card {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(230, 224, 242, 0.5);
+    box-shadow: none;
+    border-radius: 0;
+    transition: background-color 0.18s ease, box-shadow 0.16s ease, transform 0.14s ease;
+  }
+
+  #notesListMobile .premium-note-card:hover {
+    background: rgba(248, 245, 252, 0.65);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.08);
+  }
+
+  #notesListMobile .notebook-note-card--active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 8%, var(--surface-elevated, #f9f9fb));
+    border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 75%, transparent);
+    box-shadow: 0 4px 14px rgba(81, 38, 99, 0.12);
+  }
+
+  #notesListMobile .notebook-note-card--active .note-card-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 700;
+  }
+
+  #notesListMobile .premium-note-card:active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 6%, rgba(248, 245, 252, 0.9));
+    transform: scale(0.985);
+    box-shadow: 0 2px 10px rgba(81, 38, 99, 0.12);
+  }
+
+  #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-strong, #34163f);
+  }
+
+  #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: var(--primary-dark, #3E1D4C);
+    border-radius: 999px;
+  }
+
+  #notesListMobile .note-card-action {
+    flex-shrink: 0;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 6px;
+    margin-left: 4px;
+    border-radius: 8px;
+  }
+
+  #notesListMobile .note-card-action:hover,
+  #notesListMobile .note-card-action:focus-visible {
+    background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+.premium-note-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(229, 223, 244, 0.95);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow:
+    0 10px 28px rgba(81, 63, 140, 0.12),
+    0 2px 6px rgba(46, 38, 68, 0.06);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  cursor: pointer;
+}
+
+.premium-note-card:hover,
+.premium-note-card:focus-within {
+  transform: translateY(-4px);
+  border-color: rgba(178, 154, 232, 0.9);
+  box-shadow:
+    0 14px 32px rgba(81, 63, 140, 0.18),
+    0 4px 10px rgba(46, 38, 68, 0.08);
+}
+
+.premium-note-card.active {
+  border-color: rgba(178, 154, 232, 0.95);
+  box-shadow:
+    0 14px 32px rgba(81, 63, 140, 0.2),
+    0 0 0 2px rgba(178, 154, 232, 0.25);
+}
+
+.premium-note-card:focus-visible {
+  outline: 2px solid rgba(178, 154, 232, 0.8);
+  outline-offset: 2px;
+}
+
+.note-card-action {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  color: var(--text-main);
+  z-index: 60; /* ensure overflow button sits above other UI */
+}
+
+.premium-note-card:hover .note-card-action,
+.premium-note-card:focus-within .note-card-action {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .note-card-action {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.note-card-preview {
+  margin-top: 6px;
+  color: var(--text-muted, #5b5568);
+  line-height: 1.5;
+}
+
+.note-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted, #756c88);
+}
+
+.note-card-folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(92, 76, 123, 0.08);
+  color: #4f3b78;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-card-folder::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.notebook-empty-state {
+  text-align: center;
+  padding: 32px 12px;
+  border: 1px dashed rgba(178, 154, 232, 0.4);
+  border-radius: 16px;
+  background: rgba(248, 245, 255, 0.6);
+  color: var(--text-muted, #5b5568);
+}
+
+.notebook-empty-illustration {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.note-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: rgba(47, 36, 77, 0.95);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(26, 17, 48, 0.3);
+  font-size: 0.9rem;
+  z-index: 2000;
+  opacity: 0;
+  animation: toast-in 0.24s ease forwards, toast-out 0.3s ease 2.4s forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+
+.pick-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+  cursor: pointer;
+}
+
+.pick-folder-row:hover {
+  background: rgba(244, 236, 255, 0.6);
+  border-color: rgba(188, 164, 237, 0.5);
+}
+
+.pick-folder-row.is-active {
+  background: linear-gradient(120deg, #f3edff, #e4dbff);
+  border-color: rgba(188, 164, 237, 0.8);
+  box-shadow: 0 10px 22px rgba(101, 74, 155, 0.12);
+}
+
+/* New folder modal tweaks */
+#newFolderModal {
+  border: none;
+  max-width: 420px;
+  width: calc(100% - 36px);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+#newFolderModal .modal-actions .btn {
+  min-width: 84px;
+}
+
+#newFolderError {
+  color: #e11d48; /* text-error */
+}
+
+/* Note editor folder chip */
+.note-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  color: var(--primary-dark);
+  cursor: pointer;
+  gap: 6px;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.note-folder-chip:hover {
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.note-folder-chip:active {
+  transform: scale(0.96);
+}
+
+.notebook-empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.notebook-empty-title {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.notebook-empty-body {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, rgba(0, 0, 0, 0.6));
+}
+
+/* Folder badge in the notes list */
+.note-folder-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  background: rgba(81, 38, 99, 0.06);
+  color: var(--primary-dark);
+}
+
+/* Overflow icon inside folder chip */
+.folder-chip { position: relative; }
+.folder-chip .notebook-folder-chip-overflow {
+  border: none;
+  background: transparent;
+  padding: 0 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notebook-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px; /* fixed width to keep uniform */
+  height: 40px; /* fixed height to keep uniform */
+  border-radius: 8px; /* slightly rounded corners */
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+  border: 0;
+  cursor: pointer;
+  box-shadow: none;
+  padding: 0 0.6rem;
+}
+
+.notebook-action-btn:focus {
+  outline: 3px solid color-mix(in srgb, #2E6171 18%, transparent);
+  outline-offset: 2px;
+}
+
+.notebook-action-btn.save {
+  background: #2E6171; /* Save button color */
+  color: #ffffff;
+}
+
+.notebook-action-btn.new {
+  background: #D4AFCD; /* New button color */
+  color: #102027; /* darker text for contrast on light background */
+}
+
+.notebook-action-btn.saved {
+  background: #798086; /* Saved Notes button color */
+  color: #ffffff;
+}
+
+/* Ensure any framework btn classes don't override our sizing */
+.notebook-action-btn,
+.notebook-action-btn * {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Saved notes list item helpers */
+.saved-note-item {
+  text-decoration: none;
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.96),
+    rgba(168, 85, 247, 0.94)
+  );
+  border: none;
+  color: #f9fafb;
+}
+
+.saved-note-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: rgba(249, 250, 251, 0.9);
+}
+
+/* Notebook header subtitle helper */
+.notebook-header-subtitle {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header divider + subtitle color polish for mobile notebook */
+#scratch-notes-card > .flex.items-center {
+  border-bottom-color: color-mix(in srgb, var(--mobile-header-border, rgba(99,102,241,0.22)) 40%, var(--color-base-200, #eef2ff) 60%);
+}
+
+.notebook-header-subtitle {
+  color: color-mix(in srgb, var(--mobile-header-button-color, #556F7A) 12%, var(--color-base-content, #0f172a) 88%);
+}
+
+ 
+/* Notebook editor layout */
+
+/* Toolbar icon sizing for mobile notebook (match .icon-btn svg) */
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Notebook editor polish */
+/* Placeholder styling */
+#notebook-editor-body:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* Soft focus ring for editor container */
+.notes-editor-container:focus-within {
+  border-color: var(--mobile-header-button-color, var(--fallback-bc, #a5b4fc));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mobile-header-button-color, #6495ed) 30%, transparent);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Smooth scrolling inside the editor */
+#notebook-editor-body {
+  scroll-behavior: smooth;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  min-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#notebook-editor-body ul,
+#notebook-editor-body ol {
+  padding-left: 1.2rem;
+  margin: 0.25rem 0 0.45rem;
+}
+
+#notebook-editor-body ul {
+  list-style: disc;
+}
+
+#notebook-editor-body ol {
+  list-style: decimal;
+}
+
+#notebook-editor-body li {
+  margin-bottom: 0.2rem;
+}
+
+#notebook-editor-body strong {
+  font-weight: 700;
+}
+
+#notebook-editor-body em {
+  font-style: italic;
+}
+
+#notebook-editor-body a {
+  color: var(--accent-color, #512663);
+  text-decoration: underline;
+  word-break: break-word;
+}
+
+/* Optional: smoother transitions for mobile header/title area */
+.mobile-note-header input,
+.mobile-note-header button {
+  transition: all 0.15s ease;
+}
+.mobile-note-header input:focus {
+  box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.25);
+}
+
+/* Notebook action buttons: New, Save, Saved Notes */
+.notebook-actions-row {
+  background: #f9f9f9; /* soft off-white background */
+  padding: 0.4rem; /* slight padding for breathing room */
+  border-radius: 10px;
+  border: 1px solid #e6dff0;
+}
+
+/* Notebook folder chip bar (mobile) */
+
+.notebook-folder-bar {
+  display: flex;
+  gap: 10px;
+  padding: 6px 12px 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 4px 8px;
+  background: linear-gradient(120deg, rgba(244, 240, 252, 0.9), rgba(235, 229, 248, 0.9));
+  border: 1px solid rgba(214, 197, 241, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 12px 24px rgba(96, 77, 129, 0.08);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.notebook-folder-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Improve folder chip scrolling: keep chips in a horizontally scrollable row
+   and keep the +New folder chip visible at the far right with a subtle fade hint */
+.notebook-folder-bar {
+  position: relative;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  flex-wrap: nowrap;
+  scroll-snap-type: x mandatory;
+}
+
+/* The scroll wrapper holds the chips and shows a right-side fade to hint scrollability */
+.notebook-folder-scroll-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* leave room on the right so the fixed New button doesn't cover chips */
+  padding-right: 92px;
+}
+
+.notebook-folder-scroll-wrap::after {
+  /* right fade to indicate scrollability */
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+/* Ensure the New folder chip stays visible at the far right (outside the scroll area) */
+.notebook-folder-chip--new {
+  margin-left: 8px;
+  z-index: 40;
+  flex: 0 0 auto;
+  align-self: center;
+  /* keep layout/visual styles only; positioning is handled by the header-pinned button */
+  position: static;
+  transform: none;
+}
+
+/* ========================
+   Notebook / Scratch Notes
+   Source of truth
+   Single source of truth for notebook layout
+   Do not add notebook layout rules to styles/index.css or mobile.html inline style
+   ======================== */
+/* Glassy gradient card style used for notebook and saved notes */
+.memory-glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.96),
+    rgba(168, 85, 247, 0.94),
+    rgba(236, 72, 153, 0.92)
+  );
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 1.25rem;
+  color: #f9fafb; /* near-white text */
+}
+
+/* Notebook card – apply gradient + soften inner spacing */
+.scratch-notes-card {
+  background: none; /* clear old solid bg if present */
+}
+
+/* Ensure any scratch-notes-card using Tailwind bg/border still looks glassy */
+.scratch-notes-card.memory-glass-card {
+  border: none;
+}
+/* New header layout (chips left, new-button right) */
+.notebook-folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 0.5rem 1rem;
+  gap: 0.5rem;
+  /* allow absolutely positioned new button to anchor to this container */
+  position: relative;
+}
+
+.folder-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex-grow: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.new-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(214, 188, 250, 0.8);
+  border-radius: 9999px;
+  color: #6b46c1;
+  background: transparent;
+  transition: background 0.2s ease;
+  /* Pin the actionable Add button to the header's top-right corner */
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  z-index: 60;
+}
+
+/* Responsive adjustments: avoid chips being covered by the pinned button on small screens */
+@media (max-width: 640px) {
+  .notebook-folder-scroll-wrap {
+    /* reduce right padding when the pinned button is snapped below the chips */
+    padding-right: 20px;
+  }
+
+  .notebook-folder-header {
+    /* allow wrapping so the button can fall below the chips */
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .new-folder-btn {
+    /* place the button below the chips on small screens */
+    position: static;
+    margin-left: auto;
+    margin-top: 6px;
+    align-self: center;
+    right: auto;
+    top: auto;
+  }
+}
+
+.new-folder-btn:hover {
+  background: #f3e8ff;
+}
+
+/* ensure fade hint remains when chips overflow inside folder-chips */
+.folder-chips .notebook-folder-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+.notebook-folder-bar .folder-chip {
+  /* legacy selector kept for compatibility; new class below */
+}
+
+/* Premium notebook folder chip styles */
+.notebook-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  border: 1px solid rgba(230, 224, 242, 0.8);
+  background: rgba(248, 245, 252, 0.85);
+  color: var(--primary-dark, #3E1D4C);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.16s ease,
+    border-color 0.18s ease;
+}
+
+.notebook-folder-chip:hover {
+  background: rgba(243, 238, 250, 0.95);
+  border-color: rgba(200, 185, 230, 0.9);
+  box-shadow: 0 6px 14px rgba(81, 38, 99, 0.12);
+}
+
+.notebook-folder-chip--active {
+  background: var(--primary-dark, #3E1D4C);
+  color: #ffffff;
+  border-color: var(--primary-dark, #3E1D4C);
+  box-shadow: 0 8px 18px rgba(81, 38, 99, 0.24);
+}
+
+.notebook-folder-chip-count {
+  min-width: 18px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  background: rgba(81, 38, 99, 0.12);
+  color: var(--primary-dark, #3E1D4C);
+}
+
+.notebook-folder-chip--active .notebook-folder-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.notebook-folder-chip:active {
+  transform: scale(0.96);
+  box-shadow: 0 3px 8px rgba(81, 38, 99, 0.16);
+}
+
+/* grip indicator (visual only) */
+.notebook-folder-chip-grip {
+  width: 6px;
+  height: 12px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.12),
+    rgba(0,0,0,0.04)
+  );
+  opacity: 0.45;
+}
+.notebook-folder-chip--active .notebook-folder-chip-grip {
+  background: rgba(255,255,255,0.7);
+  opacity: 0.85;
+}
+
+.notebook-folder-bar .folder-chip:active {
+  transform: translateY(1px);
+}
+
+.notebook-folder-bar .folder-chip.active {
+  background: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(79,70,229,0.12);
+}
+
+.notebook-folder-bar .folder-chip.outlined {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.notebook-folder-chip--new {
+  background: linear-gradient(120deg, #f5f0ff, #e7ddff);
+  border: 1px solid rgba(188, 164, 237, 0.9);
+  color: #4f387a;
+  font-weight: 700;
+  padding-inline: 14px;
+  box-shadow:
+    0 10px 22px rgba(132, 98, 181, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.notebook-folder-chip--new:hover {
+  box-shadow:
+    0 14px 26px rgba(132, 98, 181, 0.22),
+    0 0 0 1px rgba(188, 164, 237, 0.55);
+  transform: translateY(-1px);
+}
+
+.notebook-folder-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(79, 56, 122, 0.08);
+  color: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Notebook list transitions */
+.notebook-list-transition-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.notebook-list-transition-in {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.notebook-list-transition-in-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+/* Notebook grid layout */
+.notebook-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.notebook-list.note-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.notebook-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.9rem;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  margin-bottom: 0.4rem;
+}
+
+.notebook-top-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.notebook-top-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.notebook-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.notebook-tab,
+.notebook-folder-chip.notebook-tab {
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  height: auto;
+}
+
+.notebook-tab:hover,
+.notebook-folder-chip.notebook-tab:hover {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
+
+.notebook-tab.active,
+.notebook-folder-chip.notebook-tab.active,
+.notebook-folder-chip.notebook-tab.notebook-folder-chip--active {
+  background: var(--primary-soft, rgba(81, 38, 99, 0.12));
+  color: var(--text-main);
+  box-shadow: none;
+  border: 1px solid color-mix(in srgb, var(--accent-color) 22%, transparent);
+}
+
+.notebook-tab .notebook-folder-chip-count,
+.notebook-folder-chip.notebook-tab .notebook-folder-chip-count {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.notebook-notes-search {
+  margin-bottom: 0.45rem;
+}
+
+.notebook-notes-search input[type="search"],
+.notebook-notes-search input[type="text"],
+input.notebook-notes-search[type="search"],
+input.notebook-notes-search[type="text"] {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(76, 29, 149, 0.16);
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+}
+
+.notebook-notes-search input::placeholder,
+input.notebook-notes-search::placeholder {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.86rem;
+}
+
+.notebook-empty {
+  padding: 1rem 0.4rem;
+  text-align: center;
+  color: var(--text-muted, #9ca3af);
+}
+
+.notebook-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.notebook-empty-body {
+  font-size: 0.85rem;
+}
+
+.notebook-top-overflow {
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+}
+
+.note-row,
+.note-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.95rem;
+  margin-bottom: 0.35rem;
+  background: var(--surface-1, rgba(255, 255, 255, 0.9));
+  border-radius: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.note-row-main,
+.note-list-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-row-title,
+.note-list-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #2f1456);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-row-meta,
+.note-list-meta {
+  margin-top: 0.18rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted, #8a7fa3);
+}
+
+.note-row-folder,
+.note-list-folder {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+}
+
+.note-row-dot,
+.note-list-dot {
+  opacity: 0.7;
+  font-size: 0.8em;
+}
+
+.note-row-timestamp,
+.note-list-date {
+  color: inherit;
+  white-space: nowrap;
+}
+
+.note-row-overflow,
+.note-list-overflow {
+  border: none;
+  background: transparent;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: background 0.12s ease;
+}
+
+.note-row-overflow:hover,
+.note-list-overflow:hover {
+  background: rgba(80, 20, 120, 0.1);
+}
+
+.note-list-item:focus-within,
+.note-row:focus-within {
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.35);
+}
+
+.note-list-overflow:focus-visible,
+.note-row-overflow:focus-visible {
+  outline: 2px solid rgba(76, 29, 149, 0.5);
+  outline-offset: 2px;
+}
+
+.note-row:hover {
+  background: rgba(80, 20, 120, 0.06);
+}
+
+@media (hover: hover) {
+  .note-list-item:hover {
+    background: rgba(76, 29, 149, 0.04);
+  }
+}
+
+.note-row.selected,
+.note-row.is-active,
+.note-list-item.is-active {
+  background: rgba(76, 29, 149, 0.08);
+  box-shadow: 0 0 0 1px rgba(76, 29, 149, 0.25);
+}
+
+.note-list-item.is-active .note-list-title {
+  color: var(--text-primary-strong, #3b0764);
+  font-weight: 650;
+}
+
+.notebook-notes-list {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .mobile-shell #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* leave extra bottom padding so floating FAB doesn't cover the last items */
+    padding: 0 0 82px;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card {
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(230, 224, 242, 0.5);
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    transition: background-color 0.18s ease, box-shadow 0.16s ease, transform 0.14s ease;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card:hover {
+    background: rgba(248, 245, 252, 0.65);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.08);
+  }
+
+  .mobile-shell #notesListMobile .notebook-note-card--active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 8%, var(--surface-elevated, #f9f9fb));
+    border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 75%, transparent);
+    box-shadow: 0 4px 14px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .notebook-note-card--active .note-card-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 700;
+  }
+
+  .mobile-shell #notesListMobile .premium-note-card:active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 6%, rgba(248, 245, 252, 0.9));
+    transform: scale(0.985);
+    box-shadow: 0 2px 10px rgba(81, 38, 99, 0.12);
+  }
+
+  .mobile-shell #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-strong, #34163f);
+  }
+
+  .mobile-shell #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mobile-shell #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-preview,
+  .mobile-shell #notesListMobile .note-card-meta,
+  .mobile-shell #notesListMobile .notebook-note-timestamp {
+    display: none;
+  }
+
+  .mobile-shell #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: var(--primary-dark, #3E1D4C);
+    border-radius: 999px;
+  }
+
+  .mobile-shell #notesListMobile .note-card-action {
+    flex-shrink: 0;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+    opacity: 1;
+  }
+
+  .mobile-shell #notesListMobile .note-card-action:hover {
+    background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+/* Floating Action Button for New Folder */
+.fab-new-folder {
+  z-index: 1100;
+  box-shadow: 0 8px 22px rgba(81, 38, 99, 0.12);
+  border: none;
+}
+
+.notebook-note-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Visual polish for mobile note rows: spacing, separators and contrast */
+.premium-note-card {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.premium-note-card + .premium-note-card {
+  margin-top: 6px;
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.premium-note-card {
+  border-bottom: 1px solid rgba(220,215,235,0.55);
+}
+
+/* Touch feedback for note rows */
+.premium-note-card:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(81,63,140,0.06);
+}
+
+@media (min-width: 768px) {
+  #notesListMobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 0 12px;
+  }
+
+  #notesListMobile .premium-note-card {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(230, 224, 242, 0.5);
+    box-shadow: none;
+    border-radius: 0;
+    transition: background-color 0.18s ease, box-shadow 0.16s ease, transform 0.14s ease;
+  }
+
+  #notesListMobile .premium-note-card:hover {
+    background: rgba(248, 245, 252, 0.65);
+    box-shadow: 0 2px 8px rgba(81, 38, 99, 0.08);
+  }
+
+  #notesListMobile .notebook-note-card--active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 8%, var(--surface-elevated, #f9f9fb));
+    border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 75%, transparent);
+    box-shadow: 0 4px 14px rgba(81, 38, 99, 0.12);
+  }
+
+  #notesListMobile .notebook-note-card--active .note-card-title {
+    color: var(--text-main, #231B2E);
+    font-weight: 700;
+  }
+
+  #notesListMobile .premium-note-card:active {
+    background: color-mix(in srgb, var(--accent-color, #512663) 6%, rgba(248, 245, 252, 0.9));
+    transform: scale(0.985);
+    box-shadow: 0 2px 10px rgba(81, 38, 99, 0.12);
+  }
+
+  #notesListMobile .note-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-strong, #34163f);
+  }
+
+  #notesListMobile .note-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  #notesListMobile .note-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #notesListMobile .note-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #notesListMobile .note-card-folder {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(81, 38, 99, 0.08);
+    color: var(--primary-dark, #3E1D4C);
+    border-radius: 999px;
+  }
+
+  #notesListMobile .note-card-action {
+    flex-shrink: 0;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 6px;
+    margin-left: 4px;
+    border-radius: 8px;
+  }
+
+  #notesListMobile .note-card-action:hover,
+  #notesListMobile .note-card-action:focus-visible {
+    background: rgba(81, 38, 99, 0.08);
+  }
+}
+
+.premium-note-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(229, 223, 244, 0.95);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow:
+    0 10px 28px rgba(81, 63, 140, 0.12),
+    0 2px 6px rgba(46, 38, 68, 0.06);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  cursor: pointer;
+}
+
+.premium-note-card:hover,
+.premium-note-card:focus-within {
+  transform: translateY(-4px);
+  border-color: rgba(178, 154, 232, 0.9);
+  box-shadow:
+    0 14px 32px rgba(81, 63, 140, 0.18),
+    0 4px 10px rgba(46, 38, 68, 0.08);
+}
+
+.premium-note-card.active {
+  border-color: rgba(178, 154, 232, 0.95);
+  box-shadow:
+    0 14px 32px rgba(81, 63, 140, 0.2),
+    0 0 0 2px rgba(178, 154, 232, 0.25);
+}
+
+.premium-note-card:focus-visible {
+  outline: 2px solid rgba(178, 154, 232, 0.8);
+  outline-offset: 2px;
+}
+
+.note-card-action {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  color: var(--text-main);
+  z-index: 60; /* ensure overflow button sits above other UI */
+}
+
+.premium-note-card:hover .note-card-action,
+.premium-note-card:focus-within .note-card-action {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .note-card-action {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-card-title {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.note-card-preview {
+  margin-top: 6px;
+  color: var(--text-muted, #5b5568);
+  line-height: 1.5;
+}
+
+.note-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted, #756c88);
+}
+
+.note-card-folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(92, 76, 123, 0.08);
+  color: #4f3b78;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-card-folder::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.notebook-empty-state {
+  text-align: center;
+  padding: 32px 12px;
+  border: 1px dashed rgba(178, 154, 232, 0.4);
+  border-radius: 16px;
+  background: rgba(248, 245, 255, 0.6);
+  color: var(--text-muted, #5b5568);
+}
+
+.notebook-empty-illustration {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.note-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: rgba(47, 36, 77, 0.95);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(26, 17, 48, 0.3);
+  font-size: 0.9rem;
+  z-index: 2000;
+  opacity: 0;
+  animation: toast-in 0.24s ease forwards, toast-out 0.3s ease 2.4s forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+
+.pick-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+  cursor: pointer;
+}
+
+.pick-folder-row:hover {
+  background: rgba(244, 236, 255, 0.6);
+  border-color: rgba(188, 164, 237, 0.5);
+}
+
+.pick-folder-row.is-active {
+  background: linear-gradient(120deg, #f3edff, #e4dbff);
+  border-color: rgba(188, 164, 237, 0.8);
+  box-shadow: 0 10px 22px rgba(101, 74, 155, 0.12);
+}
+
+/* New folder modal tweaks */
+#newFolderModal {
+  border: none;
+  max-width: 420px;
+  width: calc(100% - 36px);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+#newFolderModal .modal-actions .btn {
+  min-width: 84px;
+}
+
+#newFolderError {
+  color: #e11d48; /* text-error */
+}
+
+/* Note editor folder chip */
+.note-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  color: var(--primary-dark);
+  cursor: pointer;
+  gap: 6px;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.note-folder-chip:hover {
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.note-folder-chip:active {
+  transform: scale(0.96);
+}
+
+.notebook-empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.notebook-empty-title {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.notebook-empty-body {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, rgba(0, 0, 0, 0.6));
+}
+
+/* Folder badge in the notes list */
+.note-folder-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  background: rgba(81, 38, 99, 0.06);
+  color: var(--primary-dark);
+}
+
+/* Overflow icon inside folder chip */
+.folder-chip { position: relative; }
+.folder-chip .notebook-folder-chip-overflow {
+  border: none;
+  background: transparent;
+  padding: 0 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notebook-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px; /* fixed width to keep uniform */
+  height: 40px; /* fixed height to keep uniform */
+  border-radius: 8px; /* slightly rounded corners */
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+  border: 0;
+  cursor: pointer;
+  box-shadow: none;
+  padding: 0 0.6rem;
+}
+
+.notebook-action-btn:focus {
+  outline: 3px solid color-mix(in srgb, #2E6171 18%, transparent);
+  outline-offset: 2px;
+}
+
+.notebook-action-btn.save {
+  background: #2E6171; /* Save button color */
+  color: #ffffff;
+}
+
+.notebook-action-btn.new {
+  background: #D4AFCD; /* New button color */
+  color: #102027; /* darker text for contrast on light background */
+}
+
+.notebook-action-btn.saved {
+  background: #798086; /* Saved Notes button color */
+  color: #ffffff;
+}
+
+/* Ensure any framework btn classes don't override our sizing */
+.notebook-action-btn,
+.notebook-action-btn * {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Saved notes list item helpers */
+.saved-note-item {
+  text-decoration: none;
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.96),
+    rgba(168, 85, 247, 0.94)
+  );
+  border: none;
+  color: #f9fafb;
+}
+
+.saved-note-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: rgba(249, 250, 251, 0.9);
+}
+
+/* Notebook header subtitle helper */
+.notebook-header-subtitle {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header divider + subtitle color polish for mobile notebook */
+#scratch-notes-card > .flex.items-center {
+  border-bottom-color: color-mix(in srgb, var(--mobile-header-border, rgba(99,102,241,0.22)) 40%, var(--color-base-200, #eef2ff) 60%);
+}
+
+.notebook-header-subtitle {
+  color: color-mix(in srgb, var(--mobile-header-button-color, #556F7A) 12%, var(--color-base-content, #0f172a) 88%);
+}
+
+ 
+/* Notebook editor layout */
+
+/* Toolbar icon sizing for mobile notebook (match .icon-btn svg) */
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Notebook editor polish */
+/* Placeholder styling */
+#notebook-editor-body:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* Soft focus ring for editor container */
+.notes-editor-container:focus-within {
+  border-color: var(--mobile-header-button-color, var(--fallback-bc, #a5b4fc));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mobile-header-button-color, #6495ed) 30%, transparent);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Smooth scrolling inside the editor */
+#notebook-editor-body {
+  scroll-behavior: smooth;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  min-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#notebook-editor-body ul,
+#notebook-editor-body ol {
+  padding-left: 1.2rem;
+  margin: 0.25rem 0 0.45rem;
+}
+
+#notebook-editor-body ul {
+  list-style: disc;
+}
+
+#notebook-editor-body ol {
+  list-style: decimal;
+}
+
+#notebook-editor-body li {
+  margin-bottom: 0.2rem;
+}
+
+#notebook-editor-body strong {
+  font-weight: 700;
+}
+
+#notebook-editor-body em {
+  font-style: italic;
+}
+
+#notebook-editor-body a {
+  color: var(--accent-color, #512663);
+  text-decoration: underline;
+  word-break: break-word;
+}
+
+/* Optional: smoother transitions for mobile header/title area */
+.mobile-note-header input,
+.mobile-note-header button {
+  transition: all 0.15s ease;
+}
+.mobile-note-header input:focus {
+  box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.25);
+}
+
+/* Notebook action buttons: New, Save, Saved Notes */
+.notebook-actions-row {
+  background: #f9f9f9; /* soft off-white background */
+  padding: 0.4rem; /* slight padding for breathing room */
+  border-radius: 10px;
+  border: 1px solid #e6dff0;
+}
+
+/* Notebook folder chip bar (mobile) */
+
+.notebook-folder-bar {
+  display: flex;
+  gap: 10px;
+  padding: 6px 12px 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 4px 8px;
+  background: linear-gradient(120deg, rgba(244, 240, 252, 0.9), rgba(235, 229, 248, 0.9));
+  border: 1px solid rgba(214, 197, 241, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 12px 24px rgba(96, 77, 129, 0.08);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.notebook-folder-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Improve folder chip scrolling: keep chips in a horizontally scrollable row
+   and keep the +New folder chip visible at the far right with a subtle fade hint */
+.notebook-folder-bar {
+  position: relative;
+}
+
+.notebook-folder-filter-bar {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  flex-wrap: nowrap;
+  scroll-snap-type: x mandatory;
+}
+
+/* The scroll wrapper holds the chips and shows a right-side fade to hint scrollability */
+.notebook-folder-scroll-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* leave room on the right so the fixed New button doesn't cover chips */
+  padding-right: 92px;
+}
+
+.notebook-folder-scroll-wrap::after {
+  /* right fade to indicate scrollability */
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+
+/* Ensure the New folder chip stays visible at the far right (outside the scroll area) */
+.notebook-folder-chip--new {
+  margin-left: 8px;
+  z-index: 40;
+  flex: 0 0 auto;
+  align-self: center;
+  /* keep layout/visual styles only; positioning is handled by the header-pinned button */
+  position: static;
+  transform: none;
+}
+
+/* Dark theme fade tweak */
+html[data-theme="night"] .notebook-folder-scroll-wrap::after,
+html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
+  background: linear-gradient(to left, rgba(4,7,18,0.85), rgba(4,7,18,0));
+}
+
+
+.note-editor-card {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  box-sizing: border-box;
+  background: var(--surface-soft, #fff);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.mobile-shell #view-notebook .mobile-view-inner,
+.mobile-shell #view-notebook #scratch-notes-card {
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.mobile-shell #savedNotesSheet {
+  width: 100%;
+  max-width: 98vw;
+  box-sizing: border-box;
+  margin: 7px;
+}
+
+@media (min-width: 900px) {
+  .mobile-shell #view-notebook #scratch-notes-card {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.note-editor-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;   /* tighter vertical rhythm */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.scratch-notes-header-block {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;  /* title → folder label → toolbar closer together */
+  align-items: stretch;
+}
+
+.scratch-notes-body-wrapper,
+.note-editor-content-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  padding: 0;
+  border-radius: 0;
+  box-sizing: border-box;
+  background: #ffffff;
+  overflow: hidden;          /* scroll happens inside body */
+}
+
+/* Prevent utility max-height helpers from constraining the notebook editor */
+.scratch-notes-body-wrapper,
+.note-editor-content-wrapper,
+.editor,
+.note-editor {
+  max-height: none !important;
+}
+
+/* Notebook body text: document-like */
+.note-body-field textarea {
+  font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.note-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;   /* less internal padding */
+  margin: 3px 0;    /* less space above/below */
+  background: transparent;
+  border-radius: 0;
+  overflow-x: auto;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.note-editor-toolbar .rte-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #ffffff;
+  color: var(--text-primary, #1f1633);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  opacity: 1;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+/* Subtle hover + active states */
+.note-editor-toolbar .rte-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+/* Active formatting state (e.g., B/I/U on) */
+.note-editor-toolbar .rte-btn.active {
+  background: rgba(15, 23, 42, 0.07);
+  border-color: rgba(80, 128, 191, 0.7); /* use app accent for active */
+  color: rgba(17, 24, 39, 1);
+}
+
+/* Glyph inside toolbar pill (B/I/U/•/1./arrows) */
+.rte-icon {
+  font-size: 0.8rem;
+  line-height: 1;
+  pointer-events: none;
+  color: inherit;
+  opacity: 1;
+}
+
+.rte-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.12);
+  margin: 0 2px;
+}
+
+.note-editor-toolbar span {
+  text-decoration: none;
+  color: inherit;
+  opacity: 1;
+}
+
+.note-editor-toolbar .list-label {
+  display: none;
+}
+
+/* Notebook toolbar: minimal inline group */
+.note-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0;
+  border-radius: 999px;
+  background: transparent; /* no purple chip background */
+}
+
+/* Mobile-specific: tighten filter bar spacing and stretch scratch-notes panel */
+@media (max-width: 899px) {
+  /* Ensure the new iOS-style header tabs behave correctly on mobile */
+  .reminders-top-row .reminder-tabs {
+    width: auto;
+    max-width: none;
+    padding: 0.12rem;
+    margin: 0;
+    justify-content: flex-start;
+    gap: 0.2rem;
+  }
+
+  .reminders-top-row .reminder-tab {
+    flex: 0 0 auto;
+    min-width: auto;
+  }
+
+  /* Normalise any accidental large top spacing */
+  .mobile-view-inner .reminders-content-shell,
+  .reminders-content-shell,
+  .reminders-list-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #remindersSummary,
+  .reminders-summary,
+  .reminders-top-controls,
+  .reminders-list-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .note-editor-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+
+  .scratch-notes-header-block {
+    flex: 0 0 auto;
+  }
+
+  /* Editable area */
+  .scratch-notes-body,
+  .note-editor-area,
+  .notebook-editor-body,
+  .note-editor-content {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto; /* internal scroll for long notes */
+    padding-right: 6px;
+  }
+
+  /* Reserve space for bottom nav to avoid content behind footer */
+  #mobile-shell #main {
+    padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
+  }
+
+}
+
+.note-content-wrapper {
+  margin-top: 6px;
+  border-radius: 0;
+  border: none;
+  background: #ffffff;
+  padding: 0.5rem 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.note-editor-content {
+  width: 100%;
+  max-width: 100%;
+  min-height: 140px;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  outline: none;
+  overflow-x: hidden;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #1f1633;
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  flex: 1 1 auto;
+  min-height: 100%;
+  overflow-y: auto;
+}
+
+.scratch-notes-body {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.note-editor-content textarea {
+  resize: none;
+}
+
+/* Scratch-notes section layout */
+.scratch-notes-wrapper,
+.note-sheet-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;  /* no centering that creates big gaps */
+  align-items: stretch;
+  padding: 0;   /* small left/right inset */
+  margin-top: 0;
+  box-sizing: border-box;
+}
+
+.scratch-notes-card,
+#scratch-notes-card {
+  flex: 1 1 auto;
+  min-height: calc(100vh - 120px); /* header + bottom nav allowance */
+  max-height: none;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Make note-editor-card fill its container */
+.note-editor-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* View-notebook section should fill available height */
+#view-notebook {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#view-notebook .mobile-view-inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px !important;
+  padding-bottom: 8px !important;
+}
+
+/* Make the scratch-notes wrapper fill and the card extend properly */
+#view-notebook .scratch-notes-wrapper {
+  margin-top: 0;
+  padding-top: 3.5rem;
+}
+
+/* Allow the scratch-notes card to use the full vertical space */
+.mobile-shell #view-notebook #scratch-notes-card {
+  max-height: none;
+}
+
+/* Ensure notebook content doesn't sit under the floating footer */
+body.mobile-shell[data-active-view="notebook"] #scratch-notes-card {
+  padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + env(safe-area-inset-bottom, 0px));
+}
+
+.note-editor-content.is-placeholder,
+.note-editor-content[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(31, 22, 51, 0.35);
+  font-style: italic;
+}
+
+.note-editor-content ul,
+.note-editor-content ol {
+  margin: 0 0 0.4rem 1.1rem;
+  padding-left: 0;
+}
+
+.note-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+.note-editor-content p {
+  margin: 0 0 0.35rem;
+}
+
+.note-editor-content * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Buttons */
+/* Mobile notes typography scaling */
+.mobile-panel--notes-size-small {
+  --mobile-notes-text-scale: 0.9;
+}
+
+.mobile-panel--notes-size-default {
+  --mobile-notes-text-scale: 1;
+}
+
+.mobile-panel--notes-size-large {
+  --mobile-notes-text-scale: 1.15;
+}
+
+.mobile-panel--notes [data-note-summary],
+.mobile-panel--notes [data-note-detail-list],
+.mobile-panel--notes [data-note-detail-list] > * {
+  font-size: calc(var(--mobile-notes-detail-base, 0.75rem) * var(--mobile-notes-text-scale, 1));
+  line-height: calc(1.35 * var(--mobile-notes-text-scale, 1));
+}
+
+.mobile-panel--notes .note-body-field textarea {
+  font-size: calc(var(--mobile-notes-textarea-base, 1rem) * var(--mobile-notes-text-scale, 1));
+  line-height: calc(1.45 * var(--mobile-notes-text-scale, 1));
+}
+
+.mobile-panel--notes .note-body-field textarea::placeholder {
+  font-size: inherit;
+}
+
+/* Reduce the offset under the sticky header so the note title sits closer */
+body {
+  margin-top: 48px;
+}
+
+/* Reduce top padding to shorten the space between the header and title */
+#view-notebook {
+  padding-top: calc(env(safe-area-inset-top, 0) + 24px);
+}
+
+/* Light theme overrides for the writing panel */
+#notebook-editor-body,
+#notebook-editor-body .note-title-field,
+#notebook-editor-body .note-body-field {
+  background-color: var(--surface-elevated) !important; /* Soft Off‑White */
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+  /* Ensure elements sit flush without extra space */
+  margin-top: 0 !important;
+}
+
+/* Use Deep Violet for formatting icons */
+.formatting-toolbar-strip button svg {
+  color: #512663 !important;
+  width: 18px;
+  height: 18px;
+}
+
+.formatting-toolbar {
+  display: flex;
+  justify-content: start;
+  gap: 8px;
+  padding: 8px 0px 0px;
+  border-bottom: 0px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.formatting-toolbar button {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.formatting-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.formatting-toolbar button.active {
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.note-editor-card {
+  border-radius: 1rem;
+  background: var(--surface-soft, #fff);
+  padding: 0.9rem 1rem;
+  box-shadow: 0 18px 45px rgba(15, 0, 65, 0.08);
+}
+
+.note-editor-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.note-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(76, 29, 149, 0.04);
+}
+
+.note-title-input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-subtle, #e3d9f4);
+  background: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.note-title-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+  outline-offset: 1px;
+}
+
+.note-title {
+  width: 100%;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 0;
+  margin-bottom: 8px;
+  color: inherit;
+}
+
+.note-title:focus {
+  outline: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.note-editor-content,
+.note-editor-card .note-editor-area {
+  min-height: 220px;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(76, 29, 149, 0.12);
+  background: #fff;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
 body.mobile-theme .btn-primary,
 body.mobile-theme button.btn-primary,
 body.mobile-theme .button-primary {
@@ -187,8 +3677,8 @@ body.mobile-theme textarea,
 body.mobile-theme .form-control {
   width: 100%;
   background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
+  border: 2px solid #E5E7EB;
+  border-radius: 1.5rem;
   padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
   color: #111827;
@@ -260,8 +3750,182 @@ body.mobile-theme .card-grid {
 
 /* Accessibility Helpers */
 body.mobile-theme :focus-visible {
-  outline: 2px solid #5080BF;
+  outline: 2px solid #424242;
   outline-offset: 2px;
+}
+
+/* Notebook note actions sheet */
+.note-options-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 60;
+}
+
+.note-options-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#note-options-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-1, #fff);
+  border-top-left-radius: 1.2rem;
+  border-top-right-radius: 1.2rem;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.2rem;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  z-index: 70;
+  pointer-events: none;
+}
+
+#note-options-sheet.open {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.note-options-grip {
+  width: 3rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+  margin: 0 auto 0.8rem;
+}
+
+.note-options-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.note-action-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem 0.6rem;
+  border-radius: 0.6rem;
+  font-size: 0.92rem;
+  color: var(--text-primary, #2f1456);
+  background: transparent;
+  border: none;
+  transition: background 0.15s ease;
+}
+
+.note-action-btn:hover,
+.note-action-btn:focus-visible {
+  background: rgba(80, 20, 120, 0.05);
+}
+
+.note-action-delete {
+  color: var(--error, #b91c1c);
+}
+
+
+.note-row,
+.note-list-item {
+  width: 100%;
+  background: white;
+  padding: 12px 14px;
+
+  border-radius: 12px;
+  margin-bottom: 8px;
+
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.note-list-main,
+.note-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saved-notes-list {
+  padding: 0 12px 8px;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.note-list-title,
+.note-row-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-list-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.note-list-meta,
+.note-row-meta {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.note-list-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.note-list-title {
+  flex: 1 1 auto;
+}
+
+.note-list-pin-icon {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.note-options-button,
+.note-list-overflow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+.note-list-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 0.25rem;
+}
+
+.note-list-item .note-actions {
+  margin-left: auto;
+  align-self: flex-start;
+  padding-top: 4px;
 }
 
 /* Media Queries */
@@ -272,9 +3936,14 @@ body.mobile-theme :focus-visible {
     padding: 1.25rem 1.5rem;
   }
   body.mobile-theme .card,
-  body.mobile-theme .note-card,
-  body.mobile-theme .reminder-card {
+  body.mobile-theme .note-card {
     padding: 1.15rem 1.35rem;
+  }
+
+  body.mobile-theme .reminder-card {
+    padding: 10px 14px;
+    gap: 0.55rem;
+    border-radius: 14px;
   }
   body.mobile-theme .btn-primary,
   body.mobile-theme button.btn-primary,
@@ -286,4 +3955,137 @@ body.mobile-theme :focus-visible {
   body.mobile-theme .card-grid {
     gap: 1.25rem;
   }
+}
+
+@media (min-width: 900px) {
+  body.desktop-theme .reminder-card {
+    padding: 0.5rem 1rem;
+  }
+}
+
+.note-folder-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+
+  max-height: 70vh;
+  background: var(--surface-1, #ffffff);
+  border-top-left-radius: 1.2rem;
+  border-top-right-radius: 1.2rem;
+  box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.18);
+
+  padding: 0.75rem 1rem 1rem;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+
+.note-folder-sheet.open {
+  transform: translateY(0);
+}
+
+.note-folder-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.note-folder-sheet-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.note-folder-sheet-list {
+  margin-top: 0.35rem;
+  padding: 0.25rem 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.note-folder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0.55rem 0.1rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.note-folder-row:hover {
+  background: rgba(76, 29, 149, 0.04);
+}
+
+.note-folder-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.note-folder-row-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.note-folder-row-count {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.note-folder-row-indicator {
+  font-size: 0.9rem;
+  color: var(--accent, #4c1d95);
+}
+
+.note-folder-row.is-current {
+  background: rgba(76, 29, 149, 0.06);
+}
+
+.note-folder-row-new {
+  border: 1px dashed rgba(76, 29, 149, 0.35);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  margin-top: 0.5rem;
+
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-start;
+}
+
+.note-folder-row-new .note-folder-row-prefix {
+  font-size: 0.9rem;
+  color: var(--accent, #4c1d95);
+}
+
+.note-folder-row-new .note-folder-row-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.note-folder-row-new:hover {
+  background: rgba(76, 29, 149, 0.04);
+}
+
+.note-folder-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 39;
+}
+
+.note-folder-sheet-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
 }

@@ -1,6 +1,6 @@
 const NOTES_STORAGE_KEY = 'memoryCueNotes';
 const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
-const LEGACY_NOTE_KEYS = ['mobileNotes'];
+const LEGACY_NOTE_KEYS = ['mobileNotes', 'memory-cue-notes'];
 
 const hasLocalStorage = () => typeof localStorage !== 'undefined';
 
@@ -102,6 +102,7 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
     body: normalizedBodyHtml,
     bodyHtml: normalizedBodyHtml,
     bodyText: normalizedBodyText,
+    pinned: typeof overrides.pinned === 'boolean' ? overrides.pinned : false,
     updatedAt:
       overrides.updatedAt && isValidDateString(overrides.updatedAt)
         ? overrides.updatedAt
@@ -131,6 +132,7 @@ const normalizeNotes = (value) => {
         const bodyText = deriveBodyText(body, fallbackText);
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
+        const pinned = typeof note.pinned === 'boolean' ? note.pinned : false;
         if (!title && !body && !fallbackText) {
           return null;
         }
@@ -140,6 +142,7 @@ const normalizeNotes = (value) => {
           folderId: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
           bodyHtml: body,
           bodyText,
+          pinned,
         });
       })
       .filter(Boolean);
@@ -157,6 +160,7 @@ const normalizeNotes = (value) => {
     const fallbackText = typeof value.bodyText === 'string' ? value.bodyText : '';
     const body = normalizeBodyValue(rawBodyHtml || fallbackText);
     const bodyText = deriveBodyText(body, fallbackText);
+    const pinned = typeof value.pinned === 'boolean' ? value.pinned : false;
     if (!title && !body && !bodyText) {
       return [];
     }
@@ -167,6 +171,7 @@ const normalizeNotes = (value) => {
         folderId: typeof value.folderId === 'string' ? value.folderId : undefined,
         bodyHtml: body,
         bodyText,
+        pinned,
       }),
     ];
   }
@@ -249,6 +254,7 @@ export const saveAllNotes = (notes, options = {}) => {
     const out = normalized[0];
     if (out) {
       out.folderId = typeof note.folderId === 'string' && note.folderId ? note.folderId : out.folderId || null;
+      out.pinned = typeof note.pinned === 'boolean' ? note.pinned : Boolean(out.pinned);
     }
     return out;
   }).filter(Boolean);

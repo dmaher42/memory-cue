@@ -155,7 +155,7 @@
 
 .header-pill .header-icons svg,
 .header-pill .header-icons button {
-  color: #512663;
+  color: #000000 !important;
 }
 
 .mobile-footer {
@@ -209,8 +209,30 @@
 }
 
 /* Ensure the inner svg/icon contrasts when active */
-#mobile-footer-new-reminder[aria-expanded="true"] svg {
-  filter: brightness(0) invert(1) saturate(1.2);
+#mobile-footer-new-reminder[aria-expanded="true"] svg,
+.floating-footer #mobile-footer-new-reminder[aria-expanded="true"] svg {
+  stroke: var(--icon-color, #512663) !important;
+  fill: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.mobile-footer svg,
+.floating-footer svg,
+.footer-nav svg,
+.mobile-footer-nav svg,
+.footer-button svg {
+  stroke: var(--icon-color, #512663) !important;
+  fill: none !important;
+  opacity: 1 !important;
+}
+
+.mobile-footer .mobile-footer-item--active svg,
+.floating-footer .floating-card.active svg,
+.floating-footer .floating-card.is-active svg {
+  stroke: var(--icon-color, #512663) !important;
+  fill: none !important;
+  opacity: 1 !important;
 }
 
 /* Soft-glass elevated card for mobile New Reminder form */

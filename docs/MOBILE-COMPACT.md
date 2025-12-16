@@ -1,6 +1,6 @@
 # Mobile compact CSS
 
-This file describes how to load `src/styles/mobile-compact.css` into the app so short mobile viewports show the Save / New Note buttons without scrolling.
+This file describes how to load `styles/mobile-compact.css` into the app so short mobile viewports show the Save / New Note buttons without scrolling. The legacy `src/styles/mobile-compact.css` has been removed; always import from `styles/mobile-compact.css`.
 
 Options to enable the CSS (pick one):
 

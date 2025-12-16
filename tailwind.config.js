@@ -51,6 +51,19 @@ export default {
       },
       "light",
       "dark",
+      {
+        "professional-dark": {
+          primary: "#4f46e5",
+          secondary: "#fcd34d",
+          accent: "#f472b6",
+          neutral: "#1f2937",
+          "base-100": "#111827",
+          info: "#3abff8",
+          success: "#36d399",
+          warning: "#fbbd23",
+          error: "#f87272",
+        },
+      },
     ],
   },
 };
