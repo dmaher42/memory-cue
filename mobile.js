@@ -13,6 +13,20 @@ import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
 
+const isNotesSyncDebugEnabled = (() => {
+  try {
+    if (typeof window !== 'undefined' && window.__NOTES_SYNC_DEBUG) {
+      return true;
+    }
+    if (typeof localStorage !== 'undefined') {
+      return Boolean(localStorage.getItem('notesSyncDebug'));
+    }
+  } catch {
+    /* ignore debug detection errors */
+  }
+  return false;
+})();
+
 initViewportHeight();
 
 document.querySelector('.fab-button')?.addEventListener('click', () => {
@@ -2782,8 +2796,28 @@ if (document.readyState === 'loading') {
 }
 
 function wireMobileNotesSupabaseAuth() {
+  const debugLog = (...args) => {
+    if (isNotesSyncDebugEnabled) {
+      try {
+        console.debug(...args);
+      } catch {
+        /* ignore debug logging issues */
+      }
+    }
+  };
+
   // 1. Initialise the notes sync controller for mobile
-  const notesSync = initNotesSync?.();
+  const notesSync = initNotesSync?.({
+    debugLogger: isNotesSyncDebugEnabled ? debugLog : null,
+    onRemotePull: ({ mergedCount, remoteCount } = {}) => {
+      try {
+        mobileNotesSyncDidPullFromRemote();
+      } catch {
+        // ignore UI refresh errors
+      }
+      debugLog('[notes-sync] Mobile remote pull complete', { mergedCount, remoteCount });
+    },
+  });
   if (!notesSync) {
     console.warn('[notes-sync] initNotesSync() did not return a controller; notes will remain local-only.');
   } else if (typeof notesSync.syncFromRemote === 'function') {
@@ -2816,6 +2850,7 @@ function wireMobileNotesSupabaseAuth() {
     },
     disableButtonBinding: false,
     onSessionChange(user, session) {
+      debugLog('[notes-sync] Mobile session change', { userId: user?.id || null });
       if (notesSync && typeof notesSync.handleSessionChange === 'function') {
         notesSync.handleSessionChange(user ?? null, session ?? null);
       }
@@ -2839,6 +2874,7 @@ function wireMobileNotesSupabaseAuth() {
     .then(({ data }) => {
       const session = data?.session ?? null;
       const user = session?.user ?? null;
+      debugLog('[notes-sync] Mobile initial session', { userId: user?.id || null });
       if (typeof notesSync.handleSessionChange === 'function') {
         notesSync.handleSessionChange(user, session);
       }
@@ -2846,6 +2882,33 @@ function wireMobileNotesSupabaseAuth() {
     .catch((err) => {
       console.warn('[notes-sync] Failed to get initial Supabase session on mobile:', err);
     });
+
+  const requestRemoteSync = () => {
+    if (typeof notesSync.syncFromRemote === 'function') {
+      notesSync
+        .syncFromRemote()
+        .catch(() => {
+          /* best-effort */
+        });
+    }
+  };
+
+  const bindRemoteSyncListeners = () => {
+    if (bindRemoteSyncListeners.bound) {
+      return;
+    }
+    bindRemoteSyncListeners.bound = true;
+    window.addEventListener('online', requestRemoteSync);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          requestRemoteSync();
+        }
+      });
+    }
+  };
+
+  bindRemoteSyncListeners();
 }
 
 (() => {

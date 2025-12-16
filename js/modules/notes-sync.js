@@ -72,6 +72,8 @@ export const initNotesSync = (options = {}) => {
     userColumn = DEFAULT_USER_COLUMN,
     updatedAtColumn = DEFAULT_UPDATED_AT_COLUMN,
     supabase: suppliedSupabase = null,
+    onRemotePull = null,
+    debugLogger = null,
   } = options;
 
   let supabase = suppliedSupabase || null;
@@ -79,6 +81,16 @@ export const initNotesSync = (options = {}) => {
   let isApplyingRemote = false;
   let lastSyncedIds = new Set();
   let remoteSyncPromise = null;
+
+  const logDebug = (...args) => {
+    if (typeof debugLogger === 'function') {
+      try {
+        debugLogger(...args);
+      } catch {
+        // Debug logging failures should never break sync.
+      }
+    }
+  };
 
   const ensureSupabase = () => {
     if (supabase) {
@@ -113,7 +125,7 @@ export const initNotesSync = (options = {}) => {
       ? notes.filter((note) => note && typeof note.id === 'string')
       : [];
 
-      const payload = sanitized.map((note) => ({
+    const payload = sanitized.map((note) => ({
       id: note.id,
       [userColumn]: currentUserId,
       title: note.title,
@@ -157,6 +169,7 @@ export const initNotesSync = (options = {}) => {
     }
 
     try {
+      logDebug('[notes-sync] Starting remote pull');
       const { data, error } = await client
         .from(tableName)
         .select(`id,title,body,body_html,body_text,folder_id,${updatedAtColumn}`)
@@ -178,6 +191,17 @@ export const initNotesSync = (options = {}) => {
             console.error('[notes-sync] Failed to upload local notes to Supabase.', syncError);
           }
         }
+        if (typeof onRemotePull === 'function') {
+          try {
+            onRemotePull({ mergedCount: localNotes.length, remoteCount: remoteNotes.length });
+          } catch (callbackError) {
+            console.warn('[notes-sync] onRemotePull callback failed (empty remote).', callbackError);
+          }
+        }
+        logDebug('[notes-sync] Remote pull completed (no remote notes)', {
+          mergedCount: localNotes.length,
+          remoteCount: remoteNotes.length,
+        });
         return;
       }
 
@@ -196,6 +220,18 @@ export const initNotesSync = (options = {}) => {
       } catch (syncError) {
         console.error('[notes-sync] Failed to reconcile notes with Supabase.', syncError);
       }
+
+      if (typeof onRemotePull === 'function') {
+        try {
+          onRemotePull({ mergedCount: merged.length, remoteCount: remoteNotes.length });
+        } catch (callbackError) {
+          console.warn('[notes-sync] onRemotePull callback failed.', callbackError);
+        }
+      }
+      logDebug('[notes-sync] Remote pull completed', {
+        mergedCount: merged.length,
+        remoteCount: remoteNotes.length,
+      });
     } catch (error) {
       console.error('[notes-sync] Failed to fetch notes from Supabase.', error);
     } finally {
@@ -216,6 +252,7 @@ export const initNotesSync = (options = {}) => {
 
   const handleSessionChange = async (user) => {
     currentUserId = typeof user?.id === 'string' ? user.id : null;
+    logDebug('[notes-sync] Session change', { userId: currentUserId });
     if (!currentUserId) {
       lastSyncedIds = new Set();
       return;
