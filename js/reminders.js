@@ -3680,7 +3680,7 @@ export async function initReminders(sel = {}) {
     });
   }
 
-  function applyMobileRemindersFilter(mode) {
+  function setMobileRemindersFilter(mode) {
     if (!mode || mode === mobileRemindersFilterMode) {
       return false;
     }
