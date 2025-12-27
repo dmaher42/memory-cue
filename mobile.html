@@ -19,7 +19,6 @@
       --cauliflower-blue: #F7F7FA;
       --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
       --text-primary: #231B2E; /* Deep violet text */
-      --text-secondary: #5b4a68; /* Muted violet */
       --text-strong: #34163f;
       --text-body:  #4a3c57;
       --text-muted: #9a8bb0;
@@ -89,7 +88,7 @@
       margin-bottom: 2px !important; /* tiny controlled gap below header */
       gap: 0.5rem;
       white-space: nowrap;
-      overflow: hidden;
+      overflow: visible;
       flex-wrap: nowrap;
       position: relative;
     }
@@ -105,7 +104,7 @@
       background: color-mix(in srgb, #f4f1fb 88%, #ffffff);
       border: 1px solid color-mix(in srgb, #dcd3ec 65%, transparent);
       border-radius: 999px;
-      box-shadow: 0 10px 25px rgba(81, 38, 99, 0.07);
+      box-shadow: 0 5px 14px rgba(81, 38, 99, 0.06);
     }
 
     .reminders-quick-bar input#quickAddInput {
@@ -126,19 +125,23 @@
       display: inline-flex;
       align-items: center;
       gap: 0.2rem;
-      padding: 0.12rem;
+      padding: 0.1rem;
       border-radius: 999px;
       background: color-mix(in srgb, #e8e1f4 78%, #ffffff);
+      border: 1px solid var(--card-border);
+      border: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
+      box-shadow: none;
       flex-shrink: 0;
     }
 
     .reminder-tab {
       border: none;
       background: transparent;
-      padding: 0.25rem 0.7rem;
+      padding: 0.22rem 0.6rem;
       border-radius: 999px;
       font-size: 0.82rem;
       font-weight: 600;
+      letter-spacing: 0.01em;
       color: color-mix(in srgb, var(--accent-color) 55%, #7b6a8b);
       cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease;
@@ -149,7 +152,22 @@
     .reminder-tab.active,
     .reminder-tab[aria-pressed="true"] {
       background: var(--accent-color);
+      background: color-mix(in srgb, var(--accent-color) 92%, #000);
       color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    @media (max-width: 420px) {
+      .reminders-top-row {
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .reminders-top-row::-webkit-scrollbar {
+        display: none;
+      }
     }
 
     .reminders-quick-actions {
@@ -1665,8 +1683,8 @@ body[data-active-view="notebook"] #view-notebook .card-body {
       background: #f8f6ff;
       border: 1px solid rgba(81, 38, 99, 0.08);
       box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.9),
-        0 10px 24px rgba(20, 6, 44, 0.06);
+        0 0 0 1px rgba(255, 255, 255, 0.85),
+        0 6px 14px rgba(20, 6, 44, 0.05);
       white-space: nowrap;
       overflow: hidden;
     }
@@ -1684,27 +1702,34 @@ body[data-active-view="notebook"] #view-notebook .card-body {
       display: inline-flex;
       align-items: center;
       flex-shrink: 0;
-      padding: 3px;
+      padding: 2px;
       border-radius: 999px;
       background: #efe6ff;
+      border: 1px solid var(--card-border);
+      border: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
+      box-shadow: none;
     }
 
     .reminder-tab {
       border: none;
       background: transparent;
-      padding: 0.25rem 0.7rem;
+      padding: 0.22rem 0.6rem;
       border-radius: 999px;
       font-size: 0.8rem;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.01em;
       color: #5c4b75;
       cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease;
     }
 
     .reminder-tab.reminders-tab-active,
+    .reminder-tab.active,
     .reminder-tab[aria-pressed="true"] {
-      background: #512663;
+      background: var(--accent-color);
+      background: color-mix(in srgb, var(--accent-color) 92%, #000);
       color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
     .reminders-quick-actions {
@@ -1746,7 +1771,7 @@ body[data-active-view="notebook"] #view-notebook .card-body {
   border-radius: 999px;
   background: #f8f6ff;
   border: 1px solid rgba(81,38,99,0.08);
-  box-shadow: 0 6px 18px rgba(15, 10, 41, 0.10);
+  box-shadow: 0 4px 10px rgba(15, 10, 41, 0.08);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -1765,24 +1790,31 @@ body[data-active-view="notebook"] #view-notebook .card-body {
   align-items: center;
   flex-shrink: 0;
   background: #eee6ff;
-  padding: 3px;
+  padding: 2px;
   border-radius: 999px;
+  border: 1px solid var(--card-border);
+  border: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
+  box-shadow: none;
 }
 
 .reminder-tab {
   border: none;
   background: transparent;
-  padding: 0.25rem 0.7rem;
+  padding: 0.22rem 0.6rem;
   border-radius: 999px;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   color: #5c4b75;
 }
 
 .reminder-tab.reminders-tab-active,
+.reminder-tab.active,
 .reminder-tab[aria-pressed="true"] {
-  background: #512663;
+  background: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 92%, #000);
   color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .reminders-quick-actions {
@@ -5921,7 +5953,7 @@ body, main, section, div, p, span, li {
       border-radius: 999px;
       background: #f8f6ff;
       border: 1px solid rgba(81,38,99,0.08);
-      box-shadow: 0 6px 18px rgba(15, 10, 41, 0.10);
+      box-shadow: 0 4px 10px rgba(15, 10, 41, 0.08);
       white-space: nowrap;
       overflow: hidden;
     }
@@ -5940,24 +5972,31 @@ body, main, section, div, p, span, li {
       align-items: center;
       flex-shrink: 0;
       background: #eee6ff;
-      padding: 3px;
+      padding: 2px;
       border-radius: 999px;
+      border: 1px solid var(--card-border);
+      border: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
+      box-shadow: none;
     }
 
     .reminder-tab {
       border: none;
       background: transparent;
-      padding: 0.25rem 0.7rem;
+      padding: 0.22rem 0.6rem;
       border-radius: 999px;
       font-size: 0.8rem;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.01em;
       color: #5c4b75;
     }
 
     .reminder-tab.reminders-tab-active,
+    .reminder-tab.active,
     .reminder-tab[aria-pressed="true"] {
-      background: #512663;
+      background: var(--accent-color);
+      background: color-mix(in srgb, var(--accent-color) 92%, #000);
       color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
     .reminders-quick-actions {
