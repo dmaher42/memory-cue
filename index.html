@@ -30,9 +30,9 @@
     content="default-src 'self';
              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.bigdatacloud.net https://hn.algolia.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://cdn.jsdelivr.net;
              script-src 'self' https://cdn.jsdelivr.net https://esm.sh https://www.gstatic.com https://apis.google.com;
-             style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+             style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
              img-src 'self' data:;
-             font-src 'self' data:;
+             font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com;
              worker-src 'self';
              frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.google.com;
              base-uri 'self';
@@ -48,6 +48,12 @@
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
   <!-- BEGIN GPT CHANGE: head cleanup -->
   <!-- END GPT CHANGE -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
   <!-- PWA manifest -->
   <link rel="manifest" href="./manifest.webmanifest" />
   <!-- BEGIN GPT CHANGE: apple icon -->
@@ -55,6 +61,7 @@
   <!-- END GPT CHANGE -->
   <!-- Ensure this file exists; keep as-is or change to your actual icon -->
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles/index.css" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
   <link rel="stylesheet" href="./assets/styles-b0e8fdf5.css" />
