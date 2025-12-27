@@ -1990,6 +1990,60 @@ body, main, section, div, p, span, li {
   <link rel="stylesheet" href="css/theme-mobile.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <style>
+    /* New Header Styles */
+    .mobile-header {
+      background: var(--cauliflower-blue);
+      padding: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .header-main-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .quick-add-form {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 999px;
+      padding: 0.5rem;
+    }
+
+    .quick-add-form input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0 0.5rem;
+    }
+
+    .quick-add-tabs {
+      display: flex;
+      background: var(--cauliflower-blue);
+      border-radius: 999px;
+      padding: 0.25rem;
+    }
+
+    .quick-add-tabs .reminder-tab {
+      padding: 0.25rem 0.75rem;
+    }
+
     /* Accessibility helper */
     .sr-only {
       position: absolute;
@@ -2570,94 +2624,75 @@ body, main, section, div, p, span, li {
     color: var(--text-primary);
   }
 
-  /* Floating footer buttons */
+  /* Integrated Tab Bar Styles */
   #mobile-nav-shell {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
+    z-index: 100;
   }
 
   #mobile-nav-shell .floating-footer {
-    height: 56px;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background: var(--surface-elevated, rgba(255, 255, 255, 0.75));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    padding: 6px 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 999;
-    pointer-events: auto;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface-elevated, rgba(255, 255, 255, 0.85));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    padding: 0.5rem 1rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   #mobile-nav-shell .fab-container {
-    position: fixed;
+    position: absolute;
     left: 50%;
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    top: -30px; /* Adjust to position the FAB correctly */
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.35rem;
-    pointer-events: none;
   }
 
   #mobile-nav-shell .fab-button {
-    pointer-events: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     border-radius: 999px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08);
-    color: var(--icon-active, #111111);
+    background: var(--accent-color);
+    color: white;
+    box-shadow: 0 10px 26px rgba(81, 38, 99, 0.3);
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    transition: transform 0.15s ease;
+    border: none;
   }
 
-  #mobile-nav-shell .fab-button:hover,
-  #mobile-nav-shell .fab-button:focus-visible {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.12);
-    outline: none;
-    background: rgba(255, 255, 255, 0.88);
+  #mobile-nav-shell .fab-button:hover {
+    transform: scale(1.05);
   }
 
   #mobile-nav-shell .fab-button svg {
-    width: 22px;
-    height: 22px;
-    stroke: currentColor;
-    stroke-width: 2;
-    fill: none;
+    width: 24px;
+    height: 24px;
   }
 
   #mobile-nav-shell .fab-menu {
-    pointer-events: auto;
+    position: absolute;
+    bottom: 100%;
+    margin-bottom: 1rem;
     display: none;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.5rem;
     min-width: 180px;
-    padding: 8px;
+    padding: 0.5rem;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16), 0 6px 18px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
   }
 
   #mobile-nav-shell .fab-menu[data-open="true"] {
@@ -2665,40 +2700,34 @@ body, main, section, div, p, span, li {
   }
 
   #mobile-nav-shell .fab-menu .fab-menu-item {
-    width: 100%;
-    border: none;
-    background: transparent;
-    padding: 10px 12px;
+    padding: 0.75rem 1rem;
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
     color: var(--text-main);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.12s ease;
   }
 
-  #mobile-nav-shell .fab-menu .fab-menu-item:hover,
-  #mobile-nav-shell .fab-menu .fab-menu-item:focus-visible {
+  #mobile-nav-shell .fab-menu .fab-menu-item:hover {
     background: color-mix(in srgb, #e8e1f4 45%, #ffffff);
-    outline: none;
   }
 
   #mobile-nav-shell .floating-footer .floating-card {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    padding: 6px;
-    border-radius: 8px;
+    padding: 0.25rem;
+    border-radius: 0;
     cursor: pointer;
-    transition: background 0.1s ease;
+    flex: 1;
+    color: var(--icon-inactive);
   }
 
-  #mobile-nav-shell .floating-footer .floating-card:hover {
-    background: rgba(0, 0, 0, 0.04);
+  #mobile-nav-shell .floating-footer .floating-card.active {
+    color: var(--accent-color);
   }
 
   .icon {
@@ -4571,131 +4600,34 @@ body, main, section, div, p, span, li {
     })();
   </script>
 
-  <!-- Mobile header matching screenshot -->
-    <header
-    id="reminders-slim-header"
-    class="w-full px-4 pt-3 pb-3 mobile-header pt-safe-top sticky"
-    role="banner"
-  >
-    <div class="max-w-3xl mx-auto">
-      <div class="reminders-top-row">
-        <form id="quickAddForm" class="header-bar" onsubmit="return false;">
-          <input
-            id="quickAddInput"
-            type="text"
-            placeholder="Quick reminder…"
-            autocomplete="off"
-          />
-
-          <button
-            type="button"
-            class="filter-toggle reminder-tab reminders-tab reminders-tab-active"
-            data-reminders-tab="all"
-            data-filter="all"
-            aria-pressed="true"
-          >
-            All
-          </button>
-          <button
-            type="button"
-            class="filter-toggle reminder-tab reminders-tab"
-            data-reminders-tab="today"
-            data-filter="today"
-            aria-pressed="false"
-          >
-            Today
-          </button>
-
-          <button
-            id="openSavedNotesGlobal"
-            type="button"
-            class="icon-button"
-            aria-label="Open saved notes"
-          >
-            <svg
-              class="header-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M6.25 3.5H13.75C14.44 3.5 15 4.06 15 4.75V16.5L10 13.8 5 16.5V4.75C5 4.06 5.56 3.5 6.25 3.5Z" />
-            </svg>
-          </button>
-          <button
-            id="startVoiceCaptureGlobal"
-            type="button"
-            class="icon-button"
-            aria-label="Start voice capture"
-          >
-            <svg
-              class="header-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="6.5" y="3.5" width="7" height="9" rx="3.5" />
-              <path d="M5.5 9.75V10c0 2.48 2 4.5 4.5 4.5s4.5-2.02 4.5-4.5V9.75" />
-              <path d="M10 14.5V17" />
-              <path d="M7.5 17h5" />
-            </svg>
-          </button>
-          <button
-            id="quickAddReminderGlobal"
-            type="button"
-            class="icon-button"
-            aria-label="Add reminder"
-          >
-            <svg
-              class="header-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="10" cy="10" r="7.1" />
-              <path d="M10 6.25v7.5" />
-              <path d="M6.25 10h7.5" />
-            </svg>
-          </button>
-          <button
-            id="overflowMenuBtn"
-            type="button"
-            class="icon-button"
-            aria-haspopup="true"
-            aria-expanded="false"
-            aria-controls="overflowMenu"
-            aria-label="More options"
-          >
-            <svg
-              class="header-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="10" cy="4.75" r="1.05" />
-              <circle cx="10" cy="10" r="1.05" />
-              <circle cx="10" cy="15.25" r="1.05" />
-            </svg>
-          </button>
-        </form>
+  <!-- Unified Mobile Header -->
+  <header id="reminders-slim-header" class="mobile-header" role="banner">
+    <div class="header-main-row">
+      <h1 class="header-title">Reminders</h1>
+      <div class="header-actions">
+        <!-- The existing icon buttons can be moved here -->
+        <button id="openSavedNotesGlobal" type="button" class="icon-button" aria-label="Open saved notes">
+          <span class="material-symbols-rounded">bookmark</span>
+        </button>
+        <button id="startVoiceCaptureGlobal" type="button" class="icon-button" aria-label="Start voice capture">
+          <span class="material-symbols-rounded">mic</span>
+        </button>
+        <button id="overflowMenuBtn" type="button" class="icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="More options">
+          <span class="material-symbols-rounded">more_vert</span>
+        </button>
       </div>
-
-      <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
+    </div>
+    <div class="header-quick-add">
+      <form id="quickAddForm" class="quick-add-form" onsubmit="return false;">
+        <span class="material-symbols-rounded">add</span>
+        <input id="quickAddInput" type="text" placeholder="Quick reminder..." autocomplete="off" />
+        <div class="quick-add-tabs">
+          <button type="button" class="filter-toggle reminder-tab reminders-tab-active" data-reminders-tab="all" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="filter-toggle reminder-tab" data-reminders-tab="today" data-filter="today" aria-pressed="false">Today</button>
+        </div>
+      </form>
+    </div>
+    <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <!-- Reminders -->
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">Reminders</div>
@@ -4805,8 +4737,6 @@ body, main, section, div, p, span, li {
           </button>
         </div>
       </div>
-
-    </div>
   </header>
 
   <script>
