@@ -189,7 +189,7 @@ body.mobile-theme header,
 body.mobile-theme .top-bar {
   background-color: #5080BF;
   color: #FFFFFF;
-  padding: 1rem 1.25rem;
+  padding: 1rem 1.10rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
