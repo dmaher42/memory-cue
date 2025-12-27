@@ -310,7 +310,8 @@
 
   /* Ensure notebook content sits comfortably beneath the header */
   body[data-active-view="notebook"] #main {
-    padding-top: 12px !important;
+    /* Use the variable set by JS, with a safe fallback and extra breathing room */
+    padding-top: calc(var(--mobile-header-height, 112px) + 18px) !important;
     margin-top: 0 !important;
   }
 
@@ -3258,7 +3259,7 @@ body, main, section, div, p, span, li {
  <style>
   /* 1. Match the page padding to the header so content starts just below it */
   body[data-active-view="notebook"] #main {
-    padding-top: var(--mobile-header-height, 60px) !important;
+    padding-top: calc(var(--mobile-header-height, 112px) + 18px) !important;
     margin-top: 0 !important; /* Keep content immediately below the header */
   }
 
@@ -3296,7 +3297,7 @@ body, main, section, div, p, span, li {
   <!-- Clean Mobile Header -->
   <style id="mobile-header-compact" aria-hidden="true">
   :root {
-    --mobile-header-height: calc(45px / 4);
+    --mobile-header-height: 112px;
   }
 
   /* Make header visually compact while preserving touch targets and accessibility */
@@ -4526,38 +4527,53 @@ body, main, section, div, p, span, li {
   </script>
 
   <script id="keep-header-fixed">
-    const header = document.getElementById('reminders-slim-header');
-    const main = document.querySelector('main');
+    (function() {
+      const header = document.getElementById('reminders-slim-header');
+      const main = document.querySelector('main');
 
-    // Store the initial measured header height
-    let initialHeaderHeight = null;
+      function applyFixedHeader() {
+        if (!header) return;
 
-    function applyFixedHeader() {
-      if (!header || !main) return;
+        // Add sticky header class
+        header.classList.add('force-fixed');
+        header.style.backdropFilter = 'blur(14px)';
+        header.style.willChange = 'transform, top';
 
-      // Add sticky header class
-      header.classList.add('force-fixed');
-      header.style.backdropFilter = 'blur(14px)';
-      header.style.willChange = 'transform, top';
+        // Measure header height
+        const rect = header.getBoundingClientRect();
+        if (rect.height > 0) {
+          const height = Math.ceil(rect.height);
+          // Apply a small visual padding (6px gap)
+          const finalHeight = height + 6;
 
-      // Measure header height only once
-      if (initialHeaderHeight === null) {
-        initialHeaderHeight = Math.ceil(header.getBoundingClientRect().height);
+          // Set the header height CSS variable
+          document.documentElement.style.setProperty('--mobile-header-height', `${finalHeight}px`);
+
+          // Apply top padding to main content so it doesn't go under the header
+          // But respect notebook view's own padding rule (which uses the variable)
+          if (main && !main.closest('[data-active-view="notebook"]')) {
+             main.style.paddingTop = `${finalHeight}px`;
+          }
+        }
       }
 
-      // Apply a small visual padding (6px gap)
-      const finalHeight = initialHeaderHeight + 6;
+      // Update on load, resize, and mutations
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyFixedHeader);
+      } else {
+        applyFixedHeader();
+      }
+      window.addEventListener('resize', applyFixedHeader);
+      window.addEventListener('orientationchange', applyFixedHeader);
 
-      // Set the header height CSS variable once
-      document.documentElement.style.setProperty('--mobile-header-height', `${finalHeight}px`);
-
-      // Apply top padding to main content so it doesn't go under the header
-      main.style.paddingTop = `${finalHeight}px`;
-    }
-
-    // Only call this once on DOM load and on orientation change
-    document.addEventListener('DOMContentLoaded', applyFixedHeader);
-    window.addEventListener('orientationchange', applyFixedHeader);
+      // Use ResizeObserver for robust height tracking
+      if (typeof ResizeObserver !== 'undefined' && header) {
+        const ro = new ResizeObserver(() => {
+          applyFixedHeader();
+        });
+        ro.observe(header);
+      }
+    })();
   </script>
 
   <script>
@@ -4610,7 +4626,20 @@ body, main, section, div, p, span, li {
         });
 
         const main = document.getElementById('main') || document.querySelector('main');
-        if (main) main.setAttribute('data-active-view', name);
+        if (main) {
+          main.setAttribute('data-active-view', name);
+          // Force padding for notebook view to avoid header overlap
+          if (name === 'notebook') {
+            // Use the CSS variable for the header height (default 112px) plus breathing room
+            const headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height').trim();
+            const heightVal = headerHeight ? headerHeight : '112px';
+            // We use calc in CSS, but here we set a safe inline style fallback
+            // If the variable is "112px", we want "calc(112px + 18px)"
+            main.style.setProperty('padding-top', `calc(${heightVal} + 18px)`, 'important');
+          } else {
+            main.style.removeProperty('padding-top');
+          }
+        }
         if (document.body) document.body.setAttribute('data-active-view', name);
 
         // If this is the 'new' view, trigger the add reminder action so the
@@ -4875,7 +4904,7 @@ body, main, section, div, p, span, li {
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="padding: 0 !important; max-width: 100%;">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
-        <div id="noteEditorSheet" class="note-sheet-wrapper scratch-notes-wrapper sheet">
+        <div id="noteEditorSheet" class="note-sheet-wrapper scratch-notes-wrapper">
          <div id="scratch-notes-card" class="writing-panel scratch-notes-card p-0 space-y-3 pb-3 bg-white rounded-none shadow-none" style="background:white; border-radius:0; box-shadow:none; padding: 0 !important; width: 100vw; margin: 0 -1rem;">
             <!-- Top-right Saved notes pill in notebook view -->
             <div class="note-actions-top">
