@@ -2691,6 +2691,22 @@ const initMobileNotes = () => {
     });
   }
 
+  const newNoteButton = document.getElementById('newNoteMobile');
+  if (newNoteButton) {
+    newNoteButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      startNewNoteFromUI();
+    });
+  }
+
+  const fabNewNoteButton = document.getElementById('mobile-fab-new-note');
+  if (fabNewNoteButton) {
+    fabNewNoteButton.addEventListener('click', () => {
+      // inline script handles navigation; we trigger the editor reset
+      startNewNoteFromUI();
+    });
+  }
+
   // Autosave: debounce saving when user edits title or body
   const AUTOSAVE_DELAY = 1500; // ms
   const debouncedAutoSave = debounce(() => {
