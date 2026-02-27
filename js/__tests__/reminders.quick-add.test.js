@@ -94,6 +94,57 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
+test('quick add routes footy drill prefix to Footy – Drills category', async () => {
+  const quickInput = document.getElementById('quickAddInput');
+  quickInput.value = 'footy drill: cone sprint ladders';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  expect(items[0].title).toBe('cone sprint ladders');
+  expect(items[0].category).toBe('Footy – Drills');
+  expect(Number.isFinite(items[0].createdAt)).toBe(true);
+  expect(Number.isFinite(items[0].updatedAt)).toBe(true);
+});
+
+test('quick add routes task prefix to Tasks category', async () => {
+  const quickInput = document.getElementById('quickAddInput');
+  quickInput.value = 'TASK: mark lesson plans';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  expect(items[0].title).toBe('mark lesson plans');
+  expect(items[0].category).toBe('Tasks');
+  expect(Number.isFinite(items[0].createdAt)).toBe(true);
+  expect(Number.isFinite(items[0].updatedAt)).toBe(true);
+});
+
+test('quick add routes reflection prefix to Lesson – Reflections notes folder', async () => {
+  const quickInput = document.getElementById('quickAddInput');
+  quickInput.value = 'Reflection: Year 8 class responded better to shorter instructions';
+
+  const note = await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(0);
+  expect(note).toBeTruthy();
+
+  const folders = JSON.parse(localStorage.getItem('memoryCueFolders') || '[]');
+  const reflectionFolder = folders.find((folder) => folder?.name === 'Lesson – Reflections');
+  expect(reflectionFolder).toBeTruthy();
+
+  const notes = JSON.parse(localStorage.getItem('memoryCueNotes') || '[]');
+  expect(Array.isArray(notes)).toBe(true);
+  expect(notes).toHaveLength(1);
+  expect(notes[0].title).toBe('Year 8 class responded better to shorter instructions');
+  expect(notes[0].folderId).toBe(reflectionFolder.id);
+  expect(typeof notes[0].updatedAt).toBe('string');
+  expect(Number.isNaN(Date.parse(notes[0].updatedAt))).toBe(false);
+});
+
 test('quick add parses natural language time into due date', async () => {
   const quickInput = document.getElementById('quickAddInput');
   quickInput.value = 'Call parents tomorrow 1pm';
