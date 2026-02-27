@@ -817,6 +817,112 @@ export async function initReminders(sel = {}) {
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   let stopQuickAddVoiceListening = null;
+  const NOTES_STORAGE_KEY = 'memoryCueNotes';
+  const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
+  const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
+
+  function parseQuickAddPrefixRoute(rawText) {
+    const text = typeof rawText === 'string' ? rawText : '';
+    const routes = [
+      { kind: 'footy-drill', pattern: /^\s*footy\s+drill\s*:\s*/i },
+      { kind: 'reflection', pattern: /^\s*reflection\s*:\s*/i },
+      { kind: 'task', pattern: /^\s*task\s*:\s*/i },
+    ];
+
+    for (const route of routes) {
+      if (route.pattern.test(text)) {
+        return {
+          kind: route.kind,
+          text: text.replace(route.pattern, '').trim(),
+        };
+      }
+    }
+
+    return {
+      kind: 'default',
+      text: text.trim(),
+    };
+  }
+
+  function readJsonArrayStorage(key, fallback = []) {
+    if (typeof localStorage === 'undefined') {
+      return Array.isArray(fallback) ? [...fallback] : [];
+    }
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        return Array.isArray(fallback) ? [...fallback] : [];
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : Array.isArray(fallback) ? [...fallback] : [];
+    } catch {
+      return Array.isArray(fallback) ? [...fallback] : [];
+    }
+  }
+
+  function ensureReflectionFolder() {
+    const fallbackFolders = [{ id: 'unsorted', name: 'Unsorted', order: 0 }];
+    const folders = readJsonArrayStorage(FOLDERS_STORAGE_KEY, fallbackFolders)
+      .filter((folder) => folder && typeof folder === 'object' && typeof folder.id === 'string');
+
+    const existing = folders.find((folder) => folder.name === REFLECTION_FOLDER_NAME);
+    if (existing?.id) {
+      return existing.id;
+    }
+
+    const usedIds = new Set(folders.map((folder) => folder.id));
+    let nextId = 'lesson-reflections';
+    let suffix = 1;
+    while (usedIds.has(nextId)) {
+      suffix += 1;
+      nextId = `lesson-reflections-${suffix}`;
+    }
+
+    folders.push({
+      id: nextId,
+      name: REFLECTION_FOLDER_NAME,
+      order: folders.length,
+    });
+
+    try {
+      localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
+    } catch {
+      // Ignore storage write failures so quick-add does not crash.
+    }
+
+    return nextId;
+  }
+
+  function saveReflectionQuickNote(content) {
+    const trimmed = typeof content === 'string' ? content.trim() : '';
+    if (!trimmed || typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    const folderId = ensureReflectionFolder();
+    const notes = readJsonArrayStorage(NOTES_STORAGE_KEY, []);
+    const nowIso = new Date().toISOString();
+
+    const note = {
+      id: uid(),
+      title: trimmed,
+      body: trimmed,
+      bodyHtml: trimmed,
+      bodyText: trimmed,
+      pinned: false,
+      updatedAt: nowIso,
+      folderId,
+    };
+
+    notes.unshift(note);
+    try {
+      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+    } catch {
+      return null;
+    }
+
+    return note;
+  }
 
   function buildQuickReminder(titleText, dueOverride) {
     const d = loadLastDefaults();
@@ -843,8 +949,18 @@ export async function initReminders(sel = {}) {
       typeof options.text === 'string'
         ? options.text
         : (quickInput.value || '').trim();
-    const t = (text || '').trim();
+    const route = parseQuickAddPrefixRoute(text);
+    const t = route.text;
     if (!t) return null;
+
+    if (route.kind === 'reflection') {
+      const note = saveReflectionQuickNote(t);
+      if (!note) {
+        return null;
+      }
+      quickInput.value = '';
+      return note;
+    }
 
     const hasDueOverride =
       options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
@@ -865,6 +981,11 @@ export async function initReminders(sel = {}) {
     }
 
     const payload = buildQuickReminder(t, quickDue);
+    if (route.kind === 'footy-drill') {
+      payload.category = 'Footy – Drills';
+    } else if (route.kind === 'task') {
+      payload.category = 'Tasks';
+    }
     if (
       options.notifyAt instanceof Date &&
       !Number.isNaN(options.notifyAt.getTime())
