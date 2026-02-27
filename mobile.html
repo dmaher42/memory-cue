@@ -4637,7 +4637,9 @@ body, main, section, div, p, span, li {
             // If the variable is "112px", we want "calc(112px + 18px)"
             main.style.setProperty('padding-top', `calc(${heightVal} + 18px)`, 'important');
           } else {
-            main.style.removeProperty('padding-top');
+            const headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height').trim();
+            const heightVal = headerHeight ? headerHeight : '112px';
+            main.style.setProperty('padding-top', heightVal, 'important');
           }
         }
         if (document.body) document.body.setAttribute('data-active-view', name);
