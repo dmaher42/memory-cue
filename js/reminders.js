@@ -817,6 +817,112 @@ export async function initReminders(sel = {}) {
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   let stopQuickAddVoiceListening = null;
+  const NOTES_STORAGE_KEY = 'memoryCueNotes';
+  const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
+  const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
+
+  function parseQuickAddPrefixRoute(rawText) {
+    const text = typeof rawText === 'string' ? rawText : '';
+    const routes = [
+      { kind: 'footy-drill', pattern: /^\s*footy\s+drill\s*:\s*/i },
+      { kind: 'reflection', pattern: /^\s*reflection\s*:\s*/i },
+      { kind: 'task', pattern: /^\s*task\s*:\s*/i },
+    ];
+
+    for (const route of routes) {
+      if (route.pattern.test(text)) {
+        return {
+          kind: route.kind,
+          text: text.replace(route.pattern, '').trim(),
+        };
+      }
+    }
+
+    return {
+      kind: 'default',
+      text: text.trim(),
+    };
+  }
+
+  function readJsonArrayStorage(key, fallback = []) {
+    if (typeof localStorage === 'undefined') {
+      return Array.isArray(fallback) ? [...fallback] : [];
+    }
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        return Array.isArray(fallback) ? [...fallback] : [];
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : Array.isArray(fallback) ? [...fallback] : [];
+    } catch {
+      return Array.isArray(fallback) ? [...fallback] : [];
+    }
+  }
+
+  function ensureReflectionFolder() {
+    const fallbackFolders = [{ id: 'unsorted', name: 'Unsorted', order: 0 }];
+    const folders = readJsonArrayStorage(FOLDERS_STORAGE_KEY, fallbackFolders)
+      .filter((folder) => folder && typeof folder === 'object' && typeof folder.id === 'string');
+
+    const existing = folders.find((folder) => folder.name === REFLECTION_FOLDER_NAME);
+    if (existing?.id) {
+      return existing.id;
+    }
+
+    const usedIds = new Set(folders.map((folder) => folder.id));
+    let nextId = 'lesson-reflections';
+    let suffix = 1;
+    while (usedIds.has(nextId)) {
+      suffix += 1;
+      nextId = `lesson-reflections-${suffix}`;
+    }
+
+    folders.push({
+      id: nextId,
+      name: REFLECTION_FOLDER_NAME,
+      order: folders.length,
+    });
+
+    try {
+      localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
+    } catch {
+      // Ignore storage write failures so quick-add does not crash.
+    }
+
+    return nextId;
+  }
+
+  function saveReflectionQuickNote(content) {
+    const trimmed = typeof content === 'string' ? content.trim() : '';
+    if (!trimmed || typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    const folderId = ensureReflectionFolder();
+    const notes = readJsonArrayStorage(NOTES_STORAGE_KEY, []);
+    const nowIso = new Date().toISOString();
+
+    const note = {
+      id: uid(),
+      title: trimmed,
+      body: trimmed,
+      bodyHtml: trimmed,
+      bodyText: trimmed,
+      pinned: false,
+      updatedAt: nowIso,
+      folderId,
+    };
+
+    notes.unshift(note);
+    try {
+      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+    } catch {
+      return null;
+    }
+
+    return note;
+  }
 
   function buildQuickReminder(titleText, dueOverride) {
     const d = loadLastDefaults();
@@ -832,6 +938,236 @@ export async function initReminders(sel = {}) {
     };
   }
 
+
+  function parseInboxTimeQuery(rawQuery, nowOverride = null) {
+    const queryText = typeof rawQuery === 'string' ? rawQuery.trim() : '';
+    if (!queryText) {
+      return { keywordQuery: '', timeRange: null };
+    }
+
+    const now = nowOverride instanceof Date && !Number.isNaN(nowOverride.getTime())
+      ? new Date(nowOverride)
+      : new Date();
+    const normalized = queryText.toLowerCase();
+    const dayRegex = /\b(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i;
+    const timeRegex = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i;
+    const todayRegex = /\btoday\b/i;
+    const yesterdayRegex = /\byesterday\b/i;
+
+    const dayMatch = normalized.match(dayRegex);
+    const timeMatch = normalized.match(timeRegex);
+    const todayMatch = normalized.match(todayRegex);
+    const yesterdayMatch = normalized.match(yesterdayRegex);
+
+    const parseTimeParts = () => {
+      if (!timeMatch) return null;
+      let hours = Number.parseInt(timeMatch[1], 10);
+      const minutes = Number.parseInt(timeMatch[2] || '0', 10);
+      const meridiem = timeMatch[3] ? timeMatch[3].toLowerCase() : null;
+      if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes > 59) {
+        return null;
+      }
+      if (meridiem === 'pm' && hours < 12) {
+        hours += 12;
+      } else if (meridiem === 'am' && hours === 12) {
+        hours = 0;
+      }
+      if (hours > 23) {
+        return null;
+      }
+      return { hours, minutes };
+    };
+
+    const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const stripMatches = () => {
+      let cleaned = queryText;
+      if (dayMatch) {
+        cleaned = cleaned.replace(new RegExp(`\\b${escapeRegex(dayMatch[0])}\\b`, 'i'), ' ');
+      }
+      if (todayMatch) {
+        cleaned = cleaned.replace(new RegExp(`\\b${escapeRegex(todayMatch[0])}\\b`, 'i'), ' ');
+      }
+      if (yesterdayMatch) {
+        cleaned = cleaned.replace(new RegExp(`\\b${escapeRegex(yesterdayMatch[0])}\\b`, 'i'), ' ');
+      }
+      if (timeMatch) {
+        cleaned = cleaned.replace(new RegExp(escapeRegex(timeMatch[0]), 'i'), ' ');
+      }
+      return cleaned.replace(/\s+/g, ' ').trim();
+    };
+
+    const buildDayRange = (dayOffset = 0) => {
+      const dayStart = new Date(now);
+      dayStart.setHours(0, 0, 0, 0);
+      dayStart.setDate(dayStart.getDate() + dayOffset);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+      return { start: dayStart.getTime(), end: dayEnd.getTime() };
+    };
+
+    const timeParts = parseTimeParts();
+    if (dayMatch && timeParts) {
+      const token = dayMatch[1].slice(0, 3).toLowerCase();
+      const targetDowMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      const targetDow = targetDowMap[token];
+      if (typeof targetDow === 'number') {
+        const target = new Date(now);
+        const diff = (targetDow - target.getDay() + 7) % 7;
+        target.setDate(target.getDate() + diff);
+        target.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+        return {
+          keywordQuery: stripMatches(),
+          timeRange: {
+            start: target.getTime() - 60 * 60 * 1000,
+            end: target.getTime() + 60 * 60 * 1000,
+          },
+        };
+      }
+    }
+
+    if (todayMatch || yesterdayMatch) {
+      if (timeParts) {
+        const target = new Date(now);
+        if (yesterdayMatch) {
+          target.setDate(target.getDate() - 1);
+        }
+        target.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+        return {
+          keywordQuery: stripMatches(),
+          timeRange: {
+            start: target.getTime() - 60 * 60 * 1000,
+            end: target.getTime() + 60 * 60 * 1000,
+          },
+        };
+      }
+
+      return {
+        keywordQuery: stripMatches(),
+        timeRange: buildDayRange(yesterdayMatch ? -1 : 0),
+      };
+    }
+
+    return {
+      keywordQuery: queryText,
+      timeRange: null,
+    };
+  }
+
+  function setupInboxSearch() {
+    const inboxSearchInput = typeof document !== 'undefined' ? document.getElementById('inboxSearchInput') : null;
+    const inboxSearchResults = typeof document !== 'undefined' ? document.getElementById('inboxSearchResults') : null;
+    if (!inboxSearchInput || !inboxSearchResults) {
+      return;
+    }
+
+    const readNotes = () => {
+      if (typeof localStorage === 'undefined') return [];
+      try {
+        const raw = localStorage.getItem(NOTES_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const formatDateLabel = (timestamp) => {
+      if (!Number.isFinite(timestamp)) {
+        return 'No date';
+      }
+      try {
+        return new Date(timestamp).toLocaleString();
+      } catch {
+        return 'No date';
+      }
+    };
+
+    const renderResults = (results) => {
+      inboxSearchResults.innerHTML = '';
+      if (!results.length) {
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      results.slice(0, 20).forEach((entry) => {
+        const li = document.createElement('li');
+        li.className = 'text-xs py-1 border-b border-base-300/60';
+
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-outline badge-xs mr-2';
+        badge.textContent = entry.type;
+
+        const title = document.createElement('span');
+        title.textContent = entry.title || '(untitled)';
+
+        const date = document.createElement('div');
+        date.className = 'opacity-70';
+        date.textContent = formatDateLabel(entry.timestamp);
+
+        li.appendChild(badge);
+        li.appendChild(title);
+        li.appendChild(date);
+        fragment.appendChild(li);
+      });
+      inboxSearchResults.appendChild(fragment);
+    };
+
+    const runSearch = () => {
+      const query = inboxSearchInput.value || '';
+      const trimmed = query.trim();
+      if (!trimmed) {
+        inboxSearchResults.innerHTML = '';
+        return;
+      }
+
+      const parsed = parseInboxTimeQuery(trimmed);
+      const keywords = (parsed.keywordQuery || '')
+        .toLowerCase()
+        .split(/\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      const reminderEntries = (Array.isArray(items) ? items : []).map((item) => ({
+        type: 'Reminder',
+        title: item?.title || '',
+        body: item?.notes || '',
+        timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
+      }));
+      const noteEntries = readNotes().map((note) => {
+        const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
+        const createdTime = typeof note?.createdAt === 'string' ? Date.parse(note.createdAt) : Number.NaN;
+        return {
+          type: 'Note',
+          title: note?.title || '',
+          body: note?.bodyText || note?.body || '',
+          timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
+        };
+      });
+
+      const combined = [...reminderEntries, ...noteEntries];
+      const matches = combined.filter((entry) => {
+        const haystack = `${entry.title} ${entry.body}`.toLowerCase();
+        const keywordMatch = !keywords.length || keywords.every((word) => haystack.includes(word));
+        if (!keywordMatch) {
+          return false;
+        }
+        if (!parsed.timeRange) {
+          return true;
+        }
+        if (!Number.isFinite(entry.timestamp)) {
+          return false;
+        }
+        return entry.timestamp >= parsed.timeRange.start && entry.timestamp <= parsed.timeRange.end;
+      });
+
+      matches.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      renderResults(matches);
+    };
+
+    inboxSearchInput.addEventListener('input', runSearch);
+    document.addEventListener('memoryCue:remindersUpdated', runSearch);
+  }
+
   async function quickAddNow(options = {}) {
     if (!quickInput) return null;
     if (typeof stopQuickAddVoiceListening === 'function') {
@@ -843,8 +1179,18 @@ export async function initReminders(sel = {}) {
       typeof options.text === 'string'
         ? options.text
         : (quickInput.value || '').trim();
-    const t = (text || '').trim();
+    const route = parseQuickAddPrefixRoute(text);
+    const t = route.text;
     if (!t) return null;
+
+    if (route.kind === 'reflection') {
+      const note = saveReflectionQuickNote(t);
+      if (!note) {
+        return null;
+      }
+      quickInput.value = '';
+      return note;
+    }
 
     const hasDueOverride =
       options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
@@ -865,6 +1211,11 @@ export async function initReminders(sel = {}) {
     }
 
     const payload = buildQuickReminder(t, quickDue);
+    if (route.kind === 'footy-drill') {
+      payload.category = 'Footy – Drills';
+    } else if (route.kind === 'task') {
+      payload.category = 'Tasks';
+    }
     if (
       options.notifyAt instanceof Date &&
       !Number.isNaN(options.notifyAt.getTime())
@@ -912,6 +1263,8 @@ export async function initReminders(sel = {}) {
     event.preventDefault();
     quickAddNow();
   });
+
+  setupInboxSearch();
 
   function setupQuickAddVoiceSupport() {
     if (
@@ -4517,6 +4870,7 @@ export async function initReminders(sel = {}) {
       },
       render,
       getItems: () => items.map(item => ({ ...item })),
+      parseInboxTimeQuery,
     },
   };
 }
