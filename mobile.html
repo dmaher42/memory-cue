@@ -4687,6 +4687,10 @@ body, main, section, div, p, span, li {
           <button type="button" class="filter-toggle reminder-tab" data-reminders-tab="today" data-filter="today" aria-pressed="false">Today</button>
         </div>
       </form>
+      <div class="mt-2">
+        <input id="inboxSearchInput" type="search" class="input input-sm w-full" placeholder="Inbox search (keywords, today, Monday 4pm)" autocomplete="off" />
+        <ul id="inboxSearchResults" class="mt-2 space-y-1"></ul>
+      </div>
     </div>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <!-- Reminders -->
