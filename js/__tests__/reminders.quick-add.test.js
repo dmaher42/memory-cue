@@ -145,6 +145,33 @@ test('quick add routes reflection prefix to Lesson – Reflections notes folder'
   expect(Number.isNaN(Date.parse(notes[0].updatedAt))).toBe(false);
 });
 
+
+
+test('inbox search parser handles weekday plus time', () => {
+  const parsed = controller.__testing.parseInboxTimeQuery('Monday 4pm', new Date('2024-05-15T09:00:00Z'));
+
+  expect(parsed.keywordQuery).toBe('');
+  expect(parsed.timeRange).toBeTruthy();
+  expect(Number.isFinite(parsed.timeRange.start)).toBe(true);
+  expect(Number.isFinite(parsed.timeRange.end)).toBe(true);
+  expect(parsed.timeRange.end).toBeGreaterThan(parsed.timeRange.start);
+});
+
+test('inbox search parser handles today keyword without time', () => {
+  const parsed = controller.__testing.parseInboxTimeQuery('today', new Date('2024-05-15T09:00:00Z'));
+
+  expect(parsed.keywordQuery).toBe('');
+  expect(parsed.timeRange).toBeTruthy();
+  expect(parsed.timeRange.end).toBeGreaterThan(parsed.timeRange.start);
+});
+
+test('inbox search parser falls back to keyword-only when no time pattern exists', () => {
+  const parsed = controller.__testing.parseInboxTimeQuery('mark reports');
+
+  expect(parsed.keywordQuery).toBe('mark reports');
+  expect(parsed.timeRange).toBeNull();
+});
+
 test('quick add parses natural language time into due date', async () => {
   const quickInput = document.getElementById('quickAddInput');
   quickInput.value = 'Call parents tomorrow 1pm';
