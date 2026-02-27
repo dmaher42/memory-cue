@@ -282,7 +282,50 @@ export const saveAllNotes = (notes, options = {}) => {
 export { NOTES_STORAGE_KEY };
 
 // Folders API
-const defaultFolders = () => [{ id: 'unsorted', name: 'Unsorted' }];
+const REFLECTIONS_FOLDER_NAME = 'Lesson – Reflections';
+const REFLECTIONS_FOLDER_ID = 'lesson-reflections';
+
+const ensureRequiredFolders = (folders = []) => {
+  const normalized = Array.isArray(folders)
+    ? folders
+        .filter((folder) => folder && typeof folder.id === 'string' && folder.id.trim())
+        .map((folder, index) => ({
+          id: String(folder.id),
+          name: typeof folder.name === 'string' ? folder.name : String(folder.id),
+          order: typeof folder.order === 'number' ? folder.order : index,
+        }))
+    : [];
+
+  let changed = false;
+
+  if (!normalized.some((folder) => folder.id === 'unsorted')) {
+    normalized.unshift({ id: 'unsorted', name: 'Unsorted', order: 0 });
+    changed = true;
+  }
+
+  if (!normalized.some((folder) => folder.name === REFLECTIONS_FOLDER_NAME)) {
+    const usedIds = new Set(normalized.map((folder) => folder.id));
+    let folderId = REFLECTIONS_FOLDER_ID;
+    let suffix = 1;
+    while (usedIds.has(folderId)) {
+      suffix += 1;
+      folderId = `${REFLECTIONS_FOLDER_ID}-${suffix}`;
+    }
+    normalized.push({ id: folderId, name: REFLECTIONS_FOLDER_NAME, order: normalized.length });
+    changed = true;
+  }
+
+  const withOrder = normalized.map((folder, index) => {
+    if (folder.order !== index) {
+      changed = true;
+    }
+    return { ...folder, order: index };
+  });
+
+  return { folders: withOrder, changed };
+};
+
+const defaultFolders = () => ensureRequiredFolders([{ id: 'unsorted', name: 'Unsorted', order: 0 }]).folders;
 
 export const getFolders = () => {
   if (!hasLocalStorage()) {
@@ -293,23 +336,15 @@ export const getFolders = () => {
     if (typeof raw === 'string') {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) {
-        // Ensure order is present; if missing, assign and persist
-        let needsSave = false;
-        const normalized = parsed.map((f, idx) => {
-          const id = String(f.id);
-          const name = typeof f.name === 'string' ? f.name : String(f.id);
-          const order = typeof f.order === 'number' ? f.order : idx;
-          if (typeof f.order !== 'number') needsSave = true;
-          return { id, name, order };
-        });
-        if (needsSave) {
+        const ensured = ensureRequiredFolders(parsed);
+        if (ensured.changed) {
           try {
-            localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(normalized));
+            localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(ensured.folders));
           } catch {
             /* ignore write errors */
           }
         }
-        return normalized;
+        return ensured.folders;
       }
     }
   } catch (e) {
@@ -336,14 +371,8 @@ export const saveFolders = (folders) => {
     return false;
   }
   try {
-    const sanitized = folders
-      .filter((f) => f && typeof f.id === 'string' && f.id.trim())
-      .map((f, idx) => ({ id: f.id, name: typeof f.name === 'string' ? f.name : String(f.id), order: typeof f.order === 'number' ? f.order : idx }));
-    if (!sanitized.length) {
-      // always ensure at least the unsorted folder exists
-      sanitized.push(...defaultFolders());
-    }
-    localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(sanitized));
+    const ensured = ensureRequiredFolders(folders);
+    localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(ensured.folders));
     return true;
   } catch (e) {
     return false;
