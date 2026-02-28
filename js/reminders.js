@@ -878,6 +878,7 @@ export async function initReminders(sel = {}) {
       : null;
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
+  let isQuickAddSubmitting = false;
   let stopQuickAddVoiceListening = null;
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
   const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
@@ -1543,6 +1544,9 @@ ${query}`;
 
   async function quickAddNow(options = {}) {
     if (!quickInput) return null;
+    if (isQuickAddSubmitting) {
+      return null;
+    }
     if (typeof stopQuickAddVoiceListening === 'function') {
       try {
         stopQuickAddVoiceListening();
@@ -1555,62 +1559,90 @@ ${query}`;
     const route = parseQuickAddPrefixRoute(text);
     const t = route.text;
     if (!t) return null;
-
-    if (route.kind === 'reflection') {
-      const note = saveReflectionQuickNote(t);
-      if (!note) {
-        return null;
-      }
-      quickInput.value = '';
-      return note;
+    isQuickAddSubmitting = true;
+    if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
+      quickBtn.disabled = true;
     }
 
-    const hasDueOverride =
-      options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
-    const dueOverride = hasDueOverride ? options.dueDate : null;
-    let quickDue = null;
-    if (dueOverride) {
-      quickDue = new Date(dueOverride).toISOString();
-    } else {
-      try {
-        const parsedWhen = parseQuickWhen(t);
-        if (parsedWhen && parsedWhen.time) {
-          const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
-          quickDue = isoCandidate;
+    let entry = null;
+    let wasSaved = false;
+
+    try {
+      if (route.kind === 'reflection') {
+        const note = saveReflectionQuickNote(t);
+        if (!note) {
+          return null;
         }
-      } catch {
-        quickDue = null;
+        quickInput.value = '';
+        try {
+          quickInput.focus({ preventScroll: true });
+        } catch {
+          quickInput.focus();
+        }
+        wasSaved = true;
+        return note;
       }
-    }
 
-    const payload = buildQuickReminder(t, quickDue);
-    if (route.kind === 'footy-drill') {
-      payload.category = 'Footy – Drills';
-    } else if (route.kind === 'task') {
-      payload.category = 'Tasks';
-    }
-    if (
-      options.notifyAt instanceof Date &&
-      !Number.isNaN(options.notifyAt.getTime())
-    ) {
-      try {
-        payload.notifyAt = new Date(options.notifyAt).toISOString();
-      } catch {
-        payload.notifyAt = null;
+      const hasDueOverride =
+        options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
+      const dueOverride = hasDueOverride ? options.dueDate : null;
+      let quickDue = null;
+      if (dueOverride) {
+        quickDue = new Date(dueOverride).toISOString();
+      } else {
+        try {
+          const parsedWhen = parseQuickWhen(t);
+          if (parsedWhen && parsedWhen.time) {
+            const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
+            quickDue = isoCandidate;
+          }
+        } catch {
+          quickDue = null;
+        }
       }
-    }
-    const entry = createReminderFromPayload(payload, {
-      closeSheet: false,
-    });
 
-    if (entry && typeof document !== 'undefined') {
-      quickInput.value = '';
-      try {
-        document.dispatchEvent(
-          new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
-        );
-      } catch {
-        // Ignore dispatch issues so the add flow can finish silently.
+      const payload = buildQuickReminder(t, quickDue);
+      if (route.kind === 'footy-drill') {
+        payload.category = 'Footy – Drills';
+      } else if (route.kind === 'task') {
+        payload.category = 'Tasks';
+      }
+      if (
+        options.notifyAt instanceof Date &&
+        !Number.isNaN(options.notifyAt.getTime())
+      ) {
+        try {
+          payload.notifyAt = new Date(options.notifyAt).toISOString();
+        } catch {
+          payload.notifyAt = null;
+        }
+      }
+      entry = createReminderFromPayload(payload, {
+        closeSheet: false,
+      });
+
+      if (entry && typeof document !== 'undefined') {
+        quickInput.value = '';
+        try {
+          quickInput.focus({ preventScroll: true });
+        } catch {
+          quickInput.focus();
+        }
+        try {
+          document.dispatchEvent(
+            new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
+          );
+        } catch {
+          // Ignore dispatch issues so the add flow can finish silently.
+        }
+        wasSaved = true;
+      }
+    } finally {
+      if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
+        quickBtn.disabled = false;
+      }
+      if (wasSaved) {
+        isQuickAddSubmitting = false;
       }
     }
 
@@ -1628,12 +1660,14 @@ ${query}`;
   quickInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === 'NumpadEnter') {
       e.preventDefault();
+      e.stopPropagation();
       quickAddNow();
     }
   });
 
   quickForm?.addEventListener('submit', (event) => {
     event.preventDefault();
+    event.stopPropagation();
     quickAddNow();
   });
 

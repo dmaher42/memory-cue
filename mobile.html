@@ -6130,6 +6130,20 @@ body, main, section, div, p, span, li {
       outline: none;
     }
 
+    /* Quick Add: visible focus treatment without layout shift */
+    .reminders-quick-bar:focus-within {
+      border-color: color-mix(in srgb, var(--accent-color) 36%, rgba(81, 38, 99, 0.08));
+      background: color-mix(in srgb, var(--accent-color) 8%, #f8f6ff);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-color) 24%, transparent),
+        0 4px 10px rgba(15, 10, 41, 0.08);
+    }
+
+    #quickAddInput:focus,
+    #quickAddInput:focus-visible {
+      background: color-mix(in srgb, var(--accent-color) 7%, transparent);
+    }
+
     .reminder-tabs {
       display: inline-flex;
       align-items: center;
