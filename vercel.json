@@ -7,6 +7,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/mobile"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     }
