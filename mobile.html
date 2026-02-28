@@ -2793,6 +2793,59 @@ body, main, section, div, p, span, li {
     .view-panel h2 {
       color: var(--text-primary);
     }
+
+    #view-assistant {
+      align-content: start;
+    }
+
+    .assistant-panel {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1rem;
+      box-shadow: 0 8px 20px rgba(81, 38, 99, 0.08);
+      padding: 0.75rem;
+      display: grid;
+      gap: 0.75rem;
+      min-height: 60vh;
+    }
+
+    #assistantThread {
+      display: grid;
+      gap: 0.5rem;
+      align-content: start;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+      min-height: 40vh;
+    }
+
+    .assistant-message {
+      max-width: 85%;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.85rem;
+      font-size: 0.92rem;
+      line-height: 1.35;
+      background: color-mix(in srgb, var(--accent-color) 10%, #ffffff);
+      border: 1px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
+      color: var(--text-main);
+      justify-self: end;
+    }
+
+    #assistantForm {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    #assistantInput {
+      flex: 1;
+    }
+
+    #assistantLoading {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      min-height: 1.1rem;
+    }
+
     .section-jump::-webkit-scrollbar {
       display: none;
     }
@@ -5448,6 +5501,22 @@ body, main, section, div, p, span, li {
                 <button type="button" class="note-action-btn note-action-delete">Delete note</button>
               </div>
             </div>
+    <section data-view="assistant" id="view-assistant" class="view-panel hidden" aria-hidden="true">
+      <div class="assistant-panel">
+        <div id="assistantThread" aria-live="polite" aria-label="Assistant conversation"></div>
+        <form id="assistantForm">
+          <input
+            id="assistantInput"
+            type="text"
+            class="input input-sm w-full"
+            placeholder="Ask Memory Cue assistant..."
+            autocomplete="off"
+          />
+          <button id="assistantSendBtn" type="submit" class="btn btn-sm btn-primary">Send</button>
+        </form>
+        <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
+      </div>
+    </section>
 </main>
     </div>
   </div>
@@ -5516,13 +5585,13 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card btn-saved-notes"
-        id="mobile-footer-saved-notes"
-        data-nav-target="saved-notes"
-        aria-label="Open saved notes"
+        class="floating-card btn-assistant"
+        id="mobile-footer-assistant"
+        data-nav-target="assistant"
+        aria-label="Go to Assistant"
       >
         <svg
-          class="icon icon-bookmark"
+          class="icon icon-assistant"
           width="20"
           height="20"
           viewBox="0 0 24 24"
@@ -5533,8 +5602,11 @@ body, main, section, div, p, span, li {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M6.25 4.5H17.75C18.44 4.5 19 5.06 19 5.75V20L12 16.2 5 20V5.75C5 5.06 5.56 4.5 6.25 4.5Z" />
+          <path d="M12 4.75C8 4.75 4.75 7.75 4.75 11.5C4.75 13.55 5.72 15.4 7.3 16.65V19.25L10.1 17.8C10.7 17.95 11.34 18.03 12 18.03C16 18.03 19.25 15.03 19.25 11.28C19.25 7.53 16 4.75 12 4.75Z" />
+          <path d="M9.2 11.2h5.6" />
+          <path d="M9.2 13.45h3.5" />
         </svg>
+        <span>Assistant</span>
       </button>
     </div>
   </div>
@@ -5632,25 +5704,6 @@ body, main, section, div, p, span, li {
         closeSavedNotesSheet();
       };
 
-      const openSavedNotes = () => {
-        setActiveFooterIcon('mobile-footer-saved-notes');
-        try {
-          if (typeof window.showSavedNotesSheet === 'function') {
-            window.showSavedNotesSheet();
-            return;
-          }
-
-          const savedTrigger =
-            document.getElementById('openSavedNotesGlobal') ||
-            document.getElementById('savedNotesShortcut');
-          if (savedTrigger instanceof HTMLElement) {
-            savedTrigger.click();
-          }
-        } catch (error) {
-          console.warn(error);
-        }
-      };
-
       const closeFabMenu = () => {
         if (fabMenu instanceof HTMLElement) {
           fabMenu.dataset.open = 'false';
@@ -5723,11 +5776,6 @@ body, main, section, div, p, span, li {
 
         closeFabMenu();
         setActiveFooterIcon(button.id);
-
-        if (view === 'saved-notes') {
-          openSavedNotes();
-          return;
-        }
 
         if (view === 'notebook') {
           navigateToNotebook();
