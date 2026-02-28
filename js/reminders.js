@@ -1059,7 +1059,7 @@ export async function initReminders(sel = {}) {
     const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
 
     try {
-      const response = await fetch('/api/parse-entry', {
+      const response = await fetch('https://memory-cue-api.vercel.app/api/parse-entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
