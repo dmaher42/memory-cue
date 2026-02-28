@@ -4482,3 +4482,9 @@ section[data-route="dashboard"] .dashboard-shortcuts {
       align-items: center;
   }
 }
+
+
+.mic-active {
+  background-color: var(--accent-color);
+  color: white;
+}
