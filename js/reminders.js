@@ -1178,6 +1178,7 @@ export async function initReminders(sel = {}) {
         title: item?.title || '',
         body: item?.notes || '',
         timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
+        semanticEmbedding: normalizeSemanticEmbedding(item?.semanticEmbedding),
       }));
       const noteEntries = readNotes().map((note) => {
         const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
@@ -1187,6 +1188,7 @@ export async function initReminders(sel = {}) {
           title: note?.title || '',
           body: note?.bodyText || note?.body || '',
           timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
+          semanticEmbedding: normalizeSemanticEmbedding(note?.semanticEmbedding),
         };
       });
 
@@ -1251,6 +1253,10 @@ export async function initReminders(sel = {}) {
         date.className = 'opacity-70';
         date.textContent = formatDateLabel(entry.timestamp);
 
+        const relatedLabel = document.createElement('div');
+        relatedLabel.className = 'opacity-60 italic';
+        relatedLabel.textContent = 'Related results';
+
         if (mode === 'autocomplete') {
           li.addEventListener('mousedown', (event) => {
             event.preventDefault();
@@ -1263,12 +1269,37 @@ export async function initReminders(sel = {}) {
         li.appendChild(badge);
         li.appendChild(title);
         li.appendChild(date);
+        if (entry.isSemanticMatch && mode !== 'autocomplete') {
+          li.appendChild(relatedLabel);
+        }
         fragment.appendChild(li);
       });
       inboxSearchResults.appendChild(fragment);
     };
 
-    const runSearch = () => {
+    async function semanticSearch(query, entries, excludedEntries = []) {
+      const embedding = normalizeSemanticEmbedding(await generateEmbedding(query));
+      if (!embedding) {
+        return [];
+      }
+      const similarityThreshold = 0.72;
+      const excluded = new Set(excludedEntries);
+      const scored = entries
+        .filter((entry) => !excluded.has(entry))
+        .map((entry) => ({
+          entry,
+          score: cosineSimilarity(embedding, entry.semanticEmbedding),
+        }))
+        .filter((candidate) => candidate.score >= similarityThreshold)
+        .sort((a, b) => b.score - a.score)
+        .map((candidate) => ({
+          ...candidate.entry,
+          isSemanticMatch: true,
+        }));
+      return scored;
+    }
+
+    const runSearch = async () => {
       const query = inboxSearchInput.value || '';
       const trimmed = query.trim();
       if (inboxSearchClear) {
@@ -1303,7 +1334,14 @@ export async function initReminders(sel = {}) {
       });
 
       matches.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      renderResults(matches);
+
+      const combinedResults = [...matches];
+      if (matches.length < 5) {
+        const semanticMatches = await semanticSearch(parsed.keywordQuery || trimmed, combined, matches);
+        combinedResults.push(...semanticMatches);
+      }
+
+      renderResults(combinedResults);
     };
 
     const findAutocompleteResults = (query) => {
