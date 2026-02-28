@@ -2059,6 +2059,27 @@ body, main, section, div, p, span, li {
       width: 100%;
     }
 
+    .header-quick-add {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: var(--space-2);
+    }
+
+    .header-search {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: var(--space-2);
+    }
+
+    .reminders-mobile-flow {
+      display: block;
+      width: 100%;
+      padding: var(--space-2) var(--space-4) var(--space-4);
+      background: var(--mobile-quick-surface);
+    }
+
+    .reminders-mobile-flow > * + * {
+      margin-top: var(--space-2);
+    }
+
     .quick-add-form {
       display: flex;
       align-items: center;
@@ -2146,7 +2167,7 @@ body, main, section, div, p, span, li {
       z-index: 21;
       max-height: 12rem;
       overflow-y: auto;
-      margin-top: var(--space-1);
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: calc(var(--space-1) / 2);
@@ -2155,7 +2176,7 @@ body, main, section, div, p, span, li {
     #remindersListMobile {
       position: relative;
       z-index: 0;
-      margin-top: var(--space-2);
+      margin-top: 0;
       display: flex;
       flex-direction: column;
       gap: var(--space-1);
@@ -4126,18 +4147,16 @@ body, main, section, div, p, span, li {
       }
     }
 
-    /* Keep reminders content below the fixed mobile header + search area */
+    /* Keep reminders content in a single vertical flow under the sticky header */
     #view-reminders {
-      padding-top: calc(var(--mobile-header-height, 112px) + 0.5rem) !important;
+      padding-top: 0 !important;
     }
 
     .reminders-content-shell {
       background-color: transparent;
       border-radius: 1.25rem;
-      /* remove top padding so content sits flush under the sticky header */
-      padding: 0 1rem 1rem;
-      padding-top: 0 !important;
-      margin-top: 0 !important;
+      padding: 0;
+      margin-top: 0;
       width: 100%;
     }
 
@@ -4780,7 +4799,6 @@ body, main, section, div, p, span, li {
           <input id="inboxSearchInput" type="search" placeholder="Search reminders, notes, drills…" autocomplete="off" />
           <button id="inboxSearchClear" type="button" class="inbox-search-clear" aria-label="Clear inbox search" hidden>&times;</button>
         </div>
-        <ul id="inboxSearchResults"></ul>
       </div>
     </div>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
@@ -4972,25 +4990,23 @@ body, main, section, div, p, span, li {
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
-      <div class="mobile-view-inner mx-auto w-full px-4 pt-2 pb-4 space-y-2" style="background: var(--mobile-quick-surface);">
-        <!-- header removed to keep view minimal -->
-        <div class="reminders-content-shell space-y-2">
+      <div class="reminders-mobile-flow reminders-content-shell">
+        <div id="inboxSearchResults"></div>
 
-          <div id="remindersListMobile">
-            <section
-              id="reminderListSection"
-              class="w-full relative memory-glass-card-soft"
-            >
-              <div class="w-full" id="remindersWrapper">
-                <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
-                <p id="reminderReorderHint" class="sr-only">
-                  Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
-                </p>
-                <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
-              </div>
-            </section>
-          </div>
-        </div>
+        <section id="remindersListMobile">
+          <section
+            id="reminderListSection"
+            class="w-full relative memory-glass-card-soft"
+          >
+            <div class="w-full" id="remindersWrapper">
+              <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
+              <p id="reminderReorderHint" class="sr-only">
+                Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
+              </p>
+              <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
+            </div>
+          </section>
+        </section>
       </div>
     </section>
     <!-- END GPT CHANGE -->
