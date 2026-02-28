@@ -2879,6 +2879,15 @@ const initMobileNotes = () => {
       }
     });
 
+    document.addEventListener('memoryCue:notesUpdated', () => {
+      try {
+        lastSerializedNotes = readStoredSnapshot();
+        refreshFromStorage({ preserveDraft: true });
+      } catch (error) {
+        console.error('Failed to refresh notes after smart capture update', error);
+      }
+    });
+
     if (!window.__memoryCueNotesWatcher) {
       window.__memoryCueNotesWatcher = window.setInterval(() => {
         const snapshot = readStoredSnapshot();

@@ -885,6 +885,19 @@ export async function initReminders(sel = {}) {
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
   const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
   const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
+  const SMART_TAG_KEYWORDS = [
+    'u14',
+    'pressure',
+    'transition',
+    'year7',
+    'year9',
+    'netball',
+    'footy',
+    'voting',
+    'preferential',
+    'drill',
+    'lesson',
+  ];
 
   function parseQuickAddPrefixRoute(rawText) {
     const text = typeof rawText === 'string' ? rawText : '';
@@ -988,6 +1001,78 @@ export async function initReminders(sel = {}) {
     }
 
     return note;
+  }
+
+  function classifyInput(text) {
+    const normalized = typeof text === 'string' ? text.toLowerCase() : '';
+    if (normalized.includes('footy')) return 'footy_drill';
+    if (normalized.includes('netball')) return 'netball_note';
+    if (normalized.includes('reflection')) return 'reflection';
+    if (normalized.includes('remind')) return 'reminder';
+    if (normalized.includes('lesson')) return 'teaching_note';
+    return 'general_note';
+  }
+
+  function extractTitle(text) {
+    const normalized = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
+    if (!normalized) {
+      return 'Untitled note';
+    }
+    const words = normalized.split(' ').filter(Boolean);
+    const firstWords = words.slice(0, 5).join(' ');
+    return firstWords.length > 60 ? `${firstWords.slice(0, 60).trimEnd()}` : firstWords;
+  }
+
+  function extractTags(text) {
+    const normalized = typeof text === 'string' ? text.toLowerCase() : '';
+    const matches = SMART_TAG_KEYWORDS.filter((keyword) => normalized.includes(keyword));
+    return [...new Set(matches)];
+  }
+
+  async function createSmartEntry(text) {
+    const normalizedText = typeof text === 'string' ? text.trim() : '';
+    if (!normalizedText) {
+      return null;
+    }
+
+    const nowIso = new Date().toISOString();
+    const smartEntry = {
+      id: Date.now().toString(),
+      type: classifyInput(normalizedText),
+      title: extractTitle(normalizedText),
+      content: normalizedText,
+      tags: extractTags(normalizedText),
+      dateCreated: nowIso,
+      body: normalizedText,
+      bodyHtml: normalizedText,
+      bodyText: normalizedText,
+      pinned: false,
+      updatedAt: nowIso,
+      folderId: 'unsorted',
+      semanticEmbedding: null,
+    };
+
+    const notes = readJsonArrayStorage(NOTES_STORAGE_KEY, []);
+    notes.unshift(smartEntry);
+
+    try {
+      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+    } catch (error) {
+      console.error('Failed to save smart entry', error);
+      return null;
+    }
+
+    try {
+      if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+        document.dispatchEvent(
+          new CustomEvent('memoryCue:notesUpdated', { detail: { entry: smartEntry } }),
+        );
+      }
+    } catch (error) {
+      console.error('Failed to dispatch notes refresh event', error);
+    }
+
+    return smartEntry;
   }
 
   function buildQuickReminder(titleText, dueOverride) {
@@ -1577,8 +1662,7 @@ ${query}`;
       typeof options.text === 'string'
         ? options.text
         : (quickInput.value || '').trim();
-    const route = parseQuickAddPrefixRoute(text);
-    const t = route.text;
+    const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
     isQuickAddSubmitting = true;
     if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
@@ -1589,58 +1673,7 @@ ${query}`;
     let wasSaved = false;
 
     try {
-      if (route.kind === 'reflection') {
-        const note = saveReflectionQuickNote(t);
-        if (!note) {
-          return null;
-        }
-        quickInput.value = '';
-        try {
-          quickInput.focus({ preventScroll: true });
-        } catch {
-          quickInput.focus();
-        }
-        wasSaved = true;
-        return note;
-      }
-
-      const hasDueOverride =
-        options.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime());
-      const dueOverride = hasDueOverride ? options.dueDate : null;
-      let quickDue = null;
-      if (dueOverride) {
-        quickDue = new Date(dueOverride).toISOString();
-      } else {
-        try {
-          const parsedWhen = parseQuickWhen(t);
-          if (parsedWhen && parsedWhen.time) {
-            const isoCandidate = new Date(`${parsedWhen.date}T${parsedWhen.time}:00`).toISOString();
-            quickDue = isoCandidate;
-          }
-        } catch {
-          quickDue = null;
-        }
-      }
-
-      const payload = buildQuickReminder(t, quickDue);
-      if (route.kind === 'footy-drill') {
-        payload.category = 'Footy – Drills';
-      } else if (route.kind === 'task') {
-        payload.category = 'Tasks';
-      }
-      if (
-        options.notifyAt instanceof Date &&
-        !Number.isNaN(options.notifyAt.getTime())
-      ) {
-        try {
-          payload.notifyAt = new Date(options.notifyAt).toISOString();
-        } catch {
-          payload.notifyAt = null;
-        }
-      }
-      entry = createReminderFromPayload(payload, {
-        closeSheet: false,
-      });
+      entry = await createSmartEntry(t);
 
       if (entry && typeof document !== 'undefined') {
         quickInput.value = '';
@@ -1662,9 +1695,7 @@ ${query}`;
       if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
         quickBtn.disabled = false;
       }
-      if (wasSaved) {
-        isQuickAddSubmitting = false;
-      }
+      isQuickAddSubmitting = false;
     }
 
     return entry || null;
