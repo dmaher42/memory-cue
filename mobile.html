@@ -2077,6 +2077,25 @@ body, main, section, div, p, span, li {
       padding: 0.25rem 0.75rem;
     }
 
+
+    .inbox-search-container {
+      margin-top: 0.5rem;
+      margin-bottom: 0.9rem;
+      position: relative;
+      z-index: 1;
+      display: block;
+    }
+
+    #inboxSearchResults {
+      max-height: 12rem;
+      overflow-y: auto;
+    }
+
+    #remindersListMobile {
+      position: relative;
+      z-index: 0;
+    }
+
     /* Accessibility helper */
     .sr-only {
       position: absolute;
@@ -4689,7 +4708,7 @@ body, main, section, div, p, span, li {
           <button type="button" class="filter-toggle reminder-tab" data-reminders-tab="today" data-filter="today" aria-pressed="false">Today</button>
         </div>
       </form>
-      <div class="mt-2">
+      <div id="inboxSearchContainer" class="inbox-search-container" role="search" aria-label="Inbox search">
         <input id="inboxSearchInput" type="search" class="input input-sm w-full" placeholder="Inbox search (keywords, today, Monday 4pm)" autocomplete="off" />
         <ul id="inboxSearchResults" class="mt-2 space-y-1"></ul>
       </div>
@@ -4887,7 +4906,7 @@ body, main, section, div, p, span, li {
         <!-- header removed to keep view minimal -->
         <div class="reminders-content-shell space-y-2">
 
-          <div id="remindersListMobile" class="space-y-2">
+          <div id="remindersListMobile" class="space-y-2 mt-2">
             <section
               id="reminderListSection"
               class="w-full relative memory-glass-card-soft"
