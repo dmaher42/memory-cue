@@ -1118,6 +1118,123 @@ export async function initReminders(sel = {}) {
     };
   }
 
+  function readInboxSearchNotes() {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(NOTES_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function buildInboxSearchEntries() {
+    const reminderEntries = (Array.isArray(items) ? items : []).map((item) => ({
+      type: 'Reminder',
+      title: item?.title || '',
+      body: item?.notes || '',
+      timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
+      semanticEmbedding: normalizeSemanticEmbedding(item?.semanticEmbedding),
+    }));
+    const noteEntries = readInboxSearchNotes().map((note) => {
+      const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
+      const createdTime = typeof note?.createdAt === 'string' ? Date.parse(note.createdAt) : Number.NaN;
+      return {
+        type: 'Note',
+        title: note?.title || '',
+        body: note?.bodyText || note?.body || '',
+        timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
+        semanticEmbedding: normalizeSemanticEmbedding(note?.semanticEmbedding),
+      };
+    });
+
+    return [...reminderEntries, ...noteEntries];
+  }
+
+  async function semanticSearchEntries(query, entries, excludedEntries = []) {
+    const embedding = normalizeSemanticEmbedding(await generateEmbedding(query));
+    if (!embedding) {
+      return [];
+    }
+    const similarityThreshold = 0.72;
+    const excluded = new Set(excludedEntries);
+    const scored = entries
+      .filter((entry) => !excluded.has(entry))
+      .map((entry) => ({
+        entry,
+        score: cosineSimilarity(embedding, entry.semanticEmbedding),
+      }))
+      .filter((candidate) => candidate.score >= similarityThreshold)
+      .sort((a, b) => b.score - a.score)
+      .map((candidate) => ({
+        ...candidate.entry,
+        isSemanticMatch: true,
+      }));
+    return scored;
+  }
+
+  function keywordSearchEntries(query, entries) {
+    const parsed = parseInboxTimeQuery(query);
+    const keywords = (parsed.keywordQuery || '')
+      .toLowerCase()
+      .split(/\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    const matches = entries.filter((entry) => {
+      const haystack = `${entry.title} ${entry.body}`.toLowerCase();
+      const keywordMatch = !keywords.length || keywords.every((word) => haystack.includes(word));
+      if (!keywordMatch) {
+        return false;
+      }
+      if (!parsed.timeRange) {
+        return true;
+      }
+      if (!Number.isFinite(entry.timestamp)) {
+        return false;
+      }
+      return entry.timestamp >= parsed.timeRange.start && entry.timestamp <= parsed.timeRange.end;
+    });
+
+    matches.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return matches;
+  }
+
+  function formatRagContext(entries) {
+    const lines = ['=== MEMORY CONTEXT START ==='];
+    entries.forEach((entry, index) => {
+      const dateLabel = Number.isFinite(entry.timestamp)
+        ? new Date(entry.timestamp).toISOString().slice(0, 10)
+        : 'No date';
+      lines.push(`[${index + 1}] Type: ${entry.type || 'Unknown'}`);
+      lines.push(`    Title: ${entry.title || '(untitled)'}`);
+      lines.push(`    Date: ${dateLabel}`);
+      lines.push(`    Notes: ${entry.body || ''}`);
+      lines.push('');
+    });
+    lines.push('=== MEMORY CONTEXT END ===');
+    return lines.join('\n');
+  }
+
+  async function buildRagContext(query, maxResults = 8) {
+    const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+    const safeMaxResults = Number.isFinite(maxResults)
+      ? Math.max(1, Math.min(50, Math.floor(maxResults)))
+      : 8;
+    if (!trimmedQuery) {
+      return formatRagContext([]);
+    }
+
+    const entries = buildInboxSearchEntries();
+    const semanticMatches = await semanticSearchEntries(trimmedQuery, entries);
+    const topMatches = semanticMatches.length
+      ? semanticMatches.slice(0, safeMaxResults)
+      : keywordSearchEntries(trimmedQuery, entries).slice(0, safeMaxResults);
+
+    return formatRagContext(topMatches);
+  }
+
   function setupInboxSearch() {
     const inboxSearchInput = typeof document !== 'undefined' ? document.getElementById('inboxSearchInput') : null;
     const inboxSearchResults = typeof document !== 'undefined' ? document.getElementById('inboxSearchResults') : null;
@@ -1125,17 +1242,6 @@ export async function initReminders(sel = {}) {
     if (!inboxSearchInput || !inboxSearchResults) {
       return;
     }
-
-    const readNotes = () => {
-      if (typeof localStorage === 'undefined') return [];
-      try {
-        const raw = localStorage.getItem(NOTES_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    };
 
     const formatDateLabel = (timestamp) => {
       if (!Number.isFinite(timestamp)) {
@@ -1172,28 +1278,7 @@ export async function initReminders(sel = {}) {
       return `${before}<mark class="inbox-search-match">${match}</mark>${after}`;
     };
 
-    const buildCombinedEntries = () => {
-      const reminderEntries = (Array.isArray(items) ? items : []).map((item) => ({
-        type: 'Reminder',
-        title: item?.title || '',
-        body: item?.notes || '',
-        timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
-        semanticEmbedding: normalizeSemanticEmbedding(item?.semanticEmbedding),
-      }));
-      const noteEntries = readNotes().map((note) => {
-        const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
-        const createdTime = typeof note?.createdAt === 'string' ? Date.parse(note.createdAt) : Number.NaN;
-        return {
-          type: 'Note',
-          title: note?.title || '',
-          body: note?.bodyText || note?.body || '',
-          timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
-          semanticEmbedding: normalizeSemanticEmbedding(note?.semanticEmbedding),
-        };
-      });
-
-      return [...reminderEntries, ...noteEntries];
-    };
+    const buildCombinedEntries = () => buildInboxSearchEntries();
 
     let autocompleteResults = [];
     let autocompleteIndex = -1;
@@ -1278,25 +1363,7 @@ export async function initReminders(sel = {}) {
     };
 
     async function semanticSearch(query, entries, excludedEntries = []) {
-      const embedding = normalizeSemanticEmbedding(await generateEmbedding(query));
-      if (!embedding) {
-        return [];
-      }
-      const similarityThreshold = 0.72;
-      const excluded = new Set(excludedEntries);
-      const scored = entries
-        .filter((entry) => !excluded.has(entry))
-        .map((entry) => ({
-          entry,
-          score: cosineSimilarity(embedding, entry.semanticEmbedding),
-        }))
-        .filter((candidate) => candidate.score >= similarityThreshold)
-        .sort((a, b) => b.score - a.score)
-        .map((candidate) => ({
-          ...candidate.entry,
-          isSemanticMatch: true,
-        }));
-      return scored;
+      return semanticSearchEntries(query, entries, excludedEntries);
     }
 
     const runSearch = async () => {
@@ -5191,6 +5258,7 @@ export async function initReminders(sel = {}) {
     closeActiveNotifications,
     getActiveNotifications: () => activeNotifications,
     addNoteToReminder,
+    buildRagContext,
     __testing: {
       setItems(listItems = []) {
         items = Array.isArray(listItems)
@@ -5203,6 +5271,7 @@ export async function initReminders(sel = {}) {
       render,
       getItems: () => items.map(item => ({ ...item })),
       parseInboxTimeQuery,
+      buildRagContext,
     },
   };
 }
