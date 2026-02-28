@@ -1733,9 +1733,8 @@ ${query}`;
       return;
     }
 
-    const SpeechRecognitionCtor =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (typeof SpeechRecognitionCtor !== 'function') {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
       quickVoiceBtn.setAttribute('disabled', 'true');
       quickVoiceBtn.setAttribute('aria-disabled', 'true');
       if (!quickVoiceBtn.getAttribute('title')) {
@@ -1745,88 +1744,73 @@ ${query}`;
     }
 
     let recognition = null;
-    let listening = false;
+    let isListening = false;
 
     const updateListening = (state) => {
-      listening = state;
+      isListening = state;
       quickVoiceBtn.setAttribute('aria-pressed', state ? 'true' : 'false');
       quickVoiceBtn.dataset.listening = state ? 'true' : 'false';
       quickVoiceBtn.classList.toggle('is-listening', state);
+      quickVoiceBtn.classList.toggle('mic-active', state);
     };
 
-    const ensureRecognition = () => {
-      if (recognition) {
-        return recognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-AU';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.addEventListener('result', (event) => {
+      const transcript = event?.results?.[0]?.[0]?.transcript?.trim() || '';
+      if (!transcript) {
+        return;
       }
+      quickInput.value =
+        quickInput.value.trim().length > 0 ? `${quickInput.value} ${transcript}` : transcript;
+      try {
+        quickInput.focus({ preventScroll: true });
+      } catch {
+        quickInput.focus();
+      }
+    });
 
-      recognition = new SpeechRecognitionCtor();
-      const lang =
-        (typeof document !== 'undefined' &&
-          document.documentElement &&
-          document.documentElement.lang) ||
-        (typeof navigator !== 'undefined' && navigator.language) ||
-        'en-US';
-      recognition.lang = lang;
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+    recognition.addEventListener('end', () => {
+      updateListening(false);
+    });
 
-      recognition.addEventListener('result', (event) => {
-        const transcript = event?.results?.[0]?.[0]?.transcript?.trim() || '';
-        if (!transcript) {
-          return;
-        }
-        quickInput.value = transcript;
-        try {
-          quickInput.focus({ preventScroll: true });
-        } catch {
-          quickInput.focus();
-        }
-        try {
-          const length = quickInput.value.length;
-          if (typeof quickInput.setSelectionRange === 'function') {
-            quickInput.setSelectionRange(length, length);
-          }
-        } catch {}
-      });
-
-      const reset = () => {
-        updateListening(false);
-      };
-
-      recognition.addEventListener('end', reset);
-      recognition.addEventListener('error', reset);
-
-      return recognition;
-    };
+    recognition.addEventListener('error', (event) => {
+      console.error('Mic error:', event?.error);
+      updateListening(false);
+    });
 
     const stopListening = () => {
-      if (!listening || !recognition) {
+      if (!isListening || !recognition) {
         return;
       }
       try {
         recognition.stop();
-      } catch {}
+      } catch (error) {
+        console.error('Mic stop error:', error);
+      }
       updateListening(false);
     };
 
     stopQuickAddVoiceListening = stopListening;
 
     quickVoiceBtn.addEventListener('click', () => {
-      const recog = ensureRecognition();
-      if (!recog) {
+      if (!recognition) {
         return;
       }
 
-      if (listening) {
+      if (isListening) {
         stopListening();
         return;
       }
 
       try {
-        recog.start();
+        recognition.start();
         updateListening(true);
       } catch (error) {
-        console.warn('Quick add voice error:', error);
+        console.error('Mic start error:', error);
         updateListening(false);
       }
     });
