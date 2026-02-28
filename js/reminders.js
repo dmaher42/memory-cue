@@ -1235,6 +1235,21 @@ export async function initReminders(sel = {}) {
     return formatRagContext(topMatches);
   }
 
+  async function askAssistant(query) {
+    const context = await buildRagContext(query);
+    const prompt = `You are an assistant that must answer ONLY using the provided MEMORY CONTEXT.
+Do not invent new information.
+If answer not in context, say: "I do not have enough information."
+
+MEMORY CONTEXT:
+${context}
+
+USER QUESTION:
+${query}`;
+    console.log('[RAG assistant] Prompt:\n', prompt);
+    return 'Assistant response placeholder.';
+  }
+
   function setupInboxSearch() {
     const inboxSearchInput = typeof document !== 'undefined' ? document.getElementById('inboxSearchInput') : null;
     const inboxSearchResults = typeof document !== 'undefined' ? document.getElementById('inboxSearchResults') : null;
@@ -5259,6 +5274,7 @@ export async function initReminders(sel = {}) {
     getActiveNotifications: () => activeNotifications,
     addNoteToReminder,
     buildRagContext,
+    askAssistant,
     __testing: {
       setItems(listItems = []) {
         items = Array.isArray(listItems)
@@ -5272,6 +5288,7 @@ export async function initReminders(sel = {}) {
       getItems: () => items.map(item => ({ ...item })),
       parseInboxTimeQuery,
       buildRagContext,
+      askAssistant,
     },
   };
 }
