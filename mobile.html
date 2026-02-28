@@ -46,6 +46,9 @@
       --icon-inactive: #4c5c7a;
       --icon-active: #111111;
       --true-blue: #0073cf;
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
     }
 
     [data-theme="professional-dark"] {
@@ -2026,13 +2029,13 @@ body, main, section, div, p, span, li {
     /* New Header Styles */
     .mobile-header {
       background: var(--cauliflower-blue);
-      padding: 1rem;
+      padding: var(--space-2);
       position: sticky;
       top: 0;
       z-index: 40;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: var(--space-2);
     }
 
     .header-main-row {
@@ -2048,7 +2051,7 @@ body, main, section, div, p, span, li {
 
     .header-actions {
       display: flex;
-      gap: 0.5rem;
+      gap: var(--space-1);
     }
 
     .header-quick-add,
@@ -2062,8 +2065,8 @@ body, main, section, div, p, span, li {
       background: white;
       border: 1px solid var(--border-subtle);
       border-radius: 999px;
-      padding: 0.5rem 0.65rem;
-      gap: 0.35rem;
+      padding: var(--space-1);
+      gap: var(--space-1);
     }
 
     .quick-add-form input {
@@ -2072,7 +2075,7 @@ body, main, section, div, p, span, li {
       border-radius: 999px;
       font-size: 0.95rem;
       background: transparent;
-      padding: 0.42rem 0.75rem;
+      padding: var(--space-1) var(--space-2);
       color: var(--text-main);
       line-height: 1.3;
     }
@@ -2086,11 +2089,11 @@ body, main, section, div, p, span, li {
       display: flex;
       background: var(--cauliflower-blue);
       border-radius: 999px;
-      padding: 0.25rem;
+      padding: calc(var(--space-1) / 2);
     }
 
     .quick-add-tabs .reminder-tab {
-      padding: 0.25rem 0.75rem;
+      padding: calc(var(--space-1) / 2) var(--space-2);
     }
 
 
@@ -2108,7 +2111,7 @@ body, main, section, div, p, span, li {
       width: 100%;
       border: 1px solid var(--border-subtle);
       border-radius: 999px;
-      padding: 0.42rem 2.15rem 0.42rem 0.75rem;
+      padding: var(--space-1) calc(var(--space-3) + var(--space-1)) var(--space-1) var(--space-2);
       font-size: 0.95rem;
       line-height: 1.3;
       color: var(--text-main);
@@ -2118,7 +2121,7 @@ body, main, section, div, p, span, li {
     .inbox-search-clear {
       position: absolute;
       top: 50%;
-      right: 0.4rem;
+      right: calc(var(--space-1) / 2);
       transform: translateY(-50%);
       border: none;
       border-radius: 999px;
@@ -2143,12 +2146,19 @@ body, main, section, div, p, span, li {
       z-index: 21;
       max-height: 12rem;
       overflow-y: auto;
+      margin-top: var(--space-1);
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--space-1) / 2);
     }
 
     #remindersListMobile {
       position: relative;
       z-index: 0;
-      margin-top: 0.85rem;
+      margin-top: var(--space-2);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
     }
 
     /* Accessibility helper */
@@ -4770,7 +4780,7 @@ body, main, section, div, p, span, li {
           <input id="inboxSearchInput" type="search" placeholder="Search reminders, notes, drills…" autocomplete="off" />
           <button id="inboxSearchClear" type="button" class="inbox-search-clear" aria-label="Clear inbox search" hidden>&times;</button>
         </div>
-        <ul id="inboxSearchResults" class="mt-2 space-y-1"></ul>
+        <ul id="inboxSearchResults"></ul>
       </div>
     </div>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
@@ -4966,7 +4976,7 @@ body, main, section, div, p, span, li {
         <!-- header removed to keep view minimal -->
         <div class="reminders-content-shell space-y-2">
 
-          <div id="remindersListMobile" class="space-y-2">
+          <div id="remindersListMobile">
             <section
               id="reminderListSection"
               class="w-full relative memory-glass-card-soft"
