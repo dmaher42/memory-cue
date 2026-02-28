@@ -31,6 +31,68 @@ const SEEDED_CATEGORIES = Object.freeze([
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
 
+function normalizeSemanticEmbedding(value) {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const vector = value
+    .map((entry) => Number(entry))
+    .filter((entry) => Number.isFinite(entry));
+  return vector.length ? vector : null;
+}
+
+async function generateEmbedding(text) {
+  const normalized = typeof text === 'string' ? text.trim() : '';
+  if (!normalized) {
+    return null;
+  }
+  // TODO: Replace this stub with a real embeddings API integration.
+  return null;
+}
+
+function cosineSimilarity(vecA, vecB) {
+  const a = normalizeSemanticEmbedding(vecA);
+  const b = normalizeSemanticEmbedding(vecB);
+  if (!a || !b || a.length !== b.length) {
+    return 0;
+  }
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+  if (!magA || !magB) {
+    return 0;
+  }
+  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
+}
+
+async function ensureEmbeddingForItem(item) {
+  if (!item || typeof item !== 'object') {
+    return item;
+  }
+  const existing = normalizeSemanticEmbedding(item.semanticEmbedding);
+  if (existing) {
+    item.semanticEmbedding = existing;
+    return item;
+  }
+  const text = [item.title, item.bodyText, item.body, item.notes]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .join('\n')
+    .trim();
+  if (!text) {
+    return item;
+  }
+  const generated = normalizeSemanticEmbedding(await generateEmbedding(text));
+  if (generated) {
+    item.semanticEmbedding = generated;
+  }
+  return item;
+}
+
 // Provide a safe fallback that does not embed production credentials in the
 // repository. Hosting environments are expected to inject their own Firebase
 // configuration via the memoryCueFirebase API or a local module export.
@@ -912,6 +974,7 @@ export async function initReminders(sel = {}) {
       pinned: false,
       updatedAt: nowIso,
       folderId,
+      semanticEmbedding: null,
     };
 
     notes.unshift(note);
@@ -935,6 +998,7 @@ export async function initReminders(sel = {}) {
       notes: '',
       due: dueIso,
       pinToToday: false,
+      semanticEmbedding: null,
     };
   }
 
@@ -2798,6 +2862,7 @@ export async function initReminders(sel = {}) {
                 ? entry.plannerLessonId.trim()
                 : null,
             pinToToday: entry.pinToToday === true,
+            semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
           };
         })
         .filter(Boolean);
@@ -2833,6 +2898,7 @@ export async function initReminders(sel = {}) {
               ? entry.plannerLessonId.trim()
               : null,
           pinToToday: !!entry.pinToToday,
+          semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
         }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
@@ -2850,6 +2916,41 @@ export async function initReminders(sel = {}) {
   }
 
   hydrateOfflineReminders();
+
+  async function ensureAllEmbeddings() {
+    let remindersUpdated = false;
+    for (const reminder of items) {
+      const before = normalizeSemanticEmbedding(reminder?.semanticEmbedding);
+      await ensureEmbeddingForItem(reminder);
+      const after = normalizeSemanticEmbedding(reminder?.semanticEmbedding);
+      if (!before && after) {
+        remindersUpdated = true;
+      }
+    }
+    if (remindersUpdated) {
+      persistItems();
+    }
+
+    const notes = readJsonArrayStorage(NOTES_STORAGE_KEY, []);
+    let notesUpdated = false;
+    for (const note of notes) {
+      const before = normalizeSemanticEmbedding(note?.semanticEmbedding);
+      await ensureEmbeddingForItem(note);
+      const after = normalizeSemanticEmbedding(note?.semanticEmbedding);
+      if (!before && after) {
+        notesUpdated = true;
+      }
+    }
+    if (notesUpdated && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+      } catch (error) {
+        console.warn('Failed to persist note embeddings', error);
+      }
+    }
+  }
+
+  ensureAllEmbeddings();
 
   async function migrateOfflineRemindersIfNeeded() {
     if (!userId) {
@@ -2902,6 +3003,7 @@ export async function initReminders(sel = {}) {
         if (!Number.isFinite(entry.notifiedAt)) {
           entry.notifiedAt = null;
         }
+        entry.semanticEmbedding = normalizeSemanticEmbedding(entry.semanticEmbedding);
       }
     });
   }
@@ -3558,6 +3660,7 @@ export async function initReminders(sel = {}) {
           : null,
       pinToToday: !!payload.pinToToday,
       notifyAt: notifyAtValue,
+      semanticEmbedding: normalizeSemanticEmbedding(payload.semanticEmbedding),
     };
 
     assignOrderIndexForNewItem(item, { position: 'start' });
@@ -3891,6 +3994,7 @@ export async function initReminders(sel = {}) {
         urlPath: entry.urlPath || reminderLandingPath,
         updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
         notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
+        semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
       }));
   }
 
@@ -3998,6 +4102,7 @@ export async function initReminders(sel = {}) {
       urlPath: reminderLandingPath,
       updatedAt: Date.now(),
       viaTrigger: !!previous.viaTrigger,
+      semanticEmbedding: normalizeSemanticEmbedding(item.semanticEmbedding),
       notifiedAt: (() => {
         const prevDue = typeof previous.due === 'string' ? previous.due : null;
         const prevNotified = Number.isFinite(previous.notifiedAt) ? previous.notifiedAt : null;
