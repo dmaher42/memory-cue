@@ -4972,55 +4972,65 @@ body, main, section, div, p, span, li {
 
   <script>
     (function wireQuickReminderShortcut() {
-      const focusQuickInput = (input) => {
-        if (!input) return;
+      const dispatchReminderSheetOpen = (trigger, prefillText = '') => {
+        const detail = {
+          mode: 'create',
+          trigger: trigger instanceof HTMLElement ? trigger : null,
+          prefillText,
+        };
+
         try {
-          input.focus({ preventScroll: true });
-        } catch (e) {
-          input.focus();
-        }
-      };
-
-      const syncQuickInputToForm = (event) => {
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
+          document.dispatchEvent(new CustomEvent('open-reminder-sheet', { detail }));
+          document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
+          document.dispatchEvent(new CustomEvent('cue:open', { detail }));
+        } catch (error) {
+          console.warn('Failed to open reminder sheet', error);
         }
 
-        const quickInput = document.getElementById('quickAddInput');
-        const titleInput = document.getElementById('reminderText');
-        const saveBtn = document.getElementById('saveReminder');
+        const focusEditor = () => {
+          const reminderText = document.getElementById('reminderText');
+          if (!(reminderText instanceof HTMLElement)) return;
+          try {
+            reminderText.focus({ preventScroll: true });
+          } catch (error) {
+            reminderText.focus();
+          }
+          if (prefillText && reminderText instanceof HTMLInputElement) {
+            reminderText.value = prefillText;
+            reminderText.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        };
 
-        if (!(quickInput instanceof HTMLInputElement) || !(titleInput instanceof HTMLInputElement) || !(saveBtn instanceof HTMLElement)) {
-          return;
-        }
-
-        const text = (quickInput.value || '').trim();
-        if (!text) {
-          focusQuickInput(quickInput);
-          return;
-        }
-
-        titleInput.value = text;
-        titleInput.dispatchEvent(new Event('input', { bubbles: true }));
-        titleInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-        saveBtn.click();
-
-        quickInput.value = '';
-        focusQuickInput(quickInput);
+        document.addEventListener('reminder:sheet-opened', focusEditor, { once: true });
       };
 
       const init = () => {
         const quickForm = document.getElementById('quickAddForm');
-        const quickSaveBtn =
-          document.getElementById('quickAddReminderGlobal') ||
-          document.getElementById('quickAddSubmit');
+        const quickInput = document.getElementById('quickAddInput');
 
-        if (!quickForm) return;
+        document.addEventListener('click', (event) => {
+          const trigger = event.target instanceof Element
+            ? event.target.closest('[data-trigger="open-cue"]')
+            : null;
+          if (!(trigger instanceof HTMLElement)) return;
 
-        quickForm.addEventListener('submit', syncQuickInputToForm);
-        quickSaveBtn?.addEventListener('click', syncQuickInputToForm);
+          event.preventDefault();
+          dispatchReminderSheetOpen(trigger);
+        });
+
+        if (!(quickForm instanceof HTMLFormElement) || !(quickInput instanceof HTMLInputElement)) {
+          return;
+        }
+
+        if (typeof window.memoryCueQuickAddNow !== 'function') {
+          quickForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const text = (quickInput.value || '').trim();
+            if (!text) return;
+            dispatchReminderSheetOpen(quickInput, text);
+          });
+        }
+
       };
 
       if (document.readyState === 'loading') {
@@ -6321,7 +6331,7 @@ body, main, section, div, p, span, li {
   <!-- END GPT CHANGE: bottom sheet for Create Reminder -->
 
   <!-- BEGIN GPT CHANGE: settings modal -->
-  <div id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" class="hidden">
+  <div id="settingsModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settingsTitle" class="hidden">
     <div class="modal-panel">
       <header class="modal-header">
         <h2 id="settingsTitle">Settings</h2>
@@ -6354,11 +6364,11 @@ body, main, section, div, p, span, li {
   <script id="mobile-enhancements">
     document.querySelectorAll('[data-close]').forEach((btn) => {
       btn.addEventListener('click', (event) => {
-        const trigger = event.target;
-        const dialog = trigger?.closest?.('.sheet, .modal');
-        if (dialog) {
-          dialog.classList.add('hidden');
-        }
+        const trigger = event.target instanceof Element ? event.target : null;
+        const dialog = trigger?.closest?.('.sheet, [role="dialog"]');
+        if (!(dialog instanceof HTMLElement)) return;
+        dialog.classList.add('hidden');
+        dialog.setAttribute('aria-hidden', 'true');
       });
     });
 
@@ -7118,26 +7128,81 @@ body, main, section, div, p, span, li {
       ).filter((btn) => btn instanceof HTMLElement);
       const modal = document.getElementById('settingsModal');
       const closeBtn = document.getElementById('closeSettings');
-      if (!openBtns.length || !modal || !closeBtn) return;
+      if (!openBtns.length || !(modal instanceof HTMLElement) || !(closeBtn instanceof HTMLElement)) return;
 
-      const open = () => {
+      let lastTrigger = null;
+
+      const getFocusableElements = () =>
+        Array.from(
+          modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+        ).filter((el) => el instanceof HTMLElement && !el.hasAttribute('disabled'));
+
+      const open = (trigger) => {
+        lastTrigger = trigger instanceof HTMLElement ? trigger : null;
         modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        closeBtn.focus();
       };
 
       const close = () => {
         modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+
+        const focusTarget =
+          (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) ||
+          openBtns[0];
+
+        if (focusTarget instanceof HTMLElement) {
+          try {
+            focusTarget.focus({ preventScroll: true });
+          } catch (error) {
+            focusTarget.focus();
+          }
+        }
+
+        lastTrigger = null;
       };
 
-      openBtns.forEach((btn) => btn.addEventListener('click', open));
-      closeBtn.addEventListener('click', close);
+      openBtns.forEach((btn) => {
+        btn.dataset.modalTrigger = 'settingsModal';
+        btn.addEventListener('click', (event) => {
+          event.preventDefault();
+          open(btn);
+        });
+      });
+
+      closeBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        close();
+      });
+
       modal.addEventListener('click', (event) => {
-        if (event.target instanceof HTMLElement && event.target.matches('[data-close]')) {
+        if (event.target instanceof HTMLElement && event.target.matches('.modal-backdrop, [data-close]')) {
           close();
         }
       });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || modal.classList.contains('hidden')) return;
+        close();
+      });
+
       modal.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          close();
+        if (event.key !== 'Tab') return;
+
+        const focusableElements = getFocusableElements();
+        if (!focusableElements.length) return;
+
+        const first = focusableElements[0];
+        const last = focusableElements[focusableElements.length - 1];
+        const active = document.activeElement;
+
+        if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
         }
       });
     })();
