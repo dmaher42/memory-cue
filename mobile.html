@@ -2059,6 +2059,18 @@ body, main, section, div, p, span, li {
       width: 100%;
     }
 
+    .mobile-header {
+      --control-border: 1px solid var(--border-subtle);
+      --control-radius: 999px;
+      --control-font-size: 0.95rem;
+      --control-text-color: var(--text-main);
+      --control-placeholder-color: var(--text-placeholder);
+      --control-bg: #fff;
+      --control-icon-color: var(--text-secondary);
+      --control-size-sm: 1.55rem;
+      --control-size-md: 2rem;
+    }
+
     .header-quick-add {
       border-top: 1px solid var(--border-subtle);
       padding-top: var(--space-2);
@@ -2083,27 +2095,26 @@ body, main, section, div, p, span, li {
     .quick-add-form {
       display: flex;
       align-items: center;
-      background: white;
-      border: 1px solid var(--border-subtle);
-      border-radius: 999px;
+      background: var(--control-bg);
+      border: var(--control-border);
+      border-radius: var(--control-radius);
       padding: var(--space-1);
       gap: var(--space-1);
     }
 
-    .quick-add-form input {
+    .control-input {
       flex: 1;
-      border: 1px solid var(--border-subtle);
-      border-radius: 999px;
-      font-size: 0.95rem;
+      border: var(--control-border);
+      border-radius: var(--control-radius);
+      font-size: var(--control-font-size);
       background: transparent;
       padding: var(--space-1) var(--space-2);
-      color: var(--text-main);
+      color: var(--control-text-color);
       line-height: 1.3;
     }
 
-    .quick-add-form input::placeholder,
-    #inboxSearchInput::placeholder {
-      color: var(--text-placeholder);
+    .control-input::placeholder {
+      color: var(--control-placeholder-color);
     }
 
     .quick-add-tabs {
@@ -2128,15 +2139,38 @@ body, main, section, div, p, span, li {
       position: relative;
     }
 
-    #inboxSearchInput {
+    .inbox-search-input {
       width: 100%;
-      border: 1px solid var(--border-subtle);
-      border-radius: 999px;
+      border: var(--control-border);
+      border-radius: var(--control-radius);
       padding: var(--space-1) calc(var(--space-3) + var(--space-1)) var(--space-1) var(--space-2);
-      font-size: 0.95rem;
+      font-size: var(--control-font-size);
       line-height: 1.3;
+      color: var(--control-text-color);
+      background: var(--control-bg);
+    }
+
+    .control-icon-button {
+      border: none;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--control-icon-color);
+      background: transparent;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .control-icon-button:hover,
+    .control-icon-button:focus-visible {
+      background: color-mix(in srgb, var(--accent-color) 8%, #ffffff);
       color: var(--text-main);
-      background: #fff;
+    }
+
+    .icon-button.control-icon-button {
+      width: var(--control-size-md);
+      height: var(--control-size-md);
     }
 
     .inbox-search-clear {
@@ -2144,18 +2178,11 @@ body, main, section, div, p, span, li {
       top: 50%;
       right: calc(var(--space-1) / 2);
       transform: translateY(-50%);
-      border: none;
-      border-radius: 999px;
-      width: 1.55rem;
-      height: 1.55rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      width: var(--control-size-sm);
+      height: var(--control-size-sm);
       background: color-mix(in srgb, var(--card-border) 55%, #ffffff);
-      color: var(--text-secondary);
       font-size: 1rem;
       line-height: 1;
-      cursor: pointer;
     }
 
     .inbox-search-clear[hidden] {
@@ -4772,13 +4799,13 @@ body, main, section, div, p, span, li {
       <h1 class="header-title">Reminders</h1>
       <div class="header-actions">
         <!-- The existing icon buttons can be moved here -->
-        <button id="openSavedNotesGlobal" type="button" class="icon-button" aria-label="Open saved notes">
+        <button id="openSavedNotesGlobal" type="button" class="icon-button control-icon-button" aria-label="Open saved notes">
           <span class="material-symbols-rounded">bookmark</span>
         </button>
-        <button id="startVoiceCaptureGlobal" type="button" class="icon-button" aria-label="Start voice capture">
+        <button id="startVoiceCaptureGlobal" type="button" class="icon-button control-icon-button" aria-label="Start voice capture">
           <span class="material-symbols-rounded">mic</span>
         </button>
-        <button id="overflowMenuBtn" type="button" class="icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="More options">
+        <button id="overflowMenuBtn" type="button" class="icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="More options">
           <span class="material-symbols-rounded">more_vert</span>
         </button>
       </div>
@@ -4786,7 +4813,7 @@ body, main, section, div, p, span, li {
     <div class="header-quick-add">
       <form id="quickAddForm" class="quick-add-form" onsubmit="return false;">
         <span class="material-symbols-rounded">add</span>
-        <input id="quickAddInput" type="text" placeholder="Quick reminder..." autocomplete="off" />
+        <input id="quickAddInput" class="control-input quick-add-input" type="text" placeholder="Quick reminder..." autocomplete="off" />
         <div class="quick-add-tabs">
           <button type="button" class="filter-toggle reminder-tab reminders-tab-active" data-reminders-tab="all" data-filter="all" aria-pressed="true">All</button>
           <button type="button" class="filter-toggle reminder-tab" data-reminders-tab="today" data-filter="today" aria-pressed="false">Today</button>
@@ -4796,8 +4823,8 @@ body, main, section, div, p, span, li {
     <div class="header-search">
       <div id="inboxSearchContainer" class="inbox-search-container" role="search" aria-label="Inbox search">
         <div class="inbox-search-input-wrap">
-          <input id="inboxSearchInput" type="search" placeholder="Search reminders, notes, drills…" autocomplete="off" />
-          <button id="inboxSearchClear" type="button" class="inbox-search-clear" aria-label="Clear inbox search" hidden>&times;</button>
+          <input id="inboxSearchInput" class="control-input inbox-search-input" type="search" placeholder="Search reminders, notes, drills…" autocomplete="off" />
+          <button id="inboxSearchClear" type="button" class="inbox-search-clear control-icon-button" aria-label="Clear inbox search" hidden>&times;</button>
         </div>
       </div>
     </div>
