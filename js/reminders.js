@@ -1057,6 +1057,7 @@ export async function initReminders(sel = {}) {
   function setupInboxSearch() {
     const inboxSearchInput = typeof document !== 'undefined' ? document.getElementById('inboxSearchInput') : null;
     const inboxSearchResults = typeof document !== 'undefined' ? document.getElementById('inboxSearchResults') : null;
+    const inboxSearchClear = typeof document !== 'undefined' ? document.getElementById('inboxSearchClear') : null;
     if (!inboxSearchInput || !inboxSearchResults) {
       return;
     }
@@ -1115,6 +1116,9 @@ export async function initReminders(sel = {}) {
     const runSearch = () => {
       const query = inboxSearchInput.value || '';
       const trimmed = query.trim();
+      if (inboxSearchClear) {
+        inboxSearchClear.hidden = !trimmed;
+      }
       if (!trimmed) {
         inboxSearchResults.innerHTML = '';
         return;
@@ -1165,6 +1169,16 @@ export async function initReminders(sel = {}) {
     };
 
     inboxSearchInput.addEventListener('input', runSearch);
+
+    if (inboxSearchClear) {
+      inboxSearchClear.addEventListener('click', () => {
+        inboxSearchInput.value = '';
+        inboxSearchResults.innerHTML = '';
+        inboxSearchClear.hidden = true;
+        inboxSearchInput.focus();
+      });
+    }
+
     document.addEventListener('memoryCue:remindersUpdated', runSearch);
   }
 
