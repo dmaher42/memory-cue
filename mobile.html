@@ -4897,6 +4897,7 @@ body, main, section, div, p, span, li {
       <form id="quickAddForm" class="quick-add-form" onsubmit="return false;">
         <span class="material-symbols-rounded">add</span>
         <input id="quickAddInput" class="control-input quick-add-input" type="text" placeholder="Quick reminder..." autocomplete="off" />
+        <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
         <div class="quick-add-tabs">
           <button type="button" class="filter-toggle reminder-tab reminders-tab-active" data-reminders-tab="all" data-filter="all" aria-pressed="true">All</button>
           <button type="button" class="filter-toggle reminder-tab" data-reminders-tab="today" data-filter="today" aria-pressed="false">Today</button>
