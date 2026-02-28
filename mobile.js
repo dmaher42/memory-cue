@@ -29,6 +29,98 @@ const isNotesSyncDebugEnabled = (() => {
 
 initViewportHeight();
 
+(function initAssistantView() {
+  const setupAssistant = () => {
+    const assistantForm = document.getElementById('assistantForm');
+    const assistantInput = document.getElementById('assistantInput');
+    const assistantThread = document.getElementById('assistantThread');
+
+    if (
+      !(assistantForm instanceof HTMLFormElement) ||
+      !(assistantInput instanceof HTMLInputElement) ||
+      !(assistantThread instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    assistantForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const text = (assistantInput.value || '').trim();
+      if (!text) {
+        return;
+      }
+
+      const message = document.createElement('div');
+      message.className = 'assistant-message';
+      message.textContent = text;
+      assistantThread.appendChild(message);
+
+      assistantInput.value = '';
+      assistantInput.focus();
+      assistantThread.scrollTop = assistantThread.scrollHeight;
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupAssistant, { once: true });
+  } else {
+    setupAssistant();
+  }
+})();
+
+(function initAssistantNavigation() {
+  const setupAssistantNavigation = () => {
+    const assistantView = document.getElementById('view-assistant');
+    const remindersView = document.getElementById('view-reminders');
+    const notebookView = document.getElementById('view-notebook');
+
+    if (!(assistantView instanceof HTMLElement)) {
+      return;
+    }
+
+    const setVisibility = (element, isVisible) => {
+      if (!(element instanceof HTMLElement)) return;
+      element.classList.toggle('hidden', !isVisible);
+      element.setAttribute('aria-hidden', String(!isVisible));
+    };
+
+    window.addEventListener('app:navigate', (event) => {
+      const view = event?.detail?.view;
+      if (!view) return;
+
+      if (view === 'assistant') {
+        setVisibility(assistantView, true);
+        setVisibility(remindersView, false);
+        setVisibility(notebookView, false);
+
+        const main = document.getElementById('main');
+        if (main instanceof HTMLElement) {
+          main.setAttribute('data-active-view', 'assistant');
+          const headerHeight = getComputedStyle(document.documentElement)
+            .getPropertyValue('--mobile-header-height')
+            .trim() || '112px';
+          main.style.setProperty('padding-top', headerHeight, 'important');
+        }
+
+        if (document.body instanceof HTMLElement) {
+          document.body.setAttribute('data-active-view', 'assistant');
+        }
+
+        return;
+      }
+
+      setVisibility(assistantView, false);
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupAssistantNavigation, { once: true });
+  } else {
+    setupAssistantNavigation();
+  }
+})();
+
 document.querySelector('.fab-button')?.addEventListener('click', () => {
   openEditor();
 });
