@@ -876,6 +876,8 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined'
       ? document.getElementById('quickAddVoice') || document.getElementById('voiceBtn')
       : null;
+  const quickAddParsingIndicator =
+    typeof document !== 'undefined' ? document.getElementById('quickAddParsingIndicator') : null;
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   // Track the currently focused input mode to prevent cross-triggering between quick add and search.
@@ -1019,14 +1021,74 @@ export async function initReminders(sel = {}) {
       return 'Untitled note';
     }
     const words = normalized.split(' ').filter(Boolean);
-    const firstWords = words.slice(0, 5).join(' ');
+    const firstWords = words.slice(0, 6).join(' ');
     return firstWords.length > 60 ? `${firstWords.slice(0, 60).trimEnd()}` : firstWords;
   }
 
   function extractTags(text) {
     const normalized = typeof text === 'string' ? text.toLowerCase() : '';
     const matches = SMART_TAG_KEYWORDS.filter((keyword) => normalized.includes(keyword));
+    if (/\byear\s*7\b/.test(normalized)) {
+      matches.push('year7');
+    }
+    if (/\byear\s*9\b/.test(normalized)) {
+      matches.push('year9');
+    }
+    if (/\bvote\b/.test(normalized)) {
+      matches.push('voting');
+    }
     return [...new Set(matches)];
+  }
+
+  function sanitizeTags(tags) {
+    if (!Array.isArray(tags)) {
+      return [];
+    }
+    const cleaned = tags
+      .map((tag) => (typeof tag === 'string' ? tag.trim().toLowerCase() : ''))
+      .filter(Boolean)
+      .slice(0, 8);
+    return [...new Set(cleaned)];
+  }
+
+  async function parseSmartEntryWithAI(text) {
+    if (typeof fetch !== 'function') {
+      throw new Error('fetch is unavailable');
+    }
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
+
+    try {
+      const response = await fetch('/api/parse-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        signal: controller?.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`AI parse failed (${response.status})`);
+      }
+      const data = await response.json();
+      return {
+        type: data?.type,
+        title: typeof data?.title === 'string' ? data.title.trim() : '',
+        tags: sanitizeTags(data?.tags),
+        reminderDate: typeof data?.reminderDate === 'string' ? data.reminderDate : null,
+      };
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
+
+  function parseSmartEntryWithFallback(text) {
+    return {
+      type: classifyInput(text),
+      title: extractTitle(text),
+      tags: extractTags(text),
+      reminderDate: null,
+    };
   }
 
   async function createSmartEntry(text) {
@@ -1035,13 +1097,35 @@ export async function initReminders(sel = {}) {
       return null;
     }
 
+    let parsedFields = null;
+    try {
+      parsedFields = await parseSmartEntryWithAI(normalizedText);
+    } catch (error) {
+      console.warn('AI smart capture failed, using fallback classifier', error);
+      parsedFields = parseSmartEntryWithFallback(normalizedText);
+    }
+
+    const fallbackFields = parseSmartEntryWithFallback(normalizedText);
+    const resolvedType =
+      typeof parsedFields?.type === 'string' && parsedFields.type
+        ? parsedFields.type
+        : fallbackFields.type;
+    const resolvedTitle =
+      typeof parsedFields?.title === 'string' && parsedFields.title
+        ? parsedFields.title.slice(0, 60)
+        : fallbackFields.title;
+    const resolvedTags = sanitizeTags(parsedFields?.tags?.length ? parsedFields.tags : fallbackFields.tags);
+    const resolvedReminderDate =
+      typeof parsedFields?.reminderDate === 'string' ? parsedFields.reminderDate : null;
+
     const nowIso = new Date().toISOString();
     const smartEntry = {
       id: Date.now().toString(),
-      type: classifyInput(normalizedText),
-      title: extractTitle(normalizedText),
+      type: resolvedType,
+      title: resolvedTitle || fallbackFields.title,
       content: normalizedText,
-      tags: extractTags(normalizedText),
+      tags: resolvedTags,
+      reminderDate: resolvedReminderDate,
       dateCreated: nowIso,
       body: normalizedText,
       bodyHtml: normalizedText,
@@ -1665,6 +1749,13 @@ ${query}`;
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
     isQuickAddSubmitting = true;
+    if (quickInput && typeof quickInput.disabled !== 'undefined') {
+      quickInput.disabled = true;
+      quickInput.setAttribute('aria-busy', 'true');
+    }
+    if (quickAddParsingIndicator instanceof HTMLElement) {
+      quickAddParsingIndicator.hidden = false;
+    }
     if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
       quickBtn.disabled = true;
     }
@@ -1692,6 +1783,13 @@ ${query}`;
         wasSaved = true;
       }
     } finally {
+      if (quickInput && typeof quickInput.disabled !== 'undefined') {
+        quickInput.disabled = false;
+        quickInput.setAttribute('aria-busy', 'false');
+      }
+      if (quickAddParsingIndicator instanceof HTMLElement) {
+        quickAddParsingIndicator.hidden = true;
+      }
       if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
         quickBtn.disabled = false;
       }
