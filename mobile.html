@@ -2200,6 +2200,35 @@ body, main, section, div, p, span, li {
       display: flex;
       flex-direction: column;
       gap: calc(var(--space-1) / 2);
+      border-radius: var(--control-radius);
+      background: var(--card-bg, #fff);
+      border: 1px solid color-mix(in srgb, var(--card-border) 65%, #fff);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+      padding: calc(var(--space-1) / 2);
+    }
+
+    .inbox-search-result-item {
+      list-style: none;
+      padding: var(--space-1);
+      border-radius: calc(var(--control-radius) - 4px);
+      border-bottom: 1px solid color-mix(in srgb, var(--card-border) 55%, #fff);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .inbox-search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .inbox-search-result-item.is-active {
+      background: color-mix(in srgb, var(--accent-color) 12%, #fff);
+    }
+
+    .inbox-search-result-title mark.inbox-search-match {
+      background: color-mix(in srgb, var(--accent-color) 25%, #fff);
+      color: inherit;
+      border-radius: 0.2rem;
+      padding: 0 0.1rem;
     }
 
     #remindersListMobile {

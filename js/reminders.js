@@ -1084,26 +1084,117 @@ export async function initReminders(sel = {}) {
       }
     };
 
-    const renderResults = (results) => {
+    const escapeHtml = (value) => String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+    const highlightMatch = (value, query) => {
+      const raw = String(value || '');
+      if (!query) {
+        return escapeHtml(raw);
+      }
+      const lowerRaw = raw.toLowerCase();
+      const lowerQuery = query.toLowerCase();
+      const queryIndex = lowerRaw.indexOf(lowerQuery);
+      if (queryIndex < 0) {
+        return escapeHtml(raw);
+      }
+      const before = escapeHtml(raw.slice(0, queryIndex));
+      const match = escapeHtml(raw.slice(queryIndex, queryIndex + query.length));
+      const after = escapeHtml(raw.slice(queryIndex + query.length));
+      return `${before}<mark class="inbox-search-match">${match}</mark>${after}`;
+    };
+
+    const buildCombinedEntries = () => {
+      const reminderEntries = (Array.isArray(items) ? items : []).map((item) => ({
+        type: 'Reminder',
+        title: item?.title || '',
+        body: item?.notes || '',
+        timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
+      }));
+      const noteEntries = readNotes().map((note) => {
+        const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
+        const createdTime = typeof note?.createdAt === 'string' ? Date.parse(note.createdAt) : Number.NaN;
+        return {
+          type: 'Note',
+          title: note?.title || '',
+          body: note?.bodyText || note?.body || '',
+          timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
+        };
+      });
+
+      return [...reminderEntries, ...noteEntries];
+    };
+
+    let autocompleteResults = [];
+    let autocompleteIndex = -1;
+    let lastAutocompleteQuery = null;
+    let autocompleteDebounceTimer = null;
+
+    const closeAutocomplete = () => {
+      autocompleteResults = [];
+      autocompleteIndex = -1;
+      lastAutocompleteQuery = null;
       inboxSearchResults.innerHTML = '';
+      inboxSearchResults.dataset.mode = '';
+    };
+
+    const renderResults = (results, options = {}) => {
+      const limit = Number.isFinite(options.limit) ? options.limit : 20;
+      const query = options.query || '';
+      const selectedIndex = Number.isInteger(options.selectedIndex) ? options.selectedIndex : -1;
+      const mode = options.mode || '';
+      inboxSearchResults.innerHTML = '';
+      inboxSearchResults.dataset.mode = mode;
       if (!results.length) {
+        if (mode === 'autocomplete') {
+          const emptyMessage = document.createElement('div');
+          emptyMessage.className = 'inbox-search-empty text-xs opacity-70 py-2 px-2';
+          emptyMessage.textContent = 'No matches';
+          inboxSearchResults.appendChild(emptyMessage);
+        }
         return;
       }
       const fragment = document.createDocumentFragment();
-      results.slice(0, 20).forEach((entry) => {
+      results.slice(0, limit).forEach((entry, index) => {
         const li = document.createElement('li');
-        li.className = 'text-xs py-1 border-b border-base-300/60';
+        li.className = 'inbox-search-result-item text-xs py-1 border-b border-base-300/60';
+        if (mode === 'autocomplete') {
+          li.classList.add('inbox-search-result-item--autocomplete');
+          li.setAttribute('role', 'option');
+          li.tabIndex = -1;
+          if (index === selectedIndex) {
+            li.classList.add('is-active');
+          }
+        }
 
         const badge = document.createElement('span');
         badge.className = 'badge badge-outline badge-xs mr-2';
         badge.textContent = entry.type;
 
         const title = document.createElement('span');
-        title.textContent = entry.title || '(untitled)';
+        title.className = 'inbox-search-result-title';
+        if (mode === 'autocomplete') {
+          title.innerHTML = highlightMatch(entry.title || '(untitled)', query);
+        } else {
+          title.textContent = entry.title || '(untitled)';
+        }
 
         const date = document.createElement('div');
         date.className = 'opacity-70';
         date.textContent = formatDateLabel(entry.timestamp);
+
+        if (mode === 'autocomplete') {
+          li.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            inboxSearchInput.value = entry.title || '';
+            runSearch();
+            closeAutocomplete();
+          });
+        }
 
         li.appendChild(badge);
         li.appendChild(title);
@@ -1131,24 +1222,7 @@ export async function initReminders(sel = {}) {
         .map((part) => part.trim())
         .filter(Boolean);
 
-      const reminderEntries = (Array.isArray(items) ? items : []).map((item) => ({
-        type: 'Reminder',
-        title: item?.title || '',
-        body: item?.notes || '',
-        timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
-      }));
-      const noteEntries = readNotes().map((note) => {
-        const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
-        const createdTime = typeof note?.createdAt === 'string' ? Date.parse(note.createdAt) : Number.NaN;
-        return {
-          type: 'Note',
-          title: note?.title || '',
-          body: note?.bodyText || note?.body || '',
-          timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
-        };
-      });
-
-      const combined = [...reminderEntries, ...noteEntries];
+      const combined = buildCombinedEntries();
       const matches = combined.filter((entry) => {
         const haystack = `${entry.title} ${entry.body}`.toLowerCase();
         const keywordMatch = !keywords.length || keywords.every((word) => haystack.includes(word));
@@ -1168,12 +1242,113 @@ export async function initReminders(sel = {}) {
       renderResults(matches);
     };
 
-    inboxSearchInput.addEventListener('input', runSearch);
+    const findAutocompleteResults = (query) => {
+      const lowerQuery = query.toLowerCase();
+      const matches = buildCombinedEntries().filter((entry) => {
+        const lowerTitle = String(entry.title || '').toLowerCase();
+        const lowerBody = String(entry.body || '').toLowerCase();
+        return lowerTitle.includes(lowerQuery) || lowerBody.includes(lowerQuery);
+      });
+      matches.sort((a, b) => {
+        const aTitle = String(a.title || '').toLowerCase();
+        const bTitle = String(b.title || '').toLowerCase();
+        const aBody = String(a.body || '').toLowerCase();
+        const bBody = String(b.body || '').toLowerCase();
+        const aStarts = aTitle.startsWith(lowerQuery) || aBody.startsWith(lowerQuery);
+        const bStarts = bTitle.startsWith(lowerQuery) || bBody.startsWith(lowerQuery);
+        if (aStarts !== bStarts) {
+          return aStarts ? -1 : 1;
+        }
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      });
+      return matches.slice(0, 8);
+    };
+
+    const renderAutocomplete = (query) => {
+      autocompleteResults = findAutocompleteResults(query);
+      autocompleteIndex = autocompleteResults.length ? 0 : -1;
+      renderResults(autocompleteResults, {
+        limit: 8,
+        query,
+        selectedIndex: autocompleteIndex,
+        mode: 'autocomplete',
+      });
+    };
+
+    const rerenderAutocomplete = () => {
+      renderResults(autocompleteResults, {
+        limit: 8,
+        query: inboxSearchInput.value.trim(),
+        selectedIndex: autocompleteIndex,
+        mode: 'autocomplete',
+      });
+    };
+
+    const queueAutocomplete = () => {
+      const trimmed = (inboxSearchInput.value || '').trim();
+      if (trimmed === lastAutocompleteQuery) {
+        return;
+      }
+      if (autocompleteDebounceTimer) {
+        clearTimeout(autocompleteDebounceTimer);
+      }
+      autocompleteDebounceTimer = setTimeout(() => {
+        lastAutocompleteQuery = trimmed;
+        if (!trimmed) {
+          closeAutocomplete();
+          return;
+        }
+        renderAutocomplete(trimmed);
+      }, 120);
+    };
+
+    const selectAutocompleteResult = () => {
+      if (autocompleteIndex < 0 || autocompleteIndex >= autocompleteResults.length) {
+        return;
+      }
+      const selectedEntry = autocompleteResults[autocompleteIndex];
+      inboxSearchInput.value = selectedEntry.title || '';
+      runSearch();
+      closeAutocomplete();
+    };
+
+    inboxSearchInput.addEventListener('input', queueAutocomplete);
+    inboxSearchInput.addEventListener('keydown', (event) => {
+      if (inboxSearchResults.dataset.mode !== 'autocomplete') {
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (!autocompleteResults.length) return;
+        autocompleteIndex = Math.min(autocompleteIndex + 1, autocompleteResults.length - 1);
+        rerenderAutocomplete();
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!autocompleteResults.length) return;
+        autocompleteIndex = Math.max(autocompleteIndex - 1, 0);
+        rerenderAutocomplete();
+      } else if (event.key === 'Enter') {
+        if (autocompleteIndex >= 0) {
+          event.preventDefault();
+          selectAutocompleteResult();
+        }
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeAutocomplete();
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (!(event.target instanceof Node)) return;
+      if (event.target === inboxSearchInput || inboxSearchResults.contains(event.target)) {
+        return;
+      }
+      closeAutocomplete();
+    });
 
     if (inboxSearchClear) {
       inboxSearchClear.addEventListener('click', () => {
         inboxSearchInput.value = '';
-        inboxSearchResults.innerHTML = '';
+        closeAutocomplete();
         inboxSearchClear.hidden = true;
         inboxSearchInput.focus();
       });
