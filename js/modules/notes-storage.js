@@ -4,6 +4,16 @@ const LEGACY_NOTE_KEYS = ['mobileNotes', 'memory-cue-notes'];
 
 const hasLocalStorage = () => typeof localStorage !== 'undefined';
 
+const normalizeSemanticEmbedding = (value) => {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const vector = value
+    .map((entry) => Number(entry))
+    .filter((entry) => Number.isFinite(entry));
+  return vector.length ? vector : null;
+};
+
 let remoteSyncHandler = null;
 
 export const setRemoteSyncHandler = (handler) => {
@@ -108,6 +118,7 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
         ? overrides.updatedAt
         : new Date().toISOString(),
     folderId: overrides.folderId && typeof overrides.folderId === 'string' ? overrides.folderId : null,
+    semanticEmbedding: normalizeSemanticEmbedding(overrides.semanticEmbedding),
   };
 };
 
@@ -143,6 +154,7 @@ const normalizeNotes = (value) => {
           bodyHtml: body,
           bodyText,
           pinned,
+          semanticEmbedding: normalizeSemanticEmbedding(note.semanticEmbedding),
         });
       })
       .filter(Boolean);
@@ -172,6 +184,7 @@ const normalizeNotes = (value) => {
         bodyHtml: body,
         bodyText,
         pinned,
+        semanticEmbedding: normalizeSemanticEmbedding(value.semanticEmbedding),
       }),
     ];
   }
@@ -255,6 +268,7 @@ export const saveAllNotes = (notes, options = {}) => {
     if (out) {
       out.folderId = typeof note.folderId === 'string' && note.folderId ? note.folderId : out.folderId || null;
       out.pinned = typeof note.pinned === 'boolean' ? note.pinned : Boolean(out.pinned);
+      out.semanticEmbedding = normalizeSemanticEmbedding(note.semanticEmbedding);
     }
     return out;
   }).filter(Boolean);
