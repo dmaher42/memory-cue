@@ -878,6 +878,8 @@ export async function initReminders(sel = {}) {
       : null;
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
+  // Track the currently focused input mode to prevent cross-triggering between quick add and search.
+  let activeMode = null;
   let isQuickAddSubmitting = false;
   let stopQuickAddVoiceListening = null;
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
@@ -1259,6 +1261,11 @@ ${query}`;
       return;
     }
 
+    // Keep search behavior scoped to the search field focus state.
+    inboxSearchInput.addEventListener('focus', () => {
+      activeMode = 'search';
+    });
+
     const formatDateLabel = (timestamp) => {
       if (!Number.isFinite(timestamp)) {
         return 'No date';
@@ -1383,6 +1390,9 @@ ${query}`;
     }
 
     const runSearch = async () => {
+      if (activeMode !== 'search' && document.activeElement !== inboxSearchInput) {
+        return;
+      }
       const query = inboxSearchInput.value || '';
       const trimmed = query.trim();
       if (inboxSearchClear) {
@@ -1470,6 +1480,9 @@ ${query}`;
     };
 
     const queueAutocomplete = () => {
+      if (activeMode !== 'search' && document.activeElement !== inboxSearchInput) {
+        return;
+      }
       const trimmed = (inboxSearchInput.value || '').trim();
       if (trimmed === lastAutocompleteQuery) {
         return;
@@ -1499,6 +1512,14 @@ ${query}`;
 
     inboxSearchInput.addEventListener('input', queueAutocomplete);
     inboxSearchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === 'NumpadEnter') {
+        // Search Enter should never trigger quick add submission.
+        event.preventDefault();
+        if (inboxSearchResults.dataset.mode === 'autocomplete' && autocompleteIndex >= 0) {
+          selectAutocompleteResult();
+        }
+        return;
+      }
       if (inboxSearchResults.dataset.mode !== 'autocomplete') {
         return;
       }
@@ -1654,11 +1675,25 @@ ${query}`;
   }
 
   quickBtn?.addEventListener('click', () => {
+    activeMode = 'quick-add';
     quickAddNow();
+  });
+
+  quickInput?.addEventListener('focus', () => {
+    activeMode = 'quick-add';
+    // Clear search dropdown when user switches into quick add mode.
+    const inboxSearchResults = document.getElementById('inboxSearchResults');
+    if (inboxSearchResults) {
+      inboxSearchResults.innerHTML = '';
+      inboxSearchResults.dataset.mode = '';
+    }
   });
 
   quickInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === 'NumpadEnter') {
+      if (activeMode !== 'quick-add' && document.activeElement !== quickInput) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       quickAddNow();
@@ -1666,6 +1701,11 @@ ${query}`;
   });
 
   quickForm?.addEventListener('submit', (event) => {
+    if (activeMode !== 'quick-add' && document.activeElement !== quickInput) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     quickAddNow();
