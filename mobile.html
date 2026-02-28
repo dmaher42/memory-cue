@@ -4116,9 +4116,9 @@ body, main, section, div, p, span, li {
       }
     }
 
-    /* Adjust main content to account for sticky header */
+    /* Keep reminders content below the fixed mobile header + search area */
     #view-reminders {
-      padding-top: 0 !important;
+      padding-top: calc(var(--mobile-header-height, 112px) + 0.5rem) !important;
     }
 
     .reminders-content-shell {
