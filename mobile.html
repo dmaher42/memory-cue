@@ -4887,7 +4887,7 @@ body, main, section, div, p, span, li {
           <div class="overflow-menu-section-label">App</div>
           <button
             type="button"
-            id="menuOpenSettings"
+            id="settingsOpenBtn"
             class="overflow-menu-item"
             data-menu-action="settings"
           >
@@ -6349,7 +6349,7 @@ body, main, section, div, p, span, li {
     <div class="modal-panel">
       <header class="modal-header">
         <h2 id="settingsTitle">Settings</h2>
-        <button type="button" id="closeSettings" aria-label="Close">✕</button>
+        <button type="button" id="settingsCloseBtn" aria-label="Close settings">✕</button>
       </header>
       <div class="card bg-base-100 border-0">
         <div class="card-body gap-4 compact">
@@ -7137,71 +7137,68 @@ body, main, section, div, p, span, li {
     })();
 
     (function () {
-      const openBtns = Array.from(
-        document.querySelectorAll('[data-open="settings"]'),
-      ).filter((btn) => btn instanceof HTMLElement);
-      const modal = document.getElementById('settingsModal');
-      const closeBtn = document.getElementById('closeSettings');
-      if (!openBtns.length || !(modal instanceof HTMLElement) || !(closeBtn instanceof HTMLElement)) return;
+      const settingsModal = document.getElementById('settingsModal');
+      const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+      const settingsBackdrop = settingsModal?.querySelector('.modal-backdrop');
+      const settingsOpenBtn = document.getElementById('settingsOpenBtn');
 
-      let lastTrigger = null;
+      if (
+        !(settingsModal instanceof HTMLElement) ||
+        !(settingsCloseBtn instanceof HTMLElement) ||
+        !(settingsOpenBtn instanceof HTMLElement)
+      ) return;
+
+      let lastSettingsTrigger = null;
 
       const getFocusableElements = () =>
         Array.from(
-          modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+          settingsModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
         ).filter((el) => el instanceof HTMLElement && !el.hasAttribute('disabled'));
 
-      const open = (trigger) => {
-        lastTrigger = trigger instanceof HTMLElement ? trigger : null;
-        modal.classList.remove('hidden');
-        modal.setAttribute('aria-hidden', 'false');
-        closeBtn.focus();
+      const openSettingsModal = (trigger = null) => {
+        lastSettingsTrigger = trigger instanceof HTMLElement ? trigger : null;
+        settingsModal.classList.remove('hidden');
+        settingsModal.setAttribute('aria-hidden', 'false');
+        settingsCloseBtn.focus();
       };
 
-      const close = () => {
-        modal.classList.add('hidden');
-        modal.setAttribute('aria-hidden', 'true');
+      const closeSettingsModal = () => {
+        settingsModal.classList.add('hidden');
+        settingsModal.setAttribute('aria-hidden', 'true');
 
-        const focusTarget =
-          (lastTrigger && document.body.contains(lastTrigger) && lastTrigger) ||
-          openBtns[0];
-
-        if (focusTarget instanceof HTMLElement) {
+        if (lastSettingsTrigger instanceof HTMLElement && document.body.contains(lastSettingsTrigger)) {
           try {
-            focusTarget.focus({ preventScroll: true });
+            lastSettingsTrigger.focus({ preventScroll: true });
           } catch (error) {
-            focusTarget.focus();
+            lastSettingsTrigger.focus();
           }
         }
 
-        lastTrigger = null;
+        lastSettingsTrigger = null;
       };
 
-      openBtns.forEach((btn) => {
-        btn.dataset.modalTrigger = 'settingsModal';
-        btn.addEventListener('click', (event) => {
-          event.preventDefault();
-          open(btn);
-        });
-      });
-
-      closeBtn.addEventListener('click', (event) => {
+      settingsOpenBtn.addEventListener('click', (event) => {
         event.preventDefault();
-        close();
+        lastSettingsTrigger = event.currentTarget;
+        openSettingsModal(lastSettingsTrigger);
       });
 
-      modal.addEventListener('click', (event) => {
-        if (event.target instanceof HTMLElement && event.target.matches('.modal-backdrop, [data-close]')) {
-          close();
-        }
+      settingsCloseBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        closeSettingsModal();
+      });
+
+      settingsBackdrop?.addEventListener('click', (event) => {
+        event.preventDefault();
+        closeSettingsModal();
       });
 
       document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || modal.classList.contains('hidden')) return;
-        close();
+        if (event.key !== 'Escape' || settingsModal.classList.contains('hidden')) return;
+        closeSettingsModal();
       });
 
-      modal.addEventListener('keydown', (event) => {
+      settingsModal.addEventListener('keydown', (event) => {
         if (event.key !== 'Tab') return;
 
         const focusableElements = getFocusableElements();
