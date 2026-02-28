@@ -3803,6 +3803,20 @@ ${query}`;
     window.openEditReminderSheet = openEditReminderSheet;
   }
 
+  if (emptyStateEl instanceof HTMLElement) {
+    emptyStateEl.addEventListener('click', (event) => {
+      const trigger = event.target instanceof Element
+        ? event.target.closest('#emptyStateCreateBtn')
+        : null;
+      if (!(trigger instanceof HTMLElement)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      openNewReminderSheet(trigger);
+    });
+  }
+
   function createReminderFromPayload(payload = {}, options = {}) {
     const {
       closeSheet = true,
@@ -4657,7 +4671,7 @@ ${query}`;
             description,
             action: hasAny
               ? undefined
-              : `<button type="button" class="${sharedEmptyStateCtaClasses}" data-trigger="open-cue">Create reminder</button>`
+              : `<button id="emptyStateCreateBtn" type="button" class="${sharedEmptyStateCtaClasses}">Create reminder</button>`
           });
         } else {
           emptyStateEl.textContent = description;
