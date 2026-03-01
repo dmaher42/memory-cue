@@ -2063,13 +2063,25 @@ body, main, section, div, p, span, li {
     /* New Header Styles */
     .mobile-header {
       background: var(--cauliflower-blue);
-      padding: var(--space-2);
+      padding: 12px 16px;
       position: sticky;
       top: 0;
       z-index: 1000;
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: 8px;
+    }
+
+    #view-reminders h1,
+    #view-reminders h2,
+    #view-reminders header,
+    #view-reminders .reminders-header,
+    #reminders-slim-header h1,
+    #reminders-slim-header h2,
+    #reminders-slim-header header,
+    #reminders-slim-header .reminders-header {
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
     .header-main-row {
@@ -2107,12 +2119,16 @@ body, main, section, div, p, span, li {
 
     .header-quick-add {
       border-top: 1px solid var(--border-subtle);
-      padding-top: var(--space-2);
+      padding-top: 0;
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
     .header-search {
       border-top: 1px solid var(--border-subtle);
-      padding-top: var(--space-2);
+      padding-top: 0;
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
     .reminders-mobile-flow {
@@ -2134,6 +2150,8 @@ body, main, section, div, p, span, li {
       border-radius: var(--control-radius);
       padding: var(--space-1);
       gap: var(--space-1);
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
     .control-input {
@@ -2166,6 +2184,8 @@ body, main, section, div, p, span, li {
     .inbox-search-container {
       position: relative;
       display: block;
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
     .inbox-search-input-wrap {
@@ -4258,7 +4278,7 @@ body, main, section, div, p, span, li {
       top: 0;
       z-index: 999;
       width: 100%;
-      padding: 2px 2px;
+      padding: 12px 16px;
       background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
