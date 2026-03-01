@@ -163,6 +163,10 @@ function isStaticAsset(pathname) {
 }
 
 async function staleWhileRevalidate(req) {
+  if (req.method !== 'GET') {
+    return fetch(req);
+  }
+
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await cache.match(req);
   const fetchPromise = fetch(req)
