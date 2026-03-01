@@ -2266,6 +2266,7 @@ body, main, section, div, p, span, li {
     #remindersListMobile {
       position: relative;
       margin-top: 0;
+      padding-top: var(--quickbar-height);
       display: flex;
       flex-direction: column;
       gap: var(--space-1);
@@ -3545,6 +3546,7 @@ body, main, section, div, p, span, li {
   <style id="mobile-header-compact" aria-hidden="true">
   :root {
     --mobile-header-height: 112px;
+    --quickbar-height: var(--mobile-header-height, 112px);
   }
 
   /* Make header visually compact while preserving touch targets and accessibility */
