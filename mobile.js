@@ -34,6 +34,10 @@ initViewportHeight();
     const assistantForm = document.getElementById('assistantForm');
     const assistantInput = document.getElementById('assistantInput');
     const assistantThread = document.getElementById('assistantThread');
+    const assistantSendBtn = document.getElementById('assistantSendBtn');
+    const assistantLoading = document.getElementById('assistantLoading');
+    const assistantApiUrl = '/api/assistant';
+    let isAssistantSending = false;
 
     if (
       !(assistantForm instanceof HTMLFormElement) ||
@@ -43,23 +47,83 @@ initViewportHeight();
       return;
     }
 
-    assistantForm.addEventListener('submit', (event) => {
-      event.preventDefault();
+    if (!(assistantSendBtn instanceof HTMLButtonElement)) {
+      console.warn('[assistant] Send button not found; click listener was not attached.');
+    }
+
+    const appendAssistantMessage = (text, className = 'assistant-message') => {
+      const message = document.createElement('div');
+      message.className = className;
+      message.textContent = text;
+      assistantThread.appendChild(message);
+      assistantThread.scrollTop = assistantThread.scrollHeight;
+    };
+
+    const sendAssistantMessage = async (event) => {
+      if (event) {
+        event.preventDefault();
+      }
+      if (isAssistantSending) {
+        return;
+      }
 
       const text = (assistantInput.value || '').trim();
       if (!text) {
         return;
       }
 
-      const message = document.createElement('div');
-      message.className = 'assistant-message';
-      message.textContent = text;
-      assistantThread.appendChild(message);
+      console.log('[assistant] send handler executed', { textLength: text.length });
+      isAssistantSending = true;
+
+      if (assistantLoading instanceof HTMLElement) {
+        assistantLoading.classList.remove('hidden');
+      }
+
+      appendAssistantMessage(text);
 
       assistantInput.value = '';
       assistantInput.focus();
-      assistantThread.scrollTop = assistantThread.scrollHeight;
+
+      try {
+        const response = await fetch(assistantApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: text }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Assistant request failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        const replyText = typeof payload?.reply === 'string'
+          ? payload.reply
+          : 'I could not read an assistant response.';
+        appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
+      } catch (error) {
+        console.error('[assistant] request failed', error);
+        appendAssistantMessage('Sorry, something went wrong while contacting the assistant.', 'assistant-message assistant-message--error');
+      } finally {
+        isAssistantSending = false;
+        if (assistantLoading instanceof HTMLElement) {
+          assistantLoading.classList.add('hidden');
+        }
+      }
+    };
+
+    assistantForm.addEventListener('submit', sendAssistantMessage);
+
+    assistantInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        sendAssistantMessage(event);
+      }
     });
+
+    if (assistantSendBtn instanceof HTMLButtonElement) {
+      assistantSendBtn.addEventListener('click', sendAssistantMessage);
+    }
   };
 
   if (document.readyState === 'loading') {
