@@ -165,9 +165,10 @@ function isStaticAsset(pathname) {
 async function staleWhileRevalidate(req) {
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await cache.match(req);
+  const shouldCache = req.method === 'GET';
   const fetchPromise = fetch(req)
     .then((res) => {
-      if (res && res.ok) cache.put(req, res.clone());
+      if (shouldCache && res && res.ok) cache.put(req, res.clone());
       return res;
     })
     .catch(() => undefined);
