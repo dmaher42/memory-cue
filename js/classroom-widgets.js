@@ -1,3 +1,5 @@
+import { RichTextWidget } from './widgets/rich-text-widget.js';
+
 const WIDGETS = [
   {
     id: 'timer',
@@ -35,9 +37,30 @@ const WIDGETS = [
     description: 'Pin reminders and expectations for the current activity.',
     categories: ['Awareness', 'Classroom Climate'],
   },
+  {
+    id: 'rich-text-board',
+    name: 'Rich Text Board',
+    type: 'RichTextWidget',
+    icon: 'fa-pen',
+    description: 'Professional rich text editor for classroom notes.',
+    categories: ['Collaboration', 'Visual'],
+  },
 ];
 
 const PRESET_STORAGE_KEY = 'widgetPresets';
+
+const WIDGET_SIZE_RULES = {
+  RichTextWidget: { minW: 4, minH: 3 },
+};
+
+function createWidgetFromType(type) {
+  switch (type) {
+    case 'RichTextWidget':
+      return new RichTextWidget();
+    default:
+      return null;
+  }
+}
 
 function safeReadPresets() {
   try {
