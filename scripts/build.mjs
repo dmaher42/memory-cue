@@ -112,17 +112,18 @@ async function buildScripts() {
 
 async function copyStatic() {
   const filesToCopy = [
-    'manifest.webmanifest',
-    'service-worker.js',
-    '404.html',
-    'index.html',
-    'mobile.html',
-    'js/firebase-config.js',
+    { source: 'manifest.webmanifest' },
+    { source: 'service-worker.js' },
+    { source: '404.html' },
+    { source: 'index.html' },
+    { source: 'mobile.html' },
+    { source: 'js/firebase-config.js' },
+    { source: 'js/firebase-config.js', destination: 'firebase-config.js' },
   ];
 
   for (const file of filesToCopy) {
-    const source = path.join(rootDir, file);
-    const destination = path.join(distDir, file);
+    const source = path.join(rootDir, file.source);
+    const destination = path.join(distDir, file.destination ?? file.source);
     try {
       await fs.mkdir(path.dirname(destination), { recursive: true });
       await fs.copyFile(source, destination);
