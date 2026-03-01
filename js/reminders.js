@@ -1062,14 +1062,27 @@ export async function initReminders(sel = {}) {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
 
+    const requestUrl = 'https://memory-cue-api.vercel.app/api/parse-entry';
+
     try {
-      const response = await fetch('https://memory-cue-api.vercel.app/api/parse-entry', {
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
         signal: controller?.signal,
       });
       if (!response.ok) {
+        let responseBody = '';
+        try {
+          responseBody = await response.text();
+        } catch (readError) {
+          responseBody = `[unavailable: ${readError?.message || 'failed to read response body'}]`;
+        }
+        console.error('AI parse request failed', {
+          url: requestUrl,
+          status: response.status,
+          body: responseBody,
+        });
         throw new Error(`AI parse failed (${response.status})`);
       }
       const data = await response.json();
@@ -1101,26 +1114,11 @@ export async function initReminders(sel = {}) {
       return null;
     }
 
-    let parsedFields = null;
-    try {
-      parsedFields = await parseSmartEntryWithAI(normalizedText);
-    } catch (error) {
-      console.warn('AI smart capture failed, using fallback classifier', error);
-      parsedFields = parseSmartEntryWithFallback(normalizedText);
-    }
-
     const fallbackFields = parseSmartEntryWithFallback(normalizedText);
-    const resolvedType =
-      typeof parsedFields?.type === 'string' && parsedFields.type
-        ? parsedFields.type
-        : fallbackFields.type;
-    const resolvedTitle =
-      typeof parsedFields?.title === 'string' && parsedFields.title
-        ? parsedFields.title.slice(0, 60)
-        : fallbackFields.title;
-    const resolvedTags = sanitizeTags(parsedFields?.tags?.length ? parsedFields.tags : fallbackFields.tags);
-    const resolvedReminderDate =
-      typeof parsedFields?.reminderDate === 'string' ? parsedFields.reminderDate : null;
+    const resolvedType = fallbackFields.type;
+    const resolvedTitle = fallbackFields.title;
+    const resolvedTags = sanitizeTags(fallbackFields.tags);
+    const resolvedReminderDate = null;
 
     const nowIso = new Date().toISOString();
     const smartEntry = {
@@ -1159,6 +1157,51 @@ export async function initReminders(sel = {}) {
     } catch (error) {
       console.error('Failed to dispatch notes refresh event', error);
     }
+
+    // Best-effort AI enrichment must never block immediate save + render.
+    parseSmartEntryWithAI(normalizedText)
+      .then((parsedFields) => {
+        if (!parsedFields || typeof localStorage === 'undefined') {
+          return;
+        }
+        const storedNotes = readJsonArrayStorage(NOTES_STORAGE_KEY, []);
+        const noteIndex = storedNotes.findIndex((entry) => entry?.id === smartEntry.id);
+        if (noteIndex < 0) {
+          return;
+        }
+        const existing = storedNotes[noteIndex] || {};
+        const updatedEntry = {
+          ...existing,
+          type:
+            typeof parsedFields.type === 'string' && parsedFields.type.trim()
+              ? parsedFields.type.trim()
+              : existing.type,
+          title:
+            typeof parsedFields.title === 'string' && parsedFields.title.trim()
+              ? parsedFields.title.trim().slice(0, 60)
+              : existing.title,
+          tags: sanitizeTags(parsedFields?.tags?.length ? parsedFields.tags : existing.tags),
+          reminderDate:
+            typeof parsedFields.reminderDate === 'string' && parsedFields.reminderDate.trim()
+              ? parsedFields.reminderDate
+              : existing.reminderDate || null,
+          updatedAt: new Date().toISOString(),
+        };
+        storedNotes[noteIndex] = updatedEntry;
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(storedNotes));
+        try {
+          if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+            document.dispatchEvent(
+              new CustomEvent('memoryCue:notesUpdated', { detail: { entry: updatedEntry } }),
+            );
+          }
+        } catch (error) {
+          console.error('Failed to dispatch notes refresh event after AI enrichment', error);
+        }
+      })
+      .catch((error) => {
+        console.warn('AI smart capture failed, using fallback classifier', error);
+      });
 
     return smartEntry;
   }
@@ -1768,7 +1811,26 @@ ${query}`;
     let wasSaved = false;
 
     try {
-      entry = await createSmartEntry(t);
+      const routed = parseQuickAddPrefixRoute(t);
+      const routedText = routed.text || t;
+
+      if (routed.kind === 'reflection') {
+        entry = saveReflectionQuickNote(routedText);
+      } else {
+        const quickParsed = parseQuickWhen(routedText);
+        let dueIso = null;
+        if (quickParsed?.time) {
+          dueIso = new Date(`${quickParsed.date}T${quickParsed.time}:00`).toISOString();
+        }
+
+        const reminderDraft = buildQuickReminder(routedText, dueIso);
+        if (routed.kind === 'task') {
+          reminderDraft.category = 'Tasks';
+        } else if (routed.kind === 'footy-drill') {
+          reminderDraft.category = 'Footy – Drills';
+        }
+        entry = addItem(reminderDraft);
+      }
 
       if (entry && typeof document !== 'undefined') {
         quickInput.value = '';
@@ -4031,6 +4093,23 @@ ${query}`;
     assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
     sortItemsByOrder(items);
+
+    if (variant === 'mobile' && mobileRemindersFilterMode === 'today') {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      const visibleInTodayFilter = isReminderForTodayMobile(item, {
+        start: startOfToday,
+        end: endOfToday,
+      });
+      if (!visibleInTodayFilter) {
+        // New reminders should be visible immediately after save.
+        mobileRemindersFilterMode = 'all';
+        syncMobileReminderTabUiState();
+      }
+    }
+
     const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
@@ -4702,6 +4781,9 @@ ${query}`;
     if (!tabButtons.length) {
       return;
     }
+
+    mobileRemindersFilterMode = mode;
+    syncMobileReminderTabUiState();
 
     if (Array.isArray(mobileRemindersCache)) {
       render();
