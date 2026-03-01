@@ -117,12 +117,15 @@ async function copyStatic() {
     '404.html',
     'index.html',
     'mobile.html',
+    'js/firebase-config.js',
   ];
 
   for (const file of filesToCopy) {
     const source = path.join(rootDir, file);
+    const destination = path.join(distDir, file);
     try {
-      await fs.copyFile(source, path.join(distDir, file));
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.copyFile(source, destination);
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
