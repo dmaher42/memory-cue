@@ -26,6 +26,14 @@ const PARSED_ENTRY_SCHEMA = {
 };
 
 module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://memory-cue.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).send('Method not allowed');
   }
@@ -43,8 +51,10 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid input: text must be a non-empty string.' });
   }
 
+  let response;
+
   try {
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +93,15 @@ module.exports = async function handler(req, res) {
         }
       })
     });
+  } catch (error) {
+    console.error('AI request failed:', error);
+    return res.status(500).json({
+      error: 'AI request failed',
+      message: error.message
+    });
+  }
 
+  try {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', response.status, errorText);
@@ -103,7 +121,10 @@ module.exports = async function handler(req, res) {
     const parsedResult = JSON.parse(outputText);
     return res.status(200).json(parsedResult);
   } catch (error) {
-    console.error('parse-entry error:', error);
-    return res.status(500).json({ error: 'Failed to parse entry.' });
+    console.error('AI request failed:', error);
+    return res.status(500).json({
+      error: 'AI request failed',
+      message: error.message
+    });
   }
 };
