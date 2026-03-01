@@ -1933,6 +1933,8 @@ html, body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   color: #111111;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Ensure controls inherit the same typography */
@@ -2829,6 +2831,10 @@ body, main, section, div, p, span, li {
 
     #view-assistant {
       align-content: start;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     .assistant-panel {
@@ -2837,18 +2843,22 @@ body, main, section, div, p, span, li {
       border-radius: 1rem;
       box-shadow: 0 8px 20px rgba(81, 38, 99, 0.08);
       padding: 0.75rem;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 0.75rem;
-      min-height: 60vh;
+      flex: 1;
+      min-height: 0;
     }
 
-    #assistantThread {
+    #assistantThread,
+    .assistant-messages {
       display: grid;
       gap: 0.5rem;
       align-content: start;
+      flex: 1;
       overflow-y: auto;
       padding-right: 0.25rem;
-      min-height: 40vh;
+      min-height: 0;
     }
 
     .assistant-message {
