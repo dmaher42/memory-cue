@@ -1808,7 +1808,33 @@ ${query}`;
     }
 
     let entry = null;
-    let wasSaved = false;
+
+    const fallbackClassify = (text) => {
+      const fallback = parseSmartEntryWithFallback(text);
+      return {
+        type: typeof fallback?.type === 'string' ? fallback.type : 'general_note',
+        title: typeof fallback?.title === 'string' ? fallback.title : '',
+        reminderDate:
+          typeof fallback?.reminderDate === 'string' && fallback.reminderDate.trim()
+            ? fallback.reminderDate
+            : null,
+      };
+    };
+
+    const mapSmartTypeToCategory = (type) => {
+      switch (type) {
+        case 'footy_drill':
+          return 'Footy – Drills';
+        case 'netball_note':
+          return 'Netball';
+        case 'teaching_note':
+          return 'Teaching';
+        case 'task':
+          return 'Tasks';
+        default:
+          return null;
+      }
+    };
 
     try {
       const routed = parseQuickAddPrefixRoute(t);
@@ -1823,13 +1849,80 @@ ${query}`;
           dueIso = new Date(`${quickParsed.date}T${quickParsed.time}:00`).toISOString();
         }
 
-        const reminderDraft = buildQuickReminder(routedText, dueIso);
-        if (routed.kind === 'task') {
-          reminderDraft.category = 'Tasks';
-        } else if (routed.kind === 'footy-drill') {
-          reminderDraft.category = 'Footy – Drills';
+        const fallbackFields = fallbackClassify(routedText);
+        const basePayload = buildQuickReminder(routedText, dueIso);
+        const optionDueIso =
+          options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
+            ? options.dueDate.toISOString()
+            : typeof options?.dueDate === 'string' && options.dueDate.trim()
+              ? options.dueDate.trim()
+              : null;
+
+        if (optionDueIso) {
+          basePayload.due = optionDueIso;
         }
-        entry = addItem(reminderDraft);
+        if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
+          basePayload.notifyAt = options.notifyAt.toISOString();
+        } else if (typeof options?.notifyAt === 'string' && options.notifyAt.trim()) {
+          basePayload.notifyAt = options.notifyAt.trim();
+        }
+
+        const fallbackCategory = mapSmartTypeToCategory(fallbackFields.type);
+        if (fallbackCategory) {
+          basePayload.category = fallbackCategory;
+        }
+
+        if (routed.kind === 'task') {
+          basePayload.category = 'Tasks';
+        } else if (routed.kind === 'footy-drill') {
+          basePayload.category = 'Footy – Drills';
+        }
+
+        // Save immediately from raw input. AI enrichment is best-effort and never blocks saving.
+        entry = addItem(basePayload);
+
+        if (entry && entry.id) {
+          (async () => {
+            try {
+              const parsedByAi = await parseSmartEntryWithAI(routedText);
+              if (!parsedByAi || !entry?.id) {
+                return;
+              }
+
+              const matchingReminder = items.find((item) => item?.id === entry.id);
+              if (!matchingReminder) {
+                return;
+              }
+
+              const nextCategory = mapSmartTypeToCategory(parsedByAi.type);
+              const nextDue =
+                typeof parsedByAi.reminderDate === 'string' && parsedByAi.reminderDate.trim()
+                  ? parsedByAi.reminderDate.trim()
+                  : null;
+
+              let changed = false;
+              if (nextCategory && nextCategory !== matchingReminder.category) {
+                matchingReminder.category = nextCategory;
+                changed = true;
+              }
+              if (nextDue && nextDue !== matchingReminder.due) {
+                matchingReminder.due = nextDue;
+                changed = true;
+              }
+
+              if (changed) {
+                matchingReminder.updatedAt = Date.now();
+                render();
+                persistItems();
+                saveToFirebase(matchingReminder);
+                emitReminderUpdates();
+                dispatchCueEvent('memoryCue:remindersUpdated', { items });
+              }
+            } catch (error) {
+              console.warn('AI smart capture failed, using fallback classifier', error);
+            }
+          })();
+        }
       }
 
       if (entry && typeof document !== 'undefined') {
@@ -1846,7 +1939,6 @@ ${query}`;
         } catch {
           // Ignore dispatch issues so the add flow can finish silently.
         }
-        wasSaved = true;
         if (quickAddSuccessIndicator instanceof HTMLElement) {
           quickAddSuccessIndicator.hidden = false;
           setTimeout(() => {
