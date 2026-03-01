@@ -871,13 +871,17 @@ export async function initReminders(sel = {}) {
   const quickInput =
     typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
   const quickBtn =
-    typeof document !== 'undefined' ? document.getElementById('quickAddSubmit') : null;
+    typeof document !== 'undefined'
+      ? document.getElementById('quickAddSubmit') || document.querySelector('[data-quick-add-submit]')
+      : null;
   const quickVoiceBtn =
     typeof document !== 'undefined'
       ? document.getElementById('quickAddVoice') || document.getElementById('voiceBtn')
       : null;
   const quickAddParsingIndicator =
     typeof document !== 'undefined' ? document.getElementById('quickAddParsingIndicator') : null;
+  const quickAddSuccessIndicator =
+    typeof document !== 'undefined' ? document.getElementById('quickAddSuccessIndicator') : null;
   const pillVoiceBtn =
     typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
   // Track the currently focused input mode to prevent cross-triggering between quick add and search.
@@ -1781,6 +1785,12 @@ ${query}`;
           // Ignore dispatch issues so the add flow can finish silently.
         }
         wasSaved = true;
+        if (quickAddSuccessIndicator instanceof HTMLElement) {
+          quickAddSuccessIndicator.hidden = false;
+          setTimeout(() => {
+            quickAddSuccessIndicator.hidden = true;
+          }, 1200);
+        }
       }
     } finally {
       if (quickInput && typeof quickInput.disabled !== 'undefined') {
@@ -3618,6 +3628,40 @@ ${query}`;
     dt.setHours(h || 0, m || 0, 0, 0);
     return dt.toISOString();
   }
+
+  function parseManualDueInput(dateValue, timeValue) {
+    const dateText = typeof dateValue === 'string' ? dateValue.trim() : '';
+    const timeText = typeof timeValue === 'string' ? timeValue.trim() : '';
+
+    if (!dateText && !timeText) {
+      return null;
+    }
+
+    const isoDateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/;
+    const isoTimeMatch = /^\d{2}:\d{2}(?::\d{2})?$/;
+    const isoDateTimeMatch = /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(?::\d{2})?$/;
+
+    if (isoDateTimeMatch.test(dateText)) {
+      const parsedIso = new Date(dateText.replace(' ', 'T'));
+      return Number.isNaN(parsedIso.getTime()) ? null : parsedIso.toISOString();
+    }
+
+    if (isoDateOnlyMatch.test(dateText) && isoTimeMatch.test(timeText || '09:00')) {
+      const cleanTime = (timeText || '09:00').slice(0, 5);
+      return localDateTimeToISO(dateText, cleanTime);
+    }
+
+    if (isoDateOnlyMatch.test(dateText) && !timeText) {
+      return localDateTimeToISO(dateText, '09:00');
+    }
+
+    const fallbackParsed = new Date([dateText, timeText].filter(Boolean).join(' '));
+    if (!Number.isNaN(fallbackParsed.getTime())) {
+      return fallbackParsed.toISOString();
+    }
+
+    return null;
+  }
   const datePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
   const timePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
   function isoToLocalDate(iso) {
@@ -5239,9 +5283,8 @@ ${query}`;
       const it = items.find(x=>x.id===editingId);
       if(!it){ resetForm(); return; }
       if(!trimmedTitle){ toast('Add a reminder title'); return; }
-      let due=null;
-      if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
-      else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+      let due = parseManualDueInput(dateValue, timeValue);
+      if (!due) { const p=parseQuickWhen(trimmedTitle); if(p.time){ due = new Date(`${p.date}T${p.time}:00`).toISOString(); } }
       it.title = trimmedTitle;
       const nextPriority = getPriorityInputValue();
       it.priority = nextPriority;
@@ -5268,9 +5311,8 @@ ${query}`;
     }
     if(!trimmedTitle){ toast('Add a reminder title'); return; }
     const noteText = details ? details.value.trim() : '';
-    let due=null;
-    if(dateValue || timeValue){ const d=(dateValue || todayISO()); const tm=(timeValue || '09:00'); due = localDateTimeToISO(d,tm); }
-    else { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
+    let due = parseManualDueInput(dateValue, timeValue);
+    if (!due) { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
     const plannerLessonDetail = plannerLinkId
       ? {
           lessonId: plannerLinkId,
@@ -5304,6 +5346,28 @@ ${query}`;
   }
 
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleSaveAction(); });
+
+  const bindNativePickerTrigger = (buttonId, inputEl) => {
+    const trigger = document.getElementById(buttonId);
+    if (!(trigger instanceof HTMLElement) || !(inputEl instanceof HTMLInputElement)) {
+      return;
+    }
+    trigger.addEventListener('click', () => {
+      if (typeof inputEl.showPicker === 'function') {
+        try {
+          inputEl.showPicker();
+          return;
+        } catch (error) {
+          console.warn('Native picker failed to open', error);
+        }
+      }
+      inputEl.focus();
+      inputEl.click();
+    });
+  };
+
+  bindNativePickerTrigger('reminderDatePickerBtn', date);
+  bindNativePickerTrigger('reminderTimePickerBtn', time);
 
   function updateDateFeedback(){ if(!title || !dateFeedback) return; const text = title.value.trim(); if(!text){ dateFeedback.style.display='none'; return; } try{ const parsed=parseQuickWhen(text); const today=todayISO(); if(parsed.date !== today || parsed.time){ let feedback=''; if(parsed.date !== today){ const dateObj = new Date(parsed.date+'T00:00:00'); feedback+=`📅 ${fmtDayDate(parsed.date)}`; } if(parsed.time){ feedback+=`${feedback ? ' ' : ''}🕐 ${parsed.time}`; } if(feedback){ dateFeedback.textContent=`Parsed: ${feedback}`; dateFeedback.style.display='block'; } else { dateFeedback.style.display='none'; } } else { dateFeedback.style.display='none'; } } catch { dateFeedback.style.display='none'; } }
 
