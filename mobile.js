@@ -36,7 +36,6 @@ initViewportHeight();
     const assistantThread = document.getElementById('assistantThread');
     const assistantSendBtn = document.getElementById('assistantSendBtn');
     const assistantLoading = document.getElementById('assistantLoading');
-    const assistantApiUrl = '/api/assistant';
     let isAssistantSending = false;
 
     if (
@@ -67,30 +66,30 @@ initViewportHeight();
         return;
       }
 
-      const text = (assistantInput.value || '').trim();
-      if (!text) {
+      const message = (assistantInput.value || '').trim();
+      if (!message) {
         return;
       }
 
-      console.log('[assistant] send handler executed', { textLength: text.length });
+      console.log('[assistant] send handler executed', { textLength: message.length });
       isAssistantSending = true;
 
       if (assistantLoading instanceof HTMLElement) {
         assistantLoading.classList.remove('hidden');
       }
 
-      appendAssistantMessage(text);
+      appendAssistantMessage(message);
 
       assistantInput.value = '';
       assistantInput.focus();
 
       try {
-        const response = await fetch(assistantApiUrl, {
+        const response = await fetch('/api/assistant', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message: text }),
+          body: JSON.stringify({ message }),
         });
 
         if (!response.ok) {
@@ -103,7 +102,7 @@ initViewportHeight();
           : 'I could not read an assistant response.';
         appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
       } catch (error) {
-        console.error('[assistant] request failed', error);
+        console.error('[assistant] request failed while calling /api/assistant', error);
         appendAssistantMessage('Sorry, something went wrong while contacting the assistant.', 'assistant-message assistant-message--error');
       } finally {
         isAssistantSending = false;
