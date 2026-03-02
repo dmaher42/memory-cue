@@ -2897,6 +2897,7 @@ function renderPlannerLessons(plan) {
                     type="text"
                     class="input input-bordered input-sm w-full"
                     placeholder="Label (e.g. Slides)"
+                    aria-label="Resource label"
                     data-resource-label="true"
                     data-lesson-id="${lessonId}"
                   />
@@ -2904,6 +2905,7 @@ function renderPlannerLessons(plan) {
                     type="url"
                     class="input input-bordered input-sm w-full"
                     placeholder="URL"
+                    aria-label="Resource URL"
                     data-resource-url="true"
                     data-lesson-id="${lessonId}"
                   />
