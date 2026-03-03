@@ -1466,7 +1466,35 @@ ${context}
 USER QUESTION:
 ${query}`;
     console.log('[RAG assistant] Prompt:\n', prompt);
-    return 'Assistant response placeholder.';
+    try {
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assistant request failed (${response.status})`);
+      }
+
+      const payload = await response.json();
+      const reply = typeof payload?.reply === 'string'
+        ? payload.reply
+        : typeof payload?.text === 'string'
+          ? payload.text
+          : typeof payload?.message === 'string'
+            ? payload.message
+            : '';
+      return reply || 'I could not read an assistant response.';
+    } catch (error) {
+      console.error('[RAG assistant] request failed while calling /api/assistant', {
+        error,
+        query,
+      });
+      return 'Sorry, something went wrong while contacting the assistant.';
+    }
   }
 
   function setupInboxSearch() {
