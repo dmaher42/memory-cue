@@ -69,6 +69,16 @@ Memory Cue expects Supabase credentials to be available at runtime via `window._
 
 Keep your real Supabase URL and anon key out of version control—set them through deployment-specific templating or secrets management rather than committing them to the repository.
 
+
+## AI setup
+
+The serverless AI endpoints require an OpenAI API key at runtime:
+
+- `OPENAI_API_KEY` for `api/assistant.js`
+- `OPENAI_API_KEY` for `api/parse-entry.js`
+
+If this variable is missing, these endpoints return a `500` JSON error indicating server misconfiguration.
+
 ## Privacy & Data
 
 Memory Cue stores notes and reminders in Firebase services (e.g., Firestore or Realtime Database). Review your Firebase security rules to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. As with any Firebase-backed app, do not commit private API keys or service credentials to the repository.
