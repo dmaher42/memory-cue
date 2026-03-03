@@ -8,6 +8,11 @@ export default async function handler(req, res) {
   try {
     const { message } = req.body;
 
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("Assistant misconfiguration: OPENAI_API_KEY is not set");
+      return res.status(500).json({ error: "Server misconfiguration: missing OpenAI API key." });
+    }
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });

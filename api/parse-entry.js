@@ -60,6 +60,11 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid input: text must be a non-empty string.' });
   }
 
+  if (!process.env.OPENAI_API_KEY) {
+    console.error('Parse entry misconfiguration: OPENAI_API_KEY is not set');
+    return res.status(500).json({ error: 'Server misconfiguration: missing OpenAI API key.' });
+  }
+
   let response;
 
   try {
