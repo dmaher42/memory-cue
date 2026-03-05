@@ -493,8 +493,13 @@
     appendAssistantBubble('Thinking...', 'assistant');
 
     try {
-      const answer = await window.MemoryCueAssistant.askMemoryCue(question);
-      assistantResponses.firstChild.textContent = answer;
+      const result = await window.MemoryCueAssistant.askMemoryCue(question);
+      const answerText = result && typeof result.answer === 'string' ? result.answer : String(result || 'No answer returned.');
+      const usedOfflineFallback = !!(result && result.offline_fallback);
+      assistantResponses.firstChild.textContent = usedOfflineFallback
+        ? `Offline fallback:
+${answerText}`
+        : answerText;
     } catch (error) {
       console.error(error);
       assistantResponses.firstChild.textContent = 'Sorry, the assistant is unavailable right now.';
