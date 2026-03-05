@@ -3,61 +3,67 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Memory Cue — AI Capture Inbox</title>
+    <title>Memory Cue Mobile</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="app-header">
-        <h1>Memory Cue</h1>
-        <p>Capture Anything</p>
+        <h1>Memory Cue Mobile</h1>
+        <p>Capture and ask your notes.</p>
       </header>
 
-      <section class="capture-panel" aria-label="Capture input">
-        <label for="captureInput" class="sr-only">What's on your mind?</label>
-        <textarea
-          id="captureInput"
-          placeholder="What's on your mind?"
-          rows="6"
-          autocomplete="off"
-          spellcheck="true"
-        ></textarea>
-
-        <p class="examples">
-          <span>task:</span>
-          <span>idea:</span>
-          <span>drill:</span>
-          <span>lesson:</span>
-          <span>reflection:</span>
-          <span>note:</span>
-        </p>
-
-        <div class="capture-controls">
-          <label class="brain-dump-toggle" for="brainDumpMode">
-            <input id="brainDumpMode" type="checkbox" />
-            <span>Brain Dump Mode</span>
-          </label>
-          <button id="captureButton" type="button">CAPTURE</button>
+      <section id="captureScreen" class="screen is-active" aria-label="Capture">
+        <div class="card">
+          <label for="captureInput" class="sr-only">Capture note</label>
+          <textarea
+            id="captureInput"
+            placeholder="What's on your mind?"
+            rows="6"
+            autocomplete="off"
+            spellcheck="true"
+          ></textarea>
+          <button id="captureButton" type="button" class="primary-btn">CAPTURE</button>
         </div>
-
-        <p class="shortcut-help">Enter = Save · Esc = Clear · Ctrl + K = Focus</p>
       </section>
 
-      <section class="entries-panel" aria-label="Saved entries">
-        <nav id="tabs" class="tabs" aria-label="Entry filters">
-          <button class="tab active" data-filter="all" type="button">All</button>
-          <button class="tab" data-filter="tasks" type="button">Tasks</button>
-          <button class="tab" data-filter="drills" type="button">Drills</button>
-          <button class="tab" data-filter="lessons" type="button">Lessons</button>
-          <button class="tab" data-filter="reflections" type="button">Reflections</button>
-          <button class="tab" data-filter="ideas" type="button">Ideas</button>
-          <button class="tab" data-filter="notes" type="button">Notes</button>
-        </nav>
+      <section id="entriesScreen" class="screen" aria-label="Entries">
+        <div class="card">
+          <nav id="entryFilters" class="filters" aria-label="Entry filters">
+            <button class="filter active" data-filter="all" type="button">All</button>
+            <button class="filter" data-filter="tasks" type="button">Tasks</button>
+            <button class="filter" data-filter="drills" type="button">Drills</button>
+            <button class="filter" data-filter="lessons" type="button">Lessons</button>
+            <button class="filter" data-filter="reflections" type="button">Reflections</button>
+            <button class="filter" data-filter="ideas" type="button">Ideas</button>
+            <button class="filter" data-filter="notes" type="button">Notes</button>
+          </nav>
+          <div id="entriesList" class="entries-list" role="list"></div>
+        </div>
+      </section>
 
-        <div id="entriesList" class="entries-list" role="list"></div>
+      <section id="assistantScreen" class="screen" aria-label="Assistant">
+        <div class="card">
+          <h2>Ask Memory Cue</h2>
+          <label for="assistantInput" class="sr-only">Ask anything about your notes</label>
+          <textarea
+            id="assistantInput"
+            placeholder="Ask anything about your notes..."
+            rows="3"
+          ></textarea>
+          <button id="askButton" type="button" class="primary-btn">ASK</button>
+          <div id="assistantResponses" class="assistant-responses" aria-live="polite"></div>
+        </div>
       </section>
     </main>
 
+    <nav class="bottom-tabs" aria-label="Main navigation">
+      <button class="bottom-tab active" data-screen="captureScreen" type="button">Capture</button>
+      <button class="bottom-tab" data-screen="entriesScreen" type="button">Entries</button>
+      <button class="bottom-tab" data-screen="assistantScreen" type="button">Assistant</button>
+    </nav>
+
+    <script src="assistant.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
