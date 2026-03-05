@@ -1,11 +1,10 @@
 :root {
   --bg: #0f172a;
   --card: #1e293b;
-  --text: #f8fafc;
-  --muted: #cbd5e1;
   --accent: #38bdf8;
-  --accent-dark: #0284c7;
+  --text: #f8fafc;
   --border: #334155;
+  --muted: #cbd5e1;
 }
 
 * {
@@ -14,154 +13,172 @@
 
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  padding: 0;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .app-shell {
-  width: min(920px, 100%);
+  max-width: 760px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1rem 5.5rem;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .app-header p {
-  margin: 0.4rem 0 1.2rem;
+  margin: 0.4rem 0 1rem;
   color: var(--muted);
 }
 
-.capture-panel,
-.entries-panel {
+.screen {
+  display: none;
+}
+
+.screen.is-active {
+  display: block;
+}
+
+.card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 1rem;
-  margin-bottom: 1rem;
 }
 
-#captureInput {
+textarea {
   width: 100%;
-  min-height: 180px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 1rem;
   background: #0b1220;
   color: var(--text);
-  font-size: 1.05rem;
-  resize: vertical;
+  padding: 0.85rem;
+  font-size: 1rem;
 }
 
-#captureInput:focus {
+textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.examples {
-  margin: 0.8rem 0;
-  color: var(--muted);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.capture-controls {
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.brain-dump-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-#captureButton {
+.primary-btn {
+  width: 100%;
+  margin-top: 0.75rem;
   border: 0;
   border-radius: 12px;
-  padding: 0.85rem 1.5rem;
-  font-weight: bold;
   background: var(--accent);
-  color: #062033;
-  cursor: pointer;
+  color: #052033;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.95rem 1rem;
 }
 
-#captureButton:hover {
-  background: var(--accent-dark);
-  color: var(--text);
-}
-
-.shortcut-help {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin: 0.8rem 0 0;
-}
-
-.tabs {
+.filters {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.45rem;
-  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
 }
 
-.tab {
+.filter {
   border: 1px solid var(--border);
   background: #0b1220;
   color: var(--text);
   border-radius: 999px;
-  padding: 0.45rem 0.8rem;
-  cursor: pointer;
+  padding: 0.35rem 0.65rem;
 }
 
-.tab.active {
+.filter.active {
   border-color: var(--accent);
   color: var(--accent);
 }
 
 .entries-list {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.7rem;
 }
 
 .entry-card {
+  background: #0b1220;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 0.85rem;
-  background: #0b1220;
+  padding: 0.75rem;
 }
 
 .badge {
   display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
+  margin-bottom: 0.5rem;
   border-radius: 999px;
-  padding: 0.2rem 0.55rem;
   background: rgba(56, 189, 248, 0.18);
   color: var(--accent);
-  margin-bottom: 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
 }
 
 .entry-content {
   margin: 0;
+}
+
+.entry-meta,
+.empty {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.assistant-responses {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.bubble {
+  margin: 0;
+  border-radius: 12px;
+  padding: 0.75rem;
   white-space: pre-wrap;
 }
 
-.entry-meta {
-  margin-top: 0.55rem;
-  color: var(--muted);
-  font-size: 0.85rem;
+.bubble-user {
+  background: #0b1220;
+  border: 1px solid var(--border);
 }
 
-.empty {
-  margin: 0;
-  color: var(--muted);
+.bubble-assistant {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.bottom-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  padding: 0.6rem;
+}
+
+.bottom-tab {
+  border: 1px solid var(--border);
+  background: #0b1220;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.95rem;
+}
+
+.bottom-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .sr-only {
@@ -174,14 +191,4 @@ body {
   overflow: hidden;
   padding: 0;
   position: absolute;
-}
-
-@media (max-width: 640px) {
-  .app-shell {
-    padding: 0.75rem;
-  }
-
-  #captureButton {
-    width: 100%;
-  }
 }
