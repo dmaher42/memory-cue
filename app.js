@@ -1,147 +1,472 @@
 (function () {
-  const STORAGE_KEY = 'memoryCueEntries';
-  const CATEGORY_MAP = {
-    task: 'tasks',
-    idea: 'ideas',
-    drill: 'drills',
-    lesson: 'lessons',
-    reflection: 'reflections',
-    note: 'notes'
+  const DB_KEY = 'memoryCueDB';
+  const LEGACY_KEY = 'memoryCueEntries';
+  const SCHEMA_VERSION = 2;
+
+  const TYPE_LABELS = ['all', 'task', 'idea', 'note', 'reflection', 'lesson', 'drill'];
+  const PREFIX_MAP = {
+    task: 'task',
+    todo: 'task',
+    idea: 'idea',
+    note: 'note',
+    notes: 'note',
+    reflection: 'reflection',
+    lesson: 'lesson',
+    drill: 'drill'
   };
 
-  const screens = Array.from(document.querySelectorAll('.screen'));
-  const bottomTabs = Array.from(document.querySelectorAll('.bottom-tab'));
-  const entryFilters = Array.from(document.querySelectorAll('.filter'));
+  let db = null;
+  let storageAvailable = true;
+  let activeTypeFilter = 'all';
+  let activeSearch = '';
+  let pendingDelete = null;
+  let toastTimer = null;
 
+  const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+  const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
   const captureInput = document.getElementById('captureInput');
   const captureButton = document.getElementById('captureButton');
+  const brainDumpToggle = document.getElementById('brainDumpToggle');
+  const brainDumpHint = document.getElementById('brainDumpHint');
+  const searchInput = document.getElementById('searchInput');
+  const typeFilters = document.getElementById('typeFilters');
   const entriesList = document.getElementById('entriesList');
-
   const assistantInput = document.getElementById('assistantInput');
   const askButton = document.getElementById('askButton');
   const assistantResponses = document.getElementById('assistantResponses');
+  const toastLive = document.getElementById('toastLive');
 
-  let activeFilter = 'all';
-
-  function loadEntries() {
+  function safeStorageCheck() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
+      const testKey = '__memory_cue_test__';
+      window.localStorage.setItem(testKey, '1');
+      window.localStorage.removeItem(testKey);
+      return true;
     } catch (error) {
-      console.error('Could not load entries from localStorage.', error);
-      return [];
+      console.error('localStorage is not available.', error);
+      return false;
     }
   }
 
-  function saveEntries(entries) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  }
-
-  function createId() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
+  function createUUID() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
     }
-    return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (char) {
+      const random = (Math.random() * 16) | 0;
+      const value = char === 'x' ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
+    });
   }
 
-  function parseCapture(text) {
-    const value = text.trim();
-    const match = value.match(/^([^:\n]+):\s*(.*)$/s);
+  function cleanLine(line) {
+    return line.replace(/^[-•*]\s+/, '').trim();
+  }
 
+  function parseTypeAndContent(text) {
+    const trimmed = text.trim();
+    const match = trimmed.match(/^([a-zA-Z]+)\s*:\s*(.+)$/);
     if (!match) {
-      return { category: 'notes', content: value };
+      return { type: 'note', content: trimmed };
     }
 
-    const prefix = match[1].trim().toLowerCase();
-    const mappedCategory = CATEGORY_MAP[prefix] || 'notes';
-    const content = match[2].trim();
+    const mappedType = PREFIX_MAP[match[1].toLowerCase()];
+    if (!mappedType) {
+      return { type: 'note', content: trimmed };
+    }
+
+    return { type: mappedType, content: match[2].trim() };
+  }
+
+  function makeEntry(rawText) {
+    const parsed = parseTypeAndContent(rawText);
+    const now = new Date().toISOString();
+    const title = parsed.content.length > 80 ? `${parsed.content.slice(0, 77)}...` : parsed.content;
 
     return {
-      category: mappedCategory,
-      content: content || value
+      id: createUUID(),
+      createdAt: now,
+      updatedAt: now,
+      type: parsed.type,
+      status: parsed.type === 'task' ? 'open' : 'active',
+      title,
+      body: parsed.content,
+      tags: [],
+      dueAt: null,
+      source: {
+        channel: 'capture',
+        app: 'memory-cue-mobile'
+      },
+      deletedAt: null
     };
   }
 
-  function renderEntries() {
-    const entries = loadEntries();
-    const filtered =
-      activeFilter === 'all'
-        ? entries
-        : entries.filter((entry) => entry.category === activeFilter);
+  function defaultDB() {
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      settings: {
+        brainDumpMode: false
+      },
+      entries: []
+    };
+  }
 
+  function saveDB(nextDB) {
+    db = nextDB;
+    if (!storageAvailable) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(DB_KEY, JSON.stringify(db));
+    } catch (error) {
+      console.error('Failed to save Memory Cue DB.', error);
+      showToast('Could not save to local storage.');
+    }
+  }
+
+  function migrateLegacyEntries(legacyEntries) {
+    const migratedEntries = legacyEntries
+      .filter(function (item) {
+        return item && (item.content || '').trim();
+      })
+      .map(function (item) {
+        const iso = item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString();
+        const type = item.category ? String(item.category).replace(/s$/, '') : 'note';
+        const body = String(item.content || '').trim();
+        const title = body.length > 80 ? `${body.slice(0, 77)}...` : body;
+
+        return {
+          id: item.id || createUUID(),
+          createdAt: iso,
+          updatedAt: iso,
+          type: TYPE_LABELS.includes(type) ? type : 'note',
+          status: type === 'task' ? 'open' : 'active',
+          title,
+          body,
+          tags: [],
+          dueAt: null,
+          source: {
+            channel: 'legacy-import',
+            app: 'memory-cue-mobile'
+          },
+          deletedAt: null
+        };
+      });
+
+    const migrated = defaultDB();
+    migrated.entries = migratedEntries;
+    return migrated;
+  }
+
+  function loadDB() {
+    if (!storageAvailable) {
+      return defaultDB();
+    }
+
+    try {
+      const raw = window.localStorage.getItem(DB_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.schemaVersion === SCHEMA_VERSION && Array.isArray(parsed.entries)) {
+          return {
+            schemaVersion: SCHEMA_VERSION,
+            settings: Object.assign({ brainDumpMode: false }, parsed.settings || {}),
+            entries: parsed.entries
+          };
+        }
+      }
+
+      const legacyRaw = window.localStorage.getItem(LEGACY_KEY);
+      if (legacyRaw) {
+        const legacyParsed = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyParsed)) {
+          const migrated = migrateLegacyEntries(legacyParsed);
+          window.localStorage.setItem(DB_KEY, JSON.stringify(migrated));
+          return migrated;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load Memory Cue DB.', error);
+      showToast('Could not load your saved entries.');
+    }
+
+    const initial = defaultDB();
+    saveDB(initial);
+    return initial;
+  }
+
+  function setTab(tabId, shouldFocusPanel) {
+    tabs.forEach(function (tab) {
+      const isSelected = tab.id === tabId;
+      tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      tab.tabIndex = isSelected ? 0 : -1;
+      tab.classList.toggle('is-active', isSelected);
+    });
+
+    panels.forEach(function (panel) {
+      const controllingTab = panel.getAttribute('aria-labelledby');
+      const isActive = controllingTab === tabId;
+      panel.hidden = !isActive;
+      panel.classList.toggle('is-active', isActive);
+      if (isActive && shouldFocusPanel) {
+        panel.focus();
+      }
+    });
+
+    if (tabId === 'tab-entries') {
+      renderEntries();
+    }
+  }
+
+  function moveTabFocus(currentIndex, key) {
+    let target = currentIndex;
+    if (key === 'ArrowRight') {
+      target = (currentIndex + 1) % tabs.length;
+    }
+    if (key === 'ArrowLeft') {
+      target = (currentIndex - 1 + tabs.length) % tabs.length;
+    }
+    if (key === 'Home') {
+      target = 0;
+    }
+    if (key === 'End') {
+      target = tabs.length - 1;
+    }
+    tabs[target].focus();
+  }
+
+  function currentEntries() {
+    return db.entries.filter(function (entry) {
+      return !entry.deletedAt;
+    });
+  }
+
+  function filteredEntries() {
+    return currentEntries()
+      .filter(function (entry) {
+        return activeTypeFilter === 'all' ? true : entry.type === activeTypeFilter;
+      })
+      .filter(function (entry) {
+        if (!activeSearch) {
+          return true;
+        }
+        const haystack = `${entry.title} ${entry.body} ${(entry.tags || []).join(' ')}`.toLowerCase();
+        return haystack.includes(activeSearch);
+      })
+      .sort(function (a, b) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+
+  function renderTypeFilters() {
+    typeFilters.innerHTML = '';
+    TYPE_LABELS.forEach(function (label) {
+      const count = label === 'all'
+        ? currentEntries().length
+        : currentEntries().filter(function (entry) {
+            return entry.type === label;
+          }).length;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `filter-pill${activeTypeFilter === label ? ' is-active' : ''}`;
+      button.textContent = `${label} (${count})`;
+      button.setAttribute('aria-pressed', activeTypeFilter === label ? 'true' : 'false');
+      button.addEventListener('click', function () {
+        activeTypeFilter = label;
+        renderTypeFilters();
+        renderEntries();
+      });
+      typeFilters.appendChild(button);
+    });
+  }
+
+  function showToast(message, options) {
+    clearTimeout(toastTimer);
+    toastLive.innerHTML = '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'toast';
+
+    const text = document.createElement('span');
+    text.textContent = message;
+    wrap.appendChild(text);
+
+    if (options && options.undo) {
+      const undoButton = document.createElement('button');
+      undoButton.type = 'button';
+      undoButton.textContent = 'Undo';
+      undoButton.addEventListener('click', function () {
+        options.undo();
+        toastLive.innerHTML = '';
+      });
+      wrap.appendChild(undoButton);
+    }
+
+    toastLive.appendChild(wrap);
+    toastTimer = setTimeout(function () {
+      toastLive.innerHTML = '';
+    }, options && options.sticky ? 8000 : 2200);
+  }
+
+  function renderEntries() {
+    renderTypeFilters();
+    const list = filteredEntries();
     entriesList.innerHTML = '';
 
-    if (filtered.length === 0) {
+    if (!list.length) {
       const empty = document.createElement('p');
       empty.className = 'empty';
-      empty.textContent = 'No entries yet.';
+      empty.textContent = 'No entries match your filters.';
       entriesList.appendChild(empty);
       return;
     }
 
-    filtered
-      .slice()
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .forEach((entry) => {
-        const card = document.createElement('article');
-        card.className = 'entry-card';
-        card.setAttribute('role', 'listitem');
+    list.forEach(function (entry) {
+      const card = document.createElement('article');
+      card.className = 'entry-card';
+      card.setAttribute('role', 'listitem');
 
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = (entry.category || 'notes').toUpperCase();
+      const topRow = document.createElement('div');
+      topRow.className = 'entry-row-top';
 
-        const content = document.createElement('p');
-        content.className = 'entry-content';
-        content.textContent = entry.content;
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = entry.type;
 
-        const meta = document.createElement('p');
-        meta.className = 'entry-meta';
-        meta.textContent = `${entry.date || ''}`;
+      const status = document.createElement('span');
+      status.className = 'status';
+      status.textContent = entry.status;
 
-        card.appendChild(badge);
-        card.appendChild(content);
-        card.appendChild(meta);
-        entriesList.appendChild(card);
+      topRow.appendChild(badge);
+      topRow.appendChild(status);
+
+      const title = document.createElement('h3');
+      title.className = 'entry-title';
+      title.textContent = entry.title || '(Untitled)';
+
+      const body = document.createElement('p');
+      body.className = 'entry-body';
+      body.textContent = entry.body;
+
+      const bottomRow = document.createElement('div');
+      bottomRow.className = 'entry-row-bottom';
+
+      const meta = document.createElement('span');
+      meta.className = 'meta';
+      meta.textContent = new Date(entry.createdAt).toLocaleString();
+
+      const actions = document.createElement('div');
+      actions.className = 'entry-actions';
+
+      if (entry.type === 'task' && entry.status !== 'done') {
+        const doneBtn = document.createElement('button');
+        doneBtn.type = 'button';
+        doneBtn.className = 'btn-small success';
+        doneBtn.textContent = 'Mark done';
+        doneBtn.addEventListener('click', function () {
+          entry.status = 'done';
+          entry.updatedAt = new Date().toISOString();
+          saveDB(db);
+          renderEntries();
+          showToast('Task marked done.');
+        });
+        actions.appendChild(doneBtn);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn-small danger';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', function () {
+        entry.deletedAt = new Date().toISOString();
+        entry.updatedAt = entry.deletedAt;
+        pendingDelete = entry.id;
+        saveDB(db);
+        renderEntries();
+        showToast('Entry deleted.', {
+          undo: function () {
+            const target = db.entries.find(function (item) {
+              return item.id === pendingDelete;
+            });
+            if (target) {
+              target.deletedAt = null;
+              target.updatedAt = new Date().toISOString();
+              saveDB(db);
+              renderEntries();
+              showToast('Delete undone.');
+            }
+          },
+          sticky: true
+        });
       });
+
+      actions.appendChild(deleteBtn);
+      bottomRow.appendChild(meta);
+      bottomRow.appendChild(actions);
+
+      card.appendChild(topRow);
+      card.appendChild(title);
+      card.appendChild(body);
+      card.appendChild(bottomRow);
+      entriesList.appendChild(card);
+    });
   }
 
-  function captureEntry() {
-    const rawText = captureInput.value;
-    if (!rawText.trim()) {
+  function updateBrainDumpUI() {
+    const enabled = !!db.settings.brainDumpMode;
+    brainDumpToggle.checked = enabled;
+    brainDumpHint.textContent = enabled
+      ? 'ON: each non-empty line saves as a separate entry.'
+      : 'OFF: save as one entry.';
+  }
+
+  function addEntriesFromCapture(rawText) {
+    const text = rawText.trim();
+    if (!text) {
+      return 0;
+    }
+
+    const created = [];
+    if (db.settings.brainDumpMode) {
+      const lines = text
+        .split('\n')
+        .map(cleanLine)
+        .filter(function (line) {
+          return line.length > 0;
+        });
+
+      lines.forEach(function (line) {
+        created.push(makeEntry(line));
+      });
+    } else {
+      created.push(makeEntry(text));
+    }
+
+    if (!created.length) {
+      return 0;
+    }
+
+    db.entries = db.entries.concat(created);
+    saveDB(db);
+    return created.length;
+  }
+
+  function saveCapture() {
+    if (!storageAvailable) {
+      showToast('Storage is unavailable. Entries cannot be saved on this device.');
       return;
     }
 
-    const parsed = parseCapture(rawText);
-    const now = Date.now();
-
-    const record = {
-      id: createId(),
-      category: parsed.category,
-      content: parsed.content,
-      timestamp: now,
-      date: new Date(now).toISOString().slice(0, 10)
-    };
-
-    const entries = loadEntries();
-    entries.push(record);
-    saveEntries(entries);
+    const count = addEntriesFromCapture(captureInput.value);
+    if (!count) {
+      showToast('Add some text before saving.');
+      return;
+    }
 
     captureInput.value = '';
+    showToast(count === 1 ? 'Saved 1 entry.' : `Saved ${count} entries.`);
     renderEntries();
-  }
-
-  function showScreen(screenId) {
-    screens.forEach((screen) => {
-      const isActive = screen.id === screenId;
-      screen.classList.toggle('is-active', isActive);
-    });
-
-    bottomTabs.forEach((tab) => {
-      const isActive = tab.dataset.screen === screenId;
-      tab.classList.toggle('active', isActive);
-    });
   }
 
   function appendAssistantBubble(text, type) {
@@ -160,6 +485,11 @@
     appendAssistantBubble(question, 'user');
     assistantInput.value = '';
 
+    if (!window.MemoryCueAssistant || typeof window.MemoryCueAssistant.askMemoryCue !== 'function') {
+      appendAssistantBubble('Assistant integration is unavailable in this build.', 'assistant');
+      return;
+    }
+
     appendAssistantBubble('Thinking...', 'assistant');
 
     try {
@@ -167,41 +497,106 @@
       assistantResponses.firstChild.textContent = answer;
     } catch (error) {
       console.error(error);
-      assistantResponses.firstChild.textContent = 'Sorry, I could not retrieve your notes right now.';
+      assistantResponses.firstChild.textContent = 'Sorry, the assistant is unavailable right now.';
     }
   }
 
-  captureButton.addEventListener('click', captureEntry);
-  askButton.addEventListener('click', askAssistant);
+  function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function (event) {
+      const isMod = event.ctrlKey || event.metaKey;
+      if (!isMod) {
+        return;
+      }
 
-  captureInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      captureEntry();
-    }
-  });
+      const key = String(event.key).toLowerCase();
+      if (key === 'enter') {
+        event.preventDefault();
+        saveCapture();
+        return;
+      }
 
-  assistantInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      askAssistant();
-    }
-  });
+      if (key === 'k') {
+        event.preventDefault();
+        setTab('tab-capture');
+        captureInput.focus();
+        return;
+      }
 
-  bottomTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      showScreen(tab.dataset.screen);
+      if (key === '1' || key === '2' || key === '3') {
+        event.preventDefault();
+        const targetId = key === '1' ? 'tab-capture' : key === '2' ? 'tab-entries' : 'tab-assistant';
+        setTab(targetId, true);
+        return;
+      }
+
+      if (event.shiftKey && key === 'b') {
+        event.preventDefault();
+        db.settings.brainDumpMode = !db.settings.brainDumpMode;
+        saveDB(db);
+        updateBrainDumpUI();
+        showToast(`Brain Dump ${db.settings.brainDumpMode ? 'enabled' : 'disabled'}.`);
+      }
     });
-  });
+  }
 
-  entryFilters.forEach((filter) => {
-    filter.addEventListener('click', () => {
-      activeFilter = filter.dataset.filter || 'all';
-      entryFilters.forEach((node) => node.classList.remove('active'));
-      filter.classList.add('active');
+  function setupTabs() {
+    tabs.forEach(function (tab, index) {
+      tab.addEventListener('click', function () {
+        setTab(tab.id);
+      });
+
+      tab.addEventListener('keydown', function (event) {
+        if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault();
+          moveTabFocus(index, event.key);
+          return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          setTab(tab.id, true);
+        }
+      });
+    });
+  }
+
+  function init() {
+    storageAvailable = safeStorageCheck();
+    db = loadDB();
+
+    if (!storageAvailable) {
+      showToast('Storage is blocked in this browser. Your entries will not persist.', { sticky: true });
+    }
+
+    updateBrainDumpUI();
+    renderEntries();
+    setTab('tab-capture');
+
+    captureButton.addEventListener('click', saveCapture);
+    askButton.addEventListener('click', askAssistant);
+
+    brainDumpToggle.addEventListener('change', function () {
+      db.settings.brainDumpMode = brainDumpToggle.checked;
+      saveDB(db);
+      updateBrainDumpUI();
+      showToast(`Brain Dump ${db.settings.brainDumpMode ? 'enabled' : 'disabled'}.`);
+    });
+
+    searchInput.addEventListener('input', function () {
+      activeSearch = searchInput.value.trim().toLowerCase();
       renderEntries();
     });
-  });
 
-  renderEntries();
+    assistantInput.addEventListener('keydown', function (event) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        askAssistant();
+      }
+    });
+
+    setupTabs();
+    setupKeyboardShortcuts();
+  }
+
+  init();
 })();
