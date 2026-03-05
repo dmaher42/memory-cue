@@ -1,6 +1,3 @@
-// Memory Cue AI Capture Inbox
-// Stores and renders quick capture entries using localStorage.
-
 (function () {
   const STORAGE_KEY = 'memoryCueEntries';
   const CATEGORY_MAP = {
@@ -12,11 +9,17 @@
     note: 'notes'
   };
 
-  const input = document.getElementById('captureInput');
+  const screens = Array.from(document.querySelectorAll('.screen'));
+  const bottomTabs = Array.from(document.querySelectorAll('.bottom-tab'));
+  const entryFilters = Array.from(document.querySelectorAll('.filter'));
+
+  const captureInput = document.getElementById('captureInput');
   const captureButton = document.getElementById('captureButton');
-  const brainDumpCheckbox = document.getElementById('brainDumpMode');
   const entriesList = document.getElementById('entriesList');
-  const tabs = Array.from(document.querySelectorAll('.tab'));
+
+  const assistantInput = document.getElementById('assistantInput');
+  const askButton = document.getElementById('askButton');
+  const assistantResponses = document.getElementById('assistantResponses');
 
   let activeFilter = 'all';
 
@@ -42,7 +45,6 @@
     return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
-  // Reads a line like "task: do marking" and returns { category, content }.
   function parseCapture(text) {
     const value = text.trim();
     const match = value.match(/^([^:\n]+):\s*(.*)$/s);
@@ -59,10 +61,6 @@
       category: mappedCategory,
       content: content || value
     };
-  }
-
-  function formatDateTime(timestamp) {
-    return new Date(timestamp).toLocaleString();
   }
 
   function renderEntries() {
@@ -92,7 +90,7 @@
 
         const badge = document.createElement('span');
         badge.className = 'badge';
-        badge.textContent = entry.category.toUpperCase();
+        badge.textContent = (entry.category || 'notes').toUpperCase();
 
         const content = document.createElement('p');
         content.className = 'entry-content';
@@ -100,7 +98,7 @@
 
         const meta = document.createElement('p');
         meta.className = 'entry-meta';
-        meta.textContent = `${entry.date} · ${formatDateTime(entry.timestamp)}`;
+        meta.textContent = `${entry.date || ''}`;
 
         card.appendChild(badge);
         card.appendChild(content);
@@ -110,7 +108,7 @@
   }
 
   function captureEntry() {
-    const rawText = input.value;
+    const rawText = captureInput.value;
     if (!rawText.trim()) {
       return;
     }
@@ -129,47 +127,78 @@
     const entries = loadEntries();
     entries.push(record);
     saveEntries(entries);
+
+    captureInput.value = '';
     renderEntries();
+  }
 
-    input.value = '';
+  function showScreen(screenId) {
+    screens.forEach((screen) => {
+      const isActive = screen.id === screenId;
+      screen.classList.toggle('is-active', isActive);
+    });
 
-    if (brainDumpCheckbox.checked) {
-      input.focus();
+    bottomTabs.forEach((tab) => {
+      const isActive = tab.dataset.screen === screenId;
+      tab.classList.toggle('active', isActive);
+    });
+  }
+
+  function appendAssistantBubble(text, type) {
+    const bubble = document.createElement('p');
+    bubble.className = `bubble bubble-${type}`;
+    bubble.textContent = text;
+    assistantResponses.prepend(bubble);
+  }
+
+  async function askAssistant() {
+    const question = assistantInput.value.trim();
+    if (!question) {
+      return;
+    }
+
+    appendAssistantBubble(question, 'user');
+    assistantInput.value = '';
+
+    appendAssistantBubble('Thinking...', 'assistant');
+
+    try {
+      const answer = await window.MemoryCueAssistant.askMemoryCue(question);
+      assistantResponses.firstChild.textContent = answer;
+    } catch (error) {
+      console.error(error);
+      assistantResponses.firstChild.textContent = 'Sorry, I could not retrieve your notes right now.';
     }
   }
 
-  function clearInput() {
-    input.value = '';
-    input.focus();
-  }
-
   captureButton.addEventListener('click', captureEntry);
+  askButton.addEventListener('click', askAssistant);
 
-  input.addEventListener('keydown', (event) => {
-    // Enter saves quickly; Shift+Enter allows a newline when needed.
+  captureInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       captureEntry();
     }
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+  assistantInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      clearInput();
-    }
-
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-      event.preventDefault();
-      input.focus();
+      askAssistant();
     }
   });
 
-  tabs.forEach((tab) => {
+  bottomTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      activeFilter = tab.dataset.filter || 'all';
-      tabs.forEach((node) => node.classList.remove('active'));
-      tab.classList.add('active');
+      showScreen(tab.dataset.screen);
+    });
+  });
+
+  entryFilters.forEach((filter) => {
+    filter.addEventListener('click', () => {
+      activeFilter = filter.dataset.filter || 'all';
+      entryFilters.forEach((node) => node.classList.remove('active'));
+      filter.classList.add('active');
       renderEntries();
     });
   });
