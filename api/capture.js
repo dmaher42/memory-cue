@@ -72,6 +72,10 @@ module.exports = async function handler(req, res) {
                   'Classify into practical types such as: task, reminder, lesson-idea, lesson-reflection, footy-drill, coaching-note, meeting-note, personal-note, resource.',
                   'Generate 0 to 5 short lowercase tags.',
                   'Choose a simple folder name like: Teaching, Coaching, Personal, Admin, Ideas.',
+                  'Set priority as low, medium, or high based on urgency/importance.',
+                  'Set actionDate to null unless the user clearly implies timing; if implied, return a short ISO-like string the app can store (for example: tomorrow morning, monday, before training, next lesson).',
+                  'Set followUpQuestion to an empty string unless one short clarifying question would materially improve the entry later.',
+                  'Lean into teacher/coach workflows by correctly routing school/lesson notes to Teaching and training/footy notes to Coaching when appropriate.',
                   'If uncertain, still return the best structure and lower the confidence score.',
                   'Never return markdown.',
                   'Never return extra keys.'
@@ -106,9 +110,27 @@ module.exports = async function handler(req, res) {
                   items: { type: 'string' }
                 },
                 folder: { type: 'string' },
+                priority: {
+                  type: 'string',
+                  enum: ['low', 'medium', 'high']
+                },
+                actionDate: {
+                  type: ['string', 'null']
+                },
+                followUpQuestion: { type: 'string' },
                 confidence: { type: 'number' }
               },
-              required: ['type', 'title', 'body', 'tags', 'folder', 'confidence']
+              required: [
+                'type',
+                'title',
+                'body',
+                'tags',
+                'folder',
+                'priority',
+                'actionDate',
+                'followUpQuestion',
+                'confidence'
+              ]
             }
           }
         }
@@ -148,6 +170,13 @@ module.exports = async function handler(req, res) {
         body: result.body,
         tags: Array.isArray(result.tags) ? result.tags : [],
         folder: result.folder,
+        priority:
+          result.priority === 'high' || result.priority === 'medium' || result.priority === 'low'
+            ? result.priority
+            : 'low',
+        actionDate: typeof result.actionDate === 'string' ? result.actionDate : null,
+        followUpQuestion:
+          typeof result.followUpQuestion === 'string' ? result.followUpQuestion : '',
         confidence: typeof result.confidence === 'number' ? result.confidence : 0
       }
     });
