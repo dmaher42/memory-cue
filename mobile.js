@@ -89,7 +89,12 @@ initViewportHeight();
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify({
+            schemaVersion: 2,
+            question: message,
+            contextText: '',
+            entries: [],
+          }),
         });
 
         if (!response.ok) {
