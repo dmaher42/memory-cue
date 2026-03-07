@@ -84,7 +84,7 @@ module.exports = async function handler(req, res) {
 
   let response;
   try {
-    response = await fetch('https://api.openai.com/v1/responses', {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -92,31 +92,21 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        max_output_tokens: 400,
+        max_completion_tokens: 400,
         store: false,
-        input: [
+        messages: [
           {
             role: 'system',
-            content: [
-              {
-                type: 'input_text',
-                text: 'You are the Memory Cue assistant. Use only supplied entries/context. If answer is unknown, say so briefly.'
-              }
-            ]
+            content: 'You are the Memory Cue assistant. Use only supplied entries/context. If answer is unknown, say so briefly.'
           },
           {
             role: 'user',
-            content: [
-              {
-                type: 'input_text',
-                text: `Question:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(entries)}`
-              }
-            ]
+            content: `Question:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(entries)}`
           }
         ],
-        text: {
-          format: {
-            type: 'json_schema',
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
             name: 'memory_cue_answer',
             strict: true,
             schema: {
@@ -152,13 +142,10 @@ module.exports = async function handler(req, res) {
   try {
     const data = await response.json();
     const outputText =
-      data.output_text ||
-      (data.output &&
-        data.output[0] &&
-        data.output[0].content &&
-        data.output[0].content[0] &&
-        data.output[0].content[0].text) ||
-      null;
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content;
 
     if (!outputText) {
       return res.status(502).json({ error: 'Assistant returned no output.' });

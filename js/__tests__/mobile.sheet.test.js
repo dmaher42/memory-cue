@@ -55,6 +55,10 @@ function runMobileModule(window) {
   context.CustomEvent = window.CustomEvent;
   context.Event = window.Event;
   context.HTMLElement = window.HTMLElement;
+  context.HTMLFormElement = window.HTMLFormElement;
+  context.HTMLInputElement = window.HTMLInputElement;
+  context.HTMLButtonElement = window.HTMLButtonElement;
+  context.HTMLSelectElement = window.HTMLSelectElement;
   context.Element = window.Element;
   context.Node = window.Node;
   context.navigator = window.navigator;
