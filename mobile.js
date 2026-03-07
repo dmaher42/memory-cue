@@ -13,6 +13,8 @@ import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
 
+const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
+
 const isNotesSyncDebugEnabled = (() => {
   try {
     if (typeof window !== 'undefined' && window.__NOTES_SYNC_DEBUG) {
@@ -31,6 +33,19 @@ initViewportHeight();
 
 (function initAssistantView() {
   const setupAssistant = () => {
+    const isFormElement = (value) =>
+      typeof HTMLFormElement !== 'undefined'
+        ? value instanceof HTMLFormElement
+        : value && value.tagName === 'FORM';
+    const isInputElement = (value) =>
+      typeof HTMLInputElement !== 'undefined'
+        ? value instanceof HTMLInputElement
+        : value && value.tagName === 'INPUT';
+    const isButtonElement = (value) =>
+      typeof HTMLButtonElement !== 'undefined'
+        ? value instanceof HTMLButtonElement
+        : value && value.tagName === 'BUTTON';
+
     const assistantForm = document.getElementById('assistantForm');
     const assistantInput = document.getElementById('assistantInput');
     const assistantThread = document.getElementById('assistantThread');
@@ -39,14 +54,14 @@ initViewportHeight();
     let isAssistantSending = false;
 
     if (
-      !(assistantForm instanceof HTMLFormElement) ||
-      !(assistantInput instanceof HTMLInputElement) ||
+      !isFormElement(assistantForm) ||
+      !isInputElement(assistantInput) ||
       !(assistantThread instanceof HTMLElement)
     ) {
       return;
     }
 
-    if (!(assistantSendBtn instanceof HTMLButtonElement)) {
+    if (!isButtonElement(assistantSendBtn)) {
       console.warn('[assistant] Send button not found; click listener was not attached.');
     }
 
@@ -58,6 +73,27 @@ initViewportHeight();
       assistantThread.scrollTop = assistantThread.scrollHeight;
     };
 
+    const saveCapturedEntryAsNote = async (entry) => {
+      const aiCaptureSave = await aiCaptureSaveModulePromise;
+      const saveCaptureFn =
+        (typeof aiCaptureSave.saveCapturedEntryAsNote === 'function' && aiCaptureSave.saveCapturedEntryAsNote)
+        || (typeof aiCaptureSave.saveCaptureEntryAsNote === 'function' && aiCaptureSave.saveCaptureEntryAsNote)
+        || (typeof aiCaptureSave.saveAiCaptureEntryAsNote === 'function' && aiCaptureSave.saveAiCaptureEntryAsNote)
+        || (typeof aiCaptureSave.default === 'function' && aiCaptureSave.default)
+        || null;
+
+      if (saveCaptureFn) {
+        return saveCaptureFn(entry);
+      }
+
+      const title = typeof entry?.title === 'string' ? entry.title : '';
+      const bodyText = typeof entry?.body === 'string' ? entry.body : '';
+      const note = createNote(title || 'Captured note', bodyText, { bodyText });
+      const notes = loadAllNotes();
+      saveAllNotes([note, ...notes]);
+      return note;
+    };
+
     const sendAssistantMessage = async (event) => {
       if (event) {
         event.preventDefault();
@@ -66,12 +102,16 @@ initViewportHeight();
         return;
       }
 
-      const message = (assistantInput.value || '').trim();
-      if (!message) {
+      const message = assistantInput.value || '';
+      const trimmedMessage = message.trim();
+
+      if (!trimmedMessage) {
         return;
       }
 
-      console.log('[assistant] send handler executed', { textLength: message.length });
+      const isCaptureMode = trimmedMessage.startsWith('+');
+
+      console.log('[assistant] send handler executed', { textLength: trimmedMessage.length, isCaptureMode });
       isAssistantSending = true;
 
       if (assistantLoading instanceof HTMLElement) {
@@ -84,31 +124,77 @@ initViewportHeight();
       assistantInput.focus();
 
       try {
-        const response = await fetch('/api/assistant', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            schemaVersion: 2,
-            question: message,
-            contextText: '',
-            entries: [],
-          }),
-        });
+        if (isCaptureMode) {
+          const captureInput = trimmedMessage.slice(1).trim();
+          const response = await fetch('/api/capture', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              schemaVersion: 1,
+              input: captureInput,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Assistant request failed (${response.status})`);
+          if (!response.ok) {
+            throw new Error(`Capture request failed (${response.status})`);
+          }
+
+          const payload = await response.json();
+          const entry = payload?.entry;
+          if (!entry || typeof entry !== 'object') {
+            throw new Error('Capture response missing entry.');
+          }
+
+          await saveCapturedEntryAsNote(entry);
+
+          const folderName = typeof entry.folder === 'string' && entry.folder.trim()
+            ? entry.folder.trim()
+            : 'Unsorted';
+          const title = typeof entry.title === 'string' && entry.title.trim()
+            ? entry.title.trim()
+            : 'Untitled note';
+          appendAssistantMessage(`Saved to ${folderName}: ${title}`, 'assistant-message assistant-message--reply');
+
+          if (typeof entry.confidence === 'number' && entry.confidence < 0.65) {
+            appendAssistantMessage(
+              'Check this one — I was not fully confident about the category.',
+              'assistant-message assistant-message--reply'
+            );
+          }
+        } else {
+          const response = await fetch('/api/assistant', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              schemaVersion: 2,
+              question: trimmedMessage,
+              contextText: '',
+              entries: [],
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Assistant request failed (${response.status})`);
+          }
+
+          const payload = await response.json();
+          const replyText = typeof payload?.reply === 'string'
+            ? payload.reply
+            : 'I could not read an assistant response.';
+          appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
         }
-
-        const payload = await response.json();
-        const replyText = typeof payload?.reply === 'string'
-          ? payload.reply
-          : 'I could not read an assistant response.';
-        appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
       } catch (error) {
-        console.error('[assistant] request failed while calling /api/assistant', error);
-        appendAssistantMessage('Sorry, something went wrong while contacting the assistant.', 'assistant-message assistant-message--error');
+        if (isCaptureMode) {
+          console.error('[assistant] request failed while calling /api/capture', error);
+          appendAssistantMessage('Sorry, I couldn\'t save that brain dump.', 'assistant-message assistant-message--error');
+        } else {
+          console.error('[assistant] request failed while calling /api/assistant', error);
+          appendAssistantMessage('Sorry, something went wrong while contacting the assistant.', 'assistant-message assistant-message--error');
+        }
       } finally {
         isAssistantSending = false;
         if (assistantLoading instanceof HTMLElement) {
@@ -125,7 +211,7 @@ initViewportHeight();
       }
     });
 
-    if (assistantSendBtn instanceof HTMLButtonElement) {
+    if (isButtonElement(assistantSendBtn)) {
       assistantSendBtn.addEventListener('click', sendAssistantMessage);
     }
   };
