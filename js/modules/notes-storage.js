@@ -96,6 +96,43 @@ const isValidDateString = (value) => {
   return !Number.isNaN(time);
 };
 
+const sanitizeTags = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((tag) => (typeof tag === 'string' ? tag.trim() : ''))
+    .filter((tag, index, list) => tag.length && list.indexOf(tag) === index);
+};
+
+const sanitizeMetadata = (value) => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const metadata = {};
+
+  if (typeof value.type === 'string' && value.type.trim()) {
+    metadata.type = value.type.trim();
+  }
+
+  const tags = sanitizeTags(value.tags);
+  if (tags.length) {
+    metadata.tags = tags;
+  }
+
+  if (value.aiCaptured === true) {
+    metadata.aiCaptured = true;
+  }
+
+  const aiConfidence = Number(value.aiConfidence);
+  if (Number.isFinite(aiConfidence)) {
+    metadata.aiConfidence = aiConfidence;
+  }
+
+  return Object.keys(metadata).length ? metadata : null;
+};
+
 export const createNote = (title, bodyHtml, overrides = {}) => {
   const trimmedTitle = typeof title === 'string' ? title.trim() : '';
   const rawBodyHtml =
@@ -113,12 +150,17 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
     bodyHtml: normalizedBodyHtml,
     bodyText: normalizedBodyText,
     pinned: typeof overrides.pinned === 'boolean' ? overrides.pinned : false,
+    createdAt:
+      overrides.createdAt && isValidDateString(overrides.createdAt)
+        ? overrides.createdAt
+        : new Date().toISOString(),
     updatedAt:
       overrides.updatedAt && isValidDateString(overrides.updatedAt)
         ? overrides.updatedAt
         : new Date().toISOString(),
     folderId: overrides.folderId && typeof overrides.folderId === 'string' ? overrides.folderId : null,
     semanticEmbedding: normalizeSemanticEmbedding(overrides.semanticEmbedding),
+    metadata: sanitizeMetadata(overrides.metadata),
   };
 };
 
@@ -149,12 +191,14 @@ const normalizeNotes = (value) => {
         }
         return createNote(title || 'Untitled note', body, {
           id,
+          createdAt: isValidDateString(note.createdAt) ? note.createdAt : updatedAt,
           updatedAt,
           folderId: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
           bodyHtml: body,
           bodyText,
           pinned,
           semanticEmbedding: normalizeSemanticEmbedding(note.semanticEmbedding),
+          metadata: sanitizeMetadata(note.metadata),
         });
       })
       .filter(Boolean);
@@ -179,12 +223,14 @@ const normalizeNotes = (value) => {
     return [
       createNote(title, body, {
         id: typeof value.id === 'string' ? value.id : undefined,
+        createdAt: isValidDateString(value.createdAt) ? value.createdAt : undefined,
         updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : undefined,
         folderId: typeof value.folderId === 'string' ? value.folderId : undefined,
         bodyHtml: body,
         bodyText,
         pinned,
         semanticEmbedding: normalizeSemanticEmbedding(value.semanticEmbedding),
+        metadata: sanitizeMetadata(value.metadata),
       }),
     ];
   }
@@ -268,7 +314,9 @@ export const saveAllNotes = (notes, options = {}) => {
     if (out) {
       out.folderId = typeof note.folderId === 'string' && note.folderId ? note.folderId : out.folderId || null;
       out.pinned = typeof note.pinned === 'boolean' ? note.pinned : Boolean(out.pinned);
+      out.createdAt = isValidDateString(note.createdAt) ? note.createdAt : out.createdAt;
       out.semanticEmbedding = normalizeSemanticEmbedding(note.semanticEmbedding);
+      out.metadata = sanitizeMetadata(note.metadata);
     }
     return out;
   }).filter(Boolean);
