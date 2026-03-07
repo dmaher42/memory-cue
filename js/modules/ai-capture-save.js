@@ -98,5 +98,13 @@ export const saveCapturedEntry = (entry, options = {}) => {
     throw new Error('Unable to save captured entry: failed to persist note to storage.');
   }
 
+  try {
+    if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+      document.dispatchEvent(new CustomEvent('memoryCue:notesUpdated', { detail: { note } }));
+    }
+  } catch (error) {
+    console.error('Unable to dispatch notes update event after AI capture save.', error);
+  }
+
   return note;
 };
