@@ -54,9 +54,14 @@ module.exports = async function handler(req, res) {
   }
 
   const payload = req.body && typeof req.body === 'object' ? req.body : {};
-  const question = typeof payload.question === 'string' ? payload.question.trim() : '';
+  const question =
+    typeof payload.question === 'string'
+      ? payload.question.trim()
+      : typeof payload.message === 'string'
+      ? payload.message.trim()
+      : '';
   const contextText = typeof payload.contextText === 'string' ? payload.contextText : '';
-  const schemaVersion = payload.schemaVersion;
+  const schemaVersion = payload.schemaVersion == null ? 2 : payload.schemaVersion;
   const rawEntries = Array.isArray(payload.entries) ? payload.entries : [];
 
   if (schemaVersion !== 2) {
@@ -159,7 +164,14 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'Assistant returned no output.' });
     }
 
-    return res.status(200).json(JSON.parse(outputText));
+    const result = JSON.parse(outputText);
+
+    return res.status(200).json({
+      answer: result.answer,
+      reply: result.answer,
+      cited_entry_ids: Array.isArray(result.cited_entry_ids) ? result.cited_entry_ids : [],
+      followups: Array.isArray(result.followups) ? result.followups : []
+    });
   } catch (_error) {
     return res.status(500).json({ error: 'Assistant failed.' });
   }
