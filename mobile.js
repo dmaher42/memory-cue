@@ -1334,6 +1334,127 @@ const initMobileNotes = () => {
     return extractPlainText(source);
   };
 
+  const getDashboardItemLabel = (note) => {
+    const title = typeof note?.title === 'string' ? note.title.trim() : '';
+    if (title) {
+      return title;
+    }
+    const body = getNoteBodyText(note).trim();
+    return body || 'Untitled note';
+  };
+
+  const getDashboardSectionItems = (notes, matcher, maxItems = 3) => {
+    if (!Array.isArray(notes)) {
+      return [];
+    }
+    const items = notes.filter((note) => matcher(note));
+    return items.slice(0, maxItems);
+  };
+
+  const buildDashboardData = () => {
+    const sourceNotes = sortNotesForDisplay(allNotes || []);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfWeek = startOfToday - (now.getDay() * 24 * 60 * 60 * 1000);
+
+    const hasKeyword = (note, keywords = []) => {
+      const haystack = `${note?.title || ''} ${getNoteBodyText(note)}`.toLowerCase();
+      return keywords.some((keyword) => haystack.includes(keyword));
+    };
+
+    return [
+      {
+        title: 'Today',
+        items: getDashboardSectionItems(sourceNotes, (note) => getNoteTimestamp(note) >= startOfToday),
+      },
+      {
+        title: 'This Week',
+        items: getDashboardSectionItems(sourceNotes, (note) => getNoteTimestamp(note) >= startOfWeek),
+      },
+      {
+        title: 'Coaching',
+        items: getDashboardSectionItems(sourceNotes, (note) => hasKeyword(note, ['coaching', 'drill', 'training'])),
+      },
+      {
+        title: 'Teaching',
+        items: getDashboardSectionItems(sourceNotes, (note) => hasKeyword(note, ['teaching', 'lesson', 'class', 'worksheet'])),
+      },
+      {
+        title: 'Recent',
+        items: sourceNotes.slice(0, 3),
+      },
+      {
+        title: 'Inbox',
+        items: getDashboardSectionItems(sourceNotes, (note) => normalizeFolderId(note?.folderId) === 'inbox'),
+      },
+    ];
+  };
+
+  const openNoteFromDashboard = (noteId) => {
+    if (!noteId) {
+      return;
+    }
+    const note = allNotes.find((item) => item?.id === noteId);
+    if (!note) {
+      return;
+    }
+
+    setEditorValues(note);
+    updateListSelection();
+    if (isSavedNotesSheetOpen()) {
+      hideSavedNotesSheet();
+    }
+
+    document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebook' } }));
+  };
+
+  const renderDashboardPanel = () => {
+    const dashboardPanel = document.getElementById('dashboardPanel');
+    if (!(dashboardPanel instanceof HTMLElement)) {
+      return;
+    }
+
+    const sections = buildDashboardData();
+    dashboardPanel.innerHTML = '';
+
+    sections.forEach((section) => {
+      const sectionEl = document.createElement('section');
+      sectionEl.className = 'memory-glass-card-soft p-3 mb-2';
+
+      const titleEl = document.createElement('h3');
+      titleEl.className = 'text-sm font-semibold mb-1';
+      titleEl.textContent = section.title;
+      sectionEl.appendChild(titleEl);
+
+      const listEl = document.createElement('ul');
+      listEl.className = 'space-y-1';
+
+      if (!Array.isArray(section.items) || section.items.length === 0) {
+        const emptyEl = document.createElement('li');
+        emptyEl.className = 'text-xs text-base-content/60';
+        emptyEl.textContent = 'No notes yet';
+        listEl.appendChild(emptyEl);
+      } else {
+        section.items.forEach((note) => {
+          const itemEl = document.createElement('li');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'text-left w-full text-sm';
+          button.dataset.noteId = note.id;
+          button.textContent = `• ${getDashboardItemLabel(note)}`;
+          button.addEventListener('click', () => {
+            openNoteFromDashboard(note.id);
+          });
+          itemEl.appendChild(button);
+          listEl.appendChild(itemEl);
+        });
+      }
+
+      sectionEl.appendChild(listEl);
+      dashboardPanel.appendChild(sectionEl);
+    });
+  };
+
   const updateListSelection = () => {
     if (!listElement) {
       return;
@@ -1463,6 +1584,7 @@ const initMobileNotes = () => {
     const visibleNotes = getVisibleNotes();
 
     renderNotesList(visibleNotes);
+    renderDashboardPanel();
 
     if (!hasAnyNotes) {
       if (!shouldPreserveEditor) {
@@ -3138,6 +3260,7 @@ const initMobileNotes = () => {
   updateToolbarState();
   applyInitialSelection();
   buildFolderFilterSelect();
+  renderDashboardPanel();
 
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (event) => {
