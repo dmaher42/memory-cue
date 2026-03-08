@@ -209,6 +209,44 @@
       background-color: rgba(0, 0, 0, 0.04);
     }
 
+    #thinkingBarContainer {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 0.75rem 0;
+      background: var(--surface-main);
+    }
+
+    #thinkingBarInput {
+      width: 100%;
+    }
+
+    #thinkingBarStatus {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    #thinkingBarResults {
+      margin-top: 0.4rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .thinking-result-item {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.65rem;
+      padding: 0.55rem 0.65rem;
+      font-size: 0.84rem;
+    }
+
+    .thinking-result-title {
+      font-weight: 600;
+      margin-bottom: 0.12rem;
+    }
+
     .reminders-quick-actions .icon-btn,
     .mobile-footer-nav button,
     .mobile-footer-nav .footer-button,
@@ -5586,8 +5624,13 @@ body, main, section, div, p, span, li {
             </div>
     <section data-view="assistant" id="view-assistant" class="view-panel hidden" aria-hidden="true">
       <div class="assistant-panel">
+        <div id="thinkingBarContainer">
+          <input id="thinkingBarInput" class="input input-sm w-full" placeholder="Capture, search, or ask…" autocomplete="off" />
+        </div>
+        <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
+        <div id="thinkingBarResults" aria-live="polite"></div>
         <div id="assistantThread" aria-live="polite" aria-label="Assistant conversation"></div>
-        <form id="assistantForm">
+        <form id="assistantForm" class="hidden">
           <input
             id="assistantInput"
             type="text"
