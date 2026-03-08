@@ -5210,6 +5210,50 @@ body, main, section, div, p, span, li {
       const init = () => {
         const quickForm = document.getElementById('quickAddForm');
         const quickInput = document.getElementById('quickAddInput');
+        const voiceButton = document.getElementById('startVoiceCaptureGlobal');
+
+        const startVoiceCapture = () => {
+          if (!(quickInput instanceof HTMLInputElement)) {
+            return;
+          }
+
+          const SpeechRecognition =
+            window.SpeechRecognition || window.webkitSpeechRecognition;
+
+          if (typeof SpeechRecognition !== 'function') {
+            window.alert('Voice capture not supported on this device.');
+            return;
+          }
+
+          const recognition = new SpeechRecognition();
+          recognition.lang = document.documentElement.lang || 'en-US';
+          recognition.continuous = false;
+          recognition.interimResults = false;
+
+          recognition.onresult = (event) => {
+            const transcript = event?.results?.[0]?.[0]?.transcript;
+            if (typeof transcript !== 'string') {
+              return;
+            }
+
+            quickInput.value = transcript.trim();
+            quickInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            try {
+              quickInput.focus({ preventScroll: true });
+            } catch (error) {
+              quickInput.focus();
+            }
+          };
+
+          recognition.onerror = (event) => {
+            if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+              window.alert('Voice capture not supported on this device.');
+            }
+          };
+
+          recognition.start();
+        };
 
         document.addEventListener('click', (event) => {
           const trigger = event.target instanceof Element
@@ -5222,7 +5266,14 @@ body, main, section, div, p, span, li {
         });
 
         if (!(quickForm instanceof HTMLFormElement) || !(quickInput instanceof HTMLInputElement)) {
+          if (voiceButton instanceof HTMLElement) {
+            voiceButton.addEventListener('click', startVoiceCapture);
+          }
           return;
+        }
+
+        if (voiceButton instanceof HTMLElement) {
+          voiceButton.addEventListener('click', startVoiceCapture);
         }
 
         if (typeof window.memoryCueQuickAddNow !== 'function') {
