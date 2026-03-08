@@ -130,6 +130,18 @@ const sanitizeMetadata = (value) => {
     metadata.aiConfidence = aiConfidence;
   }
 
+  if (typeof value.aiPriority === 'string' && value.aiPriority.trim()) {
+    metadata.aiPriority = value.aiPriority.trim();
+  }
+
+  if (typeof value.aiActionDate === 'string' && value.aiActionDate.trim()) {
+    metadata.aiActionDate = value.aiActionDate.trim();
+  }
+
+  if (typeof value.aiFollowUpQuestion === 'string' && value.aiFollowUpQuestion.trim()) {
+    metadata.aiFollowUpQuestion = value.aiFollowUpQuestion.trim();
+  }
+
   return Object.keys(metadata).length ? metadata : null;
 };
 
