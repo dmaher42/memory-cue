@@ -55,6 +55,7 @@ initViewportHeight();
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
     let isAssistantSending = false;
+    let latestThinkingSearchRequest = 0;
 
     if (
       !isFormElement(assistantForm) ||
@@ -97,17 +98,14 @@ initViewportHeight();
     };
 
     const renderSearchResults = async (query) => {
+      const requestId = ++latestThinkingSearchRequest;
       clearThinkingBarResults();
       setThinkingBarStatus('Search results');
 
-      let searchResults = [];
-      try {
-        const activityIndexModule = await import('./js/modules/activity-index.js');
-        if (activityIndexModule && typeof activityIndexModule.searchActivityIndex === 'function') {
-          searchResults = activityIndexModule.searchActivityIndex(query);
-        }
-      } catch (error) {
-        console.warn('[thinking-bar] failed to load activity index search module', error);
+      const searchResults = (await searchMemoryIndex(query)).slice(0, 10);
+
+      if (requestId !== latestThinkingSearchRequest) {
+        return;
       }
 
       if (!(thinkingBarResults instanceof HTMLElement)) {
@@ -122,9 +120,11 @@ initViewportHeight();
         return;
       }
 
-      searchResults.slice(0, 8).forEach((entry) => {
-        const row = document.createElement('div');
+      searchResults.forEach((entry) => {
+        const row = document.createElement('button');
+        row.type = 'button';
         row.className = 'thinking-result-item';
+        row.setAttribute('aria-label', `Open note ${entry?.title || 'Untitled note'}`);
 
         const title = document.createElement('div');
         title.className = 'thinking-result-title';
@@ -132,12 +132,21 @@ initViewportHeight();
           ? entry.title.trim()
           : 'Untitled note';
 
-        const body = document.createElement('div');
-        const entryBody = typeof entry?.body === 'string' ? entry.body.trim() : '';
-        body.textContent = entryBody ? entryBody.slice(0, 120) : 'No preview available.';
+        const details = document.createElement('div');
+        const entryType = typeof entry?.type === 'string' && entry.type.trim() ? entry.type.trim() : 'Note';
+        const entryFolder = typeof entry?.folder === 'string' && entry.folder.trim() ? entry.folder.trim() : 'Unsorted';
+        details.textContent = `${entryType} • ${entryFolder}`;
+
+        row.addEventListener('click', () => {
+          const noteId = typeof entry?.id === 'string' ? entry.id : '';
+          if (!noteId) {
+            return;
+          }
+          document.dispatchEvent(new CustomEvent('thinkingBar:openNote', { detail: { noteId } }));
+        });
 
         row.appendChild(title);
-        row.appendChild(body);
+        row.appendChild(details);
         thinkingBarResults.appendChild(row);
       });
     };
@@ -471,6 +480,19 @@ initViewportHeight();
       if (event.key === 'Enter' && !event.shiftKey) {
         sendAssistantMessage(event);
       }
+    });
+
+    thinkingBarInput.addEventListener('input', () => {
+      const query = typeof thinkingBarInput.value === 'string' ? thinkingBarInput.value.trim() : '';
+
+      if (query.length <= 2) {
+        latestThinkingSearchRequest += 1;
+        clearThinkingBarResults();
+        setThinkingBarStatus('');
+        return;
+      }
+
+      renderSearchResults(query);
     });
 
     assistantInput.addEventListener('keydown', (event) => {
@@ -1561,6 +1583,14 @@ const initMobileNotes = () => {
 
     document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebook' } }));
   };
+
+  document.addEventListener('thinkingBar:openNote', (event) => {
+    const noteId = event?.detail?.noteId;
+    if (!noteId) {
+      return;
+    }
+    openNoteFromDashboard(noteId);
+  });
 
   const renderDashboardPanel = () => {
     const dashboardPanel = document.getElementById('dashboardPanel');
