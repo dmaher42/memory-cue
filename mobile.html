@@ -2892,6 +2892,30 @@ body, main, section, div, p, span, li {
       display: grid;
       gap: 1.5rem;
     }
+    .category-card-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .category-card-button {
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-elevated);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .category-entry-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+    .category-entry-item {
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      background: var(--surface-elevated);
+      padding: 0.75rem;
+    }
     .section-jump {
       display: flex;
       gap: 0.5rem;
@@ -4916,10 +4940,11 @@ body, main, section, div, p, span, li {
     (function() {
       const views = {
         reminders: document.querySelector('[data-view="reminders"]'),
-        notebook: document.querySelector('[data-view="notebook"]')
+        notebook: document.querySelector('[data-view="notebook"]'),
+        categories: document.querySelector('[data-view="categories"]')
       };
 
-      const order = ['reminders', 'new', 'notebook'];
+      const order = ['reminders', 'new', 'notebook', 'categories'];
 
       const triggerReminderQuickAdd = window.triggerReminderQuickAdd || function triggerReminderQuickAdd() {
         if (triggerReminderQuickAdd._locked) return;
@@ -5236,6 +5261,13 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
+        <button
+          id="openCategoriesView"
+          type="button"
+          class="btn btn-sm btn-outline"
+        >
+          View categories
+        </button>
         <div id="inboxSearchResults"></div>
         <div id="dashboardPanel"></div>
 
@@ -5253,6 +5285,17 @@ body, main, section, div, p, span, li {
             </div>
           </section>
         </section>
+      </div>
+    </section>
+    <section data-view="categories" id="view-categories" class="view-panel hidden" aria-hidden="true">
+      <div class="space-y-3">
+        <button id="categoriesBackButton" type="button" class="btn btn-sm btn-ghost">← Back</button>
+        <h2 class="text-lg font-semibold">Categories</h2>
+      </div>
+      <div id="categoryCardGrid" class="category-card-grid"></div>
+      <div id="categoryEntriesPanel" class="space-y-2 hidden" aria-live="polite">
+        <h3 id="categoryEntriesTitle" class="text-base font-semibold"></h3>
+        <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
     </section>
     <!-- END GPT CHANGE -->
@@ -5920,6 +5963,92 @@ body, main, section, div, p, span, li {
           })
         );
       });
+    })();
+  </script>
+  <script>
+    (function () {
+      const categories = ['Inbox', 'Teaching', 'Coaching', 'Ideas', 'Tasks'];
+      const openButton = document.getElementById('openCategoriesView');
+      const backButton = document.getElementById('categoriesBackButton');
+      const cardGrid = document.getElementById('categoryCardGrid');
+      const entriesPanel = document.getElementById('categoryEntriesPanel');
+      const entriesTitle = document.getElementById('categoryEntriesTitle');
+      const entriesList = document.getElementById('categoryEntriesList');
+
+      if (!(cardGrid instanceof HTMLElement) || !(entriesList instanceof HTMLElement)) {
+        return;
+      }
+
+      const loadEntries = () => {
+        try {
+          const raw = window.localStorage?.getItem('memoryCueEntries');
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          console.warn('Unable to read memoryCueEntries from localStorage', error);
+          return [];
+        }
+      };
+
+      const getEntryLabel = (entry) => {
+        if (!entry || typeof entry !== 'object') return 'Untitled entry';
+        const title = typeof entry.title === 'string' && entry.title.trim() ? entry.title.trim() : '';
+        const text = typeof entry.text === 'string' && entry.text.trim() ? entry.text.trim() : '';
+        const content = typeof entry.content === 'string' && entry.content.trim() ? entry.content.trim() : '';
+        return title || text || content || 'Untitled entry';
+      };
+
+      const renderCategoryEntries = (categoryName) => {
+        const targetCategory = String(categoryName || '').trim().toLowerCase();
+        const entries = loadEntries().filter((entry) => {
+          const entryCategory = typeof entry?.category === 'string' ? entry.category.trim().toLowerCase() : '';
+          return Boolean(entryCategory) && entryCategory === targetCategory;
+        });
+
+        entriesTitle.textContent = `${categoryName} entries`;
+        entriesList.innerHTML = '';
+
+        if (!entries.length) {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm opacity-70';
+          empty.textContent = 'No entries found in this category.';
+          entriesList.appendChild(empty);
+        } else {
+          entries.forEach((entry) => {
+            const item = document.createElement('div');
+            item.className = 'category-entry-item';
+            item.textContent = getEntryLabel(entry);
+            entriesList.appendChild(item);
+          });
+        }
+
+        entriesPanel?.classList.remove('hidden');
+      };
+
+      const renderCategoryCards = () => {
+        cardGrid.innerHTML = '';
+        categories.forEach((categoryName) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'category-card-button';
+          button.textContent = categoryName;
+          button.addEventListener('click', () => {
+            renderCategoryEntries(categoryName);
+          });
+          cardGrid.appendChild(button);
+        });
+      };
+
+      openButton?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'categories' } }));
+      });
+
+      backButton?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
+      });
+
+      renderCategoryCards();
     })();
   </script>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
@@ -7046,11 +7175,12 @@ body, main, section, div, p, span, li {
       const views = {
         reminders: document.querySelector('[data-view="reminders"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
+        categories: document.querySelector('[data-view="categories"]'),
       };
 
       // Use the new bottom-tab buttons as the navigation controls.
       const buttons = Array.from(document.querySelectorAll('.bottom-tab')) || [];
-      const order = ['reminders', 'new', 'notebook'];
+      const order = ['reminders', 'new', 'notebook', 'categories'];
 
       if (order.some((key) => key !== 'new' && !views[key])) {
         return;
