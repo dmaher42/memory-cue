@@ -94,6 +94,37 @@ initViewportHeight();
       return note;
     };
 
+    const ensureFolderExistsByName = async (folderName) => {
+      const requestedName = typeof folderName === 'string' ? folderName.trim() : '';
+      if (!requestedName) {
+        return;
+      }
+
+      const aiCaptureSave = await aiCaptureSaveModulePromise;
+      if (typeof aiCaptureSave.ensureFolderExistsByName === 'function') {
+        aiCaptureSave.ensureFolderExistsByName(requestedName);
+        return;
+      }
+
+      const folders = Array.isArray(getFolders()) ? getFolders() : [];
+      const existing = folders.find(
+        (folder) => folder && typeof folder.name === 'string' && folder.name.trim().toLowerCase() === requestedName.toLowerCase(),
+      );
+      if (existing) {
+        return;
+      }
+
+      const newFolderId = `folder-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      saveFolders([
+        ...folders,
+        {
+          id: newFolderId,
+          name: requestedName,
+          order: folders.length,
+        },
+      ]);
+    };
+
     const sendAssistantMessage = async (event) => {
       if (event) {
         event.preventDefault();
@@ -147,19 +178,34 @@ initViewportHeight();
             throw new Error('Capture response missing entry.');
           }
 
-          await saveCapturedEntryAsNote(entry);
+          await ensureFolderExistsByName('Inbox');
 
-          const folderName = typeof entry.folder === 'string' && entry.folder.trim()
+          const confidence = typeof entry.confidence === 'number' ? entry.confidence : Number(entry.confidence);
+          const shouldRouteToInbox = Number.isFinite(confidence) && confidence < 0.7;
+          const aiSelectedFolderName = typeof entry.folder === 'string' && entry.folder.trim()
             ? entry.folder.trim()
             : 'Unsorted';
+          const targetFolderName = shouldRouteToInbox ? 'Inbox' : aiSelectedFolderName;
+
+          const entryToSave = {
+            ...entry,
+            folder: targetFolderName,
+          };
+
+          await saveCapturedEntryAsNote(entryToSave);
+
           const title = typeof entry.title === 'string' && entry.title.trim()
             ? entry.title.trim()
             : 'Untitled note';
-          appendAssistantMessage(`Saved to ${folderName}: ${title}`, 'assistant-message assistant-message--reply');
+          if (shouldRouteToInbox) {
+            appendAssistantMessage(`Saved to Inbox for review: ${title}`, 'assistant-message assistant-message--reply');
+          } else {
+            appendAssistantMessage(`Saved to ${targetFolderName}: ${title}`, 'assistant-message assistant-message--reply');
+          }
 
-          if (typeof entry.confidence === 'number' && entry.confidence < 0.65) {
+          if (typeof entry.followUpQuestion === 'string' && entry.followUpQuestion.trim()) {
             appendAssistantMessage(
-              'Check this one — I was not fully confident about the category.',
+              `Follow-up: ${entry.followUpQuestion.trim()}`,
               'assistant-message assistant-message--reply'
             );
           }
