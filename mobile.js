@@ -149,22 +149,30 @@ initViewportHeight();
       return value.trim().slice(0, maxChars);
     };
 
-    const buildAssistantEntries = async (question) => {
-      let searchFn = null;
+    const searchMemoryIndex = async (question) => {
       try {
         const activityIndexModule = await import('./js/modules/activity-index.js');
+        if (activityIndexModule && typeof activityIndexModule.searchMemoryIndex === 'function') {
+          return activityIndexModule.searchMemoryIndex(question);
+        }
         if (activityIndexModule && typeof activityIndexModule.searchActivityIndex === 'function') {
-          searchFn = activityIndexModule.searchActivityIndex;
+          return activityIndexModule.searchActivityIndex(question);
         }
       } catch (error) {
         console.warn('[assistant] failed to load activity index search module', error);
       }
 
-      const sourceEntries = searchFn
-        ? searchFn(question).slice(0, 10)
-        : [];
+      return [];
+    };
+
+    const buildAssistantEntries = async (question) => {
+      const sourceEntries = (await searchMemoryIndex(question)).slice(0, 10);
+
+      // Keep assistant payloads lightweight while still sending top memory matches.
+      const maxEntries = 10;
 
       return sourceEntries
+        .slice(0, maxEntries)
         .map((entry) => {
           const body = toAssistantEntryText(entry?.body, 1000);
           const title = toAssistantEntryText(entry?.title, 300);
@@ -425,7 +433,7 @@ initViewportHeight();
             body: JSON.stringify({
               schemaVersion: 2,
               question: trimmedMessage,
-              contextText,
+              contextText: '',
               entries,
             }),
           });
