@@ -73,6 +73,73 @@ initViewportHeight();
       assistantThread.scrollTop = assistantThread.scrollHeight;
     };
 
+    const toAssistantEntryText = (value, maxChars = 1000) => {
+      if (typeof value !== 'string') {
+        return '';
+      }
+      return value.trim().slice(0, maxChars);
+    };
+
+    const buildAssistantEntries = (question) => {
+      const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
+      if (!notes.length) {
+        return [];
+      }
+
+      const keywords = Array.from(
+        new Set(
+          String(question || '')
+            .toLowerCase()
+            .split(/[^a-z0-9]+/)
+            .map((token) => token.trim())
+            .filter((token) => token.length >= 3),
+        ),
+      );
+
+      const sortedByRecent = [...notes].sort((a, b) => {
+        const aTime = Date.parse(a?.createdAt || '') || 0;
+        const bTime = Date.parse(b?.createdAt || '') || 0;
+        return bTime - aTime;
+      });
+
+      const recentWindow = sortedByRecent.slice(0, 60);
+      const matchesQuestion = (note) => {
+        if (!keywords.length) {
+          return false;
+        }
+        const haystack = `${note?.title || ''} ${note?.bodyText || ''} ${note?.body || ''}`.toLowerCase();
+        return keywords.some((token) => haystack.includes(token));
+      };
+
+      const matchingNotes = recentWindow.filter(matchesQuestion);
+      const fallbackRecent = recentWindow.filter((note) => !matchesQuestion(note));
+      const selected = [...matchingNotes, ...fallbackRecent].slice(0, 20);
+
+      return selected
+        .map((note) => {
+          const bodyText = toAssistantEntryText(note?.bodyText, 1000);
+          const body = toAssistantEntryText(bodyText || note?.body, 1000);
+          const title = toAssistantEntryText(note?.title, 300);
+
+          if (!title && !body) {
+            return null;
+          }
+
+          return {
+            id: typeof note?.id === 'string' ? note.id : '',
+            type: typeof note?.type === 'string'
+              ? note.type
+              : typeof note?.metadata?.type === 'string'
+                ? note.metadata.type
+                : 'note',
+            title,
+            body,
+            createdAt: typeof note?.createdAt === 'string' ? note.createdAt : null,
+          };
+        })
+        .filter(Boolean);
+    };
+
     const saveCapturedEntryAsNote = async (entry) => {
       const aiCaptureSave = await aiCaptureSaveModulePromise;
       const saveCaptureFn =
@@ -210,6 +277,7 @@ initViewportHeight();
             );
           }
         } else {
+          const entries = buildAssistantEntries(trimmedMessage);
           const response = await fetch('/api/assistant', {
             method: 'POST',
             headers: {
@@ -219,7 +287,7 @@ initViewportHeight();
               schemaVersion: 2,
               question: trimmedMessage,
               contextText: '',
-              entries: [],
+              entries,
             }),
           });
 
