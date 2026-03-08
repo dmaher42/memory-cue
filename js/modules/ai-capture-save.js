@@ -7,6 +7,32 @@ import {
 } from './notes-storage.js';
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
+const normalizeOptionalString = (value) => {
+  const normalized = normalizeString(value);
+  return normalized || undefined;
+};
+
+const buildMetadataFooter = ({ tags = [], type, aiPriority, aiActionDate, aiFollowUpQuestion }) => {
+  const lines = [];
+
+  if (tags.length) {
+    lines.push(`Tags: ${tags.join(', ')}`);
+  }
+  if (type) {
+    lines.push(`Type: ${type}`);
+  }
+  if (aiPriority) {
+    lines.push(`Priority: ${aiPriority}`);
+  }
+  if (aiActionDate) {
+    lines.push(`Action Date: ${aiActionDate}`);
+  }
+  if (aiFollowUpQuestion) {
+    lines.push(`Follow Up: ${aiFollowUpQuestion}`);
+  }
+
+  return lines.length ? lines.join('\n') : '';
+};
 
 export const htmlFromPlainText = (text) => {
   if (typeof text !== 'string' || !text.length) {
@@ -63,18 +89,33 @@ export const saveCapturedEntry = (entry, options = {}) => {
   }
 
   const title = normalizeString(entry.title) || 'Untitled note';
-  const plainTextBody = typeof entry.body === 'string' ? entry.body : '';
-  const bodyHtml = htmlFromPlainText(plainTextBody);
-  const bodyText = textFromPlainText(plainTextBody);
+  const basePlainTextBody = typeof entry.body === 'string' ? entry.body : '';
 
   const nowIso = new Date().toISOString();
   const folderId = ensureFolderExistsByName(entry.folder);
-  const confidenceValue = Number(entry.confidence);
+  const confidenceRaw = entry.aiConfidence ?? entry.confidence;
+  const confidenceValue = Number(confidenceRaw);
   const tags = Array.isArray(entry.tags)
     ? entry.tags
         .map((tag) => normalizeString(tag))
         .filter((tag, index, list) => tag.length && list.indexOf(tag) === index)
     : [];
+  const type = normalizeOptionalString(entry.type);
+  const aiPriority = normalizeOptionalString(entry.aiPriority);
+  const aiActionDate = normalizeOptionalString(entry.aiActionDate);
+  const aiFollowUpQuestion = normalizeOptionalString(entry.aiFollowUpQuestion);
+  const metadataFooter = buildMetadataFooter({
+    tags,
+    type,
+    aiPriority,
+    aiActionDate,
+    aiFollowUpQuestion,
+  });
+  const plainTextBody = metadataFooter
+    ? `${basePlainTextBody.trimEnd()}${basePlainTextBody.trimEnd() ? '\n\n' : ''}${metadataFooter}`
+    : basePlainTextBody;
+  const bodyHtml = htmlFromPlainText(plainTextBody);
+  const bodyText = textFromPlainText(plainTextBody);
 
   const note = createNote(title, bodyHtml, {
     bodyHtml,
@@ -83,10 +124,13 @@ export const saveCapturedEntry = (entry, options = {}) => {
     updatedAt: nowIso,
     folderId,
     metadata: {
-      type: normalizeString(entry.type) || undefined,
+      type,
       tags,
       aiCaptured: true,
       aiConfidence: Number.isFinite(confidenceValue) ? confidenceValue : undefined,
+      aiPriority,
+      aiActionDate,
+      aiFollowUpQuestion,
     },
   });
 
