@@ -1865,16 +1865,53 @@ ${query}`;
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
 
-    const resolveBrainDumpCategory = (rawText) => {
-      const normalized = String(rawText || '').trim().toLowerCase();
-      if (normalized.startsWith('footy')) return 'coaching';
-      if (normalized.startsWith('lesson')) return 'teaching';
-      if (normalized.startsWith('task')) return 'tasks';
-      if (normalized.startsWith('idea')) return 'ideas';
-      return 'inbox';
+    const classifyBrainDumpCategory = async (rawText) => {
+      const cleanText = String(rawText || '').trim();
+      if (!cleanText) {
+        return 'Inbox';
+      }
+
+      const prompt = `Classify this note into one of these categories:\nTeaching\nCoaching\nIdeas\nTasks\nInbox\n\nNote: ${cleanText}`;
+
+      try {
+        const response = await fetch('/api/assistant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query: prompt }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Assistant classification request failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        const reply = typeof payload?.reply === 'string'
+          ? payload.reply
+          : typeof payload?.text === 'string'
+            ? payload.text
+            : typeof payload?.message === 'string'
+              ? payload.message
+              : '';
+
+        const normalizedReply = String(reply || '').trim().toLowerCase();
+        const categoryMap = {
+          teaching: 'Teaching',
+          coaching: 'Coaching',
+          ideas: 'Ideas',
+          tasks: 'Tasks',
+          inbox: 'Inbox',
+        };
+
+        return categoryMap[normalizedReply] || 'Inbox';
+      } catch (error) {
+        console.warn('Assistant classification failed, defaulting to Inbox', error);
+        return 'Inbox';
+      }
     };
 
-    const saveBrainDumpEntry = (sourceText, reminderEntry) => {
+    const saveBrainDumpEntry = async (sourceText, reminderEntry) => {
       if (typeof localStorage === 'undefined') {
         return;
       }
@@ -1883,13 +1920,15 @@ ${query}`;
         return;
       }
 
+      const category = await classifyBrainDumpCategory(cleanText);
+
       const payload = {
         id:
           reminderEntry && reminderEntry.id
             ? reminderEntry.id
             : `entry-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
         text: cleanText,
-        category: resolveBrainDumpCategory(cleanText),
+        category,
         createdAt:
           reminderEntry && reminderEntry.createdAt
             ? new Date(reminderEntry.createdAt).toISOString()
@@ -2037,7 +2076,7 @@ ${query}`;
       }
 
       if (entry && typeof document !== 'undefined') {
-        saveBrainDumpEntry(t, entry);
+        await saveBrainDumpEntry(t, entry);
         quickInput.value = '';
         try {
           quickInput.focus({ preventScroll: true });
