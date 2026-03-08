@@ -402,6 +402,7 @@ export async function initReminders(sel = {}) {
   const details = $(sel.detailsSel);
   const priority = $(sel.prioritySel);
   const categoryInput = $(sel.categorySel);
+  const sortSelect = $(sel.sortSel);
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
@@ -615,6 +616,46 @@ export async function initReminders(sel = {}) {
   let mobileRemindersFilterMode = 'all';
   let mobileRemindersCache = [];
   let mobileRemindersTemperatureLabel = '';
+  const REMINDER_SORT_OPTIONS = Object.freeze({
+    newest: 'newest',
+    oldest: 'oldest',
+    category: 'category',
+  });
+  let reminderSortMode = REMINDER_SORT_OPTIONS.newest;
+
+  function getReminderSortTimestamp(reminder) {
+    const createdAt = Number(reminder?.createdAt);
+    if (Number.isFinite(createdAt) && createdAt > 0) {
+      return createdAt;
+    }
+    const updatedAt = Number(reminder?.updatedAt);
+    if (Number.isFinite(updatedAt) && updatedAt > 0) {
+      return updatedAt;
+    }
+    return 0;
+  }
+
+  function sortReminderRows(rows = []) {
+    const sorted = Array.isArray(rows) ? rows.slice() : [];
+    if (reminderSortMode === REMINDER_SORT_OPTIONS.oldest) {
+      sorted.sort((a, b) => getReminderSortTimestamp(a) - getReminderSortTimestamp(b));
+      return sorted;
+    }
+    if (reminderSortMode === REMINDER_SORT_OPTIONS.category) {
+      sorted.sort((a, b) => {
+        const categoryDiff = normalizeCategory(a?.category).localeCompare(normalizeCategory(b?.category), undefined, {
+          sensitivity: 'base',
+        });
+        if (categoryDiff !== 0) {
+          return categoryDiff;
+        }
+        return getReminderSortTimestamp(b) - getReminderSortTimestamp(a);
+      });
+      return sorted;
+    }
+    sorted.sort((a, b) => getReminderSortTimestamp(b) - getReminderSortTimestamp(a));
+    return sorted;
+  }
 
   // Returns a short, user-facing label for "today", e.g. "Tue 18 Nov"
   function getTodayLabelForHeader() {
@@ -4954,6 +4995,32 @@ ${query}`;
     updateMobileRemindersHeaderSubtitle();
   }
 
+  function setupReminderSortControl() {
+    if (typeof HTMLSelectElement === 'undefined' || !(sortSelect instanceof HTMLSelectElement)) {
+      return;
+    }
+
+    const allowedModes = new Set(Object.values(REMINDER_SORT_OPTIONS));
+    const initialMode = String(sortSelect.value || '').trim().toLowerCase();
+    reminderSortMode = allowedModes.has(initialMode) ? initialMode : REMINDER_SORT_OPTIONS.newest;
+    sortSelect.value = reminderSortMode;
+
+    if (setupReminderSortControl._wired) {
+      return;
+    }
+
+    sortSelect.addEventListener('change', () => {
+      const nextMode = String(sortSelect.value || '').trim().toLowerCase();
+      if (!allowedModes.has(nextMode) || nextMode === reminderSortMode) {
+        return;
+      }
+      reminderSortMode = nextMode;
+      render();
+    });
+
+    setupReminderSortControl._wired = true;
+  }
+
   function setupMobileReminderTabs() {
     if (variant !== 'mobile' || typeof document === 'undefined') {
       return;
@@ -4977,6 +5044,7 @@ ${query}`;
   }
 
   function render(){
+    setupReminderSortControl();
     const now = new Date();
     const localNow = new Date(now);
     const t0 = new Date(localNow); t0.setHours(0,0,0,0);
@@ -5040,9 +5108,7 @@ ${query}`;
       }
     }
 
-    let rows = items.slice();
-
-    sortItemsByOrder(rows);
+    let rows = sortReminderRows(items);
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
