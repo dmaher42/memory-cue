@@ -6205,6 +6205,15 @@ body, main, section, div, p, span, li {
   </script>
   <!-- Load the mobile app bundle (build will rewrite to hashed path) -->
   <script src="./js/register-service-worker.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch((error) => {
+          console.warn('Service worker registration failed', error);
+        });
+      }, { once: true });
+    }
+  </script>
   <script type="module" src="./mobile.js"></script>
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <style id="reminder-editor-premium">
