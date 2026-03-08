@@ -51,11 +51,15 @@ initViewportHeight();
     const assistantThread = document.getElementById('assistantThread');
     const assistantSendBtn = document.getElementById('assistantSendBtn');
     const assistantLoading = document.getElementById('assistantLoading');
+    const thinkingBarInput = document.getElementById('thinkingBarInput');
+    const thinkingBarStatus = document.getElementById('thinkingBarStatus');
+    const thinkingBarResults = document.getElementById('thinkingBarResults');
     let isAssistantSending = false;
 
     if (
       !isFormElement(assistantForm) ||
       !isInputElement(assistantInput) ||
+      !isInputElement(thinkingBarInput) ||
       !(assistantThread instanceof HTMLElement)
     ) {
       return;
@@ -71,6 +75,71 @@ initViewportHeight();
       message.textContent = text;
       assistantThread.appendChild(message);
       assistantThread.scrollTop = assistantThread.scrollHeight;
+    };
+
+    const setThinkingBarStatus = (label) => {
+      if (!(thinkingBarStatus instanceof HTMLElement)) {
+        return;
+      }
+      if (typeof label === 'string' && label.trim()) {
+        thinkingBarStatus.textContent = label;
+        thinkingBarStatus.classList.remove('hidden');
+      } else {
+        thinkingBarStatus.textContent = '';
+        thinkingBarStatus.classList.add('hidden');
+      }
+    };
+
+    const clearThinkingBarResults = () => {
+      if (thinkingBarResults instanceof HTMLElement) {
+        thinkingBarResults.innerHTML = '';
+      }
+    };
+
+    const renderSearchResults = async (query) => {
+      clearThinkingBarResults();
+      setThinkingBarStatus('Search results');
+
+      let searchResults = [];
+      try {
+        const activityIndexModule = await import('./js/modules/activity-index.js');
+        if (activityIndexModule && typeof activityIndexModule.searchActivityIndex === 'function') {
+          searchResults = activityIndexModule.searchActivityIndex(query);
+        }
+      } catch (error) {
+        console.warn('[thinking-bar] failed to load activity index search module', error);
+      }
+
+      if (!(thinkingBarResults instanceof HTMLElement)) {
+        return;
+      }
+
+      if (!Array.isArray(searchResults) || !searchResults.length) {
+        const empty = document.createElement('div');
+        empty.className = 'thinking-result-item';
+        empty.textContent = 'No local matches found.';
+        thinkingBarResults.appendChild(empty);
+        return;
+      }
+
+      searchResults.slice(0, 8).forEach((entry) => {
+        const row = document.createElement('div');
+        row.className = 'thinking-result-item';
+
+        const title = document.createElement('div');
+        title.className = 'thinking-result-title';
+        title.textContent = typeof entry?.title === 'string' && entry.title.trim()
+          ? entry.title.trim()
+          : 'Untitled note';
+
+        const body = document.createElement('div');
+        const entryBody = typeof entry?.body === 'string' ? entry.body.trim() : '';
+        body.textContent = entryBody ? entryBody.slice(0, 120) : 'No preview available.';
+
+        row.appendChild(title);
+        row.appendChild(body);
+        thinkingBarResults.appendChild(row);
+      });
     };
 
     const toAssistantEntryText = (value, maxChars = 1000) => {
@@ -254,30 +323,45 @@ initViewportHeight();
         return;
       }
 
-      const message = assistantInput.value || '';
+      const message = thinkingBarInput.value || '';
       const trimmedMessage = message.trim();
 
       if (!trimmedMessage) {
         return;
       }
 
-      const isCaptureMode = trimmedMessage.startsWith('+');
+      const isAssistantMode = trimmedMessage.endsWith('?');
+      const isSearchMode = !isAssistantMode && trimmedMessage.length < 40 && !trimmedMessage.startsWith('+');
+      const isCaptureMode = trimmedMessage.startsWith('+') || (!isAssistantMode && !isSearchMode);
 
-      console.log('[assistant] send handler executed', { textLength: trimmedMessage.length, isCaptureMode });
+      console.log('[assistant] send handler executed', {
+        textLength: trimmedMessage.length,
+        mode: isCaptureMode ? 'capture' : isSearchMode ? 'search' : 'assistant',
+      });
       isAssistantSending = true;
 
       if (assistantLoading instanceof HTMLElement) {
         assistantLoading.classList.remove('hidden');
       }
 
+      clearThinkingBarResults();
       appendAssistantMessage(message);
 
-      assistantInput.value = '';
-      assistantInput.focus();
+      thinkingBarInput.value = '';
+      thinkingBarInput.focus();
+
+      if (isSearchMode) {
+        if (assistantLoading instanceof HTMLElement) {
+          assistantLoading.classList.add('hidden');
+        }
+        isAssistantSending = false;
+        await renderSearchResults(trimmedMessage);
+        return;
+      }
 
       try {
         if (isCaptureMode) {
-          const captureInput = trimmedMessage.slice(1).trim();
+          const captureInput = trimmedMessage.startsWith('+') ? trimmedMessage.slice(1).trim() : trimmedMessage;
           const response = await fetch('/api/capture', {
             method: 'POST',
             headers: {
@@ -323,6 +407,7 @@ initViewportHeight();
           } else {
             appendAssistantMessage(`Saved to ${targetFolderName}: ${title}`, 'assistant-message assistant-message--reply');
           }
+          setThinkingBarStatus('Saved entry');
 
           if (typeof entry.followUpQuestion === 'string' && entry.followUpQuestion.trim()) {
             appendAssistantMessage(
@@ -354,6 +439,7 @@ initViewportHeight();
             ? payload.reply
             : 'I could not read an assistant response.';
           appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
+          setThinkingBarStatus('Assistant answer');
         }
       } catch (error) {
         if (isCaptureMode) {
@@ -372,6 +458,12 @@ initViewportHeight();
     };
 
     assistantForm.addEventListener('submit', sendAssistantMessage);
+
+    thinkingBarInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        sendAssistantMessage(event);
+      }
+    });
 
     assistantInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
