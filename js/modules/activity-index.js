@@ -2,6 +2,17 @@ import { getFolderNameById, loadAllNotes } from './notes-storage.js';
 
 const MAX_SEARCH_RESULTS = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const WEEKDAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const TOKEN_SYNONYMS = Object.freeze({
+  footy: ['football'],
+  football: ['footy'],
+  drill: ['drills', 'practice', 'training'],
+  drills: ['drill', 'practice', 'training'],
+  reflection: ['reflections', 'reflect'],
+  reflections: ['reflection', 'reflect'],
+  reminder: ['reminders'],
+  reminders: ['reminder'],
+});
 
 let cachedIndex = null;
 let hasBoundNotesUpdatedListener = false;
@@ -53,6 +64,23 @@ const buildIndexEntry = (note) => {
 
 const sortByRecency = (a, b) => b.updatedAt - a.updatedAt;
 
+const tokenizeQuery = (query) => {
+  const rawTokens = normalizeString(query)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
+  const expanded = new Set(rawTokens);
+  rawTokens.forEach((token) => {
+    const synonyms = TOKEN_SYNONYMS[token] || [];
+    synonyms.forEach((synonym) => expanded.add(synonym));
+  });
+
+  return Array.from(expanded);
+};
+
+const getWeekdayFromQuery = (queryTokens) => queryTokens.find((token) => WEEKDAY_NAMES.includes(token)) || null;
+
 const ensureNotesUpdatedListener = () => {
   if (hasBoundNotesUpdatedListener || typeof document === 'undefined') {
     return;
@@ -65,7 +93,7 @@ const ensureNotesUpdatedListener = () => {
   hasBoundNotesUpdatedListener = true;
 };
 
-const scoreEntryForQuery = (entry, queryTokens) => {
+const scoreEntryForQuery = (entry, normalizedQuery, queryTokens, weekdayToken) => {
   const titleLower = entry.title.toLowerCase();
   const bodyLower = entry.body.toLowerCase();
   const typeLower = entry.type.toLowerCase();
@@ -74,6 +102,11 @@ const scoreEntryForQuery = (entry, queryTokens) => {
   let score = 0;
   let matched = false;
 
+  if (normalizedQuery.length > 2 && titleLower.includes(normalizedQuery)) {
+    score += 18;
+    matched = true;
+  }
+
   queryTokens.forEach((token) => {
     const inTitle = titleLower.includes(token);
     const inTags = tagsLower.some((tag) => tag.includes(token));
@@ -81,11 +114,11 @@ const scoreEntryForQuery = (entry, queryTokens) => {
     const inBody = bodyLower.includes(token);
 
     if (inTitle) {
-      score += 10;
+      score += 12;
       matched = true;
     }
     if (inTags) {
-      score += 7;
+      score += 10;
       matched = true;
     }
     if (inType) {
@@ -93,13 +126,21 @@ const scoreEntryForQuery = (entry, queryTokens) => {
       matched = true;
     }
     if (inBody) {
-      score += 3;
+      score += 2;
       matched = true;
     }
   });
 
+  if (weekdayToken && Number.isFinite(entry.createdAt) && entry.createdAt > 0) {
+    const entryWeekday = WEEKDAY_NAMES[new Date(entry.createdAt).getDay()];
+    if (entryWeekday === weekdayToken) {
+      score += 8;
+      matched = true;
+    }
+  }
+
   const recencyDays = Math.max(0, (Date.now() - entry.updatedAt) / MS_PER_DAY);
-  const recencyWeight = Math.max(0, 2 - recencyDays / 30);
+  const recencyWeight = Math.max(0, 3 - recencyDays / 20);
 
   return {
     entry,
@@ -126,10 +167,11 @@ export const searchActivityIndex = (query) => {
     return getRecentActivity(MAX_SEARCH_RESULTS);
   }
 
-  const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const queryTokens = tokenizeQuery(normalizedQuery);
+  const weekdayToken = getWeekdayFromQuery(queryTokens);
 
-  return buildActivityIndex()
-    .map((entry) => scoreEntryForQuery(entry, queryTokens))
+  const ranked = buildActivityIndex()
+    .map((entry) => scoreEntryForQuery(entry, normalizedQuery, queryTokens, weekdayToken))
     .filter((result) => result.matched)
     .sort((a, b) => {
       if (b.score !== a.score) {
@@ -139,6 +181,13 @@ export const searchActivityIndex = (query) => {
     })
     .slice(0, MAX_SEARCH_RESULTS)
     .map((result) => result.entry);
+
+  if (ranked.length) {
+    return ranked;
+  }
+
+  // Keep assistant search lightweight by falling back to recent notes.
+  return getRecentActivity(MAX_SEARCH_RESULTS);
 };
 
 export const getRecentActivity = (limit = MAX_SEARCH_RESULTS) => {
