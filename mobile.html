@@ -4941,10 +4941,12 @@ body, main, section, div, p, span, li {
       const views = {
         reminders: document.querySelector('[data-view="reminders"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
-        categories: document.querySelector('[data-view="categories"]')
+        categories: document.querySelector('[data-view="categories"]'),
+        inbox: document.querySelector('[data-view="inbox"]'),
+        assistant: document.querySelector('[data-view="assistant"]')
       };
 
-      const order = ['reminders', 'new', 'notebook', 'categories'];
+      const order = ['reminders', 'new', 'notebook', 'categories', 'inbox', 'assistant'];
 
       const triggerReminderQuickAdd = window.triggerReminderQuickAdd || function triggerReminderQuickAdd() {
         if (triggerReminderQuickAdd._locked) return;
@@ -5357,6 +5359,12 @@ body, main, section, div, p, span, li {
         <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
     </section>
+    <div data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
+      <div class="space-y-3">
+        <h2 class="text-lg font-semibold">Inbox</h2>
+        <div id="inboxEntriesList" class="category-entry-list" aria-live="polite"></div>
+      </div>
+    </div>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
@@ -5818,6 +5826,31 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
+        class="floating-card btn-inbox"
+        id="mobile-footer-inbox"
+        data-nav-target="inbox"
+        aria-label="Go to Inbox"
+      >
+        <svg
+          class="icon icon-inbox"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4.5 6.5h15v11h-15z" />
+          <path d="M4.5 13h4l1.5 2h4l1.5-2h4" />
+        </svg>
+        <span>Inbox</span>
+      </button>
+
+      <button
+        type="button"
         class="floating-card btn-assistant"
         id="mobile-footer-assistant"
         data-nav-target="assistant"
@@ -6033,37 +6066,59 @@ body, main, section, div, p, span, li {
       const entriesPanel = document.getElementById('categoryEntriesPanel');
       const entriesTitle = document.getElementById('categoryEntriesTitle');
       const entriesList = document.getElementById('categoryEntriesList');
+      const inboxEntriesList = document.getElementById('inboxEntriesList');
 
-      if (!(cardGrid instanceof HTMLElement) || !(entriesList instanceof HTMLElement)) {
+      if (!(cardGrid instanceof HTMLElement) || !(entriesList instanceof HTMLElement) || !(inboxEntriesList instanceof HTMLElement)) {
         return;
       }
 
-      const loadEntries = () => {
+      const readEntries = () => {
         try {
           const raw = window.localStorage?.getItem('memoryCueEntries');
           if (!raw) return [];
           const parsed = JSON.parse(raw);
-          return Array.isArray(parsed) ? parsed : [];
+          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed?.entries)) return parsed.entries;
+          return [];
         } catch (error) {
           console.warn('Unable to read memoryCueEntries from localStorage', error);
           return [];
         }
       };
 
-      const getEntryLabel = (entry) => {
+      const writeEntries = (entries) => {
+        try {
+          window.localStorage?.setItem('memoryCueEntries', JSON.stringify(entries));
+          document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+        } catch (error) {
+          console.warn('Unable to update memoryCueEntries in localStorage', error);
+        }
+      };
+
+      const getEntryText = (entry) => {
         if (!entry || typeof entry !== 'object') return 'Untitled entry';
         const title = typeof entry.title === 'string' && entry.title.trim() ? entry.title.trim() : '';
         const text = typeof entry.text === 'string' && entry.text.trim() ? entry.text.trim() : '';
         const content = typeof entry.content === 'string' && entry.content.trim() ? entry.content.trim() : '';
-        return title || text || content || 'Untitled entry';
+        const body = typeof entry.body === 'string' && entry.body.trim() ? entry.body.trim() : '';
+        return title || text || content || body || 'Untitled entry';
+      };
+
+      const getEntryCategory = (entry) => {
+        const category = typeof entry?.category === 'string' ? entry.category.trim() : '';
+        return category || 'inbox';
+      };
+
+      const getEntryCreatedDate = (entry) => {
+        const value = entry?.createdAt || entry?.created || entry?.date;
+        if (!value) return 'Unknown date';
+        const dt = new Date(value);
+        return Number.isNaN(dt.getTime()) ? String(value) : dt.toLocaleString();
       };
 
       const renderCategoryEntries = (categoryName) => {
         const targetCategory = String(categoryName || '').trim().toLowerCase();
-        const entries = loadEntries().filter((entry) => {
-          const entryCategory = typeof entry?.category === 'string' ? entry.category.trim().toLowerCase() : '';
-          return Boolean(entryCategory) && entryCategory === targetCategory;
-        });
+        const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === targetCategory);
 
         entriesTitle.textContent = `${categoryName} entries`;
         entriesList.innerHTML = '';
@@ -6077,12 +6132,120 @@ body, main, section, div, p, span, li {
           entries.forEach((entry) => {
             const item = document.createElement('div');
             item.className = 'category-entry-item';
-            item.textContent = getEntryLabel(entry);
+            item.textContent = getEntryText(entry);
             entriesList.appendChild(item);
           });
         }
 
         entriesPanel?.classList.remove('hidden');
+      };
+
+      const renderInboxEntries = () => {
+        const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === 'inbox');
+        inboxEntriesList.innerHTML = '';
+
+        if (!entries.length) {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm opacity-70';
+          empty.textContent = 'No uncategorized entries in Inbox.';
+          inboxEntriesList.appendChild(empty);
+          return;
+        }
+
+        entries.forEach((entry, index) => {
+          const card = document.createElement('article');
+          card.className = 'category-entry-item space-y-2';
+
+          const text = document.createElement('p');
+          text.className = 'text-sm';
+          text.textContent = getEntryText(entry);
+
+          const meta = document.createElement('div');
+          meta.className = 'text-xs opacity-70 flex items-center gap-2 flex-wrap';
+
+          const categoryTag = document.createElement('span');
+          categoryTag.className = 'badge badge-outline badge-sm';
+          categoryTag.textContent = getEntryCategory(entry);
+
+          const createdAt = document.createElement('span');
+          createdAt.textContent = getEntryCreatedDate(entry);
+
+          meta.append(categoryTag, createdAt);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex items-center gap-2 flex-wrap';
+
+          const moveSelect = document.createElement('select');
+          moveSelect.className = 'select select-bordered select-xs';
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = 'Move to category';
+          moveSelect.appendChild(defaultOption);
+
+          categories
+            .filter((name) => name.toLowerCase() !== 'inbox')
+            .forEach((name) => {
+              const option = document.createElement('option');
+              option.value = name;
+              option.textContent = name;
+              moveSelect.appendChild(option);
+            });
+
+          moveSelect.addEventListener('change', () => {
+            if (!moveSelect.value) return;
+            const allEntries = readEntries();
+            const entryIndex = allEntries.findIndex((item) => {
+              if (entry?.id && item?.id) return item.id === entry.id;
+              return getEntryText(item) === getEntryText(entry) && index === entries.indexOf(entry);
+            });
+            if (entryIndex === -1) return;
+            allEntries[entryIndex] = {
+              ...allEntries[entryIndex],
+              category: moveSelect.value,
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          });
+
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'btn btn-xs btn-ghost';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', () => {
+            const updatedText = window.prompt('Edit entry text', getEntryText(entry));
+            if (updatedText === null) return;
+            const nextText = updatedText.trim();
+            if (!nextText) return;
+            const allEntries = readEntries();
+            const entryIndex = allEntries.findIndex((item) => item?.id && entry?.id ? item.id === entry.id : getEntryText(item) === getEntryText(entry));
+            if (entryIndex === -1) return;
+            const target = allEntries[entryIndex];
+            const key = typeof target.text === 'string' ? 'text' : typeof target.content === 'string' ? 'content' : 'title';
+            allEntries[entryIndex] = {
+              ...target,
+              [key]: nextText,
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          });
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'btn btn-xs btn-outline';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', () => {
+            const allEntries = readEntries();
+            const nextEntries = allEntries.filter((item) => (entry?.id && item?.id ? item.id !== entry.id : item !== entry));
+            writeEntries(nextEntries);
+            renderInboxEntries();
+          });
+
+          actions.append(moveSelect, editBtn, deleteBtn);
+          card.append(text, meta, actions);
+          inboxEntriesList.appendChild(card);
+        });
       };
 
       const renderCategoryCards = () => {
@@ -6107,7 +6270,26 @@ body, main, section, div, p, span, li {
         window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
       });
 
+      document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'memoryCueEntries') {
+          renderInboxEntries();
+        }
+      });
+
+      if (typeof window.localStorage?.setItem === 'function' && !window.__memoryCueInboxSetItemPatched) {
+        const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
+        window.localStorage.setItem = function patchedSetItem(key, value) {
+          originalSetItem(key, value);
+          if (key === 'memoryCueEntries') {
+            document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+          }
+        };
+        window.__memoryCueInboxSetItemPatched = true;
+      }
+
       renderCategoryCards();
+      renderInboxEntries();
     })();
   </script>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
@@ -7244,11 +7426,13 @@ body, main, section, div, p, span, li {
         reminders: document.querySelector('[data-view="reminders"]'),
         notebook: document.querySelector('[data-view="notebook"]'),
         categories: document.querySelector('[data-view="categories"]'),
+        inbox: document.querySelector('[data-view="inbox"]'),
+        assistant: document.querySelector('[data-view="assistant"]'),
       };
 
       // Use the new bottom-tab buttons as the navigation controls.
       const buttons = Array.from(document.querySelectorAll('.bottom-tab')) || [];
-      const order = ['reminders', 'new', 'notebook', 'categories'];
+      const order = ['reminders', 'new', 'notebook', 'categories', 'inbox', 'assistant'];
 
       if (order.some((key) => key !== 'new' && !views[key])) {
         return;
