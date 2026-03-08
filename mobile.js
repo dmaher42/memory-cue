@@ -140,6 +140,81 @@ initViewportHeight();
         .filter(Boolean);
     };
 
+    const buildAssistantContextText = () => {
+      const maxContextItems = 15;
+      const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
+      const now = new Date();
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+      const thisWeekEnd = new Date(today);
+      thisWeekEnd.setDate(thisWeekEnd.getDate() + 7);
+
+      const toTimestamp = (value) => {
+        if (typeof value !== 'string') {
+          return 0;
+        }
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+
+      const normalizeTitle = (value) => (typeof value === 'string' ? value.trim() : '');
+      const parseActionDate = (value) => {
+        const timestamp = toTimestamp(value);
+        if (!timestamp) {
+          return null;
+        }
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) {
+          return null;
+        }
+        date.setHours(0, 0, 0, 0);
+        return date;
+      };
+
+      const noteRows = notes
+        .map((note) => {
+          const metadata = note && typeof note.metadata === 'object' && note.metadata ? note.metadata : {};
+          return {
+            title: normalizeTitle(note?.title),
+            updatedAt: toTimestamp(note?.updatedAt) || toTimestamp(note?.createdAt),
+            actionDate: parseActionDate(metadata.aiActionDate),
+          };
+        })
+        .filter((entry) => entry.title);
+
+      const todayTitles = noteRows
+        .filter((entry) => entry.actionDate && entry.actionDate.getTime() === today.getTime())
+        .map((entry) => entry.title);
+
+      const thisWeekTitles = noteRows
+        .filter((entry) => entry.actionDate && entry.actionDate >= today && entry.actionDate <= thisWeekEnd)
+        .map((entry) => entry.title);
+
+      const recentNoteTitles = [...noteRows]
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, maxContextItems)
+        .map((entry) => entry.title);
+
+      const takeWithinLimit = (items, usedCount) => items.slice(0, Math.max(0, maxContextItems - usedCount));
+
+      const selectedToday = takeWithinLimit(todayTitles, 0);
+      const selectedWeek = takeWithinLimit(thisWeekTitles, selectedToday.length);
+      const selectedRecent = takeWithinLimit(recentNoteTitles, selectedToday.length + selectedWeek.length);
+
+      const toListText = (items) => (items.length ? items.map((title) => `- ${title}`).join('\n') : '- None');
+
+      return [
+        'Today actions:',
+        toListText(selectedToday),
+        '',
+        'This week actions:',
+        toListText(selectedWeek),
+        '',
+        'Recent notes:',
+        toListText(selectedRecent),
+      ].join('\n');
+    };
+
     const saveCapturedEntryAsNote = async (entry) => {
       const aiCaptureSave = await aiCaptureSaveModulePromise;
       const saveCaptureFn =
@@ -278,6 +353,7 @@ initViewportHeight();
           }
         } else {
           const entries = buildAssistantEntries(trimmedMessage);
+          const contextText = buildAssistantContextText();
           const response = await fetch('/api/assistant', {
             method: 'POST',
             headers: {
@@ -286,7 +362,7 @@ initViewportHeight();
             body: JSON.stringify({
               schemaVersion: 2,
               question: trimmedMessage,
-              contextText: '',
+              contextText,
               entries,
             }),
           });
