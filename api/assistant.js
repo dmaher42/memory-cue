@@ -30,12 +30,18 @@ function trimEntry(entry) {
   const title = typeof entry.title === 'string' ? entry.title.slice(0, MAX_ENTRY_CHARS) : '';
   const body = typeof entry.body === 'string' ? entry.body.slice(0, MAX_ENTRY_CHARS) : '';
   const createdAt = typeof entry.createdAt === 'string' ? entry.createdAt.slice(0, 64) : null;
+  const tags = Array.isArray(entry.tags)
+    ? entry.tags
+        .map((tag) => (typeof tag === 'string' ? tag.slice(0, 64) : ''))
+        .filter((tag, index, list) => tag && list.indexOf(tag) === index)
+        .slice(0, 20)
+    : [];
 
   if (!title && !body) {
     return null;
   }
 
-  return { id, type, title, body, createdAt };
+  return { id, type, title, body, tags, createdAt };
 }
 
 module.exports = async function handler(req, res) {
