@@ -1823,6 +1823,48 @@ ${query}`;
         : (quickInput.value || '').trim();
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
+
+    const resolveBrainDumpCategory = (rawText) => {
+      const normalized = String(rawText || '').trim().toLowerCase();
+      if (normalized.startsWith('footy')) return 'coaching';
+      if (normalized.startsWith('lesson')) return 'teaching';
+      if (normalized.startsWith('task')) return 'tasks';
+      if (normalized.startsWith('idea')) return 'ideas';
+      return 'inbox';
+    };
+
+    const saveBrainDumpEntry = (sourceText, reminderEntry) => {
+      if (typeof localStorage === 'undefined') {
+        return;
+      }
+      const cleanText = String(sourceText || '').trim();
+      if (!cleanText) {
+        return;
+      }
+
+      const payload = {
+        id:
+          reminderEntry && reminderEntry.id
+            ? reminderEntry.id
+            : `entry-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+        text: cleanText,
+        category: resolveBrainDumpCategory(cleanText),
+        createdAt:
+          reminderEntry && reminderEntry.createdAt
+            ? new Date(reminderEntry.createdAt).toISOString()
+            : new Date().toISOString(),
+      };
+
+      try {
+        const existing = JSON.parse(localStorage.getItem('memoryCueEntries') || '[]');
+        const entries = Array.isArray(existing) ? existing : [];
+        entries.unshift(payload);
+        localStorage.setItem('memoryCueEntries', JSON.stringify(entries));
+      } catch (error) {
+        console.warn('Failed to persist memoryCueEntries', error);
+      }
+    };
+
     isQuickAddSubmitting = true;
     if (quickInput && typeof quickInput.disabled !== 'undefined') {
       quickInput.disabled = true;
@@ -1954,6 +1996,7 @@ ${query}`;
       }
 
       if (entry && typeof document !== 'undefined') {
+        saveBrainDumpEntry(t, entry);
         quickInput.value = '';
         try {
           quickInput.focus({ preventScroll: true });
