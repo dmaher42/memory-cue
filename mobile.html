@@ -5327,6 +5327,14 @@ body, main, section, div, p, span, li {
             id="reminderListSection"
             class="w-full relative memory-glass-card-soft"
           >
+            <div class="mb-2 flex items-center justify-end gap-2 px-1">
+              <label for="reminderSort" class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Sort by:</label>
+              <select id="reminderSort" class="select select-bordered select-xs max-w-[10rem]" aria-label="Sort reminders">
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="category">Category</option>
+              </select>
+            </div>
             <div class="w-full" id="remindersWrapper">
               <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
               <p id="reminderReorderHint" class="sr-only">

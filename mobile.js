@@ -933,6 +933,7 @@ const bootstrapReminders = () => {
     detailsSel: '#reminderDetails',
     prioritySel: '#priority',
     categorySel: '#category',
+    sortSel: '#reminderSort',
     saveBtnSel: '#saveReminder',
     cancelEditBtnSel: '#cancelEditBtn',
     listSel: '#reminderList',
