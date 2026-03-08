@@ -15,7 +15,7 @@
 
 const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
 const CACHE_PREFIX = 'mc-static-';
-const CACHE_VERSION = 'v14'; // bump this to force clients to update
+const CACHE_VERSION = 'v15'; // bump this to force clients to update
 const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const REMINDER_DB_NAME = 'memory-cue-reminders';
@@ -28,19 +28,13 @@ const DEFAULT_REMINDER_URL_PATH = 'mobile.html';
 let reminderDbPromise = null;
 
 const SHELL_URLS = [
+  `${APP_PATH}`,
   `${APP_PATH}index.html`,
   `${APP_PATH}mobile.html`,
   `${APP_PATH}manifest.webmanifest`,
-  `${APP_PATH}styles/tokens.css`,
-  `${APP_PATH}styles/a11y.css`,
-  // Add your real icons below if present; missing files are skipped.
+  `${APP_PATH}styles/index.css`,
   `${APP_PATH}icons/icon-192.svg`,
   `${APP_PATH}icons/icon-512.svg`,
-];
-
-// File extensions treated as static assets for SWR caching
-const STATIC_EXTS = [
-  '.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.json', '.webmanifest'
 ];
 
 // Domains we never want to intercept (bypass to network)
@@ -55,14 +49,14 @@ self.addEventListener('install', (event) => {
   // Activate this SW immediately on install
   self.skipWaiting();
 
-  event.waitUntil((async () => {
+  return event.waitUntil((async () => {
     const cache = await caches.open(RUNTIME_CACHE);
 
     // Precache shell, but don’t fail the whole install if one URL 404s.
     await Promise.allSettled(
       SHELL_URLS.map(async (url) => {
         try {
-          const res = await fetch(url, { cache: 'no-store' });
+          const res = await fetch(url, { cache: 'reload' });
           if (res && res.ok) {
             await cache.put(url, res.clone());
           }
@@ -76,7 +70,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   // Become active immediately on clients
-  event.waitUntil((async () => {
+  return event.waitUntil((async () => {
     // Clean up old caches
     const keys = await caches.keys();
     await Promise.all(
@@ -119,19 +113,8 @@ self.addEventListener('fetch', (event) => {
     return; // Let the service worker provide a graceful fallback
   }
 
-  // Handle same-origin navigations with network-first + timeout, fallback to offline shell
-  if (req.mode === 'navigate') {
-    const fallbacks = getNavigationFallbacks(url.pathname);
-    event.respondWith(networkFirstWithTimeout(req, 4500, fallbacks));
-    return;
-  }
-
-  // Only consider same-origin requests for runtime caching to avoid opaque responses
-  const isSameOrigin = url.origin === self.location.origin;
-
-  // Use SWR for static assets (by extension check), same-origin only
-  if (isSameOrigin && isStaticAsset(url.pathname)) {
-    event.respondWith(staleWhileRevalidate(req));
+  if (shouldUseCacheFirst(req, url)) {
+    event.respondWith(cacheFirst(req, getNavigationFallbacks(url.pathname)));
     return;
   }
 
@@ -161,27 +144,63 @@ self.addEventListener('fetch', (event) => {
 
 // ---------- Helpers ----------
 
-function isStaticAsset(pathname) {
-  // Safe extension check (no regex parsing issues)
-  return STATIC_EXTS.some((ext) => pathname.endsWith(ext));
-}
-
-async function staleWhileRevalidate(req) {
-  if (req.method !== 'GET') {
-    return fetch(req);
+function shouldUseCacheFirst(req, url) {
+  const requestMethod = req.method || 'GET';
+  if (requestMethod !== 'GET') {
+    return false;
+  }
+  if (url.origin !== self.location.origin) {
+    return false;
   }
 
-  const cache = await caches.open(RUNTIME_CACHE);
-  const cached = await cache.match(req);
-  const fetchPromise = fetch(req)
-    .then((res) => {
-      if (res && res.ok) cache.put(req, res.clone());
-      return res;
-    })
-    .catch(() => undefined);
+  const path = url.pathname;
+  const appRoot = APP_PATH.endsWith('/') ? APP_PATH : `${APP_PATH}/`;
+  const relativePath = path.startsWith(appRoot) ? path.slice(appRoot.length) : path.replace(/^\//, '');
 
-  // Return cached immediately if present; otherwise use network
-  return cached || (await fetchPromise) || new Response('', { status: 504, statusText: 'Gateway Timeout' });
+  if (req.mode === 'navigate') {
+    return true;
+  }
+
+  return (
+    relativePath === 'index.html' ||
+    relativePath === 'mobile.html' ||
+    relativePath.startsWith('css/') ||
+    relativePath.startsWith('styles/') ||
+    relativePath.startsWith('js/') ||
+    relativePath.startsWith('icons/') ||
+    relativePath === 'manifest.webmanifest' ||
+    relativePath.endsWith('.css') ||
+    relativePath.endsWith('.js')
+  );
+}
+
+async function cacheFirst(req, fallbackUrls = []) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cached = await cache.match(req, { ignoreSearch: req.mode === 'navigate' });
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(req);
+    if (response && response.ok) {
+      try {
+        await cache.put(req, response.clone());
+      } catch (_) {
+        // Ignore cache write failures and still return the live response.
+      }
+    }
+    return response;
+  } catch (error) {
+    const fallback = await matchFirstAvailable(fallbackUrls);
+    if (fallback) {
+      return fallback;
+    }
+    return new Response('Offline and no cached content available.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
 }
 
 function getNavigationFallbacks(pathname) {
@@ -191,44 +210,6 @@ function getNavigationFallbacks(pathname) {
     fallbacks.unshift(`${APP_PATH}mobile.html`);
   }
   return [...new Set(fallbacks)];
-}
-
-async function networkFirstWithTimeout(req, timeoutMs, offlineFallbackUrls) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), timeoutMs);
-  const fallbacks = Array.isArray(offlineFallbackUrls)
-    ? offlineFallbackUrls.filter(Boolean)
-    : offlineFallbackUrls
-    ? [offlineFallbackUrls]
-    : [];
-
-  try {
-    const res = await fetch(req, { signal: controller.signal });
-    clearTimeout(t);
-    if (res && res.ok) return res;
-
-    // Non-ok -> try cache fallback for offline shell on navigations
-    const cached = await matchFirstAvailable(fallbacks);
-    if (cached) return cached;
-
-    // As a last resort, return the original (even if non-ok) to surface correct status
-    return res;
-  } catch (_) {
-    clearTimeout(t);
-    // On timeout or network error, serve cached offline shell if we have it
-    const cached = await matchFirstAvailable(fallbacks);
-    if (cached) return cached;
-
-    // Fallback to any cached version of the request
-    const alt = await caches.match(req);
-    if (alt) return alt;
-
-    // Final hard failure
-    return new Response('Offline and no cached content available.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
-  }
 }
 
 async function matchFirstAvailable(fallbackUrls) {
