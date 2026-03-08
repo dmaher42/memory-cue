@@ -12,6 +12,7 @@ import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storag
 import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
+import { buildDashboard } from './js/modules/dashboard-data.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 
@@ -1519,50 +1520,14 @@ const initMobileNotes = () => {
     return body || 'Untitled note';
   };
 
-  const getDashboardSectionItems = (notes, matcher, maxItems = 3) => {
-    if (!Array.isArray(notes)) {
-      return [];
-    }
-    const items = notes.filter((note) => matcher(note));
-    return items.slice(0, maxItems);
-  };
-
   const buildDashboardData = () => {
-    const sourceNotes = sortNotesForDisplay(allNotes || []);
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfWeek = startOfToday - (now.getDay() * 24 * 60 * 60 * 1000);
-
-    const hasKeyword = (note, keywords = []) => {
-      const haystack = `${note?.title || ''} ${getNoteBodyText(note)}`.toLowerCase();
-      return keywords.some((keyword) => haystack.includes(keyword));
-    };
-
+    const dashboard = buildDashboard();
     return [
-      {
-        title: 'Today',
-        items: getDashboardSectionItems(sourceNotes, (note) => getNoteTimestamp(note) >= startOfToday),
-      },
-      {
-        title: 'This Week',
-        items: getDashboardSectionItems(sourceNotes, (note) => getNoteTimestamp(note) >= startOfWeek),
-      },
-      {
-        title: 'Coaching',
-        items: getDashboardSectionItems(sourceNotes, (note) => hasKeyword(note, ['coaching', 'drill', 'training'])),
-      },
-      {
-        title: 'Teaching',
-        items: getDashboardSectionItems(sourceNotes, (note) => hasKeyword(note, ['teaching', 'lesson', 'class', 'worksheet'])),
-      },
-      {
-        title: 'Recent',
-        items: sourceNotes.slice(0, 3),
-      },
-      {
-        title: 'Inbox',
-        items: getDashboardSectionItems(sourceNotes, (note) => normalizeFolderId(note?.folderId) === 'inbox'),
-      },
+      { title: 'Today', items: Array.isArray(dashboard.today) ? dashboard.today : [] },
+      { title: 'Coaching', items: Array.isArray(dashboard.coaching) ? dashboard.coaching : [] },
+      { title: 'Teaching', items: Array.isArray(dashboard.teaching) ? dashboard.teaching : [] },
+      { title: 'Recent', items: Array.isArray(dashboard.recent) ? dashboard.recent : [] },
+      { title: 'Inbox', items: Array.isArray(dashboard.inbox) ? dashboard.inbox : [] },
     ];
   };
 
