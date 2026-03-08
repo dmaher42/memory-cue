@@ -1,61 +1,64 @@
-import { buildActivityIndex, getRecentActivity } from './activity-index.js';
-import {
-  getCoachingItems,
-  getTeachingItems,
-  getThisWeekActions,
-  getTodayActions,
-} from './action-planner.js';
+import { getFolderNameById, loadAllNotes } from './notes-storage.js';
+import { getRecentActivity } from './activity-index.js';
 
-const INBOX_FOLDER_NAME = 'inbox';
+const COACHING_TYPES = new Set(['footy-drill', 'coaching-note']);
+const TEACHING_TYPES = new Set(['lesson-idea', 'lesson-reflection']);
 
-const normalizePriority = (value) => {
-  if (typeof value !== 'string') {
+const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const normalizeDateKey = (value) => {
+  const raw = normalizeString(value);
+  if (!raw) {
     return null;
   }
-  const trimmed = value.trim().toLowerCase();
-  return trimmed.length ? trimmed : null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  const year = String(parsed.getFullYear());
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
-const toDashboardItem = (item, activityById) => {
-  const activityEntry = item?.id ? activityById.get(item.id) : null;
+const getTodayKey = () => {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const toDashboardEntry = (note) => {
+  const metadata = note && typeof note.metadata === 'object' && note.metadata ? note.metadata : {};
 
   return {
-    id: typeof item?.id === 'string' ? item.id : '',
-    title: typeof item?.title === 'string' && item.title.trim() ? item.title.trim() : 'Untitled note',
-    type:
-      (typeof item?.type === 'string' && item.type.trim()) ||
-      (typeof activityEntry?.type === 'string' && activityEntry.type.trim()) ||
-      'note',
-    folder:
-      (typeof item?.folder === 'string' && item.folder.trim()) ||
-      (typeof activityEntry?.folder === 'string' && activityEntry.folder.trim()) ||
-      'Unsorted',
-    priority: normalizePriority(item?.priority ?? activityEntry?.aiPriority),
-    createdAt: activityEntry?.createdAt ?? 0,
+    id: normalizeString(note?.id),
+    title: normalizeString(note?.title) || 'Untitled note',
+    type: normalizeString(metadata.type || note?.type).toLowerCase() || 'note',
+    priority: normalizeString(metadata.aiPriority || note?.priority).toLowerCase(),
+    aiActionDate: normalizeDateKey(metadata.aiActionDate || note?.aiActionDate),
+    folder: normalizeString(getFolderNameById(note?.folderId)) || 'Unsorted',
   };
 };
 
-const mapActionItems = (items, activityById) => items.map((item) => toDashboardItem(item, activityById));
+const getRecentMemory = (limit = 10) => getRecentActivity(limit);
 
-const buildInboxItems = (activityEntries, activityById) => {
-  return mapActionItems(
-    activityEntries.filter(
-      (entry) => typeof entry.folder === 'string' && entry.folder.trim().toLowerCase() === INBOX_FOLDER_NAME,
-    ),
-    activityById,
-  );
-};
-
-export const buildDashboardData = () => {
-  const activityEntries = buildActivityIndex();
-  const activityById = new Map(activityEntries.map((entry) => [entry.id, entry]));
+export const buildDashboard = () => {
+  const entries = loadAllNotes().map((note) => toDashboardEntry(note));
+  const todayKey = getTodayKey();
 
   return {
-    today: mapActionItems(getTodayActions(), activityById),
-    thisWeek: mapActionItems(getThisWeekActions(), activityById),
-    coaching: mapActionItems(getCoachingItems(), activityById),
-    teaching: mapActionItems(getTeachingItems(), activityById),
-    recent: mapActionItems(getRecentActivity(10), activityById),
-    inbox: buildInboxItems(activityEntries, activityById),
+    today: entries.filter((entry) => entry.aiActionDate === todayKey || entry.priority === 'high'),
+    coaching: entries.filter((entry) => COACHING_TYPES.has(entry.type)),
+    teaching: entries.filter((entry) => TEACHING_TYPES.has(entry.type)),
+    recent: getRecentMemory(10),
+    inbox: entries.filter((entry) => entry.folder === 'Inbox'),
   };
 };
