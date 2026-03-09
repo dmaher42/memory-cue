@@ -58,7 +58,6 @@ function buildEntryMap(metafile) {
 
 async function buildScripts() {
   const moduleEntries = {
-    './app.js': 'app',
     './js/main.js': 'main',
     './js/config-supabase.js': 'config-supabase',
     './js/init-env.js': 'init-env',
