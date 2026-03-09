@@ -916,6 +916,77 @@ function openEditor() {
     setupSheet();
   }
 })();
+
+// =============================
+// Assistant UI
+// =============================
+
+function initAssistant() {
+  const sendBtn = document.getElementById('assistantSend');
+  const input = document.getElementById('assistantInput');
+  const output = document.getElementById('assistantOutput');
+
+  if (!sendBtn || !input) {
+    console.warn('Assistant UI not found');
+    return;
+  }
+
+  sendBtn.addEventListener('click', async () => {
+    const question = input.value.trim();
+    if (!question) return;
+
+    // show loading
+    if (output) {
+      output.innerHTML += `<div class="assistant-user">${question}</div>`;
+      output.innerHTML += '<div class="assistant-loading">Thinking...</div>';
+    }
+
+    try {
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          schemaVersion: 2,
+          question,
+          contextText: '',
+          entries: [],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (output) {
+        const loading = output.querySelector('.assistant-loading');
+        if (loading) loading.remove();
+
+        output.innerHTML += `
+          <div class="assistant-ai">
+            ${data.answer || 'No response'}
+          </div>
+        `;
+      }
+    } catch (err) {
+      console.error('Assistant error:', err);
+
+      if (output) {
+        output.innerHTML += `
+          <div class="assistant-error">
+            Assistant failed to respond
+          </div>
+        `;
+      }
+    }
+
+    input.value = '';
+  });
+}
+
+// ensure DOM loaded before attaching listeners
+document.addEventListener('DOMContentLoaded', () => {
+  initAssistant();
+});
 /* END GPT CHANGE */
 
 const bootstrapReminders = () => {
