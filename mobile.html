@@ -5236,6 +5236,422 @@ body, main, section, div, p, span, li {
       </button>
     </div>
   </div>
+  <script>
+    (function() {
+      const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
+      const fabButton = document.getElementById('mobile-fab-button');
+      const fabMenu = document.getElementById('mobile-fab-menu');
+
+      const updateBottomNavHeight = () => {
+        if (!navFooter) return;
+        const footerRect = navFooter.getBoundingClientRect();
+        const styles = getComputedStyle(navFooter);
+        const marginBottom = parseFloat(styles.marginBottom) || 0;
+        const totalHeight = footerRect.height + marginBottom;
+
+        if (totalHeight > 0) {
+          document.documentElement.style.setProperty(
+            '--mobile-bottom-nav-height',
+            `${Math.ceil(totalHeight)}px`
+          );
+        }
+      };
+
+      updateBottomNavHeight();
+
+      if (navFooter) {
+        if (typeof ResizeObserver === 'function') {
+          const observer = new ResizeObserver(updateBottomNavHeight);
+          observer.observe(navFooter);
+        } else {
+          window.addEventListener('resize', updateBottomNavHeight, { passive: true });
+        }
+      }
+
+      const focusNotebookInputs = () => {
+        // Do not auto-focus notebook fields on navigation to avoid opening mobile keyboards.
+      };
+
+      const closeSavedNotesSheet = () => {
+        try {
+          if (typeof window.hideSavedNotesSheet === 'function') {
+            window.hideSavedNotesSheet();
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+      };
+
+      const setActiveFooterIcon = (buttonId) => {
+        document
+          .querySelectorAll('#mobile-nav-shell .floating-card')
+          .forEach((btn) => {
+            if (!(btn instanceof HTMLElement)) return;
+            btn.classList.toggle('active', btn.id === buttonId);
+          });
+      };
+
+      const triggerAddReminder = (trigger) => {
+        const openQuickAddFallback = () => {
+          if (typeof window.triggerReminderQuickAdd === 'function') {
+            window.triggerReminderQuickAdd();
+            return;
+          }
+
+          const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+          if (quickAdd && typeof quickAdd.focus === 'function') {
+            quickAdd.focus();
+          }
+        };
+
+        if (typeof window.openNewReminderSheet === 'function') {
+          window.openNewReminderSheet(trigger || null);
+        } else {
+          const detail = { mode: 'create', trigger: trigger || null };
+          const sheet = document.getElementById('create-sheet');
+
+          if (sheet) {
+            document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
+            document.dispatchEvent(new CustomEvent('cue:open', { detail }));
+          } else {
+            openQuickAddFallback();
+          }
+        }
+      };
+
+      const navigateToNotebook = () => {
+        window.dispatchEvent(
+          new CustomEvent('app:navigate', {
+            detail: { view: 'notebook' }
+          })
+        );
+        setActiveFooterIcon('mobile-footer-notebook');
+        focusNotebookInputs();
+        closeSavedNotesSheet();
+      };
+
+      const closeFabMenu = () => {
+        if (fabMenu instanceof HTMLElement) {
+          fabMenu.dataset.open = 'false';
+          fabMenu.setAttribute('aria-hidden', 'true');
+          fabMenu.setAttribute('hidden', '');
+        }
+        if (fabButton instanceof HTMLElement) {
+          fabButton.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const openFabMenu = () => {
+        if (fabMenu instanceof HTMLElement) {
+          fabMenu.dataset.open = 'true';
+          fabMenu.setAttribute('aria-hidden', 'false');
+          fabMenu.removeAttribute('hidden');
+        }
+        if (fabButton instanceof HTMLElement) {
+          fabButton.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      fabButton?.addEventListener('click', (event) => {
+        event.preventDefault();
+        const isOpen = fabMenu?.dataset.open === 'true';
+        if (isOpen) {
+          closeFabMenu();
+        } else {
+          openFabMenu();
+        }
+      });
+
+      fabMenu?.addEventListener('click', (event) => {
+        const actionButton = event.target instanceof Element ? event.target.closest('[data-fab-action]') : null;
+        if (!actionButton) return;
+
+        event.preventDefault();
+        const action = actionButton.getAttribute('data-fab-action');
+        closeFabMenu();
+
+        if (action === 'new-reminder') {
+          triggerAddReminder(actionButton);
+          return;
+        }
+
+        if (action === 'new-note') {
+          navigateToNotebook();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (fabMenu?.dataset.open !== 'true') return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (target && target.closest('#mobile-fab-container')) return;
+        closeFabMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeFabMenu();
+        }
+      });
+
+      navFooter?.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
+        if (!button) return;
+
+        const view = button.getAttribute('data-nav-target');
+        if (!view) return;
+
+        closeFabMenu();
+        setActiveFooterIcon(button.id);
+
+        if (view === 'notebook') {
+          navigateToNotebook();
+          return;
+        }
+
+        closeSavedNotesSheet();
+        window.dispatchEvent(
+          new CustomEvent('app:navigate', {
+            detail: { view }
+          })
+        );
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      const categories = ['Inbox', 'Teaching', 'Coaching', 'Ideas', 'Tasks'];
+      const openButton = document.getElementById('openCategoriesView');
+      const backButton = document.getElementById('categoriesBackButton');
+      const cardGrid = document.getElementById('categoryCardGrid');
+      const entriesPanel = document.getElementById('categoryEntriesPanel');
+      const entriesTitle = document.getElementById('categoryEntriesTitle');
+      const categoryEntriesListEl = document.getElementById('categoryEntriesList');
+      const inboxEntriesList = document.getElementById('inboxEntriesList');
+
+      if (!(cardGrid instanceof HTMLElement) || !(categoryEntriesListEl instanceof HTMLElement) || !(inboxEntriesList instanceof HTMLElement)) {
+        return;
+      }
+
+      const readEntries = () => {
+        try {
+          const raw = window.localStorage?.getItem('reminderEntries');
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed?.entries)) return parsed.entries;
+          return [];
+        } catch (error) {
+          console.warn('Unable to read reminderEntries from localStorage', error);
+          return [];
+        }
+      };
+
+      const writeEntries = (entries) => {
+        try {
+          window.localStorage?.setItem('reminderEntries', JSON.stringify(entries));
+          document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+        } catch (error) {
+          console.warn('Unable to update reminderEntries in localStorage', error);
+        }
+      };
+
+      const getEntryText = (entry) => {
+        if (!entry || typeof entry !== 'object') return 'Untitled entry';
+        const title = typeof entry.title === 'string' && entry.title.trim() ? entry.title.trim() : '';
+        const text = typeof entry.text === 'string' && entry.text.trim() ? entry.text.trim() : '';
+        const content = typeof entry.content === 'string' && entry.content.trim() ? entry.content.trim() : '';
+        const body = typeof entry.body === 'string' && entry.body.trim() ? entry.body.trim() : '';
+        return title || text || content || body || 'Untitled entry';
+      };
+
+      const getEntryCategory = (entry) => {
+        const category = typeof entry?.category === 'string' ? entry.category.trim() : '';
+        return category || 'inbox';
+      };
+
+      const getEntryCreatedDate = (entry) => {
+        const value = entry?.createdAt || entry?.created || entry?.date;
+        if (!value) return 'Unknown date';
+        const dt = new Date(value);
+        return Number.isNaN(dt.getTime()) ? String(value) : dt.toLocaleString();
+      };
+
+      const renderCategoryEntries = (categoryName) => {
+        const targetCategory = String(categoryName || '').trim().toLowerCase();
+        const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === targetCategory);
+
+        entriesTitle.textContent = `${categoryName} entries`;
+        categoryEntriesListEl.innerHTML = '';
+
+        if (!entries.length) {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm opacity-70';
+          empty.textContent = 'No entries found in this category.';
+          categoryEntriesListEl.appendChild(empty);
+        } else {
+          entries.forEach((entry) => {
+            const item = document.createElement('div');
+            item.className = 'category-entry-item';
+            item.textContent = getEntryText(entry);
+            categoryEntriesListEl.appendChild(item);
+          });
+        }
+
+        entriesPanel?.classList.remove('hidden');
+      };
+
+      const renderInboxEntries = () => {
+        const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === 'inbox');
+        inboxEntriesList.innerHTML = '';
+
+        if (!entries.length) {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm opacity-70';
+          empty.textContent = 'No uncategorized entries in Inbox.';
+          inboxEntriesList.appendChild(empty);
+          return;
+        }
+
+        entries.forEach((entry, index) => {
+          const card = document.createElement('article');
+          card.className = 'category-entry-item space-y-2';
+
+          const text = document.createElement('p');
+          text.className = 'text-sm';
+          text.textContent = getEntryText(entry);
+
+          const meta = document.createElement('div');
+          meta.className = 'text-xs opacity-70 flex items-center gap-2 flex-wrap';
+
+          const categoryTag = document.createElement('span');
+          categoryTag.className = 'badge badge-outline badge-sm';
+          categoryTag.textContent = getEntryCategory(entry);
+
+          const createdAt = document.createElement('span');
+          createdAt.textContent = getEntryCreatedDate(entry);
+
+          meta.append(categoryTag, createdAt);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex items-center gap-2 flex-wrap';
+
+          const moveSelect = document.createElement('select');
+          moveSelect.className = 'select select-bordered select-xs';
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = 'Move to category';
+          moveSelect.appendChild(defaultOption);
+
+          categories
+            .filter((name) => name.toLowerCase() !== 'inbox')
+            .forEach((name) => {
+              const option = document.createElement('option');
+              option.value = name;
+              option.textContent = name;
+              moveSelect.appendChild(option);
+            });
+
+          moveSelect.addEventListener('change', () => {
+            if (!moveSelect.value) return;
+            const allEntries = readEntries();
+            const entryIndex = allEntries.findIndex((item) => {
+              if (entry?.id && item?.id) return item.id === entry.id;
+              return getEntryText(item) === getEntryText(entry) && index === entries.indexOf(entry);
+            });
+            if (entryIndex === -1) return;
+            allEntries[entryIndex] = {
+              ...allEntries[entryIndex],
+              category: moveSelect.value,
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          });
+
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'btn btn-xs btn-ghost';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', () => {
+            const updatedText = window.prompt('Edit entry text', getEntryText(entry));
+            if (updatedText === null) return;
+            const nextText = updatedText.trim();
+            if (!nextText) return;
+            const allEntries = readEntries();
+            const entryIndex = allEntries.findIndex((item) => item?.id && entry?.id ? item.id === entry.id : getEntryText(item) === getEntryText(entry));
+            if (entryIndex === -1) return;
+            const target = allEntries[entryIndex];
+            const key = typeof target.text === 'string' ? 'text' : typeof target.content === 'string' ? 'content' : 'title';
+            allEntries[entryIndex] = {
+              ...target,
+              [key]: nextText,
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          });
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'btn btn-xs btn-outline';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', () => {
+            const allEntries = readEntries();
+            const nextEntries = allEntries.filter((item) => (entry?.id && item?.id ? item.id !== entry.id : item !== entry));
+            writeEntries(nextEntries);
+            renderInboxEntries();
+          });
+
+          actions.append(moveSelect, editBtn, deleteBtn);
+          card.append(text, meta, actions);
+          inboxEntriesList.appendChild(card);
+        });
+      };
+
+      const renderCategoryCards = () => {
+        cardGrid.innerHTML = '';
+        categories.forEach((categoryName) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'category-card-button';
+          button.textContent = categoryName;
+          button.addEventListener('click', () => {
+            renderCategoryEntries(categoryName);
+          });
+          cardGrid.appendChild(button);
+        });
+      };
+
+      openButton?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'categories' } }));
+      });
+
+      backButton?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
+      });
+
+      document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'reminderEntries') {
+          renderInboxEntries();
+        }
+      });
+
+      if (typeof window.localStorage?.setItem === 'function' && !window.__memoryCueInboxSetItemPatched) {
+        const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
+        window.localStorage.setItem = function patchedSetItem(key, value) {
+          originalSetItem(key, value);
+          if (key === 'reminderEntries') {
+            document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+          }
+        };
+        window.__memoryCueInboxSetItemPatched = true;
+      }
+
+      renderCategoryCards();
+      renderInboxEntries();
+    })();
+  </script>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
