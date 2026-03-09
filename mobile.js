@@ -43,8 +43,12 @@ function initAssistant() {
         : value && value.tagName === 'INPUT';
     const assistantThread = document.getElementById('assistantThread');
     const assistantLoading = document.getElementById('assistantLoading');
-    const thinkingBarInput = document.getElementById('thinkingBarInput') || document.getElementById('quickAddInput');
-    const universalInput = document.getElementById('quickAddInput') || thinkingBarInput;
+    const thinkingBarInput = document.getElementById('thinkingBarInput')
+      || document.getElementById('universalInput')
+      || document.getElementById('quickAddInput');
+    const universalInput = document.getElementById('universalInput')
+      || document.getElementById('quickAddInput')
+      || thinkingBarInput;
     const quickAddForm = document.getElementById('quickAddForm');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
