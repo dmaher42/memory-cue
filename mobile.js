@@ -55,6 +55,11 @@ initViewportHeight();
     const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
+    const quickCaptureButton = document.getElementById('quickCaptureButton');
+    const quickCaptureModal = document.getElementById('quickCaptureModal');
+    const quickCaptureInput = document.getElementById('quickCaptureInput');
+    const quickCaptureSave = document.getElementById('quickCaptureSave');
+    const quickCaptureCancel = document.getElementById('quickCaptureCancel');
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
 
@@ -333,19 +338,16 @@ initViewportHeight();
       ]);
     };
 
-    const sendAssistantMessage = async (event) => {
-      if (event) {
-        event.preventDefault();
-      }
+    const processThinkingBarMessage = async (rawMessage, options = {}) => {
       if (isAssistantSending) {
-        return;
+        return false;
       }
 
-      const message = thinkingBarInput.value || '';
+      const message = typeof rawMessage === 'string' ? rawMessage : '';
       const trimmedMessage = message.trim();
 
       if (!trimmedMessage) {
-        return;
+        return false;
       }
 
       const isAssistantMode = trimmedMessage.endsWith('?');
@@ -365,8 +367,12 @@ initViewportHeight();
       clearThinkingBarResults();
       appendAssistantMessage(message);
 
-      thinkingBarInput.value = '';
-      thinkingBarInput.focus();
+      if (options.clearThinkingBarInput !== false) {
+        thinkingBarInput.value = '';
+      }
+      if (options.focusThinkingBarInput !== false) {
+        thinkingBarInput.focus();
+      }
 
       if (isSearchMode) {
         if (assistantLoading instanceof HTMLElement) {
@@ -374,7 +380,7 @@ initViewportHeight();
         }
         isAssistantSending = false;
         await renderSearchResults(trimmedMessage);
-        return;
+        return true;
       }
 
       try {
@@ -473,6 +479,19 @@ initViewportHeight();
           assistantLoading.classList.add('hidden');
         }
       }
+
+      return true;
+    };
+
+    const sendAssistantMessage = async (event) => {
+      if (event) {
+        event.preventDefault();
+      }
+
+      await processThinkingBarMessage(thinkingBarInput.value || '', {
+        clearThinkingBarInput: true,
+        focusThinkingBarInput: true,
+      });
     };
 
     assistantForm.addEventListener('submit', sendAssistantMessage);
@@ -504,6 +523,78 @@ initViewportHeight();
 
     if (isButtonElement(assistantSendBtn)) {
       assistantSendBtn.addEventListener('click', sendAssistantMessage);
+    }
+
+    const openQuickCaptureModal = () => {
+      if (!(quickCaptureModal instanceof HTMLElement) || !isInputElement(quickCaptureInput)) {
+        return;
+      }
+      quickCaptureModal.classList.remove('hidden');
+      quickCaptureModal.setAttribute('aria-hidden', 'false');
+      quickCaptureInput.value = '';
+      quickCaptureInput.focus();
+    };
+
+    const closeQuickCaptureModal = () => {
+      if (!(quickCaptureModal instanceof HTMLElement) || !isInputElement(quickCaptureInput)) {
+        return;
+      }
+      quickCaptureModal.classList.add('hidden');
+      quickCaptureModal.setAttribute('aria-hidden', 'true');
+      quickCaptureInput.value = '';
+    };
+
+    const saveQuickCapture = async () => {
+      if (!isInputElement(quickCaptureInput)) {
+        return;
+      }
+      const didSend = await processThinkingBarMessage(quickCaptureInput.value || '', {
+        clearThinkingBarInput: false,
+        focusThinkingBarInput: true,
+      });
+      if (didSend) {
+        closeQuickCaptureModal();
+      }
+    };
+
+    if (quickCaptureButton instanceof HTMLElement) {
+      quickCaptureButton.addEventListener('click', openQuickCaptureModal);
+      quickCaptureButton.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openQuickCaptureModal();
+        }
+      });
+    }
+
+    if (quickCaptureCancel instanceof HTMLElement) {
+      quickCaptureCancel.addEventListener('click', closeQuickCaptureModal);
+    }
+
+    if (quickCaptureSave instanceof HTMLElement) {
+      quickCaptureSave.addEventListener('click', saveQuickCapture);
+    }
+
+    if (isInputElement(quickCaptureInput)) {
+      quickCaptureInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          saveQuickCapture();
+        }
+      });
+    }
+
+    if (quickCaptureModal instanceof HTMLElement) {
+      quickCaptureModal.addEventListener('click', (event) => {
+        if (event.target === quickCaptureModal) {
+          closeQuickCaptureModal();
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !quickCaptureModal.classList.contains('hidden')) {
+          closeQuickCaptureModal();
+        }
+      });
     }
   };
 

@@ -248,6 +248,57 @@
       margin-bottom: 0.12rem;
     }
 
+    #quickCaptureButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.85rem;
+      line-height: 1;
+      color: #ffffff;
+      background: #111111;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      cursor: pointer;
+    }
+
+    #quickCaptureModal {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    #quickCaptureModal.hidden {
+      display: none;
+    }
+
+    .quick-capture-panel {
+      width: min(460px, 100%);
+      background: var(--surface-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.9rem;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+      padding: 1rem;
+    }
+
+    .quick-capture-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
     .reminders-quick-actions .icon-btn,
     .mobile-footer-nav button,
     .mobile-footer-nav .footer-button,
@@ -5234,6 +5285,20 @@ body, main, section, div, p, span, li {
         </svg>
         <span>Assistant</span>
       </button>
+    </div>
+  </div>
+
+  <div id="quickCaptureButton" role="button" tabindex="0" aria-label="Open quick capture">+</div>
+
+  <div id="quickCaptureModal" class="hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="quickCaptureTitle">
+    <div class="quick-capture-panel">
+      <h2 id="quickCaptureTitle" class="text-base font-semibold mb-3">Capture anything…</h2>
+      <label for="quickCaptureInput" class="sr-only">Capture anything</label>
+      <input id="quickCaptureInput" class="input input-sm w-full" type="text" autocomplete="off" placeholder="Capture anything…" />
+      <div class="quick-capture-actions">
+        <button id="quickCaptureCancel" type="button" class="btn btn-ghost btn-sm">Cancel</button>
+        <button id="quickCaptureSave" type="button" class="btn btn-primary btn-sm">Save</button>
+      </div>
     </div>
   </div>
   <script>
