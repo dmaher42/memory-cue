@@ -1,0 +1,97 @@
+:root {
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --mobile-bottom-nav-height: 88px;
+  --mobile-input-bar-height: 64px;
+}
+
+body {
+  overflow: hidden;
+}
+
+#main {
+  height: 100vh;
+  overflow-y: auto;
+  padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-input-bar-height) + var(--space-3)) !important;
+}
+
+.mobile-header {
+  padding: var(--space-2);
+}
+
+.header-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+#smartInputBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--mobile-bottom-nav-height) + var(--space-1));
+  z-index: 55;
+  padding: 0 var(--space-2);
+}
+
+.smart-input-form {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: #fff;
+  border: 1px solid var(--border-subtle, #e3d9f4);
+  border-radius: 999px;
+  padding: var(--space-1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.smart-input-form .quick-add-input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  padding: 0 var(--space-1);
+}
+
+.smart-send-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+  background: var(--accent-color, #512663);
+  color: #fff;
+}
+
+#mobile-nav-shell {
+  position: fixed !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 var(--space-2) var(--space-1);
+  pointer-events: none;
+}
+
+#mobile-nav-shell .floating-footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  pointer-events: auto;
+}
+
+#mobile-nav-shell .floating-footer .floating-card {
+  flex: 1 1 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 72px;
+}
+
+#mobile-nav-shell .floating-footer .floating-card span {
+  font-size: 12px;
+}
