@@ -64,7 +64,13 @@ body.app-shell .quick-add-input {
   border-radius: 12px;
   background: #fff;
   padding: 0 var(--space-2);
-  min-height: 40px;
+  min-height: 48px;
+}
+
+body.app-shell .smart-send-button {
+  min-height: 48px;
+  min-width: 88px;
+  padding: 0 var(--space-2);
 }
 
 body.app-shell .bottom-nav,
@@ -80,6 +86,7 @@ body.app-shell #mobile-nav-shell {
   background: #fff;
   border-top: 1px solid var(--border-subtle, #e3d9f4);
   padding: 0 var(--space-1);
+  pointer-events: auto;
   z-index: 59;
 }
 
@@ -93,7 +100,12 @@ body.app-shell #mobile-nav-shell .floating-footer {
 
 body.app-shell #mobile-nav-shell .floating-card {
   min-height: 48px;
+  min-width: 48px;
   border-radius: 12px;
+}
+
+body.app-shell .reminders-quick-bar {
+  display: none !important;
 }
 
 body.app-shell #mobile-nav-shell .floating-card.active,
