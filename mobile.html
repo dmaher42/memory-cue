@@ -2103,17 +2103,22 @@ body, main, section, div, p, span, li {
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <style>
     /* New Header Styles */
-    .mobile-header {
-      background: var(--cauliflower-blue);
-      padding: 10px 16px;
+    .mobile-header,
+    .app-header {
+      height: 56px;
+      min-height: 56px;
+      max-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: sticky;
       top: 0;
+      padding: 0 16px;
       z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: rgba(255,255,255,0.85);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-sizing: border-box;
     }
 
     #view-reminders h1,
@@ -2129,21 +2134,30 @@ body, main, section, div, p, span, li {
     }
 
     .header-main-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: contents;
     }
 
-    .header-title {
+    .header-title,
+    .title {
       font-size: 18px;
       font-weight: 600;
-      letter-spacing: -0.2px;
       margin: 0;
+      line-height: 1.2;
     }
 
-    .header-actions {
-      display: flex;
-      gap: var(--space-1);
+    .app-header button {
+      width: 40px;
+      height: 40px;
+    }
+
+    .menu {
+      position: absolute;
+      left: 12px;
+    }
+
+    .search {
+      position: absolute;
+      right: 12px;
     }
 
     .header-quick-add,
@@ -2278,8 +2292,8 @@ body, main, section, div, p, span, li {
     }
 
     .icon-button.control-icon-button {
-      width: var(--control-size-md);
-      height: var(--control-size-md);
+      width: 40px;
+      height: 40px;
     }
 
     .inbox-search-clear {
@@ -4353,17 +4367,22 @@ body, main, section, div, p, span, li {
     }
 
     /* NEW: Sticky lilac header with separated shell layout */
-    #reminders-slim-header {
-      position: relative;
+#reminders-slim-header {
+      position: sticky;
+      top: 0;
       z-index: 10;
       width: 100%;
-      padding: 8px 16px;
+      height: 56px;
+      min-height: 56px;
+      max-height: 56px;
+      padding: 0 16px;
       background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.55);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       color: var(--text-strong, #34163f);
+      box-sizing: border-box;
     }
 
     /* Tighter header sizing for small mobile viewports */
@@ -4404,7 +4423,7 @@ body, main, section, div, p, span, li {
     /* Responsive adjustments for narrow screens */
     @media (max-width: 380px) {
       #reminders-slim-header {
-        padding: 0.35rem 0.65rem;
+        padding: 0 16px;
       }
 
       #reminders-slim-header .header-actions {
@@ -4497,15 +4516,11 @@ body, main, section, div, p, span, li {
 
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
-    <div class="header-main-row">
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
-      <h1 class="header-title">Memory Cue</h1>
-      <div class="header-actions">
-        <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Search">
-          🔍
-        </button>
-      </div>
-    </div>
+      <h1 class="header-title title">Memory Cue</h1>
+      <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Search">
+        🔍
+      </button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <!-- Reminders -->
         <div class="overflow-menu-section">
