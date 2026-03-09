@@ -57,12 +57,28 @@ function buildEntryMap(metafile) {
 }
 
 async function buildScripts() {
+  const mobileEntry = './mobile.js';
+  const appEntry = './app.js';
+
+  let primaryEntry;
+  try {
+    await fs.access(path.join(rootDir, mobileEntry));
+    primaryEntry = mobileEntry;
+  } catch {
+    try {
+      await fs.access(path.join(rootDir, appEntry));
+      primaryEntry = appEntry;
+    } catch {
+      throw new Error('No valid entry point found for Memory Cue build.');
+    }
+  }
+
   const moduleEntries = {
     './js/main.js': 'main',
     './js/config-supabase.js': 'config-supabase',
     './js/init-env.js': 'init-env',
     './js/mobile-theme-toggle.js': 'mobile-theme-toggle',
-    './mobile.js': 'mobile',
+    [primaryEntry]: 'mobile',
   };
 
   const legacyEntries = {
