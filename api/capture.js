@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
   const schemaVersion = payload.schemaVersion;
   const input = typeof payload.input === 'string' ? payload.input.trim() : '';
 
-  if (schemaVersion !== 1) {
+  if (schemaVersion !== 2) {
     return res.status(400).json({ error: 'Invalid schemaVersion.' });
   }
 
@@ -69,14 +69,8 @@ module.exports = async function handler(req, res) {
                   'Turn the user\'s free-text input into one structured Memory Cue entry.',
                   'Keep titles short and useful.',
                   'Preserve the user\'s meaning.',
-                  'Classify into practical types such as: task, reminder, lesson-idea, lesson-reflection, footy-drill, coaching-note, meeting-note, personal-note, resource.',
+                  'Classify into one type only: note, reminder, drill, idea, or task.',
                   'Generate 0 to 5 short lowercase tags.',
-                  'Choose a simple folder name like: Teaching, Coaching, Personal, Admin, Ideas.',
-                  'Set priority as low, medium, or high based on urgency/importance.',
-                  'Set actionDate to null unless the user clearly implies timing; if implied, return a short ISO-like string the app can store (for example: tomorrow morning, monday, before training, next lesson).',
-                  'Set followUpQuestion to an empty string unless one short clarifying question would materially improve the entry later.',
-                  'Lean into teacher/coach workflows by correctly routing school/lesson notes to Teaching and training/footy notes to Coaching when appropriate.',
-                  'If uncertain, still return the best structure and lower the confidence score.',
                   'Never return markdown.',
                   'Never return extra keys.'
                 ].join(' ')
@@ -102,34 +96,27 @@ module.exports = async function handler(req, res) {
               type: 'object',
               additionalProperties: false,
               properties: {
-                type: { type: 'string' },
+                type: {
+                  type: 'string',
+                  enum: ['note', 'reminder', 'drill', 'idea', 'task']
+                },
                 title: { type: 'string' },
                 body: { type: 'string' },
                 tags: {
                   type: 'array',
                   items: { type: 'string' }
                 },
-                folder: { type: 'string' },
-                priority: {
-                  type: 'string',
-                  enum: ['low', 'medium', 'high']
-                },
-                actionDate: {
-                  type: ['string', 'null']
-                },
-                followUpQuestion: { type: 'string' },
-                confidence: { type: 'number' }
+                relatedIds: {
+                  type: 'array',
+                  items: { type: 'string' }
+                }
               },
               required: [
                 'type',
                 'title',
                 'body',
                 'tags',
-                'folder',
-                'priority',
-                'actionDate',
-                'followUpQuestion',
-                'confidence'
+                'relatedIds'
               ]
             }
           }
@@ -169,15 +156,7 @@ module.exports = async function handler(req, res) {
         title: result.title,
         body: result.body,
         tags: Array.isArray(result.tags) ? result.tags : [],
-        folder: result.folder,
-        priority:
-          result.priority === 'high' || result.priority === 'medium' || result.priority === 'low'
-            ? result.priority
-            : 'low',
-        actionDate: typeof result.actionDate === 'string' ? result.actionDate : null,
-        followUpQuestion:
-          typeof result.followUpQuestion === 'string' ? result.followUpQuestion : '',
-        confidence: typeof result.confidence === 'number' ? result.confidence : 0
+        relatedIds: Array.isArray(result.relatedIds) ? result.relatedIds : []
       }
     });
   } catch (_error) {

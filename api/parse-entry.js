@@ -5,12 +5,11 @@ const PARSED_ENTRY_SCHEMA = {
     type: {
       type: 'string',
       enum: [
-        'footy_drill',
-        'netball_note',
-        'reflection',
+        'note',
         'reminder',
-        'teaching_note',
-        'general_note'
+        'drill',
+        'idea',
+        'task'
       ]
     },
     title: { type: 'string' },
@@ -92,7 +91,7 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: `Return ONLY JSON matching schema.\nExtract:\n- type (footy_drill, netball_note, reflection, reminder, teaching_note, general_note)\n- title (short summary under 60 chars)\n- tags (lowercase keywords)\n- reminderDate (ISO string if date/time mentioned, else null)\nIf unsure, use general_note.`
+                text: `Return ONLY JSON matching schema.\nExtract:\n- type (note, reminder, drill, idea, task)\n- title (short summary under 60 chars)\n- tags (lowercase keywords)\n- reminderDate (ISO string if date/time mentioned, else null)\nIf unsure, use note.`
               }
             ]
           },

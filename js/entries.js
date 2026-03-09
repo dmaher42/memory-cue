@@ -134,7 +134,7 @@
 
   const readEntries = () => {
     try {
-      const raw = window.localStorage?.getItem('memoryCueEntries');
+      const raw = window.localStorage?.getItem('memoryEntries');
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return parsed;
@@ -148,7 +148,7 @@
 
   const writeEntries = (entries) => {
     try {
-      window.localStorage?.setItem('memoryCueEntries', JSON.stringify(entries));
+      window.localStorage?.setItem('memoryEntries', JSON.stringify(entries));
       document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
     } catch (error) {
       console.warn('Unable to update memoryCueEntries in localStorage', error);
@@ -223,6 +223,11 @@
       const meta = document.createElement('div');
       meta.className = 'text-xs opacity-70 flex items-center gap-2 flex-wrap';
 
+      const typeTag = document.createElement('span');
+      typeTag.className = 'badge badge-outline badge-sm';
+      const entryType = typeof entry?.type === 'string' && entry.type.trim() ? entry.type.trim() : 'note';
+      typeTag.textContent = `${entryType.charAt(0).toUpperCase()}${entryType.slice(1)} card`;
+
       const categoryTag = document.createElement('span');
       categoryTag.className = 'badge badge-outline badge-sm';
       categoryTag.textContent = getEntryCategory(entry);
@@ -230,7 +235,7 @@
       const createdAt = document.createElement('span');
       createdAt.textContent = getEntryCreatedDate(entry);
 
-      meta.append(categoryTag, createdAt);
+      meta.append(typeTag, categoryTag, createdAt);
 
       const actions = document.createElement('div');
       actions.className = 'flex items-center gap-2 flex-wrap';
@@ -332,7 +337,7 @@
 
   document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
   window.addEventListener('storage', (event) => {
-    if (event.key === 'memoryCueEntries') {
+    if (event.key === 'memoryEntries') {
       renderInboxEntries();
     }
   });
@@ -341,7 +346,7 @@
     const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
     window.localStorage.setItem = function patchedSetItem(key, value) {
       originalSetItem(key, value);
-      if (key === 'memoryCueEntries') {
+      if (key === 'memoryEntries') {
         document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
       }
     };
