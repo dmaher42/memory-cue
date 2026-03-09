@@ -1,6 +1,6 @@
 /* Base Styles */
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -27,7 +27,13 @@ body.mobile-theme footer {
 
 .mobile-header,
 .app-header {
-  flex: 0 0 auto;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 #mobile-shell {
@@ -41,9 +47,15 @@ body.mobile-theme footer {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   box-sizing: border-box;
   padding-bottom: 80px;
   overflow-y: auto;
+}
+
+#mobile-shell #main > * {
+  margin-top: 0;
 }
 
 /* Micro-gap under the mobile header so content sits just below the quick bar */
@@ -114,7 +126,7 @@ body.mobile-shell #mobile-shell #reminderList,
 .mobile-shell #reminderList {
   width: 100%;
   max-width: 100%;
-  margin: 50px auto;
+  margin: 0 auto;
   padding-inline: 0;
   padding-top: 5px;
   box-sizing: border-box;
