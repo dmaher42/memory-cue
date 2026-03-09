@@ -18,6 +18,7 @@
   let db = null;
   let storageAvailable = true;
   let activeTypeFilter = 'all';
+  let activeTagFilter = 'all';
   let activeSearch = '';
   let pendingDelete = null;
   let toastTimer = null;
@@ -29,7 +30,9 @@
   const brainDumpToggle = document.getElementById('brainDumpToggle');
   const brainDumpHint = document.getElementById('brainDumpHint');
   const searchInput = document.getElementById('searchInput');
+  const tagsInput = document.getElementById('tagsInput');
   const typeFilters = document.getElementById('typeFilters');
+  const tagFilters = document.getElementById('tagFilters');
   const entriesList = document.getElementById('entriesList');
   const timelineList = document.getElementById('timelineList');
   const assistantInput = document.getElementById('assistantInput');
@@ -64,6 +67,21 @@
     return line.replace(/^[-•*]\s+/, '').trim();
   }
 
+  function parseTags(rawTags) {
+    if (!rawTags) {
+      return [];
+    }
+
+    return String(rawTags)
+      .split(',')
+      .map(function (tag) {
+        return tag.trim().toLowerCase();
+      })
+      .filter(function (tag, index, array) {
+        return tag.length > 0 && array.indexOf(tag) === index;
+      });
+  }
+
   function parseTypeAndContent(text) {
     const trimmed = text.trim();
     const match = trimmed.match(/^([a-zA-Z]+)\s*:\s*(.+)$/);
@@ -79,7 +97,7 @@
     return { type: mappedType, content: match[2].trim() };
   }
 
-  function makeEntry(rawText) {
+  function makeEntry(rawText, tags) {
     const parsed = parseTypeAndContent(rawText);
     const now = new Date().toISOString();
     const title = parsed.content.length > 80 ? `${parsed.content.slice(0, 77)}...` : parsed.content;
@@ -92,7 +110,7 @@
       status: parsed.type === 'task' ? 'open' : 'active',
       title,
       body: parsed.content,
-      tags: [],
+      tags: Array.isArray(tags) ? tags : [],
       dueAt: null,
       source: {
         channel: 'capture',
@@ -144,7 +162,11 @@
           status: type === 'task' ? 'open' : 'active',
           title,
           body,
-          tags: [],
+          tags: Array.isArray(item.tags)
+            ? item.tags.map(function (tag) {
+                return String(tag).trim().toLowerCase();
+              }).filter(Boolean)
+            : [],
           dueAt: null,
           source: {
             channel: 'legacy-import',
@@ -172,7 +194,11 @@
           return {
             schemaVersion: SCHEMA_VERSION,
             settings: Object.assign({ brainDumpMode: false }, parsed.settings || {}),
-            entries: parsed.entries
+            entries: parsed.entries.map(function (entry) {
+              return Object.assign({}, entry, {
+                tags: Array.isArray(entry.tags) ? entry.tags : []
+              });
+            })
           };
         }
       }
@@ -250,6 +276,12 @@
     return currentEntries()
       .filter(function (entry) {
         return activeTypeFilter === 'all' ? true : entry.type === activeTypeFilter;
+      })
+      .filter(function (entry) {
+        if (activeTagFilter === 'all') {
+          return true;
+        }
+        return (entry.tags || []).includes(activeTagFilter);
       })
       .filter(function (entry) {
         if (!activeSearch) {
@@ -380,10 +412,55 @@
       button.addEventListener('click', function () {
         activeTypeFilter = label;
         renderTypeFilters();
+        renderTagFilters();
         renderEntries();
         renderTimeline();
       });
       typeFilters.appendChild(button);
+    });
+  }
+
+  function renderTagFilters() {
+    if (!tagFilters) {
+      return;
+    }
+
+    const counts = {};
+    currentEntries().forEach(function (entry) {
+      (entry.tags || []).forEach(function (tag) {
+        counts[tag] = (counts[tag] || 0) + 1;
+      });
+    });
+
+    const tags = Object.keys(counts).sort();
+    tagFilters.innerHTML = '';
+
+    const allButton = document.createElement('button');
+    allButton.type = 'button';
+    allButton.className = `filter-pill${activeTagFilter === 'all' ? ' is-active' : ''}`;
+    allButton.textContent = `all tags (${currentEntries().length})`;
+    allButton.setAttribute('aria-pressed', activeTagFilter === 'all' ? 'true' : 'false');
+    allButton.addEventListener('click', function () {
+      activeTagFilter = 'all';
+      renderTagFilters();
+      renderEntries();
+      renderTimeline();
+    });
+    tagFilters.appendChild(allButton);
+
+    tags.forEach(function (tag) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `filter-pill${activeTagFilter === tag ? ' is-active' : ''}`;
+      button.textContent = `${tag} (${counts[tag]})`;
+      button.setAttribute('aria-pressed', activeTagFilter === tag ? 'true' : 'false');
+      button.addEventListener('click', function () {
+        activeTagFilter = tag;
+        renderTagFilters();
+        renderEntries();
+        renderTimeline();
+      });
+      tagFilters.appendChild(button);
     });
   }
 
@@ -417,6 +494,7 @@
 
   function renderEntries() {
     renderTypeFilters();
+    renderTagFilters();
     const list = filteredEntries();
     entriesList.innerHTML = '';
 
@@ -454,6 +532,15 @@
       const body = document.createElement('p');
       body.className = 'entry-body';
       body.textContent = entry.body;
+
+      const tagsRow = document.createElement('div');
+      tagsRow.className = 'entry-tags';
+      (entry.tags || []).forEach(function (tag) {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.textContent = tag;
+        tagsRow.appendChild(chip);
+      });
 
       const bottomRow = document.createElement('div');
       bottomRow.className = 'entry-row-bottom';
@@ -517,6 +604,9 @@
       card.appendChild(topRow);
       card.appendChild(title);
       card.appendChild(body);
+      if (tagsRow.childElementCount > 0) {
+        card.appendChild(tagsRow);
+      }
       card.appendChild(bottomRow);
       entriesList.appendChild(card);
     });
@@ -537,6 +627,7 @@
     }
 
     const created = [];
+    const tags = parseTags(tagsInput ? tagsInput.value : '');
     if (db.settings.brainDumpMode) {
       const lines = text
         .split('\n')
@@ -546,10 +637,10 @@
         });
 
       lines.forEach(function (line) {
-        created.push(makeEntry(line));
+        created.push(makeEntry(line, tags));
       });
     } else {
-      created.push(makeEntry(text));
+      created.push(makeEntry(text, tags));
     }
 
     if (!created.length) {
@@ -574,6 +665,9 @@
     }
 
     captureInput.value = '';
+    if (tagsInput) {
+      tagsInput.value = '';
+    }
     showToast(count === 1 ? 'Saved 1 entry.' : `Saved ${count} entries.`);
     renderEntries();
     renderTimeline();
