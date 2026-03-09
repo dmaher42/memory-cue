@@ -189,10 +189,13 @@ body.mobile-theme header,
 body.mobile-theme .top-bar {
   background-color: #5080BF;
   color: #FFFFFF;
-  padding: 1rem 1.10rem;
+  height: 56px;
+  min-height: 56px;
+  max-height: 56px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.75rem;
 }
 
@@ -203,7 +206,7 @@ body.mobile-theme .app-header h2,
 body.mobile-theme header h2,
 body.mobile-theme .top-bar h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 18px;
   font-weight: 600;
 }
 
