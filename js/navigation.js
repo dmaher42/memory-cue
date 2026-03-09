@@ -375,54 +375,6 @@
   }
 })();
 
-(function() {
-  const header = document.getElementById('reminders-slim-header');
-  const main = document.querySelector('main');
-
-  function applyFixedHeader() {
-    if (!header) return;
-
-    // Add sticky header class
-    header.classList.add('force-fixed');
-    header.style.backdropFilter = 'blur(14px)';
-    header.style.willChange = 'transform, top';
-
-    // Measure header height
-    const rect = header.getBoundingClientRect();
-    if (rect.height > 0) {
-      const height = Math.ceil(rect.height);
-      // Apply a small visual padding (6px gap)
-      const finalHeight = height + 6;
-
-      // Set the header height CSS variable
-      document.documentElement.style.setProperty('--mobile-header-height', `${finalHeight}px`);
-
-      // Apply top padding to main content so it doesn't go under the header
-      // But respect notebook view's own padding rule (which uses the variable)
-      if (main && !main.closest('[data-active-view="notebook"]')) {
-         main.style.paddingTop = `${finalHeight}px`;
-      }
-    }
-  }
-
-  // Update on load, resize, and mutations
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyFixedHeader);
-  } else {
-    applyFixedHeader();
-  }
-  window.addEventListener('resize', applyFixedHeader);
-  window.addEventListener('orientationchange', applyFixedHeader);
-
-  // Use ResizeObserver for robust height tracking
-  if (typeof ResizeObserver !== 'undefined' && header) {
-    const ro = new ResizeObserver(() => {
-      applyFixedHeader();
-    });
-    ro.observe(header);
-  }
-})();
-
 // Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
 // prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
 (function() {
@@ -772,4 +724,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
-
