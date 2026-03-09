@@ -3645,101 +3645,6 @@
     }
   </style>
 
-  <header class="sticky top-0 z-40 w-full">
-    <div
-      class="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2 flex-nowrap backdrop-blur"
-      style="background: var(--mobile-header-bg); border-bottom: 1px solid var(--mobile-header-border); box-shadow: var(--mobile-header-shadow); color: var(--mobile-header-text);"
-    >
-      <div class="flex items-center gap-3 min-w-0 flex-nowrap">
-        <button
-          id="btn-open-drawer"
-          type="button"
-          class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
-          aria-label="Open navigation menu"
-          aria-expanded="false"
-        >
-          <span class="text-xl leading-none" aria-hidden="true">🏠</span>
-        </button>
-           </div>
-
-      <div class="flex items-center gap-2 flex-shrink-0 flex-nowrap">
-        <button
-          id="addReminderBtn"
-          type="button"
-          class="mc-add-btn btn btn-primary btn-sm gap-1 whitespace-nowrap"
-          data-open-add-task
-          data-open-quick-add
-          aria-controls="quickAddBar"
-          aria-expanded="false"
-        >
-          <span class="mc-add-btn-icon" aria-hidden="true">＋</span>
-          <span class="mc-add-btn-label">Add reminder</span>
-        </button>
-        <div class="relative">
-          <button
-            id="overflowMenuBtn"
-            type="button"
-            class="header-icon-btn inline-flex items-center justify-center w-10 h-10 rounded-full transition"
-            aria-label="Open quick settings"
-            aria-haspopup="menu"
-            aria-controls="overflowMenu"
-            aria-expanded="false"
-          >
-            <span class="text-xl leading-none" aria-hidden="true">⚙️</span>
-          </button>
-
-          <div
-            id="overflowMenu"
-            class="hidden quick-actions-panel absolute right-0 mt-2"
-            role="menu"
-            aria-hidden="true"
-            aria-labelledby="overflowMenuHeading"
-          >
-            <h2 id="overflowMenuHeading" class="sr-only">Quick settings</h2>
-            <ul class="quick-actions" role="presentation">
-              <li role="none">
-                <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                  <span class="sr-only">Dictate reminder</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                  <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                  <span class="sr-only">Open settings</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                  <span class="sr-only">Toggle theme</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                  <span class="sr-only">Sign in</span>
-                </button>
-              </li>
-              <li role="none">
-                <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                  <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                  <span class="sr-only">Sign out</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-
   <div
     id="mobile-drawer-scrim"
     class="fixed inset-0 z-30 bg-neutral-900/40 opacity-0 transition-opacity duration-200 pointer-events-none"
@@ -4074,8 +3979,9 @@
         type="button"
         class="header-btn header-btn-icon"
         data-open-add-task
+        data-open-quick-add
         aria-label="Open detailed reminder form"
-        aria-controls="createReminderModal"
+        aria-controls="quickAddBar"
         aria-expanded="false"
       >
         <span class="text-lg leading-none" aria-hidden="true">＋</span>
@@ -4262,188 +4168,6 @@
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="mobile-view-inner mx-auto w-full max-w-md px-4 pt-4 pb-4 space-y-2">
-        <header
-          id="reminders-slim-header"
-          class="w-full px-4 pt-3 pb-3 mobile-header pt-safe-top"
-          role="banner"
-        >
-          <div class="max-w-3xl mx-auto">
-            <div class="reminders-top-row">
-              <form id="quickAddForm" class="reminders-quick-bar" onsubmit="return false;">
-
-                <!-- Left: quick reminder text field -->
-                <input
-                  id="quickAddInput"
-                  type="text"
-                  placeholder="Quick reminder..."
-                  autocomplete="off"
-                />
-
-                <!-- Middle: existing All / Today segmented control -->
-                <div class="reminder-tabs" role="tablist" aria-label="Reminder filters">
-                  <button
-                    type="button"
-                    class="reminder-tab reminders-tab reminders-tab-active"
-                    data-reminders-tab="all"
-                    data-filter="all"
-                    aria-pressed="true"
-                  >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    class="reminder-tab reminders-tab"
-                    data-reminders-tab="today"
-                    data-filter="today"
-                    aria-pressed="false"
-                  >
-                    Today
-                  </button>
-                </div>
-
-                <!-- Right: saved, mic, save, overflow -->
-                <div class="reminders-quick-actions">
-                  <button
-                    id="openSavedNotesGlobal"
-                    type="button"
-                    class="icon-btn"
-                    aria-label="Open saved notes"
-                  >
-                    <svg
-                      class="icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M6.25 3.5H13.75C14.44 3.5 15 4.06 15 4.75V16.5L10 13.8 5 16.5V4.75C5 4.06 5.56 3.5 6.25 3.5Z" />
-                    </svg>
-                  </button>
-                  <button
-                    id="startVoiceCaptureGlobal"
-                    type="button"
-                    class="icon-btn"
-                    aria-label="Start voice capture"
-                  >
-                    <svg
-                      class="icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <rect x="6.5" y="3.5" width="7" height="9" rx="3.5" />
-                      <path d="M5.5 9.75V10c0 2.48 2 4.5 4.5 4.5s4.5-2.02 4.5-4.5V9.75" />
-                      <path d="M10 14.5V17" />
-                      <path d="M7.5 17h5" />
-                    </svg>
-                  </button>
-                  <button
-                    id="quickAddReminderGlobal"
-                    type="button"
-                    class="icon-btn"
-                    aria-label="Add reminder"
-                  >
-                    <svg
-                      class="icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <circle cx="10" cy="10" r="7.1" />
-                      <path d="M10 6.25v7.5" />
-                      <path d="M6.25 10h7.5" />
-                    </svg>
-                  </button>
-                  <button
-                    id="headerMenuBtnSlim"
-                    type="button"
-                    class="icon-btn"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    aria-controls="headerMenuSlim"
-                    aria-label="More options"
-                  >
-                    <svg
-                      class="icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <circle cx="10" cy="4.75" r="1.05" />
-                      <circle cx="10" cy="10" r="1.05" />
-                      <circle cx="10" cy="15.25" r="1.05" />
-                    </svg>
-                  </button>
-                </div>
-
-              </form>
-            </div>
-
-            <div
-              id="headerMenuSlim"
-              class="overflow-menu hidden quick-actions-panel"
-              aria-hidden="true"
-              role="menu"
-            >
-              <h2 id="headerMenuSlimHeading" class="sr-only">Quick settings</h2>
-              <ul class="quick-actions" role="presentation">
-                <li role="none">
-                  <button id="voiceAddBtn" type="button" class="quick-action-btn" title="Dictate reminder" role="menuitem">
-                    <span class="quick-action-icon" aria-hidden="true">🎤</span>
-                    <span class="sr-only">Dictate reminder</span>
-                  </button>
-                </li>
-                <li role="none">
-                  <button id="viewToggleMenu" type="button" class="quick-action-btn" title="Toggle layout" role="menuitem">
-                    <span class="quick-action-icon" aria-hidden="true">🗂</span>
-                    <span id="viewToggleLabel" class="sr-only">View layout: Compact</span>
-                  </button>
-                </li>
-                <li role="none">
-                  <button id="openSettings" type="button" class="quick-action-btn" data-open="settings" title="Open settings" role="menuitem">
-                    <span class="quick-action-icon" aria-hidden="true">⚙️</span>
-                    <span class="sr-only">Open settings</span>
-                  </button>
-                </li>
-                <li role="none">
-                  <button id="themeToggle" type="button" class="quick-action-btn" title="Toggle theme" role="menuitem">
-                    <span class="quick-action-icon" aria-hidden="true">🌗</span>
-                    <span class="sr-only">Toggle theme</span>
-                  </button>
-                </li>
-                <li role="none">
-                  <button id="googleSignInBtn" type="button" class="quick-action-btn" title="Sign in" role="menuitem">
-                    <span class="quick-action-icon" aria-hidden="true">🔐</span>
-                    <span class="sr-only">Sign in</span>
-                  </button>
-                </li>
-                <li role="none">
-                  <button id="googleSignOutBtn" type="button" class="quick-action-btn hidden" title="Sign out" role="menuitem">
-                    <span class="quick-action-icon" aria-hidden="true">🔓</span>
-                    <span class="sr-only">Sign out</span>
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-          </div>
-        </header>
-
         <div class="reminders-content-shell space-y-2">
 
           <div id="remindersListMobile" class="space-y-2">
@@ -4459,12 +4183,12 @@
                 <div class="flex items-center justify-end gap-2 px-1 pb-2">
                   <button
                     type="button"
-                    id="viewToggleMenu"
+                    id="reminderListViewToggle"
                     class="btn btn-ghost btn-xs"
                     aria-pressed="false"
                     aria-live="polite"
                   >
-                    <span id="viewToggleLabel" class="text-xs font-semibold tracking-wide">View layout: Stacked</span>
+                    <span id="reminderListViewToggleLabel" class="text-xs font-semibold tracking-wide">View layout: Stacked</span>
                   </button>
                 </div>
                 <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list" aria-describedby="reminderReorderHint"></ul>
