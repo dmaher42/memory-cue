@@ -51,6 +51,18 @@
           >
             Assistant
           </button>
+          <button
+            id="tab-timeline"
+            class="tab-btn"
+            role="tab"
+            type="button"
+            aria-selected="false"
+            aria-controls="panel-timeline"
+            tabindex="-1"
+            data-panel="panel-timeline"
+          >
+            Timeline
+          </button>
         </div>
       </div>
 
@@ -98,6 +110,19 @@
             <div id="typeFilters" class="filters" aria-label="Type filters"></div>
           </div>
           <div id="entriesList" class="entries-list" role="list"></div>
+        </div>
+      </section>
+
+      <section
+        id="panel-timeline"
+        class="panel"
+        role="tabpanel"
+        tabindex="0"
+        aria-labelledby="tab-timeline"
+        hidden
+      >
+        <div class="card timeline-card">
+          <div id="timelineList" class="timeline-list" role="list"></div>
         </div>
       </section>
 
