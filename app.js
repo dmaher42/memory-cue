@@ -31,6 +31,7 @@
   const searchInput = document.getElementById('searchInput');
   const typeFilters = document.getElementById('typeFilters');
   const entriesList = document.getElementById('entriesList');
+  const timelineList = document.getElementById('timelineList');
   const assistantInput = document.getElementById('assistantInput');
   const askButton = document.getElementById('askButton');
   const assistantResponses = document.getElementById('assistantResponses');
@@ -216,6 +217,10 @@
     if (tabId === 'tab-entries') {
       renderEntries();
     }
+
+    if (tabId === 'tab-timeline') {
+      renderTimeline();
+    }
   }
 
   function moveTabFocus(currentIndex, key) {
@@ -258,6 +263,106 @@
       });
   }
 
+  function getStartOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  function getStartOfWeek(date) {
+    const start = getStartOfDay(date);
+    const day = start.getDay();
+    const offset = day === 0 ? 6 : day - 1;
+    start.setDate(start.getDate() - offset);
+    return start;
+  }
+
+  function getTimelineGroup(entryDate, now) {
+    const todayStart = getStartOfDay(now);
+    const entryStart = getStartOfDay(entryDate);
+    const diffDays = Math.floor((todayStart.getTime() - entryStart.getTime()) / 86400000);
+
+    if (diffDays === 0) {
+      return 'Today';
+    }
+
+    if (diffDays === 1) {
+      return 'Yesterday';
+    }
+
+    if (entryStart >= getStartOfWeek(now)) {
+      return 'Earlier this week';
+    }
+
+    return 'Older';
+  }
+
+  function renderTimeline() {
+    if (!timelineList) {
+      return;
+    }
+
+    const grouped = {
+      Today: [],
+      Yesterday: [],
+      'Earlier this week': [],
+      Older: []
+    };
+
+    const orderedEntries = filteredEntries();
+    const now = new Date();
+
+    orderedEntries.forEach(function (entry) {
+      const createdDate = new Date(entry.createdAt);
+      const group = getTimelineGroup(createdDate, now);
+      grouped[group].push(entry);
+    });
+
+    timelineList.innerHTML = '';
+
+    if (!orderedEntries.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty';
+      empty.textContent = 'No entries in your timeline yet.';
+      timelineList.appendChild(empty);
+      return;
+    }
+
+    ['Today', 'Yesterday', 'Earlier this week', 'Older'].forEach(function (groupName) {
+      const entries = grouped[groupName];
+      if (!entries.length) {
+        return;
+      }
+
+      const section = document.createElement('section');
+      section.className = 'timeline-group';
+
+      const heading = document.createElement('h3');
+      heading.className = 'timeline-heading';
+      heading.textContent = groupName;
+      section.appendChild(heading);
+
+      entries.forEach(function (entry) {
+        const item = document.createElement('article');
+        item.className = 'timeline-entry';
+        item.setAttribute('role', 'listitem');
+
+        const text = document.createElement('p');
+        text.className = 'timeline-text';
+        text.textContent = entry.body || entry.title || '(Untitled)';
+
+        const meta = document.createElement('p');
+        meta.className = 'timeline-meta';
+        const timeCreated = new Date(entry.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        meta.textContent = `Category: ${entry.type} • Created: ${timeCreated}`;
+
+        item.appendChild(text);
+        item.appendChild(meta);
+        section.appendChild(item);
+      });
+
+      timelineList.appendChild(section);
+    });
+  }
+
   function renderTypeFilters() {
     typeFilters.innerHTML = '';
     TYPE_LABELS.forEach(function (label) {
@@ -276,6 +381,7 @@
         activeTypeFilter = label;
         renderTypeFilters();
         renderEntries();
+        renderTimeline();
       });
       typeFilters.appendChild(button);
     });
@@ -369,6 +475,7 @@
           entry.updatedAt = new Date().toISOString();
           saveDB(db);
           renderEntries();
+          renderTimeline();
           showToast('Task marked done.');
         });
         actions.appendChild(doneBtn);
@@ -384,6 +491,7 @@
         pendingDelete = entry.id;
         saveDB(db);
         renderEntries();
+        renderTimeline();
         showToast('Entry deleted.', {
           undo: function () {
             const target = db.entries.find(function (item) {
@@ -394,6 +502,7 @@
               target.updatedAt = new Date().toISOString();
               saveDB(db);
               renderEntries();
+              renderTimeline();
               showToast('Delete undone.');
             }
           },
@@ -467,6 +576,7 @@
     captureInput.value = '';
     showToast(count === 1 ? 'Saved 1 entry.' : `Saved ${count} entries.`);
     renderEntries();
+    renderTimeline();
   }
 
   function appendAssistantBubble(text, type) {
@@ -527,9 +637,15 @@ ${answerText}`
         return;
       }
 
-      if (key === '1' || key === '2' || key === '3') {
+      if (key === '1' || key === '2' || key === '3' || key === '4') {
         event.preventDefault();
-        const targetId = key === '1' ? 'tab-capture' : key === '2' ? 'tab-entries' : 'tab-assistant';
+        const targetId = key === '1'
+          ? 'tab-capture'
+          : key === '2'
+            ? 'tab-entries'
+            : key === '3'
+              ? 'tab-assistant'
+              : 'tab-timeline';
         setTab(targetId, true);
         return;
       }
@@ -575,6 +691,7 @@ ${answerText}`
 
     updateBrainDumpUI();
     renderEntries();
+    renderTimeline();
     setTab('tab-capture');
 
     captureButton.addEventListener('click', saveCapture);
@@ -590,6 +707,7 @@ ${answerText}`
     searchInput.addEventListener('input', function () {
       activeSearch = searchInput.value.trim().toLowerCase();
       renderEntries();
+      renderTimeline();
     });
 
     assistantInput.addEventListener('keydown', function (event) {
