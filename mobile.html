@@ -10,6 +10,7 @@
   <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
+  <link rel="stylesheet" href="./mobile.css" />
   <style>
     :root {
       --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
@@ -4508,11 +4509,10 @@ body, main, section, div, p, span, li {
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header" role="banner">
     <div class="header-main-row">
-      <h1 class="header-title">Reminders</h1>
+      <h1 class="header-title">Memory Cue</h1>
       <div class="header-actions">
-        <!-- The existing icon buttons can be moved here -->
         <button id="openSavedNotesGlobal" type="button" class="icon-button control-icon-button" aria-label="Open saved notes">
-          <span class="material-symbols-rounded">bookmark</span>
+          <span class="material-symbols-rounded">search</span>
         </button>
         <button id="startVoiceCaptureGlobal" type="button" class="icon-button control-icon-button" aria-label="Start voice capture">
           <span class="material-symbols-rounded">mic</span>
@@ -4522,26 +4522,10 @@ body, main, section, div, p, span, li {
         </button>
       </div>
     </div>
-    <div class="header-quick-add">
-      <form id="quickAddForm" class="quick-add-form">
-        <button id="quickAddSubmit" type="submit" class="icon-button quick-add-submit" aria-label="Add reminder">
-          <span class="material-symbols-rounded">add</span>
-        </button>
-        <input id="quickAddInput" class="control-input quick-add-input" type="text" placeholder="Quick reminder..." autocomplete="off" />
-        <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
-        <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
-        <div class="quick-add-tabs">
-          <button type="button" class="filter-toggle reminder-tab reminders-tab-active" data-reminders-tab="all" data-filter="all" aria-pressed="true">All</button>
-          <button type="button" class="filter-toggle reminder-tab" data-reminders-tab="today" data-filter="today" aria-pressed="false">Today</button>
-        </div>
-      </form>
-    </div>
-    <div class="header-search">
-      <div id="inboxSearchContainer" class="inbox-search-container" role="search" aria-label="Inbox search">
-        <div class="inbox-search-input-wrap">
-          <input id="inboxSearchInput" class="control-input inbox-search-input" type="search" placeholder="Search reminders, notes, drills…" autocomplete="off" />
-          <button id="inboxSearchClear" type="button" class="inbox-search-clear control-icon-button" aria-label="Clear inbox search" hidden>&times;</button>
-        </div>
+    <div id="inboxSearchContainer" class="inbox-search-container hidden" role="search" aria-label="Inbox search">
+      <div class="inbox-search-input-wrap">
+        <input id="inboxSearchInput" class="control-input inbox-search-input" type="search" placeholder="Search reminders, notes, drills…" autocomplete="off" />
+        <button id="inboxSearchClear" type="button" class="inbox-search-clear control-icon-button" aria-label="Clear inbox search" hidden>&times;</button>
       </div>
     </div>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
@@ -5099,22 +5083,9 @@ body, main, section, div, p, span, li {
             </div>
     <section data-view="assistant" id="view-assistant" class="view-panel hidden" aria-hidden="true">
       <div class="assistant-panel">
-        <div id="thinkingBarContainer">
-          <input id="thinkingBarInput" class="input input-sm w-full" placeholder="Capture, search, or ask…" autocomplete="off" />
-        </div>
         <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
         <div id="thinkingBarResults" aria-live="polite"></div>
         <div id="assistantThread" aria-live="polite" aria-label="Assistant conversation"></div>
-        <form id="assistantForm" class="hidden">
-          <input
-            id="assistantInput"
-            type="text"
-            class="input input-sm w-full"
-            placeholder="Ask Memory Cue assistant..."
-            autocomplete="off"
-          />
-          <button id="assistantSend" type="submit" class="btn btn-sm btn-primary">Send</button>
-        </form>
         <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
       </div>
     </section>
@@ -5130,6 +5101,15 @@ body, main, section, div, p, span, li {
         <!-- populated dynamically -->
       </ul>
     </div>
+  </div>
+
+  <div id="smartInputBar" class="smart-input-bar">
+    <form id="quickAddForm" class="smart-input-form">
+      <input id="quickAddInput" class="control-input quick-add-input" type="text" placeholder="Capture, search, or ask..." autocomplete="off" />
+      <button id="quickAddSubmit" type="submit" class="smart-send-button" aria-label="Send">Send</button>
+      <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
+      <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
+    </form>
   </div>
 
   <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
@@ -5156,6 +5136,7 @@ body, main, section, div, p, span, li {
           <circle cx="12" cy="12" r="7" />
           <path d="M12 9v3.5l2 1.5" />
         </svg>
+        <span>Reminders</span>
       </button>
 
       <button
@@ -5182,6 +5163,7 @@ body, main, section, div, p, span, li {
           <path d="M10 8h4" />
           <path d="M10 11.5h4" />
         </svg>
+        <span>Notes</span>
       </button>
 
       <button

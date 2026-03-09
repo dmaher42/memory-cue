@@ -46,24 +46,24 @@ function initAssistant() {
         ? value instanceof HTMLButtonElement
         : value && value.tagName === 'BUTTON';
 
-    const assistantForm = document.getElementById('assistantForm');
-    const assistantInput = document.getElementById('assistantInput');
     const assistantThread = document.getElementById('assistantThread');
     const assistantSendBtn = document.getElementById('assistantSend');
     const assistantLoading = document.getElementById('assistantLoading');
-    const thinkingBarInput = document.getElementById('thinkingBarInput');
+    const thinkingBarInput = document.getElementById('thinkingBarInput') || document.getElementById('quickAddInput');
+    const universalInput = document.getElementById('quickAddInput') || thinkingBarInput;
+    const quickAddForm = document.getElementById('quickAddForm');
+    const inboxSearchInput = document.getElementById('inboxSearchInput');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
 
-    if (!isFormElement(assistantForm) || !isInputElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
+    if (!isInputElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
       return;
     }
 
-    if (!isInputElement(assistantInput) || !isButtonElement(assistantSendBtn)) {
+    if (assistantSendBtn && !isButtonElement(assistantSendBtn)) {
       console.warn('[assistant] Send button not found; click listener was not attached.');
-      return;
     }
 
     const appendAssistantMessage = (text, className = 'assistant-message') => {
@@ -328,6 +328,17 @@ function initAssistant() {
       ]);
     };
 
+
+    const getActiveView = () => document.body?.getAttribute('data-active-view') || '';
+
+    const syncInboxSearchInput = () => {
+      if (!isInputElement(universalInput) || !isInputElement(inboxSearchInput)) {
+        return;
+      }
+      inboxSearchInput.value = universalInput.value;
+      inboxSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
     const sendAssistantMessage = async (event) => {
       if (event) {
         event.preventDefault();
@@ -479,6 +490,11 @@ function initAssistant() {
     thinkingBarInput.addEventListener('input', () => {
       const query = typeof thinkingBarInput.value === 'string' ? thinkingBarInput.value.trim() : '';
 
+      if (getActiveView() === 'inbox') {
+        syncInboxSearchInput();
+        return;
+      }
+
       if (query.length <= 2) {
         latestThinkingSearchRequest += 1;
         clearThinkingBarResults();
@@ -488,6 +504,20 @@ function initAssistant() {
 
       renderSearchResults(query);
     });
+
+    if (isFormElement(quickAddForm) && isInputElement(universalInput)) {
+      quickAddForm.addEventListener('submit', (event) => {
+        const activeView = getActiveView();
+        if (activeView === 'assistant') {
+          sendAssistantMessage(event);
+          return;
+        }
+        if (activeView === 'inbox') {
+          event.preventDefault();
+          syncInboxSearchInput();
+        }
+      });
+    }
 
     // The legacy assistant form is handled by js/assistant.js via a submit listener.
     // Avoid binding a separate click/keydown handler here, because preventing default
