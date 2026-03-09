@@ -74,18 +74,10 @@ async function buildScripts() {
   }
 
   const moduleEntries = {
-    './js/main.js': 'main',
+    './mobile.js': 'mobile',
     './js/config-supabase.js': 'config-supabase',
     './js/init-env.js': 'init-env',
     './js/mobile-theme-toggle.js': 'mobile-theme-toggle',
-    [primaryEntry]: 'mobile',
-  };
-
-  const legacyEntries = {
-    './js/runtime-env-shim.js': 'runtime-env-shim',
-    './js/update-footer-year.js': 'update-footer-year',
-    './js/register-service-worker.js': 'register-service-worker',
-    './js/router.js': 'router',
   };
 
   const moduleResult = await build({
@@ -104,25 +96,7 @@ async function buildScripts() {
     logLevel: 'info',
   });
 
-  const legacyResult = await build({
-    entryPoints: Object.keys(legacyEntries),
-    outdir: distDir,
-    bundle: true,
-    splitting: false,
-    format: 'iife',
-    minify: true,
-    sourcemap: false,
-    target: ['es2017'],
-    metafile: true,
-    entryNames: 'assets/[name]-[hash]',
-    assetNames: 'assets/[name]-[hash]',
-    logLevel: 'info',
-  });
-
-  return new Map([
-    ...buildEntryMap(moduleResult.metafile),
-    ...buildEntryMap(legacyResult.metafile),
-  ]);
+  return buildEntryMap(moduleResult.metafile);
 }
 
 async function copyStatic() {
