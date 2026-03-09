@@ -13,7 +13,7 @@ body {
 #main {
   height: 100vh;
   overflow-y: auto;
-  padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-input-bar-height) + var(--space-3)) !important;
+  padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-input-bar-height) + var(--space-2)) !important;
 }
 
 .mobile-header {
@@ -94,4 +94,29 @@ body {
 
 #mobile-nav-shell .floating-footer .floating-card span {
   font-size: 12px;
+}
+
+
+#view-reminders,
+#view-notebook,
+#view-inbox,
+#view-assistant {
+  padding: 0 var(--space-2);
+}
+
+#reminderList [data-reminder-item],
+#reminderList .reminder-card,
+#assistantThread .assistant-message {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(31, 26, 36, 0.08);
+  padding: 12px;
+  background: #fff;
+}
+
+.smart-input-form .quick-add-input::placeholder {
+  color: var(--text-muted, #9a8bb0);
+}
+
+#mobile-nav-shell .floating-footer .floating-card {
+  border-radius: 14px;
 }

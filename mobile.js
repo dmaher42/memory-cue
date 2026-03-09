@@ -41,18 +41,11 @@ function initAssistant() {
       typeof HTMLInputElement !== 'undefined'
         ? value instanceof HTMLInputElement
         : value && value.tagName === 'INPUT';
-    const isButtonElement = (value) =>
-      typeof HTMLButtonElement !== 'undefined'
-        ? value instanceof HTMLButtonElement
-        : value && value.tagName === 'BUTTON';
-
     const assistantThread = document.getElementById('assistantThread');
-    const assistantSendBtn = document.getElementById('assistantSend');
     const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput') || document.getElementById('quickAddInput');
     const universalInput = document.getElementById('quickAddInput') || thinkingBarInput;
     const quickAddForm = document.getElementById('quickAddForm');
-    const inboxSearchInput = document.getElementById('inboxSearchInput');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
     let isAssistantSending = false;
@@ -60,10 +53,6 @@ function initAssistant() {
 
     if (!isInputElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
       return;
-    }
-
-    if (assistantSendBtn && !isButtonElement(assistantSendBtn)) {
-      console.warn('[assistant] Send button not found; click listener was not attached.');
     }
 
     const appendAssistantMessage = (text, className = 'assistant-message') => {
@@ -332,11 +321,12 @@ function initAssistant() {
     const getActiveView = () => document.body?.getAttribute('data-active-view') || '';
 
     const syncInboxSearchInput = () => {
-      if (!isInputElement(universalInput) || !isInputElement(inboxSearchInput)) {
+      if (!isInputElement(universalInput)) {
         return;
       }
-      inboxSearchInput.value = universalInput.value;
-      inboxSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      document.dispatchEvent(new CustomEvent('memoryCue:universalSearch', {
+        detail: { query: universalInput.value },
+      }));
     };
 
     const sendAssistantMessage = async (event) => {
@@ -354,13 +344,13 @@ function initAssistant() {
         return;
       }
 
-      const isAssistantMode = trimmedMessage.endsWith('?');
-      const isSearchMode = !isAssistantMode && trimmedMessage.length < 40 && !trimmedMessage.startsWith('+');
-      const isCaptureMode = trimmedMessage.startsWith('+') || (!isAssistantMode && !isSearchMode);
+      const isReminderMode = /\bremind\b/i.test(trimmedMessage);
+      const isAssistantMode = /[?]$/.test(trimmedMessage);
+      const isCaptureMode = !isReminderMode && !isAssistantMode;
 
       console.log('[assistant] send handler executed', {
         textLength: trimmedMessage.length,
-        mode: isCaptureMode ? 'capture' : isSearchMode ? 'search' : 'assistant',
+        mode: isReminderMode ? 'reminder' : isCaptureMode ? 'capture' : 'assistant',
       });
       isAssistantSending = true;
 
@@ -374,17 +364,24 @@ function initAssistant() {
       thinkingBarInput.value = '';
       thinkingBarInput.focus();
 
-      if (isSearchMode) {
-        if (assistantLoading instanceof HTMLElement) {
-          assistantLoading.classList.add('hidden');
-        }
-        isAssistantSending = false;
-        await renderSearchResults(trimmedMessage);
-        return;
-      }
-
       try {
-        if (isCaptureMode) {
+        if (isReminderMode) {
+          const reminderOpenEvent = new CustomEvent('cue:open', { detail: { trigger: 'universal-input' } });
+          document.dispatchEvent(reminderOpenEvent);
+
+          const reminderTitleInput = document.getElementById('reminderText');
+          if (isInputElement(reminderTitleInput)) {
+            reminderTitleInput.value = trimmedMessage;
+            reminderTitleInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
+          const reminderSaveEvent = new CustomEvent('reminder:save', {
+            detail: { trigger: document.getElementById('saveReminder') },
+          });
+          document.dispatchEvent(reminderSaveEvent);
+          appendAssistantMessage('Reminder created.', 'assistant-message assistant-message--reply');
+          setThinkingBarStatus('Reminder saved');
+        } else if (isCaptureMode) {
           const captureText = trimmedMessage.startsWith('+') ? trimmedMessage.slice(1).trim() : trimmedMessage;
           const response = await fetch('/api/capture', {
             method: 'POST',
@@ -466,7 +463,10 @@ function initAssistant() {
           setThinkingBarStatus('Assistant answer');
         }
       } catch (error) {
-        if (isCaptureMode) {
+        if (isReminderMode) {
+          console.error('[assistant] failed to create reminder from universal input', error);
+          appendAssistantMessage('Sorry, I couldn\'t create that reminder.', 'assistant-message assistant-message--error');
+        } else if (isCaptureMode) {
           console.error('[assistant] request failed while calling /api/capture', error);
           appendAssistantMessage('Sorry, I couldn\'t save that brain dump.', 'assistant-message assistant-message--error');
         } else {
