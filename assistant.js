@@ -23,8 +23,36 @@
       type,
       title,
       body,
-      createdAt
+      createdAt,
+      relatedIds: Array.isArray(entry.relatedIds)
+        ? entry.relatedIds.map(function (id) {
+            return String(id);
+          }).filter(Boolean)
+        : []
     };
+  }
+
+  function inferTypeFilter(question) {
+    const lowered = String(question || '').toLowerCase();
+    if (lowered.includes('drill')) return 'drill';
+    if (lowered.includes('remind')) return 'reminder';
+    if (lowered.includes('task') || lowered.includes('todo')) return 'task';
+    if (lowered.includes('idea')) return 'idea';
+    if (lowered.includes('note')) return 'note';
+    return null;
+  }
+
+  function filterRelevantEntries(question, entries) {
+    const typeFilter = inferTypeFilter(question);
+    if (!typeFilter) {
+      return entries;
+    }
+
+    const typedEntries = entries.filter(function (entry) {
+      return entry.type === typeFilter;
+    });
+
+    return typedEntries.length ? typedEntries : entries;
   }
 
   function sortNewestFirst(entries) {
@@ -43,13 +71,17 @@
       }
 
       const parsed = JSON.parse(raw);
-      if (!parsed || parsed.schemaVersion !== SCHEMA_VERSION || !Array.isArray(parsed.entries)) {
+      const storedEntries = Array.isArray(parsed && parsed.memoryEntries)
+        ? parsed.memoryEntries
+        : (Array.isArray(parsed && parsed.entries) ? parsed.entries : null);
+
+      if (!parsed || parsed.schemaVersion !== SCHEMA_VERSION || !Array.isArray(storedEntries)) {
         return { settings: {}, entries: [] };
       }
 
       return {
         settings: parsed.settings && typeof parsed.settings === 'object' ? parsed.settings : {},
-        entries: parsed.entries.map(normalizeEntry).filter(Boolean)
+        entries: storedEntries.map(normalizeEntry).filter(Boolean)
       };
     } catch (error) {
       console.error('Unable to load Memory Cue DB.', error);
@@ -167,7 +199,8 @@
     const maxEntries = Number.isFinite(opts.maxEntries) ? opts.maxEntries : DEFAULT_MAX_ENTRIES;
     const maxChars = Number.isFinite(opts.maxChars) ? opts.maxChars : DEFAULT_MAX_CHARS;
     const loaded = loadEntriesFromDB();
-    const selectedEntries = selectEntries(loaded.entries, maxEntries, maxChars);
+    const relevantEntries = filterRelevantEntries(safeQuestion, loaded.entries);
+    const selectedEntries = selectEntries(relevantEntries, maxEntries, maxChars);
     const contextText = buildContext(selectedEntries, maxEntries, maxChars);
 
     if (!navigator.onLine) {
