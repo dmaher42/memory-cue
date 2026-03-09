@@ -470,35 +470,6 @@ function initAssistant() {
       }
     };
 
-    const sendAssistantQuestion = async (event) => {
-      if (event) {
-        event.preventDefault();
-      }
-
-      const question = assistantInput.value.trim();
-      if (!question) return;
-
-      try {
-        const response = await fetch('/api/assistant', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            schemaVersion: 2,
-            question,
-            contextText: '',
-            entries: [],
-          }),
-        });
-
-        const data = await response.json();
-        console.log('Assistant response:', data);
-      } catch (err) {
-        console.error('Assistant request failed:', err);
-      }
-    };
-
     thinkingBarInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         sendAssistantMessage(event);
@@ -518,16 +489,9 @@ function initAssistant() {
       renderSearchResults(query);
     });
 
-    assistantInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        sendAssistantQuestion(event);
-      }
-    });
-
-    if (isButtonElement(assistantSendBtn) && assistantSendBtn.dataset.assistantListenerBound !== 'true') {
-      assistantSendBtn.addEventListener('click', sendAssistantQuestion);
-      assistantSendBtn.dataset.assistantListenerBound = 'true';
-    }
+    // The legacy assistant form is handled by js/assistant.js via a submit listener.
+    // Avoid binding a separate click/keydown handler here, because preventing default
+    // on the send button blocks the form submit and makes "Send" appear non-functional.
 }
 
 if (document.readyState === 'loading') {
