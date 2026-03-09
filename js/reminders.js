@@ -1394,6 +1394,8 @@ export async function initReminders(sel = {}) {
       type: 'Reminder',
       title: item?.title || '',
       body: item?.notes || '',
+      category: item?.category || '',
+      tags: Array.isArray(item?.tags) ? item.tags : [],
       timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
       semanticEmbedding: normalizeSemanticEmbedding(item?.semanticEmbedding),
     }));
@@ -1404,12 +1406,19 @@ export async function initReminders(sel = {}) {
         type: 'Note',
         title: note?.title || '',
         body: note?.bodyText || note?.body || '',
+        category: note?.metadata?.type || '',
+        tags: Array.isArray(note?.metadata?.tags) ? note.metadata.tags : [],
         timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
         semanticEmbedding: normalizeSemanticEmbedding(note?.semanticEmbedding),
       };
     });
 
     return [...reminderEntries, ...noteEntries];
+  }
+
+  function buildSearchHaystack(entry) {
+    const tags = Array.isArray(entry?.tags) ? entry.tags.join(' ') : '';
+    return `${entry?.title || ''} ${entry?.body || ''} ${entry?.category || ''} ${tags}`.toLowerCase();
   }
 
   async function semanticSearchEntries(query, entries, excludedEntries = []) {
@@ -1574,16 +1583,25 @@ ${query}`;
       if (!query) {
         return escapeHtml(raw);
       }
-      const lowerRaw = raw.toLowerCase();
-      const lowerQuery = query.toLowerCase();
-      const queryIndex = lowerRaw.indexOf(lowerQuery);
-      if (queryIndex < 0) {
+      const parts = query
+        .toLowerCase()
+        .split(/\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length);
+      if (!parts.length) {
         return escapeHtml(raw);
       }
-      const before = escapeHtml(raw.slice(0, queryIndex));
-      const match = escapeHtml(raw.slice(queryIndex, queryIndex + query.length));
-      const after = escapeHtml(raw.slice(queryIndex + query.length));
-      return `${before}<mark class="inbox-search-match">${match}</mark>${after}`;
+      let highlighted = escapeHtml(raw);
+      parts.forEach((part) => {
+        const escapedPart = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (!escapedPart) return;
+        highlighted = highlighted.replace(
+          new RegExp(`(${escapedPart})`, 'gi'),
+          '<mark class="inbox-search-match">$1</mark>',
+        );
+      });
+      return highlighted;
     };
 
     const buildCombinedEntries = () => buildInboxSearchEntries();
@@ -1636,15 +1654,22 @@ ${query}`;
 
         const title = document.createElement('span');
         title.className = 'inbox-search-result-title';
-        if (mode === 'autocomplete') {
-          title.innerHTML = highlightMatch(entry.title || '(untitled)', query);
-        } else {
-          title.textContent = entry.title || '(untitled)';
-        }
+        title.innerHTML = highlightMatch(entry.title || '(untitled)', query);
 
         const date = document.createElement('div');
         date.className = 'opacity-70';
         date.textContent = formatDateLabel(entry.timestamp);
+
+        const metaParts = [];
+        if (entry.category) {
+          metaParts.push(`Category: ${entry.category}`);
+        }
+        if (Array.isArray(entry.tags) && entry.tags.length) {
+          metaParts.push(`Tags: ${entry.tags.join(', ')}`);
+        }
+        const meta = document.createElement('div');
+        meta.className = 'opacity-70';
+        meta.innerHTML = highlightMatch(metaParts.join(' • '), query);
 
         const relatedLabel = document.createElement('div');
         relatedLabel.className = 'opacity-60 italic';
@@ -1661,6 +1686,9 @@ ${query}`;
 
         li.appendChild(badge);
         li.appendChild(title);
+        if (metaParts.length) {
+          li.appendChild(meta);
+        }
         li.appendChild(date);
         if (entry.isSemanticMatch && mode !== 'autocomplete') {
           li.appendChild(relatedLabel);
@@ -1697,7 +1725,7 @@ ${query}`;
 
       const combined = buildCombinedEntries();
       const matches = combined.filter((entry) => {
-        const haystack = `${entry.title} ${entry.body}`.toLowerCase();
+        const haystack = buildSearchHaystack(entry);
         const keywordMatch = !keywords.length || keywords.every((word) => haystack.includes(word));
         if (!keywordMatch) {
           return false;
@@ -1724,18 +1752,12 @@ ${query}`;
 
     const findAutocompleteResults = (query) => {
       const lowerQuery = query.toLowerCase();
-      const matches = buildCombinedEntries().filter((entry) => {
-        const lowerTitle = String(entry.title || '').toLowerCase();
-        const lowerBody = String(entry.body || '').toLowerCase();
-        return lowerTitle.includes(lowerQuery) || lowerBody.includes(lowerQuery);
-      });
+      const matches = buildCombinedEntries().filter((entry) => buildSearchHaystack(entry).includes(lowerQuery));
       matches.sort((a, b) => {
-        const aTitle = String(a.title || '').toLowerCase();
-        const bTitle = String(b.title || '').toLowerCase();
-        const aBody = String(a.body || '').toLowerCase();
-        const bBody = String(b.body || '').toLowerCase();
-        const aStarts = aTitle.startsWith(lowerQuery) || aBody.startsWith(lowerQuery);
-        const bStarts = bTitle.startsWith(lowerQuery) || bBody.startsWith(lowerQuery);
+        const aHaystack = buildSearchHaystack(a);
+        const bHaystack = buildSearchHaystack(b);
+        const aStarts = aHaystack.startsWith(lowerQuery);
+        const bStarts = bHaystack.startsWith(lowerQuery);
         if (aStarts !== bStarts) {
           return aStarts ? -1 : 1;
         }
@@ -1795,7 +1817,10 @@ ${query}`;
       closeAutocomplete();
     };
 
-    inboxSearchInput.addEventListener('input', queueAutocomplete);
+    inboxSearchInput.addEventListener('input', () => {
+      queueAutocomplete();
+      runSearch();
+    });
     inboxSearchInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === 'NumpadEnter') {
         // Search Enter should never trigger quick add submission.
