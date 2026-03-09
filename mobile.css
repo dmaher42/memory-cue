@@ -141,7 +141,8 @@ body.app-shell .content .card,
 #inboxSearchResults .entry {
   width: 100%;
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
   background: var(--surface-elevated, #fff);
 }
 
@@ -149,7 +150,7 @@ body.app-shell .content .card,
 #assistantThread .assistant-message,
 #inboxSearchResults .entry {
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px;
   margin-bottom: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
