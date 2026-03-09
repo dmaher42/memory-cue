@@ -1961,12 +1961,12 @@ ${query}`;
       };
 
       try {
-        const existing = JSON.parse(localStorage.getItem('memoryCueEntries') || '[]');
+        const existing = JSON.parse(localStorage.getItem('reminderEntries') || '[]');
         const entries = Array.isArray(existing) ? existing : [];
         entries.unshift(payload);
-        localStorage.setItem('memoryCueEntries', JSON.stringify(entries));
+        localStorage.setItem('reminderEntries', JSON.stringify(entries));
       } catch (error) {
-        console.warn('Failed to persist memoryCueEntries', error);
+        console.warn('Failed to persist reminderEntries', error);
       }
     };
 

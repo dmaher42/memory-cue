@@ -1,3 +1,4 @@
+// Legacy Memory Cue prototype retained for reference. Not used by the current mobile reminders app.
 (function () {
   const DB_KEY = 'memoryCueDB';
   const LEGACY_KEY = 'memoryCueEntries';

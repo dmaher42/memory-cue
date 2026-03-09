@@ -379,7 +379,7 @@ initViewportHeight();
 
       try {
         if (isCaptureMode) {
-          const captureInput = trimmedMessage.startsWith('+') ? trimmedMessage.slice(1).trim() : trimmedMessage;
+          const captureText = trimmedMessage.startsWith('+') ? trimmedMessage.slice(1).trim() : trimmedMessage;
           const response = await fetch('/api/capture', {
             method: 'POST',
             headers: {
@@ -387,7 +387,7 @@ initViewportHeight();
             },
             body: JSON.stringify({
               schemaVersion: 1,
-              input: captureInput,
+              input: captureText,
             }),
           });
 

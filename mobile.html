@@ -6065,33 +6065,33 @@ body, main, section, div, p, span, li {
       const cardGrid = document.getElementById('categoryCardGrid');
       const entriesPanel = document.getElementById('categoryEntriesPanel');
       const entriesTitle = document.getElementById('categoryEntriesTitle');
-      const entriesList = document.getElementById('categoryEntriesList');
+      const categoryEntriesListEl = document.getElementById('categoryEntriesList');
       const inboxEntriesList = document.getElementById('inboxEntriesList');
 
-      if (!(cardGrid instanceof HTMLElement) || !(entriesList instanceof HTMLElement) || !(inboxEntriesList instanceof HTMLElement)) {
+      if (!(cardGrid instanceof HTMLElement) || !(categoryEntriesListEl instanceof HTMLElement) || !(inboxEntriesList instanceof HTMLElement)) {
         return;
       }
 
       const readEntries = () => {
         try {
-          const raw = window.localStorage?.getItem('memoryCueEntries');
+          const raw = window.localStorage?.getItem('reminderEntries');
           if (!raw) return [];
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) return parsed;
           if (Array.isArray(parsed?.entries)) return parsed.entries;
           return [];
         } catch (error) {
-          console.warn('Unable to read memoryCueEntries from localStorage', error);
+          console.warn('Unable to read reminderEntries from localStorage', error);
           return [];
         }
       };
 
       const writeEntries = (entries) => {
         try {
-          window.localStorage?.setItem('memoryCueEntries', JSON.stringify(entries));
+          window.localStorage?.setItem('reminderEntries', JSON.stringify(entries));
           document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
         } catch (error) {
-          console.warn('Unable to update memoryCueEntries in localStorage', error);
+          console.warn('Unable to update reminderEntries in localStorage', error);
         }
       };
 
@@ -6121,19 +6121,19 @@ body, main, section, div, p, span, li {
         const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === targetCategory);
 
         entriesTitle.textContent = `${categoryName} entries`;
-        entriesList.innerHTML = '';
+        categoryEntriesListEl.innerHTML = '';
 
         if (!entries.length) {
           const empty = document.createElement('p');
           empty.className = 'text-sm opacity-70';
           empty.textContent = 'No entries found in this category.';
-          entriesList.appendChild(empty);
+          categoryEntriesListEl.appendChild(empty);
         } else {
           entries.forEach((entry) => {
             const item = document.createElement('div');
             item.className = 'category-entry-item';
             item.textContent = getEntryText(entry);
-            entriesList.appendChild(item);
+            categoryEntriesListEl.appendChild(item);
           });
         }
 
@@ -6272,7 +6272,7 @@ body, main, section, div, p, span, li {
 
       document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
       window.addEventListener('storage', (event) => {
-        if (event.key === 'memoryCueEntries') {
+        if (event.key === 'reminderEntries') {
           renderInboxEntries();
         }
       });
@@ -6281,7 +6281,7 @@ body, main, section, div, p, span, li {
         const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
         window.localStorage.setItem = function patchedSetItem(key, value) {
           originalSetItem(key, value);
-          if (key === 'memoryCueEntries') {
+          if (key === 'reminderEntries') {
             document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
           }
         };
