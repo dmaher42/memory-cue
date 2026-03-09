@@ -108,6 +108,7 @@
       box-shadow: 0 5px 14px rgba(81, 38, 99, 0.06);
     }
 
+    .reminders-quick-bar input#universalInput,
     .reminders-quick-bar input#quickAddInput {
       flex: 1 1 auto;
       min-width: 0;
@@ -118,6 +119,7 @@
       padding: 0.3rem 0.2rem;
     }
 
+    .reminders-quick-bar input#universalInput::placeholder,
     .reminders-quick-bar input#quickAddInput::placeholder {
       color: var(--text-muted);
     }
@@ -1765,6 +1767,7 @@ body[data-active-view="notebook"] #view-notebook .card-body {
       overflow: hidden;
     }
 
+    .reminders-quick-bar #universalInput,
     .reminders-quick-bar #quickAddInput {
       flex: 1;
       min-width: 0;
@@ -1852,7 +1855,7 @@ body[data-active-view="notebook"] #view-notebook .card-body {
   overflow: hidden;
 }
 
-#quickAddInput {
+#universalInput, #quickAddInput {
   flex: 1;
   min-width: 0;
   border: none;
@@ -1954,7 +1957,7 @@ body {
 }
 
 /* Quick-add input */
-#quickAddInput {
+#universalInput, #quickAddInput {
   color: #000 !important;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -2019,7 +2022,7 @@ body, main, section, div, p, span, li {
 }
 
 /* 5) Quick reminder input in header */
-#quickAddInput {
+#universalInput, #quickAddInput {
   color: #000000 !important;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -3647,7 +3650,7 @@ body, main, section, div, p, span, li {
   }
 </style>
 </head>
-<body class="app-shell min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
+<body class="app app-shell min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
@@ -4509,13 +4512,11 @@ body, main, section, div, p, span, li {
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
     <div class="header-main-row">
+      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
       <h1 class="header-title">Memory Cue</h1>
       <div class="header-actions">
-        <button id="openSavedNotesGlobal" type="button" class="icon-button control-icon-button" aria-label="Open saved notes">
-          <span class="material-symbols-rounded">search</span>
-        </button>
-        <button id="overflowMenuBtn" type="button" class="icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="More options">
-          <span class="material-symbols-rounded">more_vert</span>
+        <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Search">
+          🔍
         </button>
       </div>
     </div>
@@ -4633,10 +4634,11 @@ body, main, section, div, p, span, li {
 
 
   <!-- quickAddBar is now integrated in the header -->
-  <main id="main" class="app-content mx-auto w-full max-w-none sm:max-w-lg"
+  <main id="main" class="app-content content mx-auto w-full max-w-none sm:max-w-lg"
         tabindex="-1"
         data-active-view="reminders"
       >
+    <div id="contentFeed">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -5073,6 +5075,7 @@ body, main, section, div, p, span, li {
         <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
       </div>
     </section>
+    </div>
 </main>
 
   <div class="move-to-folder-sheet hidden">
@@ -5087,7 +5090,7 @@ body, main, section, div, p, span, li {
 
   <div id="smartInputBar" class="smart-input-bar capture-bar">
     <form id="quickAddForm" class="smart-input-form">
-      <input id="quickAddInput" class="control-input quick-add-input" type="text" placeholder="Capture, search, or ask..." autocomplete="off" />
+      <input id="universalInput" class="control-input quick-add-input" type="text" placeholder="Capture, search, or ask..." autocomplete="off" />
       <button id="captureSend" type="submit" class="smart-send-button" aria-label="Send">Send</button>
       <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
       <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
@@ -5101,6 +5104,7 @@ body, main, section, div, p, span, li {
         class="floating-card btn-reminders"
         id="mobile-footer-reminders"
         data-nav-target="reminders"
+        data-tab="reminders"
         aria-label="Go to Reminders"
       >
         <svg
@@ -5126,6 +5130,7 @@ body, main, section, div, p, span, li {
         class="floating-card btn-notebook"
         id="mobile-footer-notebook"
         data-nav-target="notebook"
+        data-tab="notes"
         aria-label="Go to Notes"
       >
         <svg
@@ -5153,6 +5158,7 @@ body, main, section, div, p, span, li {
         class="floating-card btn-inbox"
         id="mobile-footer-inbox"
         data-nav-target="inbox"
+        data-tab="inbox"
         aria-label="Go to Inbox"
       >
         <svg
@@ -5178,6 +5184,7 @@ body, main, section, div, p, span, li {
         class="floating-card btn-assistant"
         id="mobile-footer-assistant"
         data-nav-target="assistant"
+        data-tab="assistant"
         aria-label="Go to Assistant"
       >
         <svg
@@ -5262,7 +5269,7 @@ body, main, section, div, p, span, li {
             return;
           }
 
-          const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+          const quickAdd = document.getElementById('universalInput') || document.getElementById('quickAddInput') || document.getElementById('quickAdd');
           if (quickAdd && typeof quickAdd.focus === 'function') {
             quickAdd.focus();
           }
@@ -5622,7 +5629,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-QEW3FSUF.js"></script>
+  <script type="module" src="./assets/mobile-FPAOKHPA.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
@@ -5846,7 +5853,7 @@ body, main, section, div, p, span, li {
       overflow: hidden;
     }
 
-    #quickAddInput {
+    #universalInput, #quickAddInput {
       flex: 1;
       min-width: 0;
       border: none;
@@ -5864,6 +5871,8 @@ body, main, section, div, p, span, li {
         0 4px 10px rgba(15, 10, 41, 0.08);
     }
 
+    #universalInput:focus,
+    #universalInput:focus-visible,
     #quickAddInput:focus,
     #quickAddInput:focus-visible {
       background: color-mix(in srgb, var(--accent-color) 7%, transparent);
