@@ -12,14 +12,20 @@
   }
 
   /* Make the root container fill the viewport and use column flex layout */
-  html, body, #root, .app {
-    height: 100vh;
+  html, body {
+    height: auto;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root, .app {
+    min-height: 100dvh;
     margin: 0;
   }
   .app {
     display: flex;
     flex-direction: column;
-    min-height: 0; /* important for children flex shrinking */
+    min-height: 100dvh;
     font-size: calc(1rem * var(--mc-font-scale));
   }
 
@@ -41,6 +47,11 @@
     flex-direction: column;
     gap: 6px;
     padding: var(--mc-app-padding);
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
   }
 
   /* Note list and editor should share available space without forcing page scroll */

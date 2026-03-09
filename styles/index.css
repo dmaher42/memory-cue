@@ -11,6 +11,23 @@ html {
   scroll-behavior: smooth;
 }
 
+html, body {
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .icon {
   width: 28px;
   height: 28px;
@@ -454,7 +471,7 @@ html[data-theme="professional"] {
     linear-gradient(180deg, var(--page-bg-muted), var(--page-bg-base));
   color: var(--desktop-text-main, var(--color-base-content, #0f172a));
   font-family: var(--font-body);
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* PROFESSIONAL DESKTOP HEADER */
