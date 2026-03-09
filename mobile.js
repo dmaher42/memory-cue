@@ -49,6 +49,9 @@ function initAssistant() {
     const universalInput = document.getElementById('universalInput')
       || document.getElementById('quickAddInput')
       || thinkingBarInput;
+    if (isInputElement(universalInput) && !document.getElementById('quickAddInput')) {
+      universalInput.setAttribute('data-legacy-input', 'quickAddInput');
+    }
     const quickAddForm = document.getElementById('quickAddForm');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
@@ -349,7 +352,7 @@ function initAssistant() {
       }
 
       const isReminderMode = /\bremind\b/i.test(trimmedMessage);
-      const isAssistantMode = /[?]$/.test(trimmedMessage);
+      const isAssistantMode = trimmedMessage.includes('?');
       const isCaptureMode = !isReminderMode && !isAssistantMode;
 
       console.log('[assistant] send handler executed', {
@@ -511,15 +514,7 @@ function initAssistant() {
 
     if (isFormElement(quickAddForm) && isInputElement(universalInput)) {
       quickAddForm.addEventListener('submit', (event) => {
-        const activeView = getActiveView();
-        if (activeView === 'assistant') {
-          sendAssistantMessage(event);
-          return;
-        }
-        if (activeView === 'inbox') {
-          event.preventDefault();
-          syncInboxSearchInput();
-        }
+        sendAssistantMessage(event);
       });
     }
 
