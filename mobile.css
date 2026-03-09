@@ -12,6 +12,7 @@ body.app-shell {
   flex-direction: column;
   min-height: 100dvh;
   overflow: hidden;
+  gap: 0;
 }
 
 body.app-shell .app-header {
@@ -29,6 +30,14 @@ body.app-shell .content {
   padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-input-bar-height) + (var(--space-1) * 3)) !important;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+body.app-shell .content > * {
+  margin-top: 0;
 }
 
 body.app-shell .capture-bar,
