@@ -14,9 +14,8 @@
 'use strict';
 
 const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
-const CACHE_PREFIX = 'mc-static-';
-const CACHE_VERSION = 'v15'; // bump this to force clients to update
-const RUNTIME_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
+const CACHE_NAME = 'memory-cue-v2';
+const RUNTIME_CACHE = CACHE_NAME;
 
 const REMINDER_DB_NAME = 'memory-cue-reminders';
 const REMINDER_DB_VERSION = 1;
@@ -75,7 +74,7 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((k) => k.startsWith(CACHE_PREFIX) && k !== RUNTIME_CACHE)
+        .filter((k) => k !== RUNTIME_CACHE)
         .map((k) => caches.delete(k))
     );
 
@@ -84,12 +83,19 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
+  const url = new URL(event.request.url);
 
+  // DO NOT intercept API requests
   if (url.pathname.startsWith('/api/')) {
     return;
   }
+
+  // Only handle GET requests for caching
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  const req = event.request;
 
   // Only handle http(s)
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
