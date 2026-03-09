@@ -1,12 +1,15 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/mobile.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/",
+      "dest": "/mobile.html"
     }
   ]
 }
