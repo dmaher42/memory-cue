@@ -30,6 +30,7 @@ function trimEntry(entry) {
   const title = typeof entry.title === 'string' ? entry.title.slice(0, MAX_ENTRY_CHARS) : '';
   const body = typeof entry.body === 'string' ? entry.body.slice(0, MAX_ENTRY_CHARS) : '';
   const createdAt = typeof entry.createdAt === 'string' ? entry.createdAt.slice(0, 64) : null;
+  const updatedAt = typeof entry.updatedAt === 'string' ? entry.updatedAt.slice(0, 64) : null;
   const tags = Array.isArray(entry.tags)
     ? entry.tags
         .map((tag) => (typeof tag === 'string' ? tag.slice(0, 64) : ''))
@@ -37,12 +38,30 @@ function trimEntry(entry) {
         .slice(0, 20)
     : [];
 
+  const relatedIds = Array.isArray(entry.relatedIds)
+    ? entry.relatedIds
+        .map((relatedId) => (typeof relatedId === 'string' ? relatedId.slice(0, 128) : ''))
+        .filter(Boolean)
+        .slice(0, 30)
+    : [];
+
   if (!title && !body) {
     return null;
   }
 
-  return { id, type, title, body, tags, createdAt };
+  return { id, type, title, body, tags, createdAt, updatedAt, relatedIds };
 }
+
+function inferRelevantType(question) {
+  const normalized = typeof question === 'string' ? question.toLowerCase() : '';
+  if (normalized.includes('drill') || normalized.includes('footy')) return 'drill';
+  if (normalized.includes('remind')) return 'reminder';
+  if (normalized.includes('task') || normalized.includes('todo') || normalized.includes('to do')) return 'task';
+  if (normalized.includes('idea')) return 'idea';
+  if (normalized.includes('note')) return 'note';
+  return null;
+}
+
 
 module.exports = async function handler(req, res) {
   applyCors(req, res);
@@ -87,6 +106,11 @@ module.exports = async function handler(req, res) {
   }
 
   const entries = rawEntries.map(trimEntry).filter(Boolean);
+  const relevantType = inferRelevantType(question);
+  const rankedEntries = relevantType
+    ? entries.filter((entry) => entry.type === relevantType)
+    : entries;
+  const selectedEntries = (rankedEntries.length ? rankedEntries : entries).slice(0, MAX_ENTRIES);
   const entryById = new Map(
     entries
       .filter((entry) => entry.id)
@@ -121,7 +145,7 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: `Search these notes and answer the question.\n\nQuestion:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(entries)}`
+                text: `Search these notes and answer the question.\n\nQuestion:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(selectedEntries)}`
               }
             ]
           }

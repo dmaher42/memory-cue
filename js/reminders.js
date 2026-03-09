@@ -930,6 +930,7 @@ export async function initReminders(sel = {}) {
   let isQuickAddSubmitting = false;
   let stopQuickAddVoiceListening = null;
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
+  const MEMORY_ENTRIES_STORAGE_KEY = 'memoryEntries';
   const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
   const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
   const SMART_TAG_KEYWORDS = [
@@ -1052,12 +1053,47 @@ export async function initReminders(sel = {}) {
 
   function classifyInput(text) {
     const normalized = typeof text === 'string' ? text.toLowerCase() : '';
-    if (normalized.includes('footy')) return 'footy_drill';
-    if (normalized.includes('netball')) return 'netball_note';
-    if (normalized.includes('reflection')) return 'reflection';
     if (normalized.includes('remind')) return 'reminder';
-    if (normalized.includes('lesson')) return 'teaching_note';
-    return 'general_note';
+    if (normalized.includes('drill') || normalized.includes('footy')) return 'drill';
+    if (normalized.includes('task') || normalized.includes('todo') || normalized.includes('to do')) return 'task';
+    if (normalized.includes('idea')) return 'idea';
+    return 'note';
+  }
+
+  function normalizeMemoryEntryType(type) {
+    const value = typeof type === 'string' ? type.trim().toLowerCase() : '';
+    if (value === 'note' || value === 'reminder' || value === 'drill' || value === 'idea' || value === 'task') {
+      return value;
+    }
+    return 'note';
+  }
+
+  function inferRelevantEntryType(query) {
+    const normalized = typeof query === 'string' ? query.toLowerCase() : '';
+    if (normalized.includes('remind')) return 'reminder';
+    if (normalized.includes('drill') || normalized.includes('footy')) return 'drill';
+    if (normalized.includes('task') || normalized.includes('todo') || normalized.includes('to do')) return 'task';
+    if (normalized.includes('idea')) return 'idea';
+    if (normalized.includes('note')) return 'note';
+    return null;
+  }
+
+  function readMemoryEntries() {
+    return readJsonArrayStorage(MEMORY_ENTRIES_STORAGE_KEY, []);
+  }
+
+  function writeMemoryEntries(entries) {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+    localStorage.setItem(MEMORY_ENTRIES_STORAGE_KEY, JSON.stringify(entries));
+    try {
+      if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+        document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+      }
+    } catch {
+      // Ignore event dispatch failures.
+    }
   }
 
   function extractTitle(text) {
@@ -1391,11 +1427,15 @@ export async function initReminders(sel = {}) {
 
   function buildInboxSearchEntries() {
     const reminderEntries = (Array.isArray(items) ? items : []).map((item) => ({
-      type: 'Reminder',
+      id: item?.id || '',
+      type: 'reminder',
       title: item?.title || '',
       body: item?.notes || '',
       category: item?.category || '',
       tags: Array.isArray(item?.tags) ? item.tags : [],
+      relatedIds: [],
+      createdAt: Number.isFinite(item?.createdAt) ? new Date(item.createdAt).toISOString() : '',
+      updatedAt: Number.isFinite(item?.updatedAt) ? new Date(item.updatedAt).toISOString() : '',
       timestamp: Number.isFinite(item?.createdAt) ? item.createdAt : null,
       semanticEmbedding: normalizeSemanticEmbedding(item?.semanticEmbedding),
     }));
@@ -1403,18 +1443,41 @@ export async function initReminders(sel = {}) {
       const noteTime = typeof note?.updatedAt === 'string' ? Date.parse(note.updatedAt) : Number.NaN;
       const createdTime = typeof note?.createdAt === 'string' ? Date.parse(note.createdAt) : Number.NaN;
       return {
-        type: 'Note',
+        id: note?.id || '',
+        type: 'note',
         title: note?.title || '',
         body: note?.bodyText || note?.body || '',
         category: note?.metadata?.type || '',
         tags: Array.isArray(note?.metadata?.tags) ? note.metadata.tags : [],
+        relatedIds: Array.isArray(note?.relatedIds) ? note.relatedIds : [],
+        createdAt: typeof note?.createdAt === 'string' ? note.createdAt : '',
+        updatedAt: typeof note?.updatedAt === 'string' ? note.updatedAt : '',
         timestamp: Number.isFinite(noteTime) ? noteTime : (Number.isFinite(createdTime) ? createdTime : null),
         semanticEmbedding: normalizeSemanticEmbedding(note?.semanticEmbedding),
       };
     });
 
-    return [...reminderEntries, ...noteEntries];
+    const memoryEntries = readMemoryEntries().map((entry) => {
+      const updatedTime = typeof entry?.updatedAt === 'string' ? Date.parse(entry.updatedAt) : Number.NaN;
+      const createdTime = typeof entry?.createdAt === 'string' ? Date.parse(entry.createdAt) : Number.NaN;
+      return {
+        id: typeof entry?.id === 'string' ? entry.id : '',
+        type: normalizeMemoryEntryType(entry?.type),
+        title: typeof entry?.title === 'string' ? entry.title : '',
+        body: typeof entry?.body === 'string' ? entry.body : '',
+        category: typeof entry?.category === 'string' ? entry.category : '',
+        tags: Array.isArray(entry?.tags) ? entry.tags : [],
+        relatedIds: Array.isArray(entry?.relatedIds) ? entry.relatedIds : [],
+        createdAt: typeof entry?.createdAt === 'string' ? entry.createdAt : '',
+        updatedAt: typeof entry?.updatedAt === 'string' ? entry.updatedAt : '',
+        timestamp: Number.isFinite(updatedTime) ? updatedTime : (Number.isFinite(createdTime) ? createdTime : null),
+        semanticEmbedding: null,
+      };
+    });
+
+    return [...reminderEntries, ...noteEntries, ...memoryEntries];
   }
+
 
   function buildSearchHaystack(entry) {
     const tags = Array.isArray(entry?.tags) ? entry.tags.join(' ') : '';
@@ -1506,23 +1569,36 @@ export async function initReminders(sel = {}) {
 
   async function askAssistant(query) {
     const context = await buildRagContext(query);
-    const prompt = `You are an assistant that must answer ONLY using the provided MEMORY CONTEXT.
-Do not invent new information.
-If answer not in context, say: "I do not have enough information."
+    const entries = buildInboxSearchEntries();
+    const relevantType = inferRelevantEntryType(query);
+    const filteredEntries = relevantType
+      ? entries.filter((entry) => entry.type === relevantType)
+      : entries;
+    const selectedEntries = (filteredEntries.length ? filteredEntries : entries)
+      .slice(0, 8)
+      .map((entry) => ({
+        id: entry.id,
+        type: normalizeMemoryEntryType(entry.type),
+        title: entry.title,
+        body: entry.body,
+        tags: Array.isArray(entry.tags) ? entry.tags : [],
+        relatedIds: Array.isArray(entry.relatedIds) ? entry.relatedIds : [],
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+      }));
 
-MEMORY CONTEXT:
-${context}
-
-USER QUESTION:
-${query}`;
-    console.log('[RAG assistant] Prompt:\n', prompt);
     try {
       const response = await fetch('/api/assistant', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query: prompt }),
+        body: JSON.stringify({
+          question: query,
+          contextText: context,
+          entries: selectedEntries,
+          schemaVersion: 2,
+        }),
       });
 
       if (!response.ok) {
@@ -1546,6 +1622,7 @@ ${query}`;
       return 'Sorry, something went wrong while contacting the assistant.';
     }
   }
+
 
   function setupInboxSearch() {
     const inboxSearchInput = typeof document !== 'undefined' ? document.getElementById('inboxSearchInput') : null;
@@ -1947,26 +2024,33 @@ ${query}`;
 
       const category = await classifyBrainDumpCategory(cleanText);
 
+      const nowIso = new Date().toISOString();
       const payload = {
         id:
           reminderEntry && reminderEntry.id
             ? reminderEntry.id
             : `entry-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-        text: cleanText,
+        type: normalizeMemoryEntryType(
+          reminderEntry?.category === 'Footy – Drills' ? 'drill' : classifyInput(cleanText),
+        ),
+        title: extractTitle(cleanText),
+        body: cleanText,
+        tags: sanitizeTags(extractTags(cleanText)),
+        relatedIds: [],
         category,
         createdAt:
           reminderEntry && reminderEntry.createdAt
             ? new Date(reminderEntry.createdAt).toISOString()
-            : new Date().toISOString(),
+            : nowIso,
+        updatedAt: nowIso,
       };
 
       try {
-        const existing = JSON.parse(localStorage.getItem('reminderEntries') || '[]');
-        const entries = Array.isArray(existing) ? existing : [];
+        const entries = readMemoryEntries();
         entries.unshift(payload);
-        localStorage.setItem('reminderEntries', JSON.stringify(entries));
+        writeMemoryEntries(entries);
       } catch (error) {
-        console.warn('Failed to persist reminderEntries', error);
+        console.warn('Failed to persist memory entries', error);
       }
     };
 
@@ -1987,7 +2071,7 @@ ${query}`;
     const fallbackClassify = (text) => {
       const fallback = parseSmartEntryWithFallback(text);
       return {
-        type: typeof fallback?.type === 'string' ? fallback.type : 'general_note',
+        type: typeof fallback?.type === 'string' ? fallback.type : 'note',
         title: typeof fallback?.title === 'string' ? fallback.title : '',
         reminderDate:
           typeof fallback?.reminderDate === 'string' && fallback.reminderDate.trim()
@@ -1998,12 +2082,8 @@ ${query}`;
 
     const mapSmartTypeToCategory = (type) => {
       switch (type) {
-        case 'footy_drill':
+        case 'drill':
           return 'Footy – Drills';
-        case 'netball_note':
-          return 'Netball';
-        case 'teaching_note':
-          return 'Teaching';
         case 'task':
           return 'Tasks';
         default:

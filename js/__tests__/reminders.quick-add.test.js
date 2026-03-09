@@ -106,6 +106,11 @@ test('quick add routes footy drill prefix to Footy – Drills category', async (
   expect(items[0].category).toBe('Footy – Drills');
   expect(Number.isFinite(items[0].createdAt)).toBe(true);
   expect(Number.isFinite(items[0].updatedAt)).toBe(true);
+
+  const memoryEntries = JSON.parse(localStorage.getItem('memoryEntries') || '[]');
+  expect(memoryEntries).toHaveLength(1);
+  expect(memoryEntries[0].type).toBe('drill');
+  expect(Array.isArray(memoryEntries[0].relatedIds)).toBe(true);
 });
 
 test('quick add routes task prefix to Tasks category', async () => {
