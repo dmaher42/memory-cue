@@ -91,6 +91,14 @@
             spellcheck="true"
           ></textarea>
 
+          <label for="tagsInput" class="sr-only">Tags (comma separated)</label>
+          <input
+            id="tagsInput"
+            type="text"
+            placeholder="Tags (comma separated): lesson, drill, idea"
+            autocomplete="off"
+          />
+
           <button id="captureButton" class="primary-btn" type="button">Save</button>
         </div>
       </section>
@@ -108,6 +116,7 @@
             <label for="searchInput" class="sr-only">Search entries</label>
             <input id="searchInput" type="search" placeholder="Search entries" />
             <div id="typeFilters" class="filters" aria-label="Type filters"></div>
+            <div id="tagFilters" class="filters" aria-label="Tag filters"></div>
           </div>
           <div id="entriesList" class="entries-list" role="list"></div>
         </div>
