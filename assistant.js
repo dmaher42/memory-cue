@@ -213,7 +213,9 @@
     return {
       answer: data.answer,
       cited_entry_ids: Array.isArray(data.cited_entry_ids) ? data.cited_entry_ids : [],
-      followups: Array.isArray(data.followups) ? data.followups : []
+      followups: Array.isArray(data.followups) ? data.followups : [],
+      best_entry_id: typeof data.best_entry_id === 'string' ? data.best_entry_id : '',
+      best_entry: data.best_entry && typeof data.best_entry === 'object' ? data.best_entry : null
     };
   }
 

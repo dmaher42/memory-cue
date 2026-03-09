@@ -87,6 +87,11 @@ module.exports = async function handler(req, res) {
   }
 
   const entries = rawEntries.map(trimEntry).filter(Boolean);
+  const entryById = new Map(
+    entries
+      .filter((entry) => entry.id)
+      .map((entry) => [entry.id, entry])
+  );
 
   let response;
   try {
@@ -106,7 +111,8 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: 'You are the Memory Cue assistant. Use only supplied entries/context. If answer is unknown, say so briefly.'
+                text:
+                  'You are the Memory Cue assistant. Search the supplied notes to answer the question. Use only supplied entries/context, pick the best matching entry, and if answer is unknown say so briefly.'
               }
             ]
           },
@@ -115,7 +121,7 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: `Question:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(entries)}`
+                text: `Search these notes and answer the question.\n\nQuestion:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(entries)}`
               }
             ]
           }
@@ -137,9 +143,12 @@ module.exports = async function handler(req, res) {
                 followups: {
                   type: 'array',
                   items: { type: 'string' }
+                },
+                best_entry_id: {
+                  type: 'string'
                 }
               },
-              required: ['answer', 'cited_entry_ids', 'followups']
+              required: ['answer', 'cited_entry_ids', 'followups', 'best_entry_id']
             }
           }
         }
@@ -176,7 +185,12 @@ module.exports = async function handler(req, res) {
       answer: result.answer,
       reply: result.answer,
       cited_entry_ids: Array.isArray(result.cited_entry_ids) ? result.cited_entry_ids : [],
-      followups: Array.isArray(result.followups) ? result.followups : []
+      followups: Array.isArray(result.followups) ? result.followups : [],
+      best_entry_id: typeof result.best_entry_id === 'string' ? result.best_entry_id : '',
+      best_entry:
+        typeof result.best_entry_id === 'string' && entryById.has(result.best_entry_id)
+          ? entryById.get(result.best_entry_id)
+          : null
     });
   } catch (_error) {
     return res.status(500).json({ error: 'Assistant failed.' });
