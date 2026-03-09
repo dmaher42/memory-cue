@@ -4,15 +4,16 @@
   const LEGACY_KEY = 'memoryCueEntries';
   const SCHEMA_VERSION = 2;
 
-  const TYPE_LABELS = ['all', 'task', 'idea', 'note', 'reflection', 'lesson', 'drill'];
+  const ENTRY_TYPES = ['note', 'reminder', 'drill', 'idea', 'task'];
+  const TYPE_LABELS = ['all'].concat(ENTRY_TYPES);
   const PREFIX_MAP = {
     task: 'task',
     todo: 'task',
+    reminder: 'reminder',
+    remind: 'reminder',
     idea: 'idea',
     note: 'note',
     notes: 'note',
-    reflection: 'reflection',
-    lesson: 'lesson',
     drill: 'drill'
   };
 
@@ -87,31 +88,80 @@
     const trimmed = text.trim();
     const match = trimmed.match(/^([a-zA-Z]+)\s*:\s*(.+)$/);
     if (!match) {
-      return { type: 'note', content: trimmed };
+      return { type: null, content: trimmed };
     }
 
     const mappedType = PREFIX_MAP[match[1].toLowerCase()];
     if (!mappedType) {
-      return { type: 'note', content: trimmed };
+      return { type: null, content: trimmed };
     }
 
     return { type: mappedType, content: match[2].trim() };
   }
 
-  function makeEntry(rawText, tags) {
+  function inferTypeFromText(text) {
+    const lowered = String(text || '').toLowerCase();
+    if (/\b(remind|reminder|tomorrow|next week|at \d|meeting|appointment)\b/.test(lowered)) {
+      return 'reminder';
+    }
+    if (/\b(drill|training|session|warmup|warm-up|footy)\b/.test(lowered)) {
+      return 'drill';
+    }
+    if (/\b(task|todo|to-do|finish|complete|send|submit|buy|call)\b/.test(lowered)) {
+      return 'task';
+    }
+    if (/\b(idea|brainstorm|concept|plan)\b/.test(lowered)) {
+      return 'idea';
+    }
+    return 'note';
+  }
+
+  function normalizeType(type, fallbackText) {
+    const lowered = String(type || '').trim().toLowerCase();
+    if (ENTRY_TYPES.includes(lowered)) {
+      return lowered;
+    }
+    return inferTypeFromText(fallbackText);
+  }
+
+  async function classifyCaptureType(text) {
+    const fallbackType = inferTypeFromText(text);
+    if (!navigator.onLine || typeof fetch !== 'function') {
+      return fallbackType;
+    }
+
+    try {
+      const response = await fetch('/api/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schemaVersion: 1, input: text })
+      });
+      if (!response.ok) {
+        return fallbackType;
+      }
+      const data = await response.json();
+      return normalizeType(data && data.entry ? data.entry.type : '', text);
+    } catch (_error) {
+      return fallbackType;
+    }
+  }
+
+  function makeEntry(rawText, tags, classifiedType) {
     const parsed = parseTypeAndContent(rawText);
     const now = new Date().toISOString();
     const title = parsed.content.length > 80 ? `${parsed.content.slice(0, 77)}...` : parsed.content;
+    const normalizedType = normalizeType(classifiedType || parsed.type, parsed.content);
 
     return {
       id: createUUID(),
-      createdAt: now,
-      updatedAt: now,
-      type: parsed.type,
-      status: parsed.type === 'task' ? 'open' : 'active',
+      type: normalizedType,
       title,
       body: parsed.content,
       tags: Array.isArray(tags) ? tags : [],
+      createdAt: now,
+      updatedAt: now,
+      relatedIds: Array.isArray(parsed.relatedIds) ? parsed.relatedIds : [],
+      status: normalizedType === 'task' ? 'open' : 'active',
       dueAt: null,
       source: {
         channel: 'capture',
@@ -127,7 +177,7 @@
       settings: {
         brainDumpMode: false
       },
-      entries: []
+      memoryEntries: []
     };
   }
 
@@ -178,7 +228,7 @@
       });
 
     const migrated = defaultDB();
-    migrated.entries = migratedEntries;
+    migrated.memoryEntries = migratedEntries;
     return migrated;
   }
 
@@ -191,12 +241,17 @@
       const raw = window.localStorage.getItem(DB_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.schemaVersion === SCHEMA_VERSION && Array.isArray(parsed.entries)) {
+        const storedEntries = Array.isArray(parsed.memoryEntries)
+          ? parsed.memoryEntries
+          : (Array.isArray(parsed.entries) ? parsed.entries : null);
+
+        if (parsed && parsed.schemaVersion === SCHEMA_VERSION && Array.isArray(storedEntries)) {
           return {
             schemaVersion: SCHEMA_VERSION,
             settings: Object.assign({ brainDumpMode: false }, parsed.settings || {}),
-            entries: parsed.entries.map(function (entry) {
+            memoryEntries: storedEntries.map(function (entry) {
               return Object.assign({}, entry, {
+                type: normalizeType(entry.type, `${entry.title || ''} ${entry.body || ''}`),
                 tags: Array.isArray(entry.tags) ? entry.tags : []
               });
             })
@@ -268,7 +323,7 @@
   }
 
   function currentEntries() {
-    return db.entries.filter(function (entry) {
+    return db.memoryEntries.filter(function (entry) {
       return !entry.deletedAt;
     });
   }
@@ -553,6 +608,8 @@
       const actions = document.createElement('div');
       actions.className = 'entry-actions';
 
+      card.classList.add(`entry-card-${entry.type}`);
+
       if (entry.type === 'task' && entry.status !== 'done') {
         const doneBtn = document.createElement('button');
         doneBtn.type = 'button';
@@ -582,7 +639,7 @@
         renderTimeline();
         showToast('Entry deleted.', {
           undo: function () {
-            const target = db.entries.find(function (item) {
+            const target = db.memoryEntries.find(function (item) {
               return item.id === pendingDelete;
             });
             if (target) {
@@ -621,7 +678,7 @@
       : 'OFF: save as one entry.';
   }
 
-  function addEntriesFromCapture(rawText) {
+  async function addEntriesFromCapture(rawText) {
     const text = rawText.trim();
     if (!text) {
       return 0;
@@ -637,29 +694,31 @@
           return line.length > 0;
         });
 
-      lines.forEach(function (line) {
-        created.push(makeEntry(line, tags));
-      });
+      for (const line of lines) {
+        const classifiedType = await classifyCaptureType(line);
+        created.push(makeEntry(line, tags, classifiedType));
+      }
     } else {
-      created.push(makeEntry(text, tags));
+      const classifiedType = await classifyCaptureType(text);
+      created.push(makeEntry(text, tags, classifiedType));
     }
 
     if (!created.length) {
       return 0;
     }
 
-    db.entries = db.entries.concat(created);
+    db.memoryEntries = db.memoryEntries.concat(created);
     saveDB(db);
     return created.length;
   }
 
-  function saveCapture() {
+  async function saveCapture() {
     if (!storageAvailable) {
       showToast('Storage is unavailable. Entries cannot be saved on this device.');
       return;
     }
 
-    const count = addEntriesFromCapture(captureInput.value);
+    const count = await addEntriesFromCapture(captureInput.value);
     if (!count) {
       showToast('Add some text before saving.');
       return;
