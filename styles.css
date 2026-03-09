@@ -50,7 +50,7 @@ body {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.45rem;
 }
 
@@ -242,6 +242,41 @@ input[type='search'] {
 .empty {
   color: var(--muted);
   margin: 0.5rem 0;
+}
+
+
+.timeline-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.timeline-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.timeline-heading {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--accent-2);
+}
+
+.timeline-entry {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0a1426;
+  padding: 0.6rem;
+}
+
+.timeline-text {
+  margin: 0 0 0.35rem;
+  white-space: pre-wrap;
+}
+
+.timeline-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .assistant-card h2 {
