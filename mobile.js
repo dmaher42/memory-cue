@@ -2254,7 +2254,7 @@ const initMobileNotes = () => {
     buildFolderFilterSelect(chipModel);
   };
 
-  // Ensure a floating action button (FAB) exists inside the saved notes sheet
+  // Ensure a floating action button (FAB) exists and is anchored to the viewport
   const ensureFloatingNewFolderFab = () => {
     if (!savedNotesSheet) return;
 
@@ -2270,16 +2270,6 @@ const initMobileNotes = () => {
     }
 
     if (document.getElementById('fabNewFolder')) return;
-
-    // ensure the sheet can anchor absolute children
-    try {
-      const currentPosition = savedNotesSheet.style?.position;
-      if (!currentPosition || currentPosition === 'relative') {
-        savedNotesSheet.style.position = 'fixed';
-      }
-    } catch (e) {
-      /* ignore */
-    }
 
     const fab = document.createElement('button');
     fab.id = 'fabNewFolder';
@@ -2300,7 +2290,7 @@ const initMobileNotes = () => {
       }
     });
 
-    savedNotesSheet.appendChild(fab);
+    document.body.appendChild(fab);
   };
 
   /* New Folder modal setup */
