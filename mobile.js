@@ -32,8 +32,7 @@ const isNotesSyncDebugEnabled = (() => {
 
 initViewportHeight();
 
-(function initAssistantView() {
-  const setupAssistant = () => {
+function initAssistant() {
     const isFormElement = (value) =>
       typeof HTMLFormElement !== 'undefined'
         ? value instanceof HTMLFormElement
@@ -50,7 +49,7 @@ initViewportHeight();
     const assistantForm = document.getElementById('assistantForm');
     const assistantInput = document.getElementById('assistantInput');
     const assistantThread = document.getElementById('assistantThread');
-    const assistantSendBtn = document.getElementById('assistantSendBtn');
+    const assistantSendBtn = document.getElementById('assistantSend');
     const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
@@ -58,17 +57,13 @@ initViewportHeight();
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
 
-    if (
-      !isFormElement(assistantForm) ||
-      !isInputElement(assistantInput) ||
-      !isInputElement(thinkingBarInput) ||
-      !(assistantThread instanceof HTMLElement)
-    ) {
+    if (!isFormElement(assistantForm) || !isInputElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
       return;
     }
 
-    if (!isButtonElement(assistantSendBtn)) {
+    if (!isInputElement(assistantInput) || !isButtonElement(assistantSendBtn)) {
       console.warn('[assistant] Send button not found; click listener was not attached.');
+      return;
     }
 
     const appendAssistantMessage = (text, className = 'assistant-message') => {
@@ -475,7 +470,34 @@ initViewportHeight();
       }
     };
 
-    assistantForm.addEventListener('submit', sendAssistantMessage);
+    const sendAssistantQuestion = async (event) => {
+      if (event) {
+        event.preventDefault();
+      }
+
+      const question = assistantInput.value.trim();
+      if (!question) return;
+
+      try {
+        const response = await fetch('/api/assistant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            schemaVersion: 2,
+            question,
+            contextText: '',
+            entries: [],
+          }),
+        });
+
+        const data = await response.json();
+        console.log('Assistant response:', data);
+      } catch (err) {
+        console.error('Assistant request failed:', err);
+      }
+    };
 
     thinkingBarInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -498,21 +520,23 @@ initViewportHeight();
 
     assistantInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
-        sendAssistantMessage(event);
+        sendAssistantQuestion(event);
       }
     });
 
-    if (isButtonElement(assistantSendBtn)) {
-      assistantSendBtn.addEventListener('click', sendAssistantMessage);
+    if (isButtonElement(assistantSendBtn) && assistantSendBtn.dataset.assistantListenerBound !== 'true') {
+      assistantSendBtn.addEventListener('click', sendAssistantQuestion);
+      assistantSendBtn.dataset.assistantListenerBound = 'true';
     }
-  };
+}
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupAssistant, { once: true });
-  } else {
-    setupAssistant();
-  }
-})();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initAssistant();
+  }, { once: true });
+} else {
+  initAssistant();
+}
 
 (function initAssistantNavigation() {
   const setupAssistantNavigation = () => {
@@ -916,78 +940,6 @@ function openEditor() {
     setupSheet();
   }
 })();
-
-// =============================
-// Assistant UI
-// =============================
-
-function initAssistant() {
-  const sendBtn = document.getElementById('assistantSend');
-  const input = document.getElementById('assistantInput');
-  const output = document.getElementById('assistantOutput');
-
-  if (!sendBtn || !input) {
-    console.warn('Assistant UI not found');
-    return;
-  }
-
-  sendBtn.addEventListener('click', async () => {
-    const question = input.value.trim();
-    if (!question) return;
-
-    // show loading
-    if (output) {
-      output.innerHTML += `<div class="assistant-user">${question}</div>`;
-      output.innerHTML += '<div class="assistant-loading">Thinking...</div>';
-    }
-
-    try {
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          schemaVersion: 2,
-          question,
-          contextText: '',
-          entries: [],
-        }),
-      });
-
-      const data = await response.json();
-
-      if (output) {
-        const loading = output.querySelector('.assistant-loading');
-        if (loading) loading.remove();
-
-        output.innerHTML += `
-          <div class="assistant-ai">
-            ${data.answer || 'No response'}
-          </div>
-        `;
-      }
-    } catch (err) {
-      console.error('Assistant error:', err);
-
-      if (output) {
-        output.innerHTML += `
-          <div class="assistant-error">
-            Assistant failed to respond
-          </div>
-        `;
-      }
-    }
-
-    input.value = '';
-  });
-}
-
-// ensure DOM loaded before attaching listeners
-document.addEventListener('DOMContentLoaded', () => {
-  initAssistant();
-});
-/* END GPT CHANGE */
 
 const bootstrapReminders = () => {
   if (bootstrapReminders._initialised) {
