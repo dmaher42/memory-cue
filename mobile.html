@@ -4620,11 +4620,12 @@ body, main, section, div, p, span, li {
 
 
   <!-- quickAddBar is now integrated in the header -->
-  <main id="main" class="app-content content mx-auto w-full max-w-none sm:max-w-lg"
+  <main id="main" class="app-content content mx-auto w-full max-w-none"
         tabindex="-1"
         data-active-view="reminders"
       >
-    <div id="contentFeed">
+    <div class="content-container">
+      <div id="contentFeed">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -4679,6 +4680,7 @@ body, main, section, div, p, span, li {
       <div class="space-y-3">
         <h2 class="text-lg font-semibold">Inbox</h2>
         <div id="inboxEntriesList" class="category-entry-list" aria-live="polite"></div>
+      </div>
       </div>
     </div>
     <!-- END GPT CHANGE -->
