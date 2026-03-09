@@ -3647,7 +3647,7 @@ body, main, section, div, p, span, li {
   }
 </style>
 </head>
-<body class="min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
+<body class="app-shell min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
@@ -4507,7 +4507,7 @@ body, main, section, div, p, span, li {
 
 
   <!-- Unified Mobile Header -->
-  <header id="reminders-slim-header" class="mobile-header" role="banner">
+  <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
     <div class="header-main-row">
       <h1 class="header-title">Memory Cue</h1>
       <div class="header-actions">
@@ -4633,14 +4633,7 @@ body, main, section, div, p, span, li {
 
 
   <!-- quickAddBar is now integrated in the header -->
-  <div class="app-main">
-    <div
-      id="mobile-shell"
-      class="mobile-shell mx-auto w-full px-4 pb-16"
-    >
-      <main
-        id="main"
-        class="mx-auto pt-4 pb-4 w-full max-w-none sm:max-w-lg"
+  <main id="main" class="app-content mx-auto w-full max-w-none sm:max-w-lg"
         tabindex="-1"
         data-active-view="reminders"
       >
@@ -5081,8 +5074,6 @@ body, main, section, div, p, span, li {
       </div>
     </section>
 </main>
-    </div>
-  </div>
 
   <div class="move-to-folder-sheet hidden">
     <div class="sheet-backdrop"></div>
@@ -5094,16 +5085,16 @@ body, main, section, div, p, span, li {
     </div>
   </div>
 
-  <div id="smartInputBar" class="smart-input-bar">
+  <div id="smartInputBar" class="smart-input-bar capture-bar">
     <form id="quickAddForm" class="smart-input-form">
       <input id="quickAddInput" class="control-input quick-add-input" type="text" placeholder="Capture, search, or ask..." autocomplete="off" />
-      <button id="quickAddSubmit" type="submit" class="smart-send-button" aria-label="Send">Send</button>
+      <button id="captureSend" type="submit" class="smart-send-button" aria-label="Send">Send</button>
       <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
       <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
     </form>
   </div>
 
-  <div id="mobile-nav-shell" class="sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3">
+  <nav id="mobile-nav-shell" class="bottom-nav sticky inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none px-2 pb-3" aria-label="Bottom navigation">
     <div class="floating-footer">
       <button
         type="button"
@@ -5208,7 +5199,7 @@ body, main, section, div, p, span, li {
         <span>Assistant</span>
       </button>
     </div>
-  </div>
+  </nav>
   <script>
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
