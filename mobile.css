@@ -117,11 +117,37 @@ body.app-shell #mobile-nav-shell .floating-card[aria-current='page'] {
   outline: 2px solid color-mix(in srgb, var(--accent-color, #512663) 40%, transparent);
 }
 
+
+body.app-shell .content .content-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+  line-height: 1.4;
+}
+
+body.app-shell .content #contentFeed {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.app-shell .content .card,
+#contentFeed .entry,
+#assistantThread .assistant-message,
+#inboxSearchResults .entry {
+  width: 100%;
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--surface-elevated, #fff);
+}
+
 #contentFeed .entry,
 #assistantThread .assistant-message,
 #inboxSearchResults .entry {
   border-radius: 12px;
-  padding: 12px;
+  padding: 14px;
   margin-bottom: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
