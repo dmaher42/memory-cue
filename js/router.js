@@ -3,9 +3,9 @@ const groupedRoutes = new Set(['notes', 'resources', 'templates']);
 function renderRoute() {
   const rawRoute = (window.location.hash || '#dashboard').replace('#', '');
   const activeRoute = rawRoute === '' ? 'dashboard' : rawRoute;
-  const routeNodes = document.querySelectorAll('[data-route]');
+  const routeNodes = document.querySelectorAll('[data-route], [data-view]');
   routeNodes.forEach((node) => {
-    const nodeRoute = node.dataset.route;
+    const nodeRoute = node.dataset.route || node.dataset.view;
     const isDashboardFallback = rawRoute === '' && nodeRoute === 'dashboard';
     const shouldShow = isDashboardFallback || nodeRoute === activeRoute;
 
@@ -14,8 +14,9 @@ function renderRoute() {
     node.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
   });
 
-  document.querySelectorAll('[data-nav]').forEach((link) => {
-    const isActive = link.dataset.nav === activeRoute;
+  document.querySelectorAll('[data-nav], [data-route]').forEach((link) => {
+    const linkRoute = link.dataset.nav || link.dataset.route;
+    const isActive = linkRoute === activeRoute;
     link.classList.toggle('btn-active', isActive);
     if (isActive) {
       link.setAttribute('aria-current', 'page');
@@ -25,8 +26,9 @@ function renderRoute() {
   });
 
   const isGroupedRoute = groupedRoutes.has(activeRoute);
-  document.querySelectorAll('#nav-more-menu [data-nav]').forEach((link) => {
-    const isActive = link.dataset.nav === activeRoute;
+  document.querySelectorAll('#nav-more-menu [data-nav], #nav-more-menu [data-route]').forEach((link) => {
+    const linkRoute = link.dataset.nav || link.dataset.route;
+    const isActive = linkRoute === activeRoute;
     link.classList.toggle('btn-active', isActive);
     if (isActive) {
       link.setAttribute('aria-current', 'page');
@@ -121,6 +123,8 @@ function initRouter() {
   initMobileNavHandlers();
   renderRoute();
 }
+
+window.renderRoute = renderRoute;
 
 window.addEventListener('hashchange', renderRoute);
 
