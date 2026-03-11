@@ -5110,10 +5110,10 @@ body, main, section, div, p, span, li {
       <button
         type="button"
         class="floating-card btn-reminders"
-        id="mobile-footer-reminders"
-        data-nav-target="reminders"
-        data-tab="reminders"
-        aria-label="Go to Reminders"
+        id="mobile-footer-today"
+        data-nav-target="today"
+        data-tab="today"
+        aria-label="Go to Today"
       >
         <svg
           class="icon icon-clock"
@@ -5130,35 +5130,7 @@ body, main, section, div, p, span, li {
           <circle cx="12" cy="12" r="7" />
           <path d="M12 9v3.5l2 1.5" />
         </svg>
-        <span>Reminders</span>
-      </button>
-
-      <button
-        type="button"
-        class="floating-card btn-notebook"
-        id="mobile-footer-notebook"
-        data-nav-target="notebook"
-        data-tab="notes"
-        aria-label="Go to Notes"
-      >
-        <svg
-          class="icon icon-notebook"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="7" y="4" width="10" height="16" rx="2" />
-          <path d="M10 4v16" />
-          <path d="M10 8h4" />
-          <path d="M10 11.5h4" />
-        </svg>
-        <span>Notes</span>
+        <span>Today</span>
       </button>
 
       <button
@@ -5247,10 +5219,6 @@ body, main, section, div, p, span, li {
         }
       }
 
-      const focusNotebookInputs = () => {
-        // Do not auto-focus notebook fields on navigation to avoid opening mobile keyboards.
-      };
-
       const closeSavedNotesSheet = () => {
         try {
           if (typeof window.hideSavedNotesSheet === 'function') {
@@ -5296,17 +5264,6 @@ body, main, section, div, p, span, li {
             openQuickAddFallback();
           }
         }
-      };
-
-      const navigateToNotebook = () => {
-        window.dispatchEvent(
-          new CustomEvent('app:navigate', {
-            detail: { view: 'notebook' }
-          })
-        );
-        setActiveFooterIcon('mobile-footer-notebook');
-        focusNotebookInputs();
-        closeSavedNotesSheet();
       };
 
       const closeFabMenu = () => {
@@ -5355,7 +5312,12 @@ body, main, section, div, p, span, li {
         }
 
         if (action === 'new-note') {
-          navigateToNotebook();
+          window.dispatchEvent(
+            new CustomEvent('app:navigate', {
+              detail: { view: 'notebook' }
+            })
+          );
+          closeSavedNotesSheet();
         }
       });
 
@@ -5379,18 +5341,22 @@ body, main, section, div, p, span, li {
         const view = button.getAttribute('data-nav-target');
         if (!view) return;
 
+        const routeMap = {
+          today: 'reminders',
+          inbox: 'inbox',
+          assistant: 'assistant'
+        };
+
+        const targetView = routeMap[view];
+        if (!targetView) return;
+
         closeFabMenu();
         setActiveFooterIcon(button.id);
-
-        if (view === 'notebook') {
-          navigateToNotebook();
-          return;
-        }
 
         closeSavedNotesSheet();
         window.dispatchEvent(
           new CustomEvent('app:navigate', {
-            detail: { view }
+            detail: { view: targetView }
           })
         );
       });
