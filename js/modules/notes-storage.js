@@ -105,6 +105,15 @@ const sanitizeTags = (value) => {
     .filter((tag, index, list) => tag.length && list.indexOf(tag) === index);
 };
 
+const sanitizeLinks = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((linkId) => (typeof linkId === 'string' ? linkId.trim() : ''))
+    .filter((linkId, index, list) => linkId.length && list.indexOf(linkId) === index);
+};
+
 const sanitizeMetadata = (value) => {
   if (!value || typeof value !== 'object') {
     return null;
@@ -173,6 +182,7 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
     folderId: overrides.folderId && typeof overrides.folderId === 'string' ? overrides.folderId : null,
     semanticEmbedding: normalizeSemanticEmbedding(overrides.semanticEmbedding),
     metadata: sanitizeMetadata(overrides.metadata),
+    links: sanitizeLinks(overrides.links),
   };
 };
 
@@ -211,6 +221,7 @@ const normalizeNotes = (value) => {
           pinned,
           semanticEmbedding: normalizeSemanticEmbedding(note.semanticEmbedding),
           metadata: sanitizeMetadata(note.metadata),
+          links: sanitizeLinks(note.links),
         });
       })
       .filter(Boolean);
@@ -243,6 +254,7 @@ const normalizeNotes = (value) => {
         pinned,
         semanticEmbedding: normalizeSemanticEmbedding(value.semanticEmbedding),
         metadata: sanitizeMetadata(value.metadata),
+        links: sanitizeLinks(value.links),
       }),
     ];
   }
@@ -329,6 +341,7 @@ export const saveAllNotes = (notes, options = {}) => {
       out.createdAt = isValidDateString(note.createdAt) ? note.createdAt : out.createdAt;
       out.semanticEmbedding = normalizeSemanticEmbedding(note.semanticEmbedding);
       out.metadata = sanitizeMetadata(note.metadata);
+      out.links = sanitizeLinks(note.links);
     }
     return out;
   }).filter(Boolean);
@@ -475,4 +488,74 @@ export const assignNoteToFolder = (noteId, folderId) => {
   }
   const saved = saveAllNotes(newNotes);
   return saved;
+};
+
+export const linkEntries = (sourceId, targetId) => {
+  if (!sourceId || typeof sourceId !== 'string' || !targetId || typeof targetId !== 'string') {
+    return false;
+  }
+
+  const sourceKey = sourceId.trim();
+  const targetKey = targetId.trim();
+
+  if (!sourceKey || !targetKey || sourceKey === targetKey) {
+    return false;
+  }
+
+  const notes = loadAllNotes();
+  if (!Array.isArray(notes) || !notes.length) {
+    return false;
+  }
+
+  let sourceFound = false;
+  let targetFound = false;
+  let changed = false;
+
+  const linkedNotes = notes.map((note) => {
+    if (!note || typeof note !== 'object') {
+      return note;
+    }
+
+    if (note.id === sourceKey) {
+      sourceFound = true;
+      const currentLinks = sanitizeLinks(note.links);
+      if (!currentLinks.includes(targetKey)) {
+        changed = true;
+        return {
+          ...note,
+          links: [...currentLinks, targetKey],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return {
+        ...note,
+        links: currentLinks,
+      };
+    }
+
+    if (note.id === targetKey) {
+      targetFound = true;
+      const currentLinks = sanitizeLinks(note.links);
+      if (!currentLinks.includes(sourceKey)) {
+        changed = true;
+        return {
+          ...note,
+          links: [...currentLinks, sourceKey],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return {
+        ...note,
+        links: currentLinks,
+      };
+    }
+
+    return note;
+  });
+
+  if (!sourceFound || !targetFound || !changed) {
+    return false;
+  }
+
+  return saveAllNotes(linkedNotes);
 };
