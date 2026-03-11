@@ -43,6 +43,10 @@ function getCategory(type) {
   return [...memoryCueData[toCollectionKey(type)]];
 }
 
+function searchByPerson(name) {
+  return getAllNotes().filter((entry) => entry?.person === name);
+}
+
 function getStoreSnapshot() {
   return {
     tasks: [...memoryCueData.tasks],
@@ -58,6 +62,7 @@ module.exports = {
   addRecord,
   getCategory,
   getAllNotes,
+  searchByPerson,
   getStoreSnapshot,
   memoryCueData,
 };

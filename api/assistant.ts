@@ -1,4 +1,4 @@
-const { addRecord, getAllNotes, getCategory } = require('./memory-store');
+const { addRecord, getAllNotes, getCategory, searchByPerson } = require('./memory-store');
 const { classifyMemoryType, createStructuredMemory } = require('./memory-utils');
 
 const ALLOWED_ORIGINS = [
@@ -43,6 +43,12 @@ function pickRetrievalType(inputText) {
   return null;
 }
 
+function extractPersonQuery(inputText) {
+  const match = String(inputText || '').match(/\bwhat\s+did\s+([^?]+?)\s+say\??\s*$/i);
+  if (!match) return null;
+  return match[1].trim();
+}
+
 function keywordScore(query, memory) {
   const q = query.toLowerCase().split(/\s+/).filter(Boolean);
   const haystack = `${memory.text || ''} ${(memory.tags || []).join(' ')}`.toLowerCase();
@@ -78,6 +84,18 @@ export default async function handler(req, res) {
   const intent = detectIntent(input);
   let reply = "I don't know.";
   let results = [];
+
+  const personQuery = extractPersonQuery(input);
+  if (personQuery) {
+    results = searchByPerson(personQuery);
+    reply = formatMemoryList(`${personQuery} said`, results);
+
+    return res.status(200).json({
+      success: true,
+      reply,
+      contextUsed: results
+    });
+  }
 
   if (intent === 'save') {
     const type = classifyMemoryType(input);

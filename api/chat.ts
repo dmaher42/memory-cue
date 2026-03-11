@@ -1,3 +1,11 @@
+const { searchByPerson } = require('./memory-store');
+
+function extractPersonQuestion(message: string) {
+  const match = String(message || '').match(/\bwhat\s+did\s+([^?]+?)\s+say\??\s*$/i);
+  if (!match) return null;
+  return match[1].trim();
+}
+
 async function generateLLMResponse(prompt: string) {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('Missing OpenAI API key');
@@ -86,6 +94,16 @@ export default async function handler(req, res) {
     }
 
     let results = Array.isArray(memoryEntries) ? memoryEntries : [];
+
+    const personQuestion = extractPersonQuestion(message);
+    if (personQuestion) {
+      const personMatches = searchByPerson(personQuestion);
+      if (personMatches.length) {
+        results = personMatches;
+      } else if (results.length) {
+        results = results.filter((entry) => entry?.person === personQuestion);
+      }
+    }
 
     if (!results.length) {
       const searchRes = await fetch(searchUrl, {
