@@ -15,6 +15,17 @@ function applyCors(req, res) {
   }
 }
 
+async function generateLLMResponse(prompt) {
+  const contextMatch = prompt.match(/CONTEXT:\n([\s\S]*)\n\nAnswer the question using the context\./);
+  const contextText = contextMatch ? contextMatch[1].trim() : '';
+
+  if (!contextText) {
+    return "I don't know.";
+  }
+
+  return contextText.split('\n').find((line) => line.trim()) || "I don't know.";
+}
+
 module.exports = async function handler(req, res) {
   applyCors(req, res);
 
@@ -27,21 +38,50 @@ module.exports = async function handler(req, res) {
   }
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const input = typeof body.input === 'string' ? body.input.trim() : '';
+  const input = typeof body.input === 'string'
+    ? body.input.trim()
+    : (typeof body.question === 'string' ? body.question.trim() : '');
 
   if (!input) {
     return res.status(400).json({ error: 'Missing input' });
   }
 
-  console.log('[assistant request]', input);
+  const host = req.headers.host;
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const searchUrl = host ? `${protocol}://${host}/api/search` : '/api/search';
 
-  // TODO: Replace placeholder assistant response with real AI call.
-  const reply = `You said: ${input}`;
+  let results = [];
+  try {
+    const search = await fetch(searchUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: input })
+    });
 
-  console.log('[assistant response]', reply);
+    const payload = await search.json();
+    results = Array.isArray(payload && payload.results) ? payload.results : [];
+  } catch (error) {
+    console.error('[assistant] search failed', error);
+  }
+
+  const context = results.map((n) => n.text).join('\n\n');
+
+  const prompt = `
+QUESTION:
+${input}
+
+CONTEXT:
+${context}
+
+Answer the question using the context.
+If the context does not contain the answer, say you don't know.
+`;
+
+  const reply = await generateLLMResponse(prompt);
 
   return res.status(200).json({
     success: true,
-    reply
+    reply,
+    contextUsed: results
   });
 };

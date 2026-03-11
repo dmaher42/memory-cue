@@ -1,4 +1,5 @@
-const chrono = require('chrono-node');
+const { RRule } = require('rrule');
+const { addRecord } = require('./memory-store');
 
 const ALLOWED_ORIGINS = [
   'https://dmaher42.github.io',
@@ -8,10 +9,6 @@ const ALLOWED_ORIGINS = [
 ];
 
 const MAX_INPUT_CHARS = 6000;
-
-const notes = [];
-const reminders = [];
-const tasks = [];
 
 function applyCors(req, res) {
   const origin = req.headers.origin;
@@ -166,13 +163,7 @@ module.exports = async function handler(req, res) {
     createdAt: Date.now()
   };
 
-  if (reminderTime) {
-    reminders.push(record);
-  } else if (type === 'task') {
-    tasks.push(record);
-  } else {
-    notes.push(record);
-  }
+  addRecord(type, record);
 
   console.log('[capture classified]', type);
 
