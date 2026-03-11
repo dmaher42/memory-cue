@@ -4761,8 +4761,9 @@ body, main, section, div, p, span, li {
     </section>
     <section data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
+        <h2 class="text-lg font-semibold">Inbox</h2>
         <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Inbox</button>
-        <div id="inboxEntriesList" class="category-entry-list" aria-live="polite"></div>
+        <ul id="inboxEntriesList" class="category-entry-list list-disc pl-4" aria-live="polite"></ul>
       </div>
     </section>
     <!-- END GPT CHANGE -->
@@ -5593,8 +5594,26 @@ body, main, section, div, p, span, li {
         entriesPanel?.classList.remove('hidden');
       };
 
+      const isUnprocessedEntry = (entry) => {
+        if (!entry || typeof entry !== 'object') return false;
+        return entry.processed === false || entry.processed === 'false';
+      };
+
+      const getEntryTimestamp = (entry) => {
+        const rawDate = entry?.createdAt || entry?.created || entry?.date || entry?.updatedAt;
+        const parsedDate = new Date(rawDate || 0).getTime();
+        return Number.isFinite(parsedDate) ? parsedDate : 0;
+      };
+
+      const findEntryIndex = (allEntries, entry) => allEntries.findIndex((item) => {
+        if (entry?.id && item?.id) return item.id === entry.id;
+        return getEntryText(item) === getEntryText(entry) && getEntryTimestamp(item) === getEntryTimestamp(entry);
+      });
+
       const renderInboxEntries = () => {
-        const entries = readEntries().filter((entry) => String(entry?.status || '').toLowerCase() === 'inbox');
+        const entries = readEntries()
+          .filter((entry) => isUnprocessedEntry(entry))
+          .sort((a, b) => getEntryTimestamp(b) - getEntryTimestamp(a));
         inboxEntriesList.innerHTML = '';
 
         if (!entries.length) {
@@ -5605,74 +5624,35 @@ body, main, section, div, p, span, li {
           return;
         }
 
-        entries.forEach((entry, index) => {
-          const card = document.createElement('article');
+        entries.forEach((entry) => {
+          const card = document.createElement('li');
           card.className = 'category-entry-item space-y-2';
 
-          const text = document.createElement('p');
-          text.className = 'text-sm';
+          const text = document.createElement('button');
+          text.type = 'button';
+          text.className = 'text-sm text-left w-full btn btn-ghost btn-sm justify-start px-1';
           text.textContent = getEntryText(entry);
+          text.setAttribute('aria-label', 'Edit inbox item');
 
           const meta = document.createElement('div');
           meta.className = 'text-xs opacity-70 flex items-center gap-2 flex-wrap';
 
           const categoryTag = document.createElement('span');
           categoryTag.className = 'badge badge-outline badge-sm';
-          categoryTag.textContent = String(entry?.status || 'inbox');
+          categoryTag.textContent = entry?.pinned ? 'Pinned' : 'Inbox';
 
           const createdAt = document.createElement('span');
           createdAt.textContent = getEntryCreatedDate(entry);
 
           meta.append(categoryTag, createdAt);
 
-          const actions = document.createElement('div');
-          actions.className = 'flex items-center gap-2 flex-wrap';
-
-          const moveSelect = document.createElement('select');
-          moveSelect.className = 'select select-bordered select-xs';
-          const defaultOption = document.createElement('option');
-          defaultOption.value = '';
-          defaultOption.textContent = 'Move to category';
-          moveSelect.appendChild(defaultOption);
-
-          categories
-            .filter((name) => name.toLowerCase() !== 'inbox')
-            .forEach((name) => {
-              const option = document.createElement('option');
-              option.value = name;
-              option.textContent = name;
-              moveSelect.appendChild(option);
-            });
-
-          moveSelect.addEventListener('change', () => {
-            if (!moveSelect.value) return;
-            const allEntries = readEntries();
-            const entryIndex = allEntries.findIndex((item) => {
-              if (entry?.id && item?.id) return item.id === entry.id;
-              return getEntryText(item) === getEntryText(entry) && index === entries.indexOf(entry);
-            });
-            if (entryIndex === -1) return;
-            allEntries[entryIndex] = {
-              ...allEntries[entryIndex],
-              status: moveSelect.value.toLowerCase(),
-              category: moveSelect.value,
-              updatedAt: new Date().toISOString()
-            };
-            writeEntries(allEntries);
-            renderInboxEntries();
-          });
-
-          const editBtn = document.createElement('button');
-          editBtn.type = 'button';
-          editBtn.className = 'btn btn-xs btn-ghost';
-          editBtn.textContent = 'Edit';
-          editBtn.addEventListener('click', () => {
+          text.addEventListener('click', () => {
             const updatedText = window.prompt('Edit entry text', getEntryText(entry));
             if (updatedText === null) return;
             const nextText = updatedText.trim();
             if (!nextText) return;
             const allEntries = readEntries();
-            const entryIndex = allEntries.findIndex((item) => item?.id && entry?.id ? item.id === entry.id : getEntryText(item) === getEntryText(entry));
+            const entryIndex = findEntryIndex(allEntries, entry);
             if (entryIndex === -1) return;
             const target = allEntries[entryIndex];
             const key = typeof target.text === 'string' ? 'text' : typeof target.content === 'string' ? 'content' : 'title';
@@ -5685,26 +5665,73 @@ body, main, section, div, p, span, li {
             renderInboxEntries();
           });
 
-          const deleteBtn = document.createElement('button');
-          deleteBtn.type = 'button';
-          deleteBtn.className = 'btn btn-xs btn-outline';
-          deleteBtn.textContent = 'Delete';
-          deleteBtn.addEventListener('click', () => {
+          const deleteEntry = () => {
             const allEntries = readEntries();
-            const nextEntries = allEntries.filter((item) => (entry?.id && item?.id ? item.id !== entry.id : item !== entry));
+            const entryIndex = findEntryIndex(allEntries, entry);
+            if (entryIndex === -1) return;
+            const nextEntries = allEntries.filter((_, idx) => idx !== entryIndex);
             writeEntries(nextEntries);
             renderInboxEntries();
+          };
+
+          let touchStartX = 0;
+          card.addEventListener('touchstart', (event) => {
+            touchStartX = event.changedTouches[0]?.clientX || 0;
+          }, { passive: true });
+          card.addEventListener('touchmove', (event) => {
+            const currentX = event.changedTouches[0]?.clientX || touchStartX;
+            if (touchStartX - currentX > 16) return;
+          }, { passive: true });
+          card.addEventListener('touchend', (event) => {
+            const endX = event.changedTouches[0]?.clientX || touchStartX;
+            if (touchStartX - endX > 80) {
+              deleteEntry();
+            }
           });
 
-          actions.append(moveSelect, editBtn, deleteBtn);
-          card.append(text, meta, actions);
+          let longPressTimer = null;
+          const clearLongPress = () => {
+            if (longPressTimer) {
+              window.clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          };
+
+          const onLongPress = () => {
+            const allEntries = readEntries();
+            const entryIndex = findEntryIndex(allEntries, entry);
+            if (entryIndex === -1) return;
+            allEntries[entryIndex] = {
+              ...allEntries[entryIndex],
+              pinned: !Boolean(allEntries[entryIndex]?.pinned),
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          };
+
+          card.addEventListener('touchstart', () => {
+            clearLongPress();
+            longPressTimer = window.setTimeout(onLongPress, 600);
+          }, { passive: true });
+          card.addEventListener('touchend', clearLongPress);
+          card.addEventListener('touchcancel', clearLongPress);
+          card.addEventListener('touchmove', clearLongPress, { passive: true });
+          card.addEventListener('mousedown', () => {
+            clearLongPress();
+            longPressTimer = window.setTimeout(onLongPress, 600);
+          });
+          card.addEventListener('mouseup', clearLongPress);
+          card.addEventListener('mouseleave', clearLongPress);
+
+          card.append(text, meta);
           inboxEntriesList.appendChild(card);
         });
       };
 
       const processInboxEntries = async () => {
         const allEntries = readEntries();
-        const inboxEntries = allEntries.filter((entry) => String(entry?.status || '').toLowerCase() === 'inbox');
+        const inboxEntries = allEntries.filter((entry) => isUnprocessedEntry(entry));
         if (!inboxEntries.length) {
           return;
         }
@@ -5773,6 +5800,8 @@ body, main, section, div, p, span, li {
               context: typeof update.context === 'string' ? update.context : entry.context,
               person: typeof update.person === 'string' || update.person === null ? update.person : entry.person,
               text: typeof update.rewrite === 'string' ? update.rewrite : entry.text,
+              category: typeof update.category === 'string' ? update.category : entry.category,
+              processed: true,
               status: 'processed',
               updatedAt: new Date().toISOString()
             };
