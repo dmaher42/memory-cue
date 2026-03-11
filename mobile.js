@@ -445,17 +445,13 @@ function initAssistant() {
             );
           }
         } else {
-          const entries = await buildAssistantEntries(trimmedMessage);
           const response = await fetch('/api/assistant', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              schemaVersion: 2,
-              question: trimmedMessage,
-              contextText: '',
-              entries,
+              input: trimmedMessage,
             }),
           });
 

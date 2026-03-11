@@ -52,6 +52,47 @@ function classifyCapture(input) {
   return 'note';
 }
 
+function detectRecurrence(text) {
+  const t = text.toLowerCase();
+
+  if (t.includes('every') || t.includes('weekly') || t.includes('each')) {
+    return 'weekly';
+  }
+
+  if (t.includes('daily')) {
+    return 'daily';
+  }
+
+  if (t.includes('next two weeks')) {
+    return 'weekly';
+  }
+
+  return null;
+}
+
+function getWeekCount(text) {
+  if (text.toLowerCase().includes('next two weeks')) {
+    return 2;
+  }
+
+  return 4;
+}
+
+function extractByWeekday(text) {
+  const weekdays = [];
+  const t = text.toLowerCase();
+
+  if (t.includes('monday')) weekdays.push(RRule.MO);
+  if (t.includes('tuesday')) weekdays.push(RRule.TU);
+  if (t.includes('wednesday')) weekdays.push(RRule.WE);
+  if (t.includes('thursday')) weekdays.push(RRule.TH);
+  if (t.includes('friday')) weekdays.push(RRule.FR);
+  if (t.includes('saturday')) weekdays.push(RRule.SA);
+  if (t.includes('sunday')) weekdays.push(RRule.SU);
+
+  return weekdays;
+}
+
 module.exports = async function handler(req, res) {
   applyCors(req, res);
 
@@ -87,6 +128,34 @@ module.exports = async function handler(req, res) {
     reminderTime = parsedDates[0].start.date();
     type = 'reminder';
     console.log('[reminder detected]', reminderTime);
+  }
+
+  const recurrenceType = detectRecurrence(body.input);
+  let recurrenceRule = null;
+  let occurrences = [];
+
+  if (recurrenceType === 'weekly') {
+    const weekdays = extractByWeekday(body.input);
+    const weekCount = getWeekCount(body.input);
+
+    recurrenceRule = new RRule({
+      freq: RRule.WEEKLY,
+      interval: 1,
+      count: weekdays.length > 0 ? weekdays.length * weekCount : weekCount,
+      byweekday: weekdays.length > 0 ? weekdays : undefined,
+      dtstart: new Date()
+    });
+  } else if (recurrenceType === 'daily') {
+    recurrenceRule = new RRule({
+      freq: RRule.DAILY,
+      interval: 1,
+      count: 4,
+      dtstart: new Date()
+    });
+  }
+
+  if (recurrenceRule) {
+    occurrences = recurrenceRule.all();
   }
 
   const record = {
