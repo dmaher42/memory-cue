@@ -1102,6 +1102,8 @@ const initMobileNotes = () => {
   const saveButton = document.getElementById('noteSaveMobile');
   const listElement = document.getElementById('notesListMobile');
   const countElement = document.getElementById('notesCountMobile');
+  const relatedNotesPanel = document.getElementById('relatedNotesPanel');
+  const relatedNotesList = document.getElementById('relatedNotesList');
   const filterInput = document.getElementById('notebook-search-input');
   const folderFilterSelect = document.getElementById('folderFilterSelect');
   const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
@@ -1471,6 +1473,10 @@ const initMobileNotes = () => {
 
   bindSavedNotesSheetEvents();
 
+  if (relatedNotesPanel instanceof HTMLElement) {
+    relatedNotesPanel.classList.add('hidden');
+  }
+
   const getNormalizedFilterQuery = () =>
     typeof filterQuery === 'string' ? filterQuery.trim().toLowerCase() : '';
 
@@ -1559,7 +1565,10 @@ const initMobileNotes = () => {
 
   const setEditorValues = (note, options = {}) => {
     const { isNew = false } = options;
-    if (note && currentNoteId === note.id && !isNew) return;
+    if (note && currentNoteId === note.id && !isNew) {
+      renderRelatedNotes(note);
+      return;
+    }
     if (!note) {
       currentNoteIsNew = false;
       currentNoteHasChanged = false;
@@ -1572,6 +1581,7 @@ const initMobileNotes = () => {
       if (labelElClear) {
         labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
       }
+      renderRelatedNotes(null);
       return;
     }
     currentNoteIsNew = Boolean(isNew);
@@ -1591,6 +1601,7 @@ const initMobileNotes = () => {
     if (labelEl) {
       labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
     }
+    renderRelatedNotes(note);
   };
 
   const extractPlainText = (html = '') => getEditorBodyText(html);
@@ -1615,6 +1626,53 @@ const initMobileNotes = () => {
     }
     const body = getNoteBodyText(note).trim();
     return body || 'Untitled note';
+  };
+
+  const getNoteLinks = (note) => {
+    if (!Array.isArray(note?.links)) {
+      return [];
+    }
+    return note.links
+      .map((linkId) => (typeof linkId === 'string' ? linkId.trim() : ''))
+      .filter((linkId, index, links) => linkId && links.indexOf(linkId) === index);
+  };
+
+  const renderRelatedNotes = (note) => {
+    if (!(relatedNotesPanel instanceof HTMLElement) || !(relatedNotesList instanceof HTMLElement)) {
+      return;
+    }
+
+    relatedNotesList.innerHTML = '';
+
+    if (!note || typeof note.id !== 'string') {
+      relatedNotesPanel.classList.add('hidden');
+      return;
+    }
+
+    relatedNotesPanel.classList.remove('hidden');
+
+    const related = getNoteLinks(note)
+      .map((id) => allNotes.find((entry) => entry?.id === id))
+      .filter(Boolean);
+
+    if (!related.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No related notes.';
+      relatedNotesList.appendChild(empty);
+      return;
+    }
+
+    related.forEach((relatedNote) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-ghost btn-xs justify-start w-full';
+      button.textContent = getDashboardItemLabel(relatedNote);
+      button.addEventListener('click', () => {
+        setEditorValues(relatedNote);
+        updateListSelection();
+      });
+      relatedNotesList.appendChild(button);
+    });
   };
 
   const buildDashboardData = () => {
