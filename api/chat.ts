@@ -50,7 +50,7 @@ export default async function handler(req, res) {
   }
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const { message, history = [] } = body;
+  const { message, history = [], memoryContext = '', memoryEntries = [] } = body;
   const configuredAppUrl = process.env.APP_URL?.trim();
 
   if (!message) {
@@ -85,16 +85,33 @@ export default async function handler(req, res) {
       searchUrl = `${proto.trim()}://${host.toString().trim()}/api/search`;
     }
 
-    const searchRes = await fetch(searchUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: message })
-    });
+    let results = Array.isArray(memoryEntries) ? memoryEntries : [];
 
-    const { results = [] } = await searchRes.json();
+    if (!results.length) {
+      const searchRes = await fetch(searchUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: message })
+      });
+
+      const payload = await searchRes.json();
+      results = Array.isArray(payload?.results) ? payload.results : [];
+    }
 
     const contextNotes = results
-      .map((n) => `• ${n.text}`)
+      .map((n) => {
+        if (typeof n?.text === 'string' && n.text.trim()) {
+          return `• ${n.text}`;
+        }
+        const title = typeof n?.title === 'string' ? n.title.trim() : '';
+        const summary = typeof n?.summary === 'string'
+          ? n.summary.trim()
+          : typeof n?.body === 'string'
+            ? n.body.trim().slice(0, 200)
+            : '';
+        const tags = Array.isArray(n?.tags) && n.tags.length ? ` (${n.tags.join(', ')})` : '';
+        return [title ? `• ${title}${tags}` : '• Note', summary].filter(Boolean).join(' — ');
+      })
       .join('\n');
 
     const conversationHistory = history
@@ -112,6 +129,7 @@ CONVERSATION:
 ${conversationHistory}
 
 MEMORY NOTES:
+${typeof memoryContext === 'string' && memoryContext.trim() ? `${memoryContext}\n\n` : ''}
 ${contextNotes}
 
 USER QUESTION:

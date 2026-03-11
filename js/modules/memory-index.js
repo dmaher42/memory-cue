@@ -1,6 +1,6 @@
 import { getFolderNameById, loadAllNotes } from './notes-storage.js';
 
-const MAX_SEARCH_RESULTS = 20;
+const MAX_SEARCH_RESULTS = 5;
 const DEFAULT_RECENT_LIMIT = 20;
 const ALLOWED_MEMORY_TYPES = new Set([
   'task',
@@ -60,10 +60,13 @@ const buildIndexEntry = (note) => {
   const updatedAt = toTimestamp(note.updatedAt) || createdAt;
   const type = normalizeString(metadata.type).toLowerCase();
 
+  const body = normalizeString(note.bodyText) || normalizeString(note.body);
+
   return {
     id: normalizeString(note.id),
     title: normalizeString(note.title) || 'Untitled note',
-    body: normalizeString(note.bodyText) || normalizeString(note.body),
+    body,
+    summary: body.slice(0, 180),
     type,
     tags: normalizeTags(metadata.tags),
     folder: getFolderNameById(note.folderId),
@@ -72,7 +75,13 @@ const buildIndexEntry = (note) => {
   };
 };
 
+const tokenizeQuery = (query) => normalizeString(query)
+  .toLowerCase()
+  .split(/[^a-z0-9]+/)
+  .filter(Boolean);
+
 const scoreMemoryMatch = (entry, normalizedQuery) => {
+  const queryTokens = tokenizeQuery(normalizedQuery);
   const lowerTitle = entry.title.toLowerCase();
   const lowerBody = entry.body.toLowerCase();
   const lowerTags = entry.tags.map((tag) => tag.toLowerCase());
@@ -80,20 +89,22 @@ const scoreMemoryMatch = (entry, normalizedQuery) => {
   let score = 0;
   let matched = false;
 
-  if (lowerTitle.includes(normalizedQuery)) {
-    score += 1000;
-    matched = true;
-  }
+  queryTokens.forEach((token) => {
+    if (lowerTitle.includes(token)) {
+      score += 1000;
+      matched = true;
+    }
 
-  if (lowerTags.some((tag) => tag.includes(normalizedQuery))) {
-    score += 500;
-    matched = true;
-  }
+    if (lowerTags.some((tag) => tag.includes(token))) {
+      score += 500;
+      matched = true;
+    }
 
-  if (lowerBody.includes(normalizedQuery)) {
-    score += 100;
-    matched = true;
-  }
+    if (lowerBody.includes(token)) {
+      score += 100;
+      matched = true;
+    }
+  });
 
   // Recency is the final tie-breaker after relevance rules.
   const recencyBoost = entry.updatedAt > 0 ? Math.max(0, 50 - (Date.now() - entry.updatedAt) / (24 * 60 * 60 * 1000)) : 0;

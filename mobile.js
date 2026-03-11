@@ -153,25 +153,22 @@ function initAssistant() {
 
     const searchMemoryIndex = async (question) => {
       try {
-        const activityIndexModule = await import('./js/modules/activity-index.js');
-        if (activityIndexModule && typeof activityIndexModule.searchMemoryIndex === 'function') {
-          return activityIndexModule.searchMemoryIndex(question);
-        }
-        if (activityIndexModule && typeof activityIndexModule.searchActivityIndex === 'function') {
-          return activityIndexModule.searchActivityIndex(question);
+        const memoryIndexModule = await import('./js/modules/memory-index.js');
+        if (memoryIndexModule && typeof memoryIndexModule.searchMemoryIndex === 'function') {
+          return memoryIndexModule.searchMemoryIndex(question);
         }
       } catch (error) {
-        console.warn('[assistant] failed to load activity index search module', error);
+        console.warn('[assistant] failed to load memory index search module', error);
       }
 
       return [];
     };
 
     const buildAssistantEntries = async (question) => {
-      const sourceEntries = (await searchMemoryIndex(question)).slice(0, 10);
+      const sourceEntries = (await searchMemoryIndex(question)).slice(0, 5);
 
       // Keep assistant payloads lightweight while still sending top memory matches.
-      const maxEntries = 10;
+      const maxEntries = 5;
 
       return sourceEntries
         .slice(0, maxEntries)
@@ -186,6 +183,7 @@ function initAssistant() {
             id: typeof entry?.id === 'string' ? entry.id : '',
             title,
             body,
+            summary: toAssistantEntryText(entry?.summary, 240) || toAssistantEntryText(entry?.body, 240),
             type: typeof entry?.type === 'string' ? entry.type : 'note',
             tags: Array.isArray(entry?.tags)
               ? entry.tags.map((tag) => toAssistantEntryText(tag, 64)).filter(Boolean).slice(0, 12)
@@ -196,6 +194,29 @@ function initAssistant() {
           };
         })
         .filter(Boolean);
+    };
+
+    const buildMemoryContextBlock = (question, entries) => {
+      if (!Array.isArray(entries) || !entries.length) {
+        return '';
+      }
+
+      const contextRows = entries.map((entry, index) => {
+        const title = toAssistantEntryText(entry?.title, 120) || 'Untitled note';
+        const tags = Array.isArray(entry?.tags) && entry.tags.length ? ` (${entry.tags.join(', ')})` : '';
+        const summarySource = toAssistantEntryText(entry?.summary, 160) || toAssistantEntryText(entry?.body, 160);
+        return `${index + 1}. ${title}${tags}${summarySource ? ` – ${summarySource}` : ''}`;
+      });
+
+      return [
+        'User question:',
+        `"${question}"`,
+        '',
+        'Context from saved notes:',
+        ...contextRows,
+        '',
+        'Use this context when answering.',
+      ].join('\n');
     };
 
     const buildAssistantContextText = () => {
@@ -446,6 +467,9 @@ function initAssistant() {
             );
           }
         } else {
+          const assistantEntries = await buildAssistantEntries(trimmedMessage);
+          const memoryContext = buildMemoryContextBlock(trimmedMessage, assistantEntries);
+
           assistantConversationHistory.push({
             role: 'user',
             content: trimmedMessage,
@@ -480,6 +504,8 @@ function initAssistant() {
             body: JSON.stringify({
               message: trimmedMessage,
               history: assistantConversationHistory,
+              memoryContext,
+              memoryEntries: assistantEntries,
             }),
           });
 
