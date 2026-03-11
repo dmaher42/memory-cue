@@ -48,6 +48,20 @@ function extractTags(inputText) {
   return [...new Set(tags)];
 }
 
+
+function extractPerson(inputText) {
+  const text = String(inputText || '').trim();
+  if (!text) return undefined;
+
+  const saidMatch = text.match(/^([A-Z][a-z]+)\s+said\b/);
+  if (saidMatch) return saidMatch[1];
+
+  const fromMatch = text.match(/\bfrom\s+([A-Z][a-z]+)\b/);
+  if (fromMatch) return fromMatch[1];
+
+  return undefined;
+}
+
 function cleanMemoryText(inputText) {
   return String(inputText || '')
     .replace(/^\s*(remember this|add a task|save this|note|idea|question|resource)\s*[:\-]?\s*/i, '')
@@ -60,6 +74,7 @@ function createStructuredMemory(inputText, forcedType) {
     id: crypto.randomUUID(),
     type,
     text: cleanMemoryText(inputText) || String(inputText || '').trim(),
+    person: extractPerson(inputText),
     tags: extractTags(inputText),
     createdAt: new Date().toISOString(),
   };
