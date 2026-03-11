@@ -13,6 +13,7 @@ import { initNotesSync } from './js/modules/notes-sync.js';
 import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
+import { generateWeeklySummary } from './js/modules/weekly-summary.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 
@@ -55,6 +56,7 @@ function initAssistant() {
     const quickAddForm = document.getElementById('quickAddForm');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
+    const weeklyReflectionButton = document.getElementById('weeklyReflectionButton');
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
     const assistantConversationHistory = [];
@@ -591,6 +593,40 @@ function initAssistant() {
 
       renderSearchResults(query);
     });
+
+
+    if (weeklyReflectionButton instanceof HTMLElement) {
+      weeklyReflectionButton.addEventListener('click', async () => {
+        if (isAssistantSending) {
+          return;
+        }
+
+        isAssistantSending = true;
+        if (assistantLoading instanceof HTMLElement) {
+          assistantLoading.classList.remove('hidden');
+        }
+        setThinkingBarStatus('Generating weekly reflection');
+
+        try {
+          const weeklySummary = await generateWeeklySummary();
+          const summaryText = typeof weeklySummary?.summary === 'string' && weeklySummary.summary.trim()
+            ? weeklySummary.summary.trim()
+            : 'No weekly summary was returned.';
+          appendAssistantMessage('Weekly Reflection', 'assistant-message');
+          appendAssistantMessage(summaryText, 'assistant-message assistant-message--reply');
+          setThinkingBarStatus('Weekly reflection ready');
+        } catch (error) {
+          console.error('[assistant] failed to generate weekly reflection', error);
+          appendAssistantMessage("Sorry, I couldn't generate a weekly reflection right now.", 'assistant-message assistant-message--error');
+          setThinkingBarStatus('');
+        } finally {
+          isAssistantSending = false;
+          if (assistantLoading instanceof HTMLElement) {
+            assistantLoading.classList.add('hidden');
+          }
+        }
+      });
+    }
 
     if (isFormElement(quickAddForm) && isInputElement(universalInput)) {
       quickAddForm.addEventListener('submit', (event) => {
