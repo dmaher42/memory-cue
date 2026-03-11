@@ -1,4 +1,4 @@
-import { DAILY_LOG_GROUPS, getDailyLog } from './modules/daily-log.js';
+import { DAILY_LOG_GROUPS, getDailyLog, normalizeDateKey } from './modules/daily-log.js';
 
 const getCurrentRoute = () => {
   if (typeof window === 'undefined') {
@@ -25,28 +25,39 @@ const formatDateHeading = (dateValue) => {
   return parsed.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 };
 
+const getSelectedDate = () => {
+  const picker = document.getElementById('daily-log-date-filter');
+  const selected = normalizeDateKey(picker?.value || '');
+  const today = getTodayDateKey();
+
+  if (picker && !picker.value) {
+    picker.value = today;
+  }
+
+  return selected || today;
+};
+
 const renderDailyLog = () => {
   if (getCurrentRoute() !== 'daily-log') {
     return;
   }
 
-  const todayDate = new Date();
-  const entries = getDailyLog(getTodayDateKey());
+  const selectedDate = getSelectedDate();
+  const entries = getDailyLog(selectedDate);
   const grouped = {
     tasks: [],
     ideas: [],
-    notes: [],
-    knowledge: [],
+    memories: [],
   };
 
   entries.forEach((entry) => {
-    const group = DAILY_LOG_GROUPS.includes(entry.group) ? entry.group : 'notes';
+    const group = DAILY_LOG_GROUPS.includes(entry.group) ? entry.group : 'memories';
     grouped[group].push(entry);
   });
 
   const dateNode = document.getElementById('daily-log-date');
   if (dateNode) {
-    dateNode.textContent = formatDateHeading(todayDate);
+    dateNode.textContent = formatDateHeading(selectedDate);
   }
 
   DAILY_LOG_GROUPS.forEach((group) => {
@@ -73,9 +84,24 @@ const renderDailyLog = () => {
   });
 };
 
+const bindDailyLogListeners = () => {
+  const dateFilter = document.getElementById('daily-log-date-filter');
+  if (dateFilter instanceof HTMLInputElement) {
+    dateFilter.value = getSelectedDate();
+    dateFilter.addEventListener('change', renderDailyLog);
+  }
+
+  document.addEventListener('memoryCue:entriesUpdated', renderDailyLog);
+  document.addEventListener('memoryCue:notesUpdated', renderDailyLog);
+};
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderDailyLog, { once: true });
+  document.addEventListener('DOMContentLoaded', () => {
+    bindDailyLogListeners();
+    renderDailyLog();
+  }, { once: true });
 } else {
+  bindDailyLogListeners();
   renderDailyLog();
 }
 
