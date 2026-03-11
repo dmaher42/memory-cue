@@ -333,7 +333,7 @@
 
   async function processInbox() {
     const allEntries = readEntries();
-    const inboxEntries = allEntries.filter((entry) => entry?.processed !== true);
+    const inboxEntries = allEntries.filter((entry) => entry?.processed === false);
     if (!inboxEntries.length) {
       return;
     }
@@ -394,7 +394,7 @@
       const timestamp = new Date().toISOString();
       const processedNotes = [];
 
-      allEntries.forEach((entry) => {
+      inboxEntries.forEach((entry) => {
         const entryId = entry?.id ? String(entry.id) : '';
         if (!entryId || !updatesById.has(entryId)) {
           return;
@@ -428,8 +428,8 @@
       }
 
       appendToMainNotesDatabase(processedNotes);
-      const processedIds = new Set(processedNotes.map((entry) => entry.id));
-      const nextEntries = allEntries.filter((entry) => !processedIds.has(String(entry?.id || '')));
+      const inboxIds = new Set(inboxEntries.map((entry) => String(entry?.id || '')));
+      const nextEntries = allEntries.filter((entry) => !inboxIds.has(String(entry?.id || '')));
       writeEntries(nextEntries);
       renderInboxEntries();
     } catch (error) {
