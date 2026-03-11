@@ -174,6 +174,6 @@ module.exports = async function handler(req, res) {
     type,
     recurrence: record.recurrence,
     occurrences,
-    record
+    entry: record
   });
 };
