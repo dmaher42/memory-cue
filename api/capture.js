@@ -171,9 +171,6 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({
     success: true,
-    type,
-    recurrence: record.recurrence,
-    occurrences,
-    record
+    entry: record
   });
 };
