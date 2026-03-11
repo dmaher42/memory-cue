@@ -42,7 +42,7 @@ function initAssistant() {
       typeof HTMLInputElement !== 'undefined'
         ? value instanceof HTMLInputElement
         : value && value.tagName === 'INPUT';
-    const assistantThread = document.getElementById('assistantThread');
+    const assistantThread = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
     const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput')
       || document.getElementById('universalInput')
@@ -483,7 +483,7 @@ if (document.readyState === 'loading') {
 
 (function initAssistantNavigation() {
   const setupAssistantNavigation = () => {
-    const assistantView = document.getElementById('view-assistant');
+    const assistantView = document.getElementById('assistantView') || document.getElementById('view-assistant');
     const remindersView = document.getElementById('view-reminders');
     const notebookView = document.getElementById('view-notebook');
 
@@ -497,14 +497,26 @@ if (document.readyState === 'loading') {
       element.setAttribute('aria-hidden', String(!isVisible));
     };
 
+    const hideAllViews = () => {
+      setVisibility(assistantView, false);
+      setVisibility(remindersView, false);
+      setVisibility(notebookView, false);
+    };
+
+    const showAssistantView = () => {
+      hideAllViews();
+      if (assistantView instanceof HTMLElement) {
+        assistantView.classList.remove('hidden');
+        assistantView.setAttribute('aria-hidden', 'false');
+      }
+    };
+
     window.addEventListener('app:navigate', (event) => {
       const view = event?.detail?.view;
       if (!view) return;
 
       if (view === 'assistant') {
-        setVisibility(assistantView, true);
-        setVisibility(remindersView, false);
-        setVisibility(notebookView, false);
+        showAssistantView();
 
         const main = document.getElementById('main');
         if (main instanceof HTMLElement) {
