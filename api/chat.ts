@@ -51,13 +51,41 @@ export default async function handler(req, res) {
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const { message, history = [] } = body;
+  const configuredAppUrl = process.env.APP_URL?.trim();
 
   if (!message) {
     return res.status(400).json({ error: 'Missing message' });
   }
 
   try {
-    const searchRes = await fetch(process.env.APP_URL + '/api/search', {
+    let searchUrl = configuredAppUrl ? `${configuredAppUrl}/api/search` : '';
+
+    if (!searchUrl) {
+      const forwardedProto = req.headers['x-forwarded-proto'];
+      const forwardedHost = req.headers['x-forwarded-host'];
+      const hostHeader = req.headers.host;
+
+      const proto = Array.isArray(forwardedProto)
+        ? forwardedProto[0]
+        : forwardedProto?.split(',')[0];
+      const host = Array.isArray(forwardedHost)
+        ? forwardedHost[0]
+        : Array.isArray(hostHeader)
+          ? hostHeader[0]
+          : forwardedHost || hostHeader;
+
+      if (!proto || !host) {
+        return res.status(500).json({
+          error: 'Failed to process chat request',
+          message:
+            'Unable to resolve search endpoint URL. Set APP_URL or provide x-forwarded-proto and host headers.'
+        });
+      }
+
+      searchUrl = `${proto.trim()}://${host.toString().trim()}/api/search`;
+    }
+
+    const searchRes = await fetch(searchUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: message })
