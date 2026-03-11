@@ -3198,6 +3198,76 @@ body, main, section, div, p, span, li {
     pointer-events: none;
   }
 
+  .brain-dump-fab {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+    width: 3.5rem;
+    height: 3.5rem;
+    border: none;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-color);
+    color: #ffffff;
+    font-size: 2rem;
+    line-height: 1;
+    box-shadow: 0 12px 30px rgba(81, 38, 99, 0.3);
+    z-index: 95;
+  }
+
+  .brain-dump-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .brain-dump-modal[hidden] {
+    display: none;
+  }
+
+  .brain-dump-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.55);
+  }
+
+  .brain-dump-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(36rem, 100%);
+    background: var(--surface-elevated);
+    color: var(--text-main);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .brain-dump-modal-textarea {
+    width: 100%;
+    min-height: 12rem;
+    resize: vertical;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-subtle);
+    background: #fff;
+    color: var(--text-main);
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .brain-dump-modal-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
   /* Enhanced mobile body */
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -5192,11 +5262,30 @@ body, main, section, div, p, span, li {
       </button>
     </div>
   </nav>
+  <button type="button" id="brainDumpFab" class="brain-dump-fab" aria-label="Brain Dump" title="Brain Dump">+</button>
+
+  <div id="brainDumpModal" class="brain-dump-modal" role="dialog" aria-modal="true" aria-labelledby="brainDumpTitle" hidden>
+    <div class="brain-dump-modal-backdrop" data-brain-dump-close></div>
+    <div class="brain-dump-modal-panel">
+      <h2 id="brainDumpTitle" class="text-lg font-semibold">Brain Dump</h2>
+      <textarea id="brainDumpTextarea" class="brain-dump-modal-textarea" placeholder="Type anything..."></textarea>
+      <div class="brain-dump-modal-actions">
+        <button type="button" id="brainDumpCancel" class="btn btn-ghost">Cancel</button>
+        <button type="button" id="brainDumpSave" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
       const fabButton = document.getElementById('mobile-fab-button');
       const fabMenu = document.getElementById('mobile-fab-menu');
+      const brainDumpFab = document.getElementById('brainDumpFab');
+      const brainDumpModal = document.getElementById('brainDumpModal');
+      const brainDumpTextarea = document.getElementById('brainDumpTextarea');
+      const brainDumpSave = document.getElementById('brainDumpSave');
+      const brainDumpCancel = document.getElementById('brainDumpCancel');
 
       const updateBottomNavHeight = () => {
         if (!navFooter) return;
@@ -5223,6 +5312,58 @@ body, main, section, div, p, span, li {
           window.addEventListener('resize', updateBottomNavHeight, { passive: true });
         }
       }
+
+
+      const closeBrainDumpModal = () => {
+        if (!(brainDumpModal instanceof HTMLElement)) return;
+        brainDumpModal.setAttribute('hidden', '');
+      };
+
+      const openBrainDumpModal = () => {
+        if (!(brainDumpModal instanceof HTMLElement)) return;
+        brainDumpModal.removeAttribute('hidden');
+        brainDumpTextarea?.focus();
+      };
+
+      const saveBrainDump = () => {
+        const text = typeof brainDumpTextarea?.value === 'string' ? brainDumpTextarea.value.trim() : '';
+        if (!text) {
+          closeBrainDumpModal();
+          return;
+        }
+
+        const item = {
+          text,
+          type: 'inbox',
+          processed: false,
+          timestamp: Date.now()
+        };
+
+        try {
+          const raw = window.localStorage?.getItem('brainDumpItems');
+          const existing = raw ? JSON.parse(raw) : [];
+          const nextItems = Array.isArray(existing) ? [...existing, item] : [item];
+          window.localStorage?.setItem('brainDumpItems', JSON.stringify(nextItems));
+        } catch (error) {
+          console.warn('Unable to save brain dump item', error);
+        }
+
+        if (brainDumpTextarea) {
+          brainDumpTextarea.value = '';
+        }
+        closeBrainDumpModal();
+      };
+
+      brainDumpFab?.addEventListener('click', openBrainDumpModal);
+      brainDumpCancel?.addEventListener('click', closeBrainDumpModal);
+      brainDumpSave?.addEventListener('click', saveBrainDump);
+
+      brainDumpModal?.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.hasAttribute('data-brain-dump-close')) {
+          closeBrainDumpModal();
+        }
+      });
 
       const closeSavedNotesSheet = () => {
         try {
@@ -5336,6 +5477,7 @@ body, main, section, div, p, span, li {
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           closeFabMenu();
+          closeBrainDumpModal();
         }
       });
 
