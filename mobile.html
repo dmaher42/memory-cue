@@ -2946,7 +2946,7 @@ body, main, section, div, p, span, li {
       color: var(--text-primary);
     }
 
-    #view-assistant {
+    #assistantView {
       align-content: start;
       display: flex;
       flex-direction: column;
@@ -2967,7 +2967,7 @@ body, main, section, div, p, span, li {
       min-height: 0;
     }
 
-    #assistantThread,
+    #assistantMessages,
     .assistant-messages {
       display: grid;
       gap: 0.5rem;
@@ -2990,10 +2990,14 @@ body, main, section, div, p, span, li {
       justify-self: end;
     }
 
-    #assistantForm {
+    .assistant-input {
       display: flex;
       gap: 0.5rem;
       align-items: center;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-top: 1px solid #eee;
     }
 
     #assistantInput {
@@ -5150,12 +5154,20 @@ body, main, section, div, p, span, li {
                 <button type="button" class="note-action-btn note-action-delete">Delete note</button>
               </div>
             </div>
-    <section data-view="assistant" id="view-assistant" class="view-panel hidden" aria-hidden="true">
+    <section data-view="assistant" id="assistantView" class="view hidden" aria-hidden="true">
       <div class="assistant-panel">
         <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm">Weekly Reflection</button>
         <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
         <div id="thinkingBarResults" aria-live="polite"></div>
-        <div id="assistantThread" aria-live="polite" aria-label="Assistant conversation"></div>
+        <div id="assistantMessages" class="assistant-messages" aria-live="polite" aria-label="Assistant conversation"></div>
+        <form id="assistantForm" class="assistant-input">
+          <textarea
+            id="assistantInput"
+            placeholder="Ask the assistant..."
+            rows="1"
+          ></textarea>
+          <button type="submit">Send</button>
+        </form>
         <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
       </div>
     </section>
@@ -5912,7 +5924,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-6HLNYGXI.js"></script>
+  <script type="module" src="./assets/mobile-PINEY6LU.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
