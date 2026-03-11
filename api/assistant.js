@@ -5,11 +5,6 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173'
 ];
 
-const MAX_QUESTION_CHARS = 1000;
-const MAX_CONTEXT_CHARS = 12000;
-const MAX_ENTRIES = 50;
-const MAX_ENTRY_CHARS = 1200;
-
 function applyCors(req, res) {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -19,49 +14,6 @@ function applyCors(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
 }
-
-function trimEntry(entry) {
-  if (!entry || typeof entry !== 'object') {
-    return null;
-  }
-
-  const id = typeof entry.id === 'string' ? entry.id.slice(0, 128) : '';
-  const type = typeof entry.type === 'string' ? entry.type.slice(0, 40) : 'note';
-  const title = typeof entry.title === 'string' ? entry.title.slice(0, MAX_ENTRY_CHARS) : '';
-  const body = typeof entry.body === 'string' ? entry.body.slice(0, MAX_ENTRY_CHARS) : '';
-  const createdAt = typeof entry.createdAt === 'string' ? entry.createdAt.slice(0, 64) : null;
-  const updatedAt = typeof entry.updatedAt === 'string' ? entry.updatedAt.slice(0, 64) : null;
-  const tags = Array.isArray(entry.tags)
-    ? entry.tags
-        .map((tag) => (typeof tag === 'string' ? tag.slice(0, 64) : ''))
-        .filter((tag, index, list) => tag && list.indexOf(tag) === index)
-        .slice(0, 20)
-    : [];
-
-  const relatedIds = Array.isArray(entry.relatedIds)
-    ? entry.relatedIds
-        .map((relatedId) => (typeof relatedId === 'string' ? relatedId.slice(0, 128) : ''))
-        .filter(Boolean)
-        .slice(0, 30)
-    : [];
-
-  if (!title && !body) {
-    return null;
-  }
-
-  return { id, type, title, body, tags, createdAt, updatedAt, relatedIds };
-}
-
-function inferRelevantType(question) {
-  const normalized = typeof question === 'string' ? question.toLowerCase() : '';
-  if (normalized.includes('drill') || normalized.includes('footy')) return 'drill';
-  if (normalized.includes('remind')) return 'reminder';
-  if (normalized.includes('task') || normalized.includes('todo') || normalized.includes('to do')) return 'task';
-  if (normalized.includes('idea')) return 'idea';
-  if (normalized.includes('note')) return 'note';
-  return null;
-}
-
 
 module.exports = async function handler(req, res) {
   applyCors(req, res);
@@ -74,149 +26,22 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'Server misconfiguration: missing OpenAI API key.' });
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const input = typeof body.input === 'string' ? body.input.trim() : '';
+
+  if (!input) {
+    return res.status(400).json({ error: 'Missing input' });
   }
 
-  const payload = req.body && typeof req.body === 'object' ? req.body : {};
-  const question =
-    typeof payload.question === 'string'
-      ? payload.question.trim()
-      : typeof payload.message === 'string'
-      ? payload.message.trim()
-      : '';
-  const contextText = typeof payload.contextText === 'string' ? payload.contextText : '';
-  const schemaVersion = payload.schemaVersion == null ? 2 : payload.schemaVersion;
-  const rawEntries = Array.isArray(payload.entries) ? payload.entries : [];
+  console.log('[assistant request]', input);
 
-  if (schemaVersion !== 2) {
-    return res.status(400).json({ error: 'Invalid schemaVersion.' });
-  }
+  // TODO: Replace placeholder assistant response with real AI call.
+  const reply = `You said: ${input}`;
 
-  if (!question || question.length > MAX_QUESTION_CHARS) {
-    return res.status(400).json({ error: 'Invalid question length.' });
-  }
+  console.log('[assistant response]', reply);
 
-  if (contextText.length > MAX_CONTEXT_CHARS) {
-    return res.status(400).json({ error: 'contextText too large.' });
-  }
-
-  if (rawEntries.length > MAX_ENTRIES) {
-    return res.status(400).json({ error: 'Too many entries.' });
-  }
-
-  const entries = rawEntries.map(trimEntry).filter(Boolean);
-  const relevantType = inferRelevantType(question);
-  const rankedEntries = relevantType
-    ? entries.filter((entry) => entry.type === relevantType)
-    : entries;
-  const selectedEntries = (rankedEntries.length ? rankedEntries : entries).slice(0, MAX_ENTRIES);
-  const entryById = new Map(
-    entries
-      .filter((entry) => entry.id)
-      .map((entry) => [entry.id, entry])
-  );
-
-  let response;
-  try {
-    response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_output_tokens: 400,
-        store: false,
-        input: [
-          {
-            role: 'system',
-            content: [
-              {
-                type: 'input_text',
-                text:
-                  'You are the Memory Cue assistant. Search the supplied notes to answer the question. Use only supplied entries/context, pick the best matching entry, and if answer is unknown say so briefly.'
-              }
-            ]
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'input_text',
-                text: `Search these notes and answer the question.\n\nQuestion:\n${question}\n\nContext:\n${contextText}\n\nEntries JSON:\n${JSON.stringify(selectedEntries)}`
-              }
-            ]
-          }
-        ],
-        text: {
-          format: {
-            type: 'json_schema',
-            name: 'memory_cue_answer',
-            strict: true,
-            schema: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                answer: { type: 'string' },
-                cited_entry_ids: {
-                  type: 'array',
-                  items: { type: 'string' }
-                },
-                followups: {
-                  type: 'array',
-                  items: { type: 'string' }
-                },
-                best_entry_id: {
-                  type: 'string'
-                }
-              },
-              required: ['answer', 'cited_entry_ids', 'followups', 'best_entry_id']
-            }
-          }
-        }
-      })
-    });
-  } catch (_error) {
-    return res.status(500).json({ error: 'Assistant failed.' });
-  }
-
-  if (!response.ok) {
-    return res.status(response.status === 429 ? 429 : 500).json({
-      error: response.status === 429 ? 'Rate limit exceeded.' : 'Assistant failed.'
-    });
-  }
-
-  try {
-    const data = await response.json();
-    const outputText =
-      data.output_text ||
-      (data.output &&
-        data.output[0] &&
-        data.output[0].content &&
-        data.output[0].content[0] &&
-        data.output[0].content[0].text) ||
-      null;
-
-    if (!outputText) {
-      return res.status(502).json({ error: 'Assistant returned no output.' });
-    }
-
-    const result = JSON.parse(outputText);
-
-    return res.status(200).json({
-      answer: result.answer,
-      reply: result.answer,
-      cited_entry_ids: Array.isArray(result.cited_entry_ids) ? result.cited_entry_ids : [],
-      followups: Array.isArray(result.followups) ? result.followups : [],
-      best_entry_id: typeof result.best_entry_id === 'string' ? result.best_entry_id : '',
-      best_entry:
-        typeof result.best_entry_id === 'string' && entryById.has(result.best_entry_id)
-          ? entryById.get(result.best_entry_id)
-          : null
-    });
-  } catch (_error) {
-    return res.status(500).json({ error: 'Assistant failed.' });
-  }
+  return res.status(200).json({
+    success: true,
+    reply
+  });
 };
