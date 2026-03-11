@@ -1,3 +1,5 @@
+const chrono = require('chrono-node');
+
 const ALLOWED_ORIGINS = [
   'https://dmaher42.github.io',
   'https://memory-cue.vercel.app',
@@ -77,16 +79,25 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'input too large.' });
   }
 
-  const type = classifyCapture(body.input);
+  let type = classifyCapture(body.input);
+  const parsedDates = chrono.parse(body.input);
+  let reminderTime = null;
+
+  if (parsedDates.length > 0) {
+    reminderTime = parsedDates[0].start.date();
+    type = 'reminder';
+    console.log('[reminder detected]', reminderTime);
+  }
 
   const record = {
     id: crypto.randomUUID(),
     text: body.input,
     type,
+    reminderTime,
     createdAt: Date.now()
   };
 
-  if (type === 'reminder') {
+  if (reminderTime) {
     reminders.push(record);
   } else if (type === 'task') {
     tasks.push(record);
@@ -99,6 +110,7 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({
     success: true,
     type,
+    reminderTime,
     record
   });
 };
