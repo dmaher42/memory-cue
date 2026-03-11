@@ -58,7 +58,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-d70805ec.css" />
+  <link rel="stylesheet" href="./assets/styles-cdadb88b.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
   <link
@@ -86,6 +86,7 @@
   <!-- END GPT FIX: compact-skeleton-style -->
   <script src="./js/runtime-env-shim.js" defer></script>
   <script type="module" src="./js/main.js" defer></script>
+  <script type="module" src="./js/daily-log-view.js" defer></script>
 </head>
 <body id="top" class="bg-base-100 text-base-content antialiased leading-7 min-h-screen">
   <a class="skip-link" href="#mainContent">Skip to main content</a>
@@ -108,6 +109,9 @@
           </li>
           <li>
             <a href="#planner" data-route="planner" id="nav-planner" class="btn btn-sm btn-ghost">Planner</a>
+          </li>
+          <li>
+            <a href="#daily-log" data-route="daily-log" data-nav="daily-log" id="nav-daily-log" class="btn btn-sm btn-ghost">Daily Log</a>
           </li>
           <li>
             <a href="#notes" data-route="notes" id="nav-notes" class="btn btn-sm btn-ghost">Notes</a>
@@ -1093,6 +1097,35 @@
         </article>
       </div>
     </section>
+    <section data-view="daily-log" id="view-daily-log" class="app-view" hidden tabindex="-1">
+      <div class="view-container space-y-6">
+        <header class="space-y-1">
+          <h2 class="text-2xl font-semibold">Daily Log</h2>
+          <p id="daily-log-date" class="text-sm text-base-content/70"></p>
+        </header>
+
+        <section aria-labelledby="daily-log-tasks-heading" class="space-y-2">
+          <h3 id="daily-log-tasks-heading" class="text-lg font-semibold">Tasks</h3>
+          <ul id="daily-log-tasks" class="list-disc space-y-1 pl-5"></ul>
+        </section>
+
+        <section aria-labelledby="daily-log-ideas-heading" class="space-y-2">
+          <h3 id="daily-log-ideas-heading" class="text-lg font-semibold">Ideas</h3>
+          <ul id="daily-log-ideas" class="list-disc space-y-1 pl-5"></ul>
+        </section>
+
+        <section aria-labelledby="daily-log-notes-heading" class="space-y-2">
+          <h3 id="daily-log-notes-heading" class="text-lg font-semibold">Notes</h3>
+          <ul id="daily-log-notes" class="list-disc space-y-1 pl-5"></ul>
+        </section>
+
+        <section aria-labelledby="daily-log-knowledge-heading" class="space-y-2">
+          <h3 id="daily-log-knowledge-heading" class="text-lg font-semibold">Knowledge</h3>
+          <ul id="daily-log-knowledge" class="list-disc space-y-1 pl-5"></ul>
+        </section>
+      </div>
+    </section>
+
     <section data-view="notes" id="view-notes" class="app-view" hidden tabindex="-1">
       <div class="view-container view-container--narrow">
         <article class="view-panel view-panel--main bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
