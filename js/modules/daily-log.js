@@ -1,6 +1,7 @@
 import { loadAllNotes } from './notes-storage.js';
 
-const DAILY_LOG_GROUPS = ['tasks', 'ideas', 'notes', 'knowledge'];
+const DAILY_LOG_GROUPS = ['tasks', 'ideas', 'memories'];
+const MEMORY_ENTRIES_STORAGE_KEY = 'memoryEntries';
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -25,34 +26,75 @@ const normalizeDateKey = (value) => {
   return `${year}-${month}-${day}`;
 };
 
-const toDailyLogGroup = (note) => {
-  const metadataType = normalizeString(note?.metadata?.type).toLowerCase();
-  const noteType = normalizeString(note?.type).toLowerCase();
-  const value = metadataType || noteType;
+const toDateKeyFromTimestamp = (value) => {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return normalizeDateKey(parsed.toISOString());
+};
 
-  if (value.includes('task')) {
+const toDailyLogGroup = (value = '') => {
+  const normalized = normalizeString(value).toLowerCase();
+
+  if (normalized.includes('task')) {
     return 'tasks';
   }
-  if (value.includes('idea')) {
+  if (normalized.includes('idea')) {
     return 'ideas';
   }
-  if (value.includes('knowledge')) {
-    return 'knowledge';
+  return 'memories';
+};
+
+const toDailyLogEntry = ({ id = '', group = 'memories', text = '' } = {}) => ({
+  id: normalizeString(id),
+  group: DAILY_LOG_GROUPS.includes(group) ? group : 'memories',
+  text: normalizeString(text) || 'Untitled item',
+});
+
+const readMemoryEntries = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return [];
   }
-  return 'notes';
+
+  try {
+    const raw = window.localStorage.getItem(MEMORY_ENTRIES_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to read memory entries for Daily Log', error);
+    return [];
+  }
 };
 
-const toDailyLogEntry = (note) => {
-  const title = normalizeString(note?.title);
-  const bodyText = normalizeString(note?.bodyText);
-  const body = normalizeString(note?.body);
+const getNoteDateKey = (note) => (
+  normalizeDateKey(note?.metadata?.aiActionDate)
+  || normalizeDateKey(note?.createdAt)
+);
 
-  return {
-    id: normalizeString(note?.id),
-    group: toDailyLogGroup(note),
-    text: title || bodyText || body || 'Untitled note',
-  };
-};
+const getMemoryEntryDateKey = (entry) => (
+  normalizeDateKey(entry?.date)
+  || toDateKeyFromTimestamp(entry?.createdAt)
+  || toDateKeyFromTimestamp(entry?.timestamp)
+);
+
+const getNoteText = (note) => (
+  normalizeString(note?.title)
+  || normalizeString(note?.bodyText)
+  || normalizeString(note?.body)
+);
+
+const getMemoryEntryText = (entry) => (
+  normalizeString(entry?.text)
+  || normalizeString(entry?.title)
+  || normalizeString(entry?.body)
+);
 
 export const getDailyLog = (date) => {
   const dateKey = normalizeDateKey(date);
@@ -60,13 +102,23 @@ export const getDailyLog = (date) => {
     return [];
   }
 
-  return loadAllNotes()
-    .filter((note) => {
-      const metadataDate = normalizeDateKey(note?.metadata?.aiActionDate);
-      const createdDate = normalizeDateKey(note?.createdAt);
-      return metadataDate === dateKey || createdDate === dateKey;
-    })
-    .map((note) => toDailyLogEntry(note));
+  const noteEntries = loadAllNotes()
+    .filter((note) => getNoteDateKey(note) === dateKey)
+    .map((note) => toDailyLogEntry({
+      id: note?.id,
+      group: toDailyLogGroup(note?.metadata?.type || note?.type),
+      text: getNoteText(note),
+    }));
+
+  const memoryEntries = readMemoryEntries()
+    .filter((entry) => getMemoryEntryDateKey(entry) === dateKey)
+    .map((entry) => toDailyLogEntry({
+      id: entry?.id,
+      group: toDailyLogGroup(entry?.type),
+      text: getMemoryEntryText(entry),
+    }));
+
+  return [...memoryEntries, ...noteEntries];
 };
 
-export { DAILY_LOG_GROUPS };
+export { DAILY_LOG_GROUPS, normalizeDateKey };

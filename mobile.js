@@ -378,10 +378,13 @@ function initAssistant() {
       isAssistantSending = true;
 
       try {
+        const capturedAt = new Date();
         const captureItem = {
           text: trimmedMessage,
           type: 'uncategorized',
           timestamp: Date.now(),
+          createdAt: capturedAt.getTime(),
+          date: `${capturedAt.getFullYear()}-${String(capturedAt.getMonth() + 1).padStart(2, '0')}-${String(capturedAt.getDate()).padStart(2, '0')}`,
           source: 'capture',
         };
 
