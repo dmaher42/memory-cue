@@ -127,6 +127,7 @@
   const entriesTitle = document.getElementById('categoryEntriesTitle');
   const entriesList = document.getElementById('categoryEntriesList');
   const inboxEntriesList = document.getElementById('inboxEntriesList');
+  const processInboxButton = document.getElementById('processInboxButton');
 
   if (!(cardGrid instanceof HTMLElement) || !(entriesList instanceof HTMLElement) || !(inboxEntriesList instanceof HTMLElement)) {
     return;
@@ -313,6 +314,94 @@
     });
   };
 
+  const processInboxEntries = async () => {
+    const allEntries = readEntries();
+    const inboxEntries = allEntries.filter((entry) => String(entry?.status || '').toLowerCase() === 'inbox');
+    if (!inboxEntries.length) {
+      return;
+    }
+
+    if (processInboxButton) {
+      processInboxButton.disabled = true;
+      processInboxButton.textContent = 'Processing...';
+    }
+
+    const prompt = [
+      'Read these inbox items.',
+      '',
+      'Classify each item into:',
+      '',
+      'task',
+      'idea',
+      'note',
+      'knowledge',
+      '',
+      'Also extract:',
+      '',
+      'context (teaching / training / personal)',
+      'person if mentioned',
+      '',
+      'Return JSON.'
+    ].join('\n');
+
+    try {
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt,
+          entries: inboxEntries
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assistant request failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      const updates = Array.isArray(data) ? data : [];
+      if (!updates.length) {
+        return;
+      }
+
+      const updatesById = new Map(
+        updates
+          .filter((item) => item && typeof item === 'object' && item.id)
+          .map((item) => [String(item.id), item])
+      );
+
+      const nextEntries = allEntries.map((entry) => {
+        const entryId = entry?.id ? String(entry.id) : '';
+        if (!entryId || !updatesById.has(entryId)) {
+          return entry;
+        }
+
+        const update = updatesById.get(entryId);
+        return {
+          ...entry,
+          type: typeof update.type === 'string' ? update.type : entry.type,
+          context: typeof update.context === 'string' ? update.context : entry.context,
+          person: typeof update.person === 'string' || update.person === null ? update.person : entry.person,
+          text: typeof update.rewrite === 'string' ? update.rewrite : entry.text,
+          status: 'processed',
+          updatedAt: new Date().toISOString()
+        };
+      });
+
+      writeEntries(nextEntries);
+      renderInboxEntries();
+    } catch (error) {
+      console.error('Unable to process inbox entries.', error);
+    } finally {
+      if (processInboxButton) {
+        processInboxButton.disabled = false;
+        processInboxButton.textContent = 'Process Inbox';
+      }
+    }
+  };
+
   const renderCategoryCards = () => {
     cardGrid.innerHTML = '';
     categories.forEach((categoryName) => {
@@ -334,6 +423,8 @@
   backButton?.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
   });
+
+  processInboxButton?.addEventListener('click', processInboxEntries);
 
   document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
   window.addEventListener('storage', (event) => {
@@ -1771,4 +1862,3 @@ document.querySelectorAll('[data-close]').forEach((btn) => {
     }
   });
 })();
-
