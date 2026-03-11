@@ -57,6 +57,7 @@ function initAssistant() {
     const thinkingBarResults = document.getElementById('thinkingBarResults');
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
+    const assistantConversationHistory = [];
 
     if (!isInputElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
       return;
@@ -445,13 +446,19 @@ function initAssistant() {
             );
           }
         } else {
-          const response = await fetch('/api/assistant', {
+          assistantConversationHistory.push({
+            role: 'user',
+            content: trimmedMessage,
+          });
+
+          const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              input: trimmedMessage,
+              message: trimmedMessage,
+              history: assistantConversationHistory,
             }),
           });
 
@@ -463,6 +470,10 @@ function initAssistant() {
           const replyText = typeof payload?.reply === 'string'
             ? payload.reply
             : 'I could not read an assistant response.';
+          assistantConversationHistory.push({
+            role: 'assistant',
+            content: replyText,
+          });
           appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
           setThinkingBarStatus('Assistant answer');
         }
@@ -474,7 +485,7 @@ function initAssistant() {
           console.error('[assistant] request failed while calling /api/capture', error);
           appendAssistantMessage('Sorry, I couldn\'t save that brain dump.', 'assistant-message assistant-message--error');
         } else {
-          console.error('[assistant] request failed while calling /api/assistant', error);
+          console.error('[assistant] request failed while calling /api/chat', error);
           appendAssistantMessage('Sorry, something went wrong while contacting the assistant.', 'assistant-message assistant-message--error');
         }
       } finally {
