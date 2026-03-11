@@ -4516,11 +4516,11 @@ body, main, section, div, p, span, li {
 
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
-      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
       <h1 class="header-title title">Memory Cue</h1>
       <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Search">
         🔍
       </button>
+      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <!-- Reminders -->
         <div class="overflow-menu-section">
@@ -4646,15 +4646,13 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
-        <button
-          id="openCategoriesView"
-          type="button"
-          class="btn btn-sm btn-outline"
-        >
-          View categories
-        </button>
+        <div class="flex flex-wrap items-center gap-2 px-1" aria-label="Entry filters">
+          <span class="badge badge-outline badge-sm">Inbox</span>
+          <span class="badge badge-outline badge-sm">Teaching</span>
+          <span class="badge badge-outline badge-sm">Coaching</span>
+          <span class="badge badge-outline badge-sm">Recent</span>
+        </div>
         <div id="inboxSearchResults"></div>
-        <div id="dashboardPanel"></div>
 
         <section id="remindersListMobile">
           <section
@@ -4691,14 +4689,12 @@ body, main, section, div, p, span, li {
         <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
     </section>
-    <div data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
+    <section data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
-        <h2 class="text-lg font-semibold">Inbox</h2>
         <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Inbox</button>
         <div id="inboxEntriesList" class="category-entry-list" aria-live="polite"></div>
       </div>
-      </div>
-    </div>
+    </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
