@@ -5475,13 +5475,13 @@ body, main, section, div, p, span, li {
       };
 
       const renderInboxEntries = () => {
-        const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === 'inbox');
+        const entries = readEntries().filter((entry) => String(entry?.status || '').toLowerCase() === 'inbox');
         inboxEntriesList.innerHTML = '';
 
         if (!entries.length) {
           const empty = document.createElement('p');
           empty.className = 'text-sm opacity-70';
-          empty.textContent = 'No uncategorized entries in Inbox.';
+          empty.textContent = 'No entries in Inbox.';
           inboxEntriesList.appendChild(empty);
           return;
         }
@@ -5499,7 +5499,7 @@ body, main, section, div, p, span, li {
 
           const categoryTag = document.createElement('span');
           categoryTag.className = 'badge badge-outline badge-sm';
-          categoryTag.textContent = getEntryCategory(entry);
+          categoryTag.textContent = String(entry?.status || 'inbox');
 
           const createdAt = document.createElement('span');
           createdAt.textContent = getEntryCreatedDate(entry);
@@ -5535,6 +5535,7 @@ body, main, section, div, p, span, li {
             if (entryIndex === -1) return;
             allEntries[entryIndex] = {
               ...allEntries[entryIndex],
+              status: moveSelect.value.toLowerCase(),
               category: moveSelect.value,
               updatedAt: new Date().toISOString()
             };
@@ -5632,7 +5633,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-AOIVQ2HO.js"></script>
+  <script type="module" src="./assets/mobile-WECCC63U.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
