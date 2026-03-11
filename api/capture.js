@@ -117,7 +117,15 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'input too large.' });
   }
 
-  const type = classifyCapture(body.input);
+  let type = classifyCapture(body.input);
+  const parsedDates = chrono.parse(body.input);
+  let reminderTime = null;
+
+  if (parsedDates.length > 0) {
+    reminderTime = parsedDates[0].start.date();
+    type = 'reminder';
+    console.log('[reminder detected]', reminderTime);
+  }
 
   const recurrenceType = detectRecurrence(body.input);
   let recurrenceRule = null;
@@ -151,8 +159,7 @@ module.exports = async function handler(req, res) {
     id: crypto.randomUUID(),
     text: body.input,
     type,
-    recurrence: recurrenceRule ? recurrenceRule.toString() : null,
-    occurrences,
+    reminderTime,
     createdAt: Date.now()
   };
 
@@ -162,6 +169,8 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({
     success: true,
-    entry: record
+    type,
+    reminderTime,
+    record
   });
 };

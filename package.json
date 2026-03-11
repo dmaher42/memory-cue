@@ -35,7 +35,7 @@
     "tailwindcss": "^3.4.13"
   },
   "dependencies": {
-    "puppeteer": "^24.32.0",
-    "rrule": "^2.8.1"
+    "chrono-node": "^2.9.0",
+    "puppeteer": "^24.32.0"
   }
 }
