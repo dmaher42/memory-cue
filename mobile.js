@@ -451,6 +451,27 @@ function initAssistant() {
             content: trimmedMessage,
           });
 
+          const sanitizeChatErrorMessage = (backendMessage) => {
+            if (typeof backendMessage !== 'string') {
+              return '';
+            }
+
+            const normalized = backendMessage.trim().replace(/\s+/g, ' ');
+            if (!normalized) {
+              return '';
+            }
+
+            if (/missing\s+openai\s+api\s+key/i.test(normalized)) {
+              return 'The assistant is not configured yet (missing OpenAI API key).';
+            }
+
+            if (/api\s*key|configuration|config/i.test(normalized)) {
+              return 'The assistant appears to be misconfigured.';
+            }
+
+            return '';
+          };
+
           const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
@@ -463,7 +484,27 @@ function initAssistant() {
           });
 
           if (!response.ok) {
-            throw new Error(`Assistant request failed (${response.status})`);
+            let backendMessage = '';
+            try {
+              const errorPayload = await response.json();
+              if (typeof errorPayload?.error === 'string') {
+                backendMessage = errorPayload.error;
+              } else if (typeof errorPayload?.message === 'string') {
+                backendMessage = errorPayload.message;
+              }
+            } catch {
+              // Keep fallback error message when backend payload is not parseable.
+            }
+
+            const normalizedBackendMessage = typeof backendMessage === 'string'
+              ? backendMessage.trim().replace(/\s+/g, ' ')
+              : '';
+            const fullErrorMessage = normalizedBackendMessage
+              ? `Failed to process chat request: ${normalizedBackendMessage}`
+              : `Assistant request failed (${response.status})`;
+            const chatError = new Error(fullErrorMessage);
+            chatError.chatSafeSummary = sanitizeChatErrorMessage(normalizedBackendMessage);
+            throw chatError;
           }
 
           const payload = await response.json();
@@ -486,7 +527,12 @@ function initAssistant() {
           appendAssistantMessage('Sorry, I couldn\'t save that brain dump.', 'assistant-message assistant-message--error');
         } else {
           console.error('[assistant] request failed while calling /api/chat', error);
-          appendAssistantMessage('Sorry, something went wrong while contacting the assistant.', 'assistant-message assistant-message--error');
+          const safeSummary = typeof error?.chatSafeSummary === 'string' ? error.chatSafeSummary.trim() : '';
+          const baseMessage = 'Sorry, something went wrong while contacting the assistant.';
+          const userMessage = safeSummary
+            ? `${baseMessage} ${safeSummary}`
+            : baseMessage;
+          appendAssistantMessage(userMessage, 'assistant-message assistant-message--error');
         }
       } finally {
         isAssistantSending = false;
