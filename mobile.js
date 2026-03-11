@@ -390,15 +390,16 @@ function initAssistant() {
           setThinkingBarStatus('Reminder saved');
         } else if (isCaptureMode) {
           const captureText = trimmedMessage.startsWith('+') ? trimmedMessage.slice(1).trim() : trimmedMessage;
+          const capturePayload = {
+            schemaVersion: 2,
+            input: captureText,
+          };
           const response = await fetch('/api/capture', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              schemaVersion: 1,
-              input: captureText,
-            }),
+            body: JSON.stringify(capturePayload),
           });
 
           if (!response.ok) {
