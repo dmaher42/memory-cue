@@ -1792,6 +1792,9 @@ const initMobileNotes = () => {
     return visibleNotes;
   };
 
+  const renderNotebookList = () => refreshFromStorage({ preserveDraft: true });
+  window.renderNotebookList = renderNotebookList;
+
   // Expose the refresh helper via the shared notes refresh hook
   requestNotesRefresh = (options = {}) => {
     try {

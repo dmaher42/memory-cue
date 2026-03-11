@@ -378,15 +378,27 @@
 // Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
 // prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
 (function() {
+  const renderNotebookList = () => {
+    if (typeof window.renderNotebookList === 'function') {
+      window.renderNotebookList();
+    }
+  };
+
+  function showNotesView() {
+    showViewFor('notebook');
+    renderNotebookList();
+  }
+
   const views = {
     reminders: document.querySelector('[data-view="reminders"]'),
     notebook: document.querySelector('[data-view="notebook"]'),
+    notes: document.querySelector('[data-view="notebook"]'),
     categories: document.querySelector('[data-view="categories"]'),
     inbox: document.querySelector('[data-view="inbox"]'),
     assistant: document.querySelector('[data-view="assistant"]')
   };
 
-  const order = ['reminders', 'new', 'notebook', 'categories', 'inbox', 'assistant'];
+  const order = ['reminders', 'new', 'notebook', 'notes', 'categories', 'inbox', 'assistant'];
 
   const triggerReminderQuickAdd = window.triggerReminderQuickAdd || function triggerReminderQuickAdd() {
     if (triggerReminderQuickAdd._locked) return;
@@ -456,7 +468,14 @@
     try {
       const view = ev?.detail?.view;
       if (!view || !order.includes(view)) return;
+      if (view === 'notes') {
+        showNotesView();
+        return;
+      }
       showViewFor(view);
+      if (view === 'notebook') {
+        renderNotebookList();
+      }
     } catch (e) {
       console.error('Error handling app:navigate', e);
     }

@@ -4771,6 +4771,8 @@ body, main, section, div, p, span, li {
     </section>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
+    <div id="notesView" class="view hidden" aria-hidden="true"></div>
+
     <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="padding: 0 !important; max-width: 100%;">
         <!-- notebook view header removed to keep UI minimal -->
@@ -5547,6 +5549,43 @@ body, main, section, div, p, span, li {
         }
       };
 
+      const appendProcessedEntriesToNotebook = (entries) => {
+        if (!Array.isArray(entries) || !entries.length) return;
+
+        try {
+          const raw = window.localStorage?.getItem('memoryCueNotes');
+          const existing = raw ? JSON.parse(raw) : [];
+          const next = Array.isArray(existing) ? existing.slice() : [];
+
+          entries.forEach((entry) => {
+            if (!entry || typeof entry !== 'object') return;
+            const text = getEntryText(entry);
+            const timestamp = new Date().toISOString();
+            const normalizedType = typeof entry.type === 'string' && entry.type.trim()
+              ? entry.type.trim().toLowerCase()
+              : 'note';
+
+            next.unshift({
+              id: entry.id ? String(entry.id) : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              title: text.split(/\s+/).slice(0, 8).join(' ') || 'Untitled note',
+              body: text,
+              bodyHtml: text,
+              bodyText: text,
+              type: normalizedType,
+              metadata: { type: normalizedType },
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              pinned: false
+            });
+          });
+
+          window.localStorage?.setItem('memoryCueNotes', JSON.stringify(next));
+          document.dispatchEvent(new CustomEvent('memoryCue:notesUpdated'));
+        } catch (error) {
+          console.warn('Unable to move processed inbox entries into notebook notes', error);
+        }
+      };
+
       const getEntryText = (entry) => {
         if (!entry || typeof entry !== 'object') return 'Untitled entry';
         const title = typeof entry.title === 'string' && entry.title.trim() ? entry.title.trim() : '';
@@ -5747,7 +5786,7 @@ body, main, section, div, p, span, li {
           'task',
           'idea',
           'note',
-          'knowledge',
+          'memory',
           '',
           'Also extract:',
           '',
@@ -5785,6 +5824,7 @@ body, main, section, div, p, span, li {
               .map((item) => [String(item.id), item])
           );
 
+          const processedNotebookEntries = [];
           const nextEntries = allEntries.map((entry) => {
             const entryId = entry?.id ? String(entry.id) : '';
             if (!entryId || !updatesById.has(entryId)) {
@@ -5792,7 +5832,7 @@ body, main, section, div, p, span, li {
             }
 
             const update = updatesById.get(entryId);
-            return {
+            const processedEntry = {
               ...entry,
               type: typeof update.type === 'string' ? update.type : entry.type,
               context: typeof update.context === 'string' ? update.context : entry.context,
@@ -5803,9 +5843,12 @@ body, main, section, div, p, span, li {
               status: 'processed',
               updatedAt: new Date().toISOString()
             };
+            processedNotebookEntries.push(processedEntry);
+            return processedEntry;
           });
 
           writeEntries(nextEntries);
+          appendProcessedEntriesToNotebook(processedNotebookEntries);
           renderInboxEntries();
         } catch (error) {
           console.error('Unable to process inbox entries.', error);
