@@ -58,7 +58,7 @@
   <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/a11y.css" />
-  <link rel="stylesheet" href="./assets/styles-cdadb88b.css" />
+  <link rel="stylesheet" href="./assets/styles-9405d1da.css" />
   <!-- BEGIN GPT CHANGE: styles moved to styles/index.css -->
   <!-- END GPT CHANGE -->
   <link
@@ -1099,9 +1099,15 @@
     </section>
     <section data-view="daily-log" id="view-daily-log" class="app-view" hidden tabindex="-1">
       <div class="view-container space-y-6">
-        <header class="space-y-1">
+        <header class="space-y-3">
           <h2 class="text-2xl font-semibold">Daily Log</h2>
-          <p id="daily-log-date" class="text-sm text-base-content/70"></p>
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="form-control w-full max-w-xs">
+              <span class="label-text text-sm">Filter by date</span>
+              <input id="daily-log-date-filter" type="date" class="input input-bordered input-sm w-full" />
+            </label>
+            <p id="daily-log-date" class="text-sm text-base-content/70"></p>
+          </div>
         </header>
 
         <section aria-labelledby="daily-log-tasks-heading" class="space-y-2">
@@ -1114,14 +1120,9 @@
           <ul id="daily-log-ideas" class="list-disc space-y-1 pl-5"></ul>
         </section>
 
-        <section aria-labelledby="daily-log-notes-heading" class="space-y-2">
-          <h3 id="daily-log-notes-heading" class="text-lg font-semibold">Notes</h3>
-          <ul id="daily-log-notes" class="list-disc space-y-1 pl-5"></ul>
-        </section>
-
-        <section aria-labelledby="daily-log-knowledge-heading" class="space-y-2">
-          <h3 id="daily-log-knowledge-heading" class="text-lg font-semibold">Knowledge</h3>
-          <ul id="daily-log-knowledge" class="list-disc space-y-1 pl-5"></ul>
+        <section aria-labelledby="daily-log-memories-heading" class="space-y-2">
+          <h3 id="daily-log-memories-heading" class="text-lg font-semibold">Memories</h3>
+          <ul id="daily-log-memories" class="list-disc space-y-1 pl-5"></ul>
         </section>
       </div>
     </section>
