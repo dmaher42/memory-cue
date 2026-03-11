@@ -314,9 +314,26 @@
     });
   };
 
-  const processInboxEntries = async () => {
+  const appendToMainNotesDatabase = (notes) => {
+    try {
+      const raw = window.localStorage?.getItem('memoryCueNotes');
+      const existing = raw ? JSON.parse(raw) : [];
+      const next = Array.isArray(existing) ? existing.slice() : [];
+
+      notes.forEach((note) => {
+        if (!note || typeof note !== 'object') return;
+        next.unshift(note);
+      });
+
+      window.localStorage?.setItem('memoryCueNotes', JSON.stringify(next));
+    } catch (error) {
+      console.warn('Unable to update main notes database', error);
+    }
+  };
+
+  async function processInbox() {
     const allEntries = readEntries();
-    const inboxEntries = allEntries.filter((entry) => String(entry?.status || '').toLowerCase() === 'inbox');
+    const inboxEntries = allEntries.filter((entry) => entry?.processed !== true);
     if (!inboxEntries.length) {
       return;
     }
@@ -327,21 +344,13 @@
     }
 
     const prompt = [
-      'Read these inbox items.',
+      'Classify each note into one category:',
+      'Task',
+      'Idea',
+      'Memory',
+      'Note',
       '',
-      'Classify each item into:',
-      '',
-      'task',
-      'idea',
-      'note',
-      'knowledge',
-      '',
-      'Also extract:',
-      '',
-      'context (teaching / training / personal)',
-      'person if mentioned',
-      '',
-      'Return JSON.'
+      'Return structured JSON.'
     ].join('\n');
 
     try {
@@ -352,7 +361,10 @@
         },
         body: JSON.stringify({
           prompt,
-          entries: inboxEntries
+          entries: inboxEntries.map((entry) => ({
+            id: entry?.id,
+            text: getEntryText(entry)
+          }))
         })
       });
 
@@ -366,30 +378,58 @@
         return;
       }
 
-      const updatesById = new Map(
-        updates
-          .filter((item) => item && typeof item === 'object' && item.id)
-          .map((item) => [String(item.id), item])
-      );
+      const updatesById = new Map();
+      updates.forEach((item, index) => {
+        if (!item || typeof item !== 'object') return;
+        if (item.id) {
+          updatesById.set(String(item.id), item);
+          return;
+        }
+        const fallback = inboxEntries[index];
+        if (fallback?.id) {
+          updatesById.set(String(fallback.id), item);
+        }
+      });
 
-      const nextEntries = allEntries.map((entry) => {
+      const timestamp = new Date().toISOString();
+      const processedNotes = [];
+
+      allEntries.forEach((entry) => {
         const entryId = entry?.id ? String(entry.id) : '';
         if (!entryId || !updatesById.has(entryId)) {
-          return entry;
+          return;
         }
 
         const update = updatesById.get(entryId);
-        return {
-          ...entry,
-          type: typeof update.type === 'string' ? update.type : entry.type,
-          context: typeof update.context === 'string' ? update.context : entry.context,
-          person: typeof update.person === 'string' || update.person === null ? update.person : entry.person,
-          text: typeof update.rewrite === 'string' ? update.rewrite : entry.text,
-          status: 'processed',
-          updatedAt: new Date().toISOString()
-        };
+        const type = typeof update.type === 'string' && update.type.trim()
+          ? update.type.trim().toLowerCase()
+          : (typeof entry.type === 'string' && entry.type.trim() ? entry.type.trim().toLowerCase() : 'note');
+        const text = typeof update.text === 'string' && update.text.trim()
+          ? update.text.trim()
+          : getEntryText(entry);
+
+        processedNotes.push({
+          text,
+          type,
+          processed: true,
+          timestamp,
+          id: entryId,
+          title: text.split(/\s+/).slice(0, 8).join(' '),
+          body: text,
+          bodyText: text,
+          bodyHtml: text,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        });
       });
 
+      if (!processedNotes.length) {
+        return;
+      }
+
+      appendToMainNotesDatabase(processedNotes);
+      const processedIds = new Set(processedNotes.map((entry) => entry.id));
+      const nextEntries = allEntries.filter((entry) => !processedIds.has(String(entry?.id || '')));
       writeEntries(nextEntries);
       renderInboxEntries();
     } catch (error) {
@@ -400,7 +440,7 @@
         processInboxButton.textContent = 'Process Inbox';
       }
     }
-  };
+  }
 
   const renderCategoryCards = () => {
     cardGrid.innerHTML = '';
@@ -424,7 +464,7 @@
     window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
   });
 
-  processInboxButton?.addEventListener('click', processInboxEntries);
+  processInboxButton?.addEventListener('click', processInbox);
 
   document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
   window.addEventListener('storage', (event) => {
