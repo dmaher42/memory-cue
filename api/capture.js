@@ -1,4 +1,4 @@
-const { RRule } = require('rrule');
+const chrono = require('chrono-node');
 
 const ALLOWED_ORIGINS = [
   'https://dmaher42.github.io',
@@ -120,7 +120,15 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'input too large.' });
   }
 
-  const type = classifyCapture(body.input);
+  let type = classifyCapture(body.input);
+  const parsedDates = chrono.parse(body.input);
+  let reminderTime = null;
+
+  if (parsedDates.length > 0) {
+    reminderTime = parsedDates[0].start.date();
+    type = 'reminder';
+    console.log('[reminder detected]', reminderTime);
+  }
 
   const recurrenceType = detectRecurrence(body.input);
   let recurrenceRule = null;
@@ -154,12 +162,11 @@ module.exports = async function handler(req, res) {
     id: crypto.randomUUID(),
     text: body.input,
     type,
-    recurrence: recurrenceRule ? recurrenceRule.toString() : null,
-    occurrences,
+    reminderTime,
     createdAt: Date.now()
   };
 
-  if (type === 'reminder') {
+  if (reminderTime) {
     reminders.push(record);
   } else if (type === 'task') {
     tasks.push(record);
@@ -172,8 +179,7 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({
     success: true,
     type,
-    recurrence: record.recurrence,
-    occurrences,
-    entry: record
+    reminderTime,
+    record
   });
 };
