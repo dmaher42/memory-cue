@@ -375,206 +375,37 @@ function initAssistant() {
         return;
       }
 
-      const isReminderMode = /\bremind\b/i.test(trimmedMessage);
-      const isAssistantMode = trimmedMessage.includes('?');
-      const isCaptureMode = !isReminderMode && !isAssistantMode;
-
-      console.log('[assistant] send handler executed', {
-        textLength: trimmedMessage.length,
-        mode: isReminderMode ? 'reminder' : isCaptureMode ? 'capture' : 'assistant',
-      });
       isAssistantSending = true;
 
-      if (assistantLoading instanceof HTMLElement) {
-        assistantLoading.classList.remove('hidden');
-      }
-
-      clearThinkingBarResults();
-      appendAssistantMessage(message);
-
-      thinkingBarInput.value = '';
-      thinkingBarInput.focus();
-
       try {
-        if (isReminderMode) {
-          const reminderOpenEvent = new CustomEvent('cue:open', { detail: { trigger: 'universal-input' } });
-          document.dispatchEvent(reminderOpenEvent);
+        const captureItem = {
+          text: trimmedMessage,
+          type: 'uncategorized',
+          timestamp: Date.now(),
+          source: 'capture',
+        };
 
-          const reminderTitleInput = document.getElementById('reminderText');
-          if (isInputElement(reminderTitleInput)) {
-            reminderTitleInput.value = trimmedMessage;
-            reminderTitleInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
+        const rawEntries = localStorage.getItem('memoryEntries');
+        const parsedEntries = rawEntries ? JSON.parse(rawEntries) : [];
+        const existingEntries = Array.isArray(parsedEntries)
+          ? parsedEntries
+          : Array.isArray(parsedEntries?.entries)
+            ? parsedEntries.entries
+            : [];
+        existingEntries.unshift(captureItem);
+        localStorage.setItem('memoryEntries', JSON.stringify(existingEntries));
+        document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
 
-          const reminderSaveEvent = new CustomEvent('reminder:save', {
-            detail: { trigger: document.getElementById('saveReminder') },
-          });
-          document.dispatchEvent(reminderSaveEvent);
-          appendAssistantMessage('Reminder created.', 'assistant-message assistant-message--reply');
-          setThinkingBarStatus('Reminder saved');
-        } else if (isCaptureMode) {
-          const captureText = trimmedMessage.startsWith('+') ? trimmedMessage.slice(1).trim() : trimmedMessage;
-          const capturePayload = {
-            schemaVersion: 2,
-            input: captureText,
-          };
-          const response = await fetch('/api/capture', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(capturePayload),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Capture request failed (${response.status})`);
-          }
-
-          const payload = await response.json();
-          const entry = payload?.entry;
-          if (!entry || typeof entry !== 'object') {
-            throw new Error('Capture response missing entry.');
-          }
-
-          await ensureFolderExistsByName('Inbox');
-
-          const confidence = typeof entry.confidence === 'number' ? entry.confidence : Number(entry.confidence);
-          const shouldRouteToInbox = Number.isFinite(confidence) && confidence < 0.7;
-          const aiSelectedFolderName = typeof entry.folder === 'string' && entry.folder.trim()
-            ? entry.folder.trim()
-            : 'Unsorted';
-          const targetFolderName = shouldRouteToInbox ? 'Inbox' : aiSelectedFolderName;
-
-          const entryToSave = {
-            ...entry,
-            folder: targetFolderName,
-          };
-
-          await saveCapturedEntryAsNote(entryToSave);
-
-          const title = typeof entry.title === 'string' && entry.title.trim()
-            ? entry.title.trim()
-            : 'Untitled note';
-          if (shouldRouteToInbox) {
-            appendAssistantMessage(`Saved to Inbox for review: ${title}`, 'assistant-message assistant-message--reply');
-          } else {
-            appendAssistantMessage(`Saved to ${targetFolderName}: ${title}`, 'assistant-message assistant-message--reply');
-          }
-          setThinkingBarStatus('Saved entry');
-
-          if (typeof entry.followUpQuestion === 'string' && entry.followUpQuestion.trim()) {
-            appendAssistantMessage(
-              `Follow-up: ${entry.followUpQuestion.trim()}`,
-              'assistant-message assistant-message--reply'
-            );
-          }
-        } else {
-          const assistantEntries = await buildAssistantEntries(trimmedMessage);
-          const memoryContext = buildMemoryContextBlock(trimmedMessage, assistantEntries);
-
-          assistantConversationHistory.push({
-            role: 'user',
-            content: trimmedMessage,
-          });
-
-          const sanitizeChatErrorMessage = (backendMessage) => {
-            if (typeof backendMessage !== 'string') {
-              return '';
-            }
-
-            const normalized = backendMessage.trim().replace(/\s+/g, ' ');
-            if (!normalized) {
-              return '';
-            }
-
-            if (/missing\s+openai\s+api\s+key/i.test(normalized)) {
-              return 'The assistant is not configured yet (missing OpenAI API key).';
-            }
-
-            if (/api\s*key|configuration|config/i.test(normalized)) {
-              return 'The assistant appears to be misconfigured.';
-            }
-
-            return '';
-          };
-
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: trimmedMessage,
-              history: assistantConversationHistory,
-              memoryContext,
-              memoryEntries: assistantEntries,
-            }),
-          });
-
-          if (!response.ok) {
-            let backendMessage = '';
-            try {
-              const errorPayload = await response.json();
-              if (typeof errorPayload?.error === 'string') {
-                backendMessage = errorPayload.error;
-              } else if (typeof errorPayload?.message === 'string') {
-                backendMessage = errorPayload.message;
-              }
-            } catch {
-              // Keep fallback error message when backend payload is not parseable.
-            }
-
-            const normalizedBackendMessage = typeof backendMessage === 'string'
-              ? backendMessage.trim().replace(/\s+/g, ' ')
-              : '';
-            const fullErrorMessage = normalizedBackendMessage
-              ? `Failed to process chat request: ${normalizedBackendMessage}`
-              : `Assistant request failed (${response.status})`;
-            const chatError = new Error(fullErrorMessage);
-            chatError.chatSafeSummary = sanitizeChatErrorMessage(normalizedBackendMessage);
-            throw chatError;
-          }
-
-          const payload = await response.json();
-          const replyText = typeof payload?.reply === 'string'
-            ? payload.reply
-            : 'I could not read an assistant response.';
-          assistantConversationHistory.push({
-            role: 'assistant',
-            content: replyText,
-          });
-          appendAssistantMessage(replyText, 'assistant-message assistant-message--reply');
-          setThinkingBarStatus('Assistant answer');
-        }
+        thinkingBarInput.value = '';
+        thinkingBarInput.focus();
+        setThinkingBarStatus('Saved to Inbox');
       } catch (error) {
-        if (isReminderMode) {
-          console.error('[assistant] failed to create reminder from universal input', error);
-          appendAssistantMessage('Sorry, I couldn\'t create that reminder.', 'assistant-message assistant-message--error');
-        } else if (isCaptureMode) {
-          console.error('[assistant] request failed while calling /api/capture', error);
-          appendAssistantMessage('Sorry, I couldn\'t save that brain dump.', 'assistant-message assistant-message--error');
-        } else {
-          console.error('[assistant] request failed while calling /api/chat', error);
-          const safeSummary = typeof error?.chatSafeSummary === 'string' ? error.chatSafeSummary.trim() : '';
-          const baseMessage = 'Sorry, something went wrong while contacting the assistant.';
-          const userMessage = safeSummary
-            ? `${baseMessage} ${safeSummary}`
-            : baseMessage;
-          appendAssistantMessage(userMessage, 'assistant-message assistant-message--error');
-        }
+        console.error('[capture] failed to save input to Inbox', error);
+        appendAssistantMessage("Sorry, I couldn't save that capture.", 'assistant-message assistant-message--error');
       } finally {
         isAssistantSending = false;
-        if (assistantLoading instanceof HTMLElement) {
-          assistantLoading.classList.add('hidden');
-        }
       }
     };
-
-    thinkingBarInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        sendAssistantMessage(event);
-      }
-    });
 
     thinkingBarInput.addEventListener('input', () => {
       const query = typeof thinkingBarInput.value === 'string' ? thinkingBarInput.value.trim() : '';
