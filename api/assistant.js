@@ -1,3 +1,6 @@
+const { addRecord, getAllNotes, getCategory } = require('./memory-store');
+const { classifyMemoryType, createStructuredMemory } = require('./memory-utils');
+
 const ALLOWED_ORIGINS = [
   'https://dmaher42.github.io',
   'https://memory-cue.vercel.app',
@@ -15,15 +18,43 @@ function applyCors(req, res) {
   }
 }
 
-async function generateLLMResponse(prompt) {
-  const contextMatch = prompt.match(/CONTEXT:\n([\s\S]*)\n\nAnswer the question using the context\./);
-  const contextText = contextMatch ? contextMatch[1].trim() : '';
+function normalizeInput(body) {
+  if (typeof body?.input === 'string') return body.input.trim();
+  if (typeof body?.question === 'string') return body.question.trim();
+  if (typeof body?.message === 'string') return body.message.trim();
+  return '';
+}
 
-  if (!contextText) {
-    return "I don't know.";
+function detectIntent(inputText) {
+  const normalized = inputText.toLowerCase();
+  if (/\b(remember this|save this|add a task|capture this|note this)\b/.test(normalized)) return 'save';
+  if (/\b(show|find|list)\b/.test(normalized)) return 'retrieve';
+  return 'search';
+}
+
+function pickRetrievalType(inputText) {
+  const normalized = inputText.toLowerCase();
+  if (normalized.includes('lesson idea')) return 'lesson idea';
+  if (normalized.includes('coaching') || normalized.includes('football') || normalized.includes('drill')) return 'coaching idea';
+  if (normalized.includes('task')) return 'task';
+  if (normalized.includes('question')) return 'question';
+  if (normalized.includes('resource')) return 'resource';
+  if (normalized.includes('note')) return 'note';
+  return null;
+}
+
+function keywordScore(query, memory) {
+  const q = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const haystack = `${memory.text || ''} ${(memory.tags || []).join(' ')}`.toLowerCase();
+  return q.reduce((sum, term) => (haystack.includes(term) ? sum + 1 : sum), 0);
+}
+
+function formatMemoryList(title, memories) {
+  if (!memories.length) {
+    return `## ${title}\n\nNo matches yet.`;
   }
-
-  return contextText.split('\n').find((line) => line.trim()) || "I don't know.";
+  const lines = memories.map((memory) => `- ${memory.text}`);
+  return `## ${title}\n\n${lines.join('\n')}`;
 }
 
 module.exports = async function handler(req, res) {
@@ -38,46 +69,44 @@ module.exports = async function handler(req, res) {
   }
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const input = typeof body.input === 'string'
-    ? body.input.trim()
-    : (typeof body.question === 'string' ? body.question.trim() : '');
+  const input = normalizeInput(body);
 
   if (!input) {
     return res.status(400).json({ error: 'Missing input' });
   }
 
-  const host = req.headers.host;
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const searchUrl = host ? `${protocol}://${host}/api/search` : '/api/search';
-
+  const intent = detectIntent(input);
+  let reply = "I don't know.";
   let results = [];
-  try {
-    const search = await fetch(searchUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: input })
-    });
 
-    const payload = await search.json();
-    results = Array.isArray(payload && payload.results) ? payload.results : [];
-  } catch (error) {
-    console.error('[assistant] search failed', error);
+  if (intent === 'save') {
+    const type = classifyMemoryType(input);
+    const memory = createStructuredMemory(input, type);
+    addRecord(type, memory);
+    reply = `Saved as: ${type.replace(/\b\w/g, (char) => char.toUpperCase())}\nTags: ${memory.tags.join(', ') || 'none'}`;
+    results = [memory];
+  } else if (intent === 'retrieve') {
+    const type = pickRetrievalType(input);
+    const normalizedQuery = input.replace(/\b(show|find|list|my|about)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+    const pool = type ? getCategory(type) : getAllNotes();
+    const filtered = pool
+      .map((memory) => ({ memory, score: keywordScore(normalizedQuery, memory) }))
+      .filter((entry) => entry.score > 0 || !normalizedQuery)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map((entry) => entry.memory);
+    const title = type ? `${type.replace(/\b\w/g, (char) => char.toUpperCase())}s` : 'Memories';
+    reply = formatMemoryList(title, filtered);
+    results = filtered;
+  } else {
+    const pool = getAllNotes();
+    results = pool
+      .map((memory) => ({ memory, score: keywordScore(input, memory) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((entry) => entry.memory);
+    reply = results.length ? results.map((memory) => memory.text).join('\n') : "I don't know.";
   }
-
-  const context = results.map((n) => n.text).join('\n\n');
-
-  const prompt = `
-QUESTION:
-${input}
-
-CONTEXT:
-${context}
-
-Answer the question using the context.
-If the context does not contain the answer, say you don't know.
-`;
-
-  const reply = await generateLLMResponse(prompt);
 
   return res.status(200).json({
     success: true,

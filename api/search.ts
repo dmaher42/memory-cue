@@ -30,6 +30,25 @@ function similarity(query, text) {
   return score;
 }
 
+function semanticBoost(query, note) {
+  const q = String(query || '').toLowerCase();
+  const text = `${note?.text || ''} ${(note?.tags || []).join(' ')}`.toLowerCase();
+
+  const synonyms = [
+    ['football', 'footy', 'drill', 'coaching'],
+    ['lesson', 'teaching', 'class'],
+    ['task', 'todo', 'to-do'],
+  ];
+
+  let score = 0;
+  synonyms.forEach((group) => {
+    if (group.some((term) => q.includes(term)) && group.some((term) => text.includes(term))) {
+      score += 2;
+    }
+  });
+  return score;
+}
+
 module.exports = async function handler(req, res) {
   applyCors(req, res);
 
@@ -53,7 +72,7 @@ module.exports = async function handler(req, res) {
   const results = notes
     .map((note) => ({
       note,
-      score: similarity(query, note.text)
+      score: similarity(query, note.text) + semanticBoost(query, note)
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
