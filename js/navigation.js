@@ -389,6 +389,10 @@
     renderNotebookList();
   }
 
+  function showAssistantView() {
+    showViewFor('assistant');
+  }
+
   const views = {
     reminders: document.querySelector('[data-view="reminders"]'),
     notebook: document.querySelector('[data-view="notebook"]'),
@@ -470,6 +474,10 @@
       if (!view || !order.includes(view)) return;
       if (view === 'notes') {
         showNotesView();
+        return;
+      }
+      if (view === 'assistant') {
+        showAssistantView();
         return;
       }
       showViewFor(view);

@@ -1,21 +1,30 @@
 (function () {
   const assistantForm = document.getElementById('assistantForm');
   const assistantInput = document.getElementById('assistantInput');
-  const assistantThread = document.getElementById('assistantThread');
+  const assistantMessages = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
   const assistantLoading = document.getElementById('assistantLoading');
 
-  if (!assistantForm || !assistantInput || !assistantThread) {
+  if (!assistantForm || !assistantInput || !assistantMessages) {
     return;
   }
 
   assistantForm.classList.remove('hidden');
 
-  function appendMessage(text) {
+  function appendUserMessage(text) {
     const messageEl = document.createElement('div');
     messageEl.className = 'assistant-message';
     messageEl.textContent = text;
-    assistantThread.appendChild(messageEl);
-    assistantThread.scrollTop = assistantThread.scrollHeight;
+    assistantMessages.appendChild(messageEl);
+    assistantMessages.scrollTop = assistantMessages.scrollHeight;
+    return messageEl;
+  }
+
+  function appendAssistantMessage(text) {
+    const messageEl = document.createElement('div');
+    messageEl.className = 'assistant-message assistant-message--reply';
+    messageEl.textContent = text;
+    assistantMessages.appendChild(messageEl);
+    assistantMessages.scrollTop = assistantMessages.scrollHeight;
     return messageEl;
   }
 
@@ -48,20 +57,18 @@
       return;
     }
 
-    appendMessage(message);
+    appendUserMessage(message);
     assistantInput.value = '';
-
-    const thinkingMessage = appendMessage('Thinking…');
     if (assistantLoading) {
       assistantLoading.classList.remove('hidden');
     }
 
     try {
       const reply = await sendAssistantMessage(message);
-      thinkingMessage.textContent = reply;
+      appendAssistantMessage(reply);
     } catch (error) {
       console.error('Assistant unavailable', error);
-      thinkingMessage.textContent = 'Assistant is unavailable.';
+      appendAssistantMessage('Assistant is unavailable.');
     } finally {
       if (assistantLoading) {
         assistantLoading.classList.add('hidden');
