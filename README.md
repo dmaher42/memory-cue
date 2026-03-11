@@ -74,7 +74,7 @@ Keep your real Supabase URL and anon key out of version control—set them throu
 
 The serverless AI endpoints require an OpenAI API key at runtime:
 
-- `OPENAI_API_KEY` for `api/assistant.js`
+- `OPENAI_API_KEY` for `api/assistant.ts`
 - `OPENAI_API_KEY` for `api/parse-entry.js`
 
 If this variable is missing, these endpoints return a `500` JSON error indicating server misconfiguration.
