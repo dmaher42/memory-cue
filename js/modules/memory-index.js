@@ -59,6 +59,7 @@ const buildIndexEntry = (note) => {
   const createdAt = toTimestamp(note.createdAt);
   const updatedAt = toTimestamp(note.updatedAt) || createdAt;
   const type = normalizeString(metadata.type).toLowerCase();
+  const person = normalizeString(metadata.person);
 
   const body = normalizeString(note.bodyText) || normalizeString(note.body);
 
@@ -68,6 +69,7 @@ const buildIndexEntry = (note) => {
     body,
     summary: body.slice(0, 180),
     type,
+    person,
     tags: normalizeTags(metadata.tags),
     folder: getFolderNameById(note.folderId),
     createdAt,
@@ -146,6 +148,31 @@ export const searchMemoryIndex = (query) => {
     .slice(0, MAX_SEARCH_RESULTS)
     .map((result) => result.entry);
 };
+
+export const searchPersonMemoryIndex = (personQuery) => {
+  const normalizedPerson = normalizeString(personQuery).toLowerCase();
+  if (!normalizedPerson.length) {
+    return [];
+  }
+
+  return buildMemoryIndex()
+    .filter((entry) => normalizeString(entry.person).toLowerCase().includes(normalizedPerson))
+    .sort(sortByRecency)
+    .slice(0, MAX_SEARCH_RESULTS);
+};
+
+export const getPersonMemoryIndex = () => buildMemoryIndex().reduce((index, entry) => {
+  const person = normalizeString(entry.person);
+  if (!person) {
+    return index;
+  }
+
+  if (!Array.isArray(index[person])) {
+    index[person] = [];
+  }
+  index[person].push(entry);
+  return index;
+}, {});
 
 export const getRecentMemory = (limit = DEFAULT_RECENT_LIMIT) => {
   const normalizedLimit = Number(limit);

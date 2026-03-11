@@ -1062,10 +1062,48 @@ export async function initReminders(sel = {}) {
 
   function normalizeMemoryEntryType(type) {
     const value = typeof type === 'string' ? type.trim().toLowerCase() : '';
-    if (value === 'note' || value === 'reminder' || value === 'drill' || value === 'idea' || value === 'task') {
+    if (
+      value === 'note'
+      || value === 'memory'
+      || value === 'reminder'
+      || value === 'drill'
+      || value === 'idea'
+      || value === 'task'
+    ) {
       return value;
     }
     return 'note';
+  }
+
+  function inferConversationContext(text) {
+    const normalized = typeof text === 'string' ? text.toLowerCase() : '';
+    if (normalized.includes('footy') || normalized.includes('drill') || normalized.includes('training')) {
+      return 'coaching';
+    }
+    return 'teaching';
+  }
+
+  function extractConversationMemory(text) {
+    const normalized = typeof text === 'string' ? text.trim() : '';
+    if (!normalized) return null;
+
+    const nameMatch = normalized.match(/\b([A-Z][a-z]+)\b/);
+    if (!nameMatch) return null;
+
+    const person = nameMatch[1];
+    const note = normalized
+      .replace(nameMatch[0], '')
+      .replace(/^[-,:;\s]+/, '')
+      .trim();
+
+    if (!note) return null;
+
+    return {
+      type: 'memory',
+      person,
+      note,
+      context: inferConversationContext(normalized),
+    };
   }
 
   function inferRelevantEntryType(query) {
@@ -1192,7 +1230,8 @@ export async function initReminders(sel = {}) {
     }
 
     const fallbackFields = parseSmartEntryWithFallback(normalizedText);
-    const resolvedType = fallbackFields.type;
+    const memoryFields = extractConversationMemory(normalizedText);
+    const resolvedType = memoryFields?.type || fallbackFields.type;
     const resolvedTitle = fallbackFields.title;
     const resolvedTags = sanitizeTags(fallbackFields.tags);
     const resolvedReminderDate = null;
@@ -1203,6 +1242,9 @@ export async function initReminders(sel = {}) {
       type: resolvedType,
       title: resolvedTitle || fallbackFields.title,
       content: normalizedText,
+      person: memoryFields?.person || null,
+      note: memoryFields?.note || null,
+      context: memoryFields?.context || null,
       tags: resolvedTags,
       reminderDate: resolvedReminderDate,
       dateCreated: nowIso,
@@ -1210,6 +1252,12 @@ export async function initReminders(sel = {}) {
       bodyHtml: normalizedText,
       bodyText: normalizedText,
       pinned: false,
+      metadata: {
+        type: resolvedType,
+        tags: resolvedTags,
+        person: memoryFields?.person || undefined,
+        context: memoryFields?.context || undefined,
+      },
       updatedAt: nowIso,
       folderId: 'unsorted',
       semanticEmbedding: null,
@@ -1258,6 +1306,14 @@ export async function initReminders(sel = {}) {
               ? parsedFields.title.trim().slice(0, 60)
               : existing.title,
           tags: sanitizeTags(parsedFields?.tags?.length ? parsedFields.tags : existing.tags),
+          metadata: {
+            ...(existing.metadata && typeof existing.metadata === 'object' ? existing.metadata : {}),
+            type:
+              typeof parsedFields.type === 'string' && parsedFields.type.trim()
+                ? parsedFields.type.trim()
+                : (existing?.metadata?.type || existing.type),
+            tags: sanitizeTags(parsedFields?.tags?.length ? parsedFields.tags : existing.tags),
+          },
           reminderDate:
             typeof parsedFields.reminderDate === 'string' && parsedFields.reminderDate.trim()
               ? parsedFields.reminderDate
@@ -1463,9 +1519,20 @@ export async function initReminders(sel = {}) {
       return {
         id: typeof entry?.id === 'string' ? entry.id : '',
         type: normalizeMemoryEntryType(entry?.type),
-        title: typeof entry?.title === 'string' ? entry.title : '',
-        body: typeof entry?.body === 'string' ? entry.body : '',
-        category: typeof entry?.category === 'string' ? entry.category : '',
+        title:
+          typeof entry?.title === 'string' && entry.title
+            ? entry.title
+            : (typeof entry?.person === 'string' ? entry.person : ''),
+        body:
+          typeof entry?.body === 'string' && entry.body
+            ? entry.body
+            : (typeof entry?.note === 'string' && entry.note
+              ? entry.note
+              : (typeof entry?.text === 'string' ? entry.text : '')),
+        category:
+          typeof entry?.category === 'string' && entry.category
+            ? entry.category
+            : (typeof entry?.context === 'string' ? entry.context : ''),
         tags: Array.isArray(entry?.tags) ? entry.tags : [],
         relatedIds: Array.isArray(entry?.relatedIds) ? entry.relatedIds : [],
         createdAt: typeof entry?.createdAt === 'string' ? entry.createdAt : '',
@@ -1986,11 +2053,20 @@ export async function initReminders(sel = {}) {
         text: cleanText,
         status: 'inbox',
         type: null,
+        note: null,
         context: null,
         person: null,
         createdAt: nowMs,
         date: dateStamp,
       };
+
+      const memoryFields = extractConversationMemory(cleanText);
+      if (memoryFields) {
+        payload.type = memoryFields.type;
+        payload.person = memoryFields.person;
+        payload.note = memoryFields.note;
+        payload.context = memoryFields.context;
+      }
 
       try {
         const entries = readMemoryEntries();

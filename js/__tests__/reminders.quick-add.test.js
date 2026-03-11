@@ -199,3 +199,17 @@ test('quick add parses natural language time into due date', async () => {
 
   expect(item.due).toBe(expectedIso);
 });
+
+test('quick add classifies capitalized name entries as conversation memory', async () => {
+  const quickInput = document.getElementById('quickAddInput');
+  quickInput.value = 'Shayla asked for extension';
+
+  await window.memoryCueQuickAddNow();
+
+  const memoryEntries = JSON.parse(localStorage.getItem('memoryEntries') || '[]');
+  expect(memoryEntries).toHaveLength(1);
+  expect(memoryEntries[0].type).toBe('memory');
+  expect(memoryEntries[0].person).toBe('Shayla');
+  expect(memoryEntries[0].note).toBe('asked for extension');
+  expect(memoryEntries[0].context).toBe('teaching');
+});
