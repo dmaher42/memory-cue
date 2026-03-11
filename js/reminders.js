@@ -1967,52 +1967,6 @@ export async function initReminders(sel = {}) {
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
 
-    const classifyBrainDumpCategory = async (rawText) => {
-      const cleanText = String(rawText || '').trim();
-      if (!cleanText) {
-        return 'Inbox';
-      }
-
-      const prompt = `Classify this note into one of these categories:\nTeaching\nCoaching\nIdeas\nTasks\nInbox\n\nNote: ${cleanText}`;
-
-      try {
-        const response = await fetch('/api/assistant', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query: prompt }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Assistant classification request failed (${response.status})`);
-        }
-
-        const payload = await response.json();
-        const reply = typeof payload?.reply === 'string'
-          ? payload.reply
-          : typeof payload?.text === 'string'
-            ? payload.text
-            : typeof payload?.message === 'string'
-              ? payload.message
-              : '';
-
-        const normalizedReply = String(reply || '').trim().toLowerCase();
-        const categoryMap = {
-          teaching: 'Teaching',
-          coaching: 'Coaching',
-          ideas: 'Ideas',
-          tasks: 'Tasks',
-          inbox: 'Inbox',
-        };
-
-        return categoryMap[normalizedReply] || 'Inbox';
-      } catch (error) {
-        console.warn('Assistant classification failed, defaulting to Inbox', error);
-        return 'Inbox';
-      }
-    };
-
     const saveBrainDumpEntry = async (sourceText, reminderEntry) => {
       if (typeof localStorage === 'undefined') {
         return;
@@ -2021,28 +1975,21 @@ export async function initReminders(sel = {}) {
       if (!cleanText) {
         return;
       }
-
-      const category = await classifyBrainDumpCategory(cleanText);
-
-      const nowIso = new Date().toISOString();
+      const now = new Date();
+      const nowMs = Date.now();
+      const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const payload = {
         id:
           reminderEntry && reminderEntry.id
             ? reminderEntry.id
             : `entry-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-        type: normalizeMemoryEntryType(
-          reminderEntry?.category === 'Footy – Drills' ? 'drill' : classifyInput(cleanText),
-        ),
-        title: extractTitle(cleanText),
-        body: cleanText,
-        tags: sanitizeTags(extractTags(cleanText)),
-        relatedIds: [],
-        category,
-        createdAt:
-          reminderEntry && reminderEntry.createdAt
-            ? new Date(reminderEntry.createdAt).toISOString()
-            : nowIso,
-        updatedAt: nowIso,
+        text: cleanText,
+        status: 'inbox',
+        type: null,
+        context: null,
+        person: null,
+        createdAt: nowMs,
+        date: dateStamp,
       };
 
       try {
