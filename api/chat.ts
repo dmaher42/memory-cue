@@ -11,6 +11,8 @@ async function generateLLMResponse(prompt: string) {
     throw new Error('Missing OpenAI API key');
   }
 
+  console.log('AI model:', 'gpt-5-nano');
+
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -18,7 +20,7 @@ async function generateLLMResponse(prompt: string) {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-nano',
       max_output_tokens: 400,
       store: false,
       input: [
