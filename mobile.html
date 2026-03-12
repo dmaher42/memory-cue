@@ -4880,12 +4880,30 @@ body, main, section, div, p, span, li {
   <!-- quickAddBar is now integrated in the header -->
   <main id="main" class="app-content content mx-auto w-full max-w-none"
         tabindex="-1"
-        data-active-view="reminders"
+        data-active-view="capture"
       >
     <div class="content-container">
       <div id="contentFeed">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
+    <section data-view="capture" id="view-capture" class="view-panel">
+      <div class="space-y-3">
+        <h2 class="text-lg font-semibold">Capture</h2>
+        <form id="quickAddForm" class="space-y-2">
+          <label for="universalInput" class="sr-only">Capture something</label>
+          <input
+            id="universalInput"
+            class="control-input quick-add-input w-full"
+            type="text"
+            placeholder="Capture something..."
+            autocomplete="off"
+          />
+          <button id="sendBtn" type="submit" class="smart-send-button" aria-label="Save">Save</button>
+          <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Saving…</span>
+          <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
+        </form>
+      </div>
+    </section>
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
@@ -5374,6 +5392,32 @@ body, main, section, div, p, span, li {
     <div class="floating-footer">
       <button
         type="button"
+        class="floating-card btn-capture"
+        id="mobile-footer-capture"
+        data-nav-target="capture"
+        data-tab="capture"
+        aria-label="Go to Capture"
+      >
+        <svg
+          class="icon icon-capture"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 5.25v13.5" />
+          <path d="M5.25 12h13.5" />
+        </svg>
+        <span>Capture</span>
+      </button>
+
+      <button
+        type="button"
         class="floating-card btn-reminders"
         id="mobile-footer-reminders"
         data-nav-target="reminders"
@@ -5428,32 +5472,6 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card btn-inbox"
-        id="mobile-footer-inbox"
-        data-nav-target="inbox"
-        data-tab="inbox"
-        aria-label="Go to Inbox"
-      >
-        <svg
-          class="icon icon-inbox"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M4.5 6.5h15v11h-15z" />
-          <path d="M4.5 13h4l1.5 2h4l1.5-2h4" />
-        </svg>
-        <span>Inbox</span>
-      </button>
-
-      <button
-        type="button"
         class="floating-card btn-assistant"
         id="mobile-footer-assistant"
         data-nav-target="assistant"
@@ -5480,32 +5498,11 @@ body, main, section, div, p, span, li {
       </button>
     </div>
   </nav>
-  <div id="brainDumpFabTip" class="brain-dump-fab-tip" role="status" aria-live="polite" hidden>Tap + to capture ideas</div>
-  <button type="button" id="brainDumpFab" class="brain-dump-fab" aria-label="Quick capture" title="Quick capture">+</button>
-
-  <div id="captureModal" class="capture-modal" role="dialog" aria-modal="true" aria-labelledby="captureModalTitle" hidden>
-    <div class="capture-sheet">
-      <h2 id="captureModalTitle" class="sr-only">Quick capture</h2>
-      <form id="quickAddForm" class="smart-input-form">
-        <input id="universalInput" class="control-input quick-add-input" type="text" placeholder="Capture something…" autocomplete="off" />
-        <button id="sendBtn" type="submit" class="smart-send-button" aria-label="Send">Send</button>
-        <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
-        <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
-      </form>
-    </div>
-  </div>
-
   <script>
     (function() {
       const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
       const fabButton = document.getElementById('mobile-fab-button');
       const fabMenu = document.getElementById('mobile-fab-menu');
-      const brainDumpFab = document.getElementById('brainDumpFab');
-      const brainDumpFabTip = document.getElementById('brainDumpFabTip');
-      const captureModal = document.getElementById('captureModal');
-      const quickAddForm = document.getElementById('quickAddForm');
-      const quickCaptureInput = document.getElementById('universalInput');
-      const FAB_TOOLTIP_STORAGE_KEY = 'memoryCueFabTooltipSeen';
 
       const updateBottomNavHeight = () => {
         if (!navFooter) return;
@@ -5532,61 +5529,6 @@ body, main, section, div, p, span, li {
           window.addEventListener('resize', updateBottomNavHeight, { passive: true });
         }
       }
-
-
-      const closeCaptureModal = () => {
-        if (!(captureModal instanceof HTMLElement)) return;
-        captureModal.setAttribute('hidden', '');
-      };
-
-      const openCaptureModal = () => {
-        if (!(captureModal instanceof HTMLElement)) return;
-        captureModal.removeAttribute('hidden');
-        if (quickCaptureInput instanceof HTMLElement && typeof quickCaptureInput.focus === 'function') {
-          quickCaptureInput.focus();
-        }
-      };
-
-      const hideFabTip = () => {
-        if (brainDumpFabTip instanceof HTMLElement) {
-          brainDumpFabTip.setAttribute('hidden', '');
-        }
-
-        try {
-          window.localStorage?.setItem(FAB_TOOLTIP_STORAGE_KEY, 'true');
-        } catch (error) {
-          console.warn(error);
-        }
-      };
-
-      const shouldShowFabTip = () => {
-        try {
-          return window.localStorage?.getItem(FAB_TOOLTIP_STORAGE_KEY) !== 'true';
-        } catch (error) {
-          console.warn(error);
-          return false;
-        }
-      };
-
-      if (brainDumpFabTip instanceof HTMLElement && shouldShowFabTip()) {
-        brainDumpFabTip.removeAttribute('hidden');
-      }
-
-      brainDumpFab?.addEventListener('click', () => {
-        hideFabTip();
-        openCaptureModal();
-      });
-
-      quickAddForm?.addEventListener('submit', () => {
-        closeCaptureModal();
-      });
-
-      captureModal?.addEventListener('click', (event) => {
-        if (event.target === captureModal) {
-          closeCaptureModal();
-        }
-      });
-
       const closeSavedNotesSheet = () => {
         try {
           if (typeof window.hideSavedNotesSheet === 'function') {
@@ -5699,7 +5641,6 @@ body, main, section, div, p, span, li {
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           closeFabMenu();
-          closeCaptureModal();
         }
       });
 
@@ -5711,9 +5652,9 @@ body, main, section, div, p, span, li {
         if (!view) return;
 
         const routeMap = {
+          capture: 'capture',
           reminders: 'reminders',
           notebook: 'notebook',
-          inbox: 'inbox',
           assistant: 'assistant'
         };
 
