@@ -251,6 +251,51 @@
       margin-bottom: 0.12rem;
     }
 
+    .swipe-container {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+
+    .swipe-background {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .swipe-left {
+      color: #5c4b8a;
+    }
+
+    .swipe-right {
+      color: #1f8a5b;
+    }
+
+    .swipe-up {
+      color: #7a5a1f;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .swipe-foreground {
+      position: relative;
+      background: var(--card-bg);
+      transition: transform 0.2s ease;
+      will-change: transform;
+    }
+
+    .swipe-container.swipe-active[data-swipe-direction="up"] .swipe-up {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .reminders-quick-actions .icon-btn,
     .mobile-footer-nav button,
     .mobile-footer-nav .footer-button,
@@ -5630,6 +5675,55 @@ body, main, section, div, p, span, li {
         return Number.isNaN(dt.getTime()) ? String(value) : dt.toLocaleString();
       };
 
+      const updateInboxEntry = (entry, updater) => {
+        const allEntries = readEntries();
+        const entryIndex = findEntryIndex(allEntries, entry);
+        if (entryIndex === -1) return false;
+        const currentEntry = allEntries[entryIndex];
+        const nextEntry = typeof updater === 'function' ? updater(currentEntry) : currentEntry;
+        if (!nextEntry) return false;
+        allEntries[entryIndex] = {
+          ...nextEntry,
+          updatedAt: new Date().toISOString()
+        };
+        writeEntries(allEntries);
+        return true;
+      };
+
+      const archiveInboxEntry = (entry) => updateInboxEntry(entry, (currentEntry) => ({
+        ...currentEntry,
+        processed: true,
+        status: 'archived',
+        archivedAt: new Date().toISOString(),
+      }));
+
+      const convertInboxEntryToNote = (entry) => {
+        appendProcessedEntriesToNotebook([entry]);
+        return updateInboxEntry(entry, (currentEntry) => ({
+          ...currentEntry,
+          processed: true,
+          status: 'processed',
+          processedType: 'note',
+        }));
+      };
+
+      const convertInboxEntryToReminder = async (entry) => {
+        const text = getEntryText(entry);
+        if (typeof window.memoryCueQuickAddNow === 'function') {
+          await window.memoryCueQuickAddNow({ forceText: text, source: 'inbox-swipe' });
+        } else {
+          const detail = { mode: 'create', prefillText: text, source: 'inbox-swipe' };
+          document.dispatchEvent(new CustomEvent('open-reminder-sheet', { detail }));
+        }
+
+        return updateInboxEntry(entry, (currentEntry) => ({
+          ...currentEntry,
+          processed: true,
+          status: 'processed',
+          processedType: 'reminder',
+        }));
+      };
+
       const renderCategoryEntries = (categoryName) => {
         const targetCategory = String(categoryName || '').trim().toLowerCase();
         const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === targetCategory);
@@ -5686,7 +5780,27 @@ body, main, section, div, p, span, li {
 
         entries.forEach((entry) => {
           const card = document.createElement('li');
-          card.className = 'category-entry-item space-y-2';
+          card.className = 'category-entry-item space-y-2 swipe-container';
+
+          const swipeBackground = document.createElement('div');
+          swipeBackground.className = 'swipe-background';
+
+          const swipeLeft = document.createElement('span');
+          swipeLeft.className = 'swipe-left';
+          swipeLeft.textContent = 'Note';
+
+          const swipeRight = document.createElement('span');
+          swipeRight.className = 'swipe-right';
+          swipeRight.textContent = 'Reminder';
+
+          const swipeUp = document.createElement('span');
+          swipeUp.className = 'swipe-up';
+          swipeUp.textContent = 'Archive';
+
+          swipeBackground.append(swipeLeft, swipeUp, swipeRight);
+
+          const swipeForeground = document.createElement('div');
+          swipeForeground.className = 'swipe-foreground space-y-2';
 
           const text = document.createElement('button');
           text.type = 'button';
@@ -5724,30 +5838,82 @@ body, main, section, div, p, span, li {
             writeEntries(allEntries);
             renderInboxEntries();
           });
+          let touchStartX = 0;
+          let touchStartY = 0;
+          let swipeDeltaX = 0;
+          let swipeDeltaY = 0;
 
-          const deleteEntry = () => {
-            const allEntries = readEntries();
-            const entryIndex = findEntryIndex(allEntries, entry);
-            if (entryIndex === -1) return;
-            const nextEntries = allEntries.filter((_, idx) => idx !== entryIndex);
-            writeEntries(nextEntries);
-            renderInboxEntries();
+          const resetSwipeState = () => {
+            swipeForeground.style.transform = '';
+            swipeForeground.style.transition = '';
+            card.classList.remove('swipe-active');
+            card.dataset.swipeDirection = '';
+            swipeDeltaX = 0;
+            swipeDeltaY = 0;
           };
 
-          let touchStartX = 0;
           card.addEventListener('touchstart', (event) => {
-            touchStartX = event.changedTouches[0]?.clientX || 0;
+            touchStartX = event.touches[0]?.clientX || 0;
+            touchStartY = event.touches[0]?.clientY || 0;
+            swipeForeground.style.transition = 'none';
           }, { passive: true });
+
           card.addEventListener('touchmove', (event) => {
-            const currentX = event.changedTouches[0]?.clientX || touchStartX;
-            if (touchStartX - currentX > 16) return;
+            const currentX = event.touches[0]?.clientX || touchStartX;
+            const currentY = event.touches[0]?.clientY || touchStartY;
+            swipeDeltaX = currentX - touchStartX;
+            swipeDeltaY = currentY - touchStartY;
+
+            const clampedX = Math.max(-120, Math.min(120, swipeDeltaX));
+            const clampedY = Math.max(-90, Math.min(0, swipeDeltaY));
+
+            if (Math.abs(clampedX) < 6 && Math.abs(clampedY) < 6) {
+              card.classList.remove('swipe-active');
+              card.dataset.swipeDirection = '';
+              swipeForeground.style.transform = '';
+              return;
+            }
+
+            card.classList.add('swipe-active');
+
+            if (Math.abs(clampedY) > Math.abs(clampedX) && clampedY < 0) {
+              card.dataset.swipeDirection = 'up';
+            } else if (clampedX < 0) {
+              card.dataset.swipeDirection = 'left';
+            } else {
+              card.dataset.swipeDirection = 'right';
+            }
+
+            swipeForeground.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
           }, { passive: true });
-          card.addEventListener('touchend', (event) => {
-            const endX = event.changedTouches[0]?.clientX || touchStartX;
-            if (touchStartX - endX > 80) {
-              deleteEntry();
+
+          card.addEventListener('touchend', async () => {
+            swipeForeground.style.transition = 'transform 0.2s ease';
+
+            try {
+              if (swipeDeltaY < -70 && Math.abs(swipeDeltaX) < 80) {
+                archiveInboxEntry(entry);
+                renderInboxEntries();
+                return;
+              }
+
+              if (swipeDeltaX > 80) {
+                await convertInboxEntryToReminder(entry);
+                renderInboxEntries();
+                return;
+              }
+
+              if (swipeDeltaX < -80) {
+                convertInboxEntryToNote(entry);
+                renderInboxEntries();
+                return;
+              }
+            } finally {
+              resetSwipeState();
             }
           });
+
+          card.addEventListener('touchcancel', resetSwipeState);
 
           let longPressTimer = null;
           const clearLongPress = () => {
@@ -5784,7 +5950,8 @@ body, main, section, div, p, span, li {
           card.addEventListener('mouseup', clearLongPress);
           card.addEventListener('mouseleave', clearLongPress);
 
-          card.append(text, meta);
+          swipeForeground.append(text, meta);
+          card.append(swipeBackground, swipeForeground);
           inboxEntriesList.appendChild(card);
         });
       };
