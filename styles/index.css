@@ -1333,13 +1333,14 @@ html[data-theme="professional"] {
 /* Mobile reminder rows */
 .reminder-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
-  padding: 0.3rem 0.75rem;
-  border-radius: 0.9rem;
-  background: var(--surface-soft, rgba(255, 255, 255, 0.7));
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: #f8f8fb;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02);
-  gap: 0.35rem;
 }
 
 .reminder-row * {
@@ -1356,6 +1357,19 @@ html[data-theme="professional"] {
   justify-content: center;
 }
 
+
+.reminder-card-checkbox {
+  appearance: auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.reminder-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .reminder-row-main {
   flex: 1 1 auto;
   min-width: 0;
@@ -1364,7 +1378,7 @@ html[data-theme="professional"] {
 }
 
 .reminder-row-title {
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
@@ -1374,7 +1388,8 @@ html[data-theme="professional"] {
 
 .reminder-row-meta {
   margin-top: 0.05rem;
-  font-size: 0.73rem;
+  font-size: 12px;
+  opacity: 0.6;
   color: var(--text-muted);
 }
 
