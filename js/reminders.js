@@ -3646,14 +3646,23 @@ export async function initReminders(sel = {}) {
           const rawOrder = Number(entry.orderIndex);
           return {
             id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
-            title: typeof entry.title === 'string' ? entry.title : '',
+            title:
+              typeof entry.title === 'string' && entry.title.trim()
+                ? entry.title
+                : (typeof entry.text === 'string' && entry.text.trim()
+                  ? entry.text
+                  : (typeof entry.name === 'string' ? entry.name : '')),
             priority: entry.priority || 'Medium',
             category: normalizeCategory(entry.category),
             notes: typeof entry.notes === 'string' ? entry.notes : '',
-            done: !!entry.done,
+            done: typeof entry.done === 'boolean'
+              ? entry.done
+              : Boolean(entry.completed || entry.isDone || entry.status === 'done'),
             createdAt,
             updatedAt,
-            due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+            due: typeof entry.due === 'string' && entry.due
+              ? entry.due
+              : (typeof entry.dueAt === 'string' && entry.dueAt ? entry.dueAt : null),
             pendingSync: !!entry.pendingSync,
             orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
             plannerLessonId:
@@ -4332,11 +4341,16 @@ export async function initReminders(sel = {}) {
         const pinToToday = data.pinToToday === true;
         remoteItems.push({
           id: d.id,
-          title: data.title,
+          title:
+            typeof data.title === 'string' && data.title.trim()
+              ? data.title
+              : (typeof data.text === 'string' ? data.text : ''),
           priority: data.priority,
           notes: data.notes || '',
-          done: !!data.done,
-          due: data.due || null,
+          done: typeof data.done === 'boolean'
+            ? data.done
+            : Boolean(data.completed || data.isDone || data.status === 'done'),
+          due: data.due || data.dueAt || null,
           category: normalizeCategory(data.category),
           createdAt: data.createdAt?.toMillis?.() || 0,
           updatedAt: data.updatedAt?.toMillis?.() || 0,
