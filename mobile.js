@@ -56,7 +56,10 @@ function initAssistant() {
     const quickAddForm = document.getElementById('quickAddForm');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
+    const weeklyReflectionCard = document.getElementById('weeklyReflectionCard');
     const weeklyReflectionButton = document.getElementById('weeklyReflectionButton');
+    const weeklyReflectionDetails = document.getElementById('weeklyReflectionDetails');
+    const weeklyReflectionContent = document.getElementById('weeklyReflectionContent');
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
     const assistantConversationHistory = [];
@@ -519,6 +522,20 @@ function initAssistant() {
 
     if (weeklyReflectionButton instanceof HTMLElement) {
       weeklyReflectionButton.addEventListener('click', async () => {
+        if (!(weeklyReflectionCard instanceof HTMLElement)) {
+          return;
+        }
+
+        const hasReflection = weeklyReflectionCard.dataset.loaded === 'true';
+        if (hasReflection) {
+          const isExpanded = weeklyReflectionCard.classList.toggle('expanded');
+          weeklyReflectionButton.textContent = isExpanded ? 'Hide Reflection' : 'View Reflection';
+          if (weeklyReflectionDetails instanceof HTMLElement) {
+            weeklyReflectionDetails.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
+          }
+          return;
+        }
+
         if (isAssistantSending) {
           return;
         }
@@ -534,6 +551,17 @@ function initAssistant() {
           const summaryText = typeof weeklySummary?.summary === 'string' && weeklySummary.summary.trim()
             ? weeklySummary.summary.trim()
             : 'No weekly summary was returned.';
+
+          if (weeklyReflectionContent instanceof HTMLElement) {
+            weeklyReflectionContent.textContent = summaryText;
+          }
+          weeklyReflectionCard.dataset.loaded = 'true';
+          weeklyReflectionCard.classList.add('expanded');
+          weeklyReflectionButton.textContent = 'Hide Reflection';
+          if (weeklyReflectionDetails instanceof HTMLElement) {
+            weeklyReflectionDetails.setAttribute('aria-hidden', 'false');
+          }
+
           appendAssistantMessage('Weekly Reflection', 'assistant-message');
           appendAssistantMessage(summaryText, 'assistant-message assistant-message--reply');
           setThinkingBarStatus('Weekly reflection ready');
