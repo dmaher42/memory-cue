@@ -360,6 +360,93 @@ function initAssistant() {
       }));
     };
 
+    function detectIntent(text) {
+      const lower = text.toLowerCase();
+
+      const reminderKeywords = [
+        'today',
+        'tomorrow',
+        'tonight',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+        'next week',
+      ];
+
+      const assistantKeywords = [
+        'what',
+        'how',
+        'why',
+        'find',
+        'show',
+        'summarise',
+        'summarize',
+      ];
+
+      if (/\d{1,2}(:\d{2})?\s?(am|pm)/.test(lower)) {
+        return 'reminder';
+      }
+
+      if (reminderKeywords.some((keyword) => lower.includes(keyword))) {
+        return 'reminder';
+      }
+
+      if (assistantKeywords.some((keyword) => lower.startsWith(keyword))) {
+        return 'assistant';
+      }
+
+      return 'inbox';
+    }
+
+    const createInboxItem = (text) => {
+      const capturedAt = new Date();
+      const captureItem = {
+        text,
+        type: 'uncategorized',
+        timestamp: Date.now(),
+        createdAt: capturedAt.getTime(),
+        date: `${capturedAt.getFullYear()}-${String(capturedAt.getMonth() + 1).padStart(2, '0')}-${String(capturedAt.getDate()).padStart(2, '0')}`,
+        source: 'capture',
+      };
+
+      const rawEntries = localStorage.getItem('memoryEntries');
+      const parsedEntries = rawEntries ? JSON.parse(rawEntries) : [];
+      const existingEntries = Array.isArray(parsedEntries)
+        ? parsedEntries
+        : Array.isArray(parsedEntries?.entries)
+          ? parsedEntries.entries
+          : [];
+      existingEntries.unshift(captureItem);
+      localStorage.setItem('memoryEntries', JSON.stringify(existingEntries));
+      document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+    };
+
+    const createReminderFromText = async (text) => {
+      if (typeof window.memoryCueQuickAddNow !== 'function') {
+        return false;
+      }
+
+      await window.memoryCueQuickAddNow({ forceText: text, source: 'smart-capture' });
+      return true;
+    };
+
+    const sendToAssistant = (text) => {
+      const assistantFormEl = document.getElementById('assistantForm');
+      const assistantInputEl = document.getElementById('assistantInput');
+      const isAssistantInput = assistantInputEl instanceof HTMLInputElement || assistantInputEl instanceof HTMLTextAreaElement;
+      if (!(assistantFormEl instanceof HTMLFormElement) || !isAssistantInput) {
+        return false;
+      }
+
+      assistantInputEl.value = text;
+      assistantFormEl.requestSubmit();
+      return true;
+    };
+
     const sendAssistantMessage = async (event) => {
       if (event) {
         event.preventDefault();
@@ -378,33 +465,34 @@ function initAssistant() {
       isAssistantSending = true;
 
       try {
-        const capturedAt = new Date();
-        const captureItem = {
-          text: trimmedMessage,
-          type: 'uncategorized',
-          timestamp: Date.now(),
-          createdAt: capturedAt.getTime(),
-          date: `${capturedAt.getFullYear()}-${String(capturedAt.getMonth() + 1).padStart(2, '0')}-${String(capturedAt.getDate()).padStart(2, '0')}`,
-          source: 'capture',
-        };
+        const intent = detectIntent(trimmedMessage);
 
-        const rawEntries = localStorage.getItem('memoryEntries');
-        const parsedEntries = rawEntries ? JSON.parse(rawEntries) : [];
-        const existingEntries = Array.isArray(parsedEntries)
-          ? parsedEntries
-          : Array.isArray(parsedEntries?.entries)
-            ? parsedEntries.entries
-            : [];
-        existingEntries.unshift(captureItem);
-        localStorage.setItem('memoryEntries', JSON.stringify(existingEntries));
-        document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+        if (intent === 'reminder') {
+          const reminderCreated = await createReminderFromText(trimmedMessage);
+          if (!reminderCreated) {
+            createInboxItem(trimmedMessage);
+            setThinkingBarStatus('Added to Inbox');
+          } else {
+            setThinkingBarStatus('Reminder created');
+          }
+        } else if (intent === 'assistant') {
+          const assistantSent = sendToAssistant(trimmedMessage);
+          if (!assistantSent) {
+            createInboxItem(trimmedMessage);
+            setThinkingBarStatus('Added to Inbox');
+          } else {
+            setThinkingBarStatus('Sending to assistant...');
+          }
+        } else {
+          createInboxItem(trimmedMessage);
+          setThinkingBarStatus('Added to Inbox');
+        }
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
-        setThinkingBarStatus('Saved to Inbox');
       } catch (error) {
-        console.error('[capture] failed to save input to Inbox', error);
-        appendAssistantMessage("Sorry, I couldn't save that capture.", 'assistant-message assistant-message--error');
+        console.error('[capture] failed to process smart capture', error);
+        appendAssistantMessage("Sorry, I couldn't process that capture.", 'assistant-message assistant-message--error');
       } finally {
         isAssistantSending = false;
       }
