@@ -5400,6 +5400,34 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
+        class="floating-card btn-notebook"
+        id="mobile-footer-notebook"
+        data-nav-target="notebook"
+        data-tab="notebook"
+        aria-label="Go to Notes"
+      >
+        <svg
+          class="icon icon-notebook"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="5" y="4.5" width="14" height="15" rx="2" />
+          <path d="M9 8.5h6" />
+          <path d="M9 12h6" />
+          <path d="M9 15.5h4" />
+        </svg>
+        <span>Notes</span>
+      </button>
+
+      <button
+        type="button"
         class="floating-card btn-inbox"
         id="mobile-footer-inbox"
         data-nav-target="inbox"
@@ -5684,6 +5712,7 @@ body, main, section, div, p, span, li {
 
         const routeMap = {
           reminders: 'reminders',
+          notebook: 'notebook',
           inbox: 'inbox',
           assistant: 'assistant'
         };
