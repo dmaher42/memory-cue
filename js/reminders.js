@@ -5232,6 +5232,26 @@ export async function initReminders(sel = {}) {
       render();
     });
 
+    const sortToggleBtn = document.getElementById('reminderSortToggle');
+    if (sortToggleBtn instanceof HTMLElement) {
+      sortToggleBtn.addEventListener('click', () => {
+        const modes = [
+          REMINDER_SORT_OPTIONS.newest,
+          REMINDER_SORT_OPTIONS.oldest,
+          REMINDER_SORT_OPTIONS.category,
+        ];
+        const currentIndex = modes.indexOf(reminderSortMode);
+        const nextMode = modes[(currentIndex + 1) % modes.length];
+        reminderSortMode = nextMode;
+        sortSelect.value = nextMode;
+        sortToggleBtn.setAttribute('aria-label', `Sort reminders (${nextMode})`);
+        sortToggleBtn.title = `Sort reminders (${nextMode})`;
+        render();
+      });
+      sortToggleBtn.setAttribute('aria-label', `Sort reminders (${reminderSortMode})`);
+      sortToggleBtn.title = `Sort reminders (${reminderSortMode})`;
+    }
+
     setupReminderSortControl._wired = true;
   }
 
@@ -5650,10 +5670,11 @@ export async function initReminders(sel = {}) {
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
 
-        if (dueLabel) {
+        const metaParts = [dueLabel, summary.category].filter(Boolean);
+        if (metaParts.length) {
           const metaText = document.createElement('div');
           metaText.className = 'reminder-meta reminder-date reminder-row-meta';
-          metaText.textContent = dueLabel;
+          metaText.textContent = metaParts.join(' • ');
           rowMain.appendChild(metaText);
         }
 
