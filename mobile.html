@@ -3327,55 +3327,55 @@ body, main, section, div, p, span, li {
     z-index: 95;
   }
 
-  .brain-dump-modal {
+  .capture-modal {
     position: fixed;
     inset: 0;
     z-index: 120;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    padding: 1rem;
+    padding: 0;
+    background: rgba(17, 24, 39, 0.25);
   }
 
-  .brain-dump-modal[hidden] {
+  .capture-modal[hidden] {
     display: none;
   }
 
-  .brain-dump-modal-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(17, 24, 39, 0.55);
-  }
-
-  .brain-dump-modal-panel {
+  .capture-sheet {
     position: relative;
     z-index: 1;
-    width: min(36rem, 100%);
+    width: 100%;
+    max-width: 40rem;
     background: var(--surface-elevated);
     color: var(--text-main);
     border: 1px solid var(--border-subtle);
-    border-radius: 1rem;
+    border-radius: 1rem 1rem 0 0;
     padding: 1rem;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   }
 
-  .brain-dump-modal-textarea {
+  .capture-sheet .smart-input-form {
     width: 100%;
-    min-height: 12rem;
-    resize: vertical;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .capture-sheet .quick-add-input {
+    width: 100%;
+    min-height: 3rem;
     border-radius: 0.75rem;
     border: 1px solid var(--border-subtle);
     background: #fff;
     color: var(--text-main);
     padding: 0.75rem;
-    margin-top: 0.75rem;
+    margin-top: 0;
   }
 
-  .brain-dump-modal-actions {
-    margin-top: 0.75rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+  .capture-sheet .smart-send-button {
+    min-height: 3rem;
+    min-width: 5.5rem;
   }
 
   /* Enhanced mobile body */
@@ -5300,15 +5300,6 @@ body, main, section, div, p, span, li {
     </div>
   </div>
 
-  <div id="smartInputBar" class="smart-input-bar">
-    <form id="quickAddForm" class="smart-input-form">
-      <input id="universalInput" class="control-input quick-add-input" type="text" placeholder="Capture something…" autocomplete="off" />
-      <button id="sendBtn" type="submit" class="smart-send-button" aria-label="Send">Send</button>
-      <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
-      <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
-    </form>
-  </div>
-
   <nav id="mobile-nav-shell" class="bottom-nav inset-x-0 bottom-0 z-50 flex justify-center px-2 pb-3" aria-label="Bottom navigation">
     <div class="floating-footer">
       <button
@@ -5391,17 +5382,17 @@ body, main, section, div, p, span, li {
       </button>
     </div>
   </nav>
-  <button type="button" id="brainDumpFab" class="brain-dump-fab" aria-label="Brain Dump" title="Brain Dump">+</button>
+  <button type="button" id="brainDumpFab" class="brain-dump-fab" aria-label="Quick capture" title="Quick capture">+</button>
 
-  <div id="brainDumpModal" class="brain-dump-modal" role="dialog" aria-modal="true" aria-labelledby="brainDumpTitle" hidden>
-    <div class="brain-dump-modal-backdrop" data-brain-dump-close></div>
-    <div class="brain-dump-modal-panel">
-      <h2 id="brainDumpTitle" class="text-lg font-semibold">Brain Dump</h2>
-      <textarea id="brainDumpTextarea" class="brain-dump-modal-textarea" placeholder="Type anything..."></textarea>
-      <div class="brain-dump-modal-actions">
-        <button type="button" id="brainDumpCancel" class="btn btn-ghost">Cancel</button>
-        <button type="button" id="brainDumpSave" class="btn btn-primary">Save</button>
-      </div>
+  <div id="captureModal" class="capture-modal" role="dialog" aria-modal="true" aria-labelledby="captureModalTitle" hidden>
+    <div class="capture-sheet">
+      <h2 id="captureModalTitle" class="sr-only">Quick capture</h2>
+      <form id="quickAddForm" class="smart-input-form">
+        <input id="universalInput" class="control-input quick-add-input" type="text" placeholder="Capture something…" autocomplete="off" />
+        <button id="sendBtn" type="submit" class="smart-send-button" aria-label="Send">Send</button>
+        <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Parsing…</span>
+        <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
+      </form>
     </div>
   </div>
 
@@ -5411,10 +5402,9 @@ body, main, section, div, p, span, li {
       const fabButton = document.getElementById('mobile-fab-button');
       const fabMenu = document.getElementById('mobile-fab-menu');
       const brainDumpFab = document.getElementById('brainDumpFab');
-      const brainDumpModal = document.getElementById('brainDumpModal');
-      const brainDumpTextarea = document.getElementById('brainDumpTextarea');
-      const brainDumpSave = document.getElementById('brainDumpSave');
-      const brainDumpCancel = document.getElementById('brainDumpCancel');
+      const captureModal = document.getElementById('captureModal');
+      const quickAddForm = document.getElementById('quickAddForm');
+      const quickCaptureInput = document.getElementById('universalInput');
 
       const updateBottomNavHeight = () => {
         if (!navFooter) return;
@@ -5443,64 +5433,28 @@ body, main, section, div, p, span, li {
       }
 
 
-      const closeBrainDumpModal = () => {
-        if (!(brainDumpModal instanceof HTMLElement)) return;
-        brainDumpModal.setAttribute('hidden', '');
+      const closeCaptureModal = () => {
+        if (!(captureModal instanceof HTMLElement)) return;
+        captureModal.setAttribute('hidden', '');
       };
 
-      const openBrainDumpModal = () => {
-        if (!(brainDumpModal instanceof HTMLElement)) return;
-        brainDumpModal.removeAttribute('hidden');
-        brainDumpTextarea?.focus();
+      const openCaptureModal = () => {
+        if (!(captureModal instanceof HTMLElement)) return;
+        captureModal.removeAttribute('hidden');
+        if (quickCaptureInput instanceof HTMLElement && typeof quickCaptureInput.focus === 'function') {
+          quickCaptureInput.focus();
+        }
       };
 
-      const saveBrainDump = () => {
-        const text = typeof brainDumpTextarea?.value === 'string' ? brainDumpTextarea.value.trim() : '';
-        if (!text) {
-          closeBrainDumpModal();
-          return;
-        }
+      brainDumpFab?.addEventListener('click', openCaptureModal);
 
-        // Brain Dump now feeds Inbox and should not maintain a separate raw capture store.
-        const capturedAt = new Date();
-        const item = {
-          text,
-          type: 'uncategorized',
-          timestamp: Date.now(),
-          createdAt: capturedAt.getTime(),
-          date: `${capturedAt.getFullYear()}-${String(capturedAt.getMonth() + 1).padStart(2, '0')}-${String(capturedAt.getDate()).padStart(2, '0')}`,
-          source: 'brain-dump'
-        };
+      quickAddForm?.addEventListener('submit', () => {
+        closeCaptureModal();
+      });
 
-        try {
-          const rawEntries = window.localStorage?.getItem('memoryEntries');
-          const parsedEntries = rawEntries ? JSON.parse(rawEntries) : [];
-          const existingEntries = Array.isArray(parsedEntries)
-            ? parsedEntries
-            : Array.isArray(parsedEntries?.entries)
-              ? parsedEntries.entries
-              : [];
-          existingEntries.unshift(item);
-          window.localStorage?.setItem('memoryEntries', JSON.stringify(existingEntries));
-          document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
-        } catch (error) {
-          console.warn('Unable to save brain dump item', error);
-        }
-
-        if (brainDumpTextarea) {
-          brainDumpTextarea.value = '';
-        }
-        closeBrainDumpModal();
-      };
-
-      brainDumpFab?.addEventListener('click', openBrainDumpModal);
-      brainDumpCancel?.addEventListener('click', closeBrainDumpModal);
-      brainDumpSave?.addEventListener('click', saveBrainDump);
-
-      brainDumpModal?.addEventListener('click', (event) => {
-        const target = event.target instanceof Element ? event.target : null;
-        if (target?.hasAttribute('data-brain-dump-close')) {
-          closeBrainDumpModal();
+      captureModal?.addEventListener('click', (event) => {
+        if (event.target === captureModal) {
+          closeCaptureModal();
         }
       });
 
@@ -5616,7 +5570,7 @@ body, main, section, div, p, span, li {
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           closeFabMenu();
-          closeBrainDumpModal();
+          closeCaptureModal();
         }
       });
 
