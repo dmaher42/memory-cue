@@ -143,6 +143,7 @@ test('mobile reminders group uncategorised items under General', async () => {
     <button id="saveBtn" type="button"></button>
     <button id="cancelEditBtn" type="button"></button>
     <div id="wrapper"><div id="list"></div></div>
+    <div id="reminderCategoryFilters"></div>
     <div id="status"></div>
     <div id="syncStatus"></div>
     <select id="categoryFilter"><option value="all" selected>All</option></select>
@@ -173,13 +174,26 @@ test('mobile reminders group uncategorised items under General', async () => {
   ]);
 
   const headings = Array.from(document.querySelectorAll('[data-category-heading]'));
-  expect(headings.map((heading) => heading.dataset.categoryHeading)).toEqual(['Excursion']);
+  expect(headings).toHaveLength(0);
+
+  const chips = Array.from(document.querySelectorAll('#reminderCategoryFilters .category-chip')).map((chip) => chip.textContent);
+  expect(chips[0]).toBe('All');
+  expect(chips).toContain('Excursion');
+  expect(chips).toContain('General');
 
   const generalItems = document.querySelectorAll('[data-category="General"]');
   expect(generalItems).toHaveLength(1);
 
   const excursionItems = document.querySelectorAll('[data-category="Excursion"]');
   expect(excursionItems).toHaveLength(1);
+
+  const excursionChip = document.querySelector('#reminderCategoryFilters .category-chip[data-category-filter="Excursion"]');
+  expect(excursionChip).not.toBeNull();
+  excursionChip.click();
+
+  const visibleAfterFilter = document.querySelectorAll('[data-reminder-item="true"]');
+  expect(visibleAfterFilter).toHaveLength(1);
+  expect(visibleAfterFilter[0].dataset.category).toBe('Excursion');
 });
 
 test('category selectors include school and general presets', async () => {
