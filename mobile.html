@@ -5345,18 +5345,28 @@ body, main, section, div, p, span, li {
           return;
         }
 
+        // Brain Dump now feeds Inbox and should not maintain a separate raw capture store.
+        const capturedAt = new Date();
         const item = {
           text,
-          type: 'inbox',
-          processed: false,
-          timestamp: Date.now()
+          type: 'uncategorized',
+          timestamp: Date.now(),
+          createdAt: capturedAt.getTime(),
+          date: `${capturedAt.getFullYear()}-${String(capturedAt.getMonth() + 1).padStart(2, '0')}-${String(capturedAt.getDate()).padStart(2, '0')}`,
+          source: 'brain-dump'
         };
 
         try {
-          const raw = window.localStorage?.getItem('brainDumpItems');
-          const existing = raw ? JSON.parse(raw) : [];
-          const nextItems = Array.isArray(existing) ? [...existing, item] : [item];
-          window.localStorage?.setItem('brainDumpItems', JSON.stringify(nextItems));
+          const rawEntries = window.localStorage?.getItem('memoryEntries');
+          const parsedEntries = rawEntries ? JSON.parse(rawEntries) : [];
+          const existingEntries = Array.isArray(parsedEntries)
+            ? parsedEntries
+            : Array.isArray(parsedEntries?.entries)
+              ? parsedEntries.entries
+              : [];
+          existingEntries.unshift(item);
+          window.localStorage?.setItem('memoryEntries', JSON.stringify(existingEntries));
+          document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
         } catch (error) {
           console.warn('Unable to save brain dump item', error);
         }
