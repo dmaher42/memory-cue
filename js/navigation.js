@@ -394,6 +394,7 @@
   }
 
   const views = {
+    capture: document.querySelector('[data-view="capture"]'),
     reminders: document.querySelector('[data-view="reminders"]'),
     notebook: document.querySelector('[data-view="notebook"]'),
     notes: document.querySelector('[data-view="notebook"]'),
@@ -402,7 +403,7 @@
     assistant: document.querySelector('[data-view="assistant"]')
   };
 
-  const order = ['reminders', 'new', 'notebook', 'notes', 'categories', 'inbox', 'assistant'];
+  const order = ['capture', 'reminders', 'new', 'notebook', 'notes', 'categories', 'inbox', 'assistant'];
 
   const triggerReminderQuickAdd = window.triggerReminderQuickAdd || function triggerReminderQuickAdd() {
     if (triggerReminderQuickAdd._locked) return;
@@ -465,6 +466,11 @@
     // quick-add UI is ready.
     if (name === 'new') {
       triggerReminderQuickAdd();
+    }
+
+    if (name === 'capture') {
+      const captureInput = document.getElementById('universalInput');
+      if (captureInput && typeof captureInput.focus === 'function') captureInput.focus();
     }
   }
 

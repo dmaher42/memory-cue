@@ -544,7 +544,9 @@ function initAssistant() {
     const createInboxItem = (text) => {
       const capturedAt = new Date();
       const captureItem = {
+        id: `${capturedAt.getTime()}-${Math.random().toString(16).slice(2)}`,
         text,
+        processed: false,
         type: 'uncategorized',
         timestamp: Date.now(),
         createdAt: capturedAt.getTime(),
@@ -604,28 +606,8 @@ function initAssistant() {
       isAssistantSending = true;
 
       try {
-        const intent = detectIntent(trimmedMessage);
-
-        if (intent === 'reminder') {
-          const reminderCreated = await createReminderFromText(trimmedMessage);
-          if (!reminderCreated) {
-            createInboxItem(trimmedMessage);
-            setThinkingBarStatus('Added to Inbox');
-          } else {
-            setThinkingBarStatus('Reminder created');
-          }
-        } else if (intent === 'assistant') {
-          const assistantSent = sendToAssistant(trimmedMessage);
-          if (!assistantSent) {
-            createInboxItem(trimmedMessage);
-            setThinkingBarStatus('Added to Inbox');
-          } else {
-            setThinkingBarStatus('Sending to assistant...');
-          }
-        } else {
-          createInboxItem(trimmedMessage);
-          setThinkingBarStatus('Added to Inbox');
-        }
+        createInboxItem(trimmedMessage);
+        setThinkingBarStatus('Added to Inbox');
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
