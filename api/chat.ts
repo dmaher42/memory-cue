@@ -21,7 +21,7 @@ async function generateLLMResponse(prompt: string) {
     },
     body: JSON.stringify({
       model: 'gpt-5-nano',
-      max_output_tokens: 400,
+      max_output_tokens: 80,
       store: false,
       input: [
         {
