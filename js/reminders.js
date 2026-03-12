@@ -403,6 +403,7 @@ export async function initReminders(sel = {}) {
   const priority = $(sel.prioritySel);
   const categoryInput = $(sel.categorySel);
   const sortSelect = $(sel.sortSel);
+  const categoryFilterBar = $(sel.categoryFilterBarSel || '#reminderCategoryFilters');
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
@@ -622,6 +623,9 @@ export async function initReminders(sel = {}) {
     category: 'category',
   });
   let reminderSortMode = REMINDER_SORT_OPTIONS.newest;
+  const CATEGORY_FILTER_ALL = '__all__';
+  let activeCategoryFilter = CATEGORY_FILTER_ALL;
+  let mobileCategoryFilterSignature = '';
 
   function getReminderSortTimestamp(reminder) {
     const createdAt = Number(reminder?.createdAt);
@@ -5112,6 +5116,57 @@ export async function initReminders(sel = {}) {
     setupReminderSortControl._wired = true;
   }
 
+  function applyMobileCategoryFilter(rows) {
+    if (!Array.isArray(rows) || activeCategoryFilter === CATEGORY_FILTER_ALL) {
+      return rows;
+    }
+    return rows.filter((row) => normalizeCategory(row?.category) === activeCategoryFilter);
+  }
+
+  function updateMobileCategoryFilterBar(categories = []) {
+    if (variant !== 'mobile' || !(categoryFilterBar instanceof HTMLElement)) {
+      return;
+    }
+
+    const normalizedCategories = categories.map((category) => normalizeCategory(category));
+    const options = [CATEGORY_FILTER_ALL, ...normalizedCategories];
+
+    if (!options.includes(activeCategoryFilter)) {
+      activeCategoryFilter = CATEGORY_FILTER_ALL;
+    }
+
+    const signature = `${activeCategoryFilter}::${options.join('||')}`;
+    if (signature === mobileCategoryFilterSignature) {
+      return;
+    }
+    mobileCategoryFilterSignature = signature;
+
+    categoryFilterBar.replaceChildren();
+
+    options.forEach((option) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'category-chip';
+      chip.textContent = option === CATEGORY_FILTER_ALL ? 'All' : option;
+      chip.dataset.categoryFilter = option;
+      chip.setAttribute('aria-pressed', option === activeCategoryFilter ? 'true' : 'false');
+
+      if (option === activeCategoryFilter) {
+        chip.classList.add('active');
+      }
+
+      chip.addEventListener('click', () => {
+        if (activeCategoryFilter === option) {
+          return;
+        }
+        activeCategoryFilter = option;
+        render();
+      });
+
+      categoryFilterBar.appendChild(chip);
+    });
+  }
+
   function setupMobileReminderTabs() {
     if (variant !== 'mobile' || typeof document === 'undefined') {
       return;
@@ -5164,6 +5219,8 @@ export async function initReminders(sel = {}) {
     });
     const allCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
+    updateMobileCategoryFilterBar(allCategories);
+
     if (categoryDatalist) {
       const existing = new Set();
       Array.from(categoryDatalist.querySelectorAll('option')).forEach(opt => {
@@ -5204,6 +5261,7 @@ export async function initReminders(sel = {}) {
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
       rows = filterMobileReminderRows(mobileRemindersCache, mobileRemindersFilterMode, todayRange);
+      rows = applyMobileCategoryFilter(rows);
       updateMobileRemindersHeaderSubtitle();
     }
 

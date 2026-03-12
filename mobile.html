@@ -4723,11 +4723,12 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
-        <div class="flex flex-wrap items-center gap-2 px-1" aria-label="Entry filters">
-          <span class="badge badge-outline badge-sm">Inbox</span>
-          <span class="badge badge-outline badge-sm">Teaching</span>
-          <span class="badge badge-outline badge-sm">Coaching</span>
-          <span class="badge badge-outline badge-sm">Recent</span>
+        <div
+          id="reminderCategoryFilters"
+          class="category-filter-bar"
+          role="toolbar"
+          aria-label="Filter reminders by category"
+        >
         </div>
         <div id="inboxSearchResults"></div>
 
@@ -6124,6 +6125,38 @@ body, main, section, div, p, span, li {
       border-color: var(--accent-color, #512663);
       color: #fff;
       box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
+    }
+
+    .category-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 4px 2px;
+      margin-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .category-filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-chip {
+      border-radius: 999px;
+      border: 1px solid rgba(47, 27, 63, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      line-height: 1;
+      color: var(--primary-dark);
+      white-space: nowrap;
+      transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+    }
+
+    .category-chip.active {
+      background: #5c4b8a;
+      border-color: #5c4b8a;
+      color: #fff;
     }
 
     .reminder-actions {
