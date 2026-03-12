@@ -123,10 +123,18 @@ body.app-shell #mobile-nav-shell .floating-card[aria-current='page'] {
 
 body.app-shell .content .content-container {
   width: 100%;
-  max-width: 900px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 0 12px;
   line-height: 1.4;
+}
+
+body.app-shell .content #reminderList,
+body.app-shell .content .reminder-card,
+body.app-shell .content #inboxEntriesList,
+body.app-shell .content .category-entry-item,
+body.app-shell .content .note-card {
+  width: 100%;
 }
 
 body.app-shell .content #contentFeed {
