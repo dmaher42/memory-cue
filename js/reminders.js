@@ -5278,6 +5278,22 @@ export async function initReminders(sel = {}) {
     return rows.filter((row) => normalizeCategory(row?.category) === activeCategoryFilter);
   }
 
+  function resolveReminderDisplayTitle(reminder) {
+    if (!reminder || typeof reminder !== 'object') {
+      return '';
+    }
+    const title = typeof reminder.title === 'string' ? reminder.title.trim() : '';
+    if (title) {
+      return title;
+    }
+    const text = typeof reminder.text === 'string' ? reminder.text.trim() : '';
+    if (text) {
+      return text;
+    }
+    const name = typeof reminder.name === 'string' ? reminder.name.trim() : '';
+    return name;
+  }
+
   function updateMobileCategoryFilterBar(categories = []) {
     if (variant !== 'mobile' || !(categoryFilterBar instanceof HTMLElement)) {
       return;
@@ -5530,9 +5546,10 @@ export async function initReminders(sel = {}) {
     };
 
     const buildReminderCard = (reminder, catName, { elementTag, isMobile }) => {
+      const reminderTitle = resolveReminderDisplayTitle(reminder);
       const summary = {
         id: reminder.id,
-        title: reminder.title,
+        title: reminderTitle,
         dueIso: reminder.due || null,
         priority: reminder.priority || 'Medium',
         category: catName,
@@ -5573,7 +5590,7 @@ export async function initReminders(sel = {}) {
       itemEl.setAttribute('draggable', 'true');
       itemEl.setAttribute('role', 'button');
       itemEl.tabIndex = 0;
-      itemEl.setAttribute('aria-label', `Edit reminder: ${reminder.title}`);
+      itemEl.setAttribute('aria-label', `Edit reminder: ${reminderTitle}`);
       attachReminderLongPress(itemEl, reminder);
 
       applyPriorityTokensToCard(itemEl, summary.priority);
@@ -5637,10 +5654,10 @@ export async function initReminders(sel = {}) {
 
       if (summary.done) {
         toggleBtn.classList.add('text-base-content/60');
-        toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminder.title}`);
+        toggleBtn.setAttribute('aria-label', `Mark reminder as active: ${reminderTitle}`);
       } else {
         toggleBtn.classList.add('text-success');
-        toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
+        toggleBtn.setAttribute('aria-label', `Mark reminder as done: ${reminderTitle}`);
       }
       toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
       toggleBtn.setAttribute('data-reminder-control', 'toggle');
@@ -5658,7 +5675,7 @@ export async function initReminders(sel = {}) {
         cardCheckbox.type = 'checkbox';
         cardCheckbox.className = 'reminder-complete-toggle reminder-row-complete reminder-card-checkbox';
         cardCheckbox.checked = summary.done;
-        cardCheckbox.setAttribute('aria-label', `Mark reminder as done: ${reminder.title}`);
+        cardCheckbox.setAttribute('aria-label', `Mark reminder as done: ${reminderTitle}`);
         cardCheckbox.setAttribute('data-reminder-control', 'toggle');
         cardCheckbox.setAttribute('data-no-swipe', 'true');
         cardCheckbox.addEventListener('click', (event) => {
@@ -5681,7 +5698,7 @@ export async function initReminders(sel = {}) {
         titleToggle.className = 'reminder-title-toggle cursor-pointer';
         titleToggle.setAttribute('role', 'button');
         titleToggle.tabIndex = 0;
-        titleToggle.textContent = reminder.title;
+        titleToggle.textContent = reminderTitle;
         updatePinToggleVisualState(titleToggle, summary.pinToToday);
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
@@ -5735,7 +5752,7 @@ export async function initReminders(sel = {}) {
       if (summary.done) {
         titleEl.classList.add('line-through', 'text-base-content/60');
       }
-      titleEl.textContent = reminder.title;
+      titleEl.textContent = reminderTitle;
 
       content.appendChild(titleEl);
 
@@ -5768,7 +5785,7 @@ export async function initReminders(sel = {}) {
           <line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/>
           <line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/>
         </svg>`;
-      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminder.title}`);
+      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminderTitle}`);
       deleteBtn.setAttribute('data-action', 'delete');
       deleteBtn.setAttribute('data-reminder-control', 'delete');
       deleteBtn.setAttribute('data-no-swipe', 'true');
