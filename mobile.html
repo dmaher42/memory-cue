@@ -3012,6 +3012,49 @@ body, main, section, div, p, span, li {
       min-height: 0;
     }
 
+    .insight-card {
+      margin: 0;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      background: color-mix(in srgb, var(--accent-color) 8%, #f7f5fb);
+      border: 1px solid color-mix(in srgb, var(--accent-color) 14%, transparent);
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .insight-header {
+      font-weight: 600;
+      margin-bottom: 0.1rem;
+      color: var(--text-main);
+    }
+
+    .insight-summary {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .insight-details {
+      display: none;
+      gap: 0.5rem;
+    }
+
+    .insight-card.expanded .insight-details {
+      display: grid;
+    }
+
+    .insight-card.expanded .insight-summary {
+      display: none;
+    }
+
+    .insight-reflection-content {
+      font-size: 0.9rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      color: var(--text-main);
+      margin: 0;
+    }
+
     #assistantMessages,
     .assistant-messages {
       display: grid;
@@ -5202,7 +5245,14 @@ body, main, section, div, p, span, li {
             </div>
     <section data-view="assistant" id="assistantView" class="view hidden" aria-hidden="true">
       <div class="assistant-panel">
-        <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm">Weekly Reflection</button>
+        <div id="weeklyReflectionCard" class="insight-card" aria-live="polite">
+          <div class="insight-header">Weekly Reflection</div>
+          <p id="weeklyReflectionSummary" class="insight-summary">Get a quick summary of what you captured this week.</p>
+          <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm view-reflection-btn">View Reflection</button>
+          <div id="weeklyReflectionDetails" class="insight-details" aria-hidden="true">
+            <p id="weeklyReflectionContent" class="insight-reflection-content">Tap “View Reflection” to generate this week’s insight.</p>
+          </div>
+        </div>
         <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
         <div id="thinkingBarResults" aria-live="polite"></div>
         <div id="assistantMessages" class="assistant-messages" aria-live="polite" aria-label="Assistant conversation"></div>
