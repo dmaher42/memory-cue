@@ -2153,15 +2153,15 @@ body, main, section, div, p, span, li {
     /* New Header Styles */
     .mobile-header,
     .app-header {
-      height: 56px;
-      min-height: 56px;
-      max-height: 56px;
+      height: 52px;
+      min-height: 52px;
+      max-height: 52px;
       display: flex;
       align-items: center;
       justify-content: center;
       position: sticky;
       top: 0;
-      padding: 0 16px;
+      padding: 4px 12px;
       z-index: 1000;
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(10px);
@@ -2208,6 +2208,11 @@ body, main, section, div, p, span, li {
       right: 12px;
     }
 
+    .sort {
+      position: absolute;
+      right: 56px;
+    }
+
     .header-quick-add,
     .header-search {
       width: 100%;
@@ -2241,7 +2246,7 @@ body, main, section, div, p, span, li {
     }
 
     .reminder-card {
-      padding: 10px 14px;
+      padding: 8px 10px;
       border-radius: 14px;
     }
 
@@ -2257,7 +2262,7 @@ body, main, section, div, p, span, li {
     }
 
     .reminders-mobile-flow > * + * {
-      margin-top: var(--space-2);
+      margin-top: 12px;
     }
 
     .quick-add-form {
@@ -4726,6 +4731,9 @@ body, main, section, div, p, span, li {
       <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Search">
         🔍
       </button>
+      <button id="reminderSortToggle" type="button" class="sort icon-button control-icon-button" aria-label="Sort reminders" title="Sort reminders">
+        ↕
+      </button>
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <!-- Reminders -->
@@ -4866,7 +4874,7 @@ body, main, section, div, p, span, li {
             id="reminderListSection"
             class="w-full relative memory-glass-card-soft"
           >
-            <div class="mb-2 flex items-center justify-end gap-2 px-1">
+            <div class="sr-only" aria-hidden="true">
               <label for="reminderSort" class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Sort by:</label>
               <select id="reminderSort" class="select select-bordered select-xs max-w-[10rem]" aria-label="Sort reminders">
                 <option value="newest">Newest</option>
@@ -6381,7 +6389,7 @@ body, main, section, div, p, span, li {
       gap: 8px;
       overflow-x: auto;
       padding: 0 4px 2px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       -webkit-overflow-scrolling: touch;
     }
 
