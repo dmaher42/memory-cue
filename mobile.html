@@ -3040,6 +3040,35 @@ body, main, section, div, p, span, li {
       margin: 0;
     }
 
+
+    .memory-recall {
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .memory-recall h3 {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .recall-item {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: rgba(81, 38, 99, 0.06);
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.55rem;
+    }
+
+    .recall-item--empty {
+      background: transparent;
+      border: 1px dashed var(--border-subtle);
+    }
+
     .reflection-modal {
       position: fixed;
       inset: 0;
@@ -5310,6 +5339,13 @@ body, main, section, div, p, span, li {
           <div class="insight-header"><span>Insights</span></div>
           <p id="weeklyReflectionSummary" class="insight-summary">You captured items this week.</p>
           <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm view-reflection-btn">Weekly Reflection</button>
+
+          <div class="memory-recall">
+            <h3>Memory Recall</h3>
+            <div id="memoryRecallList">
+              <div class="recall-item recall-item--empty">No recall suggestions yet.</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
