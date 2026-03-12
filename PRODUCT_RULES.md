@@ -1,39 +1,90 @@
-## Core Product Areas
-- Inbox / Capture
-- Notes
-- Reminders
-- Assistant
+## Single Capture Pipeline Rule
 
-## Capture Rules
-- Fast freeform capture goes to Inbox
-- Brain Dump is just Inbox capture
-- Do not create another raw capture store
-- Do not add multiple quick-add systems for the same purpose
+Memory Cue must have **one capture pipeline**.
 
-## Notes Rules
-- Notes are for reflections, ideas, long-form writing
-- Notes are not reminders by default
-- Notes should stay simple and low friction
+All freeform input must be processed through the same capture logic.
 
-## Reminder Rules
-- Reminders are for actionable, dated items
-- Reminders can have notifications
-- Reminders should not become a notes replacement
+Examples of capture entry points:
 
-## Assistant Rules
-- Assistant helps search, summarise, classify, and organise
-- Assistant must not become a parallel storage system
-- Assistant should work on Inbox, Notes, and Reminders
-- Assistant should not introduce duplicate entry flows
+* Brain Dump
+* Quick Add
+* Floating Action Button (FAB)
+* Assistant capture
+* Voice capture (future)
 
-## UI Rules
-- one main capture flow
-- one notes flow
-- one reminder creation flow
-- avoid duplicate modals and sheets for the same action
+All of these must create **Inbox items** through the same capture logic (typically implemented in `capture.js`).
 
-## Engineering Rules
-- avoid putting all logic in mobile.js
-- avoid large inline CSS blocks in mobile.html
-- prefer one module per feature area
-- prefer one source of truth per data model
+No feature may directly create Notes or Reminders from raw input without first creating an Inbox item.
+
+## Inbox → Conversion Rule
+
+Inbox acts as the processing layer of the system.
+
+Typical flow:
+
+User Capture
+↓
+Inbox Item
+↓
+User or Assistant processes item
+↓
+Convert to Note or Reminder
+
+Notes and Reminders should normally originate from Inbox items unless the user intentionally creates them directly.
+
+This keeps capture simple and prevents fragmented storage paths.
+
+## Assistant Mutation Safety Rule
+
+The Assistant must never silently mutate the user's data.
+
+Assistant behavior must follow these rules:
+
+* Assistant may analyse Inbox, Notes, and Reminders.
+* Assistant may suggest conversions or edits.
+* Assistant must not directly create Notes or Reminders without user confirmation.
+* Assistant should normally operate on Inbox items before converting them into structured items.
+
+This prevents hidden AI-driven data mutations.
+
+## Storage Duplication Rule
+
+The application must not introduce multiple storage locations for the same concept.
+
+Approved storage domains:
+
+Inbox
+Notes
+Reminders
+
+Any new feature must store its data within one of these domains.
+
+New localStorage keys, tables, or structures must not represent duplicate versions of:
+
+* captured ideas
+* notes
+* reminders
+
+This prevents architecture drift.
+
+## Data Flow Diagram
+
+All information in Memory Cue should follow this lifecycle:
+
+Capture
+↓
+Inbox
+↓
+Process
+↓
+Notes or Reminders
+↓
+Assistant search / summarise / classify
+
+Inbox is the entry point for new information.
+
+Notes store written content.
+
+Reminders store actionable items with dates.
+
+Assistant operates across all three to help organise and retrieve information.
