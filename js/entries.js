@@ -212,6 +212,23 @@
     return true;
   };
 
+  const convertToReminder = (entry) => {
+    dispatchReminderSheetOpen(null, getEntryText(entry));
+  };
+
+  const convertToNote = (entry) => {
+    appendToMainNotesDatabase([
+      {
+        id: `entry-${Date.now()}`,
+        title: getEntryText(entry),
+        body: getEntryText(entry),
+        bodyHtml: getEntryText(entry),
+        bodyText: getEntryText(entry),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+  };
+
   const openInboxQuickActions = (entry) => {
     if (!(entry && typeof entry === 'object')) {
       return;
@@ -234,21 +251,12 @@
     const actions = [
       {
         label: 'Create Reminder',
-        action: () => dispatchReminderSheetOpen(null, getEntryText(entry)),
+        action: () => convertToReminder(entry),
       },
       {
         label: 'Convert to Note',
         action: () => {
-          appendToMainNotesDatabase([
-            {
-              id: `entry-${Date.now()}`,
-              title: getEntryText(entry),
-              body: getEntryText(entry),
-              bodyHtml: getEntryText(entry),
-              bodyText: getEntryText(entry),
-              updatedAt: new Date().toISOString(),
-            },
-          ]);
+          convertToNote(entry);
         },
       },
       {
@@ -396,6 +404,67 @@
       createdAt.textContent = getEntryCreatedDate(entry);
 
       meta.append(typeTag, categoryTag, createdAt);
+
+      const suggestion = entry?.suggestion && typeof entry.suggestion === 'object' ? entry.suggestion : null;
+      const suggestionType = typeof suggestion?.type === 'string' ? suggestion.type.trim().toLowerCase() : 'none';
+      const suggestionReason = typeof suggestion?.reason === 'string' ? suggestion.reason.trim() : '';
+      const shouldShowSuggestion = (suggestionType === 'reminder' || suggestionType === 'note') && suggestionReason;
+
+      if (shouldShowSuggestion) {
+        const suggestionPanel = document.createElement('section');
+        suggestionPanel.className = 'rounded-md border border-base-300 bg-base-200/50 p-2 text-xs space-y-2';
+
+        const suggestionLabel = document.createElement('p');
+        suggestionLabel.className = 'font-medium';
+        suggestionLabel.textContent = 'Suggested action';
+
+        const suggestionAction = document.createElement('p');
+        suggestionAction.className = 'opacity-80';
+        suggestionAction.textContent = suggestionType === 'reminder' ? 'Create Reminder' : 'Convert to Note';
+
+        const suggestionReasonEl = document.createElement('p');
+        suggestionReasonEl.className = 'opacity-70';
+        suggestionReasonEl.textContent = suggestionReason;
+
+        const suggestionActions = document.createElement('div');
+        suggestionActions.className = 'flex items-center gap-2';
+
+        const acceptButton = document.createElement('button');
+        acceptButton.type = 'button';
+        acceptButton.className = 'btn btn-xs btn-primary';
+        acceptButton.textContent = 'Accept';
+        acceptButton.addEventListener('click', () => {
+          if (suggestionType === 'reminder') {
+            convertToReminder(entry);
+          } else if (suggestionType === 'note') {
+            convertToNote(entry);
+          }
+        });
+
+        const ignoreButton = document.createElement('button');
+        ignoreButton.type = 'button';
+        ignoreButton.className = 'btn btn-xs btn-ghost';
+        ignoreButton.textContent = 'Ignore';
+        ignoreButton.addEventListener('click', () => {
+          const allEntries = readEntries();
+          const entryIndex = allEntries.findIndex((item) => item?.id && entry?.id ? item.id === entry.id : item === entry);
+          if (entryIndex === -1) return;
+          allEntries[entryIndex] = {
+            ...allEntries[entryIndex],
+            suggestion: {
+              type: 'none',
+              reason: ''
+            },
+            updatedAt: new Date().toISOString()
+          };
+          writeEntries(allEntries);
+          renderInboxEntries();
+        });
+
+        suggestionActions.append(acceptButton, ignoreButton);
+        suggestionPanel.append(suggestionLabel, suggestionAction, suggestionReasonEl, suggestionActions);
+        card.appendChild(suggestionPanel);
+      }
 
       const actions = document.createElement('div');
       actions.className = 'flex items-center gap-2 flex-wrap';

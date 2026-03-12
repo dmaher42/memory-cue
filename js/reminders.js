@@ -1,4 +1,5 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
+import { analyseText } from './services/suggestion-service.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -2111,6 +2112,7 @@ export async function initReminders(sel = {}) {
         type: null,
         context: null,
         person: null,
+        suggestion: analyseText(cleanText),
         createdAt: nowMs,
         date: dateStamp,
       };

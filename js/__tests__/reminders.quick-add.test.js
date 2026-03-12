@@ -12,6 +12,10 @@ function loadRemindersModule() {
     "import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';\n",
     'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
   );
+  source = source.replace(
+    "import { analyseText } from './services/suggestion-service.js';\n",
+    "const analyseText = (text) => {\n      const normalized = typeof text === 'string' ? text.toLowerCase() : '';\n      if (normalized.includes('tomorrow') || /\\d+\\s*(am|pm)\\b/i.test(normalized)) {\n        return { type: 'reminder', reason: 'Contains time reference' };\n      }\n      if (normalized.length > 60) {\n        return { type: 'note', reason: 'Long text likely a note' };\n      }\n      return { type: 'none', reason: '' };\n    };\n",
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const module = { exports: {} };
@@ -114,6 +118,10 @@ test('quick add routes footy drill prefix to Footy – Drills category', async (
   expect(memoryEntries[0].type).toBeNull();
   expect(memoryEntries[0].context).toBeNull();
   expect(memoryEntries[0].person).toBeNull();
+  expect(memoryEntries[0].suggestion).toEqual({
+    type: 'none',
+    reason: '',
+  });
   expect(Number.isFinite(memoryEntries[0].createdAt)).toBe(true);
   expect(memoryEntries[0].date).toBe('2024-05-15');
 });
@@ -180,6 +188,21 @@ test('inbox search parser falls back to keyword-only when no time pattern exists
 
   expect(parsed.keywordQuery).toBe('mark reports');
   expect(parsed.timeRange).toBeNull();
+});
+
+
+test('quick add stores reminder suggestion when text contains time reference', async () => {
+  const quickInput = document.getElementById('quickAddInput');
+  quickInput.value = 'Call parents tomorrow 1pm';
+
+  await window.memoryCueQuickAddNow();
+
+  const memoryEntries = JSON.parse(localStorage.getItem('memoryEntries') || '[]');
+  expect(memoryEntries).toHaveLength(1);
+  expect(memoryEntries[0].suggestion).toEqual({
+    type: 'reminder',
+    reason: 'Contains time reference',
+  });
 });
 
 test('quick add parses natural language time into due date', async () => {
