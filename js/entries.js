@@ -177,6 +177,165 @@
     return Number.isNaN(dt.getTime()) ? String(value) : dt.toLocaleString();
   };
 
+  const QUICK_ACTION_LONG_PRESS_MS = 500;
+  let activeQuickActionsMenu = null;
+  let activeQuickActionsCleanup = null;
+
+  const closeQuickActionsMenu = () => {
+    if (typeof activeQuickActionsCleanup === 'function') {
+      activeQuickActionsCleanup();
+    }
+    activeQuickActionsCleanup = null;
+    if (activeQuickActionsMenu instanceof HTMLElement) {
+      activeQuickActionsMenu.remove();
+    }
+    activeQuickActionsMenu = null;
+  };
+
+  const sendToAssistant = (text) => {
+    const assistantFormEl = document.getElementById('assistantForm');
+    const assistantInputEl = document.getElementById('assistantInput');
+    const isAssistantInput = assistantInputEl instanceof HTMLInputElement || assistantInputEl instanceof HTMLTextAreaElement;
+    if (!(assistantFormEl instanceof HTMLFormElement) || !isAssistantInput) {
+      return false;
+    }
+
+    if (window.location.hash !== '#assistant') {
+      window.location.hash = '#assistant';
+      if (typeof window.renderRoute === 'function') {
+        window.renderRoute();
+      }
+    }
+
+    assistantInputEl.value = text;
+    assistantFormEl.requestSubmit();
+    return true;
+  };
+
+  const openInboxQuickActions = (entry) => {
+    if (!(entry && typeof entry === 'object')) {
+      return;
+    }
+
+    closeQuickActionsMenu();
+    const menu = document.createElement('div');
+    menu.className = 'quick-actions-menu';
+    menu.setAttribute('role', 'menu');
+
+    const allEntries = readEntries();
+    const resolveEntryIndex = () => allEntries.findIndex((item) => (entry?.id && item?.id ? item.id === entry.id : item === entry));
+
+    const runAction = (handler) => {
+      handler();
+      closeQuickActionsMenu();
+      renderInboxEntries();
+    };
+
+    const actions = [
+      {
+        label: 'Create Reminder',
+        action: () => dispatchReminderSheetOpen(null, getEntryText(entry)),
+      },
+      {
+        label: 'Convert to Note',
+        action: () => {
+          appendToMainNotesDatabase([
+            {
+              id: `entry-${Date.now()}`,
+              title: getEntryText(entry),
+              body: getEntryText(entry),
+              bodyHtml: getEntryText(entry),
+              bodyText: getEntryText(entry),
+              updatedAt: new Date().toISOString(),
+            },
+          ]);
+        },
+      },
+      {
+        label: 'Ask Assistant',
+        action: () => {
+          sendToAssistant(getEntryText(entry));
+        },
+      },
+      {
+        label: 'Archive',
+        action: () => {
+          const entryIndex = resolveEntryIndex();
+          if (entryIndex === -1) return;
+          const nextEntries = allEntries.filter((_, index) => index !== entryIndex);
+          writeEntries(nextEntries);
+        },
+      },
+    ];
+
+    actions.forEach((item) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.action = item.label.toLowerCase().replace(/\s+/g, '-');
+      button.textContent = item.label;
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        runAction(item.action);
+      });
+      menu.appendChild(button);
+    });
+
+    document.body.appendChild(menu);
+    activeQuickActionsMenu = menu;
+
+    const handleOutsidePress = (event) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+      if (!menu.contains(event.target)) {
+        closeQuickActionsMenu();
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeQuickActionsMenu();
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePress, true);
+    document.addEventListener('keydown', handleEscape);
+    activeQuickActionsCleanup = () => {
+      document.removeEventListener('pointerdown', handleOutsidePress, true);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  };
+
+  const attachInboxLongPress = (itemEl, entry) => {
+    if (!(itemEl instanceof HTMLElement)) {
+      return;
+    }
+    let pressTimer = null;
+
+    const start = () => {
+      pressTimer = window.setTimeout(() => {
+        openInboxQuickActions(entry);
+      }, QUICK_ACTION_LONG_PRESS_MS);
+    };
+
+    const cancel = () => {
+      if (pressTimer) {
+        window.clearTimeout(pressTimer);
+      }
+      pressTimer = null;
+    };
+
+    itemEl.addEventListener('touchstart', start, { passive: true });
+    itemEl.addEventListener('touchend', cancel);
+    itemEl.addEventListener('touchcancel', cancel);
+    itemEl.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      start();
+    });
+    itemEl.addEventListener('pointerup', cancel);
+    itemEl.addEventListener('pointerleave', cancel);
+  };
+
   const renderCategoryEntries = (categoryName) => {
     const targetCategory = String(categoryName || '').trim().toLowerCase();
     const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === targetCategory);
@@ -310,6 +469,7 @@
 
       actions.append(moveSelect, editBtn, deleteBtn);
       card.append(text, meta, actions);
+      attachInboxLongPress(card, entry);
       inboxEntriesList.appendChild(card);
     });
   };
