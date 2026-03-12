@@ -3013,11 +3013,12 @@ body, main, section, div, p, span, li {
     }
 
     .insight-card {
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 12px;
       margin: 0;
-      padding: 0.75rem;
-      border-radius: 0.75rem;
-      background: color-mix(in srgb, var(--accent-color) 8%, #f7f5fb);
-      border: 1px solid color-mix(in srgb, var(--accent-color) 14%, transparent);
+      margin-top: 16px;
+      background: #fafafa;
       display: grid;
       gap: 0.5rem;
     }
@@ -3034,25 +3035,39 @@ body, main, section, div, p, span, li {
       margin: 0;
     }
 
-    .insight-details {
-      display: none;
-      gap: 0.5rem;
+    .reflection-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
     }
 
-    .insight-card.expanded .insight-details {
+    .reflection-modal.hidden {
+      display: none;
+    }
+
+    .reflection-content {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: min(500px, 100%);
       display: grid;
+      gap: 0.75rem;
     }
 
-    .insight-card.expanded .insight-summary {
-      display: none;
-    }
-
-    .insight-reflection-content {
+    .reflection-text {
       font-size: 0.9rem;
       line-height: 1.4;
       white-space: pre-wrap;
       color: var(--text-main);
       margin: 0;
+      max-height: min(60vh, 420px);
+      overflow-y: auto;
     }
 
     #assistantMessages,
@@ -5245,14 +5260,6 @@ body, main, section, div, p, span, li {
             </div>
     <section data-view="assistant" id="assistantView" class="view hidden" aria-hidden="true">
       <div class="assistant-panel">
-        <div id="weeklyReflectionCard" class="insight-card" aria-live="polite">
-          <div class="insight-header">Weekly Reflection</div>
-          <p id="weeklyReflectionSummary" class="insight-summary">Get a quick summary of what you captured this week.</p>
-          <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm view-reflection-btn">View Reflection</button>
-          <div id="weeklyReflectionDetails" class="insight-details" aria-hidden="true">
-            <p id="weeklyReflectionContent" class="insight-reflection-content">Tap “View Reflection” to generate this week’s insight.</p>
-          </div>
-        </div>
         <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
         <div id="thinkingBarResults" aria-live="polite"></div>
         <div id="assistantMessages" class="assistant-messages" aria-live="polite" aria-label="Assistant conversation"></div>
@@ -5265,8 +5272,21 @@ body, main, section, div, p, span, li {
           <button type="submit">Send</button>
         </form>
         <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
+        <div id="weeklyReflectionCard" class="insight-card" aria-live="polite">
+          <div class="insight-header"><span>Insights</span></div>
+          <p id="weeklyReflectionSummary" class="insight-summary">You captured items this week.</p>
+          <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm view-reflection-btn">Weekly Reflection</button>
+        </div>
       </div>
     </section>
+
+    <div id="weeklyReflectionModal" class="reflection-modal hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="weeklyReflectionModalTitle">
+      <div class="reflection-content">
+        <h2 id="weeklyReflectionModalTitle">Weekly Reflection</h2>
+        <div id="weeklyReflectionContent" class="reflection-text">Tap “Weekly Reflection” to generate this week’s insight.</div>
+        <button id="closeWeeklyReflectionButton" type="button" class="btn btn-outline btn-sm close-reflection">Close</button>
+      </div>
+    </div>
     </div>
 </main>
 

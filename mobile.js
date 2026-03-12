@@ -58,7 +58,8 @@ function initAssistant() {
     const thinkingBarResults = document.getElementById('thinkingBarResults');
     const weeklyReflectionCard = document.getElementById('weeklyReflectionCard');
     const weeklyReflectionButton = document.getElementById('weeklyReflectionButton');
-    const weeklyReflectionDetails = document.getElementById('weeklyReflectionDetails');
+    const weeklyReflectionModal = document.getElementById('weeklyReflectionModal');
+    const closeWeeklyReflectionButton = document.getElementById('closeWeeklyReflectionButton');
     const weeklyReflectionContent = document.getElementById('weeklyReflectionContent');
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
@@ -522,17 +523,14 @@ function initAssistant() {
 
     if (weeklyReflectionButton instanceof HTMLElement) {
       weeklyReflectionButton.addEventListener('click', async () => {
-        if (!(weeklyReflectionCard instanceof HTMLElement)) {
+        if (!(weeklyReflectionCard instanceof HTMLElement) || !(weeklyReflectionModal instanceof HTMLElement)) {
           return;
         }
 
         const hasReflection = weeklyReflectionCard.dataset.loaded === 'true';
         if (hasReflection) {
-          const isExpanded = weeklyReflectionCard.classList.toggle('expanded');
-          weeklyReflectionButton.textContent = isExpanded ? 'Hide Reflection' : 'View Reflection';
-          if (weeklyReflectionDetails instanceof HTMLElement) {
-            weeklyReflectionDetails.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
-          }
+          weeklyReflectionModal.classList.remove('hidden');
+          weeklyReflectionModal.setAttribute('aria-hidden', 'false');
           return;
         }
 
@@ -556,14 +554,8 @@ function initAssistant() {
             weeklyReflectionContent.textContent = summaryText;
           }
           weeklyReflectionCard.dataset.loaded = 'true';
-          weeklyReflectionCard.classList.add('expanded');
-          weeklyReflectionButton.textContent = 'Hide Reflection';
-          if (weeklyReflectionDetails instanceof HTMLElement) {
-            weeklyReflectionDetails.setAttribute('aria-hidden', 'false');
-          }
-
-          appendAssistantMessage('Weekly Reflection', 'assistant-message');
-          appendAssistantMessage(summaryText, 'assistant-message assistant-message--reply');
+          weeklyReflectionModal.classList.remove('hidden');
+          weeklyReflectionModal.setAttribute('aria-hidden', 'false');
           setThinkingBarStatus('Weekly reflection ready');
         } catch (error) {
           console.error('[assistant] failed to generate weekly reflection', error);
@@ -574,6 +566,20 @@ function initAssistant() {
           if (assistantLoading instanceof HTMLElement) {
             assistantLoading.classList.add('hidden');
           }
+        }
+      });
+    }
+
+    if (closeWeeklyReflectionButton instanceof HTMLElement && weeklyReflectionModal instanceof HTMLElement) {
+      closeWeeklyReflectionButton.addEventListener('click', () => {
+        weeklyReflectionModal.classList.add('hidden');
+        weeklyReflectionModal.setAttribute('aria-hidden', 'true');
+      });
+
+      weeklyReflectionModal.addEventListener('click', (event) => {
+        if (event.target === weeklyReflectionModal) {
+          weeklyReflectionModal.classList.add('hidden');
+          weeklyReflectionModal.setAttribute('aria-hidden', 'true');
         }
       });
     }
