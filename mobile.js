@@ -14,6 +14,7 @@ import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
+import { getRecallItems } from './js/services/recall-service.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 
@@ -61,6 +62,8 @@ function initAssistant() {
     const weeklyReflectionModal = document.getElementById('weeklyReflectionModal');
     const closeWeeklyReflectionButton = document.getElementById('closeWeeklyReflectionButton');
     const weeklyReflectionContent = document.getElementById('weeklyReflectionContent');
+    const recallList = document.getElementById('memoryRecallList');
+    let lastRecallNotificationKey = '';
     let isAssistantSending = false;
     let latestThinkingSearchRequest = 0;
     const assistantConversationHistory = [];
@@ -95,6 +98,7 @@ function initAssistant() {
         thinkingBarResults.innerHTML = '';
       }
     };
+
 
     const renderSearchResults = async (query) => {
       const requestId = ++latestThinkingSearchRequest;
@@ -149,6 +153,137 @@ function initAssistant() {
         thinkingBarResults.appendChild(row);
       });
     };
+
+
+    const readRemindersForRecall = () => {
+      if (typeof localStorage === 'undefined') {
+        return [];
+      }
+      try {
+        const raw = localStorage.getItem('scheduledReminders');
+        const parsed = raw ? JSON.parse(raw) : {};
+        if (!parsed || typeof parsed !== 'object') {
+          return [];
+        }
+        return Object.values(parsed)
+          .filter((item) => item && typeof item === 'object')
+          .map((item) => ({
+            ...item,
+            sourceType: 'reminder',
+            recallText: typeof item.title === 'string' ? item.title : '',
+          }));
+      } catch {
+        return [];
+      }
+    };
+
+    const readInboxItemsForRecall = () => {
+      if (typeof localStorage === 'undefined') {
+        return [];
+      }
+      try {
+        const raw = localStorage.getItem('memoryEntries');
+        const parsed = raw ? JSON.parse(raw) : [];
+        const inboxItems = Array.isArray(parsed)
+          ? parsed.filter((entry) => entry?.processed === false || String(entry?.status || '').toLowerCase() === 'inbox')
+          : [];
+
+        return inboxItems.map((entry) => ({
+          ...entry,
+          sourceType: 'inbox',
+          recallText:
+            (typeof entry?.title === 'string' && entry.title.trim())
+              ? entry.title.trim()
+              : (typeof entry?.text === 'string' && entry.text.trim())
+                ? entry.text.trim()
+                : (typeof entry?.content === 'string' && entry.content.trim())
+                  ? entry.content.trim()
+                  : '',
+        }));
+      } catch {
+        return [];
+      }
+    };
+
+    const readNotesForRecall = () => {
+      const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
+      return notes.map((note) => ({
+        ...note,
+        sourceType: 'note',
+        recallText:
+          (typeof note?.title === 'string' && note.title.trim())
+            ? note.title.trim()
+            : (typeof note?.bodyText === 'string' && note.bodyText.trim())
+              ? note.bodyText.trim()
+              : (typeof note?.body === 'string' && note.body.trim())
+                ? note.body.trim()
+                : '',
+      }));
+    };
+
+    const maybeNotifyRecallItem = (recallItems) => {
+      if (!Array.isArray(recallItems) || !recallItems.length) {
+        return;
+      }
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+        return;
+      }
+
+      const first = recallItems[0];
+      const message = typeof first?.recallText === 'string' ? first.recallText.trim() : '';
+      if (!message) {
+        return;
+      }
+
+      const notificationKey = `${first?.sourceType || 'item'}:${message}`;
+      if (notificationKey === lastRecallNotificationKey) {
+        return;
+      }
+
+      lastRecallNotificationKey = notificationKey;
+      try {
+        new Notification('Memory Recall', {
+          body: message.slice(0, 140),
+        });
+      } catch {
+        // Ignore notification failures to avoid interrupting assistant tools.
+      }
+    };
+
+    const renderMemoryRecall = () => {
+      if (!(recallList instanceof HTMLElement)) {
+        return;
+      }
+
+      const notes = readNotesForRecall();
+      const reminders = readRemindersForRecall();
+      const inboxItems = readInboxItemsForRecall();
+      const recallItems = getRecallItems([...inboxItems, ...notes, ...reminders], { limit: 3 });
+
+      recallList.innerHTML = '';
+      if (!recallItems.length) {
+        const empty = document.createElement('div');
+        empty.className = 'recall-item recall-item--empty';
+        empty.textContent = 'No recall suggestions yet.';
+        recallList.appendChild(empty);
+        return;
+      }
+
+      recallItems.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'recall-item';
+        const text = typeof item?.recallText === 'string' ? item.recallText.trim() : '';
+        row.textContent = text || 'Untitled capture';
+        recallList.appendChild(row);
+      });
+
+      maybeNotifyRecallItem(recallItems);
+    };
+
+    renderMemoryRecall();
+    document.addEventListener('memoryCue:remindersUpdated', renderMemoryRecall);
+    document.addEventListener('memoryCue:entriesUpdated', renderMemoryRecall);
+    document.addEventListener('memoryCue:notesUpdated', renderMemoryRecall);
 
     const toAssistantEntryText = (value, maxChars = 1000) => {
       if (typeof value !== 'string') {
