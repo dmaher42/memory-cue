@@ -3311,7 +3311,7 @@ body, main, section, div, p, span, li {
   .brain-dump-fab {
     position: fixed;
     right: 1rem;
-    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--mobile-bottom-nav-height, 80px) + 0.75rem + env(safe-area-inset-bottom, 0px));
     width: 3.5rem;
     height: 3.5rem;
     border: none;
@@ -3324,7 +3324,33 @@ body, main, section, div, p, span, li {
     font-size: 2rem;
     line-height: 1;
     box-shadow: 0 12px 30px rgba(81, 38, 99, 0.3);
+    transition: transform 0.15s ease;
     z-index: 95;
+  }
+
+  .brain-dump-fab:active {
+    transform: scale(0.92);
+  }
+
+  .brain-dump-fab-tip {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(var(--mobile-bottom-nav-height, 80px) + 5rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(17, 24, 39, 0.94);
+    color: #ffffff;
+    border-radius: 0.75rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
+    z-index: 96;
+    max-width: 11.5rem;
+  }
+
+  .brain-dump-fab-tip[hidden] {
+    display: none;
   }
 
   .capture-modal {
@@ -5382,6 +5408,7 @@ body, main, section, div, p, span, li {
       </button>
     </div>
   </nav>
+  <div id="brainDumpFabTip" class="brain-dump-fab-tip" role="status" aria-live="polite" hidden>Tap + to capture ideas</div>
   <button type="button" id="brainDumpFab" class="brain-dump-fab" aria-label="Quick capture" title="Quick capture">+</button>
 
   <div id="captureModal" class="capture-modal" role="dialog" aria-modal="true" aria-labelledby="captureModalTitle" hidden>
@@ -5402,9 +5429,11 @@ body, main, section, div, p, span, li {
       const fabButton = document.getElementById('mobile-fab-button');
       const fabMenu = document.getElementById('mobile-fab-menu');
       const brainDumpFab = document.getElementById('brainDumpFab');
+      const brainDumpFabTip = document.getElementById('brainDumpFabTip');
       const captureModal = document.getElementById('captureModal');
       const quickAddForm = document.getElementById('quickAddForm');
       const quickCaptureInput = document.getElementById('universalInput');
+      const FAB_TOOLTIP_STORAGE_KEY = 'memoryCueFabTooltipSeen';
 
       const updateBottomNavHeight = () => {
         if (!navFooter) return;
@@ -5446,7 +5475,35 @@ body, main, section, div, p, span, li {
         }
       };
 
-      brainDumpFab?.addEventListener('click', openCaptureModal);
+      const hideFabTip = () => {
+        if (brainDumpFabTip instanceof HTMLElement) {
+          brainDumpFabTip.setAttribute('hidden', '');
+        }
+
+        try {
+          window.localStorage?.setItem(FAB_TOOLTIP_STORAGE_KEY, 'true');
+        } catch (error) {
+          console.warn(error);
+        }
+      };
+
+      const shouldShowFabTip = () => {
+        try {
+          return window.localStorage?.getItem(FAB_TOOLTIP_STORAGE_KEY) !== 'true';
+        } catch (error) {
+          console.warn(error);
+          return false;
+        }
+      };
+
+      if (brainDumpFabTip instanceof HTMLElement && shouldShowFabTip()) {
+        brainDumpFabTip.removeAttribute('hidden');
+      }
+
+      brainDumpFab?.addEventListener('click', () => {
+        hideFabTip();
+        openCaptureModal();
+      });
 
       quickAddForm?.addEventListener('submit', () => {
         closeCaptureModal();
