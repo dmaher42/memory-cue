@@ -428,8 +428,127 @@ export async function initReminders(sel = {}) {
     offline: "Offline. Changes are saved on this device until you reconnect.",
   };
   const UNDO_DELETE_TIMEOUT_MS = 6000;
+  const QUICK_ACTION_LONG_PRESS_MS = 500;
   let deleteUndoState = null;
   let detailSelectionId = null;
+  let activeReminderQuickActionsMenu = null;
+  let activeReminderQuickActionsCleanup = null;
+
+  function closeReminderQuickActionsMenu() {
+    if (typeof activeReminderQuickActionsCleanup === 'function') {
+      activeReminderQuickActionsCleanup();
+    }
+    activeReminderQuickActionsCleanup = null;
+    if (activeReminderQuickActionsMenu instanceof HTMLElement) {
+      activeReminderQuickActionsMenu.remove();
+    }
+    activeReminderQuickActionsMenu = null;
+  }
+
+  function openReminderQuickActions(reminder) {
+    if (!reminder || typeof reminder !== 'object') {
+      return;
+    }
+
+    closeReminderQuickActionsMenu();
+    const menu = document.createElement('div');
+    menu.className = 'quick-actions-menu';
+    menu.setAttribute('role', 'menu');
+
+    const addAction = (label, dataAction, handler) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.action = dataAction;
+      button.textContent = label;
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        handler();
+        closeReminderQuickActionsMenu();
+        render();
+      });
+      menu.appendChild(button);
+    };
+
+    addAction('Create Reminder', 'reminder', () => {
+      addItem({
+        title: reminder.title,
+        priority: reminder.priority || 'Medium',
+        category: reminder.category || DEFAULT_CATEGORY,
+        due: reminder.due || null,
+        notes: typeof reminder.notes === 'string' ? reminder.notes : '',
+      });
+    });
+
+    addAction('Convert to Note', 'note', () => {
+      const content = [reminder.title, reminder.notes].filter((value) => typeof value === 'string' && value.trim()).join('\n\n');
+      saveReflectionQuickNote(content || reminder.title || 'Reminder note');
+    });
+
+    addAction('Ask Assistant', 'assistant', () => {
+      askAssistant(reminder.title || '').catch((error) => {
+        console.warn('Ask assistant quick action failed', error);
+      });
+    });
+
+    addAction('Archive', 'archive', () => {
+      removeItem(reminder.id);
+    });
+
+    document.body.appendChild(menu);
+    activeReminderQuickActionsMenu = menu;
+
+    const handleOutsidePress = (event) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+      if (!menu.contains(event.target)) {
+        closeReminderQuickActionsMenu();
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeReminderQuickActionsMenu();
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePress, true);
+    document.addEventListener('keydown', handleEscape);
+    activeReminderQuickActionsCleanup = () => {
+      document.removeEventListener('pointerdown', handleOutsidePress, true);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }
+
+  function attachReminderLongPress(itemEl, reminder) {
+    if (!(itemEl instanceof HTMLElement)) {
+      return;
+    }
+    let pressTimer = null;
+
+    const start = () => {
+      pressTimer = window.setTimeout(() => {
+        openReminderQuickActions(reminder);
+      }, QUICK_ACTION_LONG_PRESS_MS);
+    };
+
+    const cancel = () => {
+      if (pressTimer) {
+        window.clearTimeout(pressTimer);
+      }
+      pressTimer = null;
+    };
+
+    itemEl.addEventListener('touchstart', start, { passive: true });
+    itemEl.addEventListener('touchend', cancel);
+    itemEl.addEventListener('touchcancel', cancel);
+    itemEl.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      start();
+    });
+    itemEl.addEventListener('pointerup', cancel);
+    itemEl.addEventListener('pointerleave', cancel);
+  }
 
   function clearUndoDeleteState(tokenId, { clearMessage = true } = {}) {
     if (!deleteUndoState) {
@@ -5419,6 +5538,7 @@ export async function initReminders(sel = {}) {
       itemEl.setAttribute('role', 'button');
       itemEl.tabIndex = 0;
       itemEl.setAttribute('aria-label', `Edit reminder: ${reminder.title}`);
+      attachReminderLongPress(itemEl, reminder);
 
       applyPriorityTokensToCard(itemEl, summary.priority);
 
