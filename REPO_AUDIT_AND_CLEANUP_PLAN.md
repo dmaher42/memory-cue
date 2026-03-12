@@ -156,3 +156,56 @@ The intended Memory Cue experience should be:
 - AI as helper, not clutter
 
 This keeps the product focused, easier to maintain, and easier for non-technical owners to manage with Codex and ChatGPT.
+
+## 11. Capture System Rule (Critical)
+
+Memory Cue must only have **one raw capture pipeline**.
+
+All quick thoughts and unprocessed inputs must become **Inbox items**.
+
+This includes capture from:
+
+- Brain Dump
+- Quick Add
+- Assistant capture
+- Voice capture (if added later)
+
+Inbox acts as the **processing layer** where items can later be converted into:
+
+- Notes
+- Reminders
+
+No feature should introduce a separate raw storage path for captured thoughts.
+
+## 12. Single Source of Truth Rule
+
+Each core product area must have one clear storage authority.
+
+Inbox is the source of truth for unprocessed information.
+
+Notes are the source of truth for written content.
+
+Reminders are the source of truth for actionable items with due dates.
+
+No feature may introduce another storage layer representing the same concept.
+
+This rule prevents duplication of data models across the application.
+
+## 13. Assistant Behavior Rules
+
+The Assistant is a helper layer and must not become a parallel storage system.
+
+Assistant responsibilities:
+
+- search Notes, Reminders, and Inbox
+- summarise information
+- classify Inbox items
+- suggest conversions between item types
+
+Assistant must NOT:
+
+- create its own storage layer
+- silently create Notes or Reminders without user confirmation
+- introduce new capture flows
+
+Assistant suggestions should normally operate on Inbox items and then allow the user to convert them into Notes or Reminders.
