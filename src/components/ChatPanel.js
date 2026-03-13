@@ -20,6 +20,54 @@ const createNode = (tag, styles = {}) => {
   return node;
 };
 
+const runQuickAction = (targetView) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (window.navigationService && typeof window.navigationService.navigate === 'function') {
+    window.navigationService.navigate(targetView);
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: targetView } }));
+};
+
+const createQuickActionBar = (quickActions = []) => {
+  if (!Array.isArray(quickActions) || quickActions.length === 0) {
+    return null;
+  }
+
+  const bar = createNode('div', {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.4rem',
+    marginTop: '0.5rem',
+  });
+
+  quickActions.forEach((action) => {
+    if (!action || typeof action.label !== 'string' || typeof action.targetView !== 'string') {
+      return;
+    }
+
+    const button = createNode('button', {
+      border: '1px solid color-mix(in srgb, var(--fg) 18%, transparent)',
+      borderRadius: '999px',
+      background: 'transparent',
+      color: 'var(--fg)',
+      padding: '0.25rem 0.6rem',
+      fontSize: '0.8rem',
+      cursor: 'pointer',
+    });
+    button.type = 'button';
+    button.textContent = action.label;
+    button.addEventListener('click', () => runQuickAction(action.targetView));
+    bar.appendChild(button);
+  });
+
+  return bar.childElementCount > 0 ? bar : null;
+};
+
 const createMessageBubble = (message) => {
   const role = message?.role === 'user' ? 'user' : 'assistant';
   const bubble = createNode('div', {
@@ -33,11 +81,19 @@ const createMessageBubble = (message) => {
     ...bubbleStyles[role],
   });
   bubble.textContent = typeof message?.content === 'string' ? message.content : '';
+
+  if (role === 'assistant') {
+    const quickActionBar = createQuickActionBar(message?.quickActions);
+    if (quickActionBar) {
+      bubble.appendChild(quickActionBar);
+    }
+  }
+
   return bubble;
 };
 
-const appendMessage = (list, role, content) => {
-  const message = { role, content };
+const appendMessage = (list, role, content, quickActions = []) => {
+  const message = { role, content, quickActions };
   list.appendChild(createMessageBubble(message));
   list.scrollTop = list.scrollHeight;
 };
@@ -100,7 +156,7 @@ export const createChatPanel = () => {
     input.value = '';
 
     const assistantReply = await handleMessage(userInput);
-    appendMessage(messageList, 'assistant', assistantReply);
+    appendMessage(messageList, 'assistant', assistantReply.message, assistantReply.quickActions);
   });
 
   inputBar.append(input, sendButton);

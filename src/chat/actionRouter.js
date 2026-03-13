@@ -25,9 +25,20 @@ const resolveReminderHandler = (dependencies = {}) => {
   return null;
 };
 
+const QUICK_ACTIONS_BY_INTENT = {
+  capture: [{ label: 'Open Inbox', targetView: 'capture' }],
+  reminder: [{ label: 'Edit Reminder', targetView: 'reminders' }],
+  assistant: [{ label: 'View Notes', targetView: 'notes' }],
+};
+
+const createActionResult = (intent, message) => ({
+  message,
+  quickActions: QUICK_ACTIONS_BY_INTENT[intent] || [],
+});
+
 const routeCapture = async (text) => {
   await captureInput(text, 'capture');
-  return 'Saved to Inbox.';
+  return createActionResult('capture', 'Saved to Inbox.');
 };
 
 const routeReminder = async (text, dependencies = {}) => {
@@ -37,7 +48,7 @@ const routeReminder = async (text, dependencies = {}) => {
   }
 
   await createReminder({ title: text });
-  return 'Reminder created.';
+  return createActionResult('reminder', 'Reminder created.');
 };
 
 const routeAssistant = async (text) => {
@@ -52,7 +63,7 @@ const routeAssistant = async (text) => {
   }
 
   const payload = await response.json();
-  return parseAssistantReply(payload);
+  return createActionResult('assistant', parseAssistantReply(payload));
 };
 
 export const routeAction = async (intent, text, dependencies = {}) => {
