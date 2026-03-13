@@ -134,25 +134,25 @@
   }
 
   const readEntries = () => {
-    try {
-      const raw = window.localStorage?.getItem('memoryEntries');
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-      if (Array.isArray(parsed?.entries)) return parsed.entries;
-      return [];
-    } catch (error) {
-      console.warn('Unable to read memoryCueEntries from localStorage', error);
-      return [];
+    if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.getInboxEntries === 'function') {
+      return window.MemoryCueCaptureService.getInboxEntries();
     }
+    return [];
+  };
+
+  const removeEntry = (id) => {
+    if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.removeInboxEntry === 'function') {
+      return window.MemoryCueCaptureService.removeInboxEntry(id);
+    }
+    return false;
   };
 
   const writeEntries = (entries) => {
     try {
-      window.localStorage?.setItem('memoryEntries', JSON.stringify(entries));
+      window.localStorage?.setItem('memoryCueInbox', JSON.stringify(entries));
       document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
     } catch (error) {
-      console.warn('Unable to update memoryCueEntries in localStorage', error);
+      console.warn('Unable to update memoryCueInbox in localStorage', error);
     }
   };
 
@@ -217,6 +217,11 @@
   };
 
   const convertToNote = (entry) => {
+    if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.convertInboxToNote === 'function') {
+      window.MemoryCueCaptureService.convertInboxToNote(String(entry?.id || ''));
+      return;
+    }
+
     appendToMainNotesDatabase([
       {
         id: `entry-${Date.now()}`,
@@ -270,8 +275,7 @@
         action: () => {
           const entryIndex = resolveEntryIndex();
           if (entryIndex === -1) return;
-          const nextEntries = allEntries.filter((_, index) => index !== entryIndex);
-          writeEntries(nextEntries);
+          removeEntry(String(allEntries[entryIndex]?.id || ''));
         },
       },
     ];
@@ -657,9 +661,7 @@
       }
 
       appendToMainNotesDatabase(processedNotes);
-      const inboxIds = new Set(inboxEntries.map((entry) => String(entry?.id || '')));
-      const nextEntries = allEntries.filter((entry) => !inboxIds.has(String(entry?.id || '')));
-      writeEntries(nextEntries);
+      inboxEntries.forEach((entry) => removeEntry(String(entry?.id || '')));
       renderInboxEntries();
     } catch (error) {
       console.error('Unable to process inbox entries.', error);
@@ -697,7 +699,7 @@
 
   document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
   window.addEventListener('storage', (event) => {
-    if (event.key === 'memoryEntries') {
+    if (event.key === 'memoryCueInbox') {
       renderInboxEntries();
     }
   });
@@ -706,7 +708,7 @@
     const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
     window.localStorage.setItem = function patchedSetItem(key, value) {
       originalSetItem(key, value);
-      if (key === 'memoryEntries') {
+      if (key === 'memoryCueInbox') {
         document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
       }
     };

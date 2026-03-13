@@ -15,6 +15,7 @@ import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
 import { getRecallItems } from './js/services/recall-service.js';
+import { captureInput, getInboxEntries } from './js/services/capture-service.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 
@@ -178,31 +179,12 @@ function initAssistant() {
     };
 
     const readInboxItemsForRecall = () => {
-      if (typeof localStorage === 'undefined') {
-        return [];
-      }
-      try {
-        const raw = localStorage.getItem('memoryEntries');
-        const parsed = raw ? JSON.parse(raw) : [];
-        const inboxItems = Array.isArray(parsed)
-          ? parsed.filter((entry) => entry?.processed === false || String(entry?.status || '').toLowerCase() === 'inbox')
-          : [];
-
-        return inboxItems.map((entry) => ({
-          ...entry,
-          sourceType: 'inbox',
-          recallText:
-            (typeof entry?.title === 'string' && entry.title.trim())
-              ? entry.title.trim()
-              : (typeof entry?.text === 'string' && entry.text.trim())
-                ? entry.text.trim()
-                : (typeof entry?.content === 'string' && entry.content.trim())
-                  ? entry.content.trim()
-                  : '',
-        }));
-      } catch {
-        return [];
-      }
+      const inboxItems = getInboxEntries();
+      return inboxItems.map((entry) => ({
+        ...entry,
+        sourceType: 'inbox',
+        recallText: typeof entry?.text === 'string' && entry.text.trim() ? entry.text.trim() : '',
+      }));
     };
 
     const readNotesForRecall = () => {
@@ -402,6 +384,13 @@ function initAssistant() {
         })
         .filter((entry) => entry.title);
 
+      const inboxRows = getInboxEntries()
+        .map((entry) => ({
+          title: normalizeTitle(entry?.text),
+          updatedAt: Number(entry?.createdAt) || 0,
+        }))
+        .filter((entry) => entry.title);
+
       const todayTitles = noteRows
         .filter((entry) => entry.actionDate && entry.actionDate.getTime() === today.getTime())
         .map((entry) => entry.title);
@@ -410,7 +399,7 @@ function initAssistant() {
         .filter((entry) => entry.actionDate && entry.actionDate >= today && entry.actionDate <= thisWeekEnd)
         .map((entry) => entry.title);
 
-      const recentNoteTitles = [...noteRows]
+      const recentTitles = [...noteRows, ...inboxRows]
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, maxContextItems)
         .map((entry) => entry.title);
@@ -419,7 +408,7 @@ function initAssistant() {
 
       const selectedToday = takeWithinLimit(todayTitles, 0);
       const selectedWeek = takeWithinLimit(thisWeekTitles, selectedToday.length);
-      const selectedRecent = takeWithinLimit(recentNoteTitles, selectedToday.length + selectedWeek.length);
+      const selectedRecent = takeWithinLimit(recentTitles, selectedToday.length + selectedWeek.length);
 
       const toListText = (items) => (items.length ? items.map((title) => `- ${title}`).join('\n') : '- None');
 
@@ -541,31 +530,6 @@ function initAssistant() {
       return 'inbox';
     }
 
-    const createInboxItem = (text) => {
-      const capturedAt = new Date();
-      const captureItem = {
-        id: `${capturedAt.getTime()}-${Math.random().toString(16).slice(2)}`,
-        text,
-        processed: false,
-        type: 'uncategorized',
-        timestamp: Date.now(),
-        createdAt: capturedAt.getTime(),
-        date: `${capturedAt.getFullYear()}-${String(capturedAt.getMonth() + 1).padStart(2, '0')}-${String(capturedAt.getDate()).padStart(2, '0')}`,
-        source: 'capture',
-      };
-
-      const rawEntries = localStorage.getItem('memoryEntries');
-      const parsedEntries = rawEntries ? JSON.parse(rawEntries) : [];
-      const existingEntries = Array.isArray(parsedEntries)
-        ? parsedEntries
-        : Array.isArray(parsedEntries?.entries)
-          ? parsedEntries.entries
-          : [];
-      existingEntries.unshift(captureItem);
-      localStorage.setItem('memoryEntries', JSON.stringify(existingEntries));
-      document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
-    };
-
     const createReminderFromText = async (text) => {
       if (typeof window.memoryCueQuickAddNow !== 'function') {
         return false;
@@ -606,7 +570,9 @@ function initAssistant() {
       isAssistantSending = true;
 
       try {
-        createInboxItem(trimmedMessage);
+        const intent = detectIntent(trimmedMessage);
+        const source = intent === 'assistant' ? 'assistant' : 'capture';
+        await captureInput(trimmedMessage, source);
         setThinkingBarStatus('Added to Inbox');
 
         thinkingBarInput.value = '';
@@ -700,13 +666,6 @@ function initAssistant() {
         }
       });
     }
-
-    if (isFormElement(quickAddForm) && isInputElement(universalInput)) {
-      quickAddForm.addEventListener('submit', (event) => {
-        sendAssistantMessage(event);
-      });
-    }
-
     // The legacy assistant form is handled by js/assistant.js via a submit listener.
     // Avoid binding a separate click/keydown handler here, because preventing default
     // on the send button blocks the form submit and makes "Send" appear non-functional.

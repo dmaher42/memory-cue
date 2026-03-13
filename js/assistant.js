@@ -57,6 +57,10 @@
       return;
     }
 
+    if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.captureInput === 'function') {
+      await window.MemoryCueCaptureService.captureInput(message, 'assistant');
+    }
+
     appendUserMessage(message);
     assistantInput.value = '';
     if (assistantLoading) {

@@ -13,8 +13,8 @@ function loadRemindersModule() {
     'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
   );
   source = source.replace(
-    "import { analyseText } from './services/suggestion-service.js';\n",
-    "const analyseText = (text) => {\n      const normalized = typeof text === 'string' ? text.toLowerCase() : '';\n      if (normalized.includes('tomorrow') || /\\d+\\s*(am|pm)\\b/i.test(normalized)) {\n        return { type: 'reminder', reason: 'Contains time reference' };\n      }\n      if (normalized.length > 60) {\n        return { type: 'note', reason: 'Long text likely a note' };\n      }\n      return { type: 'none', reason: '' };\n    };\n",
+    "import { captureInput, getInboxEntries } from './services/capture-service.js';\n",
+    "const getInboxEntries = () => { try { const raw = localStorage.getItem('memoryCueInbox'); return raw ? JSON.parse(raw) : []; } catch { return []; } };\nconst captureInput = async (text, source='quick-add') => { const entry = { id: `test-${Date.now()}`, text: String(text || '').trim(), createdAt: Date.now(), source, parsedType: 'unknown', metadata: {} }; const entries = getInboxEntries(); entries.unshift(entry); localStorage.setItem('memoryCueInbox', JSON.stringify(entries)); document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated')); return entry; };\n",
   );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
@@ -111,19 +111,12 @@ test('quick add routes footy drill prefix to Footy – Drills category', async (
   expect(Number.isFinite(items[0].createdAt)).toBe(true);
   expect(Number.isFinite(items[0].updatedAt)).toBe(true);
 
-  const memoryEntries = JSON.parse(localStorage.getItem('memoryEntries') || '[]');
+  const memoryEntries = JSON.parse(localStorage.getItem('memoryCueInbox') || '[]');
   expect(memoryEntries).toHaveLength(1);
   expect(memoryEntries[0].text).toBe('footy drill: cone sprint ladders');
-  expect(memoryEntries[0].status).toBe('inbox');
-  expect(memoryEntries[0].type).toBeNull();
-  expect(memoryEntries[0].context).toBeNull();
-  expect(memoryEntries[0].person).toBeNull();
-  expect(memoryEntries[0].suggestion).toEqual({
-    type: 'none',
-    reason: '',
-  });
+  expect(memoryEntries[0].source).toBe('quick-add');
+  expect(memoryEntries[0].parsedType).toBe('unknown');
   expect(Number.isFinite(memoryEntries[0].createdAt)).toBe(true);
-  expect(memoryEntries[0].date).toBe('2024-05-15');
 });
 
 test('quick add routes task prefix to Tasks category', async () => {
@@ -197,12 +190,9 @@ test('quick add stores reminder suggestion when text contains time reference', a
 
   await window.memoryCueQuickAddNow();
 
-  const memoryEntries = JSON.parse(localStorage.getItem('memoryEntries') || '[]');
+  const memoryEntries = JSON.parse(localStorage.getItem('memoryCueInbox') || '[]');
   expect(memoryEntries).toHaveLength(1);
-  expect(memoryEntries[0].suggestion).toEqual({
-    type: 'reminder',
-    reason: 'Contains time reference',
-  });
+  expect(memoryEntries[0].source).toBe('quick-add');
 });
 
 test('quick add parses natural language time into due date', async () => {

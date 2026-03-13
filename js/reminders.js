@@ -1,5 +1,5 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
-import { analyseText } from './services/suggestion-service.js';
+import { captureInput, getInboxEntries } from './services/capture-service.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -1054,7 +1054,6 @@ export async function initReminders(sel = {}) {
   let isQuickAddSubmitting = false;
   let stopQuickAddVoiceListening = null;
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
-  const MEMORY_ENTRIES_STORAGE_KEY = 'memoryEntries';
   const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
   const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
   const SMART_TAG_KEYWORDS = [
@@ -1203,21 +1202,7 @@ export async function initReminders(sel = {}) {
   }
 
   function readMemoryEntries() {
-    return readJsonArrayStorage(MEMORY_ENTRIES_STORAGE_KEY, []);
-  }
-
-  function writeMemoryEntries(entries) {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    localStorage.setItem(MEMORY_ENTRIES_STORAGE_KEY, JSON.stringify(entries));
-    try {
-      if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
-        document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
-      }
-    } catch {
-      // Ignore event dispatch failures.
-    }
+    return getInboxEntries();
   }
 
   function extractTitle(text) {
@@ -2085,42 +2070,22 @@ export async function initReminders(sel = {}) {
       } catch {}
     }
     const text =
-      typeof options.text === 'string'
-        ? options.text
-        : (quickInput.value || '').trim();
+      typeof options.forceText === 'string'
+        ? options.forceText
+        : typeof options.text === 'string'
+          ? options.text
+          : (quickInput.value || '').trim();
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
 
-    const saveBrainDumpEntry = async (sourceText, reminderEntry) => {
-      if (typeof localStorage === 'undefined') {
-        return;
-      }
+    const saveBrainDumpEntry = async (sourceText) => {
       const cleanText = String(sourceText || '').trim();
       if (!cleanText) {
         return;
       }
-      const now = new Date();
-      const nowMs = Date.now();
-      const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const payload = {
-        id:
-          reminderEntry && reminderEntry.id
-            ? reminderEntry.id
-            : `entry-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-        text: cleanText,
-        status: 'inbox',
-        type: null,
-        context: null,
-        person: null,
-        suggestion: analyseText(cleanText),
-        createdAt: nowMs,
-        date: dateStamp,
-      };
 
       try {
-        const entries = readMemoryEntries();
-        entries.unshift(payload);
-        writeMemoryEntries(entries);
+        await captureInput(cleanText, 'quick-add');
       } catch (error) {
         console.warn('Failed to persist memory entries', error);
       }
@@ -2253,7 +2218,7 @@ export async function initReminders(sel = {}) {
       }
 
       if (entry && typeof document !== 'undefined') {
-        await saveBrainDumpEntry(t, entry);
+        await saveBrainDumpEntry(t);
         quickInput.value = '';
         try {
           quickInput.focus({ preventScroll: true });
