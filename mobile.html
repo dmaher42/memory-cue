@@ -245,27 +245,8 @@ Legacy shells remain for reference only.
       margin-top: 0.35rem;
     }
 
-    #thinkingBarResults {
+    #thinkingConversation {
       margin-top: 0.4rem;
-      display: grid;
-      gap: 0.45rem;
-    }
-
-    .thinking-result-item {
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 0.65rem;
-      padding: 0.55rem 0.65rem;
-      font-size: 0.84rem;
-      width: 100%;
-      text-align: left;
-      cursor: pointer;
-      color: inherit;
-    }
-
-    .thinking-result-title {
-      font-weight: 600;
-      margin-bottom: 0.12rem;
     }
 
     .swipe-container {
@@ -4846,7 +4827,7 @@ body, main, section, div, p, span, li {
             <button id="thinkingBarSubmit" type="submit" class="btn btn-primary capture-save-btn" aria-label="Send">Send</button>
           </form>
           <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
-          <div id="thinkingBarResults" aria-live="polite"></div>
+          <div id="thinkingConversation" class="thinking-conversation" aria-live="polite"></div>
         </section>
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
@@ -6022,17 +6003,22 @@ body, main, section, div, p, span, li {
       renderInboxEntries();
     })();
   </script>
-  <script>
-    (function () {
-      const form = document.getElementById('thinkingBarForm');
-      const input = document.getElementById('thinkingBarInput');
-      const status = document.getElementById('thinkingBarStatus');
-      const results = document.getElementById('thinkingBarResults');
-      const processInboxButton = document.getElementById('processInboxButton');
+  <script type="module">
+    import { handleMessage } from './src/chat/chatManager.js';
+    import { getMessages } from './src/chat/messageStore.js';
 
-      if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLTextAreaElement)) {
-        return;
-      }
+    const form = document.getElementById('thinkingBarForm');
+    const input = document.getElementById('thinkingBarInput');
+    const status = document.getElementById('thinkingBarStatus');
+    const conversation = document.getElementById('thinkingConversation');
+
+    if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLTextAreaElement) || !(conversation instanceof HTMLElement)) {
+      // Keep the page usable if the chat capture elements are unavailable.
+    } else {
+      const autoResizeInput = () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+      };
 
       const setStatus = (text) => {
         if (!(status instanceof HTMLElement)) return;
@@ -6041,70 +6027,83 @@ body, main, section, div, p, span, li {
         status.classList.toggle('hidden', !msg);
       };
 
+      const createMessageBubble = (role, content) => {
+        const row = document.createElement('div');
+        row.className = `thinking-message thinking-message-${role}`;
 
-      const addResult = (title, body) => {
-        if (!(results instanceof HTMLElement)) return;
-        const item = document.createElement('div');
-        item.className = 'thinking-result-item';
-        const heading = document.createElement('div');
-        heading.className = 'thinking-result-title';
-        heading.textContent = title;
-        const detail = document.createElement('div');
-        detail.textContent = body;
-        item.append(heading, detail);
-        results.prepend(item);
+        const label = document.createElement('div');
+        label.className = 'thinking-message-label';
+        label.textContent = role === 'user' ? 'You' : 'Memory Cue';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'thinking-message-bubble';
+        bubble.textContent = content;
+
+        row.append(label, bubble);
+        return row;
       };
 
-      const navigateTo = (view) => {
-        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view } }));
+      const appendMessage = (role, content) => {
+        if (!content) return;
+        conversation.appendChild(createMessageBubble(role, content));
+        conversation.scrollTop = conversation.scrollHeight;
       };
 
-      const isAssistantQuery = (text) => /\?$/.test(text) || /^(what|how|why|when|where|who|can|could|should|do|does|did)\b/i.test(text);
+      const renderHistory = () => {
+        const history = getMessages();
+        conversation.innerHTML = '';
+        history.forEach((message) => {
+          appendMessage(message.role === 'user' ? 'user' : 'assistant', message.content);
+        });
+      };
+
+      const createTypingIndicator = () => {
+        const row = document.createElement('div');
+        row.className = 'thinking-message thinking-message-assistant thinking-message-typing';
+
+        const label = document.createElement('div');
+        label.className = 'thinking-message-label';
+        label.textContent = 'Memory Cue';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'thinking-message-bubble';
+        bubble.textContent = 'Memory Cue is thinking…';
+
+        row.append(label, bubble);
+        return row;
+      };
+
+      input.addEventListener('input', autoResizeInput);
+      autoResizeInput();
+      renderHistory();
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const text = (input.value || '').trim();
+        const text = input.value.trim();
         if (!text) return;
 
+        appendMessage('user', text);
         input.value = '';
-        setStatus('Working...');
+        autoResizeInput();
+
+        const typingIndicator = createTypingIndicator();
+        conversation.appendChild(typingIndicator);
+        conversation.scrollTop = conversation.scrollHeight;
+        setStatus('');
 
         try {
-          if (/^process\s+(today'?s\s+)?(notes|inbox)\b/i.test(text)) {
-            navigateTo('inbox');
-            processInboxButton?.click();
-            addResult('Inbox', 'Processing inbox notes.');
-            setStatus('Done');
-            return;
-          }
-
-          if (/^remind\s+me\b/i.test(text)) {
-            navigateTo('reminders');
-            const reminder = await window.memoryCueQuickAddNow?.({ forceText: text, source: 'thinking-bar' });
-            if (reminder) {
-              addResult('Reminder', 'Reminder added.');
-              setStatus('Done');
-              return;
-            }
-          }
-
-          if (isAssistantQuery(text)) {
-            navigateTo('assistant');
-            await window.memoryCueAskAssistant?.(text);
-            addResult('Assistant', 'Sent to assistant.');
-            setStatus('Done');
-            return;
-          }
-
-          await window.MemoryCueCaptureService?.captureInput?.(text, 'capture');
-          addResult('Capture', 'Saved to inbox.');
-          setStatus('Done');
+          const assistantReply = await handleMessage(text);
+          typingIndicator.remove();
+          appendMessage('assistant', assistantReply?.message || 'Saved to Inbox.');
+          setStatus('');
         } catch (error) {
+          typingIndicator.remove();
           console.error('Thinking bar request failed', error);
+          appendMessage('assistant', 'Unable to complete that request right now.');
           setStatus('Unable to complete that request right now.');
         }
       });
-    })();
+    }
   </script>
 
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
