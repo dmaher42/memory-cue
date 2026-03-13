@@ -3286,11 +3286,8 @@ body, main, section, div, p, span, li {
     justify-content: space-around;
     align-items: center;
     height: 64px;
-    background: var(--surface-elevated, rgba(255, 255, 255, 0.85));
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-top: 1px solid rgba(0, 0, 0, 0.07);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    background: white;
+    border-top: 1px solid var(--border);
     padding: 0;
   }
 
@@ -3367,15 +3364,16 @@ body, main, section, div, p, span, li {
     justify-content: center;
     background: transparent;
     border: none;
-    padding: 0.25rem;
+    padding: 0.25rem 0;
     border-radius: 0;
     cursor: pointer;
     flex: 1;
-    color: var(--icon-inactive);
+    color: var(--muted);
   }
 
   #mobile-nav-shell .floating-footer .floating-card.active {
-    color: var(--accent-color);
+    color: var(--primary);
+    font-weight: 600;
   }
 
   .icon {
@@ -4916,7 +4914,7 @@ body, main, section, div, p, span, li {
 
 
   <!-- quickAddBar is now integrated in the header -->
-  <main id="main" class="app-content content mx-auto w-full max-w-none"
+  <main id="main" class="app-content content main-content mx-auto w-full max-w-none"
         tabindex="-1"
         data-active-view="capture"
       >
@@ -4940,7 +4938,7 @@ body, main, section, div, p, span, li {
       </div>
     </section>
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section id="view-reminders" class="view-panel hidden" aria-hidden="true">
+    <section data-view="reminders" id="view-reminders" class="view-panel hidden" aria-hidden="true">
       <div class="reminders-mobile-flow reminders-content-shell">
         <section class="reminders-screen-controls" aria-label="Reminder controls">
           <div class="reminders-quick-add-form" aria-label="Quick add reminder">
@@ -4948,8 +4946,7 @@ body, main, section, div, p, span, li {
           </div>
           <div class="reminders-top-controls-row">
             <div class="reminders-tabs" role="tablist" aria-label="Filter reminders by status">
-              <button type="button" class="reminder-tab reminders-tab-active" data-reminders-tab="all" aria-pressed="true">All</button>
-              <button type="button" class="reminder-tab" data-reminders-tab="today" aria-pressed="false">Today</button>
+              <button type="button" class="reminder-tab reminders-tab-active" data-reminders-tab="today" aria-pressed="true">Today</button>
               <button type="button" class="reminder-tab" data-reminders-tab="upcoming" aria-pressed="false">Upcoming</button>
               <button type="button" class="reminder-tab" data-reminders-tab="completed" aria-pressed="false">Completed</button>
             </div>
@@ -5000,10 +4997,11 @@ body, main, section, div, p, span, li {
         <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
     </div>
-    <div id="view-inbox" class="view-panel hidden" aria-hidden="true">
+    <div data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
         <h2 class="text-lg font-semibold">Inbox</h2>
         <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Notes</button>
+        <p class="text-xs text-base-content/70">Each entry can be converted to a note, turned into a reminder, tagged, or deleted.</p>
         <ul id="inboxEntriesList" class="category-entry-list list-disc pl-4" aria-live="polite"></ul>
       </div>
     </div>
@@ -5011,10 +5009,19 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: notebook view -->
     <div id="notesView" class="view hidden" aria-hidden="true"></div>
 
-    <section data-view="notes" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
+    <section data-view="notebooks" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="padding: 0 !important; max-width: 100%;">
         <section id="notesOverviewPanel" class="memory-glass-card-soft p-3 m-2">
-          <h2 class="text-lg font-semibold">Notes</h2>
+          <h2 class="text-lg font-semibold">Notebooks</h2>
+          <div class="mt-2">
+            <p class="text-xs text-base-content/70">Notebook browser</p>
+            <div id="notebookBrowserList" class="flex flex-wrap gap-2 mt-2" role="tablist" aria-label="Notebook browser">
+              <button type="button" class="btn btn-xs btn-outline" data-notebook-folder="School">School</button>
+              <button type="button" class="btn btn-xs btn-outline" data-notebook-folder="Personal">Personal</button>
+              <button type="button" class="btn btn-xs btn-outline" data-notebook-folder="Projects">Projects</button>
+              <button type="button" class="btn btn-xs btn-outline" data-notebook-folder="Unsorted">Unsorted</button>
+            </div>
+          </div>
           <div class="flex flex-col gap-2 mt-2">
             <input id="notesOverviewSearch" type="search" class="input input-sm input-bordered w-full" placeholder="Search notes" autocomplete="off" />
             <div class="flex gap-2">
@@ -5495,16 +5502,16 @@ body, main, section, div, p, span, li {
           <path d="M12 5.25v13.5" />
           <path d="M5.25 12h13.5" />
         </svg>
-        <span>📥 Capture</span>
+        <span>Capture</span>
       </button>
 
       <button
         type="button"
-        class="floating-card nav-item btn-notes"
-        id="mobile-footer-notes"
-        data-nav-target="notes"
-        data-tab="notes"
-        aria-label="Go to Notes"
+        class="floating-card nav-item btn-reminders"
+        id="mobile-footer-reminders"
+        data-nav-target="reminders"
+        data-tab="reminders"
+        aria-label="Go to Reminders"
       >
         <svg
           class="icon icon-clock"
@@ -5521,7 +5528,7 @@ body, main, section, div, p, span, li {
           <circle cx="12" cy="12" r="7" />
           <path d="M12 9v3.5l2 1.5" />
         </svg>
-        <span>📝 Notes</span>
+        <span>Reminders</span>
       </button>
 
       <button
@@ -5549,7 +5556,34 @@ body, main, section, div, p, span, li {
           <path d="M9 12h6" />
           <path d="M9 15.5h4" />
         </svg>
-        <span>📚 Notebooks</span>
+        <span>Notebooks</span>
+      </button>
+
+      <button
+        type="button"
+        class="floating-card nav-item btn-inbox"
+        id="mobile-footer-inbox"
+        data-nav-target="inbox"
+        data-tab="inbox"
+        aria-label="Go to Inbox"
+      >
+        <svg
+          class="icon icon-inbox"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7.5h16" />
+          <path d="M5.5 7.5l1.2 9A2 2 0 0 0 8.7 18h6.6a2 2 0 0 0 2-1.5l1.2-9" />
+          <path d="M9 11.5h6" />
+        </svg>
+        <span>Inbox</span>
       </button>
     </div>
     </div>
@@ -5674,6 +5708,31 @@ body, main, section, div, p, span, li {
         status: 'archived',
         archivedAt: new Date().toISOString(),
       }));
+
+      const deleteInboxEntry = (entry) => {
+        const allEntries = readEntries();
+        const entryIndex = findEntryIndex(allEntries, entry);
+        if (entryIndex === -1) return false;
+        allEntries.splice(entryIndex, 1);
+        writeEntries(allEntries);
+        return true;
+      };
+
+      const addTagToInboxEntry = (entry) => {
+        const nextTagRaw = window.prompt('Add tag', '');
+        if (nextTagRaw === null) return false;
+        const nextTag = nextTagRaw.trim();
+        if (!nextTag) return false;
+        return updateInboxEntry(entry, (currentEntry) => {
+          const existingTags = Array.isArray(currentEntry?.tags) ? currentEntry.tags : [];
+          const alreadyPresent = existingTags.some((tag) => String(tag).toLowerCase() === nextTag.toLowerCase());
+          const tags = alreadyPresent ? existingTags : [...existingTags, nextTag];
+          return {
+            ...currentEntry,
+            tags,
+          };
+        });
+      };
 
       const convertInboxEntryToNote = (entry) => {
         const entryId = String(entry?.id || '');
@@ -5803,6 +5862,47 @@ body, main, section, div, p, span, li {
           createdAt.textContent = getEntryCreatedDate(entry);
 
           meta.append(categoryTag, createdAt);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex flex-wrap gap-2';
+
+          const convertButton = document.createElement('button');
+          convertButton.type = 'button';
+          convertButton.className = 'btn btn-xs btn-outline';
+          convertButton.textContent = 'Convert to note';
+          convertButton.addEventListener('click', () => {
+            convertInboxEntryToNote(entry);
+            renderInboxEntries();
+          });
+
+          const reminderButton = document.createElement('button');
+          reminderButton.type = 'button';
+          reminderButton.className = 'btn btn-xs btn-outline';
+          reminderButton.textContent = 'Create reminder';
+          reminderButton.addEventListener('click', async () => {
+            await convertInboxEntryToReminder(entry);
+            renderInboxEntries();
+          });
+
+          const tagButton = document.createElement('button');
+          tagButton.type = 'button';
+          tagButton.className = 'btn btn-xs btn-outline';
+          tagButton.textContent = 'Add tag';
+          tagButton.addEventListener('click', () => {
+            addTagToInboxEntry(entry);
+            renderInboxEntries();
+          });
+
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'btn btn-xs btn-outline';
+          deleteButton.textContent = 'Delete';
+          deleteButton.addEventListener('click', () => {
+            deleteInboxEntry(entry);
+            renderInboxEntries();
+          });
+
+          actions.append(convertButton, reminderButton, tagButton, deleteButton);
 
           text.addEventListener('click', () => {
             const updatedText = window.prompt('Edit entry text', getEntryText(entry));
@@ -5934,7 +6034,7 @@ body, main, section, div, p, span, li {
           card.addEventListener('mouseup', clearLongPress);
           card.addEventListener('mouseleave', clearLongPress);
 
-          swipeForeground.append(text, meta);
+          swipeForeground.append(text, meta, actions);
           card.append(swipeBackground, swipeForeground);
           inboxEntriesList.appendChild(card);
         });
@@ -6086,7 +6186,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-O67TJD4L.js"></script>
+  <script type="module" src="./assets/mobile-LW5GFXOX.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
