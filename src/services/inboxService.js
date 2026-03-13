@@ -1,3 +1,4 @@
+import { upsertInboxEntry } from './supabaseSyncService.js';
 const INBOX_STORAGE_KEY = 'memoryCueInbox';
 
 const generateId = () => {
@@ -62,12 +63,16 @@ export const saveToInbox = (text) => {
     createdAt: Date.now(),
     processed: false,
     tags: [],
+    pendingSync: true,
   };
 
   const entries = getInboxEntries();
   entries.push(entry);
   persistInboxEntries(entries);
   dispatchInboxUpdated();
+  upsertInboxEntry(entry).catch((error) => {
+    console.warn('[inbox-service] Supabase inbox sync failed', error);
+  });
 
   return entry;
 };

@@ -1,3 +1,4 @@
+import { appendChatMessage, syncChatHistory } from '../services/supabaseSyncService.js';
 const CHAT_HISTORY_STORAGE_KEY = 'memoryCueChatHistory';
 
 const readMessages = () => {
@@ -29,9 +30,13 @@ const writeMessages = (messages) => {
 
 export const addMessage = (message) => {
   const messages = readMessages();
-  const nextMessages = [...messages, message];
+  const nextMessage = { ...message, pendingSync: true };
+  const nextMessages = [...messages, nextMessage];
   writeMessages(nextMessages);
-  return message;
+  appendChatMessage(nextMessage, message?.conversationId || 'default').catch((error) => {
+    console.warn('[chat/messageStore] Failed to sync chat message', error);
+  });
+  return nextMessage;
 };
 
 export const getMessages = () => readMessages();
@@ -43,6 +48,7 @@ export const clearMessages = () => {
 
   try {
     localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
+    syncChatHistory().catch(() => {});
   } catch (error) {
     console.warn('[chat/messageStore] Failed to clear chat history', error);
   }

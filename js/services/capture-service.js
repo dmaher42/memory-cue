@@ -1,5 +1,6 @@
 import { createNote, loadAllNotes, saveAllNotes } from '../modules/notes-storage.js';
 import { generateTags } from '../../src/ai/tagGenerator.js';
+import { syncInbox, upsertInboxEntry } from '../../src/services/supabaseSyncService.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
@@ -80,10 +81,14 @@ const dispatchEntriesUpdated = () => {
 
 export const saveInboxEntry = (entry) => {
   const entries = getInboxEntries();
-  entries.unshift(entry);
+  const nextEntry = { ...entry, pendingSync: true, updatedAt: Date.now() };
+  entries.unshift(nextEntry);
   persistInboxEntries(entries);
   dispatchEntriesUpdated();
-  return entry;
+  upsertInboxEntry(nextEntry).catch((error) => {
+    console.warn('[capture-service] Failed to sync inbox entry to Supabase', error);
+  });
+  return nextEntry;
 };
 
 export const removeInboxEntry = (id) => {
@@ -100,6 +105,9 @@ export const removeInboxEntry = (id) => {
 
   persistInboxEntries(nextEntries);
   dispatchEntriesUpdated();
+  syncInbox().catch((error) => {
+    console.warn('[capture-service] Failed to sync inbox deletions to Supabase', error);
+  });
   return true;
 };
 
@@ -143,6 +151,7 @@ export const captureInput = async (text, source = 'capture') => {
     source: normalizeSource(source),
     parsedType: parsed.parsedType,
     metadata: parsed.metadata,
+    pendingSync: true,
   };
 
   return saveInboxEntry(entry);
