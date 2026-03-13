@@ -1,4 +1,5 @@
 import { handleMessage } from '../chat/chatManager.js';
+import { createSystemStatusIndicator } from './SystemStatusIndicator.js';
 
 const bubbleStyles = {
   user: {
@@ -118,6 +119,8 @@ export const createChatPanel = () => {
     gap: '0.5rem',
   });
 
+  const statusIndicator = createSystemStatusIndicator();
+
   const inputBar = createNode('form', {
     display: 'flex',
     gap: '0.5rem',
@@ -156,11 +159,14 @@ export const createChatPanel = () => {
     input.value = '';
 
     const assistantReply = await handleMessage(userInput);
+    if (assistantReply?.status) {
+      statusIndicator.show(assistantReply.status);
+    }
     appendMessage(messageList, 'assistant', assistantReply.message, assistantReply.quickActions);
   });
 
   inputBar.append(input, sendButton);
-  container.append(messageList, inputBar);
+  container.append(messageList, statusIndicator.container, inputBar);
 
   return {
     container,
@@ -168,5 +174,6 @@ export const createChatPanel = () => {
     input,
     sendButton,
     inputBar,
+    statusIndicator: statusIndicator.container,
   };
 };
