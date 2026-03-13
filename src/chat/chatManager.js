@@ -1,7 +1,7 @@
 import { addMessage } from './messageStore.js';
 import { executeCommand } from '../core/commandEngine.js';
 import { createAndSaveNote } from '../../js/modules/notes-storage.js';
-import { saveToInbox } from '../services/inboxService.js';
+import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 
@@ -185,7 +185,13 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
     return { message: await askAssistant(text) };
   }
 
-  saveToInbox(text);
+  saveInboxEntry({
+    text,
+    source: 'assistant',
+    parsedType: normalizeType(parsed?.type, text),
+    tags: Array.isArray(parsed?.tags) ? parsed.tags : [],
+    metadata: parsed?.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : {},
+  });
   return { message: 'Added to inbox for later review.' };
 };
 
