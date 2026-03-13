@@ -142,6 +142,7 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
   const parsedType = normalizeType(parsed?.type, text);
 
   if (parsedType === 'reminder') {
+    console.log('Capture routed to:', 'reminder');
     await executeCommand('reminder', {
       text: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text,
       handler: dependencies.createReminder,
