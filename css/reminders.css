@@ -1,0 +1,2 @@
+/* Phase 3 reminders view ownership */
+#view-reminders .reminders-mobile-flow { padding-bottom: calc(var(--mobile-bottom-nav-height, 96px) + 0.5rem); }

@@ -47,12 +47,12 @@ function initAssistant() {
     const assistantThread = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
     const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput')
-      || document.getElementById('universalInput')
-      || document.getElementById('quickAddInput');
-    const universalInput = document.getElementById('universalInput')
-      || document.getElementById('quickAddInput')
+      || document.getElementById('captureInput') || document.getElementById('universalInput')
+      || document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput');
+    const universalInput = document.getElementById('captureInput') || document.getElementById('universalInput')
+      || document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput')
       || thinkingBarInput;
-    if (isInputElement(universalInput) && !document.getElementById('quickAddInput')) {
+    if (isInputElement(universalInput) && (!document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput'))) {
       universalInput.setAttribute('data-legacy-input', 'quickAddInput');
     }
     const quickAddForm = document.getElementById('quickAddForm');
@@ -1781,7 +1781,7 @@ const initMobileNotes = () => {
       hideSavedNotesSheet();
     }
 
-    document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebook' } }));
+    document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notes' } }));
   };
 
   document.addEventListener('thinkingBar:openNote', (event) => {

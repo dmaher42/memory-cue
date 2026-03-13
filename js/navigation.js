@@ -7,7 +7,7 @@
   const drawerSyncStatus = document.getElementById('mcStatusText');
   const drawerSyncDot = document.getElementById('mcStatus');
   const quickAddPanel = document.getElementById('quickAddBar');
-  const quickAddInputField = document.getElementById('quickAddInput');
+  const quickAddInputField = document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput');
   const quickAddSelector = '[data-open-quick-add]';
   let activeQuickAddTrigger = null;
   const isPersistentQuickAdd =
@@ -375,123 +375,38 @@
   }
 })();
 
-// Global navigation handler: treat 'new' as a dedicated view that shows the notebook and
-// prepares a new entry (focus/clear). This keeps the center tab as a navigable view.
-(function() {
-  const renderNotebookList = () => {
-    if (typeof window.renderNotebookList === 'function') {
-      window.renderNotebookList();
-    }
-  };
-
-  function showNotesView() {
-    showViewFor('notebook');
-    renderNotebookList();
-  }
-
-  function showAssistantView() {
-    showViewFor('assistant');
-  }
-
-  const views = {
-    capture: document.querySelector('[data-view="capture"]'),
-    reminders: document.querySelector('[data-view="reminders"]'),
-    notebook: document.querySelector('[data-view="notebook"]'),
-    notes: document.querySelector('[data-view="notebook"]'),
-    categories: document.querySelector('[data-view="categories"]'),
-    inbox: document.querySelector('[data-view="inbox"]'),
-    assistant: document.querySelector('[data-view="assistant"]')
-  };
-
-  const order = ['capture', 'reminders', 'new', 'notebook', 'notes', 'categories', 'inbox', 'assistant'];
-
+// Global navigation handler (Phase 3): use navigationService as the single view controller.
+(function () {
   const triggerReminderQuickAdd = window.triggerReminderQuickAdd || function triggerReminderQuickAdd() {
-    if (triggerReminderQuickAdd._locked) return;
-    triggerReminderQuickAdd._locked = true;
-    setTimeout(() => { triggerReminderQuickAdd._locked = false; }, 0);
-
     const quickAddTrigger =
       document.getElementById('mobile-footer-new-reminder') ||
       document.querySelector('[data-open-add-task]');
 
     if (quickAddTrigger) {
       const detail = { mode: 'create', trigger: quickAddTrigger };
-      try {
-        document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
-        document.dispatchEvent(new CustomEvent('cue:open', { detail }));
-        return;
-      } catch (e) {
-        console.warn('Failed to dispatch cue events for quick add', e);
-      }
+      document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
+      document.dispatchEvent(new CustomEvent('cue:open', { detail }));
+      return;
     }
 
-    const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+    const quickAdd = document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
     if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
   };
 
   window.triggerReminderQuickAdd = triggerReminderQuickAdd;
 
-  function showViewFor(name) {
-    // When navigating to 'new', we display the reminders view but keep the
-    // body/main active view set to 'new' so the bottom-tab can be highlighted.
-    const target = name === 'new' ? 'reminders' : name;
-    Object.keys(views).forEach((k) => {
-      const el = views[k];
-      if (!el) return;
-      const isActive = k === target;
-      el.classList.toggle('hidden', !isActive);
-      el.setAttribute('aria-hidden', String(!isActive));
-    });
+  window.addEventListener('app:navigate', (ev) => {
+    const view = ev?.detail?.view;
+    if (!view || !window.navigationService?.navigate) return;
+    const activeView = window.navigationService.navigate(view);
 
-    const main = document.getElementById('main') || document.querySelector('main');
-    if (main) {
-      main.setAttribute('data-active-view', name);
-      // Force padding for notebook view to avoid header overlap
-      if (name === 'notebook') {
-        // Use the CSS variable for the header height (default 112px) plus breathing room
-        const headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height').trim();
-        const heightVal = headerHeight ? headerHeight : '112px';
-        // We use calc in CSS, but here we set a safe inline style fallback
-        // If the variable is "112px", we want "calc(112px + 18px)"
-        main.style.setProperty('padding-top', `calc(${heightVal} + 18px)`, 'important');
-      } else {
-        const headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height').trim();
-        const heightVal = headerHeight ? headerHeight : '112px';
-        main.style.setProperty('padding-top', heightVal, 'important');
-      }
-    }
-    if (document.body) document.body.setAttribute('data-active-view', name);
-
-    // If this is the 'new' view, trigger the add reminder action so the
-    // quick-add UI is ready.
-    if (name === 'new') {
-      triggerReminderQuickAdd();
-    }
-
-    if (name === 'capture') {
-      const captureInput = document.getElementById('universalInput');
+    if (activeView === 'capture') {
+      const captureInput = document.getElementById('captureInput');
       if (captureInput && typeof captureInput.focus === 'function') captureInput.focus();
     }
-  }
 
-  window.addEventListener('app:navigate', (ev) => {
-    try {
-      const view = ev?.detail?.view;
-      if (!view || !order.includes(view)) return;
-      if (view === 'notes') {
-        showNotesView();
-        return;
-      }
-      if (view === 'assistant') {
-        showAssistantView();
-        return;
-      }
-      showViewFor(view);
-      if (view === 'notebook') {
-        renderNotebookList();
-      }
-    } catch (e) {
-      console.error('Error handling app:navigate', e);
+    if (activeView === 'notes' && typeof window.renderNotebookList === 'function') {
+      window.renderNotebookList();
     }
   });
 })();
@@ -557,7 +472,7 @@
         return;
       }
 
-      const quickAdd = document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+      const quickAdd = document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput') || document.getElementById('quickAdd');
       if (quickAdd && typeof quickAdd.focus === 'function') {
         quickAdd.focus();
       }
@@ -581,10 +496,10 @@
   const navigateToNotebook = () => {
     window.dispatchEvent(
       new CustomEvent('app:navigate', {
-        detail: { view: 'notebook' }
+        detail: { view: 'notes' }
       })
     );
-    setActiveFooterIcon('mobile-footer-notebook');
+    setActiveFooterIcon('mobile-footer-notes');
     focusNotebookInputs();
     closeSavedNotesSheet();
   };
@@ -662,7 +577,7 @@
     closeFabMenu();
     setActiveFooterIcon(button.id);
 
-    if (view === 'notebook') {
+    if (view === 'notes') {
       navigateToNotebook();
       return;
     }
