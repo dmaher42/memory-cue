@@ -16,6 +16,10 @@ function loadRemindersModule() {
     "import { captureInput, getInboxEntries } from './services/capture-service.js';\n",
     "const getInboxEntries = () => { try { const raw = localStorage.getItem('memoryCueInbox'); return raw ? JSON.parse(raw) : []; } catch { return []; } };\nconst captureInput = async (text, source='quick-add') => { const entry = { id: `test-${Date.now()}`, text: String(text || '').trim(), createdAt: Date.now(), source, parsedType: 'unknown', metadata: {} }; const entries = getInboxEntries(); entries.unshift(entry); localStorage.setItem('memoryCueInbox', JSON.stringify(entries)); document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated')); return entry; };\n",
   );
+  source = source.replace(
+    "import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';\n",
+    "const buildReminderPayload = (payload = {}) => payload; const setReminderCreationHandler = () => {}; const createReminderViaService = (payload = {}) => payload;\n",
+  );
   source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
   source += '\nmodule.exports = { initReminders };\n';
   const module = { exports: {} };

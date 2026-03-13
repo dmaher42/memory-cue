@@ -1,5 +1,6 @@
 import { handleMessage } from '../chat/chatManager.js';
 import { getMessages } from '../chat/messageStore.js';
+import { createReminder } from '../services/reminderService.js';
 
 const bubbleStyles = {
   user: {
@@ -148,7 +149,7 @@ export const createChatConversation = () => {
     messageList.scrollTop = messageList.scrollHeight;
 
     try {
-      const assistantReply = await handleMessage(userInput);
+      const assistantReply = await handleMessage(userInput, { createReminder });
       typingIndicator.remove();
       appendMessage('assistant', assistantReply?.message || 'Saved to Inbox.');
     } catch (error) {

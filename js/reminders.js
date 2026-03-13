@@ -1,5 +1,6 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
 import { captureInput, getInboxEntries } from './services/capture-service.js';
+import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { deleteReminder, syncReminders, upsertReminder } from '../src/services/supabaseSyncService.js';
 import { createAndSaveNote } from './modules/notes-storage.js';
@@ -4517,14 +4518,13 @@ export async function initReminders(sel = {}) {
     return item;
   }
 
+  const createReminderFromUi = (payload = {}) => createReminderFromPayload(buildReminderPayload(payload), { closeSheet: true });
+
   function addItem(obj){
-    return createReminderFromPayload(obj, { closeSheet: true });
+    return createReminderViaService(obj);
   }
 
-  if (typeof window !== 'undefined') {
-    // Shared reminder creation hook for chat and other entry points.
-    window.memoryCueCreateReminder = (payload = {}) => addItem(payload);
-  }
+  setReminderCreationHandler(createReminderFromUi);
 
   function addNoteToReminder(id, noteText){
     if(!userId){ toast('Sign in to add notes'); return null; }

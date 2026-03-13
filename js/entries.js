@@ -575,11 +575,9 @@
     }
     const { processInbox } = await import('../src/ai/inboxProcessor.js');
     const result = await processInbox(inboxEntries, {
-      createReminder: (payload) => {
-        if (typeof window.memoryCueCreateReminder === 'function') {
-          return window.memoryCueCreateReminder(payload);
-        }
-        return null;
+      createReminder: async (payload) => {
+        const { createReminder } = await import('../src/services/reminderService.js');
+        return createReminder(payload);
       },
       removeInboxEntry: (id) => removeEntry(id),
     });
