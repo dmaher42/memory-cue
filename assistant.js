@@ -63,7 +63,7 @@
     });
   }
 
-  function loadEntriesFromStore() {
+  function loadEntriesFromState() {
     if (!window.MemoryCueState || typeof MemoryCueState.getEntries !== 'function') {
       return { settings: {}, entries: [] };
     }
@@ -73,12 +73,7 @@
         ? MemoryCueState.state.settings
         : {};
 
-    const stateEntries = MemoryCueState.getEntries().map(function (entry) {
-      return {
-        ...entry,
-        createdAt: entry.createdAt || entry.timestamp || entry.updatedAt || null
-      };
-    });
+    const stateEntries = MemoryCueState.getEntries();
 
     return {
       settings: stateSettings,
@@ -117,7 +112,7 @@
   function buildContext(entries, maxEntries, maxChars) {
     const safeMaxEntries = Number.isFinite(maxEntries) ? Math.max(1, Math.floor(maxEntries)) : DEFAULT_MAX_ENTRIES;
     const safeMaxChars = Number.isFinite(maxChars) ? Math.max(200, Math.floor(maxChars)) : DEFAULT_MAX_CHARS;
-    const selected = selectEntries(entries.map(normalizeEntry).filter(Boolean), safeMaxEntries, safeMaxChars);
+    const selected = selectEntries(entries, safeMaxEntries, safeMaxChars);
 
     return selected
       .map(function (entry) {
@@ -195,7 +190,7 @@
     const opts = options && typeof options === 'object' ? options : {};
     const maxEntries = Number.isFinite(opts.maxEntries) ? opts.maxEntries : DEFAULT_MAX_ENTRIES;
     const maxChars = Number.isFinite(opts.maxChars) ? opts.maxChars : DEFAULT_MAX_CHARS;
-    const loaded = loadEntriesFromStore();
+    const loaded = loadEntriesFromState();
     const relevantEntries = filterRelevantEntries(safeQuestion, loaded.entries);
     const selectedEntries = selectEntries(relevantEntries, maxEntries, maxChars);
     const contextText = buildContext(selectedEntries, maxEntries, maxChars);
