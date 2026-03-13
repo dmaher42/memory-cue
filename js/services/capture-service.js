@@ -1,4 +1,5 @@
 import { createNote, loadAllNotes, saveAllNotes } from '../modules/notes-storage.js';
+import { generateTags } from '../../src/ai/tagGenerator.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
@@ -137,6 +138,7 @@ export const captureInput = async (text, source = 'capture') => {
   const entry = {
     id: generateId(),
     text: cleanedText,
+    tags: generateTags(cleanedText),
     createdAt: Date.now(),
     source: normalizeSource(source),
     parsedType: parsed.parsedType,
