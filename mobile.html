@@ -4916,7 +4916,7 @@ body, main, section, div, p, span, li {
     <section data-view="capture" id="view-capture" class="view-panel">
       <div class="capture-container capture-chat-layout">
         <div>
-          <h2 class="text-lg font-semibold">Capture</h2>
+          <h2 class="text-lg font-semibold">Memory Cue</h2>
           <div class="capture-form">
           <p class="text-sm text-base-content/70">Use the chat capture bar to capture ideas, add reminders, ask questions, and process inbox notes.</p>
           </div>
@@ -4929,7 +4929,7 @@ body, main, section, div, p, span, li {
       </div>
     </section>
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel">
+    <section id="view-reminders" class="view-panel hidden" aria-hidden="true">
       <div class="reminders-mobile-flow reminders-content-shell">
         <section class="reminders-screen-controls" aria-label="Reminder controls">
           <div class="reminders-quick-add-form" aria-label="Quick add reminder">
@@ -4989,7 +4989,7 @@ body, main, section, div, p, span, li {
         <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
     </div>
-    <div id="view-inbox" data-view="inbox" class="view-panel hidden" aria-hidden="true">
+    <div id="view-inbox" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
         <h2 class="text-lg font-semibold">Inbox</h2>
         <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Notes</button>
@@ -5002,6 +5002,27 @@ body, main, section, div, p, span, li {
 
     <section data-view="notes" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="padding: 0 !important; max-width: 100%;">
+        <section id="notesOverviewPanel" class="memory-glass-card-soft p-3 m-2">
+          <h2 class="text-lg font-semibold">Notes</h2>
+          <div class="flex flex-col gap-2 mt-2">
+            <input id="notesOverviewSearch" type="search" class="input input-sm input-bordered w-full" placeholder="Search notes" autocomplete="off" />
+            <div class="flex gap-2">
+              <select id="notesOverviewSort" class="select select-sm select-bordered flex-1" aria-label="Sort notes">
+                <option value="recent">Recent</option>
+                <option value="tagged">Tagged</option>
+                <option value="notebook">Notebook</option>
+                <option value="priority">Priority</option>
+              </select>
+              <select id="notesOverviewState" class="select select-sm select-bordered flex-1" aria-label="Filter by note state">
+                <option value="all">All</option>
+                <option value="inbox">Inbox</option>
+                <option value="processed">Processed</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+          <div id="notesOverviewList" class="space-y-2 mt-3" aria-live="polite"></div>
+        </section>
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
         <div id="noteEditorSheet" class="note-sheet-wrapper scratch-notes-wrapper">
@@ -5377,7 +5398,7 @@ body, main, section, div, p, span, li {
                 <button type="button" class="note-action-btn note-action-delete">Delete note</button>
               </div>
             </div>
-    <section data-view="assistant" id="view-assistant" class="view hidden" aria-hidden="true">
+    <section id="view-assistant" class="view hidden" aria-hidden="true">
       <div class="assistant-panel">
         <div id="assistantMessages" class="assistant-messages" aria-live="polite" aria-label="Assistant conversation"></div>
         <div class="assistant-input">
@@ -5466,11 +5487,11 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card nav-item btn-reminders"
-        id="mobile-footer-reminders"
-        data-nav-target="reminders"
-        data-tab="reminders"
-        aria-label="Go to Reminders"
+        class="floating-card nav-item btn-notes"
+        id="mobile-footer-notes"
+        data-nav-target="notes"
+        data-tab="notes"
+        aria-label="Go to Notes"
       >
         <svg
           class="icon icon-clock"
@@ -5487,16 +5508,16 @@ body, main, section, div, p, span, li {
           <circle cx="12" cy="12" r="7" />
           <path d="M12 9v3.5l2 1.5" />
         </svg>
-        <span>Reminders</span>
+        <span>Notes</span>
       </button>
 
       <button
         type="button"
-        class="floating-card nav-item btn-notes"
-        id="mobile-footer-notes"
-        data-nav-target="notes"
-        data-tab="notes"
-        aria-label="Go to Notes"
+        class="floating-card nav-item btn-notebook"
+        id="mobile-footer-notebooks"
+        data-nav-target="notebooks"
+        data-tab="notebooks"
+        aria-label="Go to Notebooks"
       >
         <svg
           class="icon icon-notes"
@@ -5515,60 +5536,7 @@ body, main, section, div, p, span, li {
           <path d="M9 12h6" />
           <path d="M9 15.5h4" />
         </svg>
-        <span>Notes</span>
-      </button>
-
-
-
-      <button
-        type="button"
-        class="floating-card nav-item btn-inbox"
-        id="mobile-footer-inbox"
-        data-nav-target="inbox"
-        data-tab="inbox"
-        aria-label="Go to Inbox"
-      >
-        <svg
-          class="icon icon-inbox"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M4.5 7.5h15v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-9Z" />
-          <path d="M4.5 12h4l1.5 2h4l1.5-2h4" />
-        </svg>
-        <span>Inbox</span>
-      </button>
-
-      <button
-        type="button"
-        class="floating-card nav-item btn-assistant"
-        id="mobile-footer-assistant"
-        data-nav-target="assistant"
-        data-tab="assistant"
-        aria-label="Go to Assistant"
-      >
-        <svg
-          class="icon icon-assistant"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 3.5l1.58 3.24 3.57.52-2.58 2.52.61 3.56L12 11.78 8.82 13.34l.61-3.56-2.58-2.52 3.57-.52L12 3.5Z" />
-        </svg>
-        <span>Assistant</span>
+        <span>Notebooks</span>
       </button>
     </div>
   </nav>
@@ -6103,7 +6071,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-JYCS3UDW.js"></script>
+  <script type="module" src="./assets/mobile-PDTRY5S2.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
