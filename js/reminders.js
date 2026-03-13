@@ -1,5 +1,7 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
 import { captureInput, getInboxEntries } from './services/capture-service.js';
+import { getSupabaseClient } from './supabase-client.js';
+import { deleteReminder, syncReminders, upsertReminder } from '../src/services/supabaseSyncService.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -4263,29 +4265,35 @@ export async function initReminders(sel = {}) {
     googleSignOutBtns.forEach((btn) => wireAuthButton(btn, startSignOutFlow));
   }
 
-  if (authReady && typeof onAuthStateChanged === 'function') {
-    onAuthStateChanged(auth, async (user) => {
+  const supabase = getSupabaseClient();
+  if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user || null;
       if (user) {
-        userId = user.uid;
+        userId = user.id;
         renderSyncIndicator('online');
         googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
         googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
-        if(googleUserName) googleUserName.textContent = user.displayName || user.email || '';
-        setupFirestoreSync();
+        if(googleUserName) googleUserName.textContent = user.email || '';
+        await setupSupabaseSync();
         await migrateOfflineRemindersIfNeeded();
       } else {
         applySignedOutState();
       }
     });
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data?.session?.user || null;
+      if (user) {
+        userId = user.id;
+        renderSyncIndicator('online');
+        await setupSupabaseSync();
+      }
+    }).catch(() => {});
   } else {
     applySignedOutState();
   }
 
-  // Firestore sync
-  function setupFirestoreSync(){
-    if(!firebaseReady || !db || typeof collection !== 'function' || typeof query !== 'function' || typeof orderBy !== 'function' || typeof onSnapshot !== 'function'){
-      return;
-    }
+  async function setupSupabaseSync(){
     if(!userId){
       hydrateOfflineReminders();
       render();
@@ -4294,68 +4302,41 @@ export async function initReminders(sel = {}) {
       rescheduleAllReminders();
       return;
     }
-    if(unsubscribe) unsubscribe();
-    const userCollection = collection(db, 'users', userId, 'reminders');
-    const qSnap = query(userCollection, orderBy('updatedAt','desc'));
-    unsubscribe = onSnapshot(qSnap, (snapshot) => {
-      const remoteItems = [];
-      snapshot.forEach((d)=>{
-        const data = d.data();
-        const orderValue = Number(data.orderIndex);
-        const plannerLessonId = typeof data.plannerLessonId === 'string' && data.plannerLessonId ? data.plannerLessonId : null;
-        const pinToToday = data.pinToToday === true;
-        remoteItems.push({
-          id: d.id,
-          title:
-            typeof data.title === 'string' && data.title.trim()
-              ? data.title
-              : (typeof data.text === 'string' ? data.text : ''),
-          priority: data.priority,
-          notes: data.notes || '',
-          done: typeof data.done === 'boolean'
-            ? data.done
-            : Boolean(data.completed || data.isDone || data.status === 'done'),
-          due: data.due || data.dueAt || null,
-          category: normalizeCategory(data.category),
-          createdAt: data.createdAt?.toMillis?.() || 0,
-          updatedAt: data.updatedAt?.toMillis?.() || 0,
-          pendingSync: false,
-          orderIndex: Number.isFinite(orderValue) ? orderValue : null,
-          plannerLessonId,
-          pinToToday,
-        });
-      });
-      items = ensureOrderIndicesInitialized(remoteItems);
+    try {
+      const remoteItems = await syncReminders();
+      items = ensureOrderIndicesInitialized(Array.isArray(remoteItems) ? remoteItems.map((item) => ({ ...item, category: normalizeCategory(item.category) })) : []);
       render();
       updateMobileRemindersHeaderSubtitle();
       persistItems();
       rescheduleAllReminders();
-    }, (error)=>{
-      console.error('Firestore sync error:', error);
+    } catch (error){
+      console.error('Supabase reminders sync error:', error);
       if(syncStatus){
         renderSyncIndicator('error', 'Sync Error');
       }
-    });
+    }
   }
 
   async function saveToFirebase(item){
-    if(!firebaseReady || !userId || !db || typeof doc !== 'function' || typeof setDoc !== 'function' || typeof serverTimestamp !== 'function') return;
+    if(!userId) return;
     try {
-      await setDoc(doc(db, 'users', userId, 'reminders', item.id), {
-        ownerUid: userId,
-        title: item.title, priority: item.priority, notes: item.notes || '', done: !!item.done, due: item.due || null,
+      await upsertReminder({
+        ...item,
         category: item.category || DEFAULT_CATEGORY,
         orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
-        plannerLessonId: typeof item.plannerLessonId === 'string' && item.plannerLessonId ? item.plannerLessonId : null,
-        pinToToday: !!item.pinToToday,
-        createdAt: item.createdAt ? new Date(item.createdAt) : serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      });
     } catch (error) {
       console.error('Save failed:', error); toast('Save queued (offline)');
     }
   }
-  async function deleteFromFirebase(id){ if(!firebaseReady || !userId || !db || typeof doc !== 'function' || typeof deleteDoc !== 'function') return; try { await deleteDoc(doc(db,'users',userId,'reminders',id)); } catch { toast('Delete queued (offline)'); } }
+  async function deleteFromFirebase(id){
+    if(!userId) return;
+    try {
+      await deleteReminder(id);
+    } catch {
+      toast('Delete queued (offline)');
+    }
+  }
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
