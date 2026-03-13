@@ -580,7 +580,20 @@
     setActiveFooterIcon(button.id);
 
     if (view === 'notes') {
+      closeSavedNotesSheet();
+      window.dispatchEvent(new CustomEvent('memorycue:notes:mode', { detail: { mode: 'overview' } }));
+      window.dispatchEvent(
+        new CustomEvent('app:navigate', {
+          detail: { view: 'notes' }
+        })
+      );
+      return;
+    }
+
+    if (view === 'notebooks') {
+      window.dispatchEvent(new CustomEvent('memorycue:notes:mode', { detail: { mode: 'notebooks' } }));
       navigateToNotebook();
+      setActiveFooterIcon('mobile-footer-notebooks');
       return;
     }
 

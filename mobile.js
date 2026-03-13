@@ -1274,6 +1274,12 @@ const initMobileNotes = () => {
   const filterInput = document.getElementById('notebook-search-input');
   const folderFilterSelect = document.getElementById('folderFilterSelect');
   const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
+  const notesOverviewPanel = document.getElementById('notesOverviewPanel');
+  const notesOverviewList = document.getElementById('notesOverviewList');
+  const notesOverviewSearch = document.getElementById('notesOverviewSearch');
+  const notesOverviewSort = document.getElementById('notesOverviewSort');
+  const notesOverviewState = document.getElementById('notesOverviewState');
+  const noteEditorSheet = document.getElementById('noteEditorSheet');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
     document.getElementById('openSavedNotesGlobal') ||
@@ -1551,6 +1557,10 @@ const initMobileNotes = () => {
   let folderSelectorOnSelect = null;
   let activeFolderSheetOpener = null;
   let filterQuery = '';
+  let notesOverviewQuery = '';
+  let notesOverviewSortValue = 'recent';
+  let notesOverviewStateValue = 'all';
+  let notesMode = 'notebooks';
   let skipAutoSelectOnce = false;
   let savedNotesSheetHideTimeout = null;
 
@@ -1558,6 +1568,16 @@ const initMobileNotes = () => {
     filterQuery = '';
     if (filterInput) {
       filterInput.value = '';
+    }
+  };
+
+  const applyNotesMode = (mode = 'notebooks') => {
+    notesMode = mode === 'overview' ? 'overview' : 'notebooks';
+    if (notesOverviewPanel instanceof HTMLElement) {
+      notesOverviewPanel.classList.toggle('hidden', notesMode !== 'overview');
+    }
+    if (noteEditorSheet instanceof HTMLElement) {
+      noteEditorSheet.classList.toggle('hidden', notesMode === 'overview');
     }
   };
 
@@ -1702,6 +1722,82 @@ const initMobileNotes = () => {
     }
     // Then apply search filter
     return sortNotesForDisplay(getFilteredNotes(filteredByFolder));
+  };
+
+
+  const getNotesOverviewItems = () => {
+    const items = Array.isArray(allNotes) ? [...allNotes] : [];
+    const q = (notesOverviewQuery || '').trim().toLowerCase();
+    const stateFilter = (notesOverviewStateValue || 'all').toLowerCase();
+
+    const filtered = items.filter((note) => {
+      const title = typeof note?.title === 'string' ? note.title : '';
+      const body = getNoteBodyText(note);
+      const haystack = `${title} ${body}`.toLowerCase();
+      const noteState = typeof note?.state === 'string' ? note.state.toLowerCase() : 'processed';
+      const matchesQuery = !q || haystack.includes(q);
+      const matchesState = stateFilter === 'all' || noteState === stateFilter;
+      return matchesQuery && matchesState;
+    });
+
+    if (notesOverviewSortValue === 'notebook') {
+      filtered.sort((a, b) => {
+        const aFolder = getFolderNameById(a?.folderId || 'unsorted');
+        const bFolder = getFolderNameById(b?.folderId || 'unsorted');
+        return String(aFolder).localeCompare(String(bFolder));
+      });
+      return filtered;
+    }
+
+    if (notesOverviewSortValue === 'priority') {
+      filtered.sort((a, b) => Number(Boolean(b?.pinned)) - Number(Boolean(a?.pinned)) || getNoteTimestamp(b) - getNoteTimestamp(a));
+      return filtered;
+    }
+
+    if (notesOverviewSortValue === 'tagged') {
+      filtered.sort((a, b) => {
+        const aTags = Array.isArray(a?.tags) ? a.tags.length : 0;
+        const bTags = Array.isArray(b?.tags) ? b.tags.length : 0;
+        return bTags - aTags || getNoteTimestamp(b) - getNoteTimestamp(a);
+      });
+      return filtered;
+    }
+
+    return sortNotesForDisplay(filtered);
+  };
+
+  const renderNotesOverview = () => {
+    if (!(notesOverviewList instanceof HTMLElement)) {
+      return;
+    }
+    notesOverviewList.innerHTML = '';
+    const items = getNotesOverviewItems();
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'text-sm text-base-content/70';
+      empty.textContent = 'No notes found.';
+      notesOverviewList.appendChild(empty);
+      return;
+    }
+
+    items.slice(0, 30).forEach((note) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'w-full text-left memory-glass-card-soft p-2';
+      const folder = getFolderNameById(note?.folderId || 'unsorted') || 'Unsorted';
+      const tags = Array.isArray(note?.tags) && note.tags.length ? note.tags.join(', ') : 'none';
+      button.innerHTML = `<div class="font-medium">${note?.title || 'Untitled note'}</div><div class="text-xs text-base-content/70">Notebook: ${folder}</div><div class="text-xs text-base-content/70">Tags: ${tags}</div><div class="text-xs text-base-content/70">Created: ${formatNoteTimestamp(note?.createdAt || note?.updatedAt)}</div>`;
+      button.addEventListener('click', () => {
+        setEditorValues(note);
+        updateListSelection();
+        applyNotesMode('notebooks');
+        const notebooksBtn = document.getElementById('mobile-footer-notebooks');
+        if (notebooksBtn instanceof HTMLElement) {
+          notebooksBtn.click();
+        }
+      });
+      notesOverviewList.appendChild(button);
+    });
   };
 
   const getNoteCountsByFolder = (allNotesArray = [], folders = []) => {
@@ -2056,6 +2152,7 @@ const initMobileNotes = () => {
 
     renderNotesList(visibleNotes);
     renderDashboardPanel();
+    renderNotesOverview();
 
     if (!hasAnyNotes) {
       if (!shouldPreserveEditor) {
@@ -2088,6 +2185,8 @@ const initMobileNotes = () => {
     updateStoredSnapshot();
     return visibleNotes;
   };
+
+  applyNotesMode('notebooks');
 
   const renderNotebookList = () => refreshFromStorage({ preserveDraft: true });
   window.renderNotebookList = renderNotebookList;
@@ -3517,6 +3616,34 @@ const initMobileNotes = () => {
     filterInput.addEventListener('input', handleFilterInput);
     filterInput.addEventListener('search', handleFilterInput);
   }
+
+  if (notesOverviewSearch instanceof HTMLElement) {
+    notesOverviewSearch.addEventListener('input', () => {
+      notesOverviewQuery = typeof notesOverviewSearch.value === 'string' ? notesOverviewSearch.value.trim() : '';
+      renderNotesOverview();
+    });
+  }
+
+  if (notesOverviewSort instanceof HTMLSelectElement) {
+    notesOverviewSort.addEventListener('change', () => {
+      notesOverviewSortValue = notesOverviewSort.value || 'recent';
+      renderNotesOverview();
+    });
+  }
+
+  if (notesOverviewState instanceof HTMLSelectElement) {
+    notesOverviewState.addEventListener('change', () => {
+      notesOverviewStateValue = notesOverviewState.value || 'all';
+      renderNotesOverview();
+    });
+  }
+
+  window.addEventListener('memorycue:notes:mode', (event) => {
+    applyNotesMode(event?.detail?.mode);
+    if (notesMode === 'overview') {
+      renderNotesOverview();
+    }
+  });
 
   if (folderFilterSelect) {
     folderFilterSelect.addEventListener('change', (event) => {
