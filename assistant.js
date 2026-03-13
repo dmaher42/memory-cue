@@ -1,8 +1,8 @@
 (function () {
-  const DB_KEY = 'memoryCueDB';
   const SCHEMA_VERSION = 2;
   const DEFAULT_MAX_ENTRIES = 50;
   const DEFAULT_MAX_CHARS = 12000;
+  const TYPE_LABELS = ['all', 'task', 'idea', 'note', 'reflection', 'lesson', 'drill'];
 
   function normalizeEntry(entry) {
     if (!entry || typeof entry !== 'object') {
@@ -63,30 +63,27 @@
     });
   }
 
-  function loadEntriesFromDB() {
-    try {
-      const raw = window.localStorage.getItem(DB_KEY);
-      if (!raw) {
-        return { settings: {}, entries: [] };
-      }
-
-      const parsed = JSON.parse(raw);
-      const storedEntries = Array.isArray(parsed && parsed.memoryEntries)
-        ? parsed.memoryEntries
-        : (Array.isArray(parsed && parsed.entries) ? parsed.entries : null);
-
-      if (!parsed || parsed.schemaVersion !== SCHEMA_VERSION || !Array.isArray(storedEntries)) {
-        return { settings: {}, entries: [] };
-      }
-
-      return {
-        settings: parsed.settings && typeof parsed.settings === 'object' ? parsed.settings : {},
-        entries: storedEntries.map(normalizeEntry).filter(Boolean)
-      };
-    } catch (error) {
-      console.error('Unable to load Memory Cue DB.', error);
+  function loadEntriesFromStore() {
+    if (!window.MemoryCueState || typeof MemoryCueState.getEntries !== 'function') {
       return { settings: {}, entries: [] };
     }
+
+    const stateSettings =
+      MemoryCueState.state && MemoryCueState.state.settings && typeof MemoryCueState.state.settings === 'object'
+        ? MemoryCueState.state.settings
+        : {};
+
+    const stateEntries = MemoryCueState.getEntries().map(function (entry) {
+      return {
+        ...entry,
+        createdAt: entry.createdAt || entry.timestamp || entry.updatedAt || null
+      };
+    });
+
+    return {
+      settings: stateSettings,
+      entries: stateEntries.map(normalizeEntry).filter(Boolean)
+    };
   }
 
   function selectEntries(entries, maxEntries, maxChars) {
@@ -198,7 +195,7 @@
     const opts = options && typeof options === 'object' ? options : {};
     const maxEntries = Number.isFinite(opts.maxEntries) ? opts.maxEntries : DEFAULT_MAX_ENTRIES;
     const maxChars = Number.isFinite(opts.maxChars) ? opts.maxChars : DEFAULT_MAX_CHARS;
-    const loaded = loadEntriesFromDB();
+    const loaded = loadEntriesFromStore();
     const relevantEntries = filterRelevantEntries(safeQuestion, loaded.entries);
     const selectedEntries = selectEntries(relevantEntries, maxEntries, maxChars);
     const contextText = buildContext(selectedEntries, maxEntries, maxChars);
@@ -319,14 +316,140 @@
         tags: parseTags(tagsInput.value)
       });
 
+      document.dispatchEvent(new CustomEvent('memorycue:entries-changed'));
       captureInput.value = '';
       showToast('Entry saved');
     });
   }
 
+  function initEntriesList() {
+    const entriesList = document.getElementById('entriesList');
+    const searchInput = document.getElementById('searchInput');
+    const typeFilters = document.getElementById('typeFilters');
+
+    if (!entriesList || !searchInput || !typeFilters || !window.MemoryCueState) {
+      return;
+    }
+
+    let activeTypeFilter = 'all';
+
+    function getStoreEntries() {
+      return MemoryCueState.getEntries().map(function (entry) {
+        return {
+          ...entry,
+          timestamp: entry.timestamp || entry.createdAt || entry.updatedAt || null
+        };
+      });
+    }
+
+    function filteredEntries() {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      return getStoreEntries().filter(function (entry) {
+        const matchesType = activeTypeFilter === 'all' || entry.type === activeTypeFilter;
+        if (!matchesType) {
+          return false;
+        }
+
+        if (!searchTerm) {
+          return true;
+        }
+
+        const haystack = `${entry.title || ''} ${entry.body || ''} ${(entry.tags || []).join(' ')}`.toLowerCase();
+        return haystack.includes(searchTerm);
+      });
+    }
+
+    function renderTypeFilters() {
+      typeFilters.innerHTML = '';
+      TYPE_LABELS.forEach(function (label) {
+        const count = label === 'all'
+          ? getStoreEntries().length
+          : getStoreEntries().filter(function (entry) {
+              return entry.type === label;
+            }).length;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `filter-pill${activeTypeFilter === label ? ' is-active' : ''}`;
+        button.textContent = `${label} (${count})`;
+        button.setAttribute('aria-pressed', activeTypeFilter === label ? 'true' : 'false');
+        button.addEventListener('click', function () {
+          activeTypeFilter = label;
+          renderEntries();
+        });
+        typeFilters.appendChild(button);
+      });
+    }
+
+    function renderEntries() {
+      const list = filteredEntries();
+      renderTypeFilters();
+      entriesList.innerHTML = '';
+
+      if (!list.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'No entries match your filters.';
+        entriesList.appendChild(empty);
+        return;
+      }
+
+      list.forEach(function (entry) {
+        const card = document.createElement('article');
+        card.className = 'entry-card';
+        card.setAttribute('role', 'listitem');
+
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = entry.type || 'note';
+
+        const title = document.createElement('h3');
+        title.className = 'entry-title';
+        title.textContent = entry.title || '(Untitled)';
+
+        const body = document.createElement('p');
+        body.className = 'entry-body';
+        body.textContent = entry.body || '';
+
+        const bottomRow = document.createElement('div');
+        bottomRow.className = 'entry-row-bottom';
+
+        const meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn-small danger';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', function () {
+          MemoryCueState.deleteEntry(entry.id);
+          renderEntries();
+        });
+
+        bottomRow.appendChild(meta);
+        bottomRow.appendChild(deleteBtn);
+
+        card.appendChild(badge);
+        card.appendChild(title);
+        card.appendChild(body);
+        card.appendChild(bottomRow);
+        entriesList.appendChild(card);
+      });
+    }
+
+    searchInput.addEventListener('input', renderEntries);
+    document.addEventListener('memorycue:entries-changed', renderEntries);
+    renderEntries();
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCaptureSave);
+    document.addEventListener('DOMContentLoaded', function () {
+      initCaptureSave();
+      initEntriesList();
+    });
   } else {
     initCaptureSave();
+    initEntriesList();
   }
 })();
