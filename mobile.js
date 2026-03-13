@@ -1275,6 +1275,7 @@ const initMobileNotes = () => {
   const folderFilterSelect = document.getElementById('folderFilterSelect');
   const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
   const notesOverviewPanel = document.getElementById('notesOverviewPanel');
+  const notebookBrowserList = document.getElementById('notebookBrowserList');
   const notesOverviewList = document.getElementById('notesOverviewList');
   const notesOverviewSearch = document.getElementById('notesOverviewSearch');
   const notesOverviewSort = document.getElementById('notesOverviewSort');
@@ -3635,6 +3636,31 @@ const initMobileNotes = () => {
     notesOverviewState.addEventListener('change', () => {
       notesOverviewStateValue = notesOverviewState.value || 'all';
       renderNotesOverview();
+    });
+  }
+
+  if (notebookBrowserList instanceof HTMLElement) {
+    notebookBrowserList.addEventListener('click', (event) => {
+      const trigger = event.target instanceof HTMLElement ? event.target.closest('[data-notebook-folder]') : null;
+      if (!(trigger instanceof HTMLElement)) {
+        return;
+      }
+      const requestedName = String(trigger.dataset.notebookFolder || '').trim();
+      if (!requestedName) {
+        return;
+      }
+
+      const allFolderOptions = Array.isArray(getFolders()) ? getFolders() : [];
+      const normalizedName = requestedName.toLowerCase();
+      const folderMatch = allFolderOptions.find((folder) => {
+        const folderName = typeof folder?.name === 'string' ? folder.name.trim().toLowerCase() : '';
+        return folderName === normalizedName;
+      });
+
+      currentFolderId = folderMatch?.id || (normalizedName === 'unsorted' ? 'unsorted' : 'all');
+      setActiveFolderFilter(currentFolderId);
+      setActiveFolderChip(currentFolderId);
+      renderFilteredNotes();
     });
   }
 

@@ -1,10 +1,11 @@
 (function () {
-  const VIEW_ORDER = ['capture', 'notes', 'notebooks', 'settings'];
+  const VIEW_ORDER = ['capture', 'reminders', 'notebooks', 'inbox'];
 
   const normalizeViewName = (name) => {
     if (!name) return 'capture';
     const value = String(name).toLowerCase();
-    if (value === 'notebook' || value === 'notebooks') return 'notes';
+    if (value === 'notebook') return 'notebooks';
+    if (value === 'notes') return 'notebooks';
     return value;
   };
 

@@ -46,6 +46,10 @@ body.app-shell .content {
   justify-content: flex-start;
 }
 
+.main-content {
+  padding-bottom: 140px;
+}
+
 body.app-shell .content > * {
   margin-top: 0;
 }
@@ -99,8 +103,8 @@ body.app-shell #mobile-nav-shell {
   justify-content: space-around;
   align-items: center;
   background: #fff;
-  border-top: 1px solid var(--border-subtle, #e3d9f4);
-  padding: 0 var(--space-1);
+  border-top: 1px solid var(--border, var(--border-subtle, #e3d9f4));
+  padding: 0;
   pointer-events: auto;
   z-index: 59;
 }
@@ -111,16 +115,20 @@ body.app-shell #mobile-nav-shell {
 
 body.app-shell #mobile-nav-shell .floating-footer {
   width: 100%;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-1);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 0;
   pointer-events: auto;
 }
 
 body.app-shell #mobile-nav-shell .floating-card {
-  min-height: 48px;
-  min-width: 48px;
-  border-radius: 12px;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
 }
 
 #bottom-nav button {
@@ -130,7 +138,12 @@ body.app-shell #mobile-nav-shell .floating-card {
 }
 
 #bottom-nav button.active {
-  color: #5e3a8c;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+#bottom-nav button {
+  color: var(--muted);
 }
 
 body.app-shell .reminders-quick-bar {
@@ -139,7 +152,7 @@ body.app-shell .reminders-quick-bar {
 
 body.app-shell #mobile-nav-shell .floating-card.active,
 body.app-shell #mobile-nav-shell .floating-card[aria-current='page'] {
-  outline: 2px solid color-mix(in srgb, var(--accent-color, #512663) 40%, transparent);
+  outline: none;
 }
 
 
