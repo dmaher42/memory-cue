@@ -18,6 +18,8 @@ import { getRecallItems } from './js/services/recall-service.js';
 import { getInboxEntries } from './js/services/capture-service.js';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
+import { getMessages } from './src/chat/messageStore.js';
+import { createChatComposer } from './src/components/ChatComposer.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 
@@ -61,9 +63,12 @@ function initAssistant() {
       || thinkingBarInput;
     const captureForm = document.getElementById('captureForm');
     const captureSaveBtn = document.getElementById('captureSaveBtn');
+    const thinkingBarForm = document.getElementById('thinkingBarForm');
+    const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
     const recentCapturesList = document.getElementById('recentCapturesList');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
+    const chatConversationContainer = document.getElementById('chatConversationContainer');
     const weeklyReflectionCard = document.getElementById('weeklyReflectionCard');
     const weeklyReflectionButton = document.getElementById('weeklyReflectionButton');
     const weeklyReflectionModal = document.getElementById('weeklyReflectionModal');
@@ -85,6 +90,59 @@ function initAssistant() {
       message.textContent = text;
       assistantThread.appendChild(message);
       assistantThread.scrollTop = assistantThread.scrollHeight;
+
+      if (chatConversationContainer instanceof HTMLElement) {
+        const roleClass = className.includes('--error') ? 'chat-message--assistant' : 'chat-message--assistant';
+        const chatMessage = document.createElement('div');
+        chatMessage.className = `chat-message ${roleClass}`;
+        chatMessage.textContent = text;
+        chatConversationContainer.appendChild(chatMessage);
+        chatConversationContainer.scrollTop = chatConversationContainer.scrollHeight;
+      }
+    };
+
+    const appendConversationMessage = (role, content, quickActions = []) => {
+      if (!(chatConversationContainer instanceof HTMLElement)) {
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = `chat-message ${role === 'user' ? 'chat-message--user' : 'chat-message--assistant'}`;
+      row.textContent = content;
+
+      if (role !== 'user' && Array.isArray(quickActions) && quickActions.length) {
+        const actions = document.createElement('div');
+        actions.className = 'chat-quick-actions';
+        quickActions.forEach((action) => {
+          if (!action || typeof action.label !== 'string') {
+            return;
+          }
+          const item = document.createElement('span');
+          item.textContent = action.label;
+          actions.appendChild(item);
+        });
+        if (actions.childElementCount) {
+          row.appendChild(actions);
+        }
+      }
+
+      chatConversationContainer.appendChild(row);
+      chatConversationContainer.scrollTop = chatConversationContainer.scrollHeight;
+    };
+
+    const renderConversationHistory = () => {
+      if (!(chatConversationContainer instanceof HTMLElement)) {
+        return;
+      }
+      chatConversationContainer.innerHTML = '';
+      const messages = getMessages();
+      messages.forEach((message) => {
+        const content = typeof message?.content === 'string' ? message.content.trim() : '';
+        if (!content) {
+          return;
+        }
+        appendConversationMessage(message?.role === 'user' ? 'user' : 'assistant', content, message?.quickActions);
+      });
     };
 
     const setThinkingBarStatus = (label) => {
@@ -577,10 +635,13 @@ function initAssistant() {
       isAssistantSending = true;
 
       try {
-        const intent = detectIntent(trimmedMessage);
-        const source = intent === 'assistant' ? 'assistant' : 'capture';
-        const commandResult = await executeCommand('capture', { text: trimmedMessage, source });
-        setThinkingBarStatus(commandResult.message || 'Added to Inbox');
+        appendConversationMessage('user', trimmedMessage);
+        const reply = await handleChatMessage(trimmedMessage);
+        const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
+          ? reply.message.trim()
+          : 'Saved to Inbox';
+        appendConversationMessage('assistant', replyMessage, reply?.quickActions);
+        setThinkingBarStatus(replyMessage);
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
@@ -609,6 +670,18 @@ function initAssistant() {
 
       renderSearchResults(query);
     });
+
+    createChatComposer({
+      textarea: thinkingBarInput,
+      button: thinkingBarSubmit,
+      onSubmit: async () => {
+        await sendAssistantMessage();
+      },
+    });
+
+    thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
+
+    renderConversationHistory();
 
     const renderRecentCaptures = () => {
       if (!(recentCapturesList instanceof HTMLElement)) {
