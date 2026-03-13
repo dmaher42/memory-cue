@@ -1,12 +1,14 @@
 import { processInbox } from '../ai/inboxProcessor.js';
 import { executeCommand } from '../core/commandEngine.js';
 import { getInboxEntries, removeInboxEntry } from '../services/inboxService.js';
+import { formatMemorySearchResponse, searchNotesMemory } from '../services/memorySearch.js';
 
 const QUICK_ACTIONS_BY_INTENT = {
   capture: [{ label: 'Open Inbox', targetView: 'inbox' }],
   reminder: [{ label: 'Edit Reminder', targetView: 'reminders' }],
   assistant: [{ label: 'View Notes', targetView: 'notes' }],
   processInbox: [{ label: 'View Notes', targetView: 'notes' }],
+  memorySearch: [{ label: 'View Notes', targetView: 'notes' }],
 };
 
 const createActionResult = (intent, message, status) => ({
@@ -40,6 +42,19 @@ const routeReminder = async (text, dependencies = {}) => {
 const routeAssistant = async (text) => {
   const result = await executeCommand('assistantQuery', { question: text });
   return createActionResult('assistant', result.message, result);
+};
+
+const routeMemorySearch = async (text) => {
+  const result = await executeCommand('search', {
+    query: text,
+    handler: ({ query }) => searchNotesMemory(query),
+  });
+
+  return createActionResult(
+    'memorySearch',
+    formatMemorySearchResponse(result.data),
+    { ...result, message: formatMemorySearchResponse(result.data) },
+  );
 };
 
 const routeProcessInbox = async (dependencies = {}) => {
@@ -80,6 +95,10 @@ export const routeAction = async (intent, text, dependencies = {}) => {
 
   if (intent === 'assistant') {
     return routeAssistant(text);
+  }
+
+  if (intent === 'memorySearch') {
+    return routeMemorySearch(text);
   }
 
   return routeCapture(text);
