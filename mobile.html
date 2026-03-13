@@ -25,6 +25,7 @@ Legacy shells remain for reference only.
   <link rel="stylesheet" href="./css/components.css" />
   <link rel="stylesheet" href="./css/capture.css" />
   <link rel="stylesheet" href="./css/reminders.css" />
+  <link rel="stylesheet" href="./css/reminders-ui.css" />
   <link rel="stylesheet" href="./css/assistant.css" />
   <style>
     :root {
@@ -4776,9 +4777,6 @@ body, main, section, div, p, span, li {
       <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Search">
         🔍
       </button>
-      <button id="reminderSortToggle" type="button" class="sort icon-button control-icon-button" aria-label="Sort reminders" title="Sort reminders">
-        ↕
-      </button>
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <div class="overflow-menu-section">
@@ -4865,6 +4863,22 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
+        <section class="reminders-screen-controls" aria-label="Reminder controls">
+          <form id="quickAddForm" class="reminders-quick-add-form" aria-label="Quick add reminder">
+            <label for="reminderQuickAdd" class="sr-only">Quick add reminder</label>
+            <input id="reminderQuickAdd" class="reminders-quick-add-input" type="text" placeholder="Quick add reminder" />
+            <button id="quickAddSubmit" type="submit" class="reminders-sort-btn" data-quick-add-submit>Add</button>
+          </form>
+          <div class="reminders-top-controls-row">
+            <div class="reminders-tabs" role="tablist" aria-label="Filter reminders by status">
+              <button type="button" class="reminder-tab reminders-tab-active" data-reminders-tab="all" aria-pressed="true">All</button>
+              <button type="button" class="reminder-tab" data-reminders-tab="today" aria-pressed="false">Today</button>
+              <button type="button" class="reminder-tab" data-reminders-tab="upcoming" aria-pressed="false">Upcoming</button>
+              <button type="button" class="reminder-tab" data-reminders-tab="completed" aria-pressed="false">Completed</button>
+            </div>
+            <button id="reminderSortToggle" type="button" class="reminders-sort-btn" data-reminder-sort-toggle aria-label="Sort reminders" title="Sort reminders">Sort</button>
+          </div>
+        </section>
         <div
           id="reminderCategoryFilters"
           class="category-filter-bar"
@@ -6007,7 +6021,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-MZNNXAXY.js"></script>
+  <script type="module" src="./assets/mobile-Y3H2XXEV.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
