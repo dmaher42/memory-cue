@@ -15,7 +15,8 @@ import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
 import { getRecallItems } from './js/services/recall-service.js';
-import { captureInput, getInboxEntries } from './js/services/capture-service.js';
+import { getInboxEntries } from './js/services/capture-service.js';
+import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
@@ -111,7 +112,8 @@ function initAssistant() {
       clearThinkingBarResults();
       setThinkingBarStatus('Search results');
 
-      const searchResults = (await searchMemoryIndex(query)).slice(0, 10);
+      const searchResponse = await executeCommand('search', { query });
+      const searchResults = (Array.isArray(searchResponse?.data) ? searchResponse.data : []).slice(0, 10);
 
       if (requestId !== latestThinkingSearchRequest) {
         return;
@@ -577,8 +579,8 @@ function initAssistant() {
       try {
         const intent = detectIntent(trimmedMessage);
         const source = intent === 'assistant' ? 'assistant' : 'capture';
-        await captureInput(trimmedMessage, source);
-        setThinkingBarStatus('Added to Inbox');
+        const commandResult = await executeCommand('capture', { text: trimmedMessage, source });
+        setThinkingBarStatus(commandResult.message || 'Added to Inbox');
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
@@ -661,7 +663,7 @@ function initAssistant() {
             setThinkingBarStatus(reply);
           }
         } else {
-          await captureInput(message, 'capture');
+          await executeCommand('capture', { text: message, source: 'capture' });
         }
         captureInputField.value = '';
         renderRecentCaptures();
