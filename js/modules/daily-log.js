@@ -1,7 +1,7 @@
 import { loadAllNotes } from './notes-storage.js';
 
 const DAILY_LOG_GROUPS = ['tasks', 'ideas', 'memories'];
-const MEMORY_ENTRIES_STORAGE_KEY = 'memoryEntries';
+const MEMORY_ENTRIES_STORAGE_KEY = 'memoryCueInbox';
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -68,7 +68,7 @@ const readMemoryEntries = () => {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.warn('Unable to read memory entries for Daily Log', error);
+    console.warn('Unable to read inbox entries for Daily Log', error);
     return [];
   }
 };

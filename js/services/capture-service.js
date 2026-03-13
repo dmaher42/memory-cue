@@ -1,6 +1,7 @@
 import { createNote, loadAllNotes, saveAllNotes } from '../modules/notes-storage.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
+const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
 
 const PARSED_TYPE_VALUES = new Set(['note', 'reminder', 'unknown']);
 const SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
@@ -37,6 +38,16 @@ export const getInboxEntries = () => {
   try {
     const raw = localStorage.getItem(INBOX_STORAGE_KEY);
     if (!raw) {
+      for (const legacyKey of LEGACY_INBOX_STORAGE_KEYS) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (!legacyRaw) continue;
+        const legacyParsed = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyParsed) && legacyParsed.length) {
+          localStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(legacyParsed));
+          localStorage.removeItem(legacyKey);
+          return legacyParsed;
+        }
+      }
       return [];
     }
     const parsed = JSON.parse(raw);

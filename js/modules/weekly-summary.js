@@ -74,7 +74,7 @@ export const generateWeeklySummary = async () => {
   const groupedEntries = groupByType(recentEntries);
   const memoryContext = buildContextFromGroups(groupedEntries);
 
-  const response = await fetch('/api/chat', {
+  const response = await fetch('/api/assistant-chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

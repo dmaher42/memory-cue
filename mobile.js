@@ -663,9 +663,7 @@ function initAssistant() {
         }
       });
     }
-    // The legacy assistant form is handled by js/assistant.js via a submit listener.
-    // Avoid binding a separate click/keydown handler here, because preventing default
-    // on the send button blocks the form submit and makes "Send" appear non-functional.
+    // Assistant form submit is owned by js/services/assistant-service.js.
 }
 
 if (document.readyState === 'loading') {

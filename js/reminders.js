@@ -179,9 +179,8 @@ async function ensureServiceWorkerRegistration() {
   }
   serviceWorkerReadyPromise = (async () => {
     try {
-      const existing = await navigator.serviceWorker.getRegistration();
-      if (!existing) {
-        await navigator.serviceWorker.register(resolveServiceWorkerUrl());
+      if (typeof window !== 'undefined' && window.MemoryCueServiceWorker && typeof window.MemoryCueServiceWorker.ensureRegistration === 'function') {
+        await window.MemoryCueServiceWorker.ensureRegistration();
       }
       return await navigator.serviceWorker.ready;
     } catch (err) {
@@ -1697,7 +1696,7 @@ export async function initReminders(sel = {}) {
       }));
 
     try {
-      const response = await fetch('/api/assistant', {
+      const response = await fetch('/api/assistant-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1724,7 +1723,7 @@ export async function initReminders(sel = {}) {
             : '';
       return reply || 'I could not read an assistant response.';
     } catch (error) {
-      console.error('[RAG assistant] request failed while calling /api/assistant', {
+      console.error('[RAG assistant] request failed while calling /api/assistant-chat', {
         error,
         query,
       });

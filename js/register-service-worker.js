@@ -82,6 +82,15 @@
     }
   };
 
+
+  if (typeof window !== 'undefined') {
+    window.MemoryCueServiceWorker = {
+      ensureRegistration: register,
+      waitForReady,
+      resolveServiceWorkerUrl,
+    };
+  }
+
   if (document.readyState === 'complete') {
     register();
   } else {
