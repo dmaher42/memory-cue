@@ -16,6 +16,7 @@ import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
 import { getRecallItems } from './js/services/recall-service.js';
 import { captureInput, getInboxEntries } from './js/services/capture-service.js';
+import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 
@@ -58,6 +59,7 @@ function initAssistant() {
       || document.getElementById('reminderQuickAdd')
       || thinkingBarInput;
     const captureForm = document.getElementById('captureForm');
+    const captureSaveBtn = document.getElementById('captureSaveBtn');
     const recentCapturesList = document.getElementById('recentCapturesList');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
@@ -633,6 +635,13 @@ function initAssistant() {
       });
     };
 
+    if (ENABLE_CHAT_INTERFACE && isTextEntryElement(captureInputField)) {
+      captureInputField.placeholder = 'Message Memory Cue...';
+      if (captureSaveBtn instanceof HTMLElement) {
+        captureSaveBtn.textContent = 'Send';
+      }
+    }
+
     captureForm?.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!isTextEntryElement(captureInputField) || isAssistantSending) {
@@ -646,7 +655,14 @@ function initAssistant() {
 
       isAssistantSending = true;
       try {
-        await captureInput(message, 'capture');
+        if (ENABLE_CHAT_INTERFACE) {
+          const reply = await handleChatMessage(message);
+          if (typeof reply === 'string' && reply.trim()) {
+            setThinkingBarStatus(reply);
+          }
+        } else {
+          await captureInput(message, 'capture');
+        }
         captureInputField.value = '';
         renderRecentCaptures();
       } catch (error) {
