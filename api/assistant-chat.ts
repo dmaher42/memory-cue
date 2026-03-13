@@ -1,3 +1,5 @@
+import { helpContent } from '../src/assistant/help-content.js';
+
 const ALLOWED_ORIGINS = [
   'https://dmaher42.github.io',
   'https://memory-cue.vercel.app',
@@ -76,6 +78,60 @@ function gatherContext(body) {
   ].filter(Boolean);
 
   return contextEntries;
+}
+
+function isHelpRequest(message) {
+  const helpWords = [
+    'help',
+    'how do i use',
+    'how do i use memory cue',
+    'how do i use this',
+    'how does this work',
+    'how does memory cue work',
+    'what can i type',
+    'what can i type here',
+    'what does inbox mean',
+    'what is inbox',
+    'how do reminders work',
+  ];
+
+  const normalized = toText(message).toLowerCase();
+  return helpWords.some((word) => normalized.includes(word));
+}
+
+function buildHelpReply(message) {
+  const normalized = toText(message).toLowerCase();
+
+  if (normalized === 'help') {
+    return [
+      'How to use Memory Cue:',
+      '',
+      'Type anything into the message bar.',
+      '',
+      helpContent.examples,
+      '',
+      'I will automatically store it in reminders, notebooks, or inbox.',
+    ].join('\n');
+  }
+
+  if (normalized.includes('inbox')) {
+    return `${helpContent.sections.inbox}\n\n${helpContent.examples}`;
+  }
+
+  if (normalized.includes('reminder')) {
+    return `${helpContent.sections.reminders}\n\n${helpContent.examples}`;
+  }
+
+  return [
+    'Memory Cue works by capturing thoughts through the message bar.',
+    '',
+    helpContent.examples,
+    '',
+    'I will automatically store them in:',
+    'Reminders',
+    'Notebooks',
+    'Inbox',
+  ].join('\n');
 }
 
 function buildPrompt(message, history, selectedContext) {
@@ -159,6 +215,15 @@ export default async function handler(req, res) {
       return res.status(200).json(body.entries.map((entry) => classifyLegacyEntry(entry)));
     }
     return res.status(400).json({ error: 'Missing message' });
+  }
+
+  if (isHelpRequest(message)) {
+    return res.status(200).json({
+      success: true,
+      reply: buildHelpReply(message),
+      references: [],
+      contextUsed: [],
+    });
   }
 
   try {
