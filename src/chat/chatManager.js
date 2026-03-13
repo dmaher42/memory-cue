@@ -32,3 +32,5 @@ export const handleChatMessage = async (text, dependencies = {}) => {
   addMessage(createMessage('assistant', response));
   return response;
 };
+
+export const handleMessage = handleChatMessage;
