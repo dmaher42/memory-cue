@@ -600,11 +600,15 @@
   const remindersSection = document.querySelector('section[data-view="reminders"]');
   if (!remindersSection) return;
 
-  const header = remindersSection.querySelector('header');
+  const header = remindersSection.querySelector('header') || remindersSection.querySelector('.reminders-header');
   const scrollContainer =
     remindersSection.querySelector('.reminders-scroll-container') ||
     remindersSection.querySelector('#reminders-list') ||
     remindersSection;
+
+  if (!(header instanceof HTMLElement) || !(scrollContainer instanceof HTMLElement)) {
+    return;
+  }
 
   // SAFETY:
   // Do NOT rename elements. We check multiple fallbacks.

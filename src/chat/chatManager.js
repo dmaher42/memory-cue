@@ -1,7 +1,9 @@
 import { addMessage } from './messageStore.js';
 import { executeCommand } from '../core/commandEngine.js';
 import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
-import { captureInput } from '../../js/services/capture-service.js';
+import { saveToInbox } from '../services/inboxService.js';
+import { suggestNotebookAndTags } from '../services/taggingEngine.js';
+import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -72,22 +74,68 @@ const askAssistant = async (text) => {
     : 'Here is what I found.';
 };
 
-const createNotebookNote = (parsed, text) => {
+const getReminderScheduleLabel = (parsed, text) => {
+  const metadata = parsed && typeof parsed === 'object' ? parsed.metadata || parsed : {};
+  const dueValue =
+    (typeof metadata?.due === 'string' && metadata.due.trim())
+    || (typeof metadata?.dueAt === 'string' && metadata.dueAt.trim())
+    || (typeof parsed?.due === 'string' && parsed.due.trim())
+    || (typeof parsed?.date === 'string' && parsed.date.trim())
+    || null;
+
+  if (dueValue) {
+    return dueValue;
+  }
+
+  const normalizedText = typeof text === 'string' ? text.toLowerCase() : '';
+  if (normalizedText.includes('tomorrow')) {
+    return 'tomorrow';
+  }
+  if (normalizedText.includes('today')) {
+    return 'today';
+  }
+
+  return null;
+};
+
+const createNotebookNote = async (parsed, text) => {
   const title = typeof parsed?.title === 'string' && parsed.title.trim()
     ? parsed.title.trim()
     : text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
 
+  const notebookSuggestion = await suggestNotebookAndTags(text);
+  const folderName = notebookSuggestion?.notebook && notebookSuggestion.notebook !== 'Inbox'
+    ? notebookSuggestion.notebook
+    : null;
+  const folderId = folderName ? ensureFolderExistsByName(folderName) : null;
+
   const note = createNote(title, text, {
     bodyText: text,
+    folderId,
     metadata: {
       type: 'note',
-      tags: Array.isArray(parsed?.tags) ? parsed.tags : [],
+      tags: Array.isArray(notebookSuggestion?.tags)
+        ? notebookSuggestion.tags
+        : Array.isArray(parsed?.tags)
+          ? parsed.tags
+          : [],
     },
   });
 
   const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
   saveAllNotes([note, ...notes]);
-  return note;
+  return { note, notebookName: folderName || 'Unsorted' };
+};
+
+const looksLikeNotebookCapture = (text) => {
+  const normalized = typeof text === 'string' ? text.trim().toLowerCase() : '';
+  if (!normalized) {
+    return false;
+  }
+  if (normalized.includes('?')) {
+    return false;
+  }
+  return /(meeting notes|lesson idea|remember\b|notes?\s+from|journal|plan\b|scored\b)/i.test(normalized);
 };
 
 const processParsedEntry = async (parsed, text, dependencies = {}) => {
@@ -99,22 +147,31 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
       text: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text,
       handler: dependencies.createReminder,
     });
-    return { message: 'Reminder created.' };
+    const scheduleLabel = getReminderScheduleLabel(parsed, text);
+    const title = typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text;
+    const message = scheduleLabel
+      ? `Reminder created for ${scheduleLabel}: ${title}`
+      : `Reminder created: ${title}`;
+    return { message };
   }
 
-  if (parsedType === 'note' || parsedType === 'drill' || parsedType === 'idea' || parsedType === 'task') {
-    console.log('Capture routed to:', 'note');
-    createNotebookNote(parsed, text);
-    return { message: 'Saved as a notebook note.' };
+  if (
+    parsedType === 'note'
+    || parsedType === 'drill'
+    || parsedType === 'idea'
+    || parsedType === 'task'
+    || looksLikeNotebookCapture(text)
+  ) {
+    const { notebookName } = await createNotebookNote(parsed, text);
+    return { message: `Saved to notebook (${notebookName}).` };
   }
 
   if (parsedType === 'question' || text.endsWith('?')) {
     return { message: await askAssistant(text) };
   }
 
-  console.log('Capture routed to:', 'inbox');
-  await captureInput(text, 'assistant');
-  return { message: "I wasn't sure where this belongs, so I saved it to your Inbox." };
+  saveToInbox(text);
+  return { message: 'Added to inbox for later review.' };
 };
 
 export const handleChatMessage = async (text, dependencies = {}) => {
