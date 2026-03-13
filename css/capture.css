@@ -1,0 +1,78 @@
+#view-capture {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0.75rem 1.5rem;
+}
+
+.capture-container {
+  width: 100%;
+  max-width: 38rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.1rem;
+  border-radius: 1rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--card-border, #e5e7eb);
+  box-shadow: 0 10px 26px rgba(35, 27, 46, 0.08);
+}
+
+.capture-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.capture-input {
+  width: 100%;
+  min-height: 8.5rem;
+  padding: 1rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--card-border, #d1d5db) 80%, #ffffff 20%);
+  background: var(--surface-elevated, #f9fafb);
+  color: var(--text-main, #1f2937);
+  font-size: 1rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.capture-input::placeholder {
+  color: var(--text-muted, #6b7280);
+}
+
+.capture-input:focus,
+.capture-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #512663) 45%, transparent);
+  outline-offset: 1px;
+  border-color: color-mix(in srgb, var(--accent-color, #512663) 45%, #d1d5db);
+}
+
+.capture-save-btn {
+  align-self: flex-start;
+  min-width: 7rem;
+}
+
+.capture-recent {
+  margin-top: 0.25rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid color-mix(in srgb, var(--card-border, #e5e7eb) 75%, transparent);
+}
+
+.capture-recent-list {
+  margin-top: 0.55rem;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-body, #4b5563);
+}
+
+.capture-recent-list li {
+  list-style: disc;
+}
+
+.capture-recent-empty {
+  list-style: none;
+  color: var(--text-muted, #6b7280);
+  margin-left: -1.1rem;
+}

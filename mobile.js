@@ -40,10 +40,15 @@ function initAssistant() {
       typeof HTMLFormElement !== 'undefined'
         ? value instanceof HTMLFormElement
         : value && value.tagName === 'FORM';
-    const isInputElement = (value) =>
-      typeof HTMLInputElement !== 'undefined'
-        ? value instanceof HTMLInputElement
-        : value && value.tagName === 'INPUT';
+    const isTextEntryElement = (value) => {
+      if (typeof HTMLInputElement !== 'undefined' && value instanceof HTMLInputElement) {
+        return true;
+      }
+      if (typeof HTMLTextAreaElement !== 'undefined' && value instanceof HTMLTextAreaElement) {
+        return true;
+      }
+      return Boolean(value && (value.tagName === 'INPUT' || value.tagName === 'TEXTAREA'));
+    };
     const assistantThread = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
     const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput')
@@ -52,7 +57,8 @@ function initAssistant() {
     const captureInputField = document.getElementById('captureInput')
       || document.getElementById('reminderQuickAdd')
       || thinkingBarInput;
-    const quickAddForm = document.getElementById('quickAddForm');
+    const captureForm = document.getElementById('captureForm');
+    const recentCapturesList = document.getElementById('recentCapturesList');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
     const weeklyReflectionCard = document.getElementById('weeklyReflectionCard');
@@ -66,7 +72,7 @@ function initAssistant() {
     let latestThinkingSearchRequest = 0;
     const assistantConversationHistory = [];
 
-    if (!isInputElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
+    if (!isTextEntryElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
       return;
     }
 
@@ -477,7 +483,7 @@ function initAssistant() {
     const getActiveView = () => document.body?.getAttribute('data-active-view') || '';
 
     const syncInboxSearchInput = () => {
-      if (!isInputElement(captureInputField)) {
+      if (!isTextEntryElement(captureInputField)) {
         return;
       }
       document.dispatchEvent(new CustomEvent('memoryCue:universalSearch', {
@@ -599,6 +605,59 @@ function initAssistant() {
 
       renderSearchResults(query);
     });
+
+    const renderRecentCaptures = () => {
+      if (!(recentCapturesList instanceof HTMLElement)) {
+        return;
+      }
+
+      const entries = getInboxEntries()
+        .slice(0, 5)
+        .map((entry) => (typeof entry?.text === 'string' ? entry.text.trim() : ''))
+        .filter(Boolean);
+
+      recentCapturesList.innerHTML = '';
+
+      if (!entries.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'capture-recent-empty';
+        emptyItem.textContent = 'No captures yet.';
+        recentCapturesList.appendChild(emptyItem);
+        return;
+      }
+
+      entries.forEach((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        recentCapturesList.appendChild(item);
+      });
+    };
+
+    captureForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!isTextEntryElement(captureInputField) || isAssistantSending) {
+        return;
+      }
+
+      const message = typeof captureInputField.value === 'string' ? captureInputField.value.trim() : '';
+      if (!message) {
+        return;
+      }
+
+      isAssistantSending = true;
+      try {
+        await captureInput(message, 'capture');
+        captureInputField.value = '';
+        renderRecentCaptures();
+      } catch (error) {
+        console.error('[capture] failed to save capture', error);
+      } finally {
+        isAssistantSending = false;
+      }
+    });
+
+    document.addEventListener('memoryCue:entriesUpdated', renderRecentCaptures);
+    renderRecentCaptures();
 
 
     if (weeklyReflectionButton instanceof HTMLElement) {

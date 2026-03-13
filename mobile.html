@@ -23,6 +23,7 @@ Legacy shells remain for reference only.
   <link rel="stylesheet" href="./mobile.css" />
   <link rel="stylesheet" href="./css/layout.css" />
   <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/capture.css" />
   <link rel="stylesheet" href="./css/reminders.css" />
   <link rel="stylesheet" href="./css/assistant.css" />
   <style>
@@ -4842,21 +4843,23 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <section data-view="capture" id="view-capture" class="view-panel">
-      <div class="space-y-3">
+      <div class="capture-container">
         <h2 class="text-lg font-semibold">Capture</h2>
-        <form id="quickAddForm" class="space-y-2">
+        <form id="captureForm" class="capture-form">
           <label for="captureInput" class="sr-only">Capture something</label>
-          <input
+          <textarea
             id="captureInput"
-            class="control-input quick-add-input w-full"
-            type="text"
-            placeholder="Capture something..."
+            class="capture-input"
+            placeholder="Type anything you want to remember..."
             autocomplete="off"
-          />
-          <button id="sendBtn" type="submit" class="smart-send-button" aria-label="Save">Save</button>
-          <span id="quickAddParsingIndicator" class="text-xs text-base-content/70" hidden>Saving…</span>
-          <span id="quickAddSuccessIndicator" class="text-xs text-success" role="status" aria-live="polite" hidden>Saved ✓</span>
+            rows="4"
+          ></textarea>
+          <button id="captureSaveBtn" type="submit" class="btn btn-primary capture-save-btn" aria-label="Save">Save</button>
         </form>
+        <section class="capture-recent" aria-labelledby="captureRecentHeading">
+          <h3 id="captureRecentHeading" class="text-sm font-semibold">Recent Captures</h3>
+          <ul id="recentCapturesList" class="capture-recent-list" aria-live="polite"></ul>
+        </section>
       </div>
     </section>
     <!-- BEGIN GPT CHANGE: reminders view -->
