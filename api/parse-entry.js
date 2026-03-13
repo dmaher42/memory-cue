@@ -9,7 +9,8 @@ const PARSED_ENTRY_SCHEMA = {
         'reminder',
         'drill',
         'idea',
-        'task'
+        'task',
+        'unknown'
       ]
     },
     title: { type: 'string' },
@@ -19,9 +20,13 @@ const PARSED_ENTRY_SCHEMA = {
     },
     reminderDate: {
       type: ['string', 'null']
+    },
+    metadata: {
+      type: 'object',
+      additionalProperties: true
     }
   },
-  required: ['type', 'title', 'tags', 'reminderDate']
+  required: ['type', 'title', 'tags', 'reminderDate', 'metadata']
 };
 
 const ALLOWED_ORIGINS = [
@@ -91,7 +96,7 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: `Return ONLY JSON matching schema.\nExtract:\n- type (note, reminder, drill, idea, task)\n- title (short summary under 60 chars)\n- tags (lowercase keywords)\n- reminderDate (ISO string if date/time mentioned, else null)\nIf unsure, use note.`
+                text: `Return ONLY JSON matching schema.\nExtract:\n- type (note, reminder, drill, idea, task, unknown)\n- title (short summary under 60 chars)\n- tags (lowercase keywords)\n- reminderDate (ISO string if date/time mentioned, else null)\nIf unsure, use unknown. Include metadata object with parse hints (or {}).`
               }
             ]
           },

@@ -1175,21 +1175,12 @@ export async function initReminders(sel = {}) {
     return note;
   }
 
-  function classifyInput(text) {
-    const normalized = typeof text === 'string' ? text.toLowerCase() : '';
-    if (normalized.includes('remind')) return 'reminder';
-    if (normalized.includes('drill') || normalized.includes('footy')) return 'drill';
-    if (normalized.includes('task') || normalized.includes('todo') || normalized.includes('to do')) return 'task';
-    if (normalized.includes('idea')) return 'idea';
-    return 'note';
-  }
-
   function normalizeMemoryEntryType(type) {
     const value = typeof type === 'string' ? type.trim().toLowerCase() : '';
-    if (value === 'note' || value === 'reminder' || value === 'drill' || value === 'idea' || value === 'task') {
+    if (value === 'note' || value === 'reminder' || value === 'drill' || value === 'idea' || value === 'task' || value === 'unknown') {
       return value;
     }
-    return 'note';
+    return 'unknown';
   }
 
   function inferRelevantEntryType(query) {
@@ -1249,7 +1240,7 @@ export async function initReminders(sel = {}) {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
 
-    const requestUrl = 'https://memory-cue-api.vercel.app/api/parse-entry';
+    const requestUrl = '/api/parse-entry';
 
     try {
       const response = await fetch(requestUrl, {
@@ -1274,10 +1265,11 @@ export async function initReminders(sel = {}) {
       }
       const data = await response.json();
       return {
-        type: data?.type,
-        title: typeof data?.title === 'string' ? data.title.trim() : '',
-        tags: sanitizeTags(data?.tags),
+        type: typeof data?.type === 'string' ? data.type.trim().toLowerCase() : 'unknown',
+        title: typeof data?.title === 'string' ? data.title.trim() : extractTitle(text),
+        tags: sanitizeTags(Array.isArray(data?.tags) ? data.tags : extractTags(text)),
         reminderDate: typeof data?.reminderDate === 'string' ? data.reminderDate : null,
+        metadata: data?.metadata && typeof data.metadata === 'object' ? data.metadata : {},
       };
     } finally {
       if (timeoutId) {
@@ -1288,10 +1280,11 @@ export async function initReminders(sel = {}) {
 
   function parseSmartEntryWithFallback(text) {
     return {
-      type: classifyInput(text),
+      type: 'unknown',
       title: extractTitle(text),
       tags: extractTags(text),
       reminderDate: null,
+      metadata: {},
     };
   }
 
@@ -1302,7 +1295,7 @@ export async function initReminders(sel = {}) {
     }
 
     const fallbackFields = parseSmartEntryWithFallback(normalizedText);
-    const resolvedType = fallbackFields.type;
+    const resolvedType = normalizeMemoryEntryType(fallbackFields.type);
     const resolvedTitle = fallbackFields.title;
     const resolvedTags = sanitizeTags(fallbackFields.tags);
     const resolvedReminderDate = null;
