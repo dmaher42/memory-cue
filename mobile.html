@@ -6,6 +6,7 @@
   <script type="module" src="./assets/init-env-MQHJLMJ2.js" defer></script>
   <script type="module" src="./assets/config-supabase-4TAZF5XD.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
+  <script type="module" src="./js/services/capture-service.js"></script>
   <script defer src="./js/assistant.js"></script>
   <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
@@ -5691,24 +5692,24 @@ body, main, section, div, p, span, li {
 
       const readEntries = () => {
         try {
-          const raw = window.localStorage?.getItem('reminderEntries');
+          const raw = window.localStorage?.getItem('memoryCueInbox');
           if (!raw) return [];
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) return parsed;
           if (Array.isArray(parsed?.entries)) return parsed.entries;
           return [];
         } catch (error) {
-          console.warn('Unable to read reminderEntries from localStorage', error);
+          console.warn('Unable to read memoryCueInbox from localStorage', error);
           return [];
         }
       };
 
       const writeEntries = (entries) => {
         try {
-          window.localStorage?.setItem('reminderEntries', JSON.stringify(entries));
+          window.localStorage?.setItem('memoryCueInbox', JSON.stringify(entries));
           document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
         } catch (error) {
-          console.warn('Unable to update reminderEntries in localStorage', error);
+          console.warn('Unable to update memoryCueInbox in localStorage', error);
         }
       };
 
@@ -5793,6 +5794,12 @@ body, main, section, div, p, span, li {
       }));
 
       const convertInboxEntryToNote = (entry) => {
+        const entryId = String(entry?.id || '');
+        if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.convertInboxToNote === 'function') {
+          window.MemoryCueCaptureService.convertInboxToNote(entryId);
+          return true;
+        }
+
         appendProcessedEntriesToNotebook([entry]);
         return updateInboxEntry(entry, (currentEntry) => ({
           ...currentEntry,
@@ -6171,7 +6178,7 @@ body, main, section, div, p, span, li {
 
       document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
       window.addEventListener('storage', (event) => {
-        if (event.key === 'reminderEntries') {
+        if (event.key === 'memoryCueInbox') {
           renderInboxEntries();
         }
       });
@@ -6180,7 +6187,7 @@ body, main, section, div, p, span, li {
         const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
         window.localStorage.setItem = function patchedSetItem(key, value) {
           originalSetItem(key, value);
-          if (key === 'reminderEntries') {
+          if (key === 'memoryCueInbox') {
             document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
           }
         };
@@ -6197,7 +6204,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-ZV5IR6L5.js"></script>
+  <script type="module" src="./assets/mobile-RCUD3YG2.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
