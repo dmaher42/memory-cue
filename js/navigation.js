@@ -405,7 +405,7 @@
       if (captureInput && typeof captureInput.focus === 'function') captureInput.focus();
     }
 
-    if (activeView === 'notes' && typeof window.renderNotebookList === 'function') {
+    if (activeView === 'notebooks' && typeof window.renderNotebookList === 'function') {
       window.renderNotebookList();
     }
   });
@@ -498,10 +498,10 @@
   const navigateToNotebook = () => {
     window.dispatchEvent(
       new CustomEvent('app:navigate', {
-        detail: { view: 'notes' }
+        detail: { view: 'notebooks' }
       })
     );
-    setActiveFooterIcon('mobile-footer-notes');
+    setActiveFooterIcon('mobile-footer-notebooks');
     focusNotebookInputs();
     closeSavedNotesSheet();
   };
@@ -579,18 +579,7 @@
     closeFabMenu();
     setActiveFooterIcon(button.id);
 
-    if (view === 'notes') {
-      closeSavedNotesSheet();
-      window.dispatchEvent(new CustomEvent('memorycue:notes:mode', { detail: { mode: 'overview' } }));
-      window.dispatchEvent(
-        new CustomEvent('app:navigate', {
-          detail: { view: 'notes' }
-        })
-      );
-      return;
-    }
-
-    if (view === 'notebooks') {
+        if (view === 'notebooks') {
       window.dispatchEvent(new CustomEvent('memorycue:notes:mode', { detail: { mode: 'notebooks' } }));
       navigateToNotebook();
       setActiveFooterIcon('mobile-footer-notebooks');
