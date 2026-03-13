@@ -27,6 +27,7 @@ Legacy shells remain for reference only.
   <link rel="stylesheet" href="./css/reminders.css" />
   <link rel="stylesheet" href="./css/reminders-ui.css" />
   <link rel="stylesheet" href="./css/assistant.css" />
+  <link rel="stylesheet" href="./css/navigation.css" />
   <style>
     :root {
       --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
@@ -5369,10 +5370,10 @@ body, main, section, div, p, span, li {
   </div>
 
   <nav id="mobile-nav-shell" class="bottom-nav inset-x-0 bottom-0 z-50 flex justify-center px-2 pb-3" aria-label="Bottom navigation">
-    <div class="floating-footer">
+    <div class="floating-footer bottom-nav-list">
       <button
         type="button"
-        class="floating-card btn-capture"
+        class="floating-card nav-item btn-capture active nav-active"
         id="mobile-footer-capture"
         data-nav-target="capture"
         data-tab="capture"
@@ -5398,7 +5399,7 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card btn-reminders"
+        class="floating-card nav-item btn-reminders"
         id="mobile-footer-reminders"
         data-nav-target="reminders"
         data-tab="reminders"
@@ -5424,7 +5425,7 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card btn-notes"
+        class="floating-card nav-item btn-notes"
         id="mobile-footer-notes"
         data-nav-target="notes"
         data-tab="notes"
@@ -5453,18 +5454,7 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card btn-settings"
-        id="mobile-footer-settings"
-        data-nav-target="settings"
-        data-tab="settings"
-        aria-label="Go to Settings"
-      >
-        <span>Settings</span>
-      </button>
-
-      <button
-        type="button"
-        class="floating-card btn-assistant"
+        class="floating-card nav-item btn-assistant"
         id="mobile-footer-assistant"
         data-nav-target="assistant"
         data-tab="assistant"
@@ -5482,9 +5472,7 @@ body, main, section, div, p, span, li {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M12 4.75C8 4.75 4.75 7.75 4.75 11.5C4.75 13.55 5.72 15.4 7.3 16.65V19.25L10.1 17.8C10.7 17.95 11.34 18.03 12 18.03C16 18.03 19.25 15.03 19.25 11.28C19.25 7.53 16 4.75 12 4.75Z" />
-          <path d="M9.2 11.2h5.6" />
-          <path d="M9.2 13.45h3.5" />
+          <path d="M12 3.5l1.58 3.24 3.57.52-2.58 2.52.61 3.56L12 11.78 8.82 13.34l.61-3.56-2.58-2.52 3.57-.52L12 3.5Z" />
         </svg>
         <span>Assistant</span>
       </button>

@@ -461,7 +461,9 @@
       .querySelectorAll('#mobile-nav-shell .floating-card')
       .forEach((btn) => {
         if (!(btn instanceof HTMLElement)) return;
-        btn.classList.toggle('active', btn.id === buttonId);
+        const isActive = btn.id === buttonId;
+        btn.classList.toggle('active', isActive);
+        btn.classList.toggle('nav-active', isActive);
       });
   };
 
