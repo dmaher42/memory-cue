@@ -1,7 +1,6 @@
 import { loadAllNotes } from '../modules/notes-storage.js';
 import { getInboxEntries } from './capture-service.js';
-
-const SESSION_KEY = 'memoryCueAssistantConversation';
+import { addMessage, clearMessages, getMessages } from '../../src/chat/messageStore.js';
 
 const toTimestamp = (value) => {
   const parsed = Date.parse(typeof value === 'string' ? value : '');
@@ -19,25 +18,17 @@ const readReminders = () => {
   }
 };
 
-const readConversation = () => {
-  if (typeof sessionStorage === 'undefined') return [];
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
+const readConversation = () => getMessages();
 
-const saveConversation = (history) => {
-  if (typeof sessionStorage === 'undefined') return;
-  try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(history.slice(-20)));
-  } catch (error) {
-    console.warn('[assistant-service] Unable to save conversation', error);
-  }
-};
+const createStoredMessage = (role, content) => ({
+  id:
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `chat-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+  role,
+  content,
+  timestamp: Date.now(),
+});
 
 const appendMessage = (container, text, className) => {
   const message = document.createElement('div');
@@ -46,6 +37,18 @@ const appendMessage = (container, text, className) => {
   container.appendChild(message);
   container.scrollTop = container.scrollHeight;
   return message;
+};
+
+const renderStoredConversation = (container) => {
+  const history = readConversation();
+  history.forEach((entry) => {
+    const role = entry?.role === 'assistant' ? 'assistant' : 'user';
+    const className = role === 'assistant'
+      ? 'assistant-message assistant-message--reply'
+      : 'assistant-message';
+    appendMessage(container, typeof entry?.content === 'string' ? entry.content : '', className);
+  });
+  container.scrollTop = container.scrollHeight;
 };
 
 const appendReferences = (container, references) => {
@@ -131,12 +134,21 @@ const sendAssistantRequest = async (payload) => {
     return;
   }
 
+  renderStoredConversation(assistantMessages);
+
+  const clearChatHistoryBtn = document.getElementById('clearChatHistoryBtn');
+  clearChatHistoryBtn?.addEventListener('click', () => {
+    clearMessages();
+    assistantMessages.innerHTML = '';
+  });
+
   assistantForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const message = typeof assistantInput.value === 'string' ? assistantInput.value.trim() : '';
     if (!message) return;
 
     appendMessage(assistantMessages, message, 'assistant-message');
+    addMessage(createStoredMessage('user', message));
     assistantInput.value = '';
 
     if (assistantLoading instanceof HTMLElement) {
@@ -150,8 +162,7 @@ const sendAssistantRequest = async (payload) => {
       const result = await sendAssistantRequest(payload);
       const replyNode = appendMessage(assistantMessages, result.reply, 'assistant-message assistant-message--reply');
       appendReferences(replyNode, result.references);
-      const nextHistory = [...history, { role: 'user', content: message }, { role: 'assistant', content: result.reply }];
-      saveConversation(nextHistory);
+      addMessage(createStoredMessage('assistant', result.reply));
     } catch (error) {
       console.error('[assistant-service] Assistant unavailable', error);
       appendMessage(assistantMessages, 'Assistant is unavailable.', 'assistant-message assistant-message--error');
