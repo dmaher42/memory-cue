@@ -21,19 +21,20 @@ const createMessage = (role, content, quickActions = []) => ({
 
 const normalizeRouteResult = (result) => {
   if (typeof result === 'string') {
-    return { message: result, quickActions: [] };
+    return { message: result, quickActions: [], status: null };
   }
 
   return {
     message: typeof result?.message === 'string' ? result.message : '',
     quickActions: Array.isArray(result?.quickActions) ? result.quickActions : [],
+    status: result?.status && typeof result.status === 'object' ? result.status : null,
   };
 };
 
 export const handleChatMessage = async (text, dependencies = {}) => {
   const userText = typeof text === 'string' ? text.trim() : '';
   if (!userText) {
-    return { message: '', quickActions: [] };
+    return { message: '', quickActions: [], status: null };
   }
 
   addMessage(createMessage('user', userText));

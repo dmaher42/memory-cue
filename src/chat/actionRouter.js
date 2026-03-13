@@ -9,9 +9,10 @@ const QUICK_ACTIONS_BY_INTENT = {
   processInbox: [{ label: 'View Notes', targetView: 'notes' }],
 };
 
-const createActionResult = (intent, message) => ({
+const createActionResult = (intent, message, status) => ({
   message,
   quickActions: QUICK_ACTIONS_BY_INTENT[intent] || [],
+  status,
 });
 
 const shouldProcessInbox = (text) => {
@@ -25,7 +26,7 @@ const shouldProcessInbox = (text) => {
 
 const routeCapture = async (text) => {
   const result = await executeCommand('capture', { text, source: 'capture' });
-  return createActionResult('capture', result.message);
+  return createActionResult('capture', result.message, result);
 };
 
 const routeReminder = async (text, dependencies = {}) => {
@@ -33,12 +34,12 @@ const routeReminder = async (text, dependencies = {}) => {
     text,
     handler: dependencies.createReminder,
   });
-  return createActionResult('reminder', result.message);
+  return createActionResult('reminder', result.message, result);
 };
 
 const routeAssistant = async (text) => {
   const result = await executeCommand('assistantQuery', { question: text });
-  return createActionResult('assistant', result.message);
+  return createActionResult('assistant', result.message, result);
 };
 
 const routeProcessInbox = async (dependencies = {}) => {
@@ -65,7 +66,7 @@ const routeProcessInbox = async (dependencies = {}) => {
     ? result.data.summary
     : result.message;
 
-  return createActionResult('processInbox', summary);
+  return createActionResult('processInbox', summary, { ...result, message: summary });
 };
 
 export const routeAction = async (intent, text, dependencies = {}) => {
