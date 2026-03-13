@@ -1,4 +1,13 @@
 <!DOCTYPE html>
+<!--
+/*
+Memory Cue Primary Runtime Shell
+All UI development should occur here.
+Legacy shells remain for reference only.
+*/
+-->
+
+
 <html lang="en" data-theme="light" class="h-full">
 <head>
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
@@ -11,6 +20,10 @@
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <link rel="stylesheet" href="./mobile.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/reminders.css" />
+  <link rel="stylesheet" href="./css/assistant.css" />
   <style>
     :root {
       --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
@@ -108,8 +121,8 @@
       box-shadow: 0 5px 14px rgba(81, 38, 99, 0.06);
     }
 
-    .reminders-quick-bar input#universalInput,
-    .reminders-quick-bar input#quickAddInput {
+    .reminders-quick-bar input#captureInput,
+    .reminders-quick-bar input#reminderQuickAdd {
       flex: 1 1 auto;
       min-width: 0;
       border: none;
@@ -119,8 +132,8 @@
       padding: 0.3rem 0.2rem;
     }
 
-    .reminders-quick-bar input#universalInput::placeholder,
-    .reminders-quick-bar input#quickAddInput::placeholder {
+    .reminders-quick-bar input#captureInput::placeholder,
+    .reminders-quick-bar input#reminderQuickAdd::placeholder {
       color: var(--text-muted);
     }
 
@@ -418,26 +431,26 @@
     padding-right: 0;
   }
 
-  body[data-active-view="notebook"] .container {
+  body[data-active-view="notes"] .container {
     max-width: none;
     margin: 0;
     padding: 0;
   }
 
-  body[data-active-view="notebook"] #main {
+  body[data-active-view="notes"] #main {
     max-width: none;
     margin: 0;
     padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
   }
 
   /* Ensure notebook content sits comfortably beneath the header */
-  body[data-active-view="notebook"] #main {
+  body[data-active-view="notes"] #main {
     /* Use the variable set by JS, with a safe fallback and extra breathing room */
     padding-top: calc(var(--mobile-header-height, 112px) + 18px) !important;
     margin-top: 0 !important;
   }
 
-  body[data-active-view="notebook"] #view-notebook .card-body {
+  body[data-active-view="notes"] #view-notebook .card-body {
     margin-top: 0 !important;
   }
 
@@ -466,11 +479,11 @@
     display: none !important;
   }
 
-  body[data-active-view="notebook"] #view-notebook {
+  body[data-active-view="notes"] #view-notebook {
     background: #ffffff;
   }
 
-  body[data-active-view="notebook"] #view-notebook .card {
+  body[data-active-view="notes"] #view-notebook .card {
     margin: 0;
     border: none;
     border-radius: 0;
@@ -487,12 +500,12 @@
     background: #ffffff;
   }
 
-  [data-view="notebook"] .textarea {
+  [data-view="notes"] .textarea {
     min-height: 0 !important;
   }
 
   /* Notebook: no extra top padding from card-body */
-body[data-active-view="notebook"] #view-notebook .card-body {
+body[data-active-view="notes"] #view-notebook .card-body {
   padding: 0rem 0.75rem 0.6rem;
   margin-top: 0 !important;
   min-height: auto;
@@ -1814,8 +1827,8 @@ body[data-active-view="notebook"] #view-notebook .card-body {
       overflow: hidden;
     }
 
-    .reminders-quick-bar #universalInput,
-    .reminders-quick-bar #quickAddInput {
+    .reminders-quick-bar #captureInput,
+    .reminders-quick-bar #reminderQuickAdd {
       flex: 1;
       min-width: 0;
       border: none;
@@ -1902,7 +1915,7 @@ body[data-active-view="notebook"] #view-notebook .card-body {
   overflow: hidden;
 }
 
-#universalInput, #quickAddInput {
+#captureInput, #reminderQuickAdd {
   flex: 1;
   min-width: 0;
   border: none;
@@ -2004,7 +2017,7 @@ body {
 }
 
 /* Quick-add input */
-#universalInput, #quickAddInput {
+#captureInput, #reminderQuickAdd {
   color: #000 !important;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -2069,7 +2082,7 @@ body, main, section, div, p, span, li {
 }
 
 /* 5) Quick reminder input in header */
-#universalInput, #quickAddInput {
+#captureInput, #reminderQuickAdd {
   color: #000000 !important;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -2996,7 +3009,7 @@ body, main, section, div, p, span, li {
       color: var(--text-primary);
     }
 
-    #assistantView {
+    #view-assistant {
       align-content: start;
       display: flex;
       flex-direction: column;
@@ -3870,13 +3883,13 @@ body, main, section, div, p, span, li {
   </style>
  <style>
   /* 1. Match the page padding to the header so content starts just below it */
-  body[data-active-view="notebook"] #main {
+  body[data-active-view="notes"] #main {
     padding-top: calc(var(--mobile-header-height, 112px) + 18px) !important;
     margin-top: 0 !important; /* Keep content immediately below the header */
   }
 
   /* 2. Strip inner layout padding */
-  body[data-active-view="notebook"] .mobile-view-inner {
+  body[data-active-view="notes"] .mobile-view-inner {
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
@@ -3884,7 +3897,7 @@ body, main, section, div, p, span, li {
   }
 
   /* 3. Card Reset: Full width, no shadow, no rounded corners */
-  body[data-active-view="notebook"] #scratch-notes-card {
+  body[data-active-view="notes"] #scratch-notes-card {
     padding: 0 !important;
     margin: 0 !important;
     border-radius: 0 !important;
@@ -3894,7 +3907,7 @@ body, main, section, div, p, span, li {
   }
 
   /* 4. Remove internal card padding so Title touches the top */
-  body[data-active-view="notebook"] .note-editor-card {
+  body[data-active-view="notes"] .note-editor-card {
     padding-top: 4px !important; /* Tiny breathing room only */
     padding-left: 16px !important;
     padding-right: 16px !important;
@@ -4746,6 +4759,7 @@ body, main, section, div, p, span, li {
     </div>
   </aside>
 
+  <script defer src="./js/services/navigation-service.js"></script>
   <script defer src="./js/navigation.js"></script>
   <script defer src="./js/entries.js"></script>
   <script defer src="./js/ui.js"></script>
@@ -4765,30 +4779,6 @@ body, main, section, div, p, span, li {
       </button>
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
-        <!-- Reminders -->
-        <div class="overflow-menu-section">
-          <div class="overflow-menu-section-label">Reminders</div>
-          <button
-            type="button"
-            id="menuShowCompleted"
-            class="overflow-menu-item"
-            data-menu-action="completed"
-          >
-            Completed reminders
-          </button>
-          <button
-            type="button"
-            id="viewToggleMenu"
-            class="overflow-menu-item"
-            aria-pressed="false"
-            aria-live="polite"
-            data-layout="list"
-          >
-            <span id="viewToggleLabel">View layout: Stacked</span>
-          </button>
-        </div>
-
-        <!-- Settings / App -->
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">App</div>
           <button
@@ -4855,24 +4845,6 @@ body, main, section, div, p, span, li {
             Pro dark
           </button>
         </div>
-
-        <div class="overflow-menu-section" aria-label="Layout">
-          <p class="overflow-menu-section-label">Layout</p>
-          <button
-            type="button"
-            class="overflow-menu-item"
-            data-menu-action="layout-cozy"
-          >
-            Cozy
-          </button>
-          <button
-            type="button"
-            class="overflow-menu-item"
-            data-menu-action="layout-compact"
-          >
-            Compact
-          </button>
-        </div>
       </div>
   </header>
 
@@ -4890,9 +4862,9 @@ body, main, section, div, p, span, li {
       <div class="space-y-3">
         <h2 class="text-lg font-semibold">Capture</h2>
         <form id="quickAddForm" class="space-y-2">
-          <label for="universalInput" class="sr-only">Capture something</label>
+          <label for="captureInput" class="sr-only">Capture something</label>
           <input
-            id="universalInput"
+            id="captureInput"
             class="control-input quick-add-input w-full"
             type="text"
             placeholder="Capture something..."
@@ -4962,7 +4934,7 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: notebook view -->
     <div id="notesView" class="view hidden" aria-hidden="true"></div>
 
-    <section data-view="notebook" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
+    <section data-view="notes" id="view-notebook" class="view-panel hidden mobile-panel--notes mobile-panel--notes-size-small">
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="padding: 0 !important; max-width: 100%;">
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
@@ -5339,7 +5311,7 @@ body, main, section, div, p, span, li {
                 <button type="button" class="note-action-btn note-action-delete">Delete note</button>
               </div>
             </div>
-    <section data-view="assistant" id="assistantView" class="view hidden" aria-hidden="true">
+    <section data-view="assistant" id="view-assistant" class="view hidden" aria-hidden="true">
       <div class="assistant-panel">
         <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
         <div id="thinkingBarResults" aria-live="polite"></div>
@@ -5365,6 +5337,14 @@ body, main, section, div, p, span, li {
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section data-view="settings" id="view-settings" class="view-panel hidden" aria-hidden="true">
+      <div class="space-y-3">
+        <h2 class="text-lg font-semibold">Settings</h2>
+        <p class="text-sm text-base-content/70">Manage account, theme, and sync preferences.</p>
+        <button type="button" id="settingsOpenFromView" class="btn-primary" data-menu-action="settings">Open settings panel</button>
       </div>
     </section>
 
@@ -5444,14 +5424,14 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card btn-notebook"
-        id="mobile-footer-notebook"
-        data-nav-target="notebook"
-        data-tab="notebook"
+        class="floating-card btn-notes"
+        id="mobile-footer-notes"
+        data-nav-target="notes"
+        data-tab="notes"
         aria-label="Go to Notes"
       >
         <svg
-          class="icon icon-notebook"
+          class="icon icon-notes"
           width="20"
           height="20"
           viewBox="0 0 24 24"
@@ -5468,6 +5448,18 @@ body, main, section, div, p, span, li {
           <path d="M9 15.5h4" />
         </svg>
         <span>Notes</span>
+      </button>
+
+
+      <button
+        type="button"
+        class="floating-card btn-settings"
+        id="mobile-footer-settings"
+        data-nav-target="settings"
+        data-tab="settings"
+        aria-label="Go to Settings"
+      >
+        <span>Settings</span>
       </button>
 
       <button
@@ -5555,7 +5547,7 @@ body, main, section, div, p, span, li {
             return;
           }
 
-          const quickAdd = document.getElementById('universalInput') || document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+          const quickAdd = document.getElementById('captureInput') || document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
           if (quickAdd && typeof quickAdd.focus === 'function') {
             quickAdd.focus();
           }
@@ -5624,7 +5616,7 @@ body, main, section, div, p, span, li {
         if (action === 'new-note') {
           window.dispatchEvent(
             new CustomEvent('app:navigate', {
-              detail: { view: 'notebook' }
+              detail: { view: 'notes' }
             })
           );
           closeSavedNotesSheet();
@@ -5654,7 +5646,8 @@ body, main, section, div, p, span, li {
         const routeMap = {
           capture: 'capture',
           reminders: 'reminders',
-          notebook: 'notebook',
+          notes: 'notes',
+          settings: 'settings',
           assistant: 'assistant'
         };
 
@@ -6453,7 +6446,7 @@ body, main, section, div, p, span, li {
       overflow: hidden;
     }
 
-    #universalInput, #quickAddInput {
+    #captureInput, #reminderQuickAdd {
       flex: 1;
       min-width: 0;
       border: none;
@@ -6471,10 +6464,10 @@ body, main, section, div, p, span, li {
         0 4px 10px rgba(15, 10, 41, 0.08);
     }
 
-    #universalInput:focus,
-    #universalInput:focus-visible,
-    #quickAddInput:focus,
-    #quickAddInput:focus-visible {
+    #captureInput:focus,
+    #captureInput:focus-visible,
+    #reminderQuickAdd:focus,
+    #reminderQuickAdd:focus-visible {
       background: color-mix(in srgb, var(--accent-color) 7%, transparent);
     }
 

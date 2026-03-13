@@ -1,0 +1,32 @@
+/* Phase 3 component primitives */
+.btn-primary {
+  border: 1px solid color-mix(in srgb, var(--accent-color, #512663) 55%, #ffffff);
+  background: var(--accent-color, #512663);
+  color: #fff;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  font-weight: 600;
+}
+
+.btn-secondary {
+  border: 1px solid var(--card-border, #ddd);
+  background: #fff;
+  color: var(--text-main, #231B2E);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.85rem;
+}
+
+.card-standard {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--card-border, #ddd);
+  border-radius: 1rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.input-standard {
+  width: 100%;
+  border: 1px solid var(--card-border, #ddd);
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.75rem;
+}

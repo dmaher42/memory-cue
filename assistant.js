@@ -1,8 +1,10 @@
 /*
-LEGACY APP SHELL
-This code belongs to the older Memory Cue UI.
-It is not the primary runtime and should not be extended.
+LEGACY UI SHELL
+This file belongs to the previous Memory Cue interface.
+It should not be extended.
+All new UI work must occur in mobile.html.
 */
+
 (function () {
   const SCHEMA_VERSION = 2;
   const DEFAULT_MAX_ENTRIES = 50;
