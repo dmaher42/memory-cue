@@ -4790,36 +4790,18 @@ body, main, section, div, p, span, li {
           >
             Settings
           </button>
-          <button
-            type="button"
-            id="menuSyncAll"
-            class="overflow-menu-item"
-            data-menu-action="sync-all"
-          >
-            Sync all
-          </button>
         </div>
 
         <!-- Account -->
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">Account</div>
-          <button
-            id="googleSignInBtnMenu"
-            type="button"
-            class="overflow-menu-item"
-            data-menu-action="sign-in"
-          >
-            Sign in
-          </button>
-          <button
-            id="googleSignOutBtnMenu"
-            type="button"
-            class="overflow-menu-item hidden"
-            data-menu-action="sign-out"
-            hidden
-          >
-            Sign out
-          </button>
+          <button type="button" class="overflow-menu-item" data-menu-action="sign-in">Sign in</button>
+          <button type="button" class="overflow-menu-item" data-menu-action="sign-out">Sign out</button>
+        </div>
+
+        <div class="overflow-menu-section">
+          <div class="overflow-menu-section-label">Sync</div>
+          <button type="button" class="overflow-menu-item" data-menu-action="sync-all">Sync now</button>
         </div>
 
         <div class="overflow-menu-section" aria-label="Theme">
@@ -4913,7 +4895,7 @@ body, main, section, div, p, span, li {
         </section>
       </div>
     </section>
-    <section data-view="categories" id="view-categories" class="view-panel hidden" aria-hidden="true">
+    <div id="view-categories" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
         <button id="categoriesBackButton" type="button" class="btn btn-sm btn-ghost">← Back</button>
         <h2 class="text-lg font-semibold">Categories</h2>
@@ -4923,14 +4905,14 @@ body, main, section, div, p, span, li {
         <h3 id="categoryEntriesTitle" class="text-base font-semibold"></h3>
         <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
-    </section>
-    <section data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
+    </div>
+    <div id="view-inbox" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
         <h2 class="text-lg font-semibold">Inbox</h2>
         <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Inbox</button>
         <ul id="inboxEntriesList" class="category-entry-list list-disc pl-4" aria-live="polite"></ul>
       </div>
-    </section>
+    </div>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <div id="notesView" class="view hidden" aria-hidden="true"></div>
@@ -5491,182 +5473,7 @@ body, main, section, div, p, span, li {
       </button>
     </div>
   </nav>
-  <script>
-    (function() {
-      const navFooter = document.querySelector('#mobile-nav-shell .floating-footer');
-      const fabButton = document.getElementById('mobile-fab-button');
-      const fabMenu = document.getElementById('mobile-fab-menu');
-
-      const updateBottomNavHeight = () => {
-        if (!navFooter) return;
-        const footerRect = navFooter.getBoundingClientRect();
-        const styles = getComputedStyle(navFooter);
-        const marginBottom = parseFloat(styles.marginBottom) || 0;
-        const totalHeight = footerRect.height + marginBottom;
-
-        if (totalHeight > 0) {
-          document.documentElement.style.setProperty(
-            '--mobile-bottom-nav-height',
-            `${Math.ceil(totalHeight)}px`
-          );
-        }
-      };
-
-      updateBottomNavHeight();
-
-      if (navFooter) {
-        if (typeof ResizeObserver === 'function') {
-          const observer = new ResizeObserver(updateBottomNavHeight);
-          observer.observe(navFooter);
-        } else {
-          window.addEventListener('resize', updateBottomNavHeight, { passive: true });
-        }
-      }
-      const closeSavedNotesSheet = () => {
-        try {
-          if (typeof window.hideSavedNotesSheet === 'function') {
-            window.hideSavedNotesSheet();
-          }
-        } catch (error) {
-          console.warn(error);
-        }
-      };
-
-      const setActiveFooterIcon = (buttonId) => {
-        document
-          .querySelectorAll('#mobile-nav-shell .floating-card')
-          .forEach((btn) => {
-            if (!(btn instanceof HTMLElement)) return;
-            btn.classList.toggle('active', btn.id === buttonId);
-          });
-      };
-
-      const triggerAddReminder = (trigger) => {
-        const openQuickAddFallback = () => {
-          if (typeof window.triggerReminderQuickAdd === 'function') {
-            window.triggerReminderQuickAdd();
-            return;
-          }
-
-          const quickAdd = document.getElementById('captureInput') || document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
-          if (quickAdd && typeof quickAdd.focus === 'function') {
-            quickAdd.focus();
-          }
-        };
-
-        if (typeof window.openNewReminderSheet === 'function') {
-          window.openNewReminderSheet(trigger || null);
-        } else {
-          const detail = { mode: 'create', trigger: trigger || null };
-          const sheet = document.getElementById('create-sheet');
-
-          if (sheet) {
-            document.dispatchEvent(new CustomEvent('cue:prepare', { detail }));
-            document.dispatchEvent(new CustomEvent('cue:open', { detail }));
-          } else {
-            openQuickAddFallback();
-          }
-        }
-      };
-
-      const closeFabMenu = () => {
-        if (fabMenu instanceof HTMLElement) {
-          fabMenu.dataset.open = 'false';
-          fabMenu.setAttribute('aria-hidden', 'true');
-          fabMenu.setAttribute('hidden', '');
-        }
-        if (fabButton instanceof HTMLElement) {
-          fabButton.setAttribute('aria-expanded', 'false');
-        }
-      };
-
-      const openFabMenu = () => {
-        if (fabMenu instanceof HTMLElement) {
-          fabMenu.dataset.open = 'true';
-          fabMenu.setAttribute('aria-hidden', 'false');
-          fabMenu.removeAttribute('hidden');
-        }
-        if (fabButton instanceof HTMLElement) {
-          fabButton.setAttribute('aria-expanded', 'true');
-        }
-      };
-
-      fabButton?.addEventListener('click', (event) => {
-        event.preventDefault();
-        const isOpen = fabMenu?.dataset.open === 'true';
-        if (isOpen) {
-          closeFabMenu();
-        } else {
-          openFabMenu();
-        }
-      });
-
-      fabMenu?.addEventListener('click', (event) => {
-        const actionButton = event.target instanceof Element ? event.target.closest('[data-fab-action]') : null;
-        if (!actionButton) return;
-
-        event.preventDefault();
-        const action = actionButton.getAttribute('data-fab-action');
-        closeFabMenu();
-
-        if (action === 'new-reminder') {
-          triggerAddReminder(actionButton);
-          return;
-        }
-
-        if (action === 'new-note') {
-          window.dispatchEvent(
-            new CustomEvent('app:navigate', {
-              detail: { view: 'notes' }
-            })
-          );
-          closeSavedNotesSheet();
-        }
-      });
-
-      document.addEventListener('click', (event) => {
-        if (fabMenu?.dataset.open !== 'true') return;
-        const target = event.target instanceof Element ? event.target : null;
-        if (target && target.closest('#mobile-fab-container')) return;
-        closeFabMenu();
-      });
-
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          closeFabMenu();
-        }
-      });
-
-      navFooter?.addEventListener('click', (event) => {
-        const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
-        if (!button) return;
-
-        const view = button.getAttribute('data-nav-target');
-        if (!view) return;
-
-        const routeMap = {
-          capture: 'capture',
-          reminders: 'reminders',
-          notes: 'notes',
-          settings: 'settings',
-          assistant: 'assistant'
-        };
-
-        const targetView = routeMap[view];
-        if (!targetView) return;
-
-        closeFabMenu();
-        setActiveFooterIcon(button.id);
-
-        closeSavedNotesSheet();
-        window.dispatchEvent(
-          new CustomEvent('app:navigate', {
-            detail: { view: targetView }
-          })
-        );
-      });
-    })();
-  </script>
+  <!-- Navigation/FAB behavior is centralized in js/navigation.js + js/services/navigation-service.js -->
   <script>
     (function () {
       const categories = ['Inbox', 'Teaching', 'Coaching', 'Ideas', 'Tasks'];
@@ -6160,7 +5967,7 @@ body, main, section, div, p, span, li {
       };
 
       openButton?.addEventListener('click', () => {
-        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'categories' } }));
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
       });
 
       backButton?.addEventListener('click', () => {
@@ -6197,7 +6004,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-E2XH4SWA.js"></script>
+  <script type="module" src="./assets/mobile-EERFY5XT.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
