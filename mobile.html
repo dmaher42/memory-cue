@@ -4839,22 +4839,23 @@ body, main, section, div, p, span, li {
       >
     <div class="content-container">
       <div id="contentFeed">
+        <section id="thinkingBarContainer" aria-label="Chat capture bar">
+          <form id="thinkingBarForm" class="capture-form">
+            <label for="thinkingBarInput" class="sr-only">Think or ask anything</label>
+            <textarea id="thinkingBarInput" class="capture-input" placeholder="Think or ask anything…" autocomplete="off" rows="1"></textarea>
+            <button id="thinkingBarSubmit" type="submit" class="btn btn-primary capture-save-btn" aria-label="Send">Send</button>
+          </form>
+          <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
+          <div id="thinkingBarResults" aria-live="polite"></div>
+        </section>
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
     <section data-view="capture" id="view-capture" class="view-panel">
       <div class="capture-container">
         <h2 class="text-lg font-semibold">Capture</h2>
-        <form id="captureForm" class="capture-form">
-          <label for="captureInput" class="sr-only">Capture something</label>
-          <textarea
-            id="captureInput"
-            class="capture-input"
-            placeholder="Type anything you want to remember..."
-            autocomplete="off"
-            rows="4"
-          ></textarea>
-          <button id="captureSaveBtn" type="submit" class="btn btn-primary capture-save-btn" aria-label="Save">Save</button>
-        </form>
+        <div class="capture-form">
+          <p class="text-sm text-base-content/70">Use the chat capture bar to capture ideas, add reminders, ask questions, and process inbox notes.</p>
+        </div>
         <section class="capture-recent" aria-labelledby="captureRecentHeading">
           <h3 id="captureRecentHeading" class="text-sm font-semibold">Recent Captures</h3>
           <ul id="recentCapturesList" class="capture-recent-list" aria-live="polite"></ul>
@@ -4865,11 +4866,9 @@ body, main, section, div, p, span, li {
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
         <section class="reminders-screen-controls" aria-label="Reminder controls">
-          <form id="quickAddForm" class="reminders-quick-add-form" aria-label="Quick add reminder">
-            <label for="reminderQuickAdd" class="sr-only">Quick add reminder</label>
-            <input id="reminderQuickAdd" class="reminders-quick-add-input" type="text" placeholder="Quick add reminder" />
-            <button id="quickAddSubmit" type="submit" class="reminders-sort-btn" data-quick-add-submit>Add</button>
-          </form>
+          <div class="reminders-quick-add-form" aria-label="Quick add reminder">
+            <p class="text-xs text-base-content/70">Use the chat capture bar to add reminders instantly.</p>
+          </div>
           <div class="reminders-top-controls-row">
             <div class="reminders-tabs" role="tablist" aria-label="Filter reminders by status">
               <button type="button" class="reminder-tab reminders-tab-active" data-reminders-tab="all" aria-pressed="true">All</button>
@@ -5314,17 +5313,10 @@ body, main, section, div, p, span, li {
             </div>
     <section data-view="assistant" id="view-assistant" class="view hidden" aria-hidden="true">
       <div class="assistant-panel">
-        <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
-        <div id="thinkingBarResults" aria-live="polite"></div>
         <div id="assistantMessages" class="assistant-messages" aria-live="polite" aria-label="Assistant conversation"></div>
-        <form id="assistantForm" class="assistant-input">
-          <textarea
-            id="assistantInput"
-            placeholder="Ask the assistant..."
-            rows="1"
-          ></textarea>
-          <button type="submit">Send</button>
-        </form>
+        <div class="assistant-input">
+          <p class="text-xs text-base-content/70">Use the chat capture bar to ask the assistant.</p>
+        </div>
         <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
         <div id="weeklyReflectionCard" class="insight-card" aria-live="polite">
           <div class="insight-header"><span>Insights</span></div>
@@ -6030,13 +6022,98 @@ body, main, section, div, p, span, li {
       renderInboxEntries();
     })();
   </script>
+  <script>
+    (function () {
+      const form = document.getElementById('thinkingBarForm');
+      const input = document.getElementById('thinkingBarInput');
+      const status = document.getElementById('thinkingBarStatus');
+      const results = document.getElementById('thinkingBarResults');
+      const processInboxButton = document.getElementById('processInboxButton');
+
+      if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLTextAreaElement)) {
+        return;
+      }
+
+      const setStatus = (text) => {
+        if (!(status instanceof HTMLElement)) return;
+        const msg = typeof text === 'string' ? text.trim() : '';
+        status.textContent = msg;
+        status.classList.toggle('hidden', !msg);
+      };
+
+
+      const addResult = (title, body) => {
+        if (!(results instanceof HTMLElement)) return;
+        const item = document.createElement('div');
+        item.className = 'thinking-result-item';
+        const heading = document.createElement('div');
+        heading.className = 'thinking-result-title';
+        heading.textContent = title;
+        const detail = document.createElement('div');
+        detail.textContent = body;
+        item.append(heading, detail);
+        results.prepend(item);
+      };
+
+      const navigateTo = (view) => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view } }));
+      };
+
+      const isAssistantQuery = (text) => /\?$/.test(text) || /^(what|how|why|when|where|who|can|could|should|do|does|did)\b/i.test(text);
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const text = (input.value || '').trim();
+        if (!text) return;
+
+        input.value = '';
+        setStatus('Working...');
+
+        try {
+          if (/^process\s+(today'?s\s+)?(notes|inbox)\b/i.test(text)) {
+            navigateTo('inbox');
+            processInboxButton?.click();
+            addResult('Inbox', 'Processing inbox notes.');
+            setStatus('Done');
+            return;
+          }
+
+          if (/^remind\s+me\b/i.test(text)) {
+            navigateTo('reminders');
+            const reminder = await window.memoryCueQuickAddNow?.({ forceText: text, source: 'thinking-bar' });
+            if (reminder) {
+              addResult('Reminder', 'Reminder added.');
+              setStatus('Done');
+              return;
+            }
+          }
+
+          if (isAssistantQuery(text)) {
+            navigateTo('assistant');
+            await window.memoryCueAskAssistant?.(text);
+            addResult('Assistant', 'Sent to assistant.');
+            setStatus('Done');
+            return;
+          }
+
+          await window.MemoryCueCaptureService?.captureInput?.(text, 'capture');
+          addResult('Capture', 'Saved to inbox.');
+          setStatus('Done');
+        } catch (error) {
+          console.error('Thinking bar request failed', error);
+          setStatus('Unable to complete that request right now.');
+        }
+      });
+    })();
+  </script>
+
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-IVWC7LVD.js"></script>
+  <script type="module" src="./assets/mobile-55WPMSZX.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
