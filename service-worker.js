@@ -28,7 +28,6 @@ let reminderDbPromise = null;
 
 const SHELL_URLS = [
   `${APP_PATH}`,
-  `${APP_PATH}index.html`,
   `${APP_PATH}mobile.html`,
   `${APP_PATH}manifest.webmanifest`,
   `${APP_PATH}styles/index.css`,
@@ -211,10 +210,7 @@ async function cacheFirst(req, fallbackUrls = []) {
 
 function getNavigationFallbacks(pathname) {
   const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-  const fallbacks = [`${APP_PATH}index.html`];
-  if (normalizedPath.endsWith('mobile') || normalizedPath.endsWith('mobile.html')) {
-    fallbacks.unshift(`${APP_PATH}mobile.html`);
-  }
+  const fallbacks = [`${APP_PATH}mobile.html`];
   return [...new Set(fallbacks)];
 }
 

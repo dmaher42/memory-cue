@@ -16,7 +16,7 @@ Legacy shells remain for reference only.
   <script type="module" src="./assets/config-supabase-4TAZF5XD.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
   <script type="module" src="./js/services/capture-service.js"></script>
-  <script defer src="./js/assistant.js"></script>
+  <script type="module" src="./js/services/assistant-service.js"></script>
   <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
@@ -5889,7 +5889,7 @@ body, main, section, div, p, span, li {
         ].join('\n');
 
         try {
-          const response = await fetch('/api/assistant', {
+          const response = await fetch('/api/assistant-chat', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -6004,7 +6004,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-EERFY5XT.js"></script>
+  <script type="module" src="./assets/mobile-EQZMV5JQ.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
