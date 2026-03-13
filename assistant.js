@@ -256,4 +256,77 @@
     buildContext,
     askMemoryCue
   };
+
+  function parseCaptureInput(rawText) {
+    const trimmedText = typeof rawText === 'string' ? rawText.trim() : '';
+    const typeMatch = trimmedText.match(/^(task|idea|note|reflection|lesson|drill)\s*:\s*/i);
+    const type = typeMatch ? typeMatch[1].toLowerCase() : 'note';
+    const body = typeMatch ? trimmedText.replace(typeMatch[0], '').trim() : trimmedText;
+    const title = body.split('\n')[0].trim().slice(0, 80);
+
+    return {
+      type,
+      title,
+      body
+    };
+  }
+
+  function parseTags(rawTags) {
+    if (typeof rawTags !== 'string') {
+      return [];
+    }
+
+    return rawTags
+      .split(',')
+      .map(function (tag) {
+        return tag.trim();
+      })
+      .filter(Boolean);
+  }
+
+  function showToast(message) {
+    const toastLive = document.getElementById('toastLive');
+    if (!toastLive) {
+      return;
+    }
+
+    toastLive.textContent = message;
+    window.clearTimeout(showToast.timeoutId);
+    showToast.timeoutId = window.setTimeout(function () {
+      toastLive.textContent = '';
+    }, 1800);
+  }
+
+  function initCaptureSave() {
+    const captureButton = document.getElementById('captureButton');
+    const captureInput = document.getElementById('captureInput');
+    const tagsInput = document.getElementById('tagsInput');
+
+    if (!captureButton || !captureInput || !tagsInput || !window.MemoryCueState) {
+      return;
+    }
+
+    captureButton.addEventListener('click', function () {
+      const parsedInput = parseCaptureInput(captureInput.value);
+      if (!parsedInput.body) {
+        return;
+      }
+
+      MemoryCueState.addEntry({
+        type: parsedInput.type,
+        title: parsedInput.title,
+        body: parsedInput.body,
+        tags: parseTags(tagsInput.value)
+      });
+
+      captureInput.value = '';
+      showToast('Entry saved');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCaptureSave);
+  } else {
+    initCaptureSave();
+  }
 })();
