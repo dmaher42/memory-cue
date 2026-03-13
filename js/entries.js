@@ -573,94 +573,22 @@
     if (!inboxEntries.length) {
       return [];
     }
-
-    const prompt = [
-      'Classify each note into one category:',
-      'Task',
-      'Idea',
-      'Memory',
-      'Note',
-      '',
-      'Return structured JSON.'
-    ].join('\n');
-
-    const response = await fetch('/api/assistant', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    const { processInbox } = await import('../src/ai/inboxProcessor.js');
+    const result = await processInbox(inboxEntries, {
+      createReminder: (payload) => {
+        if (typeof window.memoryCueCreateReminder === 'function') {
+          return window.memoryCueCreateReminder(payload);
+        }
+        return null;
       },
-      body: JSON.stringify({
-        prompt,
-        entries: inboxEntries.map((entry) => ({
-          id: entry?.id,
-          text: getEntryText(entry)
-        }))
-      })
+      removeInboxEntry: (id) => removeEntry(id),
     });
 
-    if (!response.ok) {
-      throw new Error(`Assistant request failed (${response.status})`);
-    }
-
-    const data = await response.json();
-    const updates = Array.isArray(data) ? data : [];
-    if (!updates.length) {
-      return [];
-    }
-
-    const updatesById = new Map();
-    updates.forEach((item, index) => {
-      if (!item || typeof item !== 'object') return;
-      if (item.id) {
-        updatesById.set(String(item.id), item);
-        return;
-      }
-      const fallback = inboxEntries[index];
-      if (fallback?.id) {
-        updatesById.set(String(fallback.id), item);
-      }
-    });
-
-    const timestamp = new Date().toISOString();
-    const processedNotes = [];
-
-    inboxEntries.forEach((entry) => {
-      const entryId = entry?.id ? String(entry.id) : '';
-      if (!entryId || !updatesById.has(entryId)) {
-        return;
-      }
-
-      const update = updatesById.get(entryId);
-      const type = typeof update.type === 'string' && update.type.trim()
-        ? update.type.trim().toLowerCase()
-        : (typeof entry.type === 'string' && entry.type.trim() ? entry.type.trim().toLowerCase() : 'note');
-      const text = typeof update.text === 'string' && update.text.trim()
-        ? update.text.trim()
-        : getEntryText(entry);
-
-      processedNotes.push({
-        text,
-        type,
-        processed: true,
-        timestamp,
-        id: entryId,
-        title: text.split(/\s+/).slice(0, 8).join(' '),
-        body: text,
-        bodyText: text,
-        bodyHtml: text,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      });
-    });
-
-    if (!processedNotes.length) {
-      return [];
-    }
-
-    appendToMainNotesDatabase(processedNotes);
-    inboxEntries.forEach((entry) => removeEntry(String(entry?.id || '')));
     renderInboxEntries();
-    return processedNotes;
+    if (result?.summary) {
+      window.alert(result.summary);
+    }
+    return Array.isArray(result?.processedItems) ? result.processedItems : [];
   };
 
   async function processInbox() {
