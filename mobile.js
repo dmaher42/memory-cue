@@ -67,7 +67,6 @@ function initAssistant() {
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
     const recentCapturesList = document.getElementById('recentCapturesList');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
-    const thinkingBarResults = document.getElementById('thinkingBarResults');
     const chatConversationContainer = document.getElementById('chatConversationContainer');
     const weeklyReflectionCard = document.getElementById('weeklyReflectionCard');
     const weeklyReflectionButton = document.getElementById('weeklyReflectionButton');
@@ -77,7 +76,6 @@ function initAssistant() {
     const recallList = document.getElementById('memoryRecallList');
     let lastRecallNotificationKey = '';
     let isAssistantSending = false;
-    let latestThinkingSearchRequest = 0;
     const assistantConversationHistory = [];
 
     if (!isTextEntryElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
@@ -157,69 +155,6 @@ function initAssistant() {
         thinkingBarStatus.classList.add('hidden');
       }
     };
-
-    const clearThinkingBarResults = () => {
-      if (thinkingBarResults instanceof HTMLElement) {
-        thinkingBarResults.innerHTML = '';
-      }
-    };
-
-
-    const renderSearchResults = async (query) => {
-      const requestId = ++latestThinkingSearchRequest;
-      clearThinkingBarResults();
-      setThinkingBarStatus('Search results');
-
-      const searchResponse = await executeCommand('search', { query });
-      const searchResults = (Array.isArray(searchResponse?.data) ? searchResponse.data : []).slice(0, 10);
-
-      if (requestId !== latestThinkingSearchRequest) {
-        return;
-      }
-
-      if (!(thinkingBarResults instanceof HTMLElement)) {
-        return;
-      }
-
-      if (!Array.isArray(searchResults) || !searchResults.length) {
-        const empty = document.createElement('div');
-        empty.className = 'thinking-result-item';
-        empty.textContent = 'No local matches found.';
-        thinkingBarResults.appendChild(empty);
-        return;
-      }
-
-      searchResults.forEach((entry) => {
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'thinking-result-item';
-        row.setAttribute('aria-label', `Open note ${entry?.title || 'Untitled note'}`);
-
-        const title = document.createElement('div');
-        title.className = 'thinking-result-title';
-        title.textContent = typeof entry?.title === 'string' && entry.title.trim()
-          ? entry.title.trim()
-          : 'Untitled note';
-
-        const details = document.createElement('div');
-        const entryType = typeof entry?.type === 'string' && entry.type.trim() ? entry.type.trim() : 'Note';
-        const entryFolder = typeof entry?.folder === 'string' && entry.folder.trim() ? entry.folder.trim() : 'Unsorted';
-        details.textContent = `${entryType} • ${entryFolder}`;
-
-        row.addEventListener('click', () => {
-          const noteId = typeof entry?.id === 'string' ? entry.id : '';
-          if (!noteId) {
-            return;
-          }
-          document.dispatchEvent(new CustomEvent('thinkingBar:openNote', { detail: { noteId } }));
-        });
-
-        row.appendChild(title);
-        row.appendChild(details);
-        thinkingBarResults.appendChild(row);
-      });
-    };
-
 
     const readRemindersForRecall = () => {
       if (typeof localStorage === 'undefined') {
@@ -642,6 +577,7 @@ function initAssistant() {
           : 'Saved to Inbox';
         appendConversationMessage('assistant', replyMessage, reply?.quickActions);
         setThinkingBarStatus(replyMessage);
+        renderConversationHistory();
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
@@ -652,24 +588,6 @@ function initAssistant() {
         isAssistantSending = false;
       }
     };
-
-    thinkingBarInput.addEventListener('input', () => {
-      const query = typeof thinkingBarInput.value === 'string' ? thinkingBarInput.value.trim() : '';
-
-      if (getActiveView() === 'inbox') {
-        syncInboxSearchInput();
-        return;
-      }
-
-      if (query.length <= 2) {
-        latestThinkingSearchRequest += 1;
-        clearThinkingBarResults();
-        setThinkingBarStatus('');
-        return;
-      }
-
-      renderSearchResults(query);
-    });
 
     createChatComposer({
       textarea: thinkingBarInput,
@@ -730,11 +648,15 @@ function initAssistant() {
 
       isAssistantSending = true;
       try {
+        appendConversationMessage('user', message);
         if (ENABLE_CHAT_INTERFACE) {
           const reply = await handleChatMessage(message);
-          if (typeof reply === 'string' && reply.trim()) {
-            setThinkingBarStatus(reply);
-          }
+          const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
+            ? reply.message.trim()
+            : 'Added to inbox.';
+          appendConversationMessage('assistant', replyMessage, reply?.quickActions);
+          setThinkingBarStatus(replyMessage);
+          renderConversationHistory();
         } else {
           await executeCommand('capture', { text: message, source: 'capture' });
         }
