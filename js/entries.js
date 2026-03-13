@@ -561,16 +561,11 @@
     }
   };
 
-  async function processInbox() {
+  const processInboxHandler = async () => {
     const allEntries = readEntries();
     const inboxEntries = allEntries.filter((entry) => entry?.processed === false);
     if (!inboxEntries.length) {
-      return;
-    }
-
-    if (processInboxButton) {
-      processInboxButton.disabled = true;
-      processInboxButton.textContent = 'Processing...';
+      return [];
     }
 
     const prompt = [
@@ -583,83 +578,94 @@
       'Return structured JSON.'
     ].join('\n');
 
+    const response = await fetch('/api/assistant', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        entries: inboxEntries.map((entry) => ({
+          id: entry?.id,
+          text: getEntryText(entry)
+        }))
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Assistant request failed (${response.status})`);
+    }
+
+    const data = await response.json();
+    const updates = Array.isArray(data) ? data : [];
+    if (!updates.length) {
+      return [];
+    }
+
+    const updatesById = new Map();
+    updates.forEach((item, index) => {
+      if (!item || typeof item !== 'object') return;
+      if (item.id) {
+        updatesById.set(String(item.id), item);
+        return;
+      }
+      const fallback = inboxEntries[index];
+      if (fallback?.id) {
+        updatesById.set(String(fallback.id), item);
+      }
+    });
+
+    const timestamp = new Date().toISOString();
+    const processedNotes = [];
+
+    inboxEntries.forEach((entry) => {
+      const entryId = entry?.id ? String(entry.id) : '';
+      if (!entryId || !updatesById.has(entryId)) {
+        return;
+      }
+
+      const update = updatesById.get(entryId);
+      const type = typeof update.type === 'string' && update.type.trim()
+        ? update.type.trim().toLowerCase()
+        : (typeof entry.type === 'string' && entry.type.trim() ? entry.type.trim().toLowerCase() : 'note');
+      const text = typeof update.text === 'string' && update.text.trim()
+        ? update.text.trim()
+        : getEntryText(entry);
+
+      processedNotes.push({
+        text,
+        type,
+        processed: true,
+        timestamp,
+        id: entryId,
+        title: text.split(/\s+/).slice(0, 8).join(' '),
+        body: text,
+        bodyText: text,
+        bodyHtml: text,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      });
+    });
+
+    if (!processedNotes.length) {
+      return [];
+    }
+
+    appendToMainNotesDatabase(processedNotes);
+    inboxEntries.forEach((entry) => removeEntry(String(entry?.id || '')));
+    renderInboxEntries();
+    return processedNotes;
+  };
+
+  async function processInbox() {
+    if (processInboxButton) {
+      processInboxButton.disabled = true;
+      processInboxButton.textContent = 'Processing...';
+    }
+
     try {
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt,
-          entries: inboxEntries.map((entry) => ({
-            id: entry?.id,
-            text: getEntryText(entry)
-          }))
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Assistant request failed (${response.status})`);
-      }
-
-      const data = await response.json();
-      const updates = Array.isArray(data) ? data : [];
-      if (!updates.length) {
-        return;
-      }
-
-      const updatesById = new Map();
-      updates.forEach((item, index) => {
-        if (!item || typeof item !== 'object') return;
-        if (item.id) {
-          updatesById.set(String(item.id), item);
-          return;
-        }
-        const fallback = inboxEntries[index];
-        if (fallback?.id) {
-          updatesById.set(String(fallback.id), item);
-        }
-      });
-
-      const timestamp = new Date().toISOString();
-      const processedNotes = [];
-
-      inboxEntries.forEach((entry) => {
-        const entryId = entry?.id ? String(entry.id) : '';
-        if (!entryId || !updatesById.has(entryId)) {
-          return;
-        }
-
-        const update = updatesById.get(entryId);
-        const type = typeof update.type === 'string' && update.type.trim()
-          ? update.type.trim().toLowerCase()
-          : (typeof entry.type === 'string' && entry.type.trim() ? entry.type.trim().toLowerCase() : 'note');
-        const text = typeof update.text === 'string' && update.text.trim()
-          ? update.text.trim()
-          : getEntryText(entry);
-
-        processedNotes.push({
-          text,
-          type,
-          processed: true,
-          timestamp,
-          id: entryId,
-          title: text.split(/\s+/).slice(0, 8).join(' '),
-          body: text,
-          bodyText: text,
-          bodyHtml: text,
-          createdAt: timestamp,
-          updatedAt: timestamp
-        });
-      });
-
-      if (!processedNotes.length) {
-        return;
-      }
-
-      appendToMainNotesDatabase(processedNotes);
-      inboxEntries.forEach((entry) => removeEntry(String(entry?.id || '')));
-      renderInboxEntries();
+      const { executeCommand } = await import('../src/core/commandEngine.js');
+      await executeCommand('processInbox', { handler: processInboxHandler });
     } catch (error) {
       console.error('Unable to process inbox entries.', error);
     } finally {

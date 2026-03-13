@@ -1,29 +1,4 @@
-import { captureInput } from '../../js/services/capture-service.js';
-
-const parseAssistantReply = (payload) => {
-  if (typeof payload?.reply === 'string' && payload.reply.trim()) {
-    return payload.reply;
-  }
-  if (typeof payload?.response === 'string' && payload.response.trim()) {
-    return payload.response;
-  }
-  if (typeof payload?.message === 'string' && payload.message.trim()) {
-    return payload.message;
-  }
-  return 'Assistant response unavailable.';
-};
-
-const resolveReminderHandler = (dependencies = {}) => {
-  if (typeof dependencies.createReminder === 'function') {
-    return dependencies.createReminder;
-  }
-
-  if (typeof window !== 'undefined' && typeof window.memoryCueCreateReminder === 'function') {
-    return window.memoryCueCreateReminder;
-  }
-
-  return null;
-};
+import { executeCommand } from '../core/commandEngine.js';
 
 const QUICK_ACTIONS_BY_INTENT = {
   capture: [{ label: 'Open Inbox', targetView: 'capture' }],
@@ -37,33 +12,21 @@ const createActionResult = (intent, message) => ({
 });
 
 const routeCapture = async (text) => {
-  await captureInput(text, 'capture');
-  return createActionResult('capture', 'Saved to Inbox.');
+  const result = await executeCommand('capture', { text, source: 'capture' });
+  return createActionResult('capture', result.message);
 };
 
 const routeReminder = async (text, dependencies = {}) => {
-  const createReminder = resolveReminderHandler(dependencies);
-  if (typeof createReminder !== 'function') {
-    throw new Error('Reminder creation logic is unavailable.');
-  }
-
-  await createReminder({ title: text });
-  return createActionResult('reminder', 'Reminder created.');
+  const result = await executeCommand('reminder', {
+    text,
+    handler: dependencies.createReminder,
+  });
+  return createActionResult('reminder', result.message);
 };
 
 const routeAssistant = async (text) => {
-  const response = await fetch('/api/assistant', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: text }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Assistant request failed (${response.status})`);
-  }
-
-  const payload = await response.json();
-  return createActionResult('assistant', parseAssistantReply(payload));
+  const result = await executeCommand('assistantQuery', { question: text });
+  return createActionResult('assistant', result.message);
 };
 
 export const routeAction = async (intent, text, dependencies = {}) => {
