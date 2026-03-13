@@ -4536,6 +4536,12 @@ export async function initReminders(sel = {}) {
   function addItem(obj){
     return createReminderFromPayload(obj, { closeSheet: true });
   }
+
+  if (typeof window !== 'undefined') {
+    // Shared reminder creation hook for chat and other entry points.
+    window.memoryCueCreateReminder = (payload = {}) => addItem(payload);
+  }
+
   function addNoteToReminder(id, noteText){
     if(!userId){ toast('Sign in to add notes'); return null; }
     if(!id) return null;
