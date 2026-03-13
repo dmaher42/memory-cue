@@ -20,6 +20,23 @@ const readReminders = () => {
 
 const readConversation = () => getMessages();
 
+const hasStoredItems = () => {
+  const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
+  const reminders = readReminders();
+  const inboxEntries = getInboxEntries();
+  return notes.length > 0 || reminders.length > 0 || inboxEntries.length > 0;
+};
+
+const buildWelcomeMessage = () => [
+  'Welcome to Memory Cue.',
+  '',
+  'Try typing something like:',
+  '',
+  'remind me to get milk tomorrow',
+  'lesson idea for year 7 volleyball',
+  'remember Archer scored 3 goals today',
+].join('\n');
+
 const createStoredMessage = (role, content) => ({
   id:
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -186,6 +203,17 @@ const askAssistant = async ({ message, assistantMessages, assistantLoading }) =>
 
   if (typeof window !== 'undefined') {
     window.memoryCueAskAssistant = async (message) => askAssistant({ message, assistantMessages, assistantLoading });
+  }
+
+  const assistantHelpBtn = document.getElementById('assistantHelpBtn');
+  assistantHelpBtn?.addEventListener('click', async () => {
+    await askAssistant({ message: 'help', assistantMessages, assistantLoading });
+  });
+
+  if (!readConversation().length && !hasStoredItems()) {
+    const welcomeMessage = buildWelcomeMessage();
+    appendMessage(assistantMessages, welcomeMessage, 'assistant-message assistant-message--reply');
+    addMessage(createStoredMessage('assistant', welcomeMessage));
   }
 
   assistantForm.addEventListener('submit', async (event) => {
