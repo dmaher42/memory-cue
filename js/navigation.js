@@ -389,7 +389,7 @@
       return;
     }
 
-    const quickAdd = document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
+    const quickAdd = document.getElementById('thinkingBarInput') || document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
     if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
   };
 
@@ -401,7 +401,7 @@
     const activeView = window.navigationService.navigate(view);
 
     if (activeView === 'capture') {
-      const captureInput = document.getElementById('captureInput');
+      const captureInput = document.getElementById('thinkingBarInput') || document.getElementById('captureInput');
       if (captureInput && typeof captureInput.focus === 'function') captureInput.focus();
     }
 
