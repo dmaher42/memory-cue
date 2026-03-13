@@ -199,3 +199,47 @@ body.app-shell .content .card,
   margin-bottom: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+
+/* Capture view polish */
+#thinkingBarContainer {
+  background: color-mix(in srgb, #ffffff 94%, #f4f7fb 6%) !important;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 70%, #ffffff 30%) !important;
+  padding: 12px 14px !important;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  box-shadow: 0 -10px 28px rgba(16, 12, 24, 0.08) !important;
+}
+
+#thinkingBarInput {
+  border-radius: 16px !important;
+  min-height: 3rem !important;
+  max-height: 9rem !important;
+  padding: 12px 15px !important;
+  border: 1px solid color-mix(in srgb, var(--border-subtle, #d8dfea) 74%, #ffffff 26%) !important;
+  box-shadow: inset 0 1px 2px rgba(20, 27, 41, 0.04) !important;
+  background: #ffffff !important;
+}
+
+#thinkingBarSubmit {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-height: 2.5rem !important;
+  border-radius: 999px !important;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #512663) 25%, #ffffff 75%) !important;
+  box-shadow: 0 6px 14px rgba(44, 30, 64, 0.2) !important;
+}
+
+#bottom-nav {
+  background: color-mix(in srgb, #ffffff 96%, #f4f7fb 4%) !important;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 74%, #ffffff 26%) !important;
+  box-shadow: 0 -8px 20px rgba(17, 23, 37, 0.08) !important;
+}
+
+#bottom-nav button {
+  color: color-mix(in srgb, var(--muted, #6b7280) 88%, #a8b1bf 12%) !important;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+#bottom-nav button.active {
+  color: var(--accent-color, #512663) !important;
+  font-weight: 600;
+}
