@@ -1,7 +1,7 @@
 import { addMessage } from './messageStore.js';
 import { executeCommand } from '../core/commandEngine.js';
 import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
-import { saveToInbox } from '../services/inboxService.js';
+import { captureInput } from '../../js/services/capture-service.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -94,6 +94,7 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
   const parsedType = normalizeType(parsed?.type, text);
 
   if (parsedType === 'reminder') {
+    console.log('Capture routed to:', 'reminder');
     await executeCommand('reminder', {
       text: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text,
       handler: dependencies.createReminder,
@@ -102,16 +103,18 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
   }
 
   if (parsedType === 'note' || parsedType === 'drill' || parsedType === 'idea' || parsedType === 'task') {
+    console.log('Capture routed to:', 'note');
     createNotebookNote(parsed, text);
-    return { message: 'Saved to notebook.' };
+    return { message: 'Saved as a notebook note.' };
   }
 
   if (parsedType === 'question' || text.endsWith('?')) {
     return { message: await askAssistant(text) };
   }
 
-  saveToInbox(text);
-  return { message: 'Added to inbox.' };
+  console.log('Capture routed to:', 'inbox');
+  await captureInput(text, 'assistant');
+  return { message: "I wasn't sure where this belongs, so I saved it to your Inbox." };
 };
 
 export const handleChatMessage = async (text, dependencies = {}) => {
