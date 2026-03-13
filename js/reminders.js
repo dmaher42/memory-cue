@@ -5555,7 +5555,6 @@ export async function initReminders(sel = {}) {
       itemEl.setAttribute('role', 'button');
       itemEl.tabIndex = 0;
       itemEl.setAttribute('aria-label', `Edit reminder: ${reminderTitle}`);
-      attachReminderLongPress(itemEl, reminder);
 
       applyPriorityTokensToCard(itemEl, summary.priority);
 
@@ -5667,18 +5666,28 @@ export async function initReminders(sel = {}) {
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
 
-        const metaParts = [dueLabel, summary.category].filter(Boolean);
-        if (metaParts.length) {
-          const metaText = document.createElement('div');
-          metaText.className = 'reminder-meta reminder-date reminder-row-meta';
-          metaText.textContent = metaParts.join(' • ');
-          rowMain.appendChild(metaText);
+        if (dueLabel) {
+          const dueLine = document.createElement('div');
+          dueLine.className = 'reminder-meta reminder-date reminder-row-meta';
+          dueLine.textContent = `Due: ${dueLabel}`;
+          rowMain.appendChild(dueLine);
+        }
+
+        if (summary.category && summary.category !== DEFAULT_CATEGORY) {
+          const categoryLine = document.createElement('div');
+          categoryLine.className = 'reminder-meta reminder-category reminder-row-meta';
+          categoryLine.textContent = `Category: ${summary.category}`;
+          rowMain.appendChild(categoryLine);
         }
 
         if (summary.done) {
           itemEl.classList.add('reminder-row-completed');
         } else if (dueDate && dueDate < now) {
-          itemEl.classList.add('reminder-row-overdue');
+          itemEl.classList.add('reminder-row-overdue', 'reminder-overdue');
+        } else if (dueIsToday) {
+          itemEl.classList.add('reminder-today');
+        } else {
+          itemEl.classList.add('reminder-upcoming');
         }
 
         itemEl.append(cardCheckbox, rowMain);
@@ -5803,6 +5812,9 @@ export async function initReminders(sel = {}) {
     }
 
     const resolveDueDateGroup = (reminder) => {
+      if (reminder?.done) {
+        return 'COMPLETED';
+      }
       const dueDate = reminder?.due ? new Date(reminder.due) : null;
       if (dueDate && dueDate >= t0 && dueDate <= t1) {
         return 'TODAY';
@@ -5813,10 +5825,18 @@ export async function initReminders(sel = {}) {
     const grouped = new Map([
       ['TODAY', []],
       ['UPCOMING', []],
+      ['COMPLETED', []],
     ]);
     rows.forEach((r) => {
       grouped.get(resolveDueDateGroup(r)).push(r);
     });
+
+    const labelMap = {
+      TODAY: 'Today',
+      UPCOMING: 'Upcoming',
+      COMPLETED: 'Completed',
+    };
+
     const sortedGroups = Array.from(grouped.entries()).filter(([, groupedRows]) => groupedRows.length > 0);
     let firstGroup = true;
     sortedGroups.forEach(([groupLabel, groupRows]) => {
@@ -5826,18 +5846,16 @@ export async function initReminders(sel = {}) {
         headingWrapper.setAttribute('role', 'presentation');
         headingWrapper.style.listStyle = 'none';
       }
-      headingWrapper.className = 'reminder-group-heading text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500';
+      headingWrapper.className = 'reminder-group-heading';
       if (!firstGroup) {
         headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
       }
       const headingInner = document.createElement('div');
       headingInner.setAttribute('role', 'heading');
       headingInner.setAttribute('aria-level', '3');
-      headingInner.className = variant === 'desktop'
-        ? 'flex items-center justify-between gap-2 px-1 text-gray-500 dark:text-gray-500'
-        : 'flex items-center justify-between gap-2 text-gray-500 dark:text-gray-500';
+      headingInner.className = 'reminder-group-heading-label';
       const headingLabel = document.createElement('span');
-      headingLabel.textContent = groupLabel;
+      headingLabel.textContent = labelMap[groupLabel] || groupLabel;
       headingInner.append(headingLabel);
       headingWrapper.appendChild(headingInner);
       frag.appendChild(headingWrapper);

@@ -1,0 +1,101 @@
+/* Reminders screen layout and visual hierarchy */
+
+.reminders-screen-controls {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.reminders-quick-add-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.reminders-quick-add-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
+  border-radius: 0.8rem;
+  background: var(--surface-elevated);
+  color: var(--text-main);
+}
+
+.reminders-top-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.reminders-tabs {
+  display: inline-flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.reminders-sort-btn {
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
+  background: var(--surface-elevated);
+  color: var(--text-main);
+  border-radius: 0.8rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+#reminderList {
+  display: grid;
+  grid-template-columns: 1fr !important;
+  gap: 0.5rem !important;
+}
+
+.reminder-group-heading {
+  margin-top: 0.25rem;
+}
+
+.reminder-group-heading-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+#view-reminders .reminder-row {
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
+  background: var(--surface-elevated);
+  padding: 0.75rem;
+}
+
+#view-reminders .reminder-row-main {
+  gap: 0.3rem;
+}
+
+#view-reminders .reminder-row-title {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+#view-reminders .reminder-row-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+#view-reminders .reminder-overdue {
+  border-color: color-mix(in srgb, #c92828 55%, var(--card-border));
+  background: color-mix(in srgb, #fff2f2 70%, var(--surface-elevated));
+}
+
+#view-reminders .reminder-overdue .reminder-row-meta {
+  color: #a61d24;
+}
+
+#view-reminders .reminder-today {
+  border-color: color-mix(in srgb, var(--accent-color) 30%, var(--card-border));
+}
+
+#view-reminders .reminder-upcoming {
+  border-color: color-mix(in srgb, #94a3b8 30%, var(--card-border));
+}
