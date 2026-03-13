@@ -5,6 +5,14 @@ export const parseIntent = (text) => {
     return 'reminder';
   }
 
+  if (normalized.includes('note')) {
+    return 'note';
+  }
+
+  if (normalized.includes('idea')) {
+    return 'capture';
+  }
+
   if (normalized.endsWith('?')) {
     return 'assistant';
   }
