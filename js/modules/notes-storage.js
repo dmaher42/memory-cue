@@ -151,7 +151,51 @@ const sanitizeMetadata = (value) => {
     metadata.aiFollowUpQuestion = value.aiFollowUpQuestion.trim();
   }
 
+  if (typeof value.source === 'string' && value.source.trim()) {
+    metadata.source = value.source.trim();
+  }
+
   return Object.keys(metadata).length ? metadata : null;
+};
+
+const sanitizeCanonicalTags = (value) => sanitizeTags(value);
+
+export const createAndSaveNote = (payload = {}, options = {}) => {
+  const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
+  const text = typeof normalizedPayload.text === 'string' ? normalizedPayload.text.trim() : '';
+  if (!text) {
+    return null;
+  }
+
+  const title =
+    typeof normalizedPayload.title === 'string' && normalizedPayload.title.trim()
+      ? normalizedPayload.title.trim()
+      : text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
+
+  const parsedType =
+    typeof normalizedPayload.parsedType === 'string' && normalizedPayload.parsedType.trim()
+      ? normalizedPayload.parsedType.trim()
+      : 'note';
+
+  const note = createNote(title, text, {
+    bodyText: text,
+    folderId:
+      typeof normalizedPayload.folderId === 'string' && normalizedPayload.folderId.trim()
+        ? normalizedPayload.folderId.trim()
+        : null,
+    metadata: {
+      type: parsedType,
+      tags: sanitizeCanonicalTags(normalizedPayload.tags),
+      source:
+        typeof normalizedPayload.source === 'string' && normalizedPayload.source.trim()
+          ? normalizedPayload.source.trim()
+          : undefined,
+    },
+  });
+
+  const notes = loadAllNotes();
+  const saved = saveAllNotes([note, ...notes], options);
+  return saved ? note : null;
 };
 
 export const createNote = (title, bodyHtml, overrides = {}) => {
