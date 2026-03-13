@@ -1034,7 +1034,7 @@ export async function initReminders(sel = {}) {
   const quickForm =
     typeof document !== 'undefined' ? document.getElementById('quickAddForm') : null;
   const quickInput =
-    typeof document !== 'undefined' ? document.getElementById('quickAddInput') : null;
+    typeof document !== 'undefined' ? document.getElementById('reminderQuickAdd') : null;
   const quickBtn =
     typeof document !== 'undefined'
       ? document.getElementById('quickAddSubmit') || document.querySelector('[data-quick-add-submit]')
