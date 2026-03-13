@@ -1,3 +1,8 @@
+/*
+LEGACY APP SHELL
+This code belongs to the older Memory Cue UI.
+It is not the primary runtime and should not be extended.
+*/
 (function () {
   const STORAGE_KEY = 'memoryCueState';
   const SCHEMA_VERSION = 1;
