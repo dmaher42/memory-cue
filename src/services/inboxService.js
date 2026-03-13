@@ -71,3 +71,20 @@ export const saveToInbox = (text) => {
 
   return entry;
 };
+
+export const removeInboxEntry = (id) => {
+  const targetId = typeof id === 'string' ? id.trim() : String(id || '').trim();
+  if (!targetId) {
+    return false;
+  }
+
+  const entries = getInboxEntries();
+  const nextEntries = entries.filter((entry) => String(entry?.id || '') !== targetId);
+  if (nextEntries.length === entries.length) {
+    return false;
+  }
+
+  persistInboxEntries(nextEntries);
+  dispatchInboxUpdated();
+  return true;
+};
