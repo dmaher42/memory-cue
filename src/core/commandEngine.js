@@ -1,4 +1,4 @@
-import { captureInput } from '../../js/services/capture-service.js';
+import { saveToInbox } from '../services/inboxService.js';
 import { loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
 import { searchMemoryIndex } from '../../js/modules/memory-index.js';
 
@@ -119,8 +119,7 @@ export const executeCommand = async (type, payload = {}) => {
     switch (type) {
       case 'capture': {
         const text = typeof payload?.text === 'string' ? payload.text : '';
-        const source = typeof payload?.source === 'string' ? payload.source : 'capture';
-        const entry = await captureInput(text, source);
+        const entry = saveToInbox(text);
         result = {
           status: 'success',
           message: 'Saved to Inbox.',

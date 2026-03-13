@@ -370,7 +370,13 @@
   };
 
   const renderInboxEntries = () => {
-    const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === 'inbox');
+    const entries = readEntries()
+      .filter((entry) => getEntryCategory(entry).toLowerCase() === 'inbox')
+      .sort((a, b) => {
+        const left = Number(new Date(a?.createdAt || a?.created || a?.date || 0).getTime()) || 0;
+        const right = Number(new Date(b?.createdAt || b?.created || b?.date || 0).getTime()) || 0;
+        return left - right;
+      });
     inboxEntriesList.innerHTML = '';
 
     if (!entries.length) {
@@ -671,7 +677,7 @@
     } finally {
       if (processInboxButton) {
         processInboxButton.disabled = false;
-        processInboxButton.textContent = 'Process Inbox';
+        processInboxButton.textContent = 'Process Notes';
       }
     }
   }
