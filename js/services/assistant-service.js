@@ -124,6 +124,45 @@ const sendAssistantRequest = async (payload) => {
   };
 };
 
+const askAssistant = async ({ message, assistantMessages, assistantLoading }) => {
+  const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+  if (!trimmedMessage) {
+    return null;
+  }
+
+  if (assistantMessages instanceof HTMLElement) {
+    appendMessage(assistantMessages, trimmedMessage, 'assistant-message');
+  }
+  addMessage(createStoredMessage('user', trimmedMessage));
+
+  if (assistantLoading instanceof HTMLElement) {
+    assistantLoading.classList.remove('hidden');
+  }
+
+  const history = readConversation();
+
+  try {
+    const payload = buildPayload(trimmedMessage, history);
+    const result = await sendAssistantRequest(payload);
+    if (assistantMessages instanceof HTMLElement) {
+      const replyNode = appendMessage(assistantMessages, result.reply, 'assistant-message assistant-message--reply');
+      appendReferences(replyNode, result.references);
+    }
+    addMessage(createStoredMessage('assistant', result.reply));
+    return result;
+  } catch (error) {
+    console.error('[assistant-service] Assistant unavailable', error);
+    if (assistantMessages instanceof HTMLElement) {
+      appendMessage(assistantMessages, 'Assistant is unavailable.', 'assistant-message assistant-message--error');
+    }
+    return { reply: 'Assistant is unavailable.', references: [] };
+  } finally {
+    if (assistantLoading instanceof HTMLElement) {
+      assistantLoading.classList.add('hidden');
+    }
+  }
+};
+
 (function initAssistantService() {
   const assistantForm = document.getElementById('assistantForm');
   const assistantInput = document.getElementById('assistantInput');
@@ -131,6 +170,9 @@ const sendAssistantRequest = async (payload) => {
   const assistantLoading = document.getElementById('assistantLoading');
 
   if (!(assistantForm instanceof HTMLFormElement) || !(assistantInput instanceof HTMLElement) || !(assistantMessages instanceof HTMLElement)) {
+    if (typeof window !== 'undefined') {
+      window.memoryCueAskAssistant = async (message) => askAssistant({ message, assistantMessages, assistantLoading });
+    }
     return;
   }
 
@@ -142,34 +184,15 @@ const sendAssistantRequest = async (payload) => {
     assistantMessages.innerHTML = '';
   });
 
+  if (typeof window !== 'undefined') {
+    window.memoryCueAskAssistant = async (message) => askAssistant({ message, assistantMessages, assistantLoading });
+  }
+
   assistantForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const message = typeof assistantInput.value === 'string' ? assistantInput.value.trim() : '';
     if (!message) return;
-
-    appendMessage(assistantMessages, message, 'assistant-message');
-    addMessage(createStoredMessage('user', message));
     assistantInput.value = '';
-
-    if (assistantLoading instanceof HTMLElement) {
-      assistantLoading.classList.remove('hidden');
-    }
-
-    const history = readConversation();
-
-    try {
-      const payload = buildPayload(message, history);
-      const result = await sendAssistantRequest(payload);
-      const replyNode = appendMessage(assistantMessages, result.reply, 'assistant-message assistant-message--reply');
-      appendReferences(replyNode, result.references);
-      addMessage(createStoredMessage('assistant', result.reply));
-    } catch (error) {
-      console.error('[assistant-service] Assistant unavailable', error);
-      appendMessage(assistantMessages, 'Assistant is unavailable.', 'assistant-message assistant-message--error');
-    } finally {
-      if (assistantLoading instanceof HTMLElement) {
-        assistantLoading.classList.add('hidden');
-      }
-    }
+    await askAssistant({ message, assistantMessages, assistantLoading });
   });
 })();

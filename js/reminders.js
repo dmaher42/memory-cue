@@ -2059,7 +2059,8 @@ export async function initReminders(sel = {}) {
   }
 
   async function quickAddNow(options = {}) {
-    if (!quickInput) return null;
+    const forcedText = typeof options.forceText === 'string' ? options.forceText.trim() : '';
+    if (!quickInput && !forcedText) return null;
     if (isQuickAddSubmitting) {
       return null;
     }
