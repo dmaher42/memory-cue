@@ -1,4 +1,4 @@
-import { createNote, loadAllNotes, saveAllNotes } from '../modules/notes-storage.js';
+import { createAndSaveNote } from '../modules/notes-storage.js';
 import { generateTags } from '../../src/ai/tagGenerator.js';
 import { syncInbox, upsertInboxEntry } from '../../src/services/supabaseSyncService.js';
 
@@ -175,16 +175,17 @@ export const convertInboxToNote = (entryId) => {
   }
 
   const title = text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
-  const note = createNote(title, text, {
-    bodyText: text,
-    metadata: {
-      type: entry.parsedType || 'note',
-      source: 'inbox',
-    },
+  const note = createAndSaveNote({
+    text,
+    title,
+    tags: Array.isArray(entry.tags) ? entry.tags : [],
+    folderId: entry.folderId,
+    source: 'inbox',
+    parsedType: entry.parsedType || 'note',
   });
-
-  const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
-  saveAllNotes([note, ...notes]);
+  if (!note) {
+    return null;
+  }
   removeInboxEntry(targetId);
 
   if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {

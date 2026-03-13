@@ -1,6 +1,6 @@
 import { addMessage } from './messageStore.js';
 import { executeCommand } from '../core/commandEngine.js';
-import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
+import { createAndSaveNote } from '../../js/modules/notes-storage.js';
 import { saveToInbox } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
@@ -127,21 +127,18 @@ const createNotebookNote = async (parsed, text) => {
     : null;
   const folderId = folderName ? ensureFolderExistsByName(folderName) : null;
 
-  const note = createNote(title, text, {
-    bodyText: text,
+  const note = createAndSaveNote({
+    text,
+    title,
+    tags: Array.isArray(notebookSuggestion?.tags)
+      ? notebookSuggestion.tags
+      : Array.isArray(parsed?.tags)
+        ? parsed.tags
+        : [],
     folderId,
-    metadata: {
-      type: 'note',
-      tags: Array.isArray(notebookSuggestion?.tags)
-        ? notebookSuggestion.tags
-        : Array.isArray(parsed?.tags)
-          ? parsed.tags
-          : [],
-    },
+    source: 'chat',
+    parsedType: 'note',
   });
-
-  const notes = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
-  saveAllNotes([note, ...notes]);
   return { note, notebookName: folderName || 'Unsorted' };
 };
 

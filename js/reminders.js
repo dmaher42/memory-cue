@@ -2,6 +2,7 @@ import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-au
 import { captureInput, getInboxEntries } from './services/capture-service.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { deleteReminder, syncReminders, upsertReminder } from '../src/services/supabaseSyncService.js';
+import { createAndSaveNote } from './modules/notes-storage.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -1318,15 +1319,23 @@ export async function initReminders(sel = {}) {
       semanticEmbedding: null,
     };
 
-    const notes = readJsonArrayStorage(NOTES_STORAGE_KEY, []);
-    notes.unshift(smartEntry);
+    const savedEntry = createAndSaveNote({
+      text: normalizedText,
+      title: smartEntry.title,
+      tags: smartEntry.tags,
+      folderId: smartEntry.folderId,
+      source: 'reminder',
+      parsedType: smartEntry.type,
+    });
 
-    try {
-      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
-    } catch (error) {
-      console.error('Failed to save smart entry', error);
+    if (!savedEntry) {
+      console.error('Failed to save smart entry');
       return null;
     }
+
+    smartEntry.id = savedEntry.id;
+    smartEntry.createdAt = savedEntry.createdAt;
+    smartEntry.updatedAt = savedEntry.updatedAt;
 
     try {
       if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
