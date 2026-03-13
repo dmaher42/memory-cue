@@ -8,3 +8,6 @@ coverage/
 build.log
 *.log
 .env
+
+assets/
+legacy/docs/assets/

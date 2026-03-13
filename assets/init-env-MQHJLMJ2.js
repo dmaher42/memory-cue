@@ -1,1 +1,0 @@
-import{c as A}from"./chunk-GUVSRPRW.js";var _=A(()=>{if(typeof window<"u"){let n=window.__ENV=window.__ENV||{};n.SUPABASE_URL=n.SUPABASE_URL||"https://xyzcompany.supabase.co",n.SUPABASE_ANON_KEY=n.SUPABASE_ANON_KEY||"public-anon-key"}});export default _();
