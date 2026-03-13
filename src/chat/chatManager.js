@@ -2,7 +2,7 @@ import { addMessage } from './messageStore.js';
 import { parseIntent } from './intentParser.js';
 import { routeAction } from './actionRouter.js';
 
-export const ENABLE_CHAT_INTERFACE = false;
+export const ENABLE_CHAT_INTERFACE = true;
 
 const generateMessageId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
