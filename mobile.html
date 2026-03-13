@@ -514,26 +514,26 @@ Legacy shells remain for reference only.
     padding-bottom: 140px;
   }
 
-  body[data-active-view="notes"] .container {
+  body[data-active-view="notebooks"] .container {
     max-width: none;
     margin: 0;
     padding: 0;
   }
 
-  body[data-active-view="notes"] #main {
+  body[data-active-view="notebooks"] #main {
     max-width: none;
     margin: 0;
     padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
   }
 
   /* Ensure notebook content sits comfortably beneath the header */
-  body[data-active-view="notes"] #main {
+  body[data-active-view="notebooks"] #main {
     /* Use the variable set by JS, with a safe fallback and extra breathing room */
     padding-top: calc(var(--mobile-header-height, 112px) + 18px) !important;
     margin-top: 0 !important;
   }
 
-  body[data-active-view="notes"] #view-notebook .card-body {
+  body[data-active-view="notebooks"] #view-notebook .card-body {
     margin-top: 0 !important;
   }
 
@@ -562,11 +562,11 @@ Legacy shells remain for reference only.
     display: none !important;
   }
 
-  body[data-active-view="notes"] #view-notebook {
+  body[data-active-view="notebooks"] #view-notebook {
     background: #ffffff;
   }
 
-  body[data-active-view="notes"] #view-notebook .card {
+  body[data-active-view="notebooks"] #view-notebook .card {
     margin: 0;
     border: none;
     border-radius: 0;
@@ -583,12 +583,12 @@ Legacy shells remain for reference only.
     background: #ffffff;
   }
 
-  [data-view="notes"] .textarea {
+  [data-view="notebooks"] .textarea {
     min-height: 0 !important;
   }
 
   /* Notebook: no extra top padding from card-body */
-body[data-active-view="notes"] #view-notebook .card-body {
+body[data-active-view="notebooks"] #view-notebook .card-body {
   padding: 0rem 0.75rem 0.6rem;
   margin-top: 0 !important;
   min-height: auto;
@@ -3968,13 +3968,13 @@ body, main, section, div, p, span, li {
   </style>
  <style>
   /* 1. Match the page padding to the header so content starts just below it */
-  body[data-active-view="notes"] #main {
+  body[data-active-view="notebooks"] #main {
     padding-top: calc(var(--mobile-header-height, 112px) + 18px) !important;
     margin-top: 0 !important; /* Keep content immediately below the header */
   }
 
   /* 2. Strip inner layout padding */
-  body[data-active-view="notes"] .mobile-view-inner {
+  body[data-active-view="notebooks"] .mobile-view-inner {
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
@@ -3982,7 +3982,7 @@ body, main, section, div, p, span, li {
   }
 
   /* 3. Card Reset: Full width, no shadow, no rounded corners */
-  body[data-active-view="notes"] #scratch-notes-card {
+  body[data-active-view="notebooks"] #scratch-notes-card {
     padding: 0 !important;
     margin: 0 !important;
     border-radius: 0 !important;
@@ -3992,7 +3992,7 @@ body, main, section, div, p, span, li {
   }
 
   /* 4. Remove internal card padding so Title touches the top */
-  body[data-active-view="notes"] .note-editor-card {
+  body[data-active-view="notebooks"] .note-editor-card {
     padding-top: 4px !important; /* Tiny breathing room only */
     padding-left: 16px !important;
     padding-right: 16px !important;
@@ -5417,27 +5417,7 @@ body, main, section, div, p, span, li {
                 <button type="button" class="note-action-btn note-action-delete">Delete note</button>
               </div>
             </div>
-    <section id="view-assistant" class="view hidden" aria-hidden="true">
-      <div class="assistant-panel">
-        <div id="assistantMessages" class="assistant-messages" aria-live="polite" aria-label="Assistant conversation"></div>
-        <div class="assistant-input">
-          <p class="text-xs text-base-content/70">Use the chat capture bar to ask the assistant.</p>
-        </div>
-        <div id="assistantLoading" class="hidden" aria-live="polite">Assistant is thinking…</div>
-        <div id="weeklyReflectionCard" class="insight-card" aria-live="polite">
-          <div class="insight-header"><span>Insights</span></div>
-          <p id="weeklyReflectionSummary" class="insight-summary">You captured items this week.</p>
-          <button id="weeklyReflectionButton" type="button" class="btn btn-outline btn-sm view-reflection-btn">Weekly Reflection</button>
-
-          <div class="memory-recall">
-            <h3>Memory Recall</h3>
-            <div id="memoryRecallList">
-              <div class="recall-item recall-item--empty">No recall suggestions yet.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    
 
     <section data-view="settings" id="view-settings" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
@@ -6115,7 +6095,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-GIB2WSMX.js"></script>
+  <script type="module" src="./assets/mobile-OU3XTJTH.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
