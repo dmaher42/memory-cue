@@ -1,7 +1,7 @@
 import { executeCommand } from '../core/commandEngine.js';
 
 const QUICK_ACTIONS_BY_INTENT = {
-  capture: [{ label: 'Open Inbox', targetView: 'capture' }],
+  capture: [{ label: 'Open Inbox', targetView: 'inbox' }],
   reminder: [{ label: 'Edit Reminder', targetView: 'reminders' }],
   assistant: [{ label: 'View Notes', targetView: 'notes' }],
 };
