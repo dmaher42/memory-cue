@@ -125,6 +125,14 @@ const sanitizeMetadata = (value) => {
     metadata.type = value.type.trim();
   }
 
+  if (typeof value.person === 'string' && value.person.trim()) {
+    metadata.person = value.person.trim();
+  }
+
+  if (typeof value.context === 'string' && value.context.trim()) {
+    metadata.context = value.context.trim();
+  }
+
   const tags = sanitizeTags(value.tags);
   if (tags.length) {
     metadata.tags = tags;
