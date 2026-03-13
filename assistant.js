@@ -294,27 +294,28 @@ It is not the primary runtime and should not be extended.
     }, 1800);
   }
 
+  /*
+  DEPRECATED CAPTURE PATH
+  Use capture-service.js instead.
+  */
   function initCaptureSave() {
     const captureButton = document.getElementById('captureButton');
     const captureInput = document.getElementById('captureInput');
     const tagsInput = document.getElementById('tagsInput');
 
-    if (!captureButton || !captureInput || !tagsInput || !window.MemoryCueState) {
+    if (!captureButton || !captureInput || !tagsInput) {
       return;
     }
 
-    captureButton.addEventListener('click', function () {
+    captureButton.addEventListener('click', async function () {
       const parsedInput = parseCaptureInput(captureInput.value);
       if (!parsedInput.body) {
         return;
       }
 
-      MemoryCueState.addEntry({
-        type: parsedInput.type,
-        title: parsedInput.title,
-        body: parsedInput.body,
-        tags: parseTags(tagsInput.value)
-      });
+      if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.captureInput === 'function') {
+        await window.MemoryCueCaptureService.captureInput(parsedInput.body, 'capture');
+      }
 
       document.dispatchEvent(new CustomEvent('memorycue:entries-changed'));
       captureInput.value = '';

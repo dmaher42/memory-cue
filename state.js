@@ -50,6 +50,10 @@ It is not the primary runtime and should not be extended.
       }
     }
 
+    /*
+    DEPRECATED CAPTURE PATH
+    Use capture-service.js instead.
+    */
     addEntry(entry) {
       const newEntry = {
         ...(entry || {}),
