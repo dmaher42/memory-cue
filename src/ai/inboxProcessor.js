@@ -1,4 +1,6 @@
 import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
+import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
+import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
@@ -58,6 +60,7 @@ const addNotes = (notes) => {
 export const processInbox = async (entries = [], options = {}) => {
   const createReminder = typeof options.createReminder === 'function' ? options.createReminder : null;
   const removeInboxEntry = typeof options.removeInboxEntry === 'function' ? options.removeInboxEntry : null;
+  const aiClassifier = typeof options.aiClassifier === 'function' ? options.aiClassifier : null;
 
   const counts = {
     note: 0,
@@ -70,26 +73,31 @@ export const processInbox = async (entries = [], options = {}) => {
   const notesToSave = [];
   const processedItems = [];
 
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const text = getEntryText(entry);
     if (!text) {
-      return;
+      continue;
     }
 
     const { type, tags } = classifyEntry(text);
+    const organization = await suggestNotebookAndTags(text, { aiClassifier });
+    const combinedTags = Array.from(new Set([...(Array.isArray(tags) ? tags : []), ...organization.tags]));
+
     counts[type] += 1;
-    processedItems.push({ ...entry, type, tags, text });
+    processedItems.push({ ...entry, type, text, tags: combinedTags, notebook: organization.notebook });
 
     if (type === 'reminder') {
       if (createReminder) {
         createReminder({ title: text, notes: 'Created from Inbox processing.' });
       }
     } else {
+      const folderId = ensureFolderExistsByName(organization.notebook);
       notesToSave.push(
         createNote(text.split(/\s+/).slice(0, 8).join(' '), text, {
+          folderId,
           metadata: {
             type,
-            tags,
+            tags: combinedTags,
           },
         }),
       );
@@ -98,7 +106,7 @@ export const processInbox = async (entries = [], options = {}) => {
     if (removeInboxEntry && entry?.id != null) {
       removeInboxEntry(String(entry.id));
     }
-  });
+  }
 
   addNotes(notesToSave);
 
