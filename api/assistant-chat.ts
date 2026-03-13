@@ -44,24 +44,6 @@ function normalizeEntry(entry, type) {
 }
 
 
-function classifyLegacyEntry(entry) {
-  const text = toText(entry?.text || entry?.body || entry?.title);
-  const lower = text.toLowerCase();
-  let type = 'note';
-  if (lower.includes('remind') || lower.includes('due')) type = 'task';
-  else if (lower.includes('idea')) type = 'idea';
-  else if (lower.includes('memory')) type = 'memory';
-
-  return {
-    id: toText(entry?.id),
-    type,
-    context: toText(entry?.context) || 'general',
-    person: toText(entry?.person) || null,
-    rewrite: text,
-    category: toText(entry?.category) || type,
-  };
-}
-
 function gatherContext(body) {
   const inboxEntries = Array.isArray(body?.inboxEntries) ? body.inboxEntries : [];
   const notes = Array.isArray(body?.notes) ? body.notes : [];
@@ -211,9 +193,6 @@ export default async function handler(req, res) {
   const message = toText(body.message || body.question || body.input);
 
   if (!message) {
-    if (Array.isArray(body.entries) && body.entries.length && toText(body.prompt)) {
-      return res.status(200).json(body.entries.map((entry) => classifyLegacyEntry(entry)));
-    }
     return res.status(400).json({ error: 'Missing message' });
   }
 

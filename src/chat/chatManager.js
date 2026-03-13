@@ -34,6 +34,25 @@ const normalizeRouteResult = (result) => {
   };
 };
 
+const normalizeParsedEntry = (parsed, text = '') => {
+  const payload = parsed && typeof parsed === 'object' ? parsed : {};
+  const normalizedType = typeof payload.type === 'string' ? payload.type.trim().toLowerCase() : '';
+  const fallbackType = typeof text === 'string' && text.trim().endsWith('?') ? 'question' : 'unknown';
+
+  return {
+    type: normalizedType || fallbackType,
+    title: typeof payload.title === 'string' ? payload.title.trim() : '',
+    tags: Array.isArray(payload.tags)
+      ? payload.tags.map((tag) => (typeof tag === 'string' ? tag.trim().toLowerCase() : '')).filter(Boolean)
+      : [],
+    reminderDate:
+      typeof payload.reminderDate === 'string' && payload.reminderDate.trim()
+        ? payload.reminderDate.trim()
+        : null,
+    metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {},
+  };
+};
+
 const parseEntry = async (text) => {
   const response = await fetch('/api/parse-entry', {
     method: 'POST',
@@ -45,7 +64,8 @@ const parseEntry = async (text) => {
     throw new Error(`Failed to parse entry (${response.status})`);
   }
 
-  return response.json();
+  const parsed = await response.json();
+  return normalizeParsedEntry(parsed, text);
 };
 
 const normalizeType = (parsedType, text) => {
@@ -75,12 +95,10 @@ const askAssistant = async (text) => {
 };
 
 const getReminderScheduleLabel = (parsed, text) => {
-  const metadata = parsed && typeof parsed === 'object' ? parsed.metadata || parsed : {};
   const dueValue =
-    (typeof metadata?.due === 'string' && metadata.due.trim())
-    || (typeof metadata?.dueAt === 'string' && metadata.dueAt.trim())
-    || (typeof parsed?.due === 'string' && parsed.due.trim())
-    || (typeof parsed?.date === 'string' && parsed.date.trim())
+    (typeof parsed?.reminderDate === 'string' && parsed.reminderDate.trim())
+    || (typeof parsed?.metadata?.due === 'string' && parsed.metadata.due.trim())
+    || (typeof parsed?.metadata?.dueAt === 'string' && parsed.metadata.dueAt.trim())
     || null;
 
   if (dueValue) {

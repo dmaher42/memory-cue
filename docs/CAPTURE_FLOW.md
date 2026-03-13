@@ -75,3 +75,5 @@ Use capture-service.js instead.
 ```
 
 These remain for compatibility scaffolding, but capture writes should use `captureInput()`.
+
+- `src/chat/intentParser.js` is deprecated. Use `/api/parse-entry` through `src/chat/chatManager.js` (or the same parse contract) and consume `{ type, title, tags, reminderDate, metadata }`.
