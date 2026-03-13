@@ -1,5 +1,9 @@
-import { upsertInboxEntry } from './supabaseSyncService.js';
-const INBOX_STORAGE_KEY = 'memoryCueInbox';
+import { syncInbox, upsertInboxEntry } from './supabaseSyncService.js';
+
+export const INBOX_STORAGE_KEY = 'memoryCueInbox';
+const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
+const PARSED_TYPE_VALUES = new Set(['note', 'reminder', 'unknown']);
+const SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
 
 const generateId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -16,6 +20,26 @@ const sanitizeText = (value) => {
   return value.replace(/\s+/g, ' ').trim();
 };
 
+const normalizeSource = (source) => {
+  const normalized = typeof source === 'string' ? source.trim().toLowerCase() : '';
+  return SOURCE_VALUES.has(normalized) ? normalized : 'capture';
+};
+
+const normalizeParsedType = (value) => {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : 'unknown';
+  return PARSED_TYPE_VALUES.has(normalized) ? normalized : 'unknown';
+};
+
+const normalizeTags = (tags) => {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return tags
+    .map((tag) => (typeof tag === 'string' ? tag.trim().toLowerCase() : ''))
+    .filter(Boolean);
+};
+
 export const getInboxEntries = () => {
   if (typeof localStorage === 'undefined') {
     return [];
@@ -23,7 +47,20 @@ export const getInboxEntries = () => {
 
   try {
     const raw = localStorage.getItem(INBOX_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
+    if (!raw) {
+      for (const legacyKey of LEGACY_INBOX_STORAGE_KEYS) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (!legacyRaw) continue;
+        const legacyParsed = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyParsed) && legacyParsed.length) {
+          localStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(legacyParsed));
+          localStorage.removeItem(legacyKey);
+          return legacyParsed;
+        }
+      }
+      return [];
+    }
+    const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     console.warn('[inbox-service] Failed to load inbox entries', error);
@@ -57,17 +94,30 @@ export const saveToInbox = (text) => {
     return null;
   }
 
+  return saveInboxEntry({ text: normalizedText });
+};
+
+export const saveInboxEntry = (entryInput = {}) => {
+  const normalizedText = sanitizeText(entryInput?.text);
+  if (!normalizedText) {
+    return null;
+  }
+
+  const timestamp = Date.now();
   const entry = {
-    id: generateId(),
+    id: typeof entryInput?.id === 'string' && entryInput.id.trim() ? entryInput.id.trim() : generateId(),
     text: normalizedText,
-    createdAt: Date.now(),
-    processed: false,
-    tags: [],
+    tags: normalizeTags(entryInput?.tags),
+    createdAt: Number.isFinite(entryInput?.createdAt) ? entryInput.createdAt : timestamp,
+    source: normalizeSource(entryInput?.source),
+    parsedType: normalizeParsedType(entryInput?.parsedType),
+    metadata: entryInput?.metadata && typeof entryInput.metadata === 'object' ? entryInput.metadata : {},
     pendingSync: true,
+    updatedAt: timestamp,
   };
 
   const entries = getInboxEntries();
-  entries.push(entry);
+  entries.unshift(entry);
   persistInboxEntries(entries);
   dispatchInboxUpdated();
   upsertInboxEntry(entry).catch((error) => {
@@ -91,5 +141,8 @@ export const removeInboxEntry = (id) => {
 
   persistInboxEntries(nextEntries);
   dispatchInboxUpdated();
+  syncInbox().catch((error) => {
+    console.warn('[inbox-service] Supabase inbox deletion sync failed', error);
+  });
   return true;
 };
