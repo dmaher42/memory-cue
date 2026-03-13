@@ -6,9 +6,9 @@ import { formatMemorySearchResponse, searchNotesMemory } from '../services/memor
 const QUICK_ACTIONS_BY_INTENT = {
   capture: [{ label: 'Open Inbox', targetView: 'inbox' }],
   reminder: [{ label: 'Edit Reminder', targetView: 'reminders' }],
-  assistant: [{ label: 'View Notes', targetView: 'notes' }],
-  processInbox: [{ label: 'View Notes', targetView: 'notes' }],
-  memorySearch: [{ label: 'View Notes', targetView: 'notes' }],
+  assistant: [{ label: 'View Notes', targetView: 'notebooks' }],
+  processInbox: [{ label: 'View Notes', targetView: 'notebooks' }],
+  memorySearch: [{ label: 'View Notes', targetView: 'notebooks' }],
 };
 
 const createActionResult = (intent, message, status) => ({

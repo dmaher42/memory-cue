@@ -40,10 +40,6 @@ const isNotesSyncDebugEnabled = (() => {
 initViewportHeight();
 
 function initAssistant() {
-    const isFormElement = (value) =>
-      typeof HTMLFormElement !== 'undefined'
-        ? value instanceof HTMLFormElement
-        : value && value.tagName === 'FORM';
     const isTextEntryElement = (value) => {
       if (typeof HTMLInputElement !== 'undefined' && value instanceof HTMLInputElement) {
         return true;
@@ -78,16 +74,18 @@ function initAssistant() {
     let isAssistantSending = false;
     const assistantConversationHistory = [];
 
-    if (!isTextEntryElement(thinkingBarInput) || !(assistantThread instanceof HTMLElement)) {
+    if (!isTextEntryElement(thinkingBarInput)) {
       return;
     }
 
     const appendAssistantMessage = (text, className = 'assistant-message') => {
-      const message = document.createElement('div');
-      message.className = className;
-      message.textContent = text;
-      assistantThread.appendChild(message);
-      assistantThread.scrollTop = assistantThread.scrollHeight;
+      if (assistantThread instanceof HTMLElement) {
+        const message = document.createElement('div');
+        message.className = className;
+        message.textContent = text;
+        assistantThread.appendChild(message);
+        assistantThread.scrollTop = assistantThread.scrollHeight;
+      }
 
       if (chatConversationContainer instanceof HTMLElement) {
         const roleClass = className.includes('--error') ? 'chat-message--assistant' : 'chat-message--assistant';
@@ -476,81 +474,6 @@ function initAssistant() {
       ]);
     };
 
-
-    const getActiveView = () => document.body?.getAttribute('data-active-view') || '';
-
-    const syncInboxSearchInput = () => {
-      if (!isTextEntryElement(captureInputField)) {
-        return;
-      }
-      document.dispatchEvent(new CustomEvent('memoryCue:universalSearch', {
-        detail: { query: captureInputField.value },
-      }));
-    };
-
-    function detectIntent(text) {
-      const lower = text.toLowerCase();
-
-      const reminderKeywords = [
-        'today',
-        'tomorrow',
-        'tonight',
-        'monday',
-        'tuesday',
-        'wednesday',
-        'thursday',
-        'friday',
-        'saturday',
-        'sunday',
-        'next week',
-      ];
-
-      const assistantKeywords = [
-        'what',
-        'how',
-        'why',
-        'find',
-        'show',
-        'summarise',
-        'summarize',
-      ];
-
-      if (/\d{1,2}(:\d{2})?\s?(am|pm)/.test(lower)) {
-        return 'reminder';
-      }
-
-      if (reminderKeywords.some((keyword) => lower.includes(keyword))) {
-        return 'reminder';
-      }
-
-      if (assistantKeywords.some((keyword) => lower.startsWith(keyword))) {
-        return 'assistant';
-      }
-
-      return 'inbox';
-    }
-
-    const createReminderFromText = async (text) => {
-      if (typeof window.memoryCueQuickAddNow !== 'function') {
-        return false;
-      }
-
-      await window.memoryCueQuickAddNow({ forceText: text, source: 'smart-capture' });
-      return true;
-    };
-
-    const sendToAssistant = (text) => {
-      const assistantFormEl = document.getElementById('assistantForm');
-      const assistantInputEl = document.getElementById('assistantInput');
-      const isAssistantInput = assistantInputEl instanceof HTMLInputElement || assistantInputEl instanceof HTMLTextAreaElement;
-      if (!(assistantFormEl instanceof HTMLFormElement) || !isAssistantInput) {
-        return false;
-      }
-
-      assistantInputEl.value = text;
-      assistantFormEl.requestSubmit();
-      return true;
-    };
 
     const sendAssistantMessage = async (event) => {
       if (event) {
@@ -1887,7 +1810,7 @@ const initMobileNotes = () => {
       hideSavedNotesSheet();
     }
 
-    document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notes' } }));
+    document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
   };
 
   document.addEventListener('thinkingBar:openNote', (event) => {
