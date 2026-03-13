@@ -7,7 +7,7 @@
   const drawerSyncStatus = document.getElementById('mcStatusText');
   const drawerSyncDot = document.getElementById('mcStatus');
   const quickAddPanel = document.getElementById('quickAddBar');
-  const quickAddInputField = document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput');
+  const quickAddInputField = document.getElementById('reminderQuickAdd');
   const quickAddSelector = '[data-open-quick-add]';
   let activeQuickAddTrigger = null;
   const isPersistentQuickAdd =
@@ -472,7 +472,7 @@
         return;
       }
 
-      const quickAdd = document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput') || document.getElementById('quickAdd');
+      const quickAdd = document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
       if (quickAdd && typeof quickAdd.focus === 'function') {
         quickAdd.focus();
       }

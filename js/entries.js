@@ -33,7 +33,7 @@
 
   const init = () => {
     const quickForm = document.getElementById('quickAddForm');
-    const quickInput = document.getElementById('quickAddInput');
+    const quickInput = document.getElementById('reminderQuickAdd');
     const voiceButton = document.getElementById('startVoiceCaptureGlobal');
 
     const startVoiceCapture = () => {
@@ -200,11 +200,8 @@
       return false;
     }
 
-    if (window.location.hash !== '#assistant') {
-      window.location.hash = '#assistant';
-      if (typeof window.renderRoute === 'function') {
-        window.renderRoute();
-      }
+    if (window.navigationService && typeof window.navigationService.navigate === 'function') {
+      window.navigationService.navigate('assistant');
     }
 
     assistantInputEl.value = text;
@@ -1313,7 +1310,7 @@ document.querySelectorAll('[data-close]').forEach((btn) => {
 
       switch (addType) {
         case 'reminder': {
-          const quickAddInput = document.getElementById('quickAddInput');
+          const quickAddInput = document.getElementById('reminderQuickAdd');
           quickAddInput?.focus();
           break;
         }
@@ -1348,252 +1345,12 @@ document.querySelectorAll('[data-close]').forEach((btn) => {
   });
 })();
 
-(function () {
-  const views = {
-    reminders: document.querySelector('[data-view="reminders"]'),
-    notebook: document.querySelector('[data-view="notebook"]'),
-    categories: document.querySelector('[data-view="categories"]'),
-    inbox: document.querySelector('[data-view="inbox"]'),
-    assistant: document.querySelector('[data-view="assistant"]'),
-  };
 
-  // Use the new bottom-tab buttons as the navigation controls.
-  const buttons = Array.from(document.querySelectorAll('.bottom-tab')) || [];
-  const order = ['reminders', 'new', 'notebook', 'categories', 'inbox', 'assistant'];
-
-  if (order.some((key) => key !== 'new' && !views[key])) {
-    return;
-  }
-
-  const reduceMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)')
-    : null;
-
-  let activeView = order[0];
-  const main = document.getElementById('main') || document.querySelector('main');
-  const body = document.body;
-
-  if (main) {
-    const preset = main.getAttribute('data-active-view');
-    if (preset && order.includes(preset)) {
-      activeView = preset;
-    }
-  }
-
-  if (body && activeView) {
-    body.setAttribute('data-active-view', activeView);
-  }
-
-  const setActiveView = (target) => {
-    if (!order.includes(target)) return;
-
-    const displayTarget = target === 'new' ? 'reminders' : target;
-
-    order.forEach((key, index) => {
-      const view = views[key];
-      const button = buttons[index];
-      const isViewActive = key === displayTarget;
-      const isButtonActive = key === target;
-
-      if (view) {
-        view.classList.toggle('hidden', !isViewActive);
-        view.setAttribute('aria-hidden', String(!isViewActive));
-      }
-
-      if (button) {
-        button.setAttribute('aria-current', isButtonActive ? 'page' : 'false');
-        button.classList.toggle('active', Boolean(isButtonActive));
-      }
-    });
-
-    activeView = target;
-
-    // Sync any bottom-tab buttons we added so they reflect the active view
-    try {
-      document.querySelectorAll('.bottom-tab').forEach((b) => {
-        const tabName = b.dataset.tab;
-        const isActiveTab = tabName === target;
-        b.classList.toggle('active', Boolean(isActiveTab));
-        if (isActiveTab) {
-          b.setAttribute('aria-current', 'page');
-        } else {
-          b.removeAttribute('aria-current');
-        }
-      });
-    } catch (e) {
-      // ignore if bottom-tabs not present
-    }
-
-    const skipLink =
-      document.querySelector('.skip-link') ||
-      document.querySelector('a[href$="#main"]');
-    if (main) {
-      main.setAttribute('data-active-view', target);
-    }
-    if (body) {
-      body.setAttribute('data-active-view', target);
-    }
-    if (skipLink && main) {
-      const behaviour = reduceMotion?.matches ? 'auto' : 'smooth';
-      try {
-        window.scrollTo({ top: 0, behavior: behaviour });
-      } catch {
-        window.scrollTo(0, 0);
-      }
-    }
-  };
-
-  // Listen for global navigation events and delegate to setActiveView
-  window.addEventListener('app:navigate', (ev) => {
-    try {
-      const view = ev?.detail?.view;
-      if (!view) return;
-      // Map 'new' to the add reminder action (trigger the quick-add)
-      if (view === 'new') {
-        if (typeof window.triggerReminderQuickAdd === 'function') {
-          window.triggerReminderQuickAdd();
-        }
-        // still set active state so the middle tab highlights
-        if (order.includes(view)) {
-          setActiveView(view);
-        }
-        return;
-      }
-      if (order.includes(view)) {
-        setActiveView(view);
-      }
-    } catch (e) {
-      console.error('Failed to handle app:navigate', e);
-    }
-  });
-
-  buttons.forEach((button, index) => {
-    button.addEventListener('click', () => {
-      setActiveView(order[index]);
-    });
-  });
-
-  document.querySelectorAll('[data-jump-view]').forEach((control) => {
-    control.addEventListener('click', () => {
-      const target = control.getAttribute('data-jump-view');
-      if (target) {
-        setActiveView(target);
-      }
-    });
-  });
-
-  document.querySelectorAll('[data-scroll-target]').forEach((control) => {
-    control.addEventListener('click', () => {
-      const targetId = control.getAttribute('data-scroll-target');
-      if (!targetId) return;
-      const el = document.getElementById(targetId);
-      if (!el) return;
-      try {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch {
-        el.scrollIntoView(true);
-      }
-    });
-  });
-
-  if (main) {
-    const SWIPE_MIN_DISTANCE = 60;
-    const SWIPE_MAX_OFF_AXIS = 80;
-    const SWIPE_MAX_DURATION = 600;
-    let startX = 0;
-    let startY = 0;
-    let startTime = 0;
-    let tracking = false;
-
-    const resetSwipeTracking = () => {
-      tracking = false;
-      startX = 0;
-      startY = 0;
-      startTime = 0;
-    };
-
-    const isInteractiveTarget = (target) => {
-      if (!(target instanceof Element)) return false;
-      return Boolean(
-        target.closest(
-          '[data-no-swipe], input, textarea, select, button, [role="button"], [role="textbox"], [contenteditable="true"], [contenteditable=""]'
-        )
-      );
-    };
-
-    main.addEventListener(
-      'touchstart',
-      (event) => {
-        if (event.touches.length !== 1) {
-          resetSwipeTracking();
-          return;
-        }
-
-        const target = event.target;
-        if (target instanceof Element && isInteractiveTarget(target)) {
-          resetSwipeTracking();
-          return;
-        }
-
-        const touch = event.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
-        startTime = event.timeStamp || Date.now();
-        tracking = true;
-      },
-      { passive: true }
-    );
-
-    main.addEventListener(
-      'touchmove',
-      (event) => {
-        if (!tracking) return;
-        if (event.touches.length !== 1) {
-          resetSwipeTracking();
-        }
-      },
-      { passive: true }
-    );
-
-    main.addEventListener(
-      'touchend',
-      (event) => {
-        if (!tracking) return;
-        tracking = false;
-
-        if (!event.changedTouches || !event.changedTouches.length) {
-          resetSwipeTracking();
-          return;
-        }
-
-        const touch = event.changedTouches[0];
-        const deltaX = touch.clientX - startX;
-        const deltaY = touch.clientY - startY;
-        const duration = (event.timeStamp || Date.now()) - startTime;
-        resetSwipeTracking();
-
-        if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE) return;
-        if (Math.abs(deltaY) > SWIPE_MAX_OFF_AXIS) return;
-        if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
-        if (duration > SWIPE_MAX_DURATION) return;
-
-        const currentIndex = order.indexOf(activeView);
-        if (currentIndex === -1) return;
-
-        if (deltaX < 0 && currentIndex < order.length - 1) {
-          setActiveView(order[currentIndex + 1]);
-        } else if (deltaX > 0 && currentIndex > 0) {
-          setActiveView(order[currentIndex - 1]);
-        }
-      },
-      { passive: true }
-    );
-
-    main.addEventListener('touchcancel', resetSwipeTracking, { passive: true });
-  }
-
-  setActiveView('reminders');
-})();
+/*
+DEPRECATED NAVIGATION BLOCK
+Phase 3 uses js/services/navigation-service.js as the single navigation controller.
+*/
+;
 
 (function () {
   // Keep full reminder list mounted to avoid items disappearing during scroll.

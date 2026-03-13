@@ -47,14 +47,11 @@ function initAssistant() {
     const assistantThread = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
     const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput')
-      || document.getElementById('captureInput') || document.getElementById('universalInput')
-      || document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput');
-    const universalInput = document.getElementById('captureInput') || document.getElementById('universalInput')
-      || document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput')
+      || document.getElementById('captureInput')
+      || document.getElementById('reminderQuickAdd');
+    const captureInputField = document.getElementById('captureInput')
+      || document.getElementById('reminderQuickAdd')
       || thinkingBarInput;
-    if (isInputElement(universalInput) && (!document.getElementById('reminderQuickAdd') || document.getElementById('quickAddInput'))) {
-      universalInput.setAttribute('data-legacy-input', 'quickAddInput');
-    }
     const quickAddForm = document.getElementById('quickAddForm');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarResults = document.getElementById('thinkingBarResults');
@@ -480,11 +477,11 @@ function initAssistant() {
     const getActiveView = () => document.body?.getAttribute('data-active-view') || '';
 
     const syncInboxSearchInput = () => {
-      if (!isInputElement(universalInput)) {
+      if (!isInputElement(captureInputField)) {
         return;
       }
       document.dispatchEvent(new CustomEvent('memoryCue:universalSearch', {
-        detail: { query: universalInput.value },
+        detail: { query: captureInputField.value },
       }));
     };
 
@@ -679,69 +676,11 @@ if (document.readyState === 'loading') {
   initAssistant();
 }
 
-(function initAssistantNavigation() {
-  const setupAssistantNavigation = () => {
-    const assistantView = document.getElementById('assistantView') || document.getElementById('view-assistant');
-    const remindersView = document.getElementById('view-reminders');
-    const notebookView = document.getElementById('view-notebook');
+/*
+DEPRECATED NAVIGATION BLOCK
+Phase 3 uses js/services/navigation-service.js as the single navigation controller.
+*/
 
-    if (!(assistantView instanceof HTMLElement)) {
-      return;
-    }
-
-    const setVisibility = (element, isVisible) => {
-      if (!(element instanceof HTMLElement)) return;
-      element.classList.toggle('hidden', !isVisible);
-      element.setAttribute('aria-hidden', String(!isVisible));
-    };
-
-    const hideAllViews = () => {
-      setVisibility(assistantView, false);
-      setVisibility(remindersView, false);
-      setVisibility(notebookView, false);
-    };
-
-    const showAssistantView = () => {
-      hideAllViews();
-      if (assistantView instanceof HTMLElement) {
-        assistantView.classList.remove('hidden');
-        assistantView.setAttribute('aria-hidden', 'false');
-      }
-    };
-
-    window.addEventListener('app:navigate', (event) => {
-      const view = event?.detail?.view;
-      if (!view) return;
-
-      if (view === 'assistant') {
-        showAssistantView();
-
-        const main = document.getElementById('main');
-        if (main instanceof HTMLElement) {
-          main.setAttribute('data-active-view', 'assistant');
-          const headerHeight = getComputedStyle(document.documentElement)
-            .getPropertyValue('--mobile-header-height')
-            .trim() || '112px';
-          main.style.setProperty('padding-top', headerHeight, 'important');
-        }
-
-        if (document.body instanceof HTMLElement) {
-          document.body.setAttribute('data-active-view', 'assistant');
-        }
-
-        return;
-      }
-
-      setVisibility(assistantView, false);
-    });
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupAssistantNavigation, { once: true });
-  } else {
-    setupAssistantNavigation();
-  }
-})();
 
 document.querySelector('.fab-button')?.addEventListener('click', () => {
   openEditor();

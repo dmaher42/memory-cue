@@ -1,42 +1,47 @@
 # UI Architecture (Phase 3)
 
 ## Canonical runtime shell
-- `mobile.html` is the primary runtime shell for the app UI.
-- Legacy shell files are retained for reference only.
+- `mobile.html` is the primary runtime shell.
+- Legacy shell files remain for reference only and should not be extended.
 
 ## Navigation system
-- Single navigation runtime: `js/services/navigation-service.js`.
-- Navigation entrypoint: `navigationService.navigate(viewName)`.
-- Supported views:
+- Single runtime navigation controller: `js/services/navigation-service.js`.
+- Primary API: `navigationService.navigate(viewName)`.
+- Views:
   - `capture`
   - `reminders`
   - `notes`
   - `assistant`
   - `settings`
-- `app:navigate` events are normalized into the same navigation service.
+- Navigation behavior:
+  - Shows target view.
+  - Hides all other managed views.
+  - Updates active bottom-nav state.
+  - Dispatches `memorycue:navigation:changed`.
+- `app:navigate` events are normalized into this same controller.
 
 ## View structure
-- Views are identified by `data-view`.
-- The navigation service enforces one visible view at a time.
-- Bottom navigation buttons use `data-nav-target` and dispatch navigation.
+- Managed view containers are identified with `data-view`.
+- Bottom navigation uses `data-nav-target` and routes through the navigation service.
+- Only one managed view is visible at a time.
 
 ## Component system
-- Standard utility classes:
+- Shared component classes:
   - `.btn-primary`
   - `.btn-secondary`
   - `.card-standard`
   - `.input-standard`
-- DaisyUI utilities remain in place; shared custom overrides are centralized.
+- DaisyUI utility classes remain in use.
+- Custom component overrides should be centralized in `css/components.css`.
 
 ## CSS organization
-- `css/layout.css`: shell/view layout rules.
-- `css/components.css`: shared components.
-- `css/reminders.css`: reminders-specific view styling.
-- `css/assistant.css`: assistant-specific view styling.
-- Existing inline CSS remains for compatibility and should be incrementally migrated.
+- `css/layout.css`: shell and view layout rules.
+- `css/components.css`: shared component primitives.
+- `css/reminders.css`: reminders view styles.
+- `css/assistant.css`: assistant view styles.
+- `mobile.html` should keep only minimal inline styles that are layout-critical.
 
 ## Naming conventions
-- `notebook` UI naming standardized to `notes` at the view/navigation layer.
-- `universalInput` standardized to `captureInput`.
-- `quickAddInput` standardized to `reminderQuickAdd`.
-- New navigation and UI work should use standardized names only.
+- Use `notes` (not `notebook`) in navigation and user-facing labels.
+- Use `captureInput` (not `universalInput`).
+- Use `reminderQuickAdd` (not `quickAddInput`).
