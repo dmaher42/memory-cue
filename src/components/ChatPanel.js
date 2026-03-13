@@ -1,5 +1,6 @@
 import { handleMessage } from '../chat/chatManager.js';
 import { createSystemStatusIndicator } from './SystemStatusIndicator.js';
+import { createReminder } from '../services/reminderService.js';
 
 const bubbleStyles = {
   user: {
@@ -158,7 +159,7 @@ export const createChatPanel = () => {
     appendMessage(messageList, 'user', userInput);
     input.value = '';
 
-    const assistantReply = await handleMessage(userInput);
+    const assistantReply = await handleMessage(userInput, { createReminder });
     if (assistantReply?.status) {
       statusIndicator.show(assistantReply.status);
     }

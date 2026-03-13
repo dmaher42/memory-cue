@@ -1,6 +1,7 @@
 import { saveToInbox } from '../services/inboxService.js';
 import { loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
 import { searchMemoryIndex } from '../../js/modules/memory-index.js';
+import { createReminder } from '../services/reminderService.js';
 
 const parseAssistantReply = (payload) => {
   if (typeof payload?.reply === 'string' && payload.reply.trim()) {
@@ -13,18 +14,6 @@ const parseAssistantReply = (payload) => {
     return payload.message;
   }
   return 'Assistant response unavailable.';
-};
-
-const resolveReminderHandler = (payload = {}) => {
-  if (typeof payload?.handler === 'function') {
-    return payload.handler;
-  }
-
-  if (typeof window !== 'undefined' && typeof window.memoryCueCreateReminder === 'function') {
-    return window.memoryCueCreateReminder;
-  }
-
-  return null;
 };
 
 const logCommand = (command, status) => {
@@ -128,11 +117,7 @@ export const executeCommand = async (type, payload = {}) => {
         break;
       }
       case 'reminder': {
-        const reminderHandler = resolveReminderHandler(payload);
-        if (typeof reminderHandler !== 'function') {
-          throw new Error('Reminder creation logic is unavailable.');
-        }
-        const reminder = await reminderHandler({ title: payload?.text });
+        const reminder = await createReminder(payload, { handler: payload?.handler });
         result = {
           status: 'success',
           message: 'Reminder created.',
