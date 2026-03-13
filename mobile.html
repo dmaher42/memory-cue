@@ -4924,10 +4924,10 @@ body, main, section, div, p, span, li {
         <div id="categoryEntriesList" class="category-entry-list"></div>
       </div>
     </div>
-    <div id="view-inbox" class="view-panel hidden" aria-hidden="true">
+    <div id="view-inbox" data-view="inbox" class="view-panel hidden" aria-hidden="true">
       <div class="space-y-3">
         <h2 class="text-lg font-semibold">Inbox</h2>
-        <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Inbox</button>
+        <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Notes</button>
         <ul id="inboxEntriesList" class="category-entry-list list-disc pl-4" aria-live="polite"></ul>
       </div>
     </div>
@@ -5452,6 +5452,33 @@ body, main, section, div, p, span, li {
       </button>
 
 
+
+      <button
+        type="button"
+        class="floating-card nav-item btn-inbox"
+        id="mobile-footer-inbox"
+        data-nav-target="inbox"
+        data-tab="inbox"
+        aria-label="Go to Inbox"
+      >
+        <svg
+          class="icon icon-inbox"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4.5 7.5h15v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-9Z" />
+          <path d="M4.5 12h4l1.5 2h4l1.5-2h4" />
+        </svg>
+        <span>Inbox</span>
+      </button>
+
       <button
         type="button"
         class="floating-card nav-item btn-assistant"
@@ -5674,7 +5701,7 @@ body, main, section, div, p, span, li {
       const renderInboxEntries = () => {
         const entries = readEntries()
           .filter((entry) => isUnprocessedEntry(entry))
-          .sort((a, b) => getEntryTimestamp(b) - getEntryTimestamp(a));
+          .sort((a, b) => getEntryTimestamp(a) - getEntryTimestamp(b));
         inboxEntriesList.innerHTML = '';
 
         if (!entries.length) {
@@ -5952,7 +5979,7 @@ body, main, section, div, p, span, li {
         } finally {
           if (processInboxButton) {
             processInboxButton.disabled = false;
-            processInboxButton.textContent = 'Process Inbox';
+            processInboxButton.textContent = 'Process Notes';
           }
         }
       };
@@ -6009,7 +6036,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-YEYRZJEU.js"></script>
+  <script type="module" src="./assets/mobile-IVWC7LVD.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
