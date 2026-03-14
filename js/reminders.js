@@ -5248,13 +5248,13 @@ export async function initReminders(sel = {}) {
     return name;
   }
 
-  function updateMobileCategoryFilterBar(categories = []) {
+  function updateMobileCategoryFilterBar() {
     if (variant !== 'mobile' || !(categoryFilterBar instanceof HTMLElement)) {
       return;
     }
 
-    const normalizedCategories = categories.map((category) => normalizeCategory(category));
-    const options = [CATEGORY_FILTER_ALL, ...normalizedCategories];
+    const dropdown = categoryFilterBar.closest('details');
+    const options = [CATEGORY_FILTER_ALL, 'School', 'Home', 'Coaching', 'General'];
 
     if (!options.includes(activeCategoryFilter)) {
       activeCategoryFilter = CATEGORY_FILTER_ALL;
@@ -5269,26 +5269,32 @@ export async function initReminders(sel = {}) {
     categoryFilterBar.replaceChildren();
 
     options.forEach((option) => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'category-chip';
-      chip.textContent = option === CATEGORY_FILTER_ALL ? 'All' : option;
-      chip.dataset.categoryFilter = option;
-      chip.setAttribute('aria-pressed', option === activeCategoryFilter ? 'true' : 'false');
+      const filterOption = document.createElement('button');
+      filterOption.type = 'button';
+      filterOption.className = 'reminder-filter-option';
+      filterOption.textContent = option === CATEGORY_FILTER_ALL ? 'All' : option;
+      filterOption.dataset.categoryFilter = option;
+      filterOption.setAttribute('aria-pressed', option === activeCategoryFilter ? 'true' : 'false');
 
       if (option === activeCategoryFilter) {
-        chip.classList.add('active');
+        filterOption.classList.add('active');
       }
 
-      chip.addEventListener('click', () => {
+      filterOption.addEventListener('click', () => {
         if (activeCategoryFilter === option) {
+          if (dropdown instanceof HTMLDetailsElement) {
+            dropdown.open = false;
+          }
           return;
         }
         activeCategoryFilter = option;
+        if (dropdown instanceof HTMLDetailsElement) {
+          dropdown.open = false;
+        }
         render();
       });
 
-      categoryFilterBar.appendChild(chip);
+      categoryFilterBar.appendChild(filterOption);
     });
   }
 
