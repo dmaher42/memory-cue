@@ -1,0 +1,1 @@
+import{c as _}from"./chunk-GUVSRPRW.js";var E=_(()=>{if(typeof window<"u"){let A=window.__ENV=window.__ENV||{};A.SUPABASE_URL=A.SUPABASE_URL||"",A.SUPABASE_ANON_KEY=A.SUPABASE_ANON_KEY||""}});export default E();
