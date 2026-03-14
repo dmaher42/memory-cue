@@ -4990,6 +4990,14 @@ body, main, section, div, p, span, li {
         <div id="inboxSearchResults"></div>
 
         <section id="remindersListMobile">
+          <div class="mb-2 flex items-center justify-end">
+            <label for="reminderSort" class="sr-only">Sort reminders</label>
+            <select id="reminderSort" class="sr-only" aria-hidden="true" tabindex="-1">
+              <option value="created" selected>Created</option>
+              <option value="time-relevance">Time relevance</option>
+            </select>
+            <button id="reminderSortToggle" type="button" class="btn btn-ghost btn-xs" aria-label="Sort reminders (Created)">Created ▼</button>
+          </div>
           <section
             id="reminderListSection"
             class="w-full relative"

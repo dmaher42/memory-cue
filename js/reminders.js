@@ -744,22 +744,6 @@ export async function initReminders(sel = {}) {
   });
   let reminderSortMode = REMINDER_SORT_OPTIONS.created;
 
-  function getReminderSortTimestamp(reminder) {
-    const createdAt = Number(reminder?.createdAt);
-    if (Number.isFinite(createdAt) && createdAt > 0) {
-      return createdAt;
-    }
-
-    const createdAtFromApi = typeof reminder?.created_at === 'string'
-      ? Date.parse(reminder.created_at)
-      : Number(reminder?.created_at);
-    if (Number.isFinite(createdAtFromApi) && createdAtFromApi > 0) {
-      return createdAtFromApi;
-    }
-
-    return 0;
-  }
-
   function sortReminderRows(rows = []) {
     const sorted = Array.isArray(rows) ? rows.slice() : [];
     if (reminderSortMode === REMINDER_SORT_OPTIONS.timeRelevance) {
@@ -785,16 +769,7 @@ export async function initReminders(sel = {}) {
       });
       return withTimeReferences.concat(withoutTimeReferences);
     }
-    return sorted
-      .map((reminder, index) => ({ reminder, index }))
-      .sort((a, b) => {
-        const diff = getReminderSortTimestamp(b.reminder) - getReminderSortTimestamp(a.reminder);
-        if (diff !== 0) {
-          return diff;
-        }
-        return a.index - b.index;
-      })
-      .map(({ reminder }) => reminder);
+    return sorted;
   }
 
   // Returns a short, user-facing label for "today", e.g. "Tue 18 Nov"
