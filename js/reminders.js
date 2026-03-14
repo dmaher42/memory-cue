@@ -407,7 +407,6 @@ export async function initReminders(sel = {}) {
   const priority = $(sel.prioritySel);
   const categoryInput = $(sel.categorySel);
   const sortSelect = $(sel.sortSel);
-  const categoryFilterBar = $(sel.categoryFilterBarSel || '#reminderCategoryFilters');
   const saveBtn = $(sel.saveBtnSel);
   const cancelEditBtn = $(sel.cancelEditBtnSel);
   const list = $(sel.listSel);
@@ -737,7 +736,6 @@ export async function initReminders(sel = {}) {
     typeof sel.autoWireAuthButtons === 'boolean' ? sel.autoWireAuthButtons : variant !== 'desktop';
 
   // Mobile reminders filter state and cache
-  let mobileRemindersFilterMode = 'all';
   let mobileRemindersCache = [];
   let mobileRemindersTemperatureLabel = '';
   const REMINDER_SORT_OPTIONS = Object.freeze({
@@ -746,9 +744,6 @@ export async function initReminders(sel = {}) {
     category: 'category',
   });
   let reminderSortMode = REMINDER_SORT_OPTIONS.newest;
-  const CATEGORY_FILTER_ALL = '__all__';
-  let activeCategoryFilter = CATEGORY_FILTER_ALL;
-  let mobileCategoryFilterSignature = '';
 
   function getReminderSortTimestamp(reminder) {
     const createdAt = Number(reminder?.createdAt);
@@ -804,14 +799,7 @@ export async function initReminders(sel = {}) {
     }
     const todayLabel = getTodayLabelForHeader();
 
-    let baseText;
-    if (mobileRemindersFilterMode === 'today') {
-      baseText = `Today\u2019s reminders \u2022 ${todayLabel}`;
-    } else if (mobileRemindersFilterMode === 'completed') {
-      baseText = `Completed reminders \u2022 ${todayLabel}`;
-    } else {
-      baseText = `All reminders \u2022 ${todayLabel}`;
-    }
+    let baseText = `Reminders \u2022 ${todayLabel}`;
 
     if (mobileRemindersTemperatureLabel) {
       baseText += ` \u2022 ${mobileRemindersTemperatureLabel}`;
@@ -4477,22 +4465,6 @@ export async function initReminders(sel = {}) {
     items = [item, ...items];
     sortItemsByOrder(items);
 
-    if (variant === 'mobile' && mobileRemindersFilterMode === 'today') {
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      const endOfToday = new Date();
-      endOfToday.setHours(23, 59, 59, 999);
-      const visibleInTodayFilter = isReminderForTodayMobile(item, {
-        start: startOfToday,
-        end: endOfToday,
-      });
-      if (!visibleInTodayFilter) {
-        // New reminders should be visible immediately after save.
-        mobileRemindersFilterMode = 'all';
-        syncMobileReminderTabUiState();
-      }
-    }
-
     const rebalanced = maybeRebalanceOrderSpacing(items);
     suppressRenderMemoryEvent = true;
     render();
@@ -5122,63 +5094,6 @@ export async function initReminders(sel = {}) {
     return dueDate >= todayRange.start && dueDate <= todayRange.end;
   }
 
-  function filterMobileReminderRows(rows, filterMode, todayRange) {
-    if (!Array.isArray(rows)) {
-      return [];
-    }
-
-    const isCompletedMode = filterMode === 'completed';
-    const filteredByStatus = isCompletedMode
-      ? rows.filter((entry) => !!entry?.done)
-      : rows.filter((entry) => !entry?.done);
-
-    if (filterMode === 'today') {
-      return filteredByStatus.filter((entry) => isReminderForTodayMobile(entry, todayRange));
-    }
-
-    return filteredByStatus;
-  }
-
-  function syncMobileReminderTabUiState() {
-    const tabButtons = document.querySelectorAll(
-      '#view-reminders [data-reminders-tab], #reminders-slim-header [data-reminders-tab]'
-    );
-    if (!tabButtons.length) {
-      return;
-    }
-
-    tabButtons.forEach((button) => {
-      const mode = button.getAttribute('data-reminders-tab');
-      const isActive = mode === mobileRemindersFilterMode;
-      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-      if (isActive) {
-        button.classList.add('reminders-tab-active', 'active');
-      } else {
-        button.classList.remove('reminders-tab-active', 'active');
-      }
-    });
-  }
-
-  function setMobileRemindersFilter(mode) {
-    if (!mode || mode === mobileRemindersFilterMode) {
-      return false;
-    }
-    const tabButtons = document.querySelectorAll(
-      '#reminders-slim-header [data-reminders-tab], #view-reminders [data-reminders-tab]'
-    );
-    if (!tabButtons.length) {
-      return;
-    }
-
-    mobileRemindersFilterMode = mode;
-    syncMobileReminderTabUiState();
-
-    if (Array.isArray(mobileRemindersCache)) {
-      render();
-    }
-    updateMobileRemindersHeaderSubtitle();
-  }
-
   function setupReminderSortControl() {
     if (typeof HTMLSelectElement === 'undefined' || !(sortSelect instanceof HTMLSelectElement)) {
       return;
@@ -5225,13 +5140,6 @@ export async function initReminders(sel = {}) {
     setupReminderSortControl._wired = true;
   }
 
-  function applyMobileCategoryFilter(rows) {
-    if (!Array.isArray(rows) || activeCategoryFilter === CATEGORY_FILTER_ALL) {
-      return rows;
-    }
-    return rows.filter((row) => normalizeCategory(row?.category) === activeCategoryFilter);
-  }
-
   function resolveReminderDisplayTitle(reminder) {
     if (!reminder || typeof reminder !== 'object') {
       return '';
@@ -5248,70 +5156,11 @@ export async function initReminders(sel = {}) {
     return name;
   }
 
-  function updateMobileCategoryFilterBar(categories = []) {
-    if (variant !== 'mobile' || !(categoryFilterBar instanceof HTMLElement)) {
-      return;
-    }
-
-    const normalizedCategories = categories.map((category) => normalizeCategory(category));
-    const options = [CATEGORY_FILTER_ALL, ...normalizedCategories];
-
-    if (!options.includes(activeCategoryFilter)) {
-      activeCategoryFilter = CATEGORY_FILTER_ALL;
-    }
-
-    const signature = `${activeCategoryFilter}::${options.join('||')}`;
-    if (signature === mobileCategoryFilterSignature) {
-      return;
-    }
-    mobileCategoryFilterSignature = signature;
-
-    categoryFilterBar.replaceChildren();
-
-    options.forEach((option) => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'category-chip';
-      chip.textContent = option === CATEGORY_FILTER_ALL ? 'All' : option;
-      chip.dataset.categoryFilter = option;
-      chip.setAttribute('aria-pressed', option === activeCategoryFilter ? 'true' : 'false');
-
-      if (option === activeCategoryFilter) {
-        chip.classList.add('active');
-      }
-
-      chip.addEventListener('click', () => {
-        if (activeCategoryFilter === option) {
-          return;
-        }
-        activeCategoryFilter = option;
-        render();
-      });
-
-      categoryFilterBar.appendChild(chip);
-    });
-  }
-
   function setupMobileReminderTabs() {
-    if (variant !== 'mobile' || typeof document === 'undefined') {
+    if (variant !== 'mobile') {
       return;
     }
-    if (setupMobileReminderTabs._wired) {
-      return;
-    }
-    syncMobileReminderTabUiState();
     updateMobileRemindersHeaderSubtitle();
-
-    const tabButtons = document.querySelectorAll(
-      '#view-reminders [data-reminders-tab], #reminders-slim-header [data-reminders-tab]'
-    );
-
-    tabButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const mode = button.getAttribute('data-reminders-tab');
-        setMobileRemindersFilter(mode);
-      });
-    });
   }
 
   function render(){
@@ -5336,6 +5185,7 @@ export async function initReminders(sel = {}) {
         item.category = normalizeCategory(item.category);
       }
     });
+
     const categorySet = new Set(SEEDED_CATEGORIES.map(cat => normalizeCategory(cat)));
     items.forEach(item => {
       if (item && typeof item === 'object') {
@@ -5343,8 +5193,6 @@ export async function initReminders(sel = {}) {
       }
     });
     const allCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-
-    updateMobileCategoryFilterBar(allCategories);
 
     if (categoryDatalist) {
       const existing = new Set();
@@ -5385,8 +5233,7 @@ export async function initReminders(sel = {}) {
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
-      rows = filterMobileReminderRows(mobileRemindersCache, mobileRemindersFilterMode, todayRange);
-      rows = applyMobileCategoryFilter(rows);
+      rows = mobileRemindersCache.slice();
       updateMobileRemindersHeaderSubtitle();
     }
 
@@ -5662,14 +5509,6 @@ export async function initReminders(sel = {}) {
           dueLine.textContent = `Due: ${dueLabel}`;
           rowMain.appendChild(dueLine);
         }
-
-        if (summary.category && summary.category !== DEFAULT_CATEGORY) {
-          const categoryLine = document.createElement('div');
-          categoryLine.className = 'reminder-meta reminder-category reminder-row-meta';
-          categoryLine.textContent = `Category: ${summary.category}`;
-          rowMain.appendChild(categoryLine);
-        }
-
         if (summary.done) {
           itemEl.classList.add('reminder-row-completed');
         } else if (dueDate && dueDate < now) {
@@ -6151,8 +5990,10 @@ export async function initReminders(sel = {}) {
   persistItems();
 
   if (variant === 'mobile') {
-    window.setMobileRemindersFilter = setMobileRemindersFilter;
+    // Filtering is now handled by the assistant; keep a no-op for legacy callers.
+    window.setMobileRemindersFilter = () => false;
   }
+
 
   return {
     cancelReminder,
