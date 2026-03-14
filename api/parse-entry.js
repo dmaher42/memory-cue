@@ -4,29 +4,11 @@ const PARSED_ENTRY_SCHEMA = {
   properties: {
     type: {
       type: 'string',
-      enum: [
-        'note',
-        'reminder',
-        'drill',
-        'idea',
-        'task',
-        'unknown'
-      ]
+      enum: ['note', 'reminder', 'question']
     },
-    title: { type: 'string' },
-    tags: {
-      type: 'array',
-      items: { type: 'string' }
-    },
-    reminderDate: {
-      type: ['string', 'null']
-    },
-    metadata: {
-      type: 'object',
-      additionalProperties: true
-    }
+    content: { type: 'string' }
   },
-  required: ['type', 'title', 'tags', 'reminderDate', 'metadata']
+  required: ['type', 'content']
 };
 
 const ALLOWED_ORIGINS = [
@@ -37,7 +19,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 const MAX_TEXT_LENGTH = 4000;
-const PARSE_FALLBACK_STATUS = 422;
+const PARSE_FALLBACK_STATUS = 200;
+const ALLOWED_PARSED_TYPES = ['note', 'reminder', 'question'];
 
 function sanitizePreview(value) {
   return String(value)
@@ -52,25 +35,17 @@ function isValidParsedEntry(parsed) {
     return false;
   }
 
-  const hasValidType = typeof parsed.type === 'string';
-  const hasValidTitle = typeof parsed.title === 'string';
-  const hasValidTags =
-    Array.isArray(parsed.tags) && parsed.tags.every((tag) => typeof tag === 'string');
-  const hasValidReminderDate =
-    parsed.reminderDate === null || typeof parsed.reminderDate === 'string';
-  const hasValidMetadata =
-    parsed.metadata && typeof parsed.metadata === 'object' && !Array.isArray(parsed.metadata);
+  const hasValidType = typeof parsed.type === 'string' && ALLOWED_PARSED_TYPES.includes(parsed.type);
+  const hasValidContent = typeof parsed.content === 'string';
 
-  return hasValidType && hasValidTitle && hasValidTags && hasValidReminderDate && hasValidMetadata;
+  return hasValidType && hasValidContent;
 }
 
 function buildFallbackEntry(text) {
   return {
-    type: 'unknown',
-    title: text.slice(0, 60),
-    tags: [],
-    reminderDate: null,
-    metadata: { parseError: true }
+    type: 'note',
+    content: text,
+    source: 'fallback'
   };
 }
 
@@ -132,7 +107,7 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: `Return ONLY JSON matching schema.\nExtract:\n- type (note, reminder, drill, idea, task, unknown)\n- title (short summary under 60 chars)\n- tags (lowercase keywords)\n- reminderDate (ISO string if date/time mentioned, else null)\nIf unsure, use unknown. Include metadata object with parse hints (or {}).`
+                text: `Return ONLY JSON matching schema.\nExtract:\n- type (note, reminder, question)\n- content (cleaned user text)\nIf unsure, use note.`
               }
             ]
           },
@@ -176,18 +151,23 @@ module.exports = async function handler(req, res) {
         data.output[0].content[0].text) ||
       null;
 
-    if (!outputText) {
-      return res.status(500).json({ error: 'Failed to parse entry.' });
-    }
-
     const outputTextLength = typeof outputText === 'string' ? outputText.length : 0;
     const outputTextPreview = sanitizePreview(outputText || '');
+
+    if (!outputText) {
+      console.warn('Model output missing parsable text. Returning fallback.', {
+        outputTextLength,
+        outputTextPreview
+      });
+      return res.status(PARSE_FALLBACK_STATUS).json(buildFallbackEntry(text));
+    }
 
     let parsedOutput;
     try {
       parsedOutput = JSON.parse(outputText);
     } catch (error) {
       console.warn('Failed to parse model output JSON', {
+        rawModelOutput: outputText,
         outputTextLength,
         outputTextPreview,
         message: error.message
