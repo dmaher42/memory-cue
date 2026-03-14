@@ -37,6 +37,42 @@ const ALLOWED_ORIGINS = [
 ];
 
 const MAX_TEXT_LENGTH = 4000;
+const PARSE_FALLBACK_STATUS = 422;
+
+function sanitizePreview(value) {
+  return String(value)
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200);
+}
+
+function isValidParsedEntry(parsed) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return false;
+  }
+
+  const hasValidType = typeof parsed.type === 'string';
+  const hasValidTitle = typeof parsed.title === 'string';
+  const hasValidTags =
+    Array.isArray(parsed.tags) && parsed.tags.every((tag) => typeof tag === 'string');
+  const hasValidReminderDate =
+    parsed.reminderDate === null || typeof parsed.reminderDate === 'string';
+  const hasValidMetadata =
+    parsed.metadata && typeof parsed.metadata === 'object' && !Array.isArray(parsed.metadata);
+
+  return hasValidType && hasValidTitle && hasValidTags && hasValidReminderDate && hasValidMetadata;
+}
+
+function buildFallbackEntry(text) {
+  return {
+    type: 'unknown',
+    title: text.slice(0, 60),
+    tags: [],
+    reminderDate: null,
+    metadata: { parseError: true }
+  };
+}
 
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin;
@@ -144,7 +180,30 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to parse entry.' });
     }
 
-    return res.status(200).json(JSON.parse(outputText));
+    const outputTextLength = typeof outputText === 'string' ? outputText.length : 0;
+    const outputTextPreview = sanitizePreview(outputText || '');
+
+    let parsedOutput;
+    try {
+      parsedOutput = JSON.parse(outputText);
+    } catch (error) {
+      console.warn('Failed to parse model output JSON', {
+        outputTextLength,
+        outputTextPreview,
+        message: error.message
+      });
+      return res.status(PARSE_FALLBACK_STATUS).json(buildFallbackEntry(text));
+    }
+
+    if (!isValidParsedEntry(parsedOutput)) {
+      console.warn('Model output failed schema shape validation', {
+        outputTextLength,
+        outputTextPreview
+      });
+      return res.status(PARSE_FALLBACK_STATUS).json(buildFallbackEntry(text));
+    }
+
+    return res.status(200).json(parsedOutput);
   } catch (error) {
     return res.status(500).json({ error: 'AI parse error', message: error.message });
   }
