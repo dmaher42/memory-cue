@@ -35,6 +35,43 @@ const SEEDED_CATEGORIES = Object.freeze([
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
+const REMINDER_KEYWORD_STOP_WORDS = new Set([
+  'a', 'an', 'and', 'are', 'at', 'be', 'for', 'from', 'have', 'idea', 'ideas', 'in', 'is', 'it', 'lesson', 'meeting', 'my', 'of', 'on', 'or', 'reminder', 'reminders', 'shopping', 'that', 'the', 'this', 'to', 'with', 'write', 'wrote'
+]);
+
+function normalizeReminderKeywords(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const deduped = new Set();
+  value.forEach((entry) => {
+    if (typeof entry !== 'string') {
+      return;
+    }
+    const normalized = entry.trim().toLowerCase();
+    if (normalized) {
+      deduped.add(normalized);
+    }
+  });
+  return Array.from(deduped).slice(0, 12);
+}
+
+function extractReminderKeywords(text) {
+  const normalized = typeof text === 'string' ? text.toLowerCase() : '';
+  const terms = normalized
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 2 && !REMINDER_KEYWORD_STOP_WORDS.has(term));
+
+  if (/\bdrills?\b/.test(normalized)) terms.push('drill');
+  if (/\blesson(s|\sideas?)?\b/.test(normalized)) terms.push('lesson');
+  if (/\bideas?\b/.test(normalized)) terms.push('idea');
+  if (/\bmeetings?\b/.test(normalized)) terms.push('meeting');
+  if (/\bshopping\b/.test(normalized)) terms.push('shopping');
+
+  return normalizeReminderKeywords(terms);
+}
 
 function normalizeSemanticEmbedding(value) {
   if (!Array.isArray(value)) {
@@ -3622,6 +3659,12 @@ export async function initReminders(sel = {}) {
                 : null,
             pinToToday: entry.pinToToday === true,
             semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
+            metadata: entry.metadata && typeof entry.metadata === 'object' ? entry.metadata : null,
+            keywords: normalizeReminderKeywords(
+              entry.keywords
+              || entry?.metadata?.keywords
+              || extractReminderKeywords(`${entry.title || ''} ${entry.notes || ''}`),
+            ),
           };
         })
         .filter(Boolean);
@@ -3658,6 +3701,12 @@ export async function initReminders(sel = {}) {
               : null,
           pinToToday: !!entry.pinToToday,
           semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
+          metadata: entry.metadata && typeof entry.metadata === 'object' ? entry.metadata : null,
+          keywords: normalizeReminderKeywords(
+            entry.keywords
+            || entry?.metadata?.keywords
+            || extractReminderKeywords(`${entry.title || ''} ${entry.notes || ''}`),
+          ),
         }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
@@ -4452,6 +4501,20 @@ export async function initReminders(sel = {}) {
       pinToToday: !!payload.pinToToday,
       notifyAt: notifyAtValue,
       semanticEmbedding: normalizeSemanticEmbedding(payload.semanticEmbedding),
+      metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : null,
+    };
+
+    const derivedKeywords = normalizeReminderKeywords(
+      payload.keywords
+      || item?.metadata?.keywords
+      || extractReminderKeywords(`${titleText} ${note}`),
+    );
+    item.keywords = derivedKeywords;
+    item.metadata = {
+      ...(item.metadata || {}),
+      text: [titleText, note].filter(Boolean).join(' ').trim(),
+      keywords: derivedKeywords,
+      created_at: new Date(item.createdAt).toISOString(),
     };
 
     assignOrderIndexForNewItem(item, { position: 'start' });

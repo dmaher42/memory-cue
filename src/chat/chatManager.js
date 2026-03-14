@@ -116,6 +116,17 @@ const REMINDER_QUERY_STOP_WORDS = new Set([
   'those',
   'reminder',
   'reminders',
+  'write',
+  'wrote',
+  'save',
+  'saved',
+  'lesson',
+  'lessons',
+  'idea',
+  'ideas',
+  'drill',
+  'drills',
+  'coaching',
 ]);
 
 const normalizeReminderQuery = (text) => (typeof text === 'string' ? text.trim().toLowerCase() : '');
@@ -133,7 +144,7 @@ const shouldSearchReminders = (text) => {
     return false;
   }
 
-  return /\b(reminder|reminders|meeting|meetings|shopping|list|idea|ideas|today|tonight|tomorrow)\b/.test(normalized);
+  return /\b(reminder|reminders|meeting|meetings|shopping|list|idea|ideas|lesson|lessons|drill|drills|coaching|today|tonight|tomorrow)\b/.test(normalized);
 };
 
 const readStoredReminders = () => {
@@ -192,7 +203,12 @@ const buildReminderSearchResponse = (queryText) => {
   const matches = reminders
     .filter((reminder) => !reminder?.done)
     .map((reminder) => {
-      const reminderText = `${reminder?.title || ''} ${reminder?.notes || ''}`.toLowerCase();
+      const reminderKeywords = Array.isArray(reminder?.keywords)
+        ? reminder.keywords
+        : Array.isArray(reminder?.metadata?.keywords)
+          ? reminder.metadata.keywords
+          : [];
+      const reminderText = `${reminder?.title || ''} ${reminder?.notes || ''} ${reminderKeywords.join(' ')}`.toLowerCase();
       const termScore = queryTerms.reduce((score, term) => score + (reminderText.includes(term) ? 1 : 0), 0);
       const todayScore = includesToday && isDueToday(reminder) ? 2 : 0;
       return { reminder, score: termScore + todayScore };
@@ -278,6 +294,8 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
     console.log('Capture routed to:', 'reminder');
     await executeCommand('reminder', {
       text: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text,
+      keywords: Array.isArray(parsed?.metadata?.keywords) ? parsed.metadata.keywords : [],
+      metadata: parsed?.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : null,
       handler: dependencies.createReminder,
     });
     const scheduleLabel = getReminderScheduleLabel(parsed, text);
