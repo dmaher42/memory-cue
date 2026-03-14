@@ -5000,13 +5000,15 @@ body, main, section, div, p, span, li {
             <button id="reminderSortToggle" type="button" class="reminders-sort-btn" data-reminder-sort-toggle aria-label="Sort reminders" title="Sort reminders">Sort</button>
           </div>
         </section>
-        <div
-          id="reminderCategoryFilters"
-          class="category-filter-bar"
-          role="toolbar"
-          aria-label="Filter reminders by category"
-        >
-        </div>
+        <details class="reminder-filter-dropdown" id="reminderFilterDropdown">
+          <summary class="reminder-filter-trigger" aria-label="Filter reminders by category">Filter ▼</summary>
+          <div
+            id="reminderCategoryFilters"
+            class="reminder-filter-options"
+            role="menu"
+            aria-label="Filter reminders by category"
+          ></div>
+        </details>
         <div id="inboxSearchResults"></div>
 
         <section id="remindersListMobile">
