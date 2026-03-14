@@ -1,4 +1,4 @@
-import { createAndSaveNote } from '../modules/notes-storage.js';
+import { saveNote } from '../../src/services/adapters/notePersistenceAdapter.js';
 import { generateTags } from '../../src/ai/tagGenerator.js';
 import { routeIntent } from '../../src/services/intentRouter.js';
 import * as reminderService from '../../src/services/reminderService.js';
@@ -112,7 +112,7 @@ const persistNoteDecision = (text, parsedEntry, context) => {
       ? parsedEntry.title.trim()
       : text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
 
-  const note = createAndSaveNote({
+  const note = saveNote({
     text,
     title,
     tags: Array.isArray(parsedEntry?.tags) ? parsedEntry.tags : generateTags(text),
@@ -218,7 +218,7 @@ export const convertInboxToNote = (entryId) => {
   }
 
   const title = text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
-  const note = createAndSaveNote({
+  const note = saveNote({
     text,
     title,
     tags: Array.isArray(entry.tags) ? entry.tags : [],
