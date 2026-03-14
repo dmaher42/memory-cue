@@ -1705,7 +1705,7 @@ const initMobileNotes = () => {
     titleInput.dataset.noteOriginalTitle = isNew ? '' : nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
-    currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+    currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
     const labelEl = document.getElementById('note-folder-label');
     if (labelEl) {
       labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
@@ -2263,7 +2263,7 @@ const initMobileNotes = () => {
         titleRow.appendChild(pinIcon);
       }
 
-      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
       const folderName = getFolderNameById(folderId) || 'Unsorted';
       const timestamp = formatNoteTimestamp(note.updatedAt);
 
@@ -3535,7 +3535,7 @@ const initMobileNotes = () => {
   const openNoteEditorForNewNote = (note) => {
     if (!note) return;
     currentEditingNoteFolderId =
-      note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
     resetEditorScroll();
     setEditorValues(note, { isNew: true });
     updateListSelection();
@@ -3547,7 +3547,7 @@ const initMobileNotes = () => {
 
   const startNewNoteFromUI = () => {
     const timestamp = new Date().toISOString();
-    const activeFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'unsorted';
+    const activeFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'everyday';
     const draftNote = createNote('', '', { folderId: activeFolderId, updatedAt: timestamp });
     const newNote = {
       ...draftNote,
@@ -3575,7 +3575,7 @@ const initMobileNotes = () => {
     const normalizedFolderId =
       currentEditingNoteFolderId && currentEditingNoteFolderId !== 'all'
         ? currentEditingNoteFolderId
-        : 'unsorted';
+        : 'everyday';
 
     if (currentNoteId) {
       const noteIndex = notesArray.findIndex((note) => note.id === currentNoteId);

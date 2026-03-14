@@ -73,6 +73,22 @@ const formatLineItems = (entries) => entries
   .map((entry) => `• ${entry.title}`)
   .join('\n');
 
+const formatNotebookHeading = (entries = []) => {
+  const folders = entries
+    .map((entry) => normalizeText(entry?.folder))
+    .filter((folder, index, list) => folder && list.indexOf(folder) === index);
+
+  if (!folders.length) {
+    return 'You wrote these notes:';
+  }
+
+  if (folders.length === 1) {
+    return `You wrote these ${folders[0].toLowerCase()} ideas:`;
+  }
+
+  return 'You wrote these notes:';
+};
+
 export const isMemorySearchQuery = (text) => {
   const normalized = normalizeToken(text);
   if (!normalized) {
@@ -111,6 +127,6 @@ export const formatMemorySearchResponse = (result) => {
     return 'I could not find any matching notes yet.';
   }
 
-  const heading = count === 1 ? 'You have 1 note saved:' : `You have ${count} notes saved:`;
+  const heading = formatNotebookHeading(items);
   return `${heading}\n\n${formatLineItems(items)}`;
 };
