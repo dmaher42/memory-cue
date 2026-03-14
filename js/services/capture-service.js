@@ -9,7 +9,7 @@ import {
 
 export { INBOX_STORAGE_KEY, getInboxEntries, removeInboxEntry };
 
-const PARSED_TYPE_VALUES = new Set(['note', 'reminder', 'unknown']);
+const PARSED_TYPE_VALUES = new Set(['note', 'reminder', 'idea', 'lesson_idea', 'coaching_drill', 'question', 'unknown']);
 const SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
 
 const sanitizeText = (value) => {
