@@ -159,21 +159,47 @@
 #chatConversationContainer {
   width: min(100%, 36rem);
   margin: 0 auto;
-  gap: 0.95rem !important;
-  padding: 0.5rem 0.3rem 0.75rem !important;
+  gap: 1.1rem !important;
+  padding: 0.7rem 0.35rem 0.95rem !important;
 }
 
 #chatConversationContainer .chat-message {
-  max-width: min(100%, 32rem) !important;
-  border-radius: 1rem !important;
-  padding: 0.78rem 0.95rem !important;
-  background: #ffffff !important;
-  border: 1px solid color-mix(in srgb, var(--card-border, #dbe2ed) 58%, #ffffff 42%) !important;
-  box-shadow: 0 6px 14px rgba(24, 30, 43, 0.06) !important;
-  line-height: 1.45 !important;
+  max-width: min(88%, 31.5rem) !important;
+  border-radius: 1.1rem !important;
+  padding: 0.92rem 1.05rem !important;
+  line-height: 1.5 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
 }
 
-#chatConversationContainer .chat-message--user,
 #chatConversationContainer .chat-message--assistant {
-  background: #ffffff !important;
+  align-self: flex-start !important;
+  background: color-mix(in srgb, var(--surface-elevated, #f9fafb) 78%, #ffffff 22%) !important;
+  border: 1px solid color-mix(in srgb, var(--card-border, #dbe2ed) 60%, #ffffff 40%) !important;
+  box-shadow: 0 6px 16px rgba(24, 30, 43, 0.05) !important;
+}
+
+#chatConversationContainer .chat-message--user {
+  align-self: flex-end !important;
+  background: color-mix(in srgb, var(--accent-color, #512663) 15%, #ffffff 85%) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #512663) 28%, transparent) !important;
+  box-shadow: 0 6px 14px rgba(62, 36, 89, 0.08) !important;
+}
+
+#chatConversationContainer .chat-message .chat-quick-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+#chatConversationContainer .chat-message .chat-quick-actions span {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--text-muted, #6b7280) 90%, #ffffff 10%);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
