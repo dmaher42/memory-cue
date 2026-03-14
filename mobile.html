@@ -4987,14 +4987,6 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel hidden" aria-hidden="true">
       <div class="reminders-mobile-flow reminders-content-shell">
-        <div class="flex items-center justify-between">
-          <button id="reminderSortToggle" type="button" class="btn btn-xs btn-ghost" aria-haspopup="listbox" aria-label="Sort reminders (Created)">Created ▼</button>
-          <select id="reminderSort" class="sr-only" aria-label="Sort reminders">
-            <option value="created" selected>Created</option>
-            <option value="time-relevance">Time relevance</option>
-          </select>
-        </div>
-        <p class="text-xs text-base-content/70">Use the chat capture bar to add reminders instantly.</p>
         <div id="inboxSearchResults"></div>
 
         <section id="remindersListMobile">
@@ -5007,7 +4999,7 @@ body, main, section, div, p, span, li {
               <p id="reminderReorderHint" class="sr-only">
                 Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
               </p>
-              <ul id="reminderList" class="w-full space-y-2 overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
+              <ul id="reminderList" class="w-full overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
             </div>
           </section>
         </section>
