@@ -61,7 +61,15 @@ export async function startSignInFlow(options = {}) {
     const supabase = getSupabaseClient();
     if (supabase && supabase.auth) {
       if (typeof supabase.auth.signInWithOAuth === 'function') {
-        return supabase.auth.signInWithOAuth({ provider: 'google', ...options });
+        const redirectUrl = `${window.location.origin}/auth/callback`;
+        return supabase.auth.signInWithOAuth({
+          ...options,
+          provider: 'google',
+          options: {
+            ...(options?.options || {}),
+            redirectTo: redirectUrl,
+          },
+        });
       }
       if (typeof supabase.auth.signIn === 'function') {
         // legacy support
@@ -428,4 +436,3 @@ export function getSupabaseAuthElements(selectors = {}, scope = document) {
     ...selectors,
   }, scope);
 }
-
