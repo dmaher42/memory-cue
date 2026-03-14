@@ -2101,18 +2101,12 @@ export async function initReminders(sel = {}) {
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
 
-    const saveBrainDumpEntry = async (sourceText) => {
-      const cleanText = String(sourceText || '').trim();
-      if (!cleanText) {
-        return;
-      }
-
-      try {
-        await captureInput(cleanText, 'quick-add');
-      } catch (error) {
-        console.warn('Failed to persist memory entries', error);
-      }
-    };
+    const hasStructuredReminderPayload =
+      options?.dueDate != null
+      || options?.notifyAt != null
+      || (typeof options?.category === 'string' && options.category.trim())
+      || (typeof options?.priority === 'string' && options.priority.trim())
+      || (typeof options?.notes === 'string' && options.notes.trim());
 
     isQuickAddSubmitting = true;
     if (quickInput && typeof quickInput.disabled !== 'undefined') {
@@ -2128,29 +2122,6 @@ export async function initReminders(sel = {}) {
 
     let entry = null;
 
-    const fallbackClassify = (text) => {
-      const fallback = parseSmartEntryWithFallback(text);
-      return {
-        type: typeof fallback?.type === 'string' ? fallback.type : 'note',
-        title: typeof fallback?.title === 'string' ? fallback.title : '',
-        reminderDate:
-          typeof fallback?.reminderDate === 'string' && fallback.reminderDate.trim()
-            ? fallback.reminderDate
-            : null,
-      };
-    };
-
-    const mapSmartTypeToCategory = (type) => {
-      switch (type) {
-        case 'drill':
-          return 'Footy – Drills';
-        case 'task':
-          return 'Tasks';
-        default:
-          return null;
-      }
-    };
-
     try {
       const routed = parseQuickAddPrefixRoute(t);
       const routedText = routed.text || t;
@@ -2158,90 +2129,50 @@ export async function initReminders(sel = {}) {
       if (routed.kind === 'reflection') {
         entry = saveReflectionQuickNote(routedText);
       } else {
-        const quickParsed = parseQuickWhen(routedText);
-        let dueIso = null;
-        if (quickParsed?.time) {
-          dueIso = new Date(`${quickParsed.date}T${quickParsed.time}:00`).toISOString();
-        }
+        if (hasStructuredReminderPayload) {
+          const basePayload = buildQuickReminder(routedText);
+          const optionDueIso =
+            options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
+              ? options.dueDate.toISOString()
+              : typeof options?.dueDate === 'string' && options.dueDate.trim()
+                ? options.dueDate.trim()
+                : null;
 
-        const fallbackFields = fallbackClassify(routedText);
-        const basePayload = buildQuickReminder(routedText, dueIso);
-        const optionDueIso =
-          options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
-            ? options.dueDate.toISOString()
-            : typeof options?.dueDate === 'string' && options.dueDate.trim()
-              ? options.dueDate.trim()
-              : null;
+          if (optionDueIso) {
+            basePayload.due = optionDueIso;
+          }
+          if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
+            basePayload.notifyAt = options.notifyAt.toISOString();
+          } else if (typeof options?.notifyAt === 'string' && options.notifyAt.trim()) {
+            basePayload.notifyAt = options.notifyAt.trim();
+          }
 
-        if (optionDueIso) {
-          basePayload.due = optionDueIso;
-        }
-        if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
-          basePayload.notifyAt = options.notifyAt.toISOString();
-        } else if (typeof options?.notifyAt === 'string' && options.notifyAt.trim()) {
-          basePayload.notifyAt = options.notifyAt.trim();
-        }
+          if (typeof options?.category === 'string' && options.category.trim()) {
+            basePayload.category = options.category.trim();
+          }
+          if (typeof options?.priority === 'string' && options.priority.trim()) {
+            basePayload.priority = options.priority.trim();
+          }
+          if (typeof options?.notes === 'string' && options.notes.trim()) {
+            basePayload.notes = options.notes.trim();
+          }
 
-        const fallbackCategory = mapSmartTypeToCategory(fallbackFields.type);
-        if (fallbackCategory) {
-          basePayload.category = fallbackCategory;
-        }
+          if (routed.kind === 'task') {
+            basePayload.category = 'Tasks';
+          } else if (routed.kind === 'footy-drill') {
+            basePayload.category = 'Footy – Drills';
+          }
 
-        if (routed.kind === 'task') {
-          basePayload.category = 'Tasks';
-        } else if (routed.kind === 'footy-drill') {
-          basePayload.category = 'Footy – Drills';
-        }
-
-        // Save immediately from raw input. AI enrichment is best-effort and never blocks saving.
-        entry = addItem(basePayload);
-
-        if (entry && entry.id) {
-          (async () => {
-            try {
-              const parsedByAi = await parseSmartEntryWithAI(routedText);
-              if (!parsedByAi || !entry?.id) {
-                return;
-              }
-
-              const matchingReminder = items.find((item) => item?.id === entry.id);
-              if (!matchingReminder) {
-                return;
-              }
-
-              const nextCategory = mapSmartTypeToCategory(parsedByAi.type);
-              const nextDue =
-                typeof parsedByAi.reminderDate === 'string' && parsedByAi.reminderDate.trim()
-                  ? parsedByAi.reminderDate.trim()
-                  : null;
-
-              let changed = false;
-              if (nextCategory && nextCategory !== matchingReminder.category) {
-                matchingReminder.category = nextCategory;
-                changed = true;
-              }
-              if (nextDue && nextDue !== matchingReminder.due) {
-                matchingReminder.due = nextDue;
-                changed = true;
-              }
-
-              if (changed) {
-                matchingReminder.updatedAt = Date.now();
-                render();
-                persistItems();
-                saveToFirebase(matchingReminder);
-                emitReminderUpdates();
-                dispatchCueEvent('memoryCue:remindersUpdated', { items });
-              }
-            } catch (error) {
-              console.warn('AI smart capture failed, using fallback classifier', error);
-            }
-          })();
+          entry = addItem(basePayload);
+        } else {
+          entry = await captureInput(routedText, {
+            source: 'quick-add',
+            entryPoint: 'reminders.quickAddNow',
+          });
         }
       }
 
       if (entry && typeof document !== 'undefined') {
-        await saveBrainDumpEntry(t);
         quickInput.value = '';
         try {
           quickInput.focus({ preventScroll: true });
@@ -5759,6 +5690,8 @@ export async function initReminders(sel = {}) {
     }
     if(!trimmedTitle){ toast('Add a reminder title'); return; }
     const noteText = details ? details.value.trim() : '';
+    const priorityValue = getPriorityInputValue();
+    const normalizedCategory = categoryInput ? normalizeCategory(categoryInput.value) : DEFAULT_CATEGORY;
     let due = parseManualDueInput(dateValue, timeValue);
     if (!due) { const p=parseQuickWhen(trimmedTitle); if(p.time){ due=new Date(`${p.date}T${p.time}:00`).toISOString(); } }
     const plannerLessonDetail = plannerLinkId
@@ -5769,22 +5702,60 @@ export async function initReminders(sel = {}) {
           summary: plannerLessonInput?.dataset?.lessonSummary || '',
         }
       : null;
-    const createdItem = addItem({ title:trimmedTitle, priority:getPriorityInputValue(), category: categoryInput ? categoryInput.value : '', due, notes: noteText, plannerLessonId: plannerLinkId || null });
-    if (createdItem) {
-      if (plannerLessonDetail) {
+    const isStructuredReminderPayload = Boolean(
+      due
+      || noteText
+      || plannerLinkId
+      || normalizedCategory !== DEFAULT_CATEGORY
+      || priorityValue !== 'Medium',
+    );
+
+    const createdItem = isStructuredReminderPayload
+      ? addItem({
+        title:trimmedTitle,
+        priority: priorityValue,
+        category: normalizedCategory,
+        due,
+        notes: noteText,
+        plannerLessonId: plannerLinkId || null,
+      })
+      : captureInput(trimmedTitle, {
+        source: 'reminder',
+        entryPoint: 'reminders.handleSaveAction',
+      });
+
+    const createdItemResolved = createdItem && typeof createdItem.then === 'function'
+      ? null
+      : createdItem;
+    const applyCreatedResult = (resolvedItem) => {
+      if (!resolvedItem) {
+        return;
+      }
+      const isReminderItem = Object.prototype.hasOwnProperty.call(resolvedItem, 'done');
+      if (plannerLessonDetail && isReminderItem) {
         toast('Planner reminder created');
         dispatchCueEvent('planner:reminderCreated', {
           lessonId: plannerLessonDetail.lessonId,
           dayLabel: plannerLessonDetail.dayLabel,
           lessonTitle: plannerLessonDetail.lessonTitle,
           summary: plannerLessonDetail.summary,
-          reminderId: createdItem.id,
-          reminderTitle: createdItem.title,
-          reminderDue: createdItem.due || null,
+          reminderId: resolvedItem.id,
+          reminderTitle: resolvedItem.title,
+          reminderDue: resolvedItem.due || null,
         });
-      } else {
+      } else if (isReminderItem) {
         toast('Reminder created');
+      } else {
+        toast('Saved');
       }
+    };
+
+    if (createdItem && typeof createdItem.then === 'function') {
+      createdItem.then(applyCreatedResult).catch((error) => {
+        console.warn('Failed to save reminder capture', error);
+      });
+    } else {
+      applyCreatedResult(createdItemResolved);
     }
     if(title) title.value='';
     if(time) time.value='';
