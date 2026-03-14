@@ -4987,47 +4987,20 @@ body, main, section, div, p, span, li {
     <!-- BEGIN GPT CHANGE: reminders view -->
     <section data-view="reminders" id="view-reminders" class="view-panel hidden" aria-hidden="true">
       <div class="reminders-mobile-flow reminders-content-shell">
-        <section class="reminders-screen-controls" aria-label="Reminder controls">
-          <div class="reminders-quick-add-form" aria-label="Quick add reminder">
-            <p class="text-xs text-base-content/70">Use the chat capture bar to add reminders instantly.</p>
-          </div>
-          <div class="reminders-top-controls-row">
-            <div class="reminders-tabs" role="tablist" aria-label="Filter reminders by status">
-              <button type="button" class="reminder-tab reminders-tab-active" data-reminders-tab="today" aria-pressed="true">Today</button>
-              <button type="button" class="reminder-tab" data-reminders-tab="upcoming" aria-pressed="false">Upcoming</button>
-              <button type="button" class="reminder-tab" data-reminders-tab="completed" aria-pressed="false">Completed</button>
-            </div>
-            <button id="reminderSortToggle" type="button" class="reminders-sort-btn" data-reminder-sort-toggle aria-label="Sort reminders" title="Sort reminders">Sort</button>
-          </div>
-        </section>
-        <div
-          id="reminderCategoryFilters"
-          class="category-filter-bar"
-          role="toolbar"
-          aria-label="Filter reminders by category"
-        >
-        </div>
+        <p class="text-xs text-base-content/70">Use the chat capture bar to add reminders instantly.</p>
         <div id="inboxSearchResults"></div>
 
         <section id="remindersListMobile">
           <section
             id="reminderListSection"
-            class="w-full relative memory-glass-card-soft"
+            class="w-full relative"
           >
-            <div class="sr-only" aria-hidden="true">
-              <label for="reminderSort" class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Sort by:</label>
-              <select id="reminderSort" class="select select-bordered select-xs max-w-[10rem]" aria-label="Sort reminders">
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="category">Category</option>
-              </select>
-            </div>
             <div class="w-full" id="remindersWrapper">
               <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
               <p id="reminderReorderHint" class="sr-only">
                 Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
               </p>
-              <ul id="reminderList" class="grid grid-cols-2 gap-1 w-full overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
+              <ul id="reminderList" class="w-full space-y-2 overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
             </div>
           </section>
         </section>
@@ -6141,7 +6114,7 @@ body, main, section, div, p, span, li {
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
   <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./assets/mobile-R7UF45QA.js"></script>
+  <script type="module" src="./assets/mobile-K3P3QZKO.js"></script>
   <script type="module" src="./assets/mobile-theme-toggle-LKXUTSLM.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
