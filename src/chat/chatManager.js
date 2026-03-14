@@ -94,6 +94,124 @@ const askAssistant = async (text) => {
     : 'Here is what I found.';
 };
 
+const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
+const MAX_REMINDER_MATCHES = 5;
+const REMINDER_QUERY_PREFIXES = ['what', 'show', 'find', 'list'];
+
+const REMINDER_QUERY_STOP_WORDS = new Set([
+  'what',
+  'do',
+  'did',
+  'i',
+  'have',
+  'my',
+  'was',
+  'were',
+  'the',
+  'a',
+  'an',
+  'that',
+  'this',
+  'these',
+  'those',
+  'reminder',
+  'reminders',
+]);
+
+const normalizeReminderQuery = (text) => (typeof text === 'string' ? text.trim().toLowerCase() : '');
+
+const shouldSearchReminders = (text) => {
+  const normalized = normalizeReminderQuery(text);
+  if (!normalized) {
+    return false;
+  }
+
+  const startsWithRecallPrefix = REMINDER_QUERY_PREFIXES
+    .some((prefix) => normalized.startsWith(`${prefix} `));
+
+  if (!startsWithRecallPrefix) {
+    return false;
+  }
+
+  return /\b(reminder|reminders|meeting|meetings|shopping|list|idea|ideas|today|tonight|tomorrow)\b/.test(normalized);
+};
+
+const readStoredReminders = () => {
+  if (typeof localStorage === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = localStorage.getItem(OFFLINE_REMINDERS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to read reminders from local storage.', error);
+    return [];
+  }
+};
+
+const extractReminderQueryTerms = (text) => {
+  const normalized = normalizeReminderQuery(text).replace(/[^a-z0-9\s]/g, ' ');
+  return normalized
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 2 && !REMINDER_QUERY_STOP_WORDS.has(term));
+};
+
+const isDueToday = (reminder) => {
+  const due = typeof reminder?.due === 'string' ? reminder.due.trim() : '';
+  if (!due) {
+    return false;
+  }
+
+  const dueDate = new Date(due);
+  if (Number.isNaN(dueDate.getTime())) {
+    return false;
+  }
+
+  const now = new Date();
+  return dueDate.getFullYear() === now.getFullYear()
+    && dueDate.getMonth() === now.getMonth()
+    && dueDate.getDate() === now.getDate();
+};
+
+const buildReminderSearchResponse = (queryText) => {
+  if (!shouldSearchReminders(queryText)) {
+    return null;
+  }
+
+  const reminders = readStoredReminders();
+  if (!reminders.length) {
+    return 'You have no reminders saved yet.';
+  }
+
+  const queryTerms = extractReminderQueryTerms(queryText);
+  const includesToday = /\btoday\b/.test(normalizeReminderQuery(queryText));
+
+  const matches = reminders
+    .filter((reminder) => !reminder?.done)
+    .map((reminder) => {
+      const reminderText = `${reminder?.title || ''} ${reminder?.notes || ''}`.toLowerCase();
+      const termScore = queryTerms.reduce((score, term) => score + (reminderText.includes(term) ? 1 : 0), 0);
+      const todayScore = includesToday && isDueToday(reminder) ? 2 : 0;
+      return { reminder, score: termScore + todayScore };
+    })
+    .filter(({ score }) => (queryTerms.length ? score > 0 : score >= 0))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_REMINDER_MATCHES)
+    .map(({ reminder }) => {
+      const title = typeof reminder?.title === 'string' ? reminder.title.trim() : '';
+      return title || 'Untitled reminder';
+    });
+
+  if (!matches.length) {
+    return 'I could not find any matching reminders.';
+  }
+
+  return `You wrote these reminders\n\n${matches.map((item) => `• ${item}`).join('\n')}`;
+};
+
 const getReminderScheduleLabel = (parsed, text) => {
   const dueValue =
     (typeof parsed?.reminderDate === 'string' && parsed.reminderDate.trim())
@@ -182,6 +300,11 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
   }
 
   if (parsedType === 'question' || text.endsWith('?')) {
+    const reminderSearchResponse = buildReminderSearchResponse(text);
+    if (reminderSearchResponse) {
+      return { message: reminderSearchResponse };
+    }
+
     return { message: await askAssistant(text) };
   }
 
