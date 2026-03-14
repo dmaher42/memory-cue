@@ -475,7 +475,7 @@ Legacy shells remain for reference only.
     #reminderList {
       display: flex !important;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0;
       overflow: visible;
     }
     @media (max-width: 380px) {
@@ -1628,17 +1628,17 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     .reminder-row {
       display: flex;
       align-items: center;
-      padding: 0.6rem 0.9rem;
-      border-radius: 999px;
-      background: var(--surface-soft, rgba(255, 255, 255, 0.7));
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02);
+      padding: 0.7rem 0.25rem;
+      border-radius: 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--text-main) 10%, transparent);
+      background: transparent;
+      box-shadow: none;
       gap: 0.6rem;
-      transition: box-shadow 0.15s ease, transform 0.12s ease;
+      transition: background-color 0.16s ease;
     }
 
     .reminder-row:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+      background: color-mix(in srgb, var(--accent-color) 4%, transparent);
     }
 
     .reminder-row-complete {
@@ -1701,6 +1701,10 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 
     .reminder-row.reminder-row-overdue .reminder-row-meta {
       color: var(--text-danger, #c62828);
+    }
+
+    .reminder-row:last-child {
+      border-bottom-color: transparent;
     }
 
       .priority-pill.priority-high {
@@ -6332,7 +6336,7 @@ body, main, section, div, p, span, li {
     .category-filter-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       overflow-x: auto;
       padding: 0 4px 2px;
       margin-bottom: 4px;
@@ -6345,20 +6349,20 @@ body, main, section, div, p, span, li {
 
     .category-chip {
       border-radius: 999px;
-      border: 1px solid rgba(47, 27, 63, 0.18);
-      background: rgba(255, 255, 255, 0.92);
-      padding: 6px 12px;
-      font-size: 0.82rem;
+      border: 1px solid color-mix(in srgb, var(--text-main) 10%, transparent);
+      background: color-mix(in srgb, var(--text-main) 4%, transparent);
+      padding: 4px 9px;
+      font-size: 0.78rem;
       line-height: 1;
-      color: var(--primary-dark);
+      color: var(--text-secondary);
       white-space: nowrap;
       transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
     }
 
     .category-chip.active {
-      background: #5c4b8a;
-      border-color: #5c4b8a;
-      color: #fff;
+      background: color-mix(in srgb, var(--accent-color) 16%, transparent);
+      border-color: color-mix(in srgb, var(--accent-color) 28%, transparent);
+      color: var(--accent-color);
     }
 
     .reminder-actions {
