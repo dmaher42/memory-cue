@@ -40,7 +40,7 @@ describe('api/parse-entry parse fallbacks', () => {
     jest.restoreAllMocks();
   });
 
-  test('returns fallback with 422 for malformed output_text JSON', async () => {
+  test('returns structured fallback for malformed output_text JSON', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ output_text: '{"type":"note", bad json' })
@@ -55,13 +55,16 @@ describe('api/parse-entry parse fallbacks', () => {
 
     await handler(req, res);
 
-    expect(res.statusCode).toBe(422);
-    expect(res.body).toEqual({
-      type: 'unknown',
-      title: 'Plan trip to Rome and review flights next week.',
-      tags: [],
-      reminderDate: null,
-      metadata: { parseError: true }
+    expect(res.statusCode).toBe(200);
+    expect(res.body.type).toBe('idea');
+    expect(res.body.title).toBe('Plan trip to Rome and review flights next week.');
+    expect(Array.isArray(res.body.tags)).toBe(true);
+    expect(res.body.reminderDate).toBeNull();
+    expect(res.body.metadata).toMatchObject({
+      originalText: 'Plan trip to Rome and review flights next week.',
+      type: 'idea'
     });
+    expect(Array.isArray(res.body.metadata.keywords)).toBe(true);
+    expect(typeof res.body.metadata.timestamp).toBe('string');
   });
 });

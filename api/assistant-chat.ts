@@ -40,6 +40,10 @@ function normalizeEntry(entry, type) {
     title: title || body.slice(0, 64) || `${type} entry`,
     body,
     createdAt: toText(entry?.createdAt),
+    parsedType: toText(entry?.parsedType || entry?.metadata?.type || ''),
+    keywords: Array.isArray(entry?.metadata?.keywords)
+      ? entry.metadata.keywords.map((keyword) => toText(keyword).toLowerCase()).filter(Boolean)
+      : [],
   };
 }
 
@@ -143,6 +147,84 @@ function buildPrompt(message, history, selectedContext) {
   ].filter(Boolean).join('\n');
 }
 
+function normalizeTypeLabel(value) {
+  const normalized = toText(value).toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'coaching_drill') return 'coaching drill';
+  if (normalized === 'lesson_idea') return 'lesson idea';
+  return normalized;
+}
+
+function detectRecallType(message) {
+  const normalized = toText(message).toLowerCase();
+  if (!normalized) return null;
+  if (/\bdrills?\b|\bcoaching drill\b/.test(normalized)) return 'coaching_drill';
+  if (/\blesson ideas?\b|\blesson\b/.test(normalized)) return 'lesson_idea';
+  if (/\breminders?\b/.test(normalized)) return 'reminder';
+  if (/\bideas?\b/.test(normalized)) return 'idea';
+  if (/\bnotes?\b/.test(normalized)) return 'note';
+  return null;
+}
+
+function extractSearchTerms(message) {
+  const normalized = toText(message).toLowerCase();
+  const cleaned = normalized.replace(/[^a-z0-9\s]/g, ' ');
+  const stopWords = new Set(['what', 'did', 'i', 'write', 'down', 'save', 'saved', 'say', 'about', 'was', 'that', 'the', 'a', 'an', 'my']);
+  return cleaned
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 2 && !stopWords.has(term));
+}
+
+function buildIdeaHighlights(message, contextEntries) {
+  const requestedType = detectRecallType(message);
+  const searchTerms = extractSearchTerms(message);
+
+  let matches = contextEntries.filter((entry) => entry.type === 'inbox');
+
+  if (requestedType) {
+    matches = matches.filter((entry) => normalizeTypeLabel(entry.parsedType) === normalizeTypeLabel(requestedType));
+  }
+
+  if (searchTerms.length) {
+    matches = matches
+      .map((entry) => {
+        const haystack = `${entry.title} ${entry.body} ${(entry.keywords || []).join(' ')}`.toLowerCase();
+        const score = searchTerms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
+        return { entry, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.entry);
+  }
+
+  const unique = [];
+  const seen = new Set();
+  for (const match of matches) {
+    const key = `${match.id}:${match.body}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(match);
+    if (unique.length >= 8) break;
+  }
+
+  if (!unique.length) {
+    return null;
+  }
+
+  const typeLabel = requestedType ? normalizeTypeLabel(requestedType) : 'ideas';
+  const heading = requestedType
+    ? `You wrote these ${typeLabel}${typeLabel.endsWith('s') ? '' : 's'}:`
+    : 'Here are matching ideas you saved:';
+  const list = unique.map((entry) => `• ${entry.body || entry.title}`).join('\n');
+
+  return {
+    reply: `${heading}\n\n${list}`,
+    references: unique.map((entry) => ({ id: entry.id, type: entry.parsedType || entry.type, title: entry.title || entry.body })),
+    contextUsed: unique,
+  };
+}
+
 async function getOpenAiResponse(prompt) {
   if (!process.env.OPENAI_API_KEY) {
     return 'Assistant is configured without OPENAI_API_KEY. I can still show matching context references below.';
@@ -207,6 +289,16 @@ export default async function handler(req, res) {
 
   try {
     const contextEntries = gatherContext(body);
+    const ideaHighlights = buildIdeaHighlights(message, contextEntries);
+    if (ideaHighlights) {
+      return res.status(200).json({
+        success: true,
+        reply: ideaHighlights.reply,
+        references: ideaHighlights.references,
+        contextUsed: ideaHighlights.contextUsed,
+      });
+    }
+
     const selectedContext = contextEntries
       .map((entry) => ({ entry, score: keywordScore(message, `${entry.title} ${entry.body}`) }))
       .sort((a, b) => b.score - a.score)

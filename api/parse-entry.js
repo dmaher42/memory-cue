@@ -4,11 +4,24 @@ const PARSED_ENTRY_SCHEMA = {
   properties: {
     type: {
       type: 'string',
-      enum: ['note', 'reminder', 'question']
+      enum: ['note', 'reminder', 'idea', 'lesson_idea', 'coaching_drill', 'question']
     },
-    content: { type: 'string' }
+    title: { type: 'string' },
+    tags: { type: 'array', items: { type: 'string' } },
+    reminderDate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    metadata: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        originalText: { type: 'string' },
+        type: { type: 'string' },
+        keywords: { type: 'array', items: { type: 'string' } },
+        timestamp: { type: 'string' }
+      },
+      required: ['originalText', 'type', 'keywords', 'timestamp']
+    }
   },
-  required: ['type', 'content']
+  required: ['type', 'title', 'tags', 'reminderDate', 'metadata']
 };
 
 const ALLOWED_ORIGINS = [
@@ -20,7 +33,11 @@ const ALLOWED_ORIGINS = [
 
 const MAX_TEXT_LENGTH = 4000;
 const PARSE_FALLBACK_STATUS = 200;
-const ALLOWED_PARSED_TYPES = ['note', 'reminder', 'question'];
+const ALLOWED_PARSED_TYPES = ['note', 'reminder', 'idea', 'lesson_idea', 'coaching_drill', 'question'];
+
+const STOP_WORDS = new Set([
+  'a', 'an', 'and', 'are', 'at', 'be', 'for', 'from', 'how', 'i', 'in', 'is', 'it', 'me', 'my', 'of', 'on', 'or', 'that', 'the', 'this', 'to', 'was', 'what', 'with', 'you', 'did', 'do'
+]);
 
 function sanitizePreview(value) {
   return String(value)
@@ -36,15 +53,83 @@ function isValidParsedEntry(parsed) {
   }
 
   const hasValidType = typeof parsed.type === 'string' && ALLOWED_PARSED_TYPES.includes(parsed.type);
-  const hasValidContent = typeof parsed.content === 'string';
+  const hasValidTitle = typeof parsed.title === 'string';
+  const hasValidTags = Array.isArray(parsed.tags) && parsed.tags.every((tag) => typeof tag === 'string');
+  const hasValidReminderDate = typeof parsed.reminderDate === 'string' || parsed.reminderDate === null;
+  const metadata = parsed.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : null;
+  const hasValidMetadata = Boolean(
+    metadata
+    && typeof metadata.originalText === 'string'
+    && typeof metadata.type === 'string'
+    && Array.isArray(metadata.keywords)
+    && metadata.keywords.every((keyword) => typeof keyword === 'string')
+    && typeof metadata.timestamp === 'string'
+  );
 
-  return hasValidType && hasValidContent;
+  return hasValidType && hasValidTitle && hasValidTags && hasValidReminderDate && hasValidMetadata;
+}
+
+function extractKeywords(text) {
+  const terms = String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 2 && !STOP_WORDS.has(term));
+
+  return Array.from(new Set(terms)).slice(0, 8);
+}
+
+function inferType(text) {
+  const normalized = String(text || '').toLowerCase();
+
+  if (/\b(remind|tomorrow|today|tonight|\d{1,2}(:\d{2})?\s?(am|pm))\b/.test(normalized)) {
+    return 'reminder';
+  }
+
+  if (/\b(drill|coaching|warmup|scrimmage|hb\b|kick|passing|defence|offense|football|soccer|netball|basketball)\b/.test(normalized)) {
+    return 'coaching_drill';
+  }
+
+  if (/\b(lesson|class|student|students|naplan|curriculum|sentence|writing|dependent clauses|activity)\b/.test(normalized)) {
+    return 'lesson_idea';
+  }
+
+  if (/\?$/.test(normalized)) {
+    return 'question';
+  }
+
+  if (/\b(idea|try|brainstorm|plan|could|should)\b/.test(normalized)) {
+    return 'idea';
+  }
+
+  return 'note';
+}
+
+function toTitle(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+function buildStructuredEntry(text) {
+  const type = inferType(text);
+  const keywords = extractKeywords(text);
+  return {
+    type,
+    title: toTitle(text),
+    tags: keywords,
+    reminderDate: null,
+    metadata: {
+      originalText: text,
+      type,
+      keywords,
+      timestamp: new Date().toISOString()
+    }
+  };
 }
 
 function buildFallbackEntry(text) {
   return {
-    type: 'note',
-    content: text,
+    ...buildStructuredEntry(text),
     source: 'fallback'
   };
 }
@@ -86,7 +171,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'Server misconfiguration: missing OpenAI API key.' });
+    return res.status(PARSE_FALLBACK_STATUS).json(buildStructuredEntry(text));
   }
 
   let response;
@@ -107,7 +192,7 @@ module.exports = async function handler(req, res) {
             content: [
               {
                 type: 'input_text',
-                text: `Return ONLY JSON matching schema.\nExtract:\n- type (note, reminder, question)\n- content (cleaned user text)\nIf unsure, use note.`
+                text: `Return ONLY JSON matching schema.\nClassify the message as one of: note, reminder, idea, lesson_idea, coaching_drill, question.\nInclude metadata with originalText, type, keywords, and timestamp.\nIf unsure, use note.`
               }
             ]
           },
@@ -159,7 +244,7 @@ module.exports = async function handler(req, res) {
         outputTextLength,
         outputTextPreview
       });
-      return res.status(PARSE_FALLBACK_STATUS).json(buildFallbackEntry(text));
+      return res.status(PARSE_FALLBACK_STATUS).json(buildStructuredEntry(text));
     }
 
     let parsedOutput;
@@ -172,7 +257,7 @@ module.exports = async function handler(req, res) {
         outputTextPreview,
         message: error.message
       });
-      return res.status(PARSE_FALLBACK_STATUS).json(buildFallbackEntry(text));
+      return res.status(PARSE_FALLBACK_STATUS).json(buildStructuredEntry(text));
     }
 
     if (!isValidParsedEntry(parsedOutput)) {
@@ -180,7 +265,7 @@ module.exports = async function handler(req, res) {
         outputTextLength,
         outputTextPreview
       });
-      return res.status(PARSE_FALLBACK_STATUS).json(buildFallbackEntry(text));
+      return res.status(PARSE_FALLBACK_STATUS).json(buildStructuredEntry(text));
     }
 
     return res.status(200).json(parsedOutput);

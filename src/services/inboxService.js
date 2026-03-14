@@ -2,7 +2,7 @@ import { syncInbox, upsertInboxEntry } from './supabaseSyncService.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
-const PARSED_TYPE_VALUES = new Set(['note', 'reminder', 'unknown']);
+const PARSED_TYPE_VALUES = new Set(['note', 'reminder', 'idea', 'lesson_idea', 'coaching_drill', 'question', 'unknown']);
 const SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
 
 const generateId = () => {
