@@ -1,3 +1,4 @@
+// Deprecated: replaced by Cloudflare Pages Function
 const PARSED_ENTRY_SCHEMA = {
   type: 'object',
   additionalProperties: false,
