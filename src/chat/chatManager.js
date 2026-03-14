@@ -3,6 +3,7 @@ import { executeCommand } from '../core/commandEngine.js';
 import { createAndSaveNote } from '../../js/modules/notes-storage.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
+import { createChatIntentInput, routeIntent } from '../services/intentRouter.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
@@ -66,15 +67,6 @@ const parseEntry = async (text) => {
 
   const parsed = await response.json();
   return normalizeParsedEntry(parsed, text);
-};
-
-const normalizeType = (parsedType, text) => {
-  const normalizedType = typeof parsedType === 'string' ? parsedType.trim().toLowerCase() : '';
-  if (normalizedType) {
-    return normalizedType;
-  }
-
-  return text.endsWith('?') ? 'question' : 'unknown';
 };
 
 const askAssistant = async (text) => {
@@ -276,21 +268,14 @@ const createNotebookNote = async (parsed, text) => {
   return { note, notebookName: folderName || 'Unsorted' };
 };
 
-const looksLikeNotebookCapture = (text) => {
-  const normalized = typeof text === 'string' ? text.trim().toLowerCase() : '';
-  if (!normalized) {
-    return false;
-  }
-  if (normalized.includes('?')) {
-    return false;
-  }
-  return /(meeting notes|lesson idea|remember\b|notes?\s+from|journal|plan\b|scored\b)/i.test(normalized);
-};
-
 const processParsedEntry = async (parsed, text, dependencies = {}) => {
-  const parsedType = normalizeType(parsed?.type, text);
+  const intentInput = createChatIntentInput(parsed, text, { channel: 'assistant_chat' });
+  const decision = routeIntent(intentInput.parsedEntry, intentInput.rawText, intentInput.hints);
+  const parsedType = typeof decision?.parsedType === 'string' && decision.parsedType
+    ? decision.parsedType
+    : 'unknown';
 
-  if (parsedType === 'reminder') {
+  if (decision.decisionType === 'persist_reminder') {
     console.log('Capture routed to:', 'reminder');
     await executeCommand('reminder', {
       text: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text,
@@ -306,18 +291,12 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
     return { message };
   }
 
-  if (
-    parsedType === 'note'
-    || parsedType === 'drill'
-    || parsedType === 'idea'
-    || parsedType === 'task'
-    || looksLikeNotebookCapture(text)
-  ) {
+  if (decision.decisionType === 'persist_note') {
     const { notebookName } = await createNotebookNote(parsed, text);
     return { message: `Saved to notebook (${notebookName}).` };
   }
 
-  if (parsedType === 'question' || text.endsWith('?')) {
+  if (decision.decisionType === 'query') {
     const reminderSearchResponse = buildReminderSearchResponse(text);
     if (reminderSearchResponse) {
       return { message: reminderSearchResponse };
@@ -329,7 +308,7 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
   saveInboxEntry({
     text,
     source: 'assistant',
-    parsedType: normalizeType(parsed?.type, text),
+    parsedType,
     tags: Array.isArray(parsed?.tags) ? parsed.tags : [],
     metadata: parsed?.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : {},
   });
