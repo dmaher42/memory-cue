@@ -69,6 +69,7 @@ const buildIndexEntry = (note) => {
     summary: body.slice(0, 180),
     type,
     tags: normalizeTags(metadata.tags),
+    keywords: normalizeTags(note.keywords),
     folder: getFolderNameById(note.folderId),
     createdAt,
     updatedAt,
@@ -85,6 +86,9 @@ const scoreMemoryMatch = (entry, normalizedQuery) => {
   const lowerTitle = entry.title.toLowerCase();
   const lowerBody = entry.body.toLowerCase();
   const lowerTags = entry.tags.map((tag) => tag.toLowerCase());
+  const lowerKeywords = Array.isArray(entry.keywords)
+    ? entry.keywords.map((keyword) => String(keyword).toLowerCase())
+    : [];
 
   let score = 0;
   let matched = false;
@@ -97,6 +101,11 @@ const scoreMemoryMatch = (entry, normalizedQuery) => {
 
     if (lowerTags.some((tag) => tag.includes(token))) {
       score += 500;
+      matched = true;
+    }
+
+    if (lowerKeywords.some((keyword) => keyword.includes(token))) {
+      score += 450;
       matched = true;
     }
 

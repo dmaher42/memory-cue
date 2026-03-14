@@ -160,6 +160,33 @@ const sanitizeMetadata = (value) => {
 
 const sanitizeCanonicalTags = (value) => sanitizeTags(value);
 
+const KEYWORD_STOP_WORDS = new Set([
+  'the', 'and', 'for', 'that', 'with', 'this', 'from', 'have', 'what', 'about', 'your', 'into',
+  'not', 'are', 'was', 'were', 'you', 'they', 'their', 'there', 'then', 'them', 'just', 'also',
+]);
+
+const extractKeywordsFromText = (value) => {
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token, index, list) => token.length > 2 && !KEYWORD_STOP_WORDS.has(token) && list.indexOf(token) === index)
+    .slice(0, 15);
+};
+
+const deriveKeywords = (title = '', bodyText = '', provided = null) => {
+  if (Array.isArray(provided) && provided.length) {
+    return sanitizeTags(provided).map((keyword) => keyword.toLowerCase());
+  }
+
+  return extractKeywordsFromText(`${title} ${bodyText}`);
+};
+
 export const createAndSaveNote = (payload = {}, options = {}) => {
   const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
   const text = typeof normalizedPayload.text === 'string' ? normalizedPayload.text.trim() : '';
@@ -208,6 +235,7 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
   const providedBodyText = typeof overrides.bodyText === 'string' ? overrides.bodyText : null;
   const normalizedBodyText =
     providedBodyText !== null ? providedBodyText.trim() : deriveBodyText(normalizedBodyHtml);
+  const keywords = deriveKeywords(trimmedTitle, normalizedBodyText, overrides.keywords);
   return {
     id: overrides.id && typeof overrides.id === 'string' ? overrides.id : generateId(),
     title: trimmedTitle || 'Untitled note',
@@ -225,6 +253,7 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
         : new Date().toISOString(),
     folderId: overrides.folderId && typeof overrides.folderId === 'string' ? overrides.folderId : null,
     semanticEmbedding: normalizeSemanticEmbedding(overrides.semanticEmbedding),
+    keywords,
     metadata: sanitizeMetadata(overrides.metadata),
     links: sanitizeLinks(overrides.links),
   };
@@ -264,6 +293,7 @@ const normalizeNotes = (value) => {
           bodyText,
           pinned,
           semanticEmbedding: normalizeSemanticEmbedding(note.semanticEmbedding),
+          keywords: deriveKeywords(title, bodyText, note.keywords),
           metadata: sanitizeMetadata(note.metadata),
           links: sanitizeLinks(note.links),
         });
@@ -297,6 +327,7 @@ const normalizeNotes = (value) => {
         bodyText,
         pinned,
         semanticEmbedding: normalizeSemanticEmbedding(value.semanticEmbedding),
+        keywords: deriveKeywords(title, bodyText, value.keywords),
         metadata: sanitizeMetadata(value.metadata),
         links: sanitizeLinks(value.links),
       }),
@@ -384,6 +415,7 @@ export const saveAllNotes = (notes, options = {}) => {
       out.pinned = typeof note.pinned === 'boolean' ? note.pinned : Boolean(out.pinned);
       out.createdAt = isValidDateString(note.createdAt) ? note.createdAt : out.createdAt;
       out.semanticEmbedding = normalizeSemanticEmbedding(note.semanticEmbedding);
+      out.keywords = deriveKeywords(out.title, out.bodyText, note.keywords || out.keywords);
       out.metadata = sanitizeMetadata(note.metadata);
       out.links = sanitizeLinks(note.links);
     }
@@ -413,8 +445,12 @@ export const saveAllNotes = (notes, options = {}) => {
 export { NOTES_STORAGE_KEY };
 
 // Folders API
-const REFLECTIONS_FOLDER_NAME = 'Lesson – Reflections';
-const REFLECTIONS_FOLDER_ID = 'lesson-reflections';
+const CORE_NOTEBOOKS = [
+  { id: 'school', name: 'School' },
+  { id: 'coaching', name: 'Coaching' },
+  { id: 'everyday', name: 'Everyday' },
+  { id: 'archive', name: 'Archive' },
+];
 
 const ensureRequiredFolders = (folders = []) => {
   const normalized = Array.isArray(folders)
@@ -429,22 +465,12 @@ const ensureRequiredFolders = (folders = []) => {
 
   let changed = false;
 
-  if (!normalized.some((folder) => folder.id === 'unsorted')) {
-    normalized.unshift({ id: 'unsorted', name: 'Unsorted', order: 0 });
-    changed = true;
-  }
-
-  if (!normalized.some((folder) => folder.name === REFLECTIONS_FOLDER_NAME)) {
-    const usedIds = new Set(normalized.map((folder) => folder.id));
-    let folderId = REFLECTIONS_FOLDER_ID;
-    let suffix = 1;
-    while (usedIds.has(folderId)) {
-      suffix += 1;
-      folderId = `${REFLECTIONS_FOLDER_ID}-${suffix}`;
+  CORE_NOTEBOOKS.forEach((requiredFolder) => {
+    if (!normalized.some((folder) => folder.id === requiredFolder.id)) {
+      normalized.push({ ...requiredFolder, order: normalized.length });
+      changed = true;
     }
-    normalized.push({ id: folderId, name: REFLECTIONS_FOLDER_NAME, order: normalized.length });
-    changed = true;
-  }
+  });
 
   const withOrder = normalized.map((folder, index) => {
     if (folder.order !== index) {
@@ -456,7 +482,7 @@ const ensureRequiredFolders = (folders = []) => {
   return { folders: withOrder, changed };
 };
 
-const defaultFolders = () => ensureRequiredFolders([{ id: 'unsorted', name: 'Unsorted', order: 0 }]).folders;
+const defaultFolders = () => ensureRequiredFolders(CORE_NOTEBOOKS).folders;
 
 export const getFolders = () => {
   if (!hasLocalStorage()) {
@@ -494,7 +520,7 @@ export const getFolders = () => {
 export const getFolderNameById = (id) => {
   const folders = getFolders();
   const found = folders.find((f) => f && String(f.id) === String(id));
-  return found ? String(found.name) : 'Unsorted';
+  return found ? String(found.name) : 'Everyday';
 };
 
 export const saveFolders = (folders) => {
@@ -521,7 +547,7 @@ export const assignNoteToFolder = (noteId, folderId) => {
       changed = true;
       return {
         ...n,
-        folderId: folderId && typeof folderId === 'string' ? folderId : null,
+        folderId: folderId && typeof folderId === 'string' ? folderId : 'everyday',
         updatedAt: new Date().toISOString(),
       };
     }

@@ -38,21 +38,27 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-test('getFolders always includes Lesson – Reflections', () => {
+test('getFolders always includes the core notebooks', () => {
   const { getFolders } = loadNotesStorageModule();
 
   const folders = getFolders();
 
   expect(Array.isArray(folders)).toBe(true);
-  expect(folders.some((folder) => folder?.name === 'Lesson – Reflections')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'School')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'Coaching')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'Everyday')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'Archive')).toBe(true);
 });
 
-test('saveFolders keeps Lesson – Reflections in storage', () => {
+test('saveFolders keeps core notebooks in storage', () => {
   const { saveFolders, getFolders } = loadNotesStorageModule();
 
-  const saved = saveFolders([{ id: 'unsorted', name: 'Unsorted', order: 0 }]);
+  const saved = saveFolders([{ id: 'school', name: 'School', order: 0 }]);
 
   expect(saved).toBe(true);
   const folders = getFolders();
-  expect(folders.some((folder) => folder?.name === 'Lesson – Reflections')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'School')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'Coaching')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'Everyday')).toBe(true);
+  expect(folders.some((folder) => folder?.name === 'Archive')).toBe(true);
 });
