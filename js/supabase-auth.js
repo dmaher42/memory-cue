@@ -332,6 +332,24 @@ function bindSignOutButtons(supabase, elements) {
   });
 }
 
+function bindSignInButtons(elements) {
+  elements.signInButtons.forEach((button) => {
+    if (!(button instanceof HTMLElement) || button.dataset.supabaseAuthBound === 'true') {
+      return;
+    }
+
+    button.dataset.supabaseAuthBound = 'true';
+
+    button.addEventListener('click', async () => {
+      try {
+        await startSignInFlow();
+      } catch (error) {
+        console.error('[supabase] Sign-in failed.', error);
+      }
+    });
+  });
+}
+
 export function initSupabaseAuth(options = {}) {
   const {
     supabase: suppliedSupabase,
@@ -367,6 +385,7 @@ export function initSupabaseAuth(options = {}) {
 
   bindAuthForms(supabase, elements);
   if (!disableButtonBinding) {
+    bindSignInButtons(elements);
     bindSignOutButtons(supabase, elements);
   }
 
@@ -428,4 +447,3 @@ export function getSupabaseAuthElements(selectors = {}, scope = document) {
     ...selectors,
   }, scope);
 }
-
