@@ -1,4 +1,4 @@
-import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
+import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 import { routeIntent } from '../services/intentRouter.js';
@@ -83,14 +83,6 @@ const mapDecisionToCountType = (decision) => {
   return 'note';
 };
 
-const addNotes = (notes) => {
-  if (!Array.isArray(notes) || !notes.length) {
-    return;
-  }
-
-  const existing = Array.isArray(loadAllNotes()) ? loadAllNotes() : [];
-  saveAllNotes([...notes, ...existing]);
-};
 
 export const processInbox = async (entries = [], options = {}) => {
   const createReminder = typeof options.createReminder === 'function' ? options.createReminder : null;
@@ -105,7 +97,7 @@ export const processInbox = async (entries = [], options = {}) => {
     personal: 0,
   };
 
-  const notesToSave = [];
+  const notePayloads = [];
   const processedItems = [];
 
   for (const entry of entries) {
@@ -152,15 +144,14 @@ export const processInbox = async (entries = [], options = {}) => {
       }
     } else if (decision.decisionType === 'persist_note') {
       const folderId = ensureFolderExistsByName(organization.notebook);
-      notesToSave.push(
-        createNote(parsedEntry?.title || text.split(/\s+/).slice(0, 8).join(' '), text, {
-          folderId,
-          metadata: {
-            type: parsedEntry?.type || type,
-            tags: combinedTags,
-          },
-        }),
-      );
+      notePayloads.push({
+        text,
+        title: parsedEntry?.title || text.split(/\s+/).slice(0, 8).join(' '),
+        folderId,
+        tags: combinedTags,
+        parsedType: parsedEntry?.type || type,
+        source: typeof entry?.source === 'string' ? entry.source : 'inbox',
+      });
     }
 
     if (removeInboxEntry && entry?.id != null) {
@@ -168,7 +159,9 @@ export const processInbox = async (entries = [], options = {}) => {
     }
   }
 
-  addNotes(notesToSave);
+  for (let index = notePayloads.length - 1; index >= 0; index -= 1) {
+    saveNote(notePayloads[index]);
+  }
 
   return {
     processedCount: processedItems.length,

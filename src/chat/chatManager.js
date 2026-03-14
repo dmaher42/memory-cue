@@ -1,10 +1,10 @@
 import { addMessage } from './messageStore.js';
 import { executeCommand } from '../core/commandEngine.js';
-import { createAndSaveNote } from '../../js/modules/notes-storage.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 import { createChatIntentInput, routeIntent } from '../services/intentRouter.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
+import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -253,7 +253,7 @@ const createNotebookNote = async (parsed, text) => {
     : null;
   const folderId = folderName ? ensureFolderExistsByName(folderName) : null;
 
-  const note = createAndSaveNote({
+  const note = saveNote({
     text,
     title,
     tags: Array.isArray(notebookSuggestion?.tags)
