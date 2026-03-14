@@ -1,5 +1,7 @@
 import { createAndSaveNote } from '../modules/notes-storage.js';
 import { generateTags } from '../../src/ai/tagGenerator.js';
+import { routeIntent } from '../../src/services/intentRouter.js';
+import * as reminderService from '../../src/services/reminderService.js';
 import {
   getInboxEntries,
   saveInboxEntry as saveInboxEntryCanonical,
@@ -47,19 +49,126 @@ const parseEntry = async (text) => {
     });
 
     if (!response.ok) {
-      return { parsedType: 'unknown', metadata: {} };
+      return { parsedEntry: null, isValid: false };
     }
 
     const parsed = await response.json();
+    const isValid = Boolean(parsed && typeof parsed === 'object');
     const parsedType = normalizeParsedType(parsed?.type);
     return {
-      parsedType,
-      metadata: parsed && typeof parsed === 'object' ? parsed : {},
+      parsedEntry: {
+        ...(isValid ? parsed : {}),
+        type: parsedType,
+      },
+      isValid,
     };
   } catch (error) {
     console.warn('[capture-service] parse-entry unavailable, using unknown type', error);
-    return { parsedType: 'unknown', metadata: {} };
+    return { parsedEntry: null, isValid: false };
   }
+};
+
+const resolveCaptureContext = (sourceInput) => {
+  if (sourceInput && typeof sourceInput === 'object') {
+    return {
+      source: normalizeSource(sourceInput.source),
+      entryPoint:
+        typeof sourceInput.entryPoint === 'string' && sourceInput.entryPoint.trim()
+          ? sourceInput.entryPoint.trim()
+          : normalizeSource(sourceInput.source),
+      capturedAt:
+        Number.isFinite(sourceInput.capturedAt)
+          ? sourceInput.capturedAt
+          : Date.now(),
+    };
+  }
+
+  const normalizedSource = normalizeSource(sourceInput);
+  return {
+    source: normalizedSource,
+    entryPoint: normalizedSource,
+    capturedAt: Date.now(),
+  };
+};
+
+const persistInboxDecision = (text, parsedEntry, context, overrides = {}) => saveInboxEntryCanonical({
+  id: overrides.id,
+  text,
+  tags: Array.isArray(parsedEntry?.tags) ? parsedEntry.tags : generateTags(text),
+  createdAt: context.capturedAt,
+  source: context.source,
+  parsedType: normalizeParsedType(parsedEntry?.type),
+  metadata: {
+    ...(parsedEntry && typeof parsedEntry === 'object' ? parsedEntry : {}),
+    source: context.source,
+    entryPoint: context.entryPoint,
+    capturedAt: context.capturedAt,
+  },
+});
+
+const persistNoteDecision = (text, parsedEntry, context) => {
+  const title =
+    typeof parsedEntry?.title === 'string' && parsedEntry.title.trim()
+      ? parsedEntry.title.trim()
+      : text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
+
+  const note = createAndSaveNote({
+    text,
+    title,
+    tags: Array.isArray(parsedEntry?.tags) ? parsedEntry.tags : generateTags(text),
+    source: context.source,
+    parsedType: normalizeParsedType(parsedEntry?.type) || 'note',
+  });
+
+  if (!note) {
+    return persistInboxDecision(text, parsedEntry, context);
+  }
+
+  return note;
+};
+
+const persistReminderDecision = async (text, parsedEntry, context) => {
+  const title =
+    typeof parsedEntry?.title === 'string' && parsedEntry.title.trim()
+      ? parsedEntry.title.trim()
+      : text;
+
+  try {
+    const reminder = await reminderService.createReminder({
+      title,
+      text,
+      due: typeof parsedEntry?.reminderDate === 'string' ? parsedEntry.reminderDate : undefined,
+      notes: text,
+      metadata: {
+        source: context.source,
+        entryPoint: context.entryPoint,
+        capturedAt: context.capturedAt,
+      },
+    });
+    if (reminder) {
+      return reminder;
+    }
+  } catch (error) {
+    console.warn('[capture-service] reminder creation unavailable, falling back to inbox', error);
+  }
+
+  return persistInboxDecision(text, parsedEntry, context);
+};
+
+const executeDecision = async (decision, text, parsedEntry, context) => {
+  if (!decision || typeof decision !== 'object') {
+    return persistInboxDecision(text, parsedEntry, context);
+  }
+
+  if (decision.decisionType === 'persist_reminder') {
+    return persistReminderDecision(text, parsedEntry, context);
+  }
+
+  if (decision.decisionType === 'persist_note') {
+    return persistNoteDecision(text, parsedEntry, context);
+  }
+
+  return persistInboxDecision(text, parsedEntry, context);
 };
 
 export const captureInput = async (text, source = 'capture') => {
@@ -68,19 +177,27 @@ export const captureInput = async (text, source = 'capture') => {
     return null;
   }
 
+  const context = resolveCaptureContext(source);
   const parsed = await parseEntry(cleanedText);
+  const parsedEntry = parsed?.parsedEntry;
 
-  const entry = {
-    id: generateId(),
-    text: cleanedText,
-    tags: generateTags(cleanedText),
-    createdAt: Date.now(),
-    source: normalizeSource(source),
-    parsedType: parsed.parsedType,
-    metadata: parsed.metadata,
+  if (!parsed?.isValid || !parsedEntry) {
+    return persistInboxDecision(
+      cleanedText,
+      { type: 'unknown', metadata: {} },
+      context,
+      { id: generateId() },
+    );
+  }
+
+  const hints = {
+    source: context.source,
+    entryPoint: context.entryPoint,
+    capturedAt: context.capturedAt,
   };
 
-  return saveInboxEntryCanonical(entry);
+  const decision = routeIntent(parsedEntry, cleanedText, hints);
+  return executeDecision(decision, cleanedText, parsedEntry, context);
 };
 
 export const convertInboxToNote = (entryId) => {
