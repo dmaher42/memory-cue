@@ -739,11 +739,10 @@ export async function initReminders(sel = {}) {
   let mobileRemindersCache = [];
   let mobileRemindersTemperatureLabel = '';
   const REMINDER_SORT_OPTIONS = Object.freeze({
-    newest: 'newest',
-    oldest: 'oldest',
-    category: 'category',
+    created: 'created',
+    timeRelevance: 'time-relevance',
   });
-  let reminderSortMode = REMINDER_SORT_OPTIONS.newest;
+  let reminderSortMode = REMINDER_SORT_OPTIONS.created;
 
   function getReminderSortTimestamp(reminder) {
     const createdAt = Number(reminder?.createdAt);
@@ -759,23 +758,29 @@ export async function initReminders(sel = {}) {
 
   function sortReminderRows(rows = []) {
     const sorted = Array.isArray(rows) ? rows.slice() : [];
-    if (reminderSortMode === REMINDER_SORT_OPTIONS.oldest) {
-      sorted.sort((a, b) => getReminderSortTimestamp(a) - getReminderSortTimestamp(b));
-      return sorted;
-    }
-    if (reminderSortMode === REMINDER_SORT_OPTIONS.category) {
-      sorted.sort((a, b) => {
-        const categoryDiff = normalizeCategory(a?.category).localeCompare(normalizeCategory(b?.category), undefined, {
-          sensitivity: 'base',
-        });
-        if (categoryDiff !== 0) {
-          return categoryDiff;
+    if (reminderSortMode === REMINDER_SORT_OPTIONS.timeRelevance) {
+      const hasTimeReference = (reminder) => {
+        if (!reminder || typeof reminder !== 'object') {
+          return false;
         }
-        return getReminderSortTimestamp(b) - getReminderSortTimestamp(a);
+        if (typeof reminder.due === 'string' && reminder.due.trim()) {
+          return true;
+        }
+        const sourceText = `${reminder.title || ''} ${reminder.notes || ''}`.toLowerCase();
+        return /(\btoday\b|\btomorrow\b|\btonight\b|\bthis\s+(week|month|year)\b|\bnext\s+(week|month|year|mon(day)?|tue(s|sday)?|wed(nesday)?|thu(r|rs|rsday)?|fri(day)?|sat(urday)?|sun(day)?)\b|\byesterday\b|\bdue\b|\bdeadline\b|\b\d{1,2}:\d{2}\b|\b\d{1,2}\s?(am|pm)\b)/i.test(sourceText);
+      };
+
+      const withTimeReferences = [];
+      const withoutTimeReferences = [];
+      sorted.forEach((reminder) => {
+        if (hasTimeReference(reminder)) {
+          withTimeReferences.push(reminder);
+        } else {
+          withoutTimeReferences.push(reminder);
+        }
       });
-      return sorted;
+      return withTimeReferences.concat(withoutTimeReferences);
     }
-    sorted.sort((a, b) => getReminderSortTimestamp(b) - getReminderSortTimestamp(a));
     return sorted;
   }
 
@@ -5101,7 +5106,7 @@ export async function initReminders(sel = {}) {
 
     const allowedModes = new Set(Object.values(REMINDER_SORT_OPTIONS));
     const initialMode = String(sortSelect.value || '').trim().toLowerCase();
-    reminderSortMode = allowedModes.has(initialMode) ? initialMode : REMINDER_SORT_OPTIONS.newest;
+    reminderSortMode = allowedModes.has(initialMode) ? initialMode : REMINDER_SORT_OPTIONS.created;
     sortSelect.value = reminderSortMode;
 
     if (setupReminderSortControl._wired) {
@@ -5119,22 +5124,27 @@ export async function initReminders(sel = {}) {
 
     const sortToggleBtn = document.getElementById('reminderSortToggle');
     if (sortToggleBtn instanceof HTMLElement) {
+      const updateSortToggleLabel = () => {
+        const label = reminderSortMode === REMINDER_SORT_OPTIONS.timeRelevance
+          ? 'Time relevance ▼'
+          : 'Created ▼';
+        sortToggleBtn.textContent = label;
+        sortToggleBtn.setAttribute('aria-label', `Sort reminders (${label.replace(' ▼', '')})`);
+        sortToggleBtn.title = `Sort reminders (${label.replace(' ▼', '')})`;
+      };
       sortToggleBtn.addEventListener('click', () => {
         const modes = [
-          REMINDER_SORT_OPTIONS.newest,
-          REMINDER_SORT_OPTIONS.oldest,
-          REMINDER_SORT_OPTIONS.category,
+          REMINDER_SORT_OPTIONS.created,
+          REMINDER_SORT_OPTIONS.timeRelevance,
         ];
         const currentIndex = modes.indexOf(reminderSortMode);
         const nextMode = modes[(currentIndex + 1) % modes.length];
         reminderSortMode = nextMode;
         sortSelect.value = nextMode;
-        sortToggleBtn.setAttribute('aria-label', `Sort reminders (${nextMode})`);
-        sortToggleBtn.title = `Sort reminders (${nextMode})`;
+        updateSortToggleLabel();
         render();
       });
-      sortToggleBtn.setAttribute('aria-label', `Sort reminders (${reminderSortMode})`);
-      sortToggleBtn.title = `Sort reminders (${reminderSortMode})`;
+      updateSortToggleLabel();
     }
 
     setupReminderSortControl._wired = true;
