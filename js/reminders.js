@@ -5230,6 +5230,7 @@ export async function initReminders(sel = {}) {
     }
 
     let rows = sortReminderRows(items);
+    const activeRows = rows.filter((row) => !row?.done);
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
@@ -5240,7 +5241,7 @@ export async function initReminders(sel = {}) {
     const highlightToday = true;
 
     const hasAny = items.length > 0;
-    const hasRows = rows.length > 0;
+    const hasRows = activeRows.length > 0;
 
     const pendingNotificationIds = (() => {
       if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
@@ -5295,8 +5296,6 @@ export async function initReminders(sel = {}) {
     list.replaceChildren();
     const frag = document.createDocumentFragment();
     const listIsSemantic = list.tagName === 'UL' || list.tagName === 'OL';
-
-    const shouldGroupByDueDate = true;
 
     const priorityClassTokens = ['priority-high', 'priority-medium', 'priority-low'];
     const applyPriorityTokensToCard = (card, priorityValue) => {
@@ -5503,20 +5502,8 @@ export async function initReminders(sel = {}) {
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
 
-        if (dueLabel) {
-          const dueLine = document.createElement('div');
-          dueLine.className = 'reminder-meta reminder-date reminder-row-meta';
-          dueLine.textContent = `Due: ${dueLabel}`;
-          rowMain.appendChild(dueLine);
-        }
         if (summary.done) {
           itemEl.classList.add('reminder-row-completed');
-        } else if (dueDate && dueDate < now) {
-          itemEl.classList.add('reminder-row-overdue', 'reminder-overdue');
-        } else if (dueIsToday) {
-          itemEl.classList.add('reminder-today');
-        } else {
-          itemEl.classList.add('reminder-upcoming');
         }
 
         itemEl.append(cardCheckbox, rowMain);
@@ -5631,79 +5618,18 @@ export async function initReminders(sel = {}) {
 
     const createMobileItem = (r, catName) => buildReminderCard(r, catName, { elementTag: 'div', isMobile: true });
 
-    if (variant !== 'desktop' && !shouldGroupByDueDate) {
-      rows.forEach((r) => {
-        const catName = r.category || DEFAULT_CATEGORY;
-        frag.appendChild(createMobileItem(r, catName));
-      });
-      list.appendChild(frag);
-      return;
-    }
-
-    const resolveDueDateGroup = (reminder) => {
-      if (reminder?.done) {
-        return 'COMPLETED';
+    activeRows.forEach((r) => {
+      const catName = r.category || DEFAULT_CATEGORY;
+      if (variant === 'desktop') {
+        const itemEl = buildReminderCard(r, catName, {
+          elementTag: listIsSemantic ? 'li' : 'div',
+          isMobile: false,
+        });
+        frag.appendChild(itemEl);
+        return;
       }
-      const dueDate = reminder?.due ? new Date(reminder.due) : null;
-      if (dueDate && dueDate >= t0 && dueDate <= t1) {
-        return 'TODAY';
-      }
-      return 'UPCOMING';
-    };
 
-    const grouped = new Map([
-      ['TODAY', []],
-      ['UPCOMING', []],
-      ['COMPLETED', []],
-    ]);
-    rows.forEach((r) => {
-      grouped.get(resolveDueDateGroup(r)).push(r);
-    });
-
-    const labelMap = {
-      TODAY: 'Today',
-      UPCOMING: 'Upcoming',
-      COMPLETED: 'Completed',
-    };
-
-    const sortedGroups = Array.from(grouped.entries()).filter(([, groupedRows]) => groupedRows.length > 0);
-    let firstGroup = true;
-    sortedGroups.forEach(([groupLabel, groupRows]) => {
-      const headingWrapper = document.createElement(listIsSemantic ? 'li' : 'div');
-      headingWrapper.dataset.dueDateHeading = groupLabel;
-      if (listIsSemantic) {
-        headingWrapper.setAttribute('role', 'presentation');
-        headingWrapper.style.listStyle = 'none';
-      }
-      headingWrapper.className = 'reminder-group-heading';
-      if (!firstGroup) {
-        headingWrapper.style.marginTop = variant === 'desktop' ? '1.25rem' : '1rem';
-      }
-      const headingInner = document.createElement('div');
-      headingInner.setAttribute('role', 'heading');
-      headingInner.setAttribute('aria-level', '3');
-      headingInner.className = 'reminder-group-heading-label';
-      const headingLabel = document.createElement('span');
-      headingLabel.textContent = labelMap[groupLabel] || groupLabel;
-      headingInner.append(headingLabel);
-      headingWrapper.appendChild(headingInner);
-      frag.appendChild(headingWrapper);
-
-      groupRows.forEach((r) => {
-        const catName = r.category || DEFAULT_CATEGORY;
-        if(variant === 'desktop'){
-          const itemEl = buildReminderCard(r, catName, {
-            elementTag: listIsSemantic ? 'li' : 'div',
-            isMobile: false,
-          });
-          frag.appendChild(itemEl);
-          return;
-        }
-
-        frag.appendChild(createMobileItem(r, catName));
-      });
-
-      firstGroup = false;
+      frag.appendChild(createMobileItem(r, catName));
     });
     list.appendChild(frag);
     syncDetailSelection();
