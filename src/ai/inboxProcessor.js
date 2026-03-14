@@ -1,6 +1,7 @@
 import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
+import { routeIntent } from '../services/intentRouter.js';
 
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
@@ -14,38 +15,72 @@ const getEntryText = (entry) => {
   return normalizeText(entry.title || entry.text || entry.content || entry.body || '');
 };
 
-const reminderPattern = /\b(remind|reminder|tomorrow|today|tonight|next week|next month|call|schedule|due|deadline|meeting|appointment|follow up)\b/i;
-const ideaPattern = /\b(idea|brainstorm|concept|prototype|invent|explore|maybe build)\b/i;
-const trainingPattern = /\b(training|workout|practice|drill|exercise|run|gym|conditioning)\b/i;
-const personalPattern = /\b(personal|family|mom|dad|parent|home|self|doctor|health)\b/i;
-const teachingPattern = /\b(lesson|teaching|classroom|student|curriculum|pompeii)\b/i;
+const normalizeParsedEntry = (parsed, text = '') => {
+  const payload = parsed && typeof parsed === 'object' ? parsed : {};
+  const normalizedType = typeof payload.type === 'string' ? payload.type.trim().toLowerCase() : '';
+  const fallbackType = typeof text === 'string' && text.trim().endsWith('?') ? 'question' : 'unknown';
 
-const classifyEntry = (text) => {
-  if (!text) {
-    return { type: 'note', tags: [] };
+  return {
+    type: normalizedType || fallbackType,
+    title: typeof payload.title === 'string' ? payload.title.trim() : '',
+    tags: Array.isArray(payload.tags)
+      ? payload.tags.map((tag) => (typeof tag === 'string' ? tag.trim().toLowerCase() : '')).filter(Boolean)
+      : [],
+    reminderDate:
+      typeof payload.reminderDate === 'string' && payload.reminderDate.trim()
+        ? payload.reminderDate.trim()
+        : null,
+    metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {},
+  };
+};
+
+const parseEntry = async (text) => {
+  const response = await fetch('/api/parse-entry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to parse entry (${response.status})`);
   }
 
-  if (reminderPattern.test(text)) {
-    return { type: 'reminder', tags: [] };
+  const parsed = await response.json();
+  return normalizeParsedEntry(parsed, text);
+};
+
+const getExistingParsedEntry = (entry, text) => {
+  if (entry?.parsedEntry && typeof entry.parsedEntry === 'object') {
+    return normalizeParsedEntry(entry.parsedEntry, text);
   }
 
-  if (trainingPattern.test(text)) {
-    return { type: 'training', tags: ['training'] };
+  if (entry?.metadata && typeof entry.metadata === 'object' && typeof entry.metadata.type === 'string') {
+    return normalizeParsedEntry(entry.metadata, text);
   }
 
-  if (personalPattern.test(text)) {
-    return { type: 'personal', tags: ['personal'] };
+  if (typeof entry?.parsedType === 'string' && entry.parsedType.trim()) {
+    return normalizeParsedEntry({ type: entry.parsedType, title: text }, text);
   }
 
-  if (teachingPattern.test(text)) {
-    return { type: 'note', tags: ['teaching'] };
+  return null;
+};
+
+const mapDecisionToCountType = (decision) => {
+  const parsedType = typeof decision?.parsedType === 'string' ? decision.parsedType.trim().toLowerCase() : '';
+
+  if (decision?.decisionType === 'persist_reminder') {
+    return 'reminder';
   }
 
-  if (ideaPattern.test(text)) {
-    return { type: 'idea', tags: ['idea'] };
+  if (parsedType === 'idea') {
+    return 'idea';
   }
 
-  return { type: 'note', tags: [] };
+  if (parsedType === 'drill') {
+    return 'training';
+  }
+
+  return 'note';
 };
 
 const addNotes = (notes) => {
@@ -79,24 +114,49 @@ export const processInbox = async (entries = [], options = {}) => {
       continue;
     }
 
-    const { type, tags } = classifyEntry(text);
+    let parsedEntry = getExistingParsedEntry(entry, text);
+    if (!parsedEntry) {
+      try {
+        parsedEntry = await parseEntry(text);
+      } catch (error) {
+        console.warn('[inbox-processor] parse-entry failed, leaving inbox item unchanged', error);
+        continue;
+      }
+    }
+
+    const hints = {
+      source: typeof entry?.source === 'string' ? entry.source : 'inbox',
+      entryId: entry?.id != null ? String(entry.id) : '',
+    };
+    const decision = routeIntent(parsedEntry, text, hints);
+
+    if (decision.decisionType === 'persist_inbox' || decision.decisionType === 'query') {
+      continue;
+    }
+
     const organization = await suggestNotebookAndTags(text, { aiClassifier });
-    const combinedTags = Array.from(new Set([...(Array.isArray(tags) ? tags : []), ...organization.tags]));
+    const combinedTags = Array.from(new Set([...(Array.isArray(parsedEntry.tags) ? parsedEntry.tags : []), ...organization.tags]));
+    const type = mapDecisionToCountType(decision);
 
     counts[type] += 1;
     processedItems.push({ ...entry, type, text, tags: combinedTags, notebook: organization.notebook });
 
-    if (type === 'reminder') {
+    if (decision.decisionType === 'persist_reminder') {
       if (createReminder) {
-        createReminder({ title: text, notes: 'Created from Inbox processing.' });
+        createReminder({
+          title: parsedEntry?.title || text,
+          text,
+          due: parsedEntry?.reminderDate || undefined,
+          notes: 'Created from Inbox processing.',
+        });
       }
-    } else {
+    } else if (decision.decisionType === 'persist_note') {
       const folderId = ensureFolderExistsByName(organization.notebook);
       notesToSave.push(
-        createNote(text.split(/\s+/).slice(0, 8).join(' '), text, {
+        createNote(parsedEntry?.title || text.split(/\s+/).slice(0, 8).join(' '), text, {
           folderId,
           metadata: {
-            type,
+            type: parsedEntry?.type || type,
             tags: combinedTags,
           },
         }),
