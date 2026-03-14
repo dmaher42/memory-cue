@@ -1,7 +1,7 @@
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
-import { routeIntent } from '../services/intentRouter.js';
+import { classifyIntentLocally, routeIntent } from '../services/intentRouter.js';
 
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
@@ -106,20 +106,28 @@ export const processInbox = async (entries = [], options = {}) => {
       continue;
     }
 
-    let parsedEntry = getExistingParsedEntry(entry, text);
-    if (!parsedEntry) {
-      try {
-        parsedEntry = await parseEntry(text);
-      } catch (error) {
-        console.warn('[inbox-processor] parse-entry failed, leaving inbox item unchanged', error);
-        continue;
-      }
-    }
-
     const hints = {
       source: typeof entry?.source === 'string' ? entry.source : 'inbox',
       entryId: entry?.id != null ? String(entry.id) : '',
+      entryPoint: 'inbox.processInbox',
+      capturedAt: Date.now(),
     };
+
+    let parsedEntry = getExistingParsedEntry(entry, text);
+    if (!parsedEntry) {
+      const localDecision = classifyIntentLocally(text, hints);
+      if (localDecision) {
+        parsedEntry = localDecision.parsedEntry;
+      } else {
+        try {
+          parsedEntry = await parseEntry(text);
+        } catch (error) {
+          console.warn('[inbox-processor] parse-entry failed, leaving inbox item unchanged', error);
+          continue;
+        }
+      }
+    }
+
     const decision = routeIntent(parsedEntry, text, hints);
 
     if (decision.decisionType === 'persist_inbox' || decision.decisionType === 'query') {

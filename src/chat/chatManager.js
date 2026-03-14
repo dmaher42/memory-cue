@@ -2,7 +2,7 @@ import { addMessage } from './messageStore.js';
 import { executeCommand } from '../core/commandEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
-import { createChatIntentInput, routeIntent } from '../services/intentRouter.js';
+import { classifyIntentLocally, createChatIntentInput, routeIntent } from '../services/intentRouter.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 
@@ -323,7 +323,20 @@ export const handleChatMessage = async (text, dependencies = {}) => {
 
   addMessage(createMessage('user', userText));
 
-  const parsed = await parseEntry(userText);
+  // Run deterministic heuristics first so /api/parse-entry remains a fallback.
+  const localDecision = classifyIntentLocally(userText, {
+    source: 'chat',
+    entryPoint: 'chat.handleChatMessage',
+    capturedAt: Date.now(),
+  });
+
+  let parsed;
+  if (localDecision) {
+    parsed = localDecision.parsedEntry;
+  } else {
+    parsed = await parseEntry(userText);
+  }
+
   const routeResult = await processParsedEntry(parsed, userText, dependencies);
   const response = normalizeRouteResult(routeResult);
 
