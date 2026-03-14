@@ -1,6 +1,6 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
-import { initSupabaseAuth } from './js/supabase-auth.js';
+import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';
 import {
   loadAllNotes,
   saveAllNotes,
@@ -4100,8 +4100,10 @@ function wireMobileNotesSupabaseAuth() {
         const primarySignInBtn = document.getElementById('googleSignInBtn');
         if (primarySignInBtn instanceof HTMLElement) {
           primarySignInBtn.click();
-        } else if (typeof window.startSignInFlow === 'function') {
-          window.startSignInFlow();
+        } else {
+          startSignInFlow().catch((error) => {
+            console.error('[supabase] Sign-in failed.', error);
+          });
         }
         break;
       }
