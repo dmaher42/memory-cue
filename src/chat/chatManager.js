@@ -388,6 +388,10 @@ export const handleChatMessage = async (text, dependencies = {}) => {
   if (localDecision) {
     parsed = localDecision.parsedEntry;
   } else {
+    console.warn('[brain] AI fallback triggered', {
+      source: 'handleChatMessage',
+      reason: 'local_intent_unresolved',
+    });
     parsed = await parseEntry(userText);
   }
 

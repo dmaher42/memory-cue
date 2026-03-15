@@ -22,6 +22,17 @@ const createHeuristicParsedEntry = (type, text, hints = {}) => ({
   },
 });
 
+const logRoutingDecision = (source, text, decision, details = {}) => {
+  console.info('[brain] routing decision', {
+    source,
+    text,
+    decisionType: decision?.decisionType,
+    parsedType: decision?.parsedType,
+    ...details,
+  });
+  return decision;
+};
+
 /**
  * Heuristic-first routing to reduce /api/parse-entry usage.
  * If we can classify with high confidence locally, we skip AI parsing.
@@ -30,38 +41,39 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
   const normalized = text.toLowerCase();
   if (!normalized) {
+    console.debug('[brain] routing decision', { source: 'classifyIntentLocally', text, decisionType: 'unresolved' });
     return null;
   }
 
   const patternMatch = predictIntent(text);
   if (patternMatch?.predictedIntent === 'persist_reminder') {
-    return {
+    return logRoutingDecision('classifyIntentLocally.pattern', text, {
       decisionType: 'persist_reminder',
       parsedType: 'reminder',
       text,
       parsedEntry: createHeuristicParsedEntry('reminder', text, hints),
       hints,
-    };
+    });
   }
 
   if (patternMatch?.predictedIntent === 'persist_note') {
-    return {
+    return logRoutingDecision('classifyIntentLocally.pattern', text, {
       decisionType: 'persist_note',
       parsedType: 'note',
       text,
       parsedEntry: createHeuristicParsedEntry('note', text, hints),
       hints,
-    };
+    });
   }
 
   if (patternMatch?.predictedIntent === 'query') {
-    return {
+    return logRoutingDecision('classifyIntentLocally.pattern', text, {
       decisionType: 'query',
       parsedType: 'question',
       text,
       parsedEntry: createHeuristicParsedEntry('question', text, hints),
       hints,
-    };
+    });
   }
 
   const startsWithQuestion = QUESTION_PREFIXES
@@ -82,7 +94,7 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
       hints,
     };
     learnIntentPattern(text, decision.decisionType);
-    return decision;
+    return logRoutingDecision('classifyIntentLocally', text, decision);
   }
 
   const scored = [
@@ -95,6 +107,7 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const [top, next] = scored;
   const isConfident = top.score >= 1 && top.score > (next?.score || 0);
   if (!isConfident) {
+    console.debug('[brain] routing decision', { source: 'classifyIntentLocally', text, decisionType: 'unresolved' });
     return null;
   }
 
@@ -107,7 +120,7 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
       parsedEntry,
       hints,
     };
-    return decision;
+    return logRoutingDecision('classifyIntentLocally', text, decision);
   }
 
   if (top.kind === 'drill' || top.kind === 'note') {
@@ -120,7 +133,7 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
       parsedEntry,
       hints,
     };
-    return decision;
+    return logRoutingDecision('classifyIntentLocally', text, decision);
   }
 
   const parsedEntry = createHeuristicParsedEntry('question', text, hints);
@@ -131,7 +144,7 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
     parsedEntry,
     hints,
   };
-  return decision;
+  return logRoutingDecision('classifyIntentLocally', text, decision);
 };
 
 const normalizeType = (parsedType, rawText) => {
@@ -185,7 +198,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       hints,
     };
     recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
-    return decision;
+    return logRoutingDecision('routeIntent', text, decision);
   }
 
   if (
@@ -204,7 +217,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       hints,
     };
     recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
-    return decision;
+    return logRoutingDecision('routeIntent', text, decision, { notebookHeuristic });
   }
 
   if (isQuestion) {
@@ -218,7 +231,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
         hints,
       };
       learnIntentPattern(text, decision.decisionType);
-      return decision;
+      return logRoutingDecision('routeIntent', text, decision, { memoryRecallScore });
     }
 
     const decision = {
@@ -229,7 +242,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       hints,
     };
     recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
-    return decision;
+    return logRoutingDecision('routeIntent', text, decision);
   }
 
   const decision = {
@@ -240,7 +253,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
     hints,
   };
   recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: 'Inbox' });
-  return decision;
+  return logRoutingDecision('routeIntent', text, decision);
 };
 
 export const createChatIntentInput = (parsedEntry, rawText, hints = {}) => ({
