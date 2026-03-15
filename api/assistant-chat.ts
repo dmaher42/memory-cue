@@ -28,6 +28,11 @@ function buildAllowedOrigins() {
 
 const ALLOWED_ORIGINS = buildAllowedOrigins();
 
+const MAX_INPUT_MESSAGE_CHARS = 2600;
+const MAX_ASSISTANT_MESSAGES = 2;
+const MAX_ASSISTANT_MESSAGE_CHARS = 2600;
+
+
 function applyCors(req, res) {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -246,7 +251,30 @@ function buildIdeaHighlights(message, contextEntries) {
   };
 }
 
-async function getOpenAiResponse(prompt) {
+
+function normalizeAssistantMessages(rawMessages) {
+  if (!Array.isArray(rawMessages)) {
+    return [];
+  }
+
+  return rawMessages
+    .slice(0, MAX_ASSISTANT_MESSAGES)
+    .map((message) => {
+      const role = toText(message?.role).toLowerCase();
+      const safeRole = role === 'system' ? 'system' : 'user';
+      const content = toText(message?.content).slice(0, MAX_ASSISTANT_MESSAGE_CHARS);
+      if (!content) {
+        return null;
+      }
+      return {
+        role: safeRole,
+        content: [{ type: 'input_text', text: content }],
+      };
+    })
+    .filter(Boolean);
+}
+
+async function getOpenAiResponse(prompt, messages = []) {
   if (!process.env.OPENAI_API_KEY) {
     return 'Assistant is configured without OPENAI_API_KEY. I can still show matching context references below.';
   }
@@ -261,12 +289,14 @@ async function getOpenAiResponse(prompt) {
       model: 'gpt-5-nano',
       store: false,
       max_output_tokens: 180,
-      input: [
-        {
-          role: 'user',
-          content: [{ type: 'input_text', text: prompt }],
-        },
-      ],
+      input: messages.length
+        ? messages
+        : [
+          {
+            role: 'user',
+            content: [{ type: 'input_text', text: prompt.slice(0, MAX_INPUT_MESSAGE_CHARS) }],
+          },
+        ],
     }),
   });
 
@@ -327,7 +357,8 @@ export default async function handler(req, res) {
       .map((item) => item.entry);
 
     const prompt = buildPrompt(message, body.history, selectedContext);
-    const reply = await getOpenAiResponse(prompt);
+    const assistantMessages = normalizeAssistantMessages(body.messages);
+    const reply = await getOpenAiResponse(prompt, assistantMessages);
 
     return res.status(200).json({
       success: true,
