@@ -167,7 +167,15 @@ export const retrieveRelevantMemories = async (question) => {
   let embeddingMatches = [];
   try {
     const questionEmbedding = await createEmbedding(safeQuestion);
-    embeddingMatches = searchEmbeddings(questionEmbedding).slice(0, 12);
+    const memoryMatches = searchMemories(questionEmbedding, 12);
+    embeddingMatches = memoryMatches.map((memory, index) => ({
+      memoryId: memory.id,
+      score: Math.max(0, 1 - (index * 0.05)),
+    }));
+
+    if (!embeddingMatches.length) {
+      embeddingMatches = searchEmbeddings(questionEmbedding).slice(0, 12);
+    }
   } catch (error) {
     console.warn('[brain-query-service] Embedding retrieval failed', error);
   }

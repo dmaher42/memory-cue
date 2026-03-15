@@ -1,19 +1,31 @@
-import { saveNote } from './adapters/notePersistenceAdapter.js';
-import { createReminder } from './reminderService.js';
-import { getInboxEntries, saveInboxEntry } from './inboxService.js';
-import { getRecentMemory } from '../../js/modules/memory-index.js';
-import { searchNotesMemory } from './memorySearch.js';
-import { getFolderNameById, getFolders, loadAllNotes } from '../../js/modules/notes-storage.js';
+import { getSupabaseClient } from '../../js/supabase-client.js';
 
-const REMINDER_STORAGE_KEY = 'memoryCue:offlineReminders';
-const MEMORY_TYPES = new Set(['note', 'reminder', 'idea', 'inbox']);
+const MEMORY_CACHE_KEY = 'memoryCueCache';
+const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];
+const MEMORY_TYPES = new Set(['note', 'reminder', 'idea', 'task', 'inbox']);
 const DEFAULT_RECENT_LIMIT = 20;
+const DEFAULT_SEARCH_LIMIT = 10;
+const SUPABASE_TABLE = 'memories';
+
+let memoryCache = [];
+let migrationChecked = false;
+let syncInFlight = null;
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
-const normalizeType = (value) => {
-  const normalized = normalizeText(value).toLowerCase();
-  return MEMORY_TYPES.has(normalized) ? normalized : 'note';
+const normalizeNumber = (value, fallback = Date.now()) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
 };
 
 const normalizeTags = (value) => {
@@ -26,304 +38,389 @@ const normalizeTags = (value) => {
     .filter((tag, index, list) => tag && list.indexOf(tag) === index);
 };
 
-const toIsoString = (value) => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return new Date(value).toISOString();
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    const parsed = Date.parse(value);
-    if (!Number.isNaN(parsed)) {
-      return new Date(parsed).toISOString();
-    }
-  }
-
-  return new Date().toISOString();
+const normalizeType = (value) => {
+  const type = normalizeText(value).toLowerCase();
+  return MEMORY_TYPES.has(type) ? type : 'note';
 };
 
-const toTimestamp = (value) => {
-  const iso = toIsoString(value);
-  const parsed = Date.parse(iso);
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
-const resolveNotebookId = (notebook) => {
-  const normalizedNotebook = normalizeText(notebook).toLowerCase();
-  if (!normalizedNotebook) {
-    return null;
+const getCurrentUserId = () => {
+  if (typeof window === 'undefined') {
+    return 'local-user';
   }
 
-  const folders = getFolders();
-  const matched = folders.find((folder) => {
-    const folderId = normalizeText(folder?.id).toLowerCase();
-    const folderName = normalizeText(folder?.name).toLowerCase();
-    return folderId === normalizedNotebook || folderName === normalizedNotebook;
-  });
-
-  return matched ? matched.id : null;
+  const userId = normalizeText(window.__MEMORY_CUE_AUTH_USER_ID);
+  return userId || 'local-user';
 };
 
-const normalizeNoteToMemory = (note = {}) => {
-  const metadata = note?.metadata && typeof note.metadata === 'object' ? note.metadata : {};
-  const parsedType = normalizeType(metadata.type === 'idea' ? 'idea' : 'note');
-  const bodyText = normalizeText(note.bodyText) || normalizeText(note.body);
+const normalizeEmbedding = (value) => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const numbers = value
+    .map((item) => Number(item))
+    .filter((item) => Number.isFinite(item));
+
+  return numbers.length ? numbers : undefined;
+};
+
+const toMemoryShape = (entry = {}, fallback = {}) => {
+  const now = Date.now();
+  const createdAt = normalizeNumber(entry.createdAt, now);
+  const updatedAt = normalizeNumber(entry.updatedAt, createdAt);
+  const resolvedId = normalizeText(entry.id)
+    || (typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `memory-${updatedAt}`);
 
   return {
-    id: normalizeText(note.id),
-    text: bodyText || normalizeText(note.title),
-    type: parsedType,
-    notebook: getFolderNameById(note.folderId),
-    tags: normalizeTags(metadata.tags),
-    createdAt: toIsoString(note.createdAt || note.updatedAt),
-    source: normalizeText(metadata.source) || 'note',
-    entryPoint: 'notes',
-    metadata,
+    id: resolvedId,
+    userId: normalizeText(entry.userId) || fallback.userId || getCurrentUserId(),
+    text: normalizeText(entry.text),
+    type: normalizeType(entry.type),
+    createdAt,
+    updatedAt,
+    source: normalizeText(entry.source) || fallback.source || 'capture',
+    entryPoint: normalizeText(entry.entryPoint) || fallback.entryPoint || 'capture',
+    tags: normalizeTags(entry.tags),
+    embedding: normalizeEmbedding(entry.embedding),
+    pendingSync: entry.pendingSync === false ? false : true,
   };
 };
 
-const normalizeIndexedNoteToMemory = (entry = {}) => ({
-  id: normalizeText(entry.id),
-  text: normalizeText(entry.body) || normalizeText(entry.title),
-  type: normalizeType(entry.type === 'idea' ? 'idea' : 'note'),
-  notebook: normalizeText(entry.folder),
-  tags: normalizeTags(entry.tags),
-  createdAt: toIsoString(entry.createdAt || entry.updatedAt),
-  source: 'note',
-  entryPoint: 'notes',
-  metadata: {
-    summary: normalizeText(entry.summary),
-    keywords: Array.isArray(entry.keywords) ? entry.keywords : [],
-  },
-});
-
-const normalizeReminderToMemory = (reminder = {}) => {
-  const metadata = reminder?.metadata && typeof reminder.metadata === 'object' ? reminder.metadata : {};
-  const title = normalizeText(reminder.title);
-  const notes = normalizeText(reminder.notes);
-
-  return {
-    id: normalizeText(reminder.id),
-    text: [title, notes].filter(Boolean).join('\n\n') || title,
-    type: 'reminder',
-    notebook: normalizeText(reminder.category) || 'Reminders',
-    tags: normalizeTags(reminder.keywords || metadata.tags),
-    createdAt: toIsoString(reminder.createdAt || reminder.updatedAt),
-    source: normalizeText(metadata.source) || 'reminder',
-    entryPoint: 'reminders',
-    metadata: {
-      ...metadata,
-      due: reminder.due || null,
-      done: !!reminder.done,
-      priority: reminder.priority || 'Medium',
-    },
-  };
-};
-
-const normalizeInboxToMemory = (entry = {}) => ({
-  id: normalizeText(entry.id),
-  text: normalizeText(entry.text),
-  type: 'inbox',
-  notebook: 'Inbox',
-  tags: normalizeTags(entry.tags),
-  createdAt: toIsoString(entry.createdAt || entry.updatedAt),
-  source: normalizeText(entry.source) || 'capture',
-  entryPoint: 'inbox',
-  metadata: entry?.metadata && typeof entry.metadata === 'object' ? entry.metadata : {},
-});
-
-const loadReminderEntries = () => {
+const readCacheFromStorage = () => {
   if (typeof localStorage === 'undefined') {
     return [];
   }
 
   try {
-    const raw = localStorage.getItem(REMINDER_STORAGE_KEY);
+    const raw = localStorage.getItem(MEMORY_CACHE_KEY);
     if (!raw) {
       return [];
     }
 
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map((item) => toMemoryShape(item)).filter((item) => item.text);
   } catch (error) {
-    console.warn('[memory-service] Failed to load reminders', error);
+    console.warn('[memory-service] Failed to read memory cache', error);
     return [];
   }
 };
 
-const matchesQuery = (memory, query) => {
-  const normalizedQuery = normalizeText(query).toLowerCase();
-  if (!normalizedQuery) {
-    return false;
+const writeCacheToStorage = (entries = []) => {
+  if (typeof localStorage === 'undefined') {
+    return;
   }
 
-  const text = normalizeText(memory?.text).toLowerCase();
-  const notebook = normalizeText(memory?.notebook).toLowerCase();
-  const tags = Array.isArray(memory?.tags) ? memory.tags.map((tag) => normalizeText(tag).toLowerCase()) : [];
-
-  return text.includes(normalizedQuery)
-    || notebook.includes(normalizedQuery)
-    || tags.some((tag) => tag.includes(normalizedQuery));
+  try {
+    localStorage.setItem(MEMORY_CACHE_KEY, JSON.stringify(entries));
+  } catch (error) {
+    console.warn('[memory-service] Failed to write memory cache', error);
+  }
 };
 
-const sortMemoriesByRecency = (a, b) => toTimestamp(b?.createdAt) - toTimestamp(a?.createdAt);
-
-const dedupeMemories = (entries = []) => {
-  const seen = new Set();
-  return entries.filter((entry) => {
-    const key = `${entry?.type || 'unknown'}:${entry?.id || ''}`;
-    if (!entry?.id || seen.has(key)) {
-      return false;
+const mergeByLatest = (entries = []) => {
+  const merged = new Map();
+  entries.forEach((entry) => {
+    if (!entry?.id) {
+      return;
     }
-    seen.add(key);
-    return true;
+
+    const existing = merged.get(entry.id);
+    if (!existing || normalizeNumber(entry.updatedAt, 0) >= normalizeNumber(existing.updatedAt, 0)) {
+      merged.set(entry.id, entry);
+    }
   });
+
+  return Array.from(merged.values());
 };
 
-export const saveMemory = async (entry = {}) => {
-  const text = normalizeText(entry?.text);
-  const type = normalizeType(entry?.type);
-  const tags = normalizeTags(entry?.tags);
-  const metadata = entry?.metadata && typeof entry.metadata === 'object' ? entry.metadata : {};
+const fromSupabaseRow = (row = {}) => toMemoryShape({
+  id: row.id,
+  userId: row.user_id,
+  text: row.text,
+  type: row.type,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  source: row.source,
+  entryPoint: row.entry_point,
+  tags: row.tags,
+  embedding: row.embedding,
+  pendingSync: false,
+});
 
-  if (!text) {
+const toSupabaseRow = (memory = {}) => ({
+  id: memory.id,
+  user_id: memory.userId,
+  text: memory.text,
+  type: memory.type,
+  created_at: new Date(memory.createdAt).toISOString(),
+  updated_at: new Date(memory.updatedAt).toISOString(),
+  source: memory.source,
+  entry_point: memory.entryPoint,
+  tags: Array.isArray(memory.tags) ? memory.tags : [],
+  embedding: Array.isArray(memory.embedding) ? memory.embedding : null,
+});
+
+const migrateLegacyEntries = () => {
+  if (migrationChecked || typeof localStorage === 'undefined') {
+    return;
+  }
+
+  migrationChecked = true;
+  const migrated = [];
+
+  LEGACY_KEYS.forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return;
+      }
+
+      parsed.forEach((item) => {
+        const memory = toMemoryShape({
+          id: item?.id,
+          text: item?.text || item?.bodyText || item?.body || item?.title,
+          type: key === 'memoryCueInbox' ? 'inbox' : item?.type || item?.parsedType || 'note',
+          createdAt: item?.createdAt || item?.updatedAt,
+          updatedAt: item?.updatedAt || item?.createdAt,
+          source: item?.source || 'capture',
+          entryPoint: key,
+          tags: item?.tags || item?.keywords,
+        });
+
+        if (memory.text) {
+          migrated.push(memory);
+        }
+      });
+    } catch (error) {
+      console.warn('[memory-service] Failed migrating key', key, error);
+    }
+  });
+
+  if (!migrated.length) {
+    return;
+  }
+
+  memoryCache = mergeByLatest([...memoryCache, ...migrated]);
+  writeCacheToStorage(memoryCache);
+  console.info('[brain] memory_migrated', { count: migrated.length });
+};
+
+const ensureCacheLoaded = () => {
+  if (!memoryCache.length) {
+    memoryCache = readCacheFromStorage();
+  }
+
+  migrateLegacyEntries();
+};
+
+const cosineSimilarity = (left = [], right = []) => {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length || !left.length) {
+    return -1;
+  }
+
+  let dot = 0;
+  let leftNorm = 0;
+  let rightNorm = 0;
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftValue = Number(left[index]) || 0;
+    const rightValue = Number(right[index]) || 0;
+    dot += leftValue * rightValue;
+    leftNorm += leftValue * leftValue;
+    rightNorm += rightValue * rightValue;
+  }
+
+  if (!leftNorm || !rightNorm) {
+    return -1;
+  }
+
+  return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
+};
+
+const triggerSync = async () => {
+  if (syncInFlight) {
+    return syncInFlight;
+  }
+
+  syncInFlight = (async () => {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return;
+    }
+
+    const userId = getCurrentUserId();
+    const pending = memoryCache.filter((item) => item.pendingSync !== false && item.userId === userId);
+
+    if (pending.length) {
+      const { error } = await supabase.from(SUPABASE_TABLE).upsert(pending.map((item) => toSupabaseRow(item)));
+      if (error) {
+        console.warn('[memory-service] Failed pushing memories', error);
+      } else {
+        const syncedIds = new Set(pending.map((item) => item.id));
+        memoryCache = memoryCache.map((item) => (syncedIds.has(item.id) ? { ...item, pendingSync: false } : item));
+      }
+    }
+
+    const { data, error } = await supabase.from(SUPABASE_TABLE).select('*').eq('user_id', userId);
+    if (error) {
+      console.warn('[memory-service] Failed pulling memories', error);
+      return;
+    }
+
+    const remote = Array.isArray(data) ? data.map((row) => fromSupabaseRow(row)) : [];
+    memoryCache = mergeByLatest([...memoryCache, ...remote]);
+    writeCacheToStorage(memoryCache);
+  })()
+    .finally(() => {
+      syncInFlight = null;
+    });
+
+  return syncInFlight;
+};
+
+const lexicalSearch = (query, limit = DEFAULT_SEARCH_LIMIT) => {
+  const normalizedQuery = normalizeText(query).toLowerCase();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  return memoryCache
+    .filter((memory) => {
+      const text = normalizeText(memory.text).toLowerCase();
+      const tags = Array.isArray(memory.tags) ? memory.tags.join(' ') : '';
+      return text.includes(normalizedQuery) || tags.includes(normalizedQuery);
+    })
+    .sort((left, right) => right.updatedAt - left.updatedAt)
+    .slice(0, limit);
+};
+
+const semanticSearch = (queryEmbedding, limit = DEFAULT_SEARCH_LIMIT) => memoryCache
+  .map((memory) => ({
+    memory,
+    score: cosineSimilarity(queryEmbedding, memory.embedding),
+  }))
+  .filter((item) => item.score > -1)
+  .sort((left, right) => right.score - left.score)
+  .slice(0, limit)
+  .map((item) => item.memory);
+
+ensureCacheLoaded();
+void triggerSync();
+
+export const saveMemory = async (memory = {}) => {
+  ensureCacheLoaded();
+
+  const nextMemory = toMemoryShape(memory, {
+    source: normalizeText(memory.source) || 'capture',
+    entryPoint: normalizeText(memory.entryPoint) || 'capture',
+  });
+
+  if (!nextMemory.text) {
     return null;
   }
 
-  const logMemorySaved = (memory) => {
-    if (!memory) {
-      return memory;
-    }
-    console.info('[brain] memory saved', {
-      id: memory.id,
-      type: memory.type,
-      source: memory.source,
-    });
-    return memory;
-  };
-
-  if (type === 'inbox') {
-    const savedInboxEntry = saveInboxEntry({
-      text,
-      tags,
-      source: entry?.source,
-      parsedType: entry?.metadata?.parsedType,
-      metadata,
-    });
-    return savedInboxEntry ? logMemorySaved(normalizeInboxToMemory(savedInboxEntry)) : null;
-  }
-
-  if (type === 'reminder') {
-    const reminderPayload = {
-      title: text,
-      notes: typeof metadata.notes === 'string' ? metadata.notes : '',
-      due: metadata.due,
-      priority: metadata.priority,
-      category: entry?.notebook,
-      semanticEmbedding: metadata.semanticEmbedding,
-    };
-
-    try {
-      const savedReminder = await createReminder(reminderPayload);
-      return savedReminder ? logMemorySaved(normalizeReminderToMemory(savedReminder)) : null;
-    } catch (error) {
-      console.warn('[memory-service] Failed to save reminder', error);
-      return null;
-    }
-  }
-
-  const savedNote = saveNote(
+  memoryCache = mergeByLatest([
+    ...memoryCache,
     {
-      text,
-      tags,
-      parsedType: type === 'idea' ? 'idea' : 'note',
-      source: entry?.source,
-      folderId: resolveNotebookId(entry?.notebook),
+      ...nextMemory,
+      updatedAt: Date.now(),
+      pendingSync: true,
     },
-    {
-      metadata,
-      entryPoint: entry?.entryPoint,
-    },
-  );
+  ]);
 
-  return savedNote ? logMemorySaved(normalizeNoteToMemory(savedNote)) : null;
+  writeCacheToStorage(memoryCache);
+  console.info('[brain] memory_saved', {
+    id: nextMemory.id,
+    type: nextMemory.type,
+    source: nextMemory.source,
+  });
+
+  void triggerSync();
+  return nextMemory;
 };
 
 export const getMemoryById = (id) => {
+  ensureCacheLoaded();
+  void triggerSync();
+
   const targetId = normalizeText(id);
   if (!targetId) {
     return null;
   }
 
-  const note = loadAllNotes().find((entry) => normalizeText(entry?.id) === targetId);
-  if (note) {
-    const memory = normalizeNoteToMemory(note);
-    console.info('[brain] memory retrieved', { id: memory.id, type: memory.type, source: 'getMemoryById' });
-    return memory;
-  }
-
-  const reminder = loadReminderEntries().find((entry) => normalizeText(entry?.id) === targetId);
-  if (reminder) {
-    const memory = normalizeReminderToMemory(reminder);
-    console.info('[brain] memory retrieved', { id: memory.id, type: memory.type, source: 'getMemoryById' });
-    return memory;
-  }
-
-  const inboxEntry = getInboxEntries().find((entry) => normalizeText(entry?.id) === targetId);
-  if (inboxEntry) {
-    const memory = normalizeInboxToMemory(inboxEntry);
-    console.info('[brain] memory retrieved', { id: memory.id, type: memory.type, source: 'getMemoryById' });
-    return memory;
-  }
-
-  return null;
+  return memoryCache.find((memory) => memory.id === targetId) || null;
 };
 
 export const getRecentMemories = (limit = DEFAULT_RECENT_LIMIT) => {
+  ensureCacheLoaded();
+  void triggerSync();
+
   const parsedLimit = Number(limit);
-  const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.floor(parsedLimit) : DEFAULT_RECENT_LIMIT;
+  const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0
+    ? Math.floor(parsedLimit)
+    : DEFAULT_RECENT_LIMIT;
 
-  const noteMemories = getRecentMemory(safeLimit).map((entry) => normalizeIndexedNoteToMemory(entry));
-  const reminderMemories = loadReminderEntries().map((entry) => normalizeReminderToMemory(entry));
-  const inboxMemories = getInboxEntries().map((entry) => normalizeInboxToMemory(entry));
-
-  const memories = dedupeMemories([...noteMemories, ...reminderMemories, ...inboxMemories])
-    .sort(sortMemoriesByRecency)
+  return [...memoryCache]
+    .sort((left, right) => right.updatedAt - left.updatedAt)
     .slice(0, safeLimit);
-
-  console.info('[brain] memory retrieved', {
-    source: 'getRecentMemories',
-    count: memories.length,
-  });
-
-  return memories;
 };
 
-export const searchMemories = (query) => {
-  const normalizedQuery = normalizeText(query);
-  if (!normalizedQuery) {
-    return [];
+export const searchMemories = (queryEmbedding, limit = DEFAULT_SEARCH_LIMIT) => {
+  ensureCacheLoaded();
+  void triggerSync();
+
+  const parsedLimit = Number(limit);
+  const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0
+    ? Math.floor(parsedLimit)
+    : DEFAULT_SEARCH_LIMIT;
+
+  if (Array.isArray(queryEmbedding)) {
+    return semanticSearch(queryEmbedding, safeLimit);
   }
 
-  const noteMatches = searchNotesMemory(normalizedQuery)
-    .items
-    .map((entry) => normalizeIndexedNoteToMemory(entry));
+  return lexicalSearch(queryEmbedding, safeLimit);
+};
 
-  const reminderMatches = loadReminderEntries()
-    .map((entry) => normalizeReminderToMemory(entry))
-    .filter((entry) => matchesQuery(entry, normalizedQuery));
+export const deleteMemory = async (id) => {
+  ensureCacheLoaded();
 
-  const inboxMatches = getInboxEntries()
-    .map((entry) => normalizeInboxToMemory(entry))
-    .filter((entry) => matchesQuery(entry, normalizedQuery));
+  const targetId = normalizeText(id);
+  if (!targetId) {
+    return false;
+  }
 
-  const matches = dedupeMemories([...noteMatches, ...reminderMatches, ...inboxMatches])
-    .sort(sortMemoriesByRecency);
+  const existing = memoryCache.find((item) => item.id === targetId);
+  if (!existing) {
+    return false;
+  }
 
-  console.info('[brain] memory retrieved', {
-    source: 'searchMemories',
-    query: normalizedQuery,
-    count: matches.length,
-  });
+  memoryCache = memoryCache.filter((item) => item.id !== targetId);
+  writeCacheToStorage(memoryCache);
 
-  return matches;
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    const { error } = await supabase
+      .from(SUPABASE_TABLE)
+      .delete()
+      .eq('id', targetId)
+      .eq('user_id', existing.userId);
+
+    if (error) {
+      console.warn('[memory-service] Failed deleting memory', error);
+      return false;
+    }
+  }
+
+  return true;
 };
