@@ -1,11 +1,32 @@
 import { helpContent } from '../src/assistant/help-content.js';
 
-const ALLOWED_ORIGINS = [
-  'https://dmaher42.github.io',
-  'https://memory-cue.vercel.app',
+const LOCALHOST_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173'
 ];
+
+function buildAllowedOrigins() {
+  const envOrigins = [
+    process.env.CORS_ALLOWED_ORIGINS,
+    process.env.CLOUDFLARE_PAGES_URL,
+    process.env.CLOUDFLARE_APP_URL,
+    process.env.APP_URL,
+    process.env.PUBLIC_APP_URL
+  ]
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(','))
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([
+    'https://dmaher42.github.io',
+    'https://memory-cue.pages.dev',
+    ...envOrigins,
+    ...LOCALHOST_ORIGINS
+  ]));
+}
+
+const ALLOWED_ORIGINS = buildAllowedOrigins();
 
 function applyCors(req, res) {
   const origin = req.headers.origin;
