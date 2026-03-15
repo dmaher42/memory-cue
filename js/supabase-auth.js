@@ -43,24 +43,22 @@ export async function startSignInFlow() {
       console.log('[auth] popup login attempt');
       try {
         return await _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
-      } catch (error) {
-        const popupErrorCode = error?.code;
-        const shouldFallbackToRedirect = (
-          popupErrorCode === 'auth/popup-blocked'
-          || popupErrorCode === 'auth/popup-closed-by-user'
-          || popupErrorCode === 'auth/cancelled-popup-request'
-        );
-
+      } catch (err) {
         if (
-          shouldFallbackToRedirect
-          && typeof _externalAuthContext.signInWithRedirect === 'function'
+          err?.code === 'auth/popup-blocked'
+          || err?.code === 'auth/popup-closed-by-user'
+          || err?.code === 'auth/cancelled-popup-request'
         ) {
-          // eslint-disable-next-line no-console
-          console.log('[auth] redirect fallback triggered');
-          return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
+          if (typeof _externalAuthContext.signInWithRedirect === 'function') {
+            // eslint-disable-next-line no-console
+            console.log('[auth] redirect fallback triggered');
+            return await _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
+          }
+        } else {
+          throw err;
         }
 
-        throw error;
+        throw err;
       }
     }
   } catch (err) {
