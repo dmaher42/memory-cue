@@ -3691,12 +3691,55 @@ export async function initReminders(sel = {}) {
 
   ensureAllEmbeddings();
 
+  async function migrateLocalReminders(authInstance, firestoreDb) {
+    if (!authInstance?.currentUser || !firestoreDb) {
+      return;
+    }
+
+    const uid = authInstance.currentUser.uid;
+    let localReminders = [];
+
+    try {
+      localReminders = JSON.parse(localStorage.getItem('memoryCue:offlineReminders') || '[]');
+    } catch (error) {
+      console.warn('Failed to parse local reminders for migration', error);
+      localReminders = [];
+    }
+
+    if (!Array.isArray(localReminders)) {
+      localReminders = [];
+    }
+
+    console.log('[brain] local reminders found:', localReminders.length);
+
+    if (!localReminders.length) {
+      return;
+    }
+
+    for (const reminder of localReminders) {
+      const reminderRef = doc(
+        collection(firestoreDb, 'users', uid, 'reminders'),
+        reminder?.id || crypto.randomUUID(),
+      );
+
+      await setDoc(reminderRef, {
+        ...reminder,
+        userId: uid,
+        migratedAt: Date.now(),
+      });
+    }
+
+    console.log('[brain] migrated reminders:', localReminders.length);
+    console.log('[brain] reminders migrated to firestore');
+    localStorage.removeItem('memoryCue:offlineReminders');
+  }
+
   async function migrateOfflineRemindersIfNeeded() {
     if (!userId) {
       items = loadOfflineRemindersFromStorage();
       return;
     }
-    // Local reminders are merged/synced during Firestore login sync.
+    await migrateLocalReminders(auth, db);
   }
   try {
     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
