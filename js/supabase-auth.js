@@ -25,33 +25,20 @@ export function setAuthContext(ctx = {}) {
 }
 
 /**
- * Start a sign-in flow.
+ * Start a sign-in flow via Firebase popup auth.
  * Uses Firebase auth handlers supplied via setAuthContext.
  * Resolves null when no auth facilities are available.
  */
-export async function startSignInFlow(options = {}) {
+export async function startSignInFlow() {
   try {
-    const prefersRedirect = Boolean(options?.preferRedirect)
-      || (typeof window !== 'undefined' && window.innerWidth < 768);
-
-    // Prefer supplied handlers
     if (
       _externalAuthContext &&
       _externalAuthContext.auth &&
-      typeof _externalAuthContext.GoogleAuthProvider === 'function'
+      typeof _externalAuthContext.GoogleAuthProvider === 'function' &&
+      typeof _externalAuthContext.signInWithPopup === 'function'
     ) {
       const provider = new _externalAuthContext.GoogleAuthProvider();
-      if (prefersRedirect && typeof _externalAuthContext.signInWithRedirect === 'function') {
-        return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
-      }
-
-      if (typeof _externalAuthContext.signInWithPopup === 'function') {
-        return _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
-      }
-
-      if (typeof _externalAuthContext.signInWithRedirect === 'function') {
-        return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
-      }
+      return _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
     }
   } catch (err) {
     // eslint-disable-next-line no-console

@@ -3940,8 +3940,8 @@ export async function initReminders(sel = {}) {
       if (!firebaseConfig.projectId) {
         throw new Error('Firebase projectId missing from configuration');
       }
-      console.log('[auth] Firebase project:', firebaseConfig.projectId);
-      console.log('[auth] Current domain:', (typeof window !== 'undefined' && window.location)
+      console.log('[auth] firebase project:', firebaseConfig.projectId);
+      console.log('[auth] domain:', (typeof window !== 'undefined' && window.location)
         ? window.location.hostname
         : 'unknown');
       console.info('[Firebase] Initialising Memory Cue', firebaseConfig.projectId);
@@ -4000,7 +4000,7 @@ export async function initReminders(sel = {}) {
   }
 
   if (firebaseReady && typeof getAuth === 'function') {
-    auth = getAuth(app);
+    auth = getAuth();
   }
 
   // Formatting helpers
