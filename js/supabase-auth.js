@@ -5,6 +5,7 @@ let _externalAuthContext = {
   GoogleAuthProvider: null,
   signInWithPopup: null,
   signInWithRedirect: null,
+  getRedirectResult: null,
   signOut: null,
   toast: null,
   onAuthStateChanged: null,
@@ -38,7 +39,29 @@ export async function startSignInFlow() {
       typeof _externalAuthContext.signInWithPopup === 'function'
     ) {
       const provider = new _externalAuthContext.GoogleAuthProvider();
-      return _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
+      // eslint-disable-next-line no-console
+      console.log('[auth] popup login attempt');
+      try {
+        return await _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
+      } catch (error) {
+        const popupErrorCode = error?.code;
+        const shouldFallbackToRedirect = (
+          popupErrorCode === 'auth/popup-blocked'
+          || popupErrorCode === 'auth/popup-closed-by-user'
+          || popupErrorCode === 'auth/cancelled-popup-request'
+        );
+
+        if (
+          shouldFallbackToRedirect
+          && typeof _externalAuthContext.signInWithRedirect === 'function'
+        ) {
+          // eslint-disable-next-line no-console
+          console.log('[auth] redirect fallback triggered');
+          return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
+        }
+
+        throw error;
+      }
     }
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -306,6 +329,12 @@ export function initSupabaseAuth(options = {}) {
   applyAuthState(elements, { user: null, messages });
 
   const auth = suppliedAuth || _externalAuthContext?.auth || null;
+
+  if (auth && typeof _externalAuthContext?.getRedirectResult === 'function') {
+    _externalAuthContext.getRedirectResult(auth).catch((error) => {
+      console.warn('[auth] Redirect sign-in result handling failed.', error);
+    });
+  }
 
   if (!disableButtonBinding) {
     bindSignInButtons(elements);

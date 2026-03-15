@@ -4196,6 +4196,7 @@ export async function initReminders(sel = {}) {
     onAuthStateChanged,
     signInWithPopup,
     signInWithRedirect,
+    getRedirectResult,
     signOut,
     toast,
   });
