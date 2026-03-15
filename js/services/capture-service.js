@@ -2,6 +2,7 @@ import { saveNote } from '../../src/services/adapters/notePersistenceAdapter.js'
 import { generateTags } from '../../src/ai/tagGenerator.js';
 import { routeIntent } from '../../src/services/intentRouter.js';
 import * as reminderService from '../../src/services/reminderService.js';
+import * as memoryService from '../../src/services/memoryService.js';
 import {
   getInboxEntries,
   saveInboxEntry as saveInboxEntryCanonical,
@@ -156,19 +157,58 @@ const persistReminderDecision = async (text, parsedEntry, context) => {
 };
 
 const executeDecision = async (decision, text, parsedEntry, context) => {
+  const intentType = typeof decision?.decisionType === 'string' ? decision.decisionType : 'persist_inbox';
+
+  const enqueueMemorySave = (savedEntry) => {
+    if (!savedEntry) {
+      return;
+    }
+
+    const resolvedType =
+      intentType === 'persist_reminder'
+        ? 'reminder'
+        : intentType === 'persist_note'
+          ? 'note'
+          : 'inbox';
+
+    Promise.resolve(memoryService.saveMemory({
+      text,
+      type: resolvedType,
+      tags: Array.isArray(parsedEntry?.tags) ? parsedEntry.tags : generateTags(text),
+      source: context.source,
+      entryPoint: context.entryPoint,
+      metadata: {
+        source: context.source,
+        entryPoint: context.entryPoint,
+        capturedAt: context.capturedAt,
+        intentType,
+      },
+    })).catch((error) => {
+      console.warn('[capture-service] async memory save failed', error);
+    });
+  };
+
   if (!decision || typeof decision !== 'object') {
-    return persistInboxDecision(text, parsedEntry, context);
+    const savedEntry = persistInboxDecision(text, parsedEntry, context);
+    enqueueMemorySave(savedEntry);
+    return savedEntry;
   }
 
   if (decision.decisionType === 'persist_reminder') {
-    return persistReminderDecision(text, parsedEntry, context);
+    const savedEntry = await persistReminderDecision(text, parsedEntry, context);
+    enqueueMemorySave(savedEntry);
+    return savedEntry;
   }
 
   if (decision.decisionType === 'persist_note') {
-    return persistNoteDecision(text, parsedEntry, context);
+    const savedEntry = persistNoteDecision(text, parsedEntry, context);
+    enqueueMemorySave(savedEntry);
+    return savedEntry;
   }
 
-  return persistInboxDecision(text, parsedEntry, context);
+  const savedEntry = persistInboxDecision(text, parsedEntry, context);
+  enqueueMemorySave(savedEntry);
+  return savedEntry;
 };
 
 export const captureInput = async (text, source = 'capture') => {
