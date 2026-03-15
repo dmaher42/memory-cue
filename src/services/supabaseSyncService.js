@@ -60,14 +60,12 @@ const mergeByLatest = (localItems = [], remoteItems = []) => {
   return Array.from(merged.values());
 };
 
-const getCurrentUserId = async (supabase) => {
-  if (!supabase?.auth?.getSession) return null;
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.warn('[supabase-sync] getSession failed', error);
-    return null;
-  }
-  return data?.session?.user?.id || null;
+const getCurrentUserId = async () => {
+  if (typeof window === 'undefined') return null;
+  const userId = typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string'
+    ? window.__MEMORY_CUE_AUTH_USER_ID.trim()
+    : '';
+  return userId || null;
 };
 
 const mapNoteToRow = (item, userId) => ({
@@ -125,7 +123,7 @@ async function syncDomain({ key, table, mapToRow, mapFromRow = (row) => row }) {
   const supabase = getSupabaseClient();
   if (!supabase) return readLocal(key);
 
-  const userId = await getCurrentUserId(supabase);
+  const userId = await getCurrentUserId();
   if (!userId) return readLocal(key);
 
   const localItems = readLocal(key);
@@ -245,7 +243,7 @@ export const upsertReminder = async (reminder) => {
 
 export const deleteReminder = async (id) => {
   const supabase = getSupabaseClient();
-  const userId = supabase ? await getCurrentUserId(supabase) : null;
+  const userId = supabase ? await getCurrentUserId() : null;
   const cached = readLocal(REMINDERS_KEY).filter((item) => String(item?.id) !== String(id));
   writeLocal(REMINDERS_KEY, cached);
   if (supabase && userId) {

@@ -1,7 +1,6 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
 import { captureInput, getInboxEntries } from './services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';
-import { getSupabaseClient } from './supabase-client.js';
 import { deleteReminder, syncReminders, upsertReminder } from '../src/services/supabaseSyncService.js';
 import { createAndSaveNote } from './modules/notes-storage.js';
 
@@ -4190,6 +4189,7 @@ export async function initReminders(sel = {}) {
     authReady,
     auth,
     GoogleAuthProvider,
+    onAuthStateChanged,
     signInWithPopup,
     signInWithRedirect,
     signOut,
@@ -4229,12 +4229,13 @@ export async function initReminders(sel = {}) {
     googleSignOutBtns.forEach((btn) => wireAuthButton(btn, startSignOutFlow));
   }
 
-  const supabase = getSupabaseClient();
-  if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user || null;
+  if (authReady && typeof onAuthStateChanged === 'function') {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        userId = user.id;
+        userId = user.uid;
+        if (typeof window !== 'undefined') {
+          window.__MEMORY_CUE_AUTH_USER_ID = user.uid;
+        }
         renderSyncIndicator('online');
         googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
         googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
@@ -4242,17 +4243,21 @@ export async function initReminders(sel = {}) {
         await setupSupabaseSync();
         await migrateOfflineRemindersIfNeeded();
       } else {
+        if (typeof window !== 'undefined') {
+          window.__MEMORY_CUE_AUTH_USER_ID = '';
+        }
         applySignedOutState();
       }
     });
-    supabase.auth.getSession().then(async ({ data }) => {
-      const user = data?.session?.user || null;
-      if (user) {
-        userId = user.id;
-        renderSyncIndicator('online');
-        await setupSupabaseSync();
+    const initialUser = auth?.currentUser || null;
+    if (initialUser) {
+      userId = initialUser.uid;
+      if (typeof window !== 'undefined') {
+        window.__MEMORY_CUE_AUTH_USER_ID = initialUser.uid;
       }
-    }).catch(() => {});
+      renderSyncIndicator('online');
+      await setupSupabaseSync();
+    }
   } else {
     applySignedOutState();
   }

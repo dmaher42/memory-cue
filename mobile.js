@@ -3804,8 +3804,8 @@ function wireMobileNotesSupabaseAuth() {
     };
   }
 
-  // 2. Initialise Supabase auth, binding to mobile sign-in / sign-out buttons
-  const supabaseAuth = initSupabaseAuth({
+  // 2. Initialise auth, binding to mobile sign-in / sign-out buttons
+  const authController = initSupabaseAuth({
     selectors: {
       // Main sign-in button in the UI, if present
       signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
@@ -3820,38 +3820,26 @@ function wireMobileNotesSupabaseAuth() {
     },
     disableButtonBinding: false,
     onSessionChange(user, session) {
-      debugLog('[notes-sync] Mobile session change', { userId: user?.id || null });
+      const normalizedUser = user && typeof user.uid === 'string' ? { ...user, id: user.uid } : null;
+      debugLog('[notes-sync] Mobile session change', { userId: normalizedUser?.id || null });
       if (notesSync && typeof notesSync.handleSessionChange === 'function') {
-        notesSync.handleSessionChange(user ?? null, session ?? null);
+        notesSync.handleSessionChange(normalizedUser, session ?? null);
       }
     },
   });
 
-  const supabase = supabaseAuth?.supabase;
-  if (!supabase || !notesSync) {
-    // If Supabase is not configured, notes will stay local; nothing else to do.
+  const auth = authController?.auth;
+  if (!notesSync) {
     return;
   }
 
-  // 3. Hand the Supabase client to the notes sync controller
-  if (typeof notesSync.setSupabaseClient === 'function') {
-    notesSync.setSupabaseClient(supabase);
+  // 3. Prime notes sync with the current Firebase session (if there is one)
+  const initialUser = auth?.currentUser;
+  if (initialUser && typeof notesSync.handleSessionChange === 'function') {
+    const normalizedUser = { ...initialUser, id: initialUser.uid };
+    debugLog('[notes-sync] Mobile initial session', { userId: normalizedUser.id || null });
+    notesSync.handleSessionChange(normalizedUser, { user: initialUser });
   }
-
-  // 4. Prime notes sync with the current session (if there is one)
-  supabase.auth
-    .getSession()
-    .then(({ data }) => {
-      const session = data?.session ?? null;
-      const user = session?.user ?? null;
-      debugLog('[notes-sync] Mobile initial session', { userId: user?.id || null });
-      if (typeof notesSync.handleSessionChange === 'function') {
-        notesSync.handleSessionChange(user, session);
-      }
-    })
-    .catch((err) => {
-      console.warn('[notes-sync] Failed to get initial Supabase session on mobile:', err);
-    });
 
   const requestRemoteSync = () => {
     if (typeof notesSync.syncFromRemote === 'function') {
