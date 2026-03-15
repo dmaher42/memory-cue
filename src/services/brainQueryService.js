@@ -105,6 +105,10 @@ const buildStructuredContext = (question, intent, memories) => {
 const callAiSummary = async (contextPayload) => {
   const openAiApiKey = typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY : '';
   if (!openAiApiKey) {
+    console.warn('[brain] AI fallback triggered', {
+      stage: 'generateAnswer',
+      reason: 'missing_openai_api_key',
+    });
     return 'I found relevant memories, but AI summarization is unavailable because OPENAI_API_KEY is not configured.';
   }
 
@@ -154,6 +158,11 @@ export const retrieveRelevantMemories = async (question) => {
   }
 
   const lexicalMemories = searchMemories(safeQuestion);
+  console.debug('[brain] memory retrieved', {
+    source: 'retrieveRelevantMemories.lexical',
+    query: safeQuestion,
+    count: lexicalMemories.length,
+  });
 
   let embeddingMatches = [];
   try {
@@ -163,7 +172,14 @@ export const retrieveRelevantMemories = async (question) => {
     console.warn('[brain-query-service] Embedding retrieval failed', error);
   }
 
-  return selectTopMemories(safeQuestion, lexicalMemories, embeddingMatches);
+  const selectedMemories = selectTopMemories(safeQuestion, lexicalMemories, embeddingMatches);
+  console.info('[brain] memory retrieved', {
+    source: 'retrieveRelevantMemories.selected',
+    query: safeQuestion,
+    count: selectedMemories.length,
+  });
+
+  return selectedMemories;
 };
 
 export const generateAnswer = async (question, context = {}) => {
@@ -187,9 +203,25 @@ export const queryBrain = async (question) => {
 
   const intent = classifyIntentLocally(safeQuestion, { source: 'brain-query-service' })
     || { decisionType: 'query', parsedType: 'question' };
+  console.info('[brain] routing decision', {
+    source: 'queryBrain',
+    decisionType: intent?.decisionType || 'query',
+    parsedType: intent?.parsedType || 'question',
+  });
 
   const memories = await retrieveRelevantMemories(safeQuestion);
-  const answer = await generateAnswer(safeQuestion, { intent, memories });
+
+  let answer = '';
+  try {
+    answer = await generateAnswer(safeQuestion, { intent, memories });
+  } catch (error) {
+    console.warn('[brain] AI fallback triggered', {
+      stage: 'queryBrain',
+      reason: 'answer_generation_failed',
+      message: error?.message || String(error),
+    });
+    answer = 'I found relevant memories, but could not generate an AI summary right now.';
+  }
 
   return {
     answer,

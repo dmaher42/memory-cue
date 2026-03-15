@@ -119,6 +119,11 @@ export const processInbox = async (entries = [], options = {}) => {
       if (localDecision) {
         parsedEntry = localDecision.parsedEntry;
       } else {
+        console.warn('[brain] AI fallback triggered', {
+          source: 'processInbox',
+          reason: 'local_intent_unresolved',
+          entryId: hints.entryId,
+        });
         try {
           parsedEntry = await parseEntry(text);
         } catch (error) {

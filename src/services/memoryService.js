@@ -189,6 +189,18 @@ export const saveMemory = async (entry = {}) => {
     return null;
   }
 
+  const logMemorySaved = (memory) => {
+    if (!memory) {
+      return memory;
+    }
+    console.info('[brain] memory saved', {
+      id: memory.id,
+      type: memory.type,
+      source: memory.source,
+    });
+    return memory;
+  };
+
   if (type === 'inbox') {
     const savedInboxEntry = saveInboxEntry({
       text,
@@ -197,7 +209,7 @@ export const saveMemory = async (entry = {}) => {
       parsedType: entry?.metadata?.parsedType,
       metadata,
     });
-    return savedInboxEntry ? normalizeInboxToMemory(savedInboxEntry) : null;
+    return savedInboxEntry ? logMemorySaved(normalizeInboxToMemory(savedInboxEntry)) : null;
   }
 
   if (type === 'reminder') {
@@ -212,7 +224,7 @@ export const saveMemory = async (entry = {}) => {
 
     try {
       const savedReminder = await createReminder(reminderPayload);
-      return savedReminder ? normalizeReminderToMemory(savedReminder) : null;
+      return savedReminder ? logMemorySaved(normalizeReminderToMemory(savedReminder)) : null;
     } catch (error) {
       console.warn('[memory-service] Failed to save reminder', error);
       return null;
@@ -233,7 +245,7 @@ export const saveMemory = async (entry = {}) => {
     },
   );
 
-  return savedNote ? normalizeNoteToMemory(savedNote) : null;
+  return savedNote ? logMemorySaved(normalizeNoteToMemory(savedNote)) : null;
 };
 
 export const getMemoryById = (id) => {
@@ -244,17 +256,23 @@ export const getMemoryById = (id) => {
 
   const note = loadAllNotes().find((entry) => normalizeText(entry?.id) === targetId);
   if (note) {
-    return normalizeNoteToMemory(note);
+    const memory = normalizeNoteToMemory(note);
+    console.info('[brain] memory retrieved', { id: memory.id, type: memory.type, source: 'getMemoryById' });
+    return memory;
   }
 
   const reminder = loadReminderEntries().find((entry) => normalizeText(entry?.id) === targetId);
   if (reminder) {
-    return normalizeReminderToMemory(reminder);
+    const memory = normalizeReminderToMemory(reminder);
+    console.info('[brain] memory retrieved', { id: memory.id, type: memory.type, source: 'getMemoryById' });
+    return memory;
   }
 
   const inboxEntry = getInboxEntries().find((entry) => normalizeText(entry?.id) === targetId);
   if (inboxEntry) {
-    return normalizeInboxToMemory(inboxEntry);
+    const memory = normalizeInboxToMemory(inboxEntry);
+    console.info('[brain] memory retrieved', { id: memory.id, type: memory.type, source: 'getMemoryById' });
+    return memory;
   }
 
   return null;
@@ -268,9 +286,16 @@ export const getRecentMemories = (limit = DEFAULT_RECENT_LIMIT) => {
   const reminderMemories = loadReminderEntries().map((entry) => normalizeReminderToMemory(entry));
   const inboxMemories = getInboxEntries().map((entry) => normalizeInboxToMemory(entry));
 
-  return dedupeMemories([...noteMemories, ...reminderMemories, ...inboxMemories])
+  const memories = dedupeMemories([...noteMemories, ...reminderMemories, ...inboxMemories])
     .sort(sortMemoriesByRecency)
     .slice(0, safeLimit);
+
+  console.info('[brain] memory retrieved', {
+    source: 'getRecentMemories',
+    count: memories.length,
+  });
+
+  return memories;
 };
 
 export const searchMemories = (query) => {
@@ -291,6 +316,14 @@ export const searchMemories = (query) => {
     .map((entry) => normalizeInboxToMemory(entry))
     .filter((entry) => matchesQuery(entry, normalizedQuery));
 
-  return dedupeMemories([...noteMatches, ...reminderMatches, ...inboxMatches])
+  const matches = dedupeMemories([...noteMatches, ...reminderMatches, ...inboxMatches])
     .sort(sortMemoriesByRecency);
+
+  console.info('[brain] memory retrieved', {
+    source: 'searchMemories',
+    query: normalizedQuery,
+    count: matches.length,
+  });
+
+  return matches;
 };
