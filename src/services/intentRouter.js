@@ -3,6 +3,13 @@ const REMINDER_KEYWORDS = ['remind', 'tomorrow', 'tonight', 'later', 'buy', 'pic
 const NOTE_KEYWORDS = ['idea', 'note', 'remember', 'lesson'];
 const DRILL_KEYWORDS = ['drill', 'training', 'coaching'];
 const QUESTION_PREFIXES = ['what', 'when', 'how', 'where'];
+const MEMORY_QUERY_PATTERNS = [
+  /\bwhat reminders? do i have\b/i,
+  /\bwhat did i write about\b/i,
+  /\bwhat was my shopping list\b/i,
+  /\bwhat(?:'s| is) on my (?:shopping )?list\b/i,
+  /\bwhat did i (?:save|note|record)\b/i,
+];
 const INTENT_PATTERNS_KEY = 'memoryCueIntentPatterns';
 const MAX_STORED_PATTERNS = 50;
 
@@ -68,6 +75,27 @@ const countKeywordMatches = (normalizedText, keywords) => keywords.reduce((count
   normalizedText.includes(keyword) ? count + 1 : count
 ), 0);
 
+const getMemoryRecallScore = (text, normalizedText, startsWithQuestion) => {
+  if (!normalizedText) {
+    return 0;
+  }
+
+  const patternMatches = MEMORY_QUERY_PATTERNS.reduce((count, pattern) => (
+    pattern.test(text) ? count + 1 : count
+  ), 0);
+
+  const hasRecallVerb = /(wrote|write|saved|save|recorded|record|have|had)/.test(normalizedText);
+  const hasMemoryObject = /(reminders?|notes?|shopping list|list|training)/.test(normalizedText);
+  const hasPersonalContext = /\b(my|i)\b/.test(normalizedText);
+
+  let score = patternMatches * 3;
+  if (startsWithQuestion && hasRecallVerb && hasMemoryObject && hasPersonalContext) {
+    score += 2;
+  }
+
+  return score;
+};
+
 const getLearnedBias = (tokens) => {
   const bias = {
     persist_reminder: 0,
@@ -129,7 +157,21 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const reminderScore = countKeywordMatches(normalized, REMINDER_KEYWORDS) + learnedBias.persist_reminder;
   const noteScore = countKeywordMatches(normalized, NOTE_KEYWORDS) + learnedBias.persist_note;
   const drillScore = countKeywordMatches(normalized, DRILL_KEYWORDS);
+  const memoryRecallScore = getMemoryRecallScore(text, normalized, startsWithQuestion);
   const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion ? 1 : 0) + learnedBias.query;
+
+  if (memoryRecallScore >= 3) {
+    const parsedEntry = createHeuristicParsedEntry('question', text, hints);
+    const decision = {
+      decisionType: 'query_memory',
+      parsedType: 'question',
+      text,
+      parsedEntry,
+      hints,
+    };
+    learnIntentPattern(text, decision.decisionType);
+    return decision;
+  }
 
   const scored = [
     { kind: 'reminder', score: reminderScore },
@@ -217,10 +259,13 @@ const looksLikeNotebookCapture = (rawText) => {
  */
 export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
+  const normalizedText = text.toLowerCase();
   const parsed = parsedEntry && typeof parsedEntry === 'object' ? parsedEntry : {};
   const parsedType = normalizeType(parsed?.type, text);
   const notebookHeuristic = looksLikeNotebookCapture(text);
   const isQuestion = parsedType === 'question' || text.endsWith('?');
+  const startsWithQuestion = QUESTION_PREFIXES
+    .some((prefix) => normalizedText.startsWith(`${prefix} `));
 
   if (parsedType === 'reminder') {
     const decision = {
@@ -254,6 +299,19 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   }
 
   if (isQuestion) {
+    const memoryRecallScore = getMemoryRecallScore(text, normalizedText, startsWithQuestion);
+    if (memoryRecallScore >= 3) {
+      const decision = {
+        decisionType: 'query_memory',
+        parsedType,
+        text,
+        parsedEntry: parsed,
+        hints,
+      };
+      learnIntentPattern(text, decision.decisionType);
+      return decision;
+    }
+
     const decision = {
       decisionType: 'query',
       parsedType,
