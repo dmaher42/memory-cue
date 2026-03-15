@@ -1,5 +1,3 @@
-import { getSupabaseClient } from './supabase-client.js';
-
 // Module-level external auth context (populated by callers such as reminders.js)
 let _externalAuthContext = {
   authReady: false,
@@ -9,6 +7,7 @@ let _externalAuthContext = {
   signInWithRedirect: null,
   signOut: null,
   toast: null,
+  onAuthStateChanged: null,
 };
 
 /**
@@ -29,7 +28,6 @@ export function setAuthContext(ctx = {}) {
  * Start a sign-in flow.
  * Preference order:
  * - If an external handler (signInWithPopup or signInWithRedirect) was supplied via setAuthContext, use it.
- * - Fallback to the Supabase client (getSupabaseClient()) when available.
  * - Resolves null when no auth facilities are available.
  */
 export async function startSignInFlow(options = {}) {
@@ -69,25 +67,6 @@ export async function startSignInFlow(options = {}) {
         return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
       }
     }
-    // Fallback to Supabase client if available
-    const supabase = getSupabaseClient();
-    if (supabase && supabase.auth) {
-      if (typeof supabase.auth.signInWithOAuth === 'function') {
-        const redirectUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-        return supabase.auth.signInWithOAuth({
-          ...options,
-          provider: 'google',
-          options: {
-            ...(options?.options || {}),
-            redirectTo: redirectUrl,
-          },
-        });
-      }
-      if (typeof supabase.auth.signIn === 'function') {
-        // legacy support
-        return supabase.auth.signIn({ provider: 'google' });
-      }
-    }
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[supabase-auth] startSignInFlow error', err);
@@ -103,16 +82,12 @@ export async function startSignInFlow(options = {}) {
 }
 
 /**
- * Start sign-out flow. Prefer supplied handler, otherwise try supabase.auth.signOut().
+ * Start sign-out flow using the supplied Firebase signOut handler.
  */
 export async function startSignOutFlow() {
   try {
     if (_externalAuthContext && typeof _externalAuthContext.signOut === 'function') {
       return _externalAuthContext.signOut(_externalAuthContext.auth);
-    }
-    const supabase = getSupabaseClient();
-    if (supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
-      return supabase.auth.signOut();
     }
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -301,64 +276,13 @@ export function applyAuthState(elements, { user, messages } = {}) {
   setFeedback(elements.feedbackEls, '');
 }
 
-function bindAuthForms(supabase, elements) {
-  elements.authForms.forEach((form) => {
-    if (!(form instanceof HTMLFormElement) || form.dataset.supabaseAuthBound === 'true') {
-      return;
-    }
-
-    form.dataset.supabaseAuthBound = 'true';
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const emailInput = elements.emailInputs.find((input) => form.contains(input))
-        || form.querySelector('input[type="email"]');
-      const email = typeof emailInput?.value === 'string' ? emailInput.value.trim() : '';
-
-      if (!email) {
-        setFeedback(elements.feedbackEls, 'Enter an email address to continue.');
-        return;
-      }
-
-      try {
-        const { error } = await supabase.auth.signInWithOtp({ email });
-        if (error) {
-          setFeedback(elements.feedbackEls, error.message || 'Unable to send magic link.');
-        } else {
-          setFeedback(elements.feedbackEls, 'Magic link sent. Check your email.');
-        }
-      } catch (error) {
-        setFeedback(elements.feedbackEls, error?.message || 'Unable to send magic link.');
-      }
-    });
-  });
-}
-
-function bindSignOutButtons(supabase, elements) {
-  elements.signOutButtons.forEach((button) => {
-    if (!(button instanceof HTMLElement) || button.dataset.supabaseAuthBound === 'true') {
-      return;
-    }
-
-    button.dataset.supabaseAuthBound = 'true';
-
-    button.addEventListener('click', async () => {
-      try {
-        await supabase.auth.signOut();
-      } catch (error) {
-        console.error('[supabase] Sign-out failed.', error);
-      }
-    });
-  });
-}
-
 function bindSignInButtons(elements) {
   elements.signInButtons.forEach((button) => {
-    if (!(button instanceof HTMLElement) || button.dataset.supabaseAuthBound === 'true') {
+    if (!(button instanceof HTMLElement) || button.dataset.authBound === 'true') {
       return;
     }
 
-    button.dataset.supabaseAuthBound = 'true';
+    button.dataset.authBound = 'true';
 
     button.addEventListener('click', async () => {
       try {
@@ -370,9 +294,27 @@ function bindSignInButtons(elements) {
   });
 }
 
+function bindSignOutButtons(elements) {
+  elements.signOutButtons.forEach((button) => {
+    if (!(button instanceof HTMLElement) || button.dataset.authBound === 'true') {
+      return;
+    }
+
+    button.dataset.authBound = 'true';
+
+    button.addEventListener('click', async () => {
+      try {
+        await startSignOutFlow();
+      } catch (error) {
+        console.error('[auth] Sign-out failed.', error);
+      }
+    });
+  });
+}
+
 export function initSupabaseAuth(options = {}) {
   const {
-    supabase: suppliedSupabase,
+    auth: suppliedAuth,
     scope = document,
     selectors: selectorOverrides = {},
     messages: messageOverrides = {},
@@ -390,61 +332,49 @@ export function initSupabaseAuth(options = {}) {
 
   applyAuthState(elements, { user: null, messages });
 
-  const supabase = suppliedSupabase
-    || getSupabaseClient()
-    || (typeof window !== 'undefined' ? window.supabase : null);
+  const auth = suppliedAuth || _externalAuthContext?.auth || null;
 
-  if (!supabase) {
+  if (!disableButtonBinding) {
+    bindSignInButtons(elements);
+    bindSignOutButtons(elements);
+  }
+
+  const cleanupFns = [];
+
+  if (!auth || typeof _externalAuthContext?.onAuthStateChanged !== 'function') {
     return {
-      supabase: null,
+      auth: null,
       elements,
       applyAuthState: (state) => applyAuthState(elements, { ...state, messages }),
       destroy() {},
     };
   }
 
-  bindAuthForms(supabase, elements);
-  if (!disableButtonBinding) {
-    bindSignInButtons(elements);
-    bindSignOutButtons(supabase, elements);
-  }
-
-  const cleanupFns = [];
-
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    applyAuthState(elements, { user: session?.user ?? null, messages });
+  const unsubscribe = _externalAuthContext.onAuthStateChanged(auth, (user) => {
+    applyAuthState(elements, { user: user ?? null, messages });
     if (typeof onSessionChange === 'function') {
       try {
-        onSessionChange(session?.user ?? null, session);
+        onSessionChange(user ?? null, user ? { user } : null);
       } catch (error) {
-        console.error('[supabase] onSessionChange handler failed.', error);
+        console.error('[auth] onSessionChange handler failed.', error);
       }
     }
   });
 
-  if (data?.subscription) {
+  if (typeof unsubscribe === 'function') {
     cleanupFns.push(() => {
       try {
-        data.subscription.unsubscribe();
+        unsubscribe();
       } catch {
         /* noop */
       }
     });
   }
 
-  supabase.auth
-    .getSession()
-    .then(({ data: sessionData, error }) => {
-      if (!error) {
-        applyAuthState(elements, { user: sessionData?.session?.user ?? null, messages });
-      }
-    })
-    .catch((error) => {
-      console.error('[supabase] getSession failed.', error);
-    });
+  applyAuthState(elements, { user: auth.currentUser ?? null, messages });
 
   return {
-    supabase,
+    auth,
     elements,
     applyAuthState: (state) => applyAuthState(elements, { ...state, messages }),
     destroy() {
