@@ -6,6 +6,8 @@ const NOTE_KEYWORDS = ['idea', 'note', 'remember', 'lesson'];
 const DRILL_KEYWORDS = ['drill', 'training', 'coaching'];
 const QUESTION_PREFIXES = ['what', 'when', 'how', 'where'];
 
+export const DECISION_TYPES = ['query_memory', 'learn_pattern', 'plan_day', 'persist_reminder', 'persist_note', 'persist_inbox'];
+
 const countKeywordMatches = (normalizedText, keywords) => keywords.reduce((count, keyword) => (
   normalizedText.includes(keyword) ? count + 1 : count
 ), 0);
@@ -66,12 +68,32 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
     });
   }
 
-  if (patternMatch?.predictedIntent === 'query') {
+  if (patternMatch?.predictedIntent === 'query' || patternMatch?.predictedIntent === 'query_memory') {
     return logRoutingDecision('classifyIntentLocally.pattern', text, {
-      decisionType: 'query',
+      decisionType: 'query_memory',
       parsedType: 'question',
       text,
       parsedEntry: createHeuristicParsedEntry('question', text, hints),
+      hints,
+    });
+  }
+
+  if (patternMatch?.predictedIntent === 'learn_pattern') {
+    return logRoutingDecision('classifyIntentLocally.pattern', text, {
+      decisionType: 'learn_pattern',
+      parsedType: 'learn_pattern',
+      text,
+      parsedEntry: createHeuristicParsedEntry('learn_pattern', text, hints),
+      hints,
+    });
+  }
+
+  if (patternMatch?.predictedIntent === 'plan_day') {
+    return logRoutingDecision('classifyIntentLocally.pattern', text, {
+      decisionType: 'plan_day',
+      parsedType: 'plan_day',
+      text,
+      parsedEntry: createHeuristicParsedEntry('plan_day', text, hints),
       hints,
     });
   }
@@ -83,19 +105,6 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const noteScore = countKeywordMatches(normalized, NOTE_KEYWORDS);
   const drillScore = countKeywordMatches(normalized, DRILL_KEYWORDS);
   const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion ? 1 : 0);
-
-  if (memoryRecallScore >= 3) {
-    const parsedEntry = createHeuristicParsedEntry('question', text, hints);
-    const decision = {
-      decisionType: 'query_memory',
-      parsedType: 'question',
-      text,
-      parsedEntry,
-      hints,
-    };
-    learnIntentPattern(text, decision.decisionType);
-    return logRoutingDecision('classifyIntentLocally', text, decision);
-  }
 
   const scored = [
     { kind: 'reminder', score: reminderScore },
@@ -138,7 +147,7 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
 
   const parsedEntry = createHeuristicParsedEntry('question', text, hints);
   const decision = {
-    decisionType: 'query',
+    decisionType: 'query_memory',
     parsedType: 'question',
     text,
     parsedEntry,
@@ -181,13 +190,32 @@ const looksLikeNotebookCapture = (rawText) => {
  */
 export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
-  const normalizedText = text.toLowerCase();
   const parsed = parsedEntry && typeof parsedEntry === 'object' ? parsedEntry : {};
   const parsedType = normalizeType(parsed?.type, text);
   const notebookHeuristic = looksLikeNotebookCapture(text);
   const isQuestion = parsedType === 'question' || text.endsWith('?');
-  const startsWithQuestion = QUESTION_PREFIXES
-    .some((prefix) => normalizedText.startsWith(`${prefix} `));
+
+  if (parsedType === 'learn_pattern') {
+    const decision = {
+      decisionType: 'learn_pattern',
+      parsedType,
+      text,
+      parsedEntry: parsed,
+      hints,
+    };
+    return logRoutingDecision('routeIntent', text, decision);
+  }
+
+  if (parsedType === 'plan_day') {
+    const decision = {
+      decisionType: 'plan_day',
+      parsedType,
+      text,
+      parsedEntry: parsed,
+      hints,
+    };
+    return logRoutingDecision('routeIntent', text, decision);
+  }
 
   if (parsedType === 'reminder') {
     const decision = {
@@ -221,21 +249,8 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   }
 
   if (isQuestion) {
-    const memoryRecallScore = getMemoryRecallScore(text, normalizedText, startsWithQuestion);
-    if (memoryRecallScore >= 3) {
-      const decision = {
-        decisionType: 'query_memory',
-        parsedType,
-        text,
-        parsedEntry: parsed,
-        hints,
-      };
-      learnIntentPattern(text, decision.decisionType);
-      return logRoutingDecision('routeIntent', text, decision, { memoryRecallScore });
-    }
-
     const decision = {
-      decisionType: 'query',
+      decisionType: 'query_memory',
       parsedType,
       text,
       parsedEntry: parsed,
