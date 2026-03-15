@@ -76,9 +76,9 @@ window.__ENV = {
 
   const FALLBACK_FIREBASE_CONFIG = Object.freeze({
     apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-    authDomain: 'ai-assistant-d546b.firebaseapp.com',
-    projectId: 'ai-assistant-d546b',
-    storageBucket: 'ai-assistant-d546b.appspot.com',
+    authDomain: 'memory-cue-app.firebaseapp.com',
+    projectId: 'memory-cue-app',
+    storageBucket: 'memory-cue-app.appspot.com',
     messagingSenderId: '751284466633',
     appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
     measurementId: 'G-R0V4M7VCE6'

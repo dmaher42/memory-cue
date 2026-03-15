@@ -2810,7 +2810,7 @@ export async function initReminders(sel = {}) {
   setupVoiceEnhancement();
 
   // Placeholder for Firebase modules loaded later
-  let initializeApp, getFirestore, enableMultiTabIndexedDbPersistence,
+  let initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence,
     enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection,
     query, orderBy, serverTimestamp, getAuth, onAuthStateChanged,
     GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
@@ -3915,11 +3915,11 @@ export async function initReminders(sel = {}) {
   saveBtn?.addEventListener('click', handleSaveAction);
 
   if (firebaseDeps) {
-    ({ initializeApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
+    ({ initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
     firebaseModulesLoaded = true;
   } else {
     try {
-      ({ initializeApp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
+      ({ initializeApp, getApps, getApp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
       ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
       ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
       firebaseModulesLoaded = true;
@@ -3945,7 +3945,9 @@ export async function initReminders(sel = {}) {
         ? window.location.hostname
         : 'unknown');
       console.info('[Firebase] Initialising Memory Cue', firebaseConfig.projectId);
-      app = initializeApp(firebaseConfig);
+      app = (typeof getApps === 'function' && getApps().length && typeof getApp === 'function')
+        ? getApp()
+        : initializeApp(firebaseConfig);
       db = getFirestore(app);
       firebaseReady = true;
       console.info('[Firebase] Firestore initialised', firebaseConfig.projectId);
@@ -4000,7 +4002,7 @@ export async function initReminders(sel = {}) {
   }
 
   if (firebaseReady && typeof getAuth === 'function') {
-    auth = getAuth();
+    auth = getAuth(app);
   }
 
   // Formatting helpers
