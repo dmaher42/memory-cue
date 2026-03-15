@@ -19,15 +19,47 @@ function normalizeConfigCandidate(candidate) {
   return Object.fromEntries(entries);
 }
 
+function normalizeAuthDomainValue(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.hostname) {
+      return parsed.hostname;
+    }
+  } catch {
+    // keep original value when it is already a bare hostname
+  }
+  return trimmed.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+}
+
+function normalizeFirebaseConfig(config) {
+  if (!config || typeof config !== 'object') {
+    return config;
+  }
+  if (typeof config.authDomain !== 'string') {
+    return config;
+  }
+  return {
+    ...config,
+    authDomain: normalizeAuthDomainValue(config.authDomain),
+  };
+}
+
 function readConfigFromGlobals() {
   const scope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {});
   const direct = normalizeConfigCandidate(scope?.__FIREBASE_CONFIG);
   if (direct) {
-    return direct;
+    return normalizeFirebaseConfig(direct);
   }
   const env = normalizeConfigCandidate(scope?.__ENV?.FIREBASE_CONFIG);
   if (env) {
-    return env;
+    return normalizeFirebaseConfig(env);
   }
   const legacyMap = {
     FIREBASE_API_KEY: 'apiKey',
@@ -45,7 +77,7 @@ function readConfigFromGlobals() {
     }
     return acc;
   }, {});
-  return Object.keys(legacy).length ? legacy : null;
+  return Object.keys(legacy).length ? normalizeFirebaseConfig(legacy) : null;
 }
 
 function getFirebaseConfig() {

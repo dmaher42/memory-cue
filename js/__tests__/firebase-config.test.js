@@ -46,4 +46,16 @@ describe('firebase-config', () => {
     expect(config.measurementId).toBe('G-TESTING1234');
     expect(config.projectId).toBe(DEFAULT_FIREBASE_CONFIG.projectId);
   });
+
+  it('normalizes authDomain when direct config includes protocol', () => {
+    globalThis.__FIREBASE_CONFIG = { authDomain: 'https://ai-assistant-d546b.firebaseapp.com/auth/callback' };
+    const config = getFirebaseConfig();
+    expect(config.authDomain).toBe('ai-assistant-d546b.firebaseapp.com');
+  });
+
+  it('normalizes FIREBASE_AUTH_DOMAIN from __ENV legacy values', () => {
+    globalThis.__ENV = { FIREBASE_AUTH_DOMAIN: 'https://custom-auth.example.com/path' };
+    const config = getFirebaseConfig();
+    expect(config.authDomain).toBe('custom-auth.example.com');
+  });
 });
