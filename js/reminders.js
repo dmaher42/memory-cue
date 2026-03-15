@@ -4229,9 +4229,11 @@ export async function initReminders(sel = {}) {
   }
 
   if (authReady && typeof getRedirectResult === 'function') {
-    getRedirectResult(auth).catch((error) => {
+    try {
+      await getRedirectResult(auth);
+    } catch (error) {
       console.warn('[auth] Redirect sign-in result handling failed.', error);
-    });
+    }
   }
 
   if (shouldWireAuthButtons && googleSignOutBtns.length) {

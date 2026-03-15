@@ -306,7 +306,7 @@ function bindSignOutButtons(elements) {
   });
 }
 
-export function initSupabaseAuth(options = {}) {
+export function initFirebaseAuth(options = {}) {
   const {
     auth: suppliedAuth,
     scope = document,
@@ -329,9 +329,13 @@ export function initSupabaseAuth(options = {}) {
   const auth = suppliedAuth || _externalAuthContext?.auth || null;
 
   if (auth && typeof _externalAuthContext?.getRedirectResult === 'function') {
-    _externalAuthContext.getRedirectResult(auth).catch((error) => {
-      console.warn('[auth] Redirect sign-in result handling failed.', error);
-    });
+    void (async () => {
+      try {
+        await _externalAuthContext.getRedirectResult(auth);
+      } catch (error) {
+        console.warn('[auth] Redirect sign-in result handling failed.', error);
+      }
+    })();
   }
 
   if (!disableButtonBinding) {
@@ -391,9 +395,13 @@ export function initSupabaseAuth(options = {}) {
 
 export { DEFAULT_SELECTORS as SUPABASE_AUTH_DEFAULT_SELECTORS };
 export { DEFAULT_MESSAGES as SUPABASE_AUTH_DEFAULT_MESSAGES };
-export function getSupabaseAuthElements(selectors = {}, scope = document) {
+export function getFirebaseAuthElements(selectors = {}, scope = document) {
   return collectAuthElements({
     ...DEFAULT_SELECTORS,
     ...selectors,
   }, scope);
 }
+
+// Backward-compatible exports while modules migrate away from legacy Supabase naming.
+export const initSupabaseAuth = initFirebaseAuth;
+export const getSupabaseAuthElements = getFirebaseAuthElements;
