@@ -72,6 +72,19 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const drillScore = countKeywordMatches(normalized, DRILL_KEYWORDS);
   const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion ? 1 : 0);
 
+  if (memoryRecallScore >= 3) {
+    const parsedEntry = createHeuristicParsedEntry('question', text, hints);
+    const decision = {
+      decisionType: 'query_memory',
+      parsedType: 'question',
+      text,
+      parsedEntry,
+      hints,
+    };
+    learnIntentPattern(text, decision.decisionType);
+    return decision;
+  }
+
   const scored = [
     { kind: 'reminder', score: reminderScore },
     { kind: 'drill', score: drillScore },
@@ -155,10 +168,13 @@ const looksLikeNotebookCapture = (rawText) => {
  */
 export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
+  const normalizedText = text.toLowerCase();
   const parsed = parsedEntry && typeof parsedEntry === 'object' ? parsedEntry : {};
   const parsedType = normalizeType(parsed?.type, text);
   const notebookHeuristic = looksLikeNotebookCapture(text);
   const isQuestion = parsedType === 'question' || text.endsWith('?');
+  const startsWithQuestion = QUESTION_PREFIXES
+    .some((prefix) => normalizedText.startsWith(`${prefix} `));
 
   if (parsedType === 'reminder') {
     const decision = {
@@ -192,6 +208,19 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   }
 
   if (isQuestion) {
+    const memoryRecallScore = getMemoryRecallScore(text, normalizedText, startsWithQuestion);
+    if (memoryRecallScore >= 3) {
+      const decision = {
+        decisionType: 'query_memory',
+        parsedType,
+        text,
+        parsedEntry: parsed,
+        hints,
+      };
+      learnIntentPattern(text, decision.decisionType);
+      return decision;
+    }
+
     const decision = {
       decisionType: 'query',
       parsedType,
