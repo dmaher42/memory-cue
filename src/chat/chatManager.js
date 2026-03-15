@@ -3,6 +3,7 @@ import { executeCommand } from '../core/commandEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 import { classifyIntentLocally, createChatIntentInput, routeIntent } from '../services/intentRouter.js';
+import { retrieveRelevantMemories } from '../services/brainQueryService.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 
@@ -70,10 +71,63 @@ const parseEntry = async (text) => {
 };
 
 const askAssistant = async (text) => {
+  const MAX_MEMORY_SNIPPETS = 5;
+  const MAX_MEMORY_CHARS = 240;
+  const MAX_USER_QUESTION_CHARS = 500;
+  const MAX_MESSAGE_CHARS = 2600;
+
+  const toTrimmedText = (value, maxChars) => {
+    if (typeof value !== 'string') {
+      return '';
+    }
+    const normalized = value.trim();
+    if (!normalized) {
+      return '';
+    }
+    return normalized.length <= maxChars ? normalized : `${normalized.slice(0, maxChars - 1)}…`;
+  };
+
+  const safeQuestion = toTrimmedText(text, MAX_USER_QUESTION_CHARS);
+  let memorySnippets = [];
+  try {
+    const memories = await retrieveRelevantMemories(safeQuestion);
+    memorySnippets = memories
+      .slice(0, MAX_MEMORY_SNIPPETS)
+      .map((memory, index) => {
+        const snippet = toTrimmedText(memory?.text, MAX_MEMORY_CHARS);
+        return snippet ? `${index + 1}. ${snippet}` : '';
+      })
+      .filter(Boolean);
+  } catch (error) {
+    console.warn('[chat-manager] failed to retrieve relevant memories for assistant context', error);
+  }
+
+  const memoryBlock = memorySnippets.length
+    ? memorySnippets.join('\n')
+    : 'No relevant memories found.';
+
+  const assembledUserContent = [
+    'Relevant past memories:',
+    memoryBlock,
+    '',
+    `User question: ${safeQuestion}`,
+  ].join('\n').slice(0, MAX_MESSAGE_CHARS);
+
+  const messages = [
+    {
+      role: 'system',
+      content: 'You are Memory Cue, a personal assistant. Use provided memories when they are relevant, and be concise.',
+    },
+    {
+      role: 'user',
+      content: assembledUserContent,
+    },
+  ];
+
   const response = await fetch('/api/assistant-chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: text }),
+    body: JSON.stringify({ message: safeQuestion, messages }),
   });
 
   if (!response.ok) {
