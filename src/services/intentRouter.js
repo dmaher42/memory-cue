@@ -1,101 +1,14 @@
+import { predictIntent, recordPattern } from './patternLearningService.js';
+
 const NOTEBOOK_CAPTURE_PATTERN = /(meeting notes|lesson idea|remember\b|notes?\s+from|journal|plan\b|scored\b)/i;
 const REMINDER_KEYWORDS = ['remind', 'tomorrow', 'tonight', 'later', 'buy', 'pick up'];
 const NOTE_KEYWORDS = ['idea', 'note', 'remember', 'lesson'];
 const DRILL_KEYWORDS = ['drill', 'training', 'coaching'];
 const QUESTION_PREFIXES = ['what', 'when', 'how', 'where'];
-const INTENT_PATTERNS_KEY = 'memoryCueIntentPatterns';
-const MAX_STORED_PATTERNS = 50;
-
-const getPatternStorage = () => (typeof localStorage !== 'undefined' ? localStorage : null);
-
-const tokenizeText = (rawText) => {
-  const normalized = typeof rawText === 'string' ? rawText.trim().toLowerCase() : '';
-  if (!normalized) {
-    return [];
-  }
-
-  return Array.from(new Set(
-    normalized
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .map((token) => token.trim())
-      .filter((token) => token.length >= 3),
-  ));
-};
-
-const readIntentPatterns = () => {
-  const storage = getPatternStorage();
-  if (!storage) {
-    return [];
-  }
-
-  try {
-    const raw = storage.getItem(INTENT_PATTERNS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn('[intent-router] Unable to read intent patterns from localStorage.', error);
-    return [];
-  }
-};
-
-const writeIntentPatterns = (patterns) => {
-  const storage = getPatternStorage();
-  if (!storage) {
-    return;
-  }
-
-  try {
-    storage.setItem(INTENT_PATTERNS_KEY, JSON.stringify(patterns.slice(0, MAX_STORED_PATTERNS)));
-  } catch (error) {
-    console.warn('[intent-router] Unable to persist intent patterns to localStorage.', error);
-  }
-};
-
-const learnIntentPattern = (rawText, decisionType) => {
-  const tokens = tokenizeText(rawText).slice(0, 5);
-  if (!tokens.length || !decisionType) {
-    return;
-  }
-
-  const existing = readIntentPatterns();
-  const now = Date.now();
-  const updates = tokens.map((token) => ({ token, decisionType, capturedAt: now }));
-  writeIntentPatterns([...updates, ...existing]);
-};
 
 const countKeywordMatches = (normalizedText, keywords) => keywords.reduce((count, keyword) => (
   normalizedText.includes(keyword) ? count + 1 : count
 ), 0);
-
-const getLearnedBias = (tokens) => {
-  const bias = {
-    persist_reminder: 0,
-    persist_note: 0,
-    query: 0,
-  };
-
-  if (!tokens.length) {
-    return bias;
-  }
-
-  const patterns = readIntentPatterns();
-  patterns.forEach((pattern) => {
-    if (!tokens.includes(pattern?.token)) {
-      return;
-    }
-
-    if (pattern?.decisionType === 'persist_reminder') {
-      bias.persist_reminder += 1;
-    } else if (pattern?.decisionType === 'persist_note') {
-      bias.persist_note += 1;
-    } else if (pattern?.decisionType === 'query') {
-      bias.query += 1;
-    }
-  });
-
-  return bias;
-};
 
 const createHeuristicParsedEntry = (type, text, hints = {}) => ({
   type,
@@ -120,16 +33,44 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
     return null;
   }
 
+  const patternMatch = predictIntent(text);
+  if (patternMatch?.predictedIntent === 'persist_reminder') {
+    return {
+      decisionType: 'persist_reminder',
+      parsedType: 'reminder',
+      text,
+      parsedEntry: createHeuristicParsedEntry('reminder', text, hints),
+      hints,
+    };
+  }
+
+  if (patternMatch?.predictedIntent === 'persist_note') {
+    return {
+      decisionType: 'persist_note',
+      parsedType: 'note',
+      text,
+      parsedEntry: createHeuristicParsedEntry('note', text, hints),
+      hints,
+    };
+  }
+
+  if (patternMatch?.predictedIntent === 'query') {
+    return {
+      decisionType: 'query',
+      parsedType: 'question',
+      text,
+      parsedEntry: createHeuristicParsedEntry('question', text, hints),
+      hints,
+    };
+  }
+
   const startsWithQuestion = QUESTION_PREFIXES
     .some((prefix) => normalized.startsWith(`${prefix} `));
 
-  const tokens = tokenizeText(normalized);
-  const learnedBias = getLearnedBias(tokens);
-
-  const reminderScore = countKeywordMatches(normalized, REMINDER_KEYWORDS) + learnedBias.persist_reminder;
-  const noteScore = countKeywordMatches(normalized, NOTE_KEYWORDS) + learnedBias.persist_note;
+  const reminderScore = countKeywordMatches(normalized, REMINDER_KEYWORDS);
+  const noteScore = countKeywordMatches(normalized, NOTE_KEYWORDS);
   const drillScore = countKeywordMatches(normalized, DRILL_KEYWORDS);
-  const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion ? 1 : 0) + learnedBias.query;
+  const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion ? 1 : 0);
 
   const scored = [
     { kind: 'reminder', score: reminderScore },
@@ -153,7 +94,6 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
       parsedEntry,
       hints,
     };
-    learnIntentPattern(text, decision.decisionType);
     return decision;
   }
 
@@ -167,7 +107,6 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
       parsedEntry,
       hints,
     };
-    learnIntentPattern(text, decision.decisionType);
     return decision;
   }
 
@@ -179,7 +118,6 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
     parsedEntry,
     hints,
   };
-  learnIntentPattern(text, decision.decisionType);
   return decision;
 };
 
@@ -230,7 +168,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       parsedEntry: parsed,
       hints,
     };
-    learnIntentPattern(text, decision.decisionType);
+    recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
     return decision;
   }
 
@@ -249,7 +187,7 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       notebookHeuristic,
       hints,
     };
-    learnIntentPattern(text, decision.decisionType);
+    recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
     return decision;
   }
 
@@ -261,17 +199,19 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       parsedEntry: parsed,
       hints,
     };
-    learnIntentPattern(text, decision.decisionType);
+    recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
     return decision;
   }
 
-  return {
+  const decision = {
     decisionType: 'persist_inbox',
     parsedType,
     text,
     parsedEntry: parsed,
     hints,
   };
+  recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: 'Inbox' });
+  return decision;
 };
 
 export const createChatIntentInput = (parsedEntry, rawText, hints = {}) => ({
