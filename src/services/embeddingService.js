@@ -87,7 +87,7 @@ const cosineSimilarity = (left, right) => {
   return dotProduct / (Math.sqrt(leftMagnitude) * Math.sqrt(rightMagnitude));
 };
 
-export const createEmbedding = async (text) => {
+export const generateEmbedding = async (text) => {
   const normalizedText = normalizeText(text);
   if (!normalizedText) {
     return [];
@@ -145,10 +145,20 @@ export const storeEmbedding = (memoryId, embedding) => {
   return limitedRecords[0];
 };
 
-export const searchEmbeddings = (queryEmbedding) => {
+export const similaritySearch = (queryEmbedding, memories = []) => {
   const normalizedQuery = normalizeEmbedding(queryEmbedding);
   if (!normalizedQuery.length) {
     return [];
+  }
+
+  if (Array.isArray(memories) && memories.length) {
+    return memories
+      .map((memory) => ({
+        ...memory,
+        score: cosineSimilarity(normalizedQuery, normalizeEmbedding(memory?.embedding)),
+      }))
+      .filter((memory) => Number.isFinite(memory.score))
+      .sort((left, right) => right.score - left.score);
   }
 
   return getStoredEmbeddings()
@@ -159,3 +169,6 @@ export const searchEmbeddings = (queryEmbedding) => {
     .filter((result) => result.memoryId)
     .sort((left, right) => right.score - left.score);
 };
+
+export const createEmbedding = generateEmbedding;
+export const searchEmbeddings = similaritySearch;

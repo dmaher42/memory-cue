@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../../js/supabase-client.js';
+import { generateEmbedding, storeEmbedding } from './embeddingService.js';
 
 const MEMORY_CACHE_KEY = 'memoryCueCache';
 const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];
@@ -330,24 +331,40 @@ export const saveMemory = async (memory = {}) => {
     return null;
   }
 
+  let embedding = normalizeEmbedding(memory.embedding);
+  if (!embedding) {
+    try {
+      embedding = await generateEmbedding(nextMemory.text);
+    } catch (error) {
+      console.warn('[memory-service] Failed to generate embedding', error);
+    }
+  }
+
+  const memoryWithEmbedding = {
+    ...nextMemory,
+    embedding,
+    updatedAt: Date.now(),
+    pendingSync: true,
+  };
+
   memoryCache = mergeByLatest([
     ...memoryCache,
-    {
-      ...nextMemory,
-      updatedAt: Date.now(),
-      pendingSync: true,
-    },
+    memoryWithEmbedding,
   ]);
+
+  if (Array.isArray(embedding) && embedding.length) {
+    storeEmbedding(memoryWithEmbedding.id, embedding);
+  }
 
   writeCacheToStorage(memoryCache);
   console.info('[brain] memory_saved', {
-    id: nextMemory.id,
-    type: nextMemory.type,
-    source: nextMemory.source,
+    id: memoryWithEmbedding.id,
+    type: memoryWithEmbedding.type,
+    source: memoryWithEmbedding.source,
   });
 
   void triggerSync();
-  return nextMemory;
+  return memoryWithEmbedding;
 };
 
 export const getMemoryById = (id) => {
