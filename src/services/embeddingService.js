@@ -14,6 +14,8 @@ const normalizeEmbedding = (embedding) => {
     .filter((value) => Number.isFinite(value));
 };
 
+const getOpenAiApiKey = () => (typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY : '');
+
 const getStoredEmbeddings = () => {
   if (typeof localStorage === 'undefined') {
     return [];
@@ -26,7 +28,17 @@ const getStoredEmbeddings = () => {
     }
 
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((record) => ({
+        memoryId: normalizeText(record?.memoryId),
+        embedding: normalizeEmbedding(record?.embedding),
+        createdAt: Number(record?.createdAt) || 0,
+      }))
+      .filter((record) => record.memoryId && record.embedding.length);
   } catch (error) {
     console.warn('[embedding-service] Failed to read stored embeddings', error);
     return [];
@@ -81,7 +93,7 @@ export const createEmbedding = async (text) => {
     return [];
   }
 
-  const openAiApiKey = typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY : '';
+  const openAiApiKey = getOpenAiApiKey();
   if (!openAiApiKey) {
     console.warn('[embedding-service] OPENAI_API_KEY is not configured');
     return [];
@@ -125,7 +137,9 @@ export const storeEmbedding = (memoryId, embedding) => {
     createdAt: timestamp,
   });
 
-  const limitedRecords = records.slice(0, MAX_STORED_EMBEDDINGS);
+  const limitedRecords = records
+    .sort((left, right) => (Number(right?.createdAt) || 0) - (Number(left?.createdAt) || 0))
+    .slice(0, MAX_STORED_EMBEDDINGS);
   persistEmbeddings(limitedRecords);
 
   return limitedRecords[0];
