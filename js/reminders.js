@@ -1,7 +1,6 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
 import { captureInput, getInboxEntries } from './services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';
-import { deleteReminder, syncReminders, upsertReminder } from '../src/services/supabaseSyncService.js';
 import { createAndSaveNote } from './modules/notes-storage.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
@@ -2812,7 +2811,7 @@ export async function initReminders(sel = {}) {
   // Placeholder for Firebase modules loaded later
   let initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence,
     enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection,
-    query, orderBy, serverTimestamp, getAuth, onAuthStateChanged,
+    query, where, getDocs, orderBy, serverTimestamp, getAuth, onAuthStateChanged,
     GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
     signOut;
 
@@ -3581,6 +3580,7 @@ export async function initReminders(sel = {}) {
             due: typeof entry.due === 'string' && entry.due
               ? entry.due
               : (typeof entry.dueAt === 'string' && entry.dueAt ? entry.dueAt : null),
+            userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : null,
             pendingSync: !!entry.pendingSync,
             orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
             plannerLessonId:
@@ -3623,6 +3623,7 @@ export async function initReminders(sel = {}) {
           createdAt: Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now(),
           updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
           due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+          userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : null,
           pendingSync: !!entry.pendingSync,
           orderIndex: Number.isFinite(entry.orderIndex) ? entry.orderIndex : null,
           plannerLessonId:
@@ -3695,29 +3696,7 @@ export async function initReminders(sel = {}) {
       items = loadOfflineRemindersFromStorage();
       return;
     }
-    let offline = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
-    if (!offline.length) {
-      items = [];
-      persistItems();
-      return;
-    }
-    const unsynced = offline.filter((entry) => entry?.pendingSync);
-    if (unsynced.length) {
-      for (const entry of unsynced) {
-        try {
-          await saveToFirebase(entry);
-          entry.pendingSync = false;
-        } catch (error) {
-          console.warn('Failed to sync offline reminder', error);
-        }
-      }
-    }
-    items = ensureOrderIndicesInitialized(
-      offline.map((entry) => ({ ...entry, pendingSync: false }))
-    );
-    persistItems();
-    render();
-    rescheduleAllReminders();
+    // Local reminders are merged/synced during Firestore login sync.
   }
   try {
     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
@@ -3915,12 +3894,12 @@ export async function initReminders(sel = {}) {
   saveBtn?.addEventListener('click', handleSaveAction);
 
   if (firebaseDeps) {
-    ({ initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
+    ({ initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
     firebaseModulesLoaded = true;
   } else {
     try {
       ({ initializeApp, getApps, getApp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
-      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
       ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
       firebaseModulesLoaded = true;
     } catch (err) {
@@ -4271,6 +4250,45 @@ export async function initReminders(sel = {}) {
     applySignedOutState();
   }
 
+  function normalizeFirestoreTimestamp(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (value && typeof value.toMillis === 'function') {
+      return value.toMillis();
+    }
+    return Date.now();
+  }
+
+  function mapFirestoreReminder(reminderId, payload = {}) {
+    const createdAt = normalizeFirestoreTimestamp(payload.createdAt);
+    const updatedAt = normalizeFirestoreTimestamp(payload.updatedAt || payload.createdAt);
+    const rawOrder = Number(payload.orderIndex);
+    return {
+      id: typeof payload.id === 'string' && payload.id ? payload.id : reminderId,
+      title: typeof payload.title === 'string' && payload.title.trim()
+        ? payload.title
+        : (typeof payload.text === 'string' ? payload.text : ''),
+      priority: payload.priority || 'Medium',
+      category: normalizeCategory(payload.category),
+      notes: typeof payload.notes === 'string' ? payload.notes : '',
+      done: !!payload.done,
+      createdAt,
+      updatedAt,
+      due: typeof payload.due === 'string' && payload.due
+        ? payload.due
+        : (typeof payload.dueDate === 'string' && payload.dueDate ? payload.dueDate : null),
+      userId: typeof payload.userId === 'string' ? payload.userId : userId,
+      pendingSync: false,
+      orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
+      plannerLessonId: typeof payload.plannerLessonId === 'string' ? payload.plannerLessonId : null,
+      pinToToday: payload.pinToToday === true,
+      semanticEmbedding: normalizeSemanticEmbedding(payload.semanticEmbedding),
+      metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : null,
+      keywords: normalizeReminderKeywords(payload.keywords),
+    };
+  }
+
   async function setupSupabaseSync(){
     if(!userId){
       hydrateOfflineReminders();
@@ -4281,14 +4299,57 @@ export async function initReminders(sel = {}) {
       return;
     }
     try {
-      const remoteItems = await syncReminders();
-      items = ensureOrderIndicesInitialized(Array.isArray(remoteItems) ? remoteItems.map((item) => ({ ...item, category: normalizeCategory(item.category) })) : []);
+      const localItems = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
+      const remindersCollection = collection(db, 'reminders');
+      const remindersQuery = query(remindersCollection, where('userId', '==', userId));
+      const remindersSnapshot = await getDocs(remindersQuery);
+      const remoteItems = remindersSnapshot.docs
+        .map((reminderDoc) => mapFirestoreReminder(reminderDoc.id, reminderDoc.data()));
+      console.log('[brain] reminders_loaded_from_firestore', { count: remoteItems.length });
+
+      const remoteById = new Map(remoteItems.map((entry) => [entry.id, entry]));
+      const remindersToSync = localItems.filter((entry) => {
+        if (!entry || typeof entry !== 'object' || !entry.id) return false;
+        return !!entry.pendingSync || !remoteById.has(entry.id);
+      });
+
+      let syncedFromLocalCount = 0;
+      for (const entry of remindersToSync) {
+        const saved = await saveToFirebase({ ...entry, userId });
+        if (saved) {
+          syncedFromLocalCount += 1;
+        }
+      }
+      if (syncedFromLocalCount > 0) {
+        console.log('[brain] reminders_synced_from_local', { count: syncedFromLocalCount });
+      }
+
+      localItems.forEach((localItem) => {
+        if (!localItem || !localItem.id) return;
+        const remoteMatch = remoteById.get(localItem.id);
+        if (!remoteMatch) {
+          remoteById.set(localItem.id, { ...localItem, pendingSync: false, userId });
+          return;
+        }
+        const localUpdatedAt = Number.isFinite(localItem.updatedAt) ? localItem.updatedAt : 0;
+        const remoteUpdatedAt = Number.isFinite(remoteMatch.updatedAt) ? remoteMatch.updatedAt : 0;
+        if (localUpdatedAt > remoteUpdatedAt) {
+          remoteById.set(localItem.id, { ...localItem, pendingSync: false, userId });
+        }
+      });
+
+      items = ensureOrderIndicesInitialized(Array.from(remoteById.values()).map((item) => ({
+        ...item,
+        pendingSync: false,
+        userId,
+        category: normalizeCategory(item.category),
+      })));
       render();
       updateMobileRemindersHeaderSubtitle();
       persistItems();
       rescheduleAllReminders();
     } catch (error){
-      console.error('Supabase reminders sync error:', error);
+      console.error('Firestore reminders sync error:', error);
       if(syncStatus){
         renderSyncIndicator('error', 'Sync Error');
       }
@@ -4296,21 +4357,53 @@ export async function initReminders(sel = {}) {
   }
 
   async function saveToFirebase(item){
-    if(!userId) return;
+    if(!userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function' || typeof collection !== 'function') return false;
     try {
-      await upsertReminder({
-        ...item,
+      const reminderId = typeof item.id === 'string' && item.id ? item.id : uid();
+      const createdAt = Number.isFinite(item.createdAt) ? item.createdAt : Date.now();
+      const updatedAt = Date.now();
+      const dueDate = typeof item.due === 'string' && item.due
+        ? item.due
+        : (typeof item.dueDate === 'string' && item.dueDate ? item.dueDate : null);
+      await setDoc(doc(collection(db, 'reminders'), reminderId), {
+        id: reminderId,
+        text: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
+        dueDate,
+        createdAt,
+        updatedAt,
+        userId,
+        title: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
+        due: dueDate,
+        priority: item.priority || 'Medium',
         category: item.category || DEFAULT_CATEGORY,
+        notes: typeof item.notes === 'string' ? item.notes : '',
+        done: !!item.done,
         orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
-      });
+        plannerLessonId: typeof item.plannerLessonId === 'string' ? item.plannerLessonId : null,
+        pinToToday: item.pinToToday === true,
+        semanticEmbedding: normalizeSemanticEmbedding(item.semanticEmbedding),
+        metadata: item.metadata && typeof item.metadata === 'object' ? item.metadata : null,
+        keywords: normalizeReminderKeywords(item.keywords),
+      }, { merge: true });
+      item.id = reminderId;
+      item.createdAt = createdAt;
+      item.updatedAt = updatedAt;
+      item.userId = userId;
+      item.pendingSync = false;
+      console.log('[brain] reminder_saved_to_firestore', { id: reminderId });
+      persistItems();
+      return true;
     } catch (error) {
+      item.pendingSync = true;
+      persistItems();
       console.error('Save failed:', error); toast('Save queued (offline)');
+      return false;
     }
   }
   async function deleteFromFirebase(id){
-    if(!userId) return;
+    if(!userId || !db || typeof deleteDoc !== 'function' || typeof doc !== 'function') return;
     try {
-      await deleteReminder(id);
+      await deleteDoc(doc(db, 'reminders', id));
     } catch {
       toast('Delete queued (offline)');
     }
