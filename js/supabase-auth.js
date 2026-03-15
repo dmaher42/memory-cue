@@ -34,34 +34,46 @@ export function setAuthContext(ctx = {}) {
  */
 export async function startSignInFlow(options = {}) {
   try {
+    const prefersRedirect = Boolean(options?.preferRedirect)
+      || (typeof window !== 'undefined'
+        && typeof window.matchMedia === 'function'
+        && window.matchMedia('(max-width: 768px)').matches);
+
     // Prefer supplied handlers
     if (
       _externalAuthContext &&
-      typeof _externalAuthContext.signInWithPopup === 'function' &&
       _externalAuthContext.auth &&
       typeof _externalAuthContext.GoogleAuthProvider === 'function'
     ) {
-      return _externalAuthContext.signInWithPopup(
-        _externalAuthContext.auth,
-        new _externalAuthContext.GoogleAuthProvider()
-      );
-    }
-    if (
-      _externalAuthContext &&
-      typeof _externalAuthContext.signInWithRedirect === 'function' &&
-      _externalAuthContext.auth &&
-      typeof _externalAuthContext.GoogleAuthProvider === 'function'
-    ) {
-      return _externalAuthContext.signInWithRedirect(
-        _externalAuthContext.auth,
-        new _externalAuthContext.GoogleAuthProvider()
-      );
+      const provider = new _externalAuthContext.GoogleAuthProvider();
+      if (prefersRedirect && typeof _externalAuthContext.signInWithRedirect === 'function') {
+        return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
+      }
+
+      if (typeof _externalAuthContext.signInWithPopup === 'function') {
+        try {
+          return await _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
+        } catch (error) {
+          const popupIssue = typeof error?.code === 'string' && [
+            'auth/popup-closed-by-user',
+            'auth/popup-blocked',
+            'auth/cancelled-popup-request',
+          ].includes(error.code);
+          if (!popupIssue || typeof _externalAuthContext.signInWithRedirect !== 'function') {
+            throw error;
+          }
+        }
+      }
+
+      if (typeof _externalAuthContext.signInWithRedirect === 'function') {
+        return _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
+      }
     }
     // Fallback to Supabase client if available
     const supabase = getSupabaseClient();
     if (supabase && supabase.auth) {
       if (typeof supabase.auth.signInWithOAuth === 'function') {
-        const redirectUrl = `${window.location.origin}/auth/callback`;
+        const redirectUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
         return supabase.auth.signInWithOAuth({
           ...options,
           provider: 'google',
