@@ -20,22 +20,19 @@ export function setAuthContext(ctx = {}) {
   } catch (err) {
     // non-fatal; keep module usable even if callers pass odd values
     // eslint-disable-next-line no-console
-    console.warn('[supabase-auth] setAuthContext failed', err);
+    console.warn('[auth] setAuthContext failed', err);
   }
 }
 
 /**
  * Start a sign-in flow.
- * Preference order:
- * - If an external handler (signInWithPopup or signInWithRedirect) was supplied via setAuthContext, use it.
- * - Resolves null when no auth facilities are available.
+ * Uses Firebase auth handlers supplied via setAuthContext.
+ * Resolves null when no auth facilities are available.
  */
 export async function startSignInFlow(options = {}) {
   try {
     const prefersRedirect = Boolean(options?.preferRedirect)
-      || (typeof window !== 'undefined'
-        && typeof window.matchMedia === 'function'
-        && window.matchMedia('(max-width: 768px)').matches);
+      || (typeof window !== 'undefined' && window.innerWidth < 768);
 
     // Prefer supplied handlers
     if (
@@ -49,18 +46,7 @@ export async function startSignInFlow(options = {}) {
       }
 
       if (typeof _externalAuthContext.signInWithPopup === 'function') {
-        try {
-          return await _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
-        } catch (error) {
-          const popupIssue = typeof error?.code === 'string' && [
-            'auth/popup-closed-by-user',
-            'auth/popup-blocked',
-            'auth/cancelled-popup-request',
-          ].includes(error.code);
-          if (!popupIssue || typeof _externalAuthContext.signInWithRedirect !== 'function') {
-            throw error;
-          }
-        }
+        return _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
       }
 
       if (typeof _externalAuthContext.signInWithRedirect === 'function') {
@@ -69,12 +55,12 @@ export async function startSignInFlow(options = {}) {
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[supabase-auth] startSignInFlow error', err);
+    console.error('[auth] startSignInFlow error', err);
     try {
       _externalAuthContext?.toast?.('Sign-in failed');
     } catch (toastErr) {
       // eslint-disable-next-line no-console
-      console.warn('[supabase-auth] toast handler failed', toastErr);
+      console.warn('[auth] toast handler failed', toastErr);
     }
     throw err;
   }
@@ -91,7 +77,7 @@ export async function startSignOutFlow() {
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[supabase-auth] startSignOutFlow error', err);
+    console.error('[auth] startSignOutFlow error', err);
     throw err;
   }
   return Promise.resolve(null);
@@ -288,7 +274,7 @@ function bindSignInButtons(elements) {
       try {
         await startSignInFlow();
       } catch (error) {
-        console.error('[supabase] Sign-in failed.', error);
+        console.error('[auth] Sign-in failed.', error);
       }
     });
   });

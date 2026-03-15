@@ -4090,7 +4090,7 @@ function wireMobileNotesSupabaseAuth() {
           primarySignInBtn.click();
         } else {
           startSignInFlow().catch((error) => {
-            console.error('[supabase] Sign-in failed.', error);
+            console.error('[auth] Sign-in failed.', error);
           });
         }
         break;
@@ -4100,13 +4100,6 @@ function wireMobileNotesSupabaseAuth() {
         const primarySignOutBtn = document.getElementById('googleSignOutBtn');
         if (primarySignOutBtn instanceof HTMLElement) {
           primarySignOutBtn.click();
-        } else if (
-          window.__supabaseAuth &&
-          window.__supabaseAuth.supabase &&
-          window.__supabaseAuth.supabase.auth &&
-          typeof window.__supabaseAuth.supabase.auth.signOut === 'function'
-        ) {
-          window.__supabaseAuth.supabase.auth.signOut().catch(() => {});
         }
         break;
       }

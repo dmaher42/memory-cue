@@ -3940,6 +3940,10 @@ export async function initReminders(sel = {}) {
       if (!firebaseConfig.projectId) {
         throw new Error('Firebase projectId missing from configuration');
       }
+      console.log('[auth] Firebase project:', firebaseConfig.projectId);
+      console.log('[auth] Current domain:', (typeof window !== 'undefined' && window.location)
+        ? window.location.hostname
+        : 'unknown');
       console.info('[Firebase] Initialising Memory Cue', firebaseConfig.projectId);
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
@@ -4222,7 +4226,9 @@ export async function initReminders(sel = {}) {
   }
 
   if (authReady && typeof getRedirectResult === 'function') {
-    getRedirectResult(auth).catch(()=>{});
+    getRedirectResult(auth).catch((error) => {
+      console.warn('[auth] Redirect sign-in result handling failed.', error);
+    });
   }
 
   if (shouldWireAuthButtons && googleSignOutBtns.length) {

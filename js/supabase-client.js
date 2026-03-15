@@ -37,7 +37,7 @@ export function getSupabaseClient() {
   );
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('[supabase] Missing SUPABASE_URL or SUPABASE_ANON_KEY.');
+    console.info('[supabase] SUPABASE_URL or SUPABASE_ANON_KEY not set; sync remains local.');
     return null;
   }
 
