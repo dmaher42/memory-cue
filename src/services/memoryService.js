@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '../../js/supabase-client.js';
-import { generateEmbedding, storeEmbedding } from './embeddingService.js';
+import { learnPattern } from './patternLearningService.js';
 
 const MEMORY_CACHE_KEY = 'memoryCueCache';
 const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];
@@ -357,6 +357,7 @@ export const saveMemory = async (memory = {}) => {
   }
 
   writeCacheToStorage(memoryCache);
+  learnPattern(nextMemory);
   console.info('[brain] memory_saved', {
     id: memoryWithEmbedding.id,
     type: memoryWithEmbedding.type,
