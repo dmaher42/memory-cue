@@ -4345,9 +4345,8 @@ export async function initReminders(sel = {}) {
     }
     try {
       const localItems = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
-      const remindersCollection = collection(db, 'reminders');
-      const remindersQuery = query(remindersCollection, where('userId', '==', userId));
-      const remindersSnapshot = await getDocs(remindersQuery);
+      const remindersCollection = collection(db, 'users', userId, 'reminders');
+      const remindersSnapshot = await getDocs(remindersCollection);
       const remoteItems = remindersSnapshot.docs
         .map((reminderDoc) => mapFirestoreReminder(reminderDoc.id, reminderDoc.data()));
       console.log('[brain] reminders_loaded_from_firestore', { count: remoteItems.length });
