@@ -1,4 +1,4 @@
-import { saveToInbox } from '../services/inboxService.js';
+import { captureInput } from './capturePipeline.js';
 import { loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
 import { searchMemoryIndex } from '../../js/modules/memory-index.js';
 import { createReminder } from '../services/reminderService.js';
@@ -107,12 +107,19 @@ export const executeCommand = async (type, payload = {}) => {
 
     switch (type) {
       case 'capture': {
-        const text = typeof payload?.text === 'string' ? payload.text : '';
-        const entry = saveToInbox(text);
+        const commandText = typeof payload?.text === 'string' ? payload.text : '';
+        const routed = await captureInput({
+          text: commandText,
+          source: 'command_engine',
+          metadata: {
+            entryPoint: 'commandEngine.executeCommand',
+            ...(payload?.metadata && typeof payload.metadata === 'object' ? payload.metadata : {}),
+          },
+        });
         result = {
           status: 'success',
-          message: 'Saved to Inbox.',
-          data: entry,
+          message: typeof routed?.message === 'string' && routed.message ? routed.message : 'Capture processed.',
+          data: routed?.data ?? routed,
         };
         break;
       }

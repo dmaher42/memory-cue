@@ -1,4 +1,5 @@
 import { addMessage } from './messageStore.js';
+import { captureInput } from '../core/capturePipeline.js';
 import { executeCommand } from '../core/commandEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
@@ -326,34 +327,23 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
 };
 
 export const handleChatMessage = async (text, dependencies = {}) => {
-  const userText = typeof text === 'string' ? text.trim() : '';
-  if (!userText) {
+  const message = typeof text === 'string' ? text.trim() : '';
+  if (!message) {
     return { message: '', quickActions: [], status: null };
   }
 
-  addMessage(createMessage('user', userText));
+  addMessage(createMessage('user', message));
 
-  // Run deterministic heuristics first so /api/parse-entry remains a fallback.
-  const localDecision = classifyIntentLocally(userText, {
+  const routeResult = await captureInput({
+    text: message,
     source: 'chat',
-    entryPoint: 'chat.handleChatMessage',
-    capturedAt: Date.now(),
+    metadata: {
+      entryPoint: 'chat.handleChatMessage',
+      uid: dependencies?.uid,
+    },
   });
 
-  let parsed;
-  if (localDecision) {
-    parsed = localDecision.parsedEntry;
-  } else {
-    console.warn('[brain] AI fallback triggered', {
-      source: 'handleChatMessage',
-      reason: 'local_intent_unresolved',
-    });
-    parsed = await parseEntry(userText);
-  }
-
-  const routeResult = await processParsedEntry(parsed, userText, dependencies);
   const response = normalizeRouteResult(routeResult);
-
   addMessage(createMessage('assistant', response.message, response.quickActions));
   return response;
 };
