@@ -35,6 +35,17 @@ const runQuickAction = (targetView) => {
   window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: targetView } }));
 };
 
+const resolveCurrentUid = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const scopedUid = typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string'
+    ? window.__MEMORY_CUE_AUTH_USER_ID.trim()
+    : '';
+  return scopedUid || null;
+};
+
 const createQuickActionBar = (quickActions = []) => {
   if (!Array.isArray(quickActions) || quickActions.length === 0) {
     return null;
@@ -149,6 +160,17 @@ export const createChatPanel = () => {
   sendButton.type = 'submit';
   sendButton.textContent = 'Send';
 
+  const planButton = createNode('button', {
+    border: '1px solid color-mix(in srgb, var(--fg) 20%, transparent)',
+    borderRadius: '0.5rem',
+    background: 'var(--card)',
+    color: 'var(--fg)',
+    padding: '0.5rem 0.9rem',
+    cursor: 'pointer',
+  });
+  planButton.type = 'button';
+  planButton.textContent = 'Plan My Day';
+
   inputBar.addEventListener('submit', async (event) => {
     event.preventDefault();
     const userInput = input.value.trim();
@@ -159,14 +181,28 @@ export const createChatPanel = () => {
     appendMessage(messageList, 'user', userInput);
     input.value = '';
 
-    const assistantReply = await handleMessage(userInput, { createReminder });
+    const assistantReply = await handleMessage(userInput, {
+      createReminder,
+      uid: resolveCurrentUid(),
+    });
     if (assistantReply?.status) {
       statusIndicator.show(assistantReply.status);
     }
     appendMessage(messageList, 'assistant', assistantReply.message, assistantReply.quickActions);
   });
 
-  inputBar.append(input, sendButton);
+  planButton.addEventListener('click', async () => {
+    const assistantReply = await handleMessage('plan my day', {
+      createReminder,
+      uid: resolveCurrentUid(),
+    });
+    if (assistantReply?.status) {
+      statusIndicator.show(assistantReply.status);
+    }
+    appendMessage(messageList, 'assistant', assistantReply.message, assistantReply.quickActions);
+  });
+
+  inputBar.append(input, sendButton, planButton);
   container.append(messageList, statusIndicator.container, inputBar);
 
   return {

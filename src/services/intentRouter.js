@@ -5,6 +5,7 @@ const REMINDER_KEYWORDS = ['remind', 'tomorrow', 'tonight', 'later', 'buy', 'pic
 const NOTE_KEYWORDS = ['idea', 'note', 'remember', 'lesson'];
 const DRILL_KEYWORDS = ['drill', 'training', 'coaching'];
 const QUESTION_PREFIXES = ['what', 'when', 'how', 'where'];
+const PLAN_DAY_PHRASES = ['plan my day', 'what should i do today', 'daily plan', 'schedule my day'];
 
 export const DECISION_TYPES = ['query_memory', 'learn_pattern', 'plan_day', 'persist_reminder', 'persist_note', 'persist_inbox'];
 
@@ -23,6 +24,9 @@ const createHeuristicParsedEntry = (type, text, hints = {}) => ({
     capturedAt: hints?.capturedAt,
   },
 });
+
+const isPlanDayPhrase = (normalizedText) => PLAN_DAY_PHRASES
+  .some((phrase) => normalizedText.includes(phrase));
 
 const logRoutingDecision = (source, text, decision, details = {}) => {
   console.info('[brain] routing decision', {
@@ -48,6 +52,16 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   }
 
   const patternMatch = predictIntent(text);
+  if (isPlanDayPhrase(normalized)) {
+    return logRoutingDecision('classifyIntentLocally.phrase', text, {
+      decisionType: 'plan_day',
+      parsedType: 'plan_day',
+      text,
+      parsedEntry: createHeuristicParsedEntry('plan_day', text, hints),
+      hints,
+    });
+  }
+
   if (patternMatch?.predictedIntent === 'persist_reminder') {
     return logRoutingDecision('classifyIntentLocally.pattern', text, {
       decisionType: 'persist_reminder',
@@ -190,6 +204,7 @@ const looksLikeNotebookCapture = (rawText) => {
  */
 export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
+  const normalizedText = text.toLowerCase();
   const parsed = parsedEntry && typeof parsedEntry === 'object' ? parsedEntry : {};
   const parsedType = normalizeType(parsed?.type, text);
   const notebookHeuristic = looksLikeNotebookCapture(text);
@@ -215,6 +230,17 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
       hints,
     };
     return logRoutingDecision('routeIntent', text, decision);
+  }
+
+  if (isPlanDayPhrase(normalizedText)) {
+    const decision = {
+      decisionType: 'plan_day',
+      parsedType: 'plan_day',
+      text,
+      parsedEntry: parsed,
+      hints,
+    };
+    return logRoutingDecision('routeIntent.phrase', text, decision);
   }
 
   if (parsedType === 'reminder') {

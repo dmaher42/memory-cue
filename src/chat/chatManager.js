@@ -6,6 +6,7 @@ import { classifyIntentLocally, createChatIntentInput, routeIntent } from '../se
 import { retrieveRelevantMemories } from '../services/brainQueryService.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
+import { generateDailyPlan, renderDailyPlan } from '../services/planningService.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -348,6 +349,11 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
   if (decision.decisionType === 'persist_note') {
     const { notebookName } = await createNotebookNote(parsed, text);
     return { message: `Saved to notebook (${notebookName}).` };
+  }
+
+  if (decision.decisionType === 'plan_day') {
+    const plan = await generateDailyPlan(dependencies.uid);
+    return { message: renderDailyPlan(plan) };
   }
 
   if (decision.decisionType === 'query') {
