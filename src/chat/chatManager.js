@@ -3,7 +3,7 @@ import { executeCommand } from '../core/commandEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { suggestNotebookAndTags } from '../services/taggingEngine.js';
 import { classifyIntentLocally, createChatIntentInput, routeIntent } from '../services/intentRouter.js';
-import { retrieveRelevantMemories } from '../services/brainQueryService.js';
+import { semanticSearch } from '../services/semanticSearchService.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { generateDailyPlan, renderDailyPlan } from '../services/planningService.js';
@@ -71,7 +71,7 @@ const parseEntry = async (text) => {
   return normalizeParsedEntry(parsed, text);
 };
 
-const askAssistant = async (text) => {
+const askAssistant = async (text, uid) => {
   const MAX_MEMORY_SNIPPETS = 5;
   const MAX_MEMORY_CHARS = 240;
   const MAX_USER_QUESTION_CHARS = 500;
@@ -91,7 +91,7 @@ const askAssistant = async (text) => {
   const safeQuestion = toTrimmedText(text, MAX_USER_QUESTION_CHARS);
   let memorySnippets = [];
   try {
-    const memories = await retrieveRelevantMemories(safeQuestion);
+    const memories = await semanticSearch(safeQuestion, uid);
     memorySnippets = memories
       .slice(0, MAX_MEMORY_SNIPPETS)
       .map((memory, index) => {
@@ -108,10 +108,10 @@ const askAssistant = async (text) => {
     : 'No relevant memories found.';
 
   const assembledUserContent = [
-    'Relevant past memories:',
-    memoryBlock,
+    `User asked: "${safeQuestion}"`,
     '',
-    `User question: ${safeQuestion}`,
+    'Relevant memories:',
+    memoryBlock,
   ].join('\n').slice(0, MAX_MESSAGE_CHARS);
 
   const messages = [
@@ -362,7 +362,7 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
       return { message: reminderSearchResponse };
     }
 
-    return { message: await askAssistant(text) };
+    return { message: await askAssistant(text, dependencies.uid) };
   }
 
   saveInboxEntry({
