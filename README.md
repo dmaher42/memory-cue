@@ -69,6 +69,17 @@ Memory Cue expects Supabase credentials to be available at runtime via `window._
 
 Keep your real Supabase URL and anon key out of version control—set them through deployment-specific templating or secrets management rather than committing them to the repository.
 
+If `SUPABASE_URL` and/or `SUPABASE_ANON_KEY` are absent, Memory Cue intentionally runs in local-only sync mode. This is expected for local development and offline-first testing.
+
+Periodic background sync registration can throw `NotAllowedError` on some browsers/platforms when notification or background execution permissions are restricted. Treat this as expected degradation: the app should continue working with foreground/local behavior.
+
+### Sync troubleshooting checklist
+
+- Confirm `window.__ENV.SUPABASE_URL` and `window.__ENV.SUPABASE_ANON_KEY` are present in the deployed page source.
+- Confirm the app is running in a secure context (`https://` or `http://localhost`).
+- Confirm browser-level notification and background execution permissions are granted for the site/PWA.
+- Confirm whether the app is installed as a PWA; some platforms gate background capabilities behind install state.
+
 
 ## AI setup
 
