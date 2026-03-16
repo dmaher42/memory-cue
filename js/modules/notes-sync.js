@@ -1,4 +1,3 @@
-import { getSupabaseClient } from '../supabase-client.js';
 import {
   createNote,
   loadAllNotes,
@@ -6,81 +5,137 @@ import {
   setRemoteSyncHandler,
 } from './notes-storage.js';
 
-const DEFAULT_TABLE_NAME = 'notes';
-const DEFAULT_USER_COLUMN = 'user_id';
-const DEFAULT_UPDATED_AT_COLUMN = 'updated_at';
+let firebaseDepsPromise = null;
 
-const toTimestamp = (value) => {
-  if (typeof value !== 'string') {
-    return 0;
+const FALLBACK_FIREBASE_CONFIG = Object.freeze({});
+let cachedFirebaseConfig = null;
+
+const getGlobalScope = () => {
+  if (typeof globalThis !== 'undefined') {
+    return globalThis;
   }
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
+  if (typeof window !== 'undefined') {
+    return window;
+  }
+  return {};
 };
 
-const mergeNotes = (localNotes = [], remoteNotes = []) => {
-  const merged = new Map();
+const resolveFirebaseConfig = () => {
+  if (cachedFirebaseConfig) {
+    return { ...cachedFirebaseConfig };
+  }
 
-  remoteNotes.forEach((note) => {
-    if (note && typeof note.id === 'string') {
-      merged.set(note.id, note);
-    }
-  });
+  const scope = getGlobalScope();
+  const memoryCueApi = scope?.memoryCueFirebase;
 
-  localNotes.forEach((note) => {
-    if (!note || typeof note.id !== 'string') {
-      return;
-    }
-    const existing = merged.get(note.id);
-    if (!existing) {
-      merged.set(note.id, note);
-      return;
-    }
-    const localTime = toTimestamp(note.updatedAt);
-    const remoteTime = toTimestamp(existing.updatedAt);
-    if (localTime > remoteTime) {
-      merged.set(note.id, note);
-    }
-  });
+  if (memoryCueApi && typeof memoryCueApi.getFirebaseConfig === 'function') {
+    cachedFirebaseConfig = memoryCueApi.getFirebaseConfig();
+    return { ...cachedFirebaseConfig };
+  }
 
-  return Array.from(merged.values()).sort((a, b) => toTimestamp(b?.updatedAt) - toTimestamp(a?.updatedAt));
+  if (typeof require === 'function') {
+    try {
+      const moduleValue = require('../firebase-config.js');
+      const getter = typeof moduleValue?.getFirebaseConfig === 'function'
+        ? moduleValue.getFirebaseConfig
+        : typeof moduleValue?.default?.getFirebaseConfig === 'function'
+          ? moduleValue.default.getFirebaseConfig
+          : null;
+      if (getter) {
+        cachedFirebaseConfig = getter();
+        return { ...cachedFirebaseConfig };
+      }
+    } catch {
+      // ignore – likely running in the browser without require
+    }
+  }
+
+  if (memoryCueApi && memoryCueApi.DEFAULT_FIREBASE_CONFIG) {
+    cachedFirebaseConfig = { ...memoryCueApi.DEFAULT_FIREBASE_CONFIG };
+    return { ...cachedFirebaseConfig };
+  }
+
+  cachedFirebaseConfig = { ...FALLBACK_FIREBASE_CONFIG };
+  return { ...cachedFirebaseConfig };
 };
 
-const mapRowToNoteFactory = (updatedAtColumn) => (row) => {
-  if (!row || typeof row !== 'object') {
+const loadFirebaseDeps = async () => {
+  if (firebaseDepsPromise) {
+    return firebaseDepsPromise;
+  }
+
+  firebaseDepsPromise = (async () => {
+    const appModule = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js');
+    const firestoreModule = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js');
+    return {
+      initializeApp: appModule.initializeApp,
+      getApps: appModule.getApps,
+      getApp: appModule.getApp,
+      getFirestore: firestoreModule.getFirestore,
+      collection: firestoreModule.collection,
+      doc: firestoreModule.doc,
+      setDoc: firestoreModule.setDoc,
+      getDocs: firestoreModule.getDocs,
+      deleteDoc: firestoreModule.deleteDoc,
+    };
+  })().catch((error) => {
+    firebaseDepsPromise = null;
+    throw error;
+  });
+
+  return firebaseDepsPromise;
+};
+
+const mapFirestoreNote = (noteId, data = {}) => {
+  if (!data || typeof data !== 'object') {
     return null;
   }
-  const fallbackText = typeof row.body_text === 'string' ? row.body_text : undefined;
-  const rawBodyHtml =
-    (typeof row.body_html === 'string' && row.body_html.length ? row.body_html : null) ??
-    (typeof row.body === 'string' && row.body.length ? row.body : null) ??
-    fallbackText;
-  const overrides = {
-    id: typeof row.id === 'string' && row.id ? row.id : undefined,
-    updatedAt: typeof row[updatedAtColumn] === 'string' ? row[updatedAtColumn] : undefined,
-    folderId: typeof row.folder_id === 'string' && row.folder_id ? row.folder_id : undefined,
-    bodyHtml: rawBodyHtml,
-    bodyText: fallbackText,
-    pinned: typeof row.pinned === 'boolean' ? row.pinned : undefined,
-  };
-  return createNote(row.title, rawBodyHtml, overrides);
+
+  const bodyHtml =
+    typeof data.bodyHtml === 'string'
+      ? data.bodyHtml
+      : typeof data.body === 'string'
+        ? data.body
+        : typeof data.bodyText === 'string'
+          ? data.bodyText
+          : '';
+
+  return createNote(data.title, bodyHtml, {
+    id: typeof data.id === 'string' && data.id ? data.id : noteId,
+    bodyHtml,
+    bodyText: typeof data.bodyText === 'string' ? data.bodyText : undefined,
+    folderId: typeof data.folderId === 'string' ? data.folderId : undefined,
+    pinned: typeof data.pinned === 'boolean' ? data.pinned : undefined,
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : undefined,
+    updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : undefined,
+    semanticEmbedding: data.semanticEmbedding,
+    keywords: data.keywords,
+    metadata: data.metadata,
+    links: data.links,
+  });
+};
+
+const normalizeUserId = (user) => {
+  if (typeof user?.id === 'string' && user.id) {
+    return user.id;
+  }
+  if (typeof user?.uid === 'string' && user.uid) {
+    return user.uid;
+  }
+  return null;
 };
 
 export const initNotesSync = (options = {}) => {
   const {
-    tableName = DEFAULT_TABLE_NAME,
-    userColumn = DEFAULT_USER_COLUMN,
-    updatedAtColumn = DEFAULT_UPDATED_AT_COLUMN,
-    supabase: suppliedSupabase = null,
     onRemotePull = null,
     debugLogger = null,
   } = options;
 
-  let supabase = suppliedSupabase || null;
   let currentUserId = null;
   let isApplyingRemote = false;
-  let lastSyncedIds = new Set();
   let remoteSyncPromise = null;
+  let firestoreDb = null;
+  let firestoreApi = null;
 
   const logDebug = (...args) => {
     if (typeof debugLogger === 'function') {
@@ -92,15 +147,135 @@ export const initNotesSync = (options = {}) => {
     }
   };
 
-  const ensureSupabase = () => {
-    if (supabase) {
-      return supabase;
+  const ensureFirestore = async () => {
+    if (firestoreDb && firestoreApi) {
+      return { db: firestoreDb, api: firestoreApi };
     }
-    supabase = getSupabaseClient();
-    return supabase;
+
+    const deps = await loadFirebaseDeps();
+    const firebaseConfig = resolveFirebaseConfig();
+    if (!firebaseConfig || typeof firebaseConfig !== 'object' || !firebaseConfig.projectId) {
+      throw new Error('Firebase config missing projectId for notes sync');
+    }
+
+    const app = deps.getApps().length ? deps.getApp() : deps.initializeApp(firebaseConfig);
+    firestoreDb = deps.getFirestore(app);
+    firestoreApi = {
+      collection: deps.collection,
+      doc: deps.doc,
+      setDoc: deps.setDoc,
+      getDocs: deps.getDocs,
+      deleteDoc: deps.deleteDoc,
+    };
+
+    return { db: firestoreDb, api: firestoreApi };
   };
 
-  const mapRowToNote = mapRowToNoteFactory(updatedAtColumn);
+  const getNotesCollection = (db, api, userId) => api.collection(db, 'users', userId, 'notes');
+
+  const syncToRemote = async (notes) => {
+    if (!currentUserId) {
+      return;
+    }
+
+    const { db, api } = await ensureFirestore();
+    const notesCollection = getNotesCollection(db, api, currentUserId);
+
+    const sanitized = Array.isArray(notes)
+      ? notes.filter((note) => note && typeof note.id === 'string')
+      : [];
+
+    const localIds = new Set(sanitized.map((note) => note.id));
+
+    for (const note of sanitized) {
+      await api.setDoc(api.doc(notesCollection, note.id), {
+        id: note.id,
+        userId: currentUserId,
+        title: typeof note.title === 'string' ? note.title : 'Untitled note',
+        body: typeof note.body === 'string' ? note.body : '',
+        bodyHtml: typeof note.bodyHtml === 'string' ? note.bodyHtml : '',
+        bodyText: typeof note.bodyText === 'string' ? note.bodyText : '',
+        folderId: typeof note.folderId === 'string' ? note.folderId : null,
+        pinned: note.pinned === true,
+        createdAt: typeof note.createdAt === 'string' ? note.createdAt : new Date().toISOString(),
+        updatedAt: typeof note.updatedAt === 'string' ? note.updatedAt : new Date().toISOString(),
+        semanticEmbedding: Array.isArray(note.semanticEmbedding) ? note.semanticEmbedding : null,
+        keywords: Array.isArray(note.keywords) ? note.keywords : [],
+        metadata: note.metadata && typeof note.metadata === 'object' ? note.metadata : null,
+        links: Array.isArray(note.links) ? note.links : [],
+      });
+    }
+
+    const existingSnapshot = await api.getDocs(notesCollection);
+    for (const remoteDoc of existingSnapshot.docs) {
+      if (!localIds.has(remoteDoc.id)) {
+        await api.deleteDoc(api.doc(notesCollection, remoteDoc.id));
+      }
+    }
+  };
+
+  const migrateLocalNotes = async () => {
+    if (!currentUserId) {
+      return 0;
+    }
+
+    const localNotes = loadAllNotes();
+    if (!Array.isArray(localNotes) || !localNotes.length) {
+      return 0;
+    }
+
+    await syncToRemote(localNotes);
+    console.log('[notes-sync] notes migrated to firestore', { count: localNotes.length });
+    return localNotes.length;
+  };
+
+  const pullFromRemote = async () => {
+    if (!currentUserId || isApplyingRemote) {
+      return;
+    }
+
+    try {
+      logDebug('[notes-sync] Starting Firestore pull');
+      const { db, api } = await ensureFirestore();
+      const notesCollection = getNotesCollection(db, api, currentUserId);
+      const snapshot = await api.getDocs(notesCollection);
+      const remoteNotes = snapshot.docs
+        .map((noteDoc) => mapFirestoreNote(noteDoc.id, noteDoc.data()))
+        .filter(Boolean);
+
+      if (remoteNotes.length) {
+        isApplyingRemote = true;
+        const saved = saveAllNotes(remoteNotes, { skipRemoteSync: true });
+        isApplyingRemote = false;
+
+        if (!saved) {
+          console.warn('[notes-sync] Unable to replace local notes cache from Firestore.');
+        }
+
+        if (typeof onRemotePull === 'function') {
+          try {
+            onRemotePull({ mergedCount: remoteNotes.length, remoteCount: remoteNotes.length });
+          } catch (callbackError) {
+            console.warn('[notes-sync] onRemotePull callback failed.', callbackError);
+          }
+        }
+        return;
+      }
+
+      const migratedCount = await migrateLocalNotes();
+      if (typeof onRemotePull === 'function') {
+        try {
+          onRemotePull({ mergedCount: migratedCount, remoteCount: 0 });
+        } catch (callbackError) {
+          console.warn('[notes-sync] onRemotePull callback failed (empty remote).', callbackError);
+        }
+      }
+    } catch (error) {
+      console.error('[notes-sync] Failed to sync notes with Firestore.', error);
+    } finally {
+      isApplyingRemote = false;
+    }
+  };
 
   const maybeSyncFromRemote = async () => {
     if (!currentUserId || isApplyingRemote || remoteSyncPromise) {
@@ -116,129 +291,6 @@ export const initNotesSync = (options = {}) => {
     return remoteSyncPromise;
   };
 
-  const syncToRemote = async (notes) => {
-    const client = ensureSupabase();
-    if (!client || !currentUserId) {
-      return;
-    }
-    const sanitized = Array.isArray(notes)
-      ? notes.filter((note) => note && typeof note.id === 'string')
-      : [];
-
-    const payload = sanitized.map((note) => ({
-      id: note.id,
-      [userColumn]: currentUserId,
-      title: note.title,
-      body: typeof note.bodyHtml === 'string' && note.bodyHtml.length ? note.bodyHtml : note.body,
-      body_html: typeof note.bodyHtml === 'string' ? note.bodyHtml : null,
-      body_text: typeof note.bodyText === 'string' ? note.bodyText : null,
-      folder_id: typeof note.folderId === 'string' && note.folderId ? note.folderId : null,
-      [updatedAtColumn]: typeof note.updatedAt === 'string' && note.updatedAt
-        ? note.updatedAt
-        : new Date().toISOString(),
-    }));
-
-    const localIds = new Set(payload.map((item) => item.id));
-
-    if (payload.length) {
-      const { error } = await client.from(tableName).upsert(payload);
-      if (error) {
-        throw error;
-      }
-    }
-
-    const idsToDelete = [...lastSyncedIds].filter((id) => id && !localIds.has(id));
-    if (idsToDelete.length) {
-      const { error } = await client
-        .from(tableName)
-        .delete()
-        .in('id', idsToDelete)
-        .eq(userColumn, currentUserId);
-      if (error) {
-        throw error;
-      }
-    }
-
-    lastSyncedIds = new Set(localIds);
-  };
-
-  const pullFromRemote = async () => {
-    const client = ensureSupabase();
-    if (!client || !currentUserId) {
-      return;
-    }
-
-    try {
-      logDebug('[notes-sync] Starting remote pull');
-      const { data, error } = await client
-        .from(tableName)
-        .select(`id,title,body,body_html,body_text,folder_id,${updatedAtColumn}`)
-        .eq(userColumn, currentUserId);
-      if (error) {
-        throw error;
-      }
-
-      const rows = Array.isArray(data) ? data : [];
-      lastSyncedIds = new Set(rows.map((row) => (typeof row.id === 'string' ? row.id : null)).filter(Boolean));
-      const remoteNotes = rows.map(mapRowToNote).filter(Boolean);
-      const localNotes = loadAllNotes();
-
-      if (!remoteNotes.length) {
-        if (localNotes.length) {
-          try {
-            await syncToRemote(localNotes);
-          } catch (syncError) {
-            console.error('[notes-sync] Failed to upload local notes to Supabase.', syncError);
-          }
-        }
-        if (typeof onRemotePull === 'function') {
-          try {
-            onRemotePull({ mergedCount: localNotes.length, remoteCount: remoteNotes.length });
-          } catch (callbackError) {
-            console.warn('[notes-sync] onRemotePull callback failed (empty remote).', callbackError);
-          }
-        }
-        logDebug('[notes-sync] Remote pull completed (no remote notes)', {
-          mergedCount: localNotes.length,
-          remoteCount: remoteNotes.length,
-        });
-        return;
-      }
-
-      const merged = mergeNotes(localNotes, remoteNotes);
-
-      isApplyingRemote = true;
-      const saved = saveAllNotes(merged, { skipRemoteSync: true });
-      isApplyingRemote = false;
-
-      if (!saved) {
-        console.warn('[notes-sync] Unable to cache notes locally after remote sync.');
-      }
-
-      try {
-        await syncToRemote(merged);
-      } catch (syncError) {
-        console.error('[notes-sync] Failed to reconcile notes with Supabase.', syncError);
-      }
-
-      if (typeof onRemotePull === 'function') {
-        try {
-          onRemotePull({ mergedCount: merged.length, remoteCount: remoteNotes.length });
-        } catch (callbackError) {
-          console.warn('[notes-sync] onRemotePull callback failed.', callbackError);
-        }
-      }
-      logDebug('[notes-sync] Remote pull completed', {
-        mergedCount: merged.length,
-        remoteCount: remoteNotes.length,
-      });
-    } catch (error) {
-      console.error('[notes-sync] Failed to fetch notes from Supabase.', error);
-    } finally {
-      isApplyingRemote = false;
-    }
-  };
-
   setRemoteSyncHandler(async (notes) => {
     if (isApplyingRemote) {
       return;
@@ -246,15 +298,14 @@ export const initNotesSync = (options = {}) => {
     try {
       await syncToRemote(notes);
     } catch (error) {
-      console.error('[notes-sync] Failed to sync notes to Supabase.', error);
+      console.error('[notes-sync] Failed to sync notes to Firestore.', error);
     }
   });
 
   const handleSessionChange = async (user) => {
-    currentUserId = typeof user?.id === 'string' ? user.id : null;
+    currentUserId = normalizeUserId(user);
     logDebug('[notes-sync] Session change', { userId: currentUserId });
     if (!currentUserId) {
-      lastSyncedIds = new Set();
       return;
     }
     await pullFromRemote();
@@ -272,10 +323,8 @@ export const initNotesSync = (options = {}) => {
   }
 
   return {
-    setSupabaseClient(client) {
-      if (client) {
-        supabase = client;
-      }
+    setSupabaseClient() {
+      // No-op for backward compatibility with existing mobile bootstrap code.
     },
     handleSessionChange,
     syncFromRemote: pullFromRemote,
