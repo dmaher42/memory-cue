@@ -15,6 +15,7 @@ const normalizeSemanticEmbedding = (value) => {
 };
 
 let remoteSyncHandler = null;
+let memoryServiceModulePromise = null;
 
 export const setRemoteSyncHandler = (handler) => {
   remoteSyncHandler = typeof handler === 'function' ? handler : null;
@@ -187,6 +188,44 @@ const deriveKeywords = (title = '', bodyText = '', provided = null) => {
   return extractKeywordsFromText(`${title} ${bodyText}`);
 };
 
+const syncNoteToMemoryService = (note, payload = {}) => {
+  if (!note || typeof note !== 'object' || typeof note.bodyText !== 'string' || !note.bodyText.trim()) {
+    return;
+  }
+
+  if (!memoryServiceModulePromise) {
+    memoryServiceModulePromise = import('../../src/services/memoryService.js').catch((error) => {
+      console.warn('[notes-storage] Failed to load memory service bridge', error);
+      return null;
+    });
+  }
+
+  memoryServiceModulePromise
+    .then((memoryServiceModule) => {
+      const saveMemory = memoryServiceModule?.saveMemory;
+      if (typeof saveMemory !== 'function') {
+        return;
+      }
+
+      return saveMemory({
+        id: note.id,
+        text: note.bodyText,
+        type: payload.parsedType || payload.type || 'note',
+        createdAt: Date.parse(note.createdAt),
+        updatedAt: Date.parse(note.updatedAt),
+        source: typeof payload.source === 'string' ? payload.source : 'capture',
+        entryPoint:
+          typeof payload.entryPoint === 'string'
+            ? payload.entryPoint
+            : 'notes-storage.createAndSaveNote',
+        tags: Array.isArray(payload.tags) ? payload.tags : note.keywords,
+      });
+    })
+    .catch((error) => {
+      console.warn('[memory-service] Failed to mirror note save', error);
+    });
+};
+
 export const createAndSaveNote = (payload = {}, options = {}) => {
   const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
   const text = typeof normalizedPayload.text === 'string' ? normalizedPayload.text.trim() : '';
@@ -222,6 +261,9 @@ export const createAndSaveNote = (payload = {}, options = {}) => {
 
   const notes = loadAllNotes();
   const saved = saveAllNotes([note, ...notes], options);
+  if (saved) {
+    syncNoteToMemoryService(note, normalizedPayload);
+  }
   return saved ? note : null;
 };
 
