@@ -189,6 +189,76 @@ function getTimestampTriggerCtor() {
   return typeof Trigger === 'function' ? Trigger : null;
 }
 
+async function ensureNotificationPermission() {
+  if (typeof Notification === 'undefined') {
+    return false;
+  }
+
+  if (Notification.permission === 'granted') return true;
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  return false;
+}
+
+function scheduleReminderNotification(reminder) {
+  if (!reminder || typeof reminder !== 'object') {
+    return;
+  }
+
+  const dueAtValue = typeof reminder.dueAt === 'string' && reminder.dueAt
+    ? reminder.dueAt
+    : reminder.due;
+  if (!dueAtValue) {
+    return;
+  }
+
+  const notifyMinutesBefore = Number.isFinite(reminder.notifyMinutesBefore)
+    ? reminder.notifyMinutesBefore
+    : 0;
+  const notifyTime =
+    new Date(dueAtValue).getTime() -
+    notifyMinutesBefore * 60000;
+
+  const delay = notifyTime - Date.now();
+  if (delay <= 0) {
+    return;
+  }
+
+  console.log('[notifications] scheduled reminder', {
+    id: reminder.id,
+    dueAt: dueAtValue,
+  });
+
+  setTimeout(() => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('Reminder', {
+        body: reminder.text || reminder.title || '',
+        icon: '/icons/icon-192.png',
+        tag: reminder.id,
+      });
+    }
+  }, delay);
+
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.serviceWorker &&
+    typeof navigator.serviceWorker.ready?.then === 'function'
+  ) {
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.active?.postMessage({
+        type: 'scheduleReminder',
+        title: 'Reminder',
+        body: reminder.text || reminder.title || '',
+        time: notifyTime,
+      });
+    });
+  }
+}
+
 function supportsNotificationTriggers() {
   if (typeof window === 'undefined') return false;
   if (!('Notification' in window)) return false;
@@ -4284,6 +4354,7 @@ export async function initReminders(sel = {}) {
         await setupSupabaseSync();
         await syncNotesFromFirestoreOnLogin();
         await migrateOfflineRemindersIfNeeded();
+        await ensureNotificationPermission();
       } else {
         notesMigrationComplete = false;
         notesMigrationUserId = null;
@@ -4308,6 +4379,7 @@ export async function initReminders(sel = {}) {
       renderSyncIndicator('online');
       await setupSupabaseSync();
       await syncNotesFromFirestoreOnLogin();
+      await ensureNotificationPermission();
     }
   } else {
     applySignedOutState();
@@ -4484,6 +4556,13 @@ export async function initReminders(sel = {}) {
         userId,
         category: normalizeCategory(item.category),
       })));
+      items.forEach((reminder) => {
+        scheduleReminderNotification({
+          ...reminder,
+          dueAt: reminder.due,
+          text: reminder.title,
+        });
+      });
       render();
       updateMobileRemindersHeaderSubtitle();
       persistItems();
@@ -4709,6 +4788,24 @@ export async function initReminders(sel = {}) {
     } else {
       saveToFirebase(item);
     }
+    const notifyMinutesBefore = (() => {
+      if (typeof item.notifyAt !== 'string' || !item.notifyAt || typeof item.due !== 'string' || !item.due) {
+        return 0;
+      }
+      const dueMs = new Date(item.due).getTime();
+      const notifyMs = new Date(item.notifyAt).getTime();
+      if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
+        return 0;
+      }
+      return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
+    })();
+    scheduleReminderNotification({
+      id: item.id,
+      text: item.title,
+      dueAt: item.due,
+      notifyMinutesBefore,
+    });
+    ensureNotificationPermission();
     tryCalendarSync(item);
     scheduleReminder(item);
     rescheduleAllReminders();
@@ -4817,6 +4914,24 @@ export async function initReminders(sel = {}) {
     } else {
       saveToFirebase(item);
     }
+    const notifyMinutesBefore = (() => {
+      if (typeof item.notifyAt !== 'string' || !item.notifyAt || typeof item.due !== 'string' || !item.due) {
+        return 0;
+      }
+      const dueMs = new Date(item.due).getTime();
+      const notifyMs = new Date(item.notifyAt).getTime();
+      if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
+        return 0;
+      }
+      return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
+    })();
+    scheduleReminderNotification({
+      id: item.id,
+      text: item.title,
+      dueAt: item.due,
+      notifyMinutesBefore,
+    });
+    ensureNotificationPermission();
     tryCalendarSync(item);
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
@@ -6131,8 +6246,8 @@ export async function initReminders(sel = {}) {
       return;
     }
     try {
-      const perm = await Notification.requestPermission();
-      if(perm==='granted'){
+      const granted = await ensureNotificationPermission();
+      if(granted){
         toast('Notifications enabled');
         if(supportsNotificationTriggers()) {
           ensureServiceWorkerRegistration();
