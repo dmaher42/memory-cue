@@ -2,6 +2,7 @@ import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-au
 import { captureInput, getInboxEntries } from './services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';
 import { createAndSaveNote, loadAllNotes, saveAllNotes, setRemoteSyncHandler } from './modules/notes-storage.js';
+import { requestNotificationPermission, startReminderScheduler } from '../src/services/reminderNotificationService.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -6590,6 +6591,8 @@ export async function initReminders(sel = {}) {
     }
   }
   setupDragAndDrop();
+  startReminderScheduler(() => items);
+  requestNotificationPermission();
   rescheduleAllReminders();
   render();
   persistItems();
