@@ -1440,6 +1440,7 @@ const initMobileNotes = () => {
     }
     savedNotesSheet.classList.remove('hidden');
     savedNotesSheet.dataset.open = 'true';
+    savedNotesSheet.removeAttribute('inert');
     savedNotesSheet.setAttribute('aria-hidden', 'false');
     document.body.dataset.savedNotesOpen = 'true';
     document.documentElement.dataset.savedNotesOpen = 'true';
@@ -1462,7 +1463,16 @@ const initMobileNotes = () => {
     if (!savedNotesSheet) {
       return;
     }
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && savedNotesSheet.contains(activeElement)) {
+      if (openSavedNotesButton instanceof HTMLElement && typeof openSavedNotesButton.focus === 'function') {
+        openSavedNotesButton.focus();
+      } else if (typeof activeElement.blur === 'function') {
+        activeElement.blur();
+      }
+    }
     savedNotesSheet.dataset.open = 'false';
+    savedNotesSheet.setAttribute('inert', '');
     savedNotesSheet.setAttribute('aria-hidden', 'true');
     delete document.body.dataset.savedNotesOpen;
     delete document.documentElement.dataset.savedNotesOpen;
