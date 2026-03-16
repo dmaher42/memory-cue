@@ -7,6 +7,7 @@ import { renderReminderList, renderReminderItem, renderTodayReminders } from './
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
+import { buildRagAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -1924,33 +1925,17 @@ export async function initReminders(sel = {}) {
         updatedAt: entry.updatedAt,
       }));
 
+    const requestBody = buildRagAssistantRequest({
+      question: query,
+      contextText: context,
+      entries: selectedEntries,
+      schemaVersion: 2,
+    });
+
     try {
-      const response = await fetch('/api/assistant-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: query,
-          contextText: context,
-          entries: selectedEntries,
-          schemaVersion: 2,
-        }),
+      return await requestAssistantChat(requestBody, {
+        fallbackReply: 'I could not read an assistant response.',
       });
-
-      if (!response.ok) {
-        throw new Error(`Assistant request failed (${response.status})`);
-      }
-
-      const payload = await response.json();
-      const reply = typeof payload?.reply === 'string'
-        ? payload.reply
-        : typeof payload?.text === 'string'
-          ? payload.text
-          : typeof payload?.message === 'string'
-            ? payload.message
-            : '';
-      return reply || 'I could not read an assistant response.';
     } catch (error) {
       console.error('[RAG assistant] request failed while calling /api/assistant-chat', {
         error,

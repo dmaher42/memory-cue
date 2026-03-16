@@ -7,6 +7,7 @@ import { semanticSearch } from '../services/semanticSearchService.js';
 import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { generateDailyPlan, renderDailyPlan } from '../services/planningService.js';
+import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -73,72 +74,20 @@ const parseEntry = async (text) => {
 
 const askAssistant = async (text, uid) => {
   const MAX_MEMORY_SNIPPETS = 5;
-  const MAX_MEMORY_CHARS = 240;
-  const MAX_USER_QUESTION_CHARS = 500;
-  const MAX_MESSAGE_CHARS = 2600;
-
-  const toTrimmedText = (value, maxChars) => {
-    if (typeof value !== 'string') {
-      return '';
-    }
-    const normalized = value.trim();
-    if (!normalized) {
-      return '';
-    }
-    return normalized.length <= maxChars ? normalized : `${normalized.slice(0, maxChars - 1)}…`;
-  };
-
-  const safeQuestion = toTrimmedText(text, MAX_USER_QUESTION_CHARS);
+  const safeQuestion = typeof text === 'string' ? text.trim() : '';
   let memorySnippets = [];
   try {
     const memories = await semanticSearch(safeQuestion, uid);
     memorySnippets = memories
       .slice(0, MAX_MEMORY_SNIPPETS)
-      .map((memory, index) => {
-        const snippet = toTrimmedText(memory?.text, MAX_MEMORY_CHARS);
-        return snippet ? `${index + 1}. ${snippet}` : '';
-      })
+      .map((memory) => memory?.text)
       .filter(Boolean);
   } catch (error) {
     console.warn('[chat-manager] failed to retrieve relevant memories for assistant context', error);
   }
 
-  const memoryBlock = memorySnippets.length
-    ? memorySnippets.join('\n')
-    : 'No relevant memories found.';
-
-  const assembledUserContent = [
-    `User asked: "${safeQuestion}"`,
-    '',
-    'Relevant memories:',
-    memoryBlock,
-  ].join('\n').slice(0, MAX_MESSAGE_CHARS);
-
-  const messages = [
-    {
-      role: 'system',
-      content: 'You are Memory Cue, a personal assistant. Use provided memories when they are relevant, and be concise.',
-    },
-    {
-      role: 'user',
-      content: assembledUserContent,
-    },
-  ];
-
-  const response = await fetch('/api/assistant-chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: safeQuestion, messages }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Assistant request failed (${response.status})`);
-  }
-
-  const payload = await response.json();
-  return typeof payload?.reply === 'string' && payload.reply.trim()
-    ? payload.reply.trim()
-    : 'Here is what I found.';
+  const requestBody = buildMemoryAssistantRequest(safeQuestion, memorySnippets);
+  return requestAssistantChat(requestBody, { fallbackReply: 'Here is what I found.' });
 };
 
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
