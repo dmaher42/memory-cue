@@ -1,7 +1,8 @@
+import { loadInbox as loadInboxEntries, loadReminders as loadReminderEntries, loadUserCollection } from './firestoreService.js';
+
 const FIREBASE_VERSION = '12.2.1';
 const FIREBASE_APP_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`;
 const FIREBASE_AUTH_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`;
-const FIREBASE_FIRESTORE_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`;
 
 let plannerContextPromise = null;
 
@@ -27,17 +28,11 @@ const ensurePlannerContext = async () => {
 
     const appModule = await import(FIREBASE_APP_URL);
     const authModule = await import(FIREBASE_AUTH_URL);
-    const firestoreModule = await import(FIREBASE_FIRESTORE_URL);
-
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
     const auth = authModule.getAuth(app);
-    const db = firestoreModule.getFirestore(app);
 
     return {
       auth,
-      db,
-      collection: firestoreModule.collection,
-      getDocs: firestoreModule.getDocs,
     };
   })();
 
@@ -94,18 +89,15 @@ const isToday = (date) => {
 };
 
 const loadCollection = async (uid, collectionName) => {
-  const context = await ensurePlannerContext();
-  if (!context || !uid) {
+  if (!uid) {
     return [];
   }
-
-  const snapshot = await context.getDocs(context.collection(context.db, 'users', uid, collectionName));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return loadUserCollection(uid, collectionName);
 };
 
 export const loadReminders = async (uid) => {
   const resolvedUid = await resolveUid(uid);
-  return loadCollection(resolvedUid, 'reminders');
+  return loadReminderEntries(resolvedUid);
 };
 
 export const loadNotes = async (uid) => {
@@ -115,7 +107,7 @@ export const loadNotes = async (uid) => {
 
 export const loadInbox = async (uid) => {
   const resolvedUid = await resolveUid(uid);
-  return loadCollection(resolvedUid, 'inbox');
+  return loadInboxEntries(resolvedUid);
 };
 
 const toPlanItem = (entry, dueDate = null) => ({

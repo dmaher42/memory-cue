@@ -1,7 +1,8 @@
+import { findUserDocumentByField, loadUserCollection, storeEmbedding as storeUserEmbedding } from './firestoreService.js';
+
 const FIREBASE_VERSION = '12.2.1';
 const FIREBASE_APP_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`;
 const FIREBASE_AUTH_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`;
-const FIREBASE_FIRESTORE_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`;
 
 let embeddingContextPromise = null;
 
@@ -27,21 +28,10 @@ const ensureEmbeddingContext = async () => {
 
     const appModule = await import(FIREBASE_APP_URL);
     const authModule = await import(FIREBASE_AUTH_URL);
-    const firestoreModule = await import(FIREBASE_FIRESTORE_URL);
-
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
     const auth = authModule.getAuth(app);
-    const db = firestoreModule.getFirestore(app);
-
     return {
       auth,
-      db,
-      addDoc: firestoreModule.addDoc,
-      collection: firestoreModule.collection,
-      getDocs: firestoreModule.getDocs,
-      limit: firestoreModule.limit,
-      query: firestoreModule.query,
-      where: firestoreModule.where,
     };
   })();
 
@@ -134,8 +124,7 @@ export const getEmbeddingsForUser = async (uid) => {
     return [];
   }
 
-  const snapshot = await context.getDocs(context.collection(context.db, 'users', resolvedUid, 'embeddings'));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return loadUserCollection(resolvedUid, 'embeddings');
 };
 
 const findEmbeddingBySourceId = async ({ uid, sourceId }) => {
@@ -144,14 +133,7 @@ const findEmbeddingBySourceId = async ({ uid, sourceId }) => {
     return null;
   }
 
-  const embeddingsRef = context.collection(context.db, 'users', uid, 'embeddings');
-  const existingQuery = context.query(
-    embeddingsRef,
-    context.where('sourceId', '==', sourceId),
-    context.limit(1),
-  );
-  const snapshot = await context.getDocs(existingQuery);
-  return snapshot.empty ? null : snapshot.docs[0];
+  return findUserDocumentByField(uid, 'embeddings', 'sourceId', sourceId);
 };
 
 export const storeEmbedding = async (payload, legacyEmbedding) => {
@@ -181,7 +163,7 @@ export const storeEmbedding = async (payload, legacyEmbedding) => {
     return existing.id;
   }
 
-  const added = await context.addDoc(context.collection(context.db, 'users', resolvedUid, 'embeddings'), {
+  const added = await storeUserEmbedding(resolvedUid, {
     text: normalizedText,
     sourceType: normalizedSourceType,
     sourceId: normalizedSourceId,

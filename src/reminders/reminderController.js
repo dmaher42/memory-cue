@@ -6,6 +6,7 @@ import { createReminder as createStoredReminder, updateReminder as updateStoredR
 import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
+import { updateReminder as updateFirestoreReminder, loadReminders as loadFirestoreReminders, upsertUserDocument, deleteUserDocument, loadUserCollection } from '../services/firestoreService.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -2953,10 +2954,9 @@ export async function initReminders(sel = {}) {
 
   // Placeholder for Firebase modules loaded later
   let initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence,
-    enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection,
-    query, where, getDocs, orderBy, serverTimestamp, getAuth, onAuthStateChanged,
-    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
-    signOut;
+    enableIndexedDbPersistence, onSnapshot, query, where, orderBy, serverTimestamp,
+    getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+    signInWithRedirect, getRedirectResult, signOut;
 
   const firebaseDeps = sel.firebaseDeps;
   const importModule = typeof sel.importModule === 'function'
@@ -3869,12 +3869,9 @@ export async function initReminders(sel = {}) {
     }
 
     for (const reminder of localReminders) {
-      const reminderRef = doc(
-        collection(firestoreDb, 'users', uid, 'reminders'),
-        reminder?.id || crypto.randomUUID(),
-      );
+      const reminderId = reminder?.id || crypto.randomUUID();
 
-      await setDoc(reminderRef, {
+      await updateFirestoreReminder(uid, reminderId, {
         ...reminder,
         userId: uid,
         migratedAt: Date.now(),
@@ -4092,12 +4089,12 @@ export async function initReminders(sel = {}) {
   saveBtn?.addEventListener('click', handleSaveAction);
 
   if (firebaseDeps) {
-    ({ initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
+    ({ initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, onSnapshot, query, where, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
     firebaseModulesLoaded = true;
   } else {
     try {
       ({ initializeApp, getApps, getApp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
-      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
+      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, onSnapshot, query, where, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
       ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
       firebaseModulesLoaded = true;
     } catch (err) {
@@ -4488,7 +4485,7 @@ export async function initReminders(sel = {}) {
   }
 
   async function migrateLocalNotesToFirestore(localNotes = []) {
-    if (notesMigrationComplete || !userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function') {
+    if (notesMigrationComplete || !userId || !db) {
       return;
     }
     notesMigrationComplete = true;
@@ -4497,24 +4494,20 @@ export async function initReminders(sel = {}) {
       if (!note || typeof note !== 'object' || typeof note.id !== 'string' || !note.id) {
         continue;
       }
-      await setDoc(
-        doc(db, 'users', userId, 'notes', note.id),
-        note,
-      );
+      await upsertUserDocument(userId, 'notes', note.id, note, { merge: false });
     }
   }
 
   async function syncNotesFromFirestoreOnLogin() {
-    if (!userId || !db || typeof collection !== 'function' || typeof getDocs !== 'function') {
+    if (!userId || !db) {
       return;
     }
 
-    const notesCollection = collection(db, 'users', userId, 'notes');
-    const snapshot = await getDocs(notesCollection);
+    const remoteNotes = await loadUserCollection(userId, 'notes');
 
-    if (snapshot.size > 0) {
-      const notesFromFirestore = snapshot.docs
-        .map((noteDoc) => normalizeFirestoreNote(noteDoc.id, noteDoc.data()))
+    if (remoteNotes.length > 0) {
+      const notesFromFirestore = remoteNotes
+        .map((noteDoc) => normalizeFirestoreNote(noteDoc.id, noteDoc))
         .filter(Boolean);
       saveAllNotes(notesFromFirestore, { skipRemoteSync: true });
       lastSyncedNoteIds = new Set(notesFromFirestore.map((note) => note.id));
@@ -4522,14 +4515,14 @@ export async function initReminders(sel = {}) {
     }
 
     const localNotes = loadAllNotes();
-    if (snapshot.size === 0 && localNotes.length) {
+    if (remoteNotes.length === 0 && localNotes.length) {
       await migrateLocalNotesToFirestore(localNotes);
     }
     lastSyncedNoteIds = new Set(localNotes.map((note) => note?.id).filter((id) => typeof id === 'string' && id));
   }
 
   setRemoteSyncHandler(async (notes) => {
-    if (!userId || !db || typeof setDoc !== 'function' || typeof deleteDoc !== 'function' || typeof doc !== 'function') {
+    if (!userId || !db) {
       return;
     }
 
@@ -4539,17 +4532,12 @@ export async function initReminders(sel = {}) {
     const localIds = new Set(serializable.map((note) => note.id));
 
     for (const note of serializable) {
-      await setDoc(
-        doc(db, 'users', userId, 'notes', note.id),
-        note,
-      );
+      await upsertUserDocument(userId, 'notes', note.id, note, { merge: false });
     }
 
     const idsToDelete = [...lastSyncedNoteIds].filter((noteId) => !localIds.has(noteId));
     for (const noteId of idsToDelete) {
-      await deleteDoc(
-        doc(db, 'users', userId, 'notes', noteId),
-      );
+      await deleteUserDocument(userId, 'notes', noteId);
     }
 
     lastSyncedNoteIds = localIds;
@@ -4598,10 +4586,9 @@ export async function initReminders(sel = {}) {
     }
     try {
       const localItems = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
-      const remindersCollection = collection(db, 'users', userId, 'reminders');
-      const remindersSnapshot = await getDocs(remindersCollection);
-      const remoteItems = remindersSnapshot.docs
-        .map((reminderDoc) => mapFirestoreReminder(reminderDoc.id, reminderDoc.data()));
+      const remoteReminders = await loadFirestoreReminders(userId);
+      const remoteItems = remoteReminders
+        .map((reminderDoc) => mapFirestoreReminder(reminderDoc.id, reminderDoc));
       console.log('[brain] reminders_loaded_from_firestore', { count: remoteItems.length });
 
       const remoteById = new Map(remoteItems.map((entry) => [entry.id, entry]));
@@ -4661,7 +4648,7 @@ export async function initReminders(sel = {}) {
   }
 
   async function saveToFirebase(item){
-    if(!userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function' || typeof collection !== 'function') return false;
+    if(!userId || !db) return false;
     try {
       const reminderId = typeof item.id === 'string' && item.id ? item.id : uid();
       const createdAt = Number.isFinite(item.createdAt) ? item.createdAt : Date.now();
@@ -4672,7 +4659,7 @@ export async function initReminders(sel = {}) {
       const recurrence = normalizeRecurrence(item.recurrence);
       const snoozedUntil = normalizeIsoString(item.snoozedUntil);
       const notifyMinutesBefore = Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0;
-      await setDoc(doc(collection(db, 'reminders'), reminderId), {
+      await updateFirestoreReminder(userId, reminderId, {
         id: reminderId,
         text: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
         dueDate,
@@ -4712,9 +4699,9 @@ export async function initReminders(sel = {}) {
     }
   }
   async function deleteFromFirebase(id){
-    if(!userId || !db || typeof deleteDoc !== 'function' || typeof doc !== 'function') return;
+    if(!userId || !db) return;
     try {
-      await deleteDoc(doc(db, 'reminders', id));
+      await deleteUserDocument(userId, 'reminders', id);
     } catch {
       toast('Delete queued (offline)');
     }
