@@ -11,19 +11,37 @@ export const setReminderCreationHandler = (handler) => {
 
 export const buildReminderPayload = (payload = {}) => {
   const source = payload && typeof payload === 'object' ? payload : {};
-  const title =
-    typeof source.title === 'string' && source.title.trim()
-      ? source.title.trim()
-      : typeof source.text === 'string' && source.text.trim()
-        ? source.text.trim()
-        : '';
+  const now = Date.now();
+  const titleCandidates = [source.title, source.text, source.name];
+  const title = titleCandidates.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
 
-  const normalized = { title };
+  const dueCandidates = [source.due, source.dueAt, source.dueDate];
+  const dueValue = dueCandidates.find((value) => value instanceof Date || (typeof value === 'string' && value.trim()));
+  const due = dueValue instanceof Date
+    ? dueValue.toISOString()
+    : typeof dueValue === 'string' && dueValue.trim()
+      ? dueValue.trim()
+      : null;
+
+  const normalized = {
+    id: typeof source.id === 'string' && source.id.trim() ? source.id.trim() : '',
+    title,
+    notes: typeof source.notes === 'string' ? source.notes.trim() : '',
+    due,
+    priority: typeof source.priority === 'string' && source.priority.trim() ? source.priority.trim() : 'Medium',
+    category: typeof source.category === 'string' && source.category.trim() ? source.category.trim() : 'General',
+    done: source.done === true || source.completed === true || source.isDone === true || source.status === 'done',
+    createdAt: Number.isFinite(Number(source.createdAt)) ? Number(source.createdAt) : now,
+    updatedAt: Number.isFinite(Number(source.updatedAt)) ? Number(source.updatedAt) : now,
+    keywords: Array.isArray(source.keywords)
+      ? source.keywords.filter((value) => typeof value === 'string' && value.trim()).map((value) => value.trim().toLowerCase())
+      : [],
+    metadata: source.metadata && typeof source.metadata === 'object' ? source.metadata : null,
+  };
   const passthroughKeys = [
     'priority',
     'category',
     'notes',
-    'due',
     'notifyAt',
     'plannerLessonId',
     'pinToToday',
@@ -38,6 +56,9 @@ export const buildReminderPayload = (payload = {}) => {
       normalized[key] = source[key];
     }
   });
+
+  delete normalized.dueAt;
+  delete normalized.dueDate;
 
   return normalized;
 };

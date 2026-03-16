@@ -105,6 +105,70 @@ function normalizeIsoString(value) {
   return parsed.toISOString();
 }
 
+function normalizeReminderRecord(reminder = {}, options = {}) {
+  const source = reminder && typeof reminder === 'object' ? reminder : {};
+  const now = Number.isFinite(options.now) ? options.now : Date.now();
+  const fallbackId = typeof options.fallbackId === 'string' && options.fallbackId ? options.fallbackId : uid();
+  const titleCandidates = [source.title, source.text, source.name];
+  const title = titleCandidates.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
+  const dueCandidate = [source.due, source.dueAt, source.dueDate]
+    .find((value) => value instanceof Date || (typeof value === 'string' && value.trim()));
+  const due = dueCandidate instanceof Date
+    ? dueCandidate.toISOString()
+    : normalizeIsoString(dueCandidate);
+  const createdAt = Number.isFinite(Number(source.createdAt)) ? Number(source.createdAt) : now;
+  const updatedAt = Number.isFinite(Number(source.updatedAt)) ? Number(source.updatedAt) : createdAt;
+  const notes = typeof source.notes === 'string'
+    ? source.notes
+    : typeof source.bodyText === 'string'
+      ? source.bodyText
+      : typeof source.body === 'string'
+        ? source.body
+        : '';
+
+  const normalized = {
+    id: typeof source.id === 'string' && source.id ? source.id : fallbackId,
+    title,
+    notes,
+    due,
+    priority: source.priority || 'Medium',
+    category: normalizeCategory(source.category),
+    done: typeof source.done === 'boolean'
+      ? source.done
+      : Boolean(source.completed || source.isDone || source.status === 'done'),
+    createdAt,
+    updatedAt,
+    keywords: normalizeReminderKeywords(
+      source.keywords
+      || source?.metadata?.keywords
+      || extractReminderKeywords(`${title} ${notes}`),
+    ),
+    metadata: source.metadata && typeof source.metadata === 'object' ? source.metadata : null,
+    recurrence: normalizeRecurrence(source.recurrence),
+    snoozedUntil: normalizeIsoString(source.snoozedUntil),
+    notifyMinutesBefore: Number.isFinite(Number(source.notifyMinutesBefore)) ? Number(source.notifyMinutesBefore) : 0,
+    userId: typeof source.userId === 'string' && source.userId ? source.userId : null,
+    pendingSync: !!source.pendingSync,
+    orderIndex: Number.isFinite(Number(source.orderIndex)) ? Number(source.orderIndex) : null,
+    plannerLessonId:
+      typeof source.plannerLessonId === 'string' && source.plannerLessonId.trim()
+        ? source.plannerLessonId.trim()
+        : null,
+    pinToToday: source.pinToToday === true,
+    semanticEmbedding: normalizeSemanticEmbedding(source.semanticEmbedding),
+    notifyAt: normalizeIsoString(source.notifyAt),
+  };
+
+  normalized.metadata = {
+    ...(normalized.metadata || {}),
+    text: [normalized.title, normalized.notes].filter(Boolean).join(' ').trim(),
+    keywords: normalized.keywords,
+    created_at: new Date(normalized.createdAt).toISOString(),
+  };
+
+  return normalized;
+}
+
 function computeNextOccurrence(reminder) {
   if (!reminder?.due) {
     return null;
@@ -3704,47 +3768,7 @@ export async function initReminders(sel = {}) {
       return parsed
         .map((entry) => {
           if (!entry || typeof entry !== 'object') return null;
-          const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now();
-          const updatedAt = Number.isFinite(entry.updatedAt) ? entry.updatedAt : createdAt;
-          const rawOrder = Number(entry.orderIndex);
-          return {
-            id: typeof entry.id === 'string' && entry.id ? entry.id : uid(),
-            title:
-              typeof entry.title === 'string' && entry.title.trim()
-                ? entry.title
-                : (typeof entry.text === 'string' && entry.text.trim()
-                  ? entry.text
-                  : (typeof entry.name === 'string' ? entry.name : '')),
-            priority: entry.priority || 'Medium',
-            category: normalizeCategory(entry.category),
-            notes: typeof entry.notes === 'string' ? entry.notes : '',
-            done: typeof entry.done === 'boolean'
-              ? entry.done
-              : Boolean(entry.completed || entry.isDone || entry.status === 'done'),
-            createdAt,
-            updatedAt,
-            due: typeof entry.due === 'string' && entry.due
-              ? entry.due
-              : (typeof entry.dueAt === 'string' && entry.dueAt ? entry.dueAt : null),
-            recurrence: normalizeRecurrence(entry.recurrence),
-            snoozedUntil: normalizeIsoString(entry.snoozedUntil),
-            notifyMinutesBefore: Number.isFinite(Number(entry.notifyMinutesBefore)) ? Number(entry.notifyMinutesBefore) : 0,
-            userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : null,
-            pendingSync: !!entry.pendingSync,
-            orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
-            plannerLessonId:
-              typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
-                ? entry.plannerLessonId.trim()
-                : null,
-            pinToToday: entry.pinToToday === true,
-            semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
-            metadata: entry.metadata && typeof entry.metadata === 'object' ? entry.metadata : null,
-            keywords: normalizeReminderKeywords(
-              entry.keywords
-              || entry?.metadata?.keywords
-              || extractReminderKeywords(`${entry.title || ''} ${entry.notes || ''}`),
-            ),
-          };
+          return normalizeReminderRecord(entry, { fallbackId: uid() });
         })
         .filter(Boolean);
     } catch (error) {
@@ -3762,35 +3786,7 @@ export async function initReminders(sel = {}) {
       }
       const serialisable = reminders
         .filter((entry) => entry && typeof entry === 'object')
-        .map((entry) => ({
-          id: entry.id,
-          title: entry.title,
-          priority: entry.priority || 'Medium',
-          category: normalizeCategory(entry.category),
-          notes: typeof entry.notes === 'string' ? entry.notes : '',
-          done: !!entry.done,
-          createdAt: Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now(),
-          updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
-          due: typeof entry.due === 'string' && entry.due ? entry.due : null,
-          recurrence: normalizeRecurrence(entry.recurrence),
-          snoozedUntil: normalizeIsoString(entry.snoozedUntil),
-          notifyMinutesBefore: Number.isFinite(Number(entry.notifyMinutesBefore)) ? Number(entry.notifyMinutesBefore) : 0,
-          userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : null,
-          pendingSync: !!entry.pendingSync,
-          orderIndex: Number.isFinite(entry.orderIndex) ? entry.orderIndex : null,
-          plannerLessonId:
-            typeof entry.plannerLessonId === 'string' && entry.plannerLessonId.trim()
-              ? entry.plannerLessonId.trim()
-              : null,
-          pinToToday: !!entry.pinToToday,
-          semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
-          metadata: entry.metadata && typeof entry.metadata === 'object' ? entry.metadata : null,
-          keywords: normalizeReminderKeywords(
-            entry.keywords
-            || entry?.metadata?.keywords
-            || extractReminderKeywords(`${entry.title || ''} ${entry.notes || ''}`),
-          ),
-        }));
+        .map((entry) => normalizeReminderRecord(entry, { fallbackId: uid() }));
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
       console.warn('Failed to persist offline reminders', error);
@@ -4556,35 +4552,14 @@ export async function initReminders(sel = {}) {
   });
 
   function mapFirestoreReminder(reminderId, payload = {}) {
-    const createdAt = normalizeFirestoreTimestamp(payload.createdAt);
-    const updatedAt = normalizeFirestoreTimestamp(payload.updatedAt || payload.createdAt);
-    const rawOrder = Number(payload.orderIndex);
-    return {
+    return normalizeReminderRecord({
+      ...payload,
       id: typeof payload.id === 'string' && payload.id ? payload.id : reminderId,
-      title: typeof payload.title === 'string' && payload.title.trim()
-        ? payload.title
-        : (typeof payload.text === 'string' ? payload.text : ''),
-      priority: payload.priority || 'Medium',
-      category: normalizeCategory(payload.category),
-      notes: typeof payload.notes === 'string' ? payload.notes : '',
-      done: !!payload.done,
-      createdAt,
-      updatedAt,
-      due: typeof payload.due === 'string' && payload.due
-        ? payload.due
-        : (typeof payload.dueDate === 'string' && payload.dueDate ? payload.dueDate : null),
-      recurrence: normalizeRecurrence(payload.recurrence),
-      snoozedUntil: normalizeIsoString(payload.snoozedUntil),
-      notifyMinutesBefore: Number.isFinite(Number(payload.notifyMinutesBefore)) ? Number(payload.notifyMinutesBefore) : 0,
+      createdAt: normalizeFirestoreTimestamp(payload.createdAt),
+      updatedAt: normalizeFirestoreTimestamp(payload.updatedAt || payload.createdAt),
       userId: typeof payload.userId === 'string' ? payload.userId : userId,
       pendingSync: false,
-      orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
-      plannerLessonId: typeof payload.plannerLessonId === 'string' ? payload.plannerLessonId : null,
-      pinToToday: payload.pinToToday === true,
-      semanticEmbedding: normalizeSemanticEmbedding(payload.semanticEmbedding),
-      metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : null,
-      keywords: normalizeReminderKeywords(payload.keywords),
-    };
+    }, { fallbackId: reminderId });
   }
 
   async function setupSupabaseSync(){
@@ -4635,12 +4610,11 @@ export async function initReminders(sel = {}) {
         }
       });
 
-      items = ensureOrderIndicesInitialized(Array.from(remoteById.values()).map((item) => ({
+      items = ensureOrderIndicesInitialized(Array.from(remoteById.values()).map((item) => normalizeReminderRecord({
         ...item,
         pendingSync: false,
         userId,
-        category: normalizeCategory(item.category),
-      })));
+      }, { fallbackId: uid() })));
       items.forEach((reminder) => {
         scheduleReminderNotification({
           ...reminder,
@@ -4663,44 +4637,42 @@ export async function initReminders(sel = {}) {
   async function saveToFirebase(item){
     if(!userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function' || typeof collection !== 'function') return false;
     try {
-      const reminderId = typeof item.id === 'string' && item.id ? item.id : uid();
-      const createdAt = Number.isFinite(item.createdAt) ? item.createdAt : Date.now();
+      const normalizedItem = normalizeReminderRecord(item, { fallbackId: uid() });
+      const reminderId = normalizedItem.id;
+      const createdAt = normalizedItem.createdAt;
       const updatedAt = Date.now();
-      const dueDate = typeof item.due === 'string' && item.due
-        ? item.due
-        : (typeof item.dueDate === 'string' && item.dueDate ? item.dueDate : null);
-      const recurrence = normalizeRecurrence(item.recurrence);
-      const snoozedUntil = normalizeIsoString(item.snoozedUntil);
-      const notifyMinutesBefore = Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0;
+      const dueDate = normalizedItem.due;
       await setDoc(doc(collection(db, 'reminders'), reminderId), {
         id: reminderId,
-        text: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
+        text: normalizedItem.title,
         dueDate,
         createdAt,
         updatedAt,
         userId,
-        title: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
+        title: normalizedItem.title,
         due: dueDate,
-        dueAt: dueDate,
-        recurrence,
-        snoozedUntil,
-        notifyMinutesBefore,
-        priority: item.priority || 'Medium',
-        category: item.category || DEFAULT_CATEGORY,
-        notes: typeof item.notes === 'string' ? item.notes : '',
-        done: !!item.done,
-        orderIndex: Number.isFinite(item.orderIndex) ? item.orderIndex : null,
-        plannerLessonId: typeof item.plannerLessonId === 'string' ? item.plannerLessonId : null,
-        pinToToday: item.pinToToday === true,
-        semanticEmbedding: normalizeSemanticEmbedding(item.semanticEmbedding),
-        metadata: item.metadata && typeof item.metadata === 'object' ? item.metadata : null,
-        keywords: normalizeReminderKeywords(item.keywords),
+        recurrence: normalizedItem.recurrence,
+        snoozedUntil: normalizedItem.snoozedUntil,
+        notifyMinutesBefore: normalizedItem.notifyMinutesBefore,
+        priority: normalizedItem.priority,
+        category: normalizedItem.category || DEFAULT_CATEGORY,
+        notes: normalizedItem.notes,
+        done: normalizedItem.done,
+        orderIndex: Number.isFinite(normalizedItem.orderIndex) ? normalizedItem.orderIndex : null,
+        plannerLessonId: normalizedItem.plannerLessonId,
+        pinToToday: normalizedItem.pinToToday,
+        semanticEmbedding: normalizeSemanticEmbedding(normalizedItem.semanticEmbedding),
+        metadata: normalizedItem.metadata,
+        keywords: normalizeReminderKeywords(normalizedItem.keywords),
       }, { merge: true });
-      item.id = reminderId;
-      item.createdAt = createdAt;
-      item.updatedAt = updatedAt;
-      item.userId = userId;
-      item.pendingSync = false;
+      Object.assign(item, {
+        ...normalizedItem,
+        id: reminderId,
+        createdAt,
+        updatedAt,
+        userId,
+        pendingSync: false,
+      });
       console.log('[brain] reminder_saved_to_firestore', { id: reminderId });
       persistItems();
       return true;
@@ -4810,64 +4782,15 @@ export async function initReminders(sel = {}) {
       return null;
     }
 
-    const nowMs = Date.now();
-    const note = payload.notes == null
-      ? ''
-      : (typeof payload.notes === 'string' ? payload.notes.trim() : String(payload.notes).trim());
-    const categoryValue = normalizeCategory(
-      payload.category ?? (categoryInput ? categoryInput.value : DEFAULT_CATEGORY),
-    );
-    let dueValue = null;
-    if (payload.due instanceof Date) {
-      const isoDue = payload.due.toISOString();
-      dueValue = isoDue;
-    } else if (typeof payload.due === 'string' && payload.due.trim()) {
-      dueValue = payload.due;
-    }
-
-    let notifyAtValue = null;
-    if (payload.notifyAt instanceof Date) {
-      notifyAtValue = payload.notifyAt.toISOString();
-    } else if (typeof payload.notifyAt === 'string' && payload.notifyAt.trim()) {
-      notifyAtValue = payload.notifyAt;
-    }
-
-    const item = {
+    const item = normalizeReminderRecord({
+      ...payload,
       id: uid(),
       title: titleText,
       priority: payload.priority || getPriorityInputValue(),
-      category: categoryValue,
-      notes: note,
-      done:false,
-      createdAt: nowMs,
-      updatedAt: nowMs,
-      due: dueValue,
-      recurrence: normalizeRecurrence(payload.recurrence),
-      snoozedUntil: normalizeIsoString(payload.snoozedUntil),
-      notifyMinutesBefore: Number.isFinite(Number(payload.notifyMinutesBefore)) ? Number(payload.notifyMinutesBefore) : 0,
+      category: payload.category ?? (categoryInput ? categoryInput.value : DEFAULT_CATEGORY),
+      done: false,
       pendingSync: !userId,
-      plannerLessonId:
-        typeof payload.plannerLessonId === 'string' && payload.plannerLessonId.trim()
-          ? payload.plannerLessonId.trim()
-          : null,
-      pinToToday: !!payload.pinToToday,
-      notifyAt: notifyAtValue,
-      semanticEmbedding: normalizeSemanticEmbedding(payload.semanticEmbedding),
-      metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : null,
-    };
-
-    const derivedKeywords = normalizeReminderKeywords(
-      payload.keywords
-      || item?.metadata?.keywords
-      || extractReminderKeywords(`${titleText} ${note}`),
-    );
-    item.keywords = derivedKeywords;
-    item.metadata = {
-      ...(item.metadata || {}),
-      text: [titleText, note].filter(Boolean).join(' ').trim(),
-      keywords: derivedKeywords,
-      created_at: new Date(item.createdAt).toISOString(),
-    };
+    });
 
     assignOrderIndexForNewItem(item, { position: 'start' });
     items = [item, ...items];
@@ -5660,12 +5583,7 @@ export async function initReminders(sel = {}) {
     if (title) {
       return title;
     }
-    const text = typeof reminder.text === 'string' ? reminder.text.trim() : '';
-    if (text) {
-      return text;
-    }
-    const name = typeof reminder.name === 'string' ? reminder.name.trim() : '';
-    return name;
+    return 'Untitled reminder';
   }
 
 
@@ -5811,6 +5729,7 @@ export async function initReminders(sel = {}) {
     const todayRange = { start: t0, end: t1 };
 
     clearDragHighlights();
+    items = items.map((entry) => normalizeReminderRecord(entry, { fallbackId: uid() }));
     sortItemsByOrder(items);
 
     if (countTotalEl) {
@@ -6624,7 +6543,7 @@ export async function initReminders(sel = {}) {
     __testing: {
       setItems(listItems = []) {
         items = Array.isArray(listItems)
-          ? listItems.map(item => ({ ...item, category: normalizeCategory(item?.category) }))
+          ? listItems.map((item) => normalizeReminderRecord(item, { fallbackId: uid() }))
           : [];
         items = ensureOrderIndicesInitialized(items);
         sortItemsByOrder(items);
