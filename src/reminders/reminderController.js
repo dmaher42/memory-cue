@@ -1,11 +1,12 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from '../../js/supabase-auth.js';
 import { captureInput, getInboxEntries } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
-import { createAndSaveNote, loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
+import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
 import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
 import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
+import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -1543,7 +1544,7 @@ export async function initReminders(sel = {}) {
       semanticEmbedding: null,
     };
 
-    const savedEntry = createAndSaveNote({
+    const savedEntry = saveNote({
       text: normalizedText,
       title: smartEntry.title,
       tags: smartEntry.tags,
