@@ -1,4 +1,5 @@
 import { syncInbox, upsertInboxEntry } from './supabaseSyncService.js';
+import { indexSourceEmbedding } from './embeddingService.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
@@ -122,6 +123,14 @@ export const saveInboxEntry = (entryInput = {}) => {
   dispatchInboxUpdated();
   upsertInboxEntry(entry).catch((error) => {
     console.warn('[inbox-service] Supabase inbox sync failed', error);
+  });
+
+  indexSourceEmbedding({
+    text: entry.text,
+    sourceType: 'inbox',
+    sourceId: entry.id,
+  }).catch((error) => {
+    console.warn('[embedding] Failed to index inbox embedding', error);
   });
 
   return entry;

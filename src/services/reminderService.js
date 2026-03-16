@@ -1,3 +1,5 @@
+import { indexSourceEmbedding } from './embeddingService.js';
+
 const reminderServiceState = {
   handler: null,
 };
@@ -52,7 +54,22 @@ export const createReminder = async (payload = {}, options = {}) => {
     throw new Error('Reminder creation logic is unavailable.');
   }
 
-  return handler(buildReminderPayload(payload));
+  const normalizedPayload = buildReminderPayload(payload);
+  const reminder = await handler(normalizedPayload);
+  const reminderId = typeof reminder?.id === 'string' ? reminder.id : null;
+  const reminderText = [normalizedPayload.title, normalizedPayload.notes].filter(Boolean).join(' ').trim();
+
+  if (reminderId && reminderText) {
+    indexSourceEmbedding({
+      text: reminderText,
+      sourceType: 'reminder',
+      sourceId: reminderId,
+    }).catch((error) => {
+      console.warn('[embedding] Failed to index reminder embedding', error);
+    });
+  }
+
+  return reminder;
 };
 
 if (typeof window !== 'undefined') {

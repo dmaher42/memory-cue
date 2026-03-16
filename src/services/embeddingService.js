@@ -1,8 +1,76 @@
-const EMBEDDING_STORAGE_KEY = 'memoryCue:embeddings';
-const MAX_STORED_EMBEDDINGS = 200;
-const OPENAI_EMBEDDING_MODEL = 'text-embedding-3-small';
+const FIREBASE_VERSION = '12.2.1';
+const FIREBASE_APP_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`;
+const FIREBASE_AUTH_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`;
+const FIREBASE_FIRESTORE_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`;
 
-const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
+let embeddingContextPromise = null;
+
+const resolveFirebaseConfig = () => {
+  if (typeof globalThis === 'undefined') {
+    return null;
+  }
+
+  return globalThis?.memoryCueFirebase?.getFirebaseConfig?.() || null;
+};
+
+const ensureEmbeddingContext = async () => {
+  if (embeddingContextPromise) {
+    return embeddingContextPromise;
+  }
+
+  embeddingContextPromise = (async () => {
+    const config = resolveFirebaseConfig();
+    if (!config?.projectId) {
+      console.warn('[embedding] Firebase config unavailable.');
+      return null;
+    }
+
+    const appModule = await import(FIREBASE_APP_URL);
+    const authModule = await import(FIREBASE_AUTH_URL);
+    const firestoreModule = await import(FIREBASE_FIRESTORE_URL);
+
+    const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
+    const auth = authModule.getAuth(app);
+    const db = firestoreModule.getFirestore(app);
+
+    return {
+      auth,
+      db,
+      addDoc: firestoreModule.addDoc,
+      collection: firestoreModule.collection,
+      getDocs: firestoreModule.getDocs,
+      limit: firestoreModule.limit,
+      query: firestoreModule.query,
+      where: firestoreModule.where,
+    };
+  })();
+
+  return embeddingContextPromise;
+};
+
+const resolveUid = async (uid) => {
+  if (typeof uid === 'string' && uid.trim()) {
+    return uid.trim();
+  }
+
+  if (typeof globalThis !== 'undefined' && typeof globalThis.__MEMORY_CUE_AUTH_USER_ID === 'string') {
+    const scopedUid = globalThis.__MEMORY_CUE_AUTH_USER_ID.trim();
+    if (scopedUid) {
+      return scopedUid;
+    }
+  }
+
+  const context = await ensureEmbeddingContext();
+  return context?.auth?.currentUser?.uid || null;
+};
+
+const normalizeText = (text) => {
+  if (typeof text !== 'string') {
+    return '';
+  }
+
+  return text.replace(/\s+/g, ' ').trim();
+};
 
 const normalizeEmbedding = (embedding) => {
   if (!Array.isArray(embedding)) {
@@ -14,70 +82,22 @@ const normalizeEmbedding = (embedding) => {
     .filter((value) => Number.isFinite(value));
 };
 
-const getOpenAiApiKey = () => (typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY : '');
-
-const getStoredEmbeddings = () => {
-  if (typeof localStorage === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = localStorage.getItem(EMBEDDING_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((record) => ({
-        memoryId: normalizeText(record?.memoryId),
-        embedding: normalizeEmbedding(record?.embedding),
-        createdAt: Number(record?.createdAt) || 0,
-      }))
-      .filter((record) => record.memoryId && record.embedding.length);
-  } catch (error) {
-    console.warn('[embedding-service] Failed to read stored embeddings', error);
-    return [];
-  }
-};
-
-const persistEmbeddings = (records) => {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-
-  try {
-    localStorage.setItem(EMBEDDING_STORAGE_KEY, JSON.stringify(records));
-  } catch (error) {
-    console.warn('[embedding-service] Failed to persist embeddings', error);
-  }
-};
-
 const cosineSimilarity = (left, right) => {
-  if (!Array.isArray(left) || !Array.isArray(right) || !left.length || !right.length) {
+  const normalizedLeft = normalizeEmbedding(left);
+  const normalizedRight = normalizeEmbedding(right);
+  if (!normalizedLeft.length || !normalizedRight.length) {
     return 0;
   }
 
-  const dimensions = Math.min(left.length, right.length);
+  const dimensions = Math.min(normalizedLeft.length, normalizedRight.length);
   let dotProduct = 0;
   let leftMagnitude = 0;
   let rightMagnitude = 0;
 
   for (let index = 0; index < dimensions; index += 1) {
-    const leftValue = Number(left[index]);
-    const rightValue = Number(right[index]);
-
-    if (!Number.isFinite(leftValue) || !Number.isFinite(rightValue)) {
-      continue;
-    }
-
-    dotProduct += leftValue * rightValue;
-    leftMagnitude += leftValue * leftValue;
-    rightMagnitude += rightValue * rightValue;
+    dotProduct += normalizedLeft[index] * normalizedRight[index];
+    leftMagnitude += normalizedLeft[index] * normalizedLeft[index];
+    rightMagnitude += normalizedRight[index] * normalizedRight[index];
   }
 
   if (leftMagnitude <= 0 || rightMagnitude <= 0) {
@@ -87,28 +107,16 @@ const cosineSimilarity = (left, right) => {
   return dotProduct / (Math.sqrt(leftMagnitude) * Math.sqrt(rightMagnitude));
 };
 
-export const generateEmbedding = async (text) => {
+export async function generateEmbedding(text) {
   const normalizedText = normalizeText(text);
   if (!normalizedText) {
     return [];
   }
 
-  const openAiApiKey = getOpenAiApiKey();
-  if (!openAiApiKey) {
-    console.warn('[embedding-service] OPENAI_API_KEY is not configured');
-    return [];
-  }
-
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
+  const response = await fetch('/api/embed', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openAiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_EMBEDDING_MODEL,
-      input: normalizedText,
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: normalizedText }),
   });
 
   if (!response.ok) {
@@ -116,59 +124,124 @@ export const generateEmbedding = async (text) => {
   }
 
   const data = await response.json();
-  const embedding = data?.data?.[0]?.embedding;
-  return normalizeEmbedding(embedding);
+  return normalizeEmbedding(data?.embedding);
+}
+
+export const getEmbeddingsForUser = async (uid) => {
+  const resolvedUid = await resolveUid(uid);
+  const context = await ensureEmbeddingContext();
+  if (!context || !resolvedUid) {
+    return [];
+  }
+
+  const snapshot = await context.getDocs(context.collection(context.db, 'users', resolvedUid, 'embeddings'));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
-export const storeEmbedding = (memoryId, embedding) => {
-  const normalizedMemoryId = normalizeText(memoryId);
-  const normalizedEmbedding = normalizeEmbedding(embedding);
-
-  if (!normalizedMemoryId || !normalizedEmbedding.length) {
+const findEmbeddingBySourceId = async ({ uid, sourceId }) => {
+  const context = await ensureEmbeddingContext();
+  if (!context || !uid || !sourceId) {
     return null;
   }
 
-  const timestamp = Date.now();
-  const records = getStoredEmbeddings().filter((record) => normalizeText(record?.memoryId) !== normalizedMemoryId);
+  const embeddingsRef = context.collection(context.db, 'users', uid, 'embeddings');
+  const existingQuery = context.query(
+    embeddingsRef,
+    context.where('sourceId', '==', sourceId),
+    context.limit(1),
+  );
+  const snapshot = await context.getDocs(existingQuery);
+  return snapshot.empty ? null : snapshot.docs[0];
+};
 
-  records.unshift({
-    memoryId: normalizedMemoryId,
-    embedding: normalizedEmbedding,
-    createdAt: timestamp,
+export const storeEmbedding = async (payload, legacyEmbedding) => {
+  const isLegacySignature = typeof payload === 'string';
+  const normalizedPayload = isLegacySignature
+    ? {
+      sourceId: payload,
+      embedding: legacyEmbedding,
+      text: payload,
+      sourceType: 'memory',
+    }
+    : (payload && typeof payload === 'object' ? payload : {});
+
+  const resolvedUid = await resolveUid(normalizedPayload.uid);
+  const context = await ensureEmbeddingContext();
+  const normalizedText = normalizeText(normalizedPayload.text);
+  const normalizedSourceType = typeof normalizedPayload.sourceType === 'string' ? normalizedPayload.sourceType.trim() : '';
+  const normalizedSourceId = typeof normalizedPayload.sourceId === 'string' ? normalizedPayload.sourceId.trim() : '';
+  const normalizedVector = normalizeEmbedding(normalizedPayload.embedding);
+
+  if (!context || !resolvedUid || !normalizedText || !normalizedSourceType || !normalizedSourceId || !normalizedVector.length) {
+    return null;
+  }
+
+  const existing = await findEmbeddingBySourceId({ uid: resolvedUid, sourceId: normalizedSourceId });
+  if (existing) {
+    return existing.id;
+  }
+
+  const added = await context.addDoc(context.collection(context.db, 'users', resolvedUid, 'embeddings'), {
+    text: normalizedText,
+    sourceType: normalizedSourceType,
+    sourceId: normalizedSourceId,
+    embedding: normalizedVector,
+    createdAt: Date.now(),
   });
 
-  const limitedRecords = records
-    .sort((left, right) => (Number(right?.createdAt) || 0) - (Number(left?.createdAt) || 0))
-    .slice(0, MAX_STORED_EMBEDDINGS);
-  persistEmbeddings(limitedRecords);
-
-  return limitedRecords[0];
+  return added.id;
 };
 
 export const similaritySearch = (queryEmbedding, memories = []) => {
   const normalizedQuery = normalizeEmbedding(queryEmbedding);
-  if (!normalizedQuery.length) {
+  if (!normalizedQuery.length || !Array.isArray(memories)) {
     return [];
   }
 
-  if (Array.isArray(memories) && memories.length) {
-    return memories
-      .map((memory) => ({
-        ...memory,
-        score: cosineSimilarity(normalizedQuery, normalizeEmbedding(memory?.embedding)),
-      }))
-      .filter((memory) => Number.isFinite(memory.score))
-      .sort((left, right) => right.score - left.score);
-  }
-
-  return getStoredEmbeddings()
-    .map((record) => ({
-      memoryId: normalizeText(record?.memoryId),
-      score: cosineSimilarity(normalizedQuery, normalizeEmbedding(record?.embedding)),
+  return memories
+    .map((memory) => ({
+      ...memory,
+      score: cosineSimilarity(normalizedQuery, memory?.embedding),
     }))
-    .filter((result) => result.memoryId)
+    .filter((memory) => Number.isFinite(memory.score))
     .sort((left, right) => right.score - left.score);
 };
 
-export const createEmbedding = generateEmbedding;
-export const searchEmbeddings = similaritySearch;
+export const indexSourceEmbedding = async ({ uid, text, sourceType, sourceId }) => {
+  const normalizedText = normalizeText(text);
+  const normalizedSourceId = typeof sourceId === 'string' ? sourceId.trim() : '';
+
+  if (!normalizedText || !normalizedSourceId) {
+    return null;
+  }
+
+  const resolvedUid = await resolveUid(uid);
+  if (!resolvedUid) {
+    return null;
+  }
+
+  const existing = await findEmbeddingBySourceId({ uid: resolvedUid, sourceId: normalizedSourceId });
+  if (existing) {
+    return existing.id;
+  }
+
+  console.debug('[embedding] generating embedding', { sourceType, sourceId: normalizedSourceId });
+  const embedding = await generateEmbedding(normalizedText);
+  if (!embedding.length) {
+    return null;
+  }
+
+  const embeddingId = await storeEmbedding({
+    uid: resolvedUid,
+    text: normalizedText,
+    sourceType,
+    sourceId: normalizedSourceId,
+    embedding,
+  });
+
+  if (embeddingId) {
+    console.debug('[embedding] embedding stored', { sourceType, sourceId: normalizedSourceId, embeddingId });
+  }
+
+  return embeddingId;
+};
