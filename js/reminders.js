@@ -1,7 +1,7 @@
 import { setAuthContext, startSignInFlow, startSignOutFlow } from './supabase-auth.js';
 import { captureInput, getInboxEntries } from './services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';
-import { createAndSaveNote } from './modules/notes-storage.js';
+import { createAndSaveNote, loadAllNotes, saveAllNotes, setRemoteSyncHandler } from './modules/notes-storage.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase/Firestore and all reminder UI handlers.
@@ -2831,6 +2831,9 @@ export async function initReminders(sel = {}) {
   let items = [];
   let suppressRenderMemoryEvent = false;
   let userId = null;
+  let notesMigrationComplete = false;
+  let notesMigrationUserId = null;
+  let lastSyncedNoteIds = new Set();
   let unsubscribe = null;
   let editingId = null;
   let currentReminderMode = null;
@@ -4266,6 +4269,11 @@ export async function initReminders(sel = {}) {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         userId = user.uid;
+        if (notesMigrationUserId !== user.uid) {
+          notesMigrationUserId = user.uid;
+          notesMigrationComplete = false;
+          lastSyncedNoteIds = new Set();
+        }
         if (typeof window !== 'undefined') {
           window.__MEMORY_CUE_AUTH_USER_ID = user.uid;
         }
@@ -4274,8 +4282,12 @@ export async function initReminders(sel = {}) {
         googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
         if(googleUserName) googleUserName.textContent = user.email || '';
         await setupSupabaseSync();
+        await syncNotesFromFirestoreOnLogin();
         await migrateOfflineRemindersIfNeeded();
       } else {
+        notesMigrationComplete = false;
+        notesMigrationUserId = null;
+        lastSyncedNoteIds = new Set();
         if (typeof window !== 'undefined') {
           window.__MEMORY_CUE_AUTH_USER_ID = '';
         }
@@ -4285,11 +4297,17 @@ export async function initReminders(sel = {}) {
     const initialUser = auth?.currentUser || null;
     if (initialUser) {
       userId = initialUser.uid;
+      if (notesMigrationUserId !== initialUser.uid) {
+        notesMigrationUserId = initialUser.uid;
+        notesMigrationComplete = false;
+        lastSyncedNoteIds = new Set();
+      }
       if (typeof window !== 'undefined') {
         window.__MEMORY_CUE_AUTH_USER_ID = initialUser.uid;
       }
       renderSyncIndicator('online');
       await setupSupabaseSync();
+      await syncNotesFromFirestoreOnLogin();
     }
   } else {
     applySignedOutState();
@@ -4304,6 +4322,84 @@ export async function initReminders(sel = {}) {
     }
     return Date.now();
   }
+
+  const normalizeFirestoreNote = (noteId, payload = {}) => {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+    return {
+      ...payload,
+      id: typeof payload.id === 'string' && payload.id ? payload.id : noteId,
+    };
+  };
+
+  async function migrateLocalNotesToFirestore(localNotes = []) {
+    if (notesMigrationComplete || !userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function') {
+      return;
+    }
+    notesMigrationComplete = true;
+
+    for (const note of localNotes) {
+      if (!note || typeof note !== 'object' || typeof note.id !== 'string' || !note.id) {
+        continue;
+      }
+      await setDoc(
+        doc(db, 'users', userId, 'notes', note.id),
+        note,
+      );
+    }
+  }
+
+  async function syncNotesFromFirestoreOnLogin() {
+    if (!userId || !db || typeof collection !== 'function' || typeof getDocs !== 'function') {
+      return;
+    }
+
+    const notesCollection = collection(db, 'users', userId, 'notes');
+    const snapshot = await getDocs(notesCollection);
+
+    if (snapshot.size > 0) {
+      const notesFromFirestore = snapshot.docs
+        .map((noteDoc) => normalizeFirestoreNote(noteDoc.id, noteDoc.data()))
+        .filter(Boolean);
+      saveAllNotes(notesFromFirestore, { skipRemoteSync: true });
+      lastSyncedNoteIds = new Set(notesFromFirestore.map((note) => note.id));
+      return;
+    }
+
+    const localNotes = loadAllNotes();
+    if (snapshot.size === 0 && localNotes.length) {
+      await migrateLocalNotesToFirestore(localNotes);
+    }
+    lastSyncedNoteIds = new Set(localNotes.map((note) => note?.id).filter((id) => typeof id === 'string' && id));
+  }
+
+  setRemoteSyncHandler(async (notes) => {
+    if (!userId || !db || typeof setDoc !== 'function' || typeof deleteDoc !== 'function' || typeof doc !== 'function') {
+      return;
+    }
+
+    const serializable = Array.isArray(notes)
+      ? notes.filter((note) => note && typeof note.id === 'string' && note.id)
+      : [];
+    const localIds = new Set(serializable.map((note) => note.id));
+
+    for (const note of serializable) {
+      await setDoc(
+        doc(db, 'users', userId, 'notes', note.id),
+        note,
+      );
+    }
+
+    const idsToDelete = [...lastSyncedNoteIds].filter((noteId) => !localIds.has(noteId));
+    for (const noteId of idsToDelete) {
+      await deleteDoc(
+        doc(db, 'users', userId, 'notes', noteId),
+      );
+    }
+
+    lastSyncedNoteIds = localIds;
+  });
 
   function mapFirestoreReminder(reminderId, payload = {}) {
     const createdAt = normalizeFirestoreTimestamp(payload.createdAt);
