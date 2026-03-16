@@ -1,5 +1,6 @@
 import { syncInbox, upsertInboxEntry } from './supabaseSyncService.js';
 import { indexSourceEmbedding } from './embeddingService.js';
+import { saveMemory, normalizeMemoryEntry } from './memoryService.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
@@ -41,6 +42,31 @@ const normalizeTags = (tags) => {
     .filter(Boolean);
 };
 
+
+const normalizeInboxEntry = (entryInput = {}) => {
+  const canonical = normalizeMemoryEntry({
+    ...entryInput,
+    type: 'inbox',
+    source: entryInput?.source,
+    entryPoint: entryInput?.entryPoint || 'inboxService.saveInboxEntry',
+  }, {
+    source: 'capture',
+    entryPoint: 'inboxService.saveInboxEntry',
+  });
+
+  return {
+    id: canonical.id,
+    text: canonical.text,
+    tags: canonical.tags,
+    createdAt: canonical.createdAt,
+    source: canonical.source,
+    parsedType: normalizeParsedType(entryInput?.parsedType || 'unknown'),
+    metadata: entryInput?.metadata && typeof entryInput.metadata === 'object' ? entryInput.metadata : {},
+    pendingSync: canonical.pendingSync,
+    updatedAt: canonical.updatedAt,
+    entryPoint: canonical.entryPoint,
+  };
+};
 export const getInboxEntries = () => {
   if (typeof localStorage === 'undefined') {
     return [];
@@ -54,15 +80,18 @@ export const getInboxEntries = () => {
         if (!legacyRaw) continue;
         const legacyParsed = JSON.parse(legacyRaw);
         if (Array.isArray(legacyParsed) && legacyParsed.length) {
-          localStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(legacyParsed));
+          const normalizedLegacy = legacyParsed.map((entry) => normalizeInboxEntry(entry)).filter((entry) => entry.text);
+          localStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(normalizedLegacy));
           localStorage.removeItem(legacyKey);
-          return legacyParsed;
+          return normalizedLegacy;
         }
       }
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.map((entry) => normalizeInboxEntry(entry)).filter((entry) => entry.text)
+      : [];
   } catch (error) {
     console.warn('[inbox-service] Failed to load inbox entries', error);
     return [];
@@ -105,7 +134,7 @@ export const saveInboxEntry = (entryInput = {}) => {
   }
 
   const timestamp = Date.now();
-  const entry = {
+  const entry = normalizeInboxEntry({
     id: typeof entryInput?.id === 'string' && entryInput.id.trim() ? entryInput.id.trim() : generateId(),
     text: normalizedText,
     tags: normalizeTags(entryInput?.tags),
@@ -115,7 +144,8 @@ export const saveInboxEntry = (entryInput = {}) => {
     metadata: entryInput?.metadata && typeof entryInput.metadata === 'object' ? entryInput.metadata : {},
     pendingSync: true,
     updatedAt: timestamp,
-  };
+    entryPoint: entryInput?.entryPoint,
+  });
 
   const entries = getInboxEntries();
   entries.unshift(entry);
@@ -131,6 +161,19 @@ export const saveInboxEntry = (entryInput = {}) => {
     sourceId: entry.id,
   }).catch((error) => {
     console.warn('[embedding] Failed to index inbox embedding', error);
+  });
+
+  saveMemory({
+    id: entry.id,
+    text: entry.text,
+    type: 'inbox',
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt,
+    source: entry.source,
+    entryPoint: entry.entryPoint,
+    tags: entry.tags,
+  }).catch((error) => {
+    console.warn('[memory-service] Failed to save inbox memory', error);
   });
 
   return entry;

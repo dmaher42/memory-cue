@@ -4,6 +4,12 @@ import { learnPattern } from './patternLearningService.js';
 const MEMORY_CACHE_KEY = 'memoryCueCache';
 const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];
 const MEMORY_TYPES = new Set(['note', 'reminder', 'idea', 'task', 'inbox']);
+const MEMORY_TYPE_ALIASES = Object.freeze({
+  lesson_idea: 'idea',
+  coaching_drill: 'idea',
+  question: 'note',
+  unknown: 'inbox',
+});
 const DEFAULT_RECENT_LIMIT = 20;
 const DEFAULT_SEARCH_LIMIT = 10;
 const SUPABASE_TABLE = 'memories';
@@ -41,8 +47,19 @@ const normalizeTags = (value) => {
 
 const normalizeType = (value) => {
   const type = normalizeText(value).toLowerCase();
+  if (MEMORY_TYPE_ALIASES[type]) {
+    return MEMORY_TYPE_ALIASES[type];
+  }
   return MEMORY_TYPES.has(type) ? type : 'note';
 };
+
+export const MEMORY_TYPE_USAGE = Object.freeze({
+  note: 'General note or reference content.',
+  inbox: 'Unprocessed capture awaiting triage.',
+  idea: 'Draft concept, brainstorm, or lesson/coaching idea.',
+  task: 'Actionable item that is not a scheduled reminder.',
+  reminder: 'Scheduled or time-based commitment.',
+});
 
 const getCurrentUserId = () => {
   if (typeof window === 'undefined') {
@@ -77,8 +94,8 @@ const toMemoryShape = (entry = {}, fallback = {}) => {
   return {
     id: resolvedId,
     userId: normalizeText(entry.userId) || fallback.userId || getCurrentUserId(),
-    text: normalizeText(entry.text),
-    type: normalizeType(entry.type),
+    text: normalizeText(entry.text || entry.bodyText || entry.body || entry.title),
+    type: normalizeType(entry.type || entry.parsedType),
     createdAt,
     updatedAt,
     source: normalizeText(entry.source) || fallback.source || 'capture',
@@ -88,6 +105,8 @@ const toMemoryShape = (entry = {}, fallback = {}) => {
     pendingSync: entry.pendingSync === false ? false : true,
   };
 };
+
+export const normalizeMemoryEntry = (entry = {}, fallback = {}) => toMemoryShape(entry, fallback);
 
 const readCacheFromStorage = () => {
   if (typeof localStorage === 'undefined') {
