@@ -356,7 +356,8 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
     return { message: renderDailyPlan(plan) };
   }
 
-  if (decision.decisionType === 'query') {
+  // Canonical intent decision types: query_memory, plan_day, persist_reminder, persist_note, persist_inbox.
+  if (decision.decisionType === 'query_memory') {
     const reminderSearchResponse = buildReminderSearchResponse(text);
     if (reminderSearchResponse) {
       return { message: reminderSearchResponse };

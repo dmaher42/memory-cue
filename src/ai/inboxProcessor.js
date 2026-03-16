@@ -135,7 +135,7 @@ export const processInbox = async (entries = [], options = {}) => {
 
     const decision = routeIntent(parsedEntry, text, hints);
 
-    if (decision.decisionType === 'persist_inbox' || decision.decisionType === 'query') {
+    if (decision.decisionType === 'persist_inbox' || decision.decisionType === 'query_memory') {
       continue;
     }
 
