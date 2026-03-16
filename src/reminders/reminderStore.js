@@ -1,5 +1,8 @@
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 
+// Reminder source of truth: this module owns the normalized local reminder cache
+// backed by localStorage. Remote sync layers should read/write through this shape.
+
 let reminders = [];
 
 

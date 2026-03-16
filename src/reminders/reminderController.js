@@ -171,6 +171,16 @@ function normalizeReminderRecord(reminder = {}, options = {}) {
   return normalized;
 }
 
+function normalizeReminderList(list = []) {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+
+  return list
+    .map((entry) => normalizeReminderRecord(entry, { fallbackId: uid() }))
+    .filter(Boolean);
+}
+
 function computeNextOccurrence(reminder) {
   if (!reminder?.due) {
     return null;
@@ -3744,6 +3754,7 @@ export async function initReminders(sel = {}) {
     rescheduleAllReminders();
   }
 
+  // Offline reminders in localStorage are the canonical local cache for reminder read/write/render.
   function loadOfflineRemindersFromStorage() {
     if (typeof localStorage === 'undefined') return [];
     try {
@@ -3751,18 +3762,14 @@ export async function initReminders(sel = {}) {
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      return parsed
-        .map((entry) => {
-          if (!entry || typeof entry !== 'object') return null;
-          return normalizeReminderRecord(entry, { fallbackId: uid() });
-        })
-        .filter(Boolean);
+      return normalizeReminderList(parsed);
     } catch (error) {
       console.warn('Failed to load offline reminders', error);
       return [];
     }
   }
 
+  // Persist using the same normalized reminder shape used by render and remote sync.
   function persistOfflineReminders(reminders = []) {
     if (typeof localStorage === 'undefined') return;
     try {
@@ -3770,9 +3777,7 @@ export async function initReminders(sel = {}) {
         localStorage.removeItem(OFFLINE_REMINDERS_KEY);
         return;
       }
-      const serialisable = reminders
-        .filter((entry) => entry && typeof entry === 'object')
-        .map((entry) => normalizeReminderRecord(entry, { fallbackId: uid() }));
+      const serialisable = normalizeReminderList(reminders);
       localStorage.setItem(OFFLINE_REMINDERS_KEY, JSON.stringify(serialisable));
     } catch (error) {
       console.warn('Failed to persist offline reminders', error);
@@ -4415,7 +4420,7 @@ export async function initReminders(sel = {}) {
         googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
         googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
         if(googleUserName) googleUserName.textContent = user.email || '';
-        await setupSupabaseSync();
+        await setupReminderFirestoreSync();
         await syncNotesFromFirestoreOnLogin();
         await migrateOfflineRemindersIfNeeded();
         await ensureNotificationPermission();
@@ -4441,7 +4446,7 @@ export async function initReminders(sel = {}) {
         window.__MEMORY_CUE_AUTH_USER_ID = initialUser.uid;
       }
       renderSyncIndicator('online');
-      await setupSupabaseSync();
+      await setupReminderFirestoreSync();
       await syncNotesFromFirestoreOnLogin();
       await ensureNotificationPermission();
     }
@@ -4548,7 +4553,8 @@ export async function initReminders(sel = {}) {
     }, { fallbackId: reminderId });
   }
 
-  async function setupSupabaseSync(){
+  // Historical name was setupSupabaseSync, but this flow reads/writes Firestore reminders.
+  async function setupReminderFirestoreSync(){
     if(!userId){
       hydrateOfflineReminders();
       render();
@@ -5715,7 +5721,7 @@ export async function initReminders(sel = {}) {
     const todayRange = { start: t0, end: t1 };
 
     clearDragHighlights();
-    items = items.map((entry) => normalizeReminderRecord(entry, { fallbackId: uid() }));
+    items = normalizeReminderList(items);
     sortItemsByOrder(items);
 
     if (countTotalEl) {
@@ -6515,7 +6521,7 @@ export async function initReminders(sel = {}) {
   activeReminderControllerApi = {
     createReminderFromPayload,
     render,
-    setupSupabaseSync,
+    setupReminderFirestoreSync,
   };
 
   return {
@@ -6528,9 +6534,7 @@ export async function initReminders(sel = {}) {
     askAssistant,
     __testing: {
       setItems(listItems = []) {
-        items = Array.isArray(listItems)
-          ? listItems.map((item) => normalizeReminderRecord(item, { fallbackId: uid() }))
-          : [];
+        items = normalizeReminderList(listItems);
         items = ensureOrderIndicesInitialized(items);
         sortItemsByOrder(items);
         render();
@@ -6553,6 +6557,11 @@ export function render() {
   return activeReminderControllerApi?.render?.();
 }
 
+export async function setupReminderFirestoreSync() {
+  return activeReminderControllerApi?.setupReminderFirestoreSync?.();
+}
+
+// Backward-compatible alias while callers migrate away from the old Supabase name.
 export async function setupSupabaseSync() {
-  return activeReminderControllerApi?.setupSupabaseSync?.();
+  return setupReminderFirestoreSync();
 }
