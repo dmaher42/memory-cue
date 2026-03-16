@@ -26,6 +26,9 @@ export const buildReminderPayload = (payload = {}) => {
     'plannerLessonId',
     'pinToToday',
     'semanticEmbedding',
+    'recurrence',
+    'snoozedUntil',
+    'notifyMinutesBefore',
   ];
 
   passthroughKeys.forEach((key) => {
