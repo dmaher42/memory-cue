@@ -39,6 +39,12 @@ const isNotesSyncDebugEnabled = (() => {
 
 initViewportHeight();
 
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+
 function initAssistant() {
     const isTextEntryElement = (value) => {
       if (typeof HTMLInputElement !== 'undefined' && value instanceof HTMLInputElement) {
