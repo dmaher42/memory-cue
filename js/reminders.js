@@ -32,6 +32,7 @@ const SEEDED_CATEGORIES = Object.freeze([
   'Wellbeing & Support',
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
+const REMINDER_RECURRENCE_VALUES = new Set(['daily', 'weekly', 'monthly']);
 const ORDER_INDEX_GAP = 1024;
 const REMINDER_KEYWORD_STOP_WORDS = new Set([
   'a', 'an', 'and', 'are', 'at', 'be', 'for', 'from', 'have', 'idea', 'ideas', 'in', 'is', 'it', 'lesson', 'meeting', 'my', 'of', 'on', 'or', 'reminder', 'reminders', 'shopping', 'that', 'the', 'this', 'to', 'with', 'write', 'wrote'
@@ -79,6 +80,51 @@ function normalizeSemanticEmbedding(value) {
     .map((entry) => Number(entry))
     .filter((entry) => Number.isFinite(entry));
   return vector.length ? vector : null;
+}
+
+function normalizeRecurrence(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  return REMINDER_RECURRENCE_VALUES.has(normalized) ? normalized : null;
+}
+
+function normalizeIsoString(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed.toISOString();
+}
+
+function computeNextOccurrence(reminder) {
+  if (!reminder?.due) {
+    return null;
+  }
+  const recurrence = normalizeRecurrence(reminder.recurrence);
+  if (!recurrence) {
+    return null;
+  }
+  const date = new Date(reminder.due);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  if (recurrence === 'daily') date.setDate(date.getDate() + 1);
+  if (recurrence === 'weekly') date.setDate(date.getDate() + 7);
+  if (recurrence === 'monthly') date.setMonth(date.getMonth() + 1);
+  return date.toISOString();
+}
+
+function getReminderScheduleIso(reminder) {
+  const snoozed = normalizeIsoString(reminder?.snoozedUntil);
+  if (snoozed) {
+    return snoozed;
+  }
+  return normalizeIsoString(reminder?.due);
 }
 
 async function generateEmbedding(text) {
@@ -596,6 +642,26 @@ export async function initReminders(sel = {}) {
       askAssistant(reminder.title || '').catch((error) => {
         console.warn('Ask assistant quick action failed', error);
       });
+    });
+
+    addAction('Snooze 5m', 'snooze-5', () => {
+      snoozeReminder(reminder, 5);
+    });
+
+    addAction('Snooze 10m', 'snooze-10', () => {
+      snoozeReminder(reminder, 10);
+    });
+
+    addAction('Snooze 30m', 'snooze-30', () => {
+      snoozeReminder(reminder, 30);
+    });
+
+    addAction('Snooze 1h', 'snooze-60', () => {
+      snoozeReminder(reminder, 60);
+    });
+
+    addAction('Snooze tomorrow', 'snooze-tomorrow', () => {
+      snoozeReminder(reminder, 'tomorrow');
     });
 
     addAction('Archive', 'archive', () => {
@@ -3653,6 +3719,9 @@ export async function initReminders(sel = {}) {
             due: typeof entry.due === 'string' && entry.due
               ? entry.due
               : (typeof entry.dueAt === 'string' && entry.dueAt ? entry.dueAt : null),
+            recurrence: normalizeRecurrence(entry.recurrence),
+            snoozedUntil: normalizeIsoString(entry.snoozedUntil),
+            notifyMinutesBefore: Number.isFinite(Number(entry.notifyMinutesBefore)) ? Number(entry.notifyMinutesBefore) : 0,
             userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : null,
             pendingSync: !!entry.pendingSync,
             orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
@@ -3696,6 +3765,9 @@ export async function initReminders(sel = {}) {
           createdAt: Number.isFinite(entry.createdAt) ? entry.createdAt : Date.now(),
           updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
           due: typeof entry.due === 'string' && entry.due ? entry.due : null,
+          recurrence: normalizeRecurrence(entry.recurrence),
+          snoozedUntil: normalizeIsoString(entry.snoozedUntil),
+          notifyMinutesBefore: Number.isFinite(Number(entry.notifyMinutesBefore)) ? Number(entry.notifyMinutesBefore) : 0,
           userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : null,
           pendingSync: !!entry.pendingSync,
           orderIndex: Number.isFinite(entry.orderIndex) ? entry.orderIndex : null,
@@ -3826,6 +3898,9 @@ export async function initReminders(sel = {}) {
         entry.priority = entry.priority || 'Medium';
         entry.notes = typeof entry.notes === 'string' ? entry.notes : '';
         entry.notifyAt = typeof entry.notifyAt === 'string' ? entry.notifyAt : null;
+        entry.recurrence = normalizeRecurrence(entry.recurrence);
+        entry.snoozedUntil = normalizeIsoString(entry.snoozedUntil);
+        entry.notifyMinutesBefore = Number.isFinite(Number(entry.notifyMinutesBefore)) ? Number(entry.notifyMinutesBefore) : 0;
         entry.body = typeof entry.body === 'string' && entry.body
           ? entry.body
           : buildReminderNotificationBody(entry);
@@ -4491,6 +4566,9 @@ export async function initReminders(sel = {}) {
       due: typeof payload.due === 'string' && payload.due
         ? payload.due
         : (typeof payload.dueDate === 'string' && payload.dueDate ? payload.dueDate : null),
+      recurrence: normalizeRecurrence(payload.recurrence),
+      snoozedUntil: normalizeIsoString(payload.snoozedUntil),
+      notifyMinutesBefore: Number.isFinite(Number(payload.notifyMinutesBefore)) ? Number(payload.notifyMinutesBefore) : 0,
       userId: typeof payload.userId === 'string' ? payload.userId : userId,
       pendingSync: false,
       orderIndex: Number.isFinite(rawOrder) ? rawOrder : null,
@@ -4584,6 +4662,9 @@ export async function initReminders(sel = {}) {
       const dueDate = typeof item.due === 'string' && item.due
         ? item.due
         : (typeof item.dueDate === 'string' && item.dueDate ? item.dueDate : null);
+      const recurrence = normalizeRecurrence(item.recurrence);
+      const snoozedUntil = normalizeIsoString(item.snoozedUntil);
+      const notifyMinutesBefore = Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0;
       await setDoc(doc(collection(db, 'reminders'), reminderId), {
         id: reminderId,
         text: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
@@ -4593,6 +4674,10 @@ export async function initReminders(sel = {}) {
         userId,
         title: typeof item.title === 'string' ? item.title : (typeof item.text === 'string' ? item.text : ''),
         due: dueDate,
+        dueAt: dueDate,
+        recurrence,
+        snoozedUntil,
+        notifyMinutesBefore,
         priority: item.priority || 'Medium',
         category: item.category || DEFAULT_CATEGORY,
         notes: typeof item.notes === 'string' ? item.notes : '',
@@ -4750,6 +4835,9 @@ export async function initReminders(sel = {}) {
       createdAt: nowMs,
       updatedAt: nowMs,
       due: dueValue,
+      recurrence: normalizeRecurrence(payload.recurrence),
+      snoozedUntil: normalizeIsoString(payload.snoozedUntil),
+      notifyMinutesBefore: Number.isFinite(Number(payload.notifyMinutesBefore)) ? Number(payload.notifyMinutesBefore) : 0,
       pendingSync: !userId,
       plannerLessonId:
         typeof payload.plannerLessonId === 'string' && payload.plannerLessonId.trim()
@@ -5077,6 +5165,61 @@ export async function initReminders(sel = {}) {
     element.addEventListener('pointerdown', handlePointerDown);
   }
 
+
+  function scheduleRecurringReminder(item) {
+    const nextDue = computeNextOccurrence(item);
+    if (!nextDue) {
+      return false;
+    }
+    item.due = nextDue;
+    item.snoozedUntil = null;
+    item.notifyAt = null;
+    item.updatedAt = Date.now();
+    console.log('[reminder] recurring scheduled', { id: item.id, dueAt: nextDue, recurrence: item.recurrence });
+    saveToFirebase(item);
+    scheduleReminder(item);
+    persistItems();
+    render();
+    return true;
+  }
+
+  function handleReminderTriggered(item) {
+    showReminder(item);
+    const current = items.find((entry) => entry?.id === item?.id);
+    if (current && scheduleRecurringReminder(current)) {
+      return;
+    }
+    clearReminderState(item.id, { closeNotification: false });
+  }
+
+  function snoozeReminder(reminder, minutes) {
+    if (!reminder || typeof reminder !== 'object') {
+      return;
+    }
+    const now = Date.now();
+    let snoozeTime = now;
+    if (minutes === 'tomorrow') {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      snoozeTime = tomorrow.getTime();
+    } else {
+      const durationMinutes = Number(minutes);
+      if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+        return;
+      }
+      snoozeTime = now + (durationMinutes * 60000);
+    }
+
+    reminder.snoozedUntil = new Date(snoozeTime).toISOString();
+    reminder.updatedAt = now;
+    saveToFirebase(reminder);
+    scheduleReminder(reminder);
+    persistItems();
+    render();
+    console.log('[reminder] snoozed', { id: reminder.id, snoozedUntil: reminder.snoozedUntil });
+  }
+
   function buildReminderNotificationBody(entry) {
     if (!entry) return 'Due now';
     const notesText = typeof entry.notes === 'string' ? entry.notes : '';
@@ -5140,6 +5283,9 @@ export async function initReminders(sel = {}) {
         title: typeof entry.title === 'string' ? entry.title : '',
         due: typeof entry.due === 'string' ? entry.due : null,
         notifyAt: typeof entry.notifyAt === 'string' ? entry.notifyAt : null,
+        recurrence: normalizeRecurrence(entry.recurrence),
+        snoozedUntil: normalizeIsoString(entry.snoozedUntil),
+        notifyMinutesBefore: Number.isFinite(Number(entry.notifyMinutesBefore)) ? Number(entry.notifyMinutesBefore) : 0,
         priority: entry.priority || 'Medium',
         category: entry.category || DEFAULT_CATEGORY,
         notes: typeof entry.notes === 'string' ? entry.notes : '',
@@ -5210,22 +5356,23 @@ export async function initReminders(sel = {}) {
   async function scheduleTriggerNotification(item){
     if(!supportsNotificationTriggers()) return false;
     const Trigger = getTimestampTriggerCtor();
-    if(!Trigger || !item?.due) return false;
-    const dueTime = new Date(item.due).getTime();
+    const scheduledIso = getReminderScheduleIso(item);
+    if(!Trigger || !scheduledIso) return false;
+    const dueTime = new Date(scheduledIso).getTime();
     if(!Number.isFinite(dueTime)) return false;
     const registration = await ensureServiceWorkerRegistration();
     if(!registration) return false;
     await cancelTriggerNotification(item.id, registration);
+    const body = buildReminderNotificationBody(item);
     const data = {
       id: item.id,
       title: item.title,
-      due: item.due,
+      due: scheduledIso,
       priority: item.priority || 'Medium',
       category: item.category || DEFAULT_CATEGORY,
       body,
       urlPath: reminderLandingPath,
     };
-    const body = buildReminderNotificationBody(item);
     const options = { body, tag: item.id, data, renotify: true };
     if(dueTime > Date.now()){
       options.showTrigger = new Trigger(dueTime);
@@ -5241,13 +5388,16 @@ export async function initReminders(sel = {}) {
   function scheduleReminder(item){
     if(!item||!item.id) return;
     item.category = normalizeCategory(item.category);
-    if(!item.due || item.done){ cancelReminder(item.id); return; }
+    if(item.done){ cancelReminder(item.id); return; }
     const previous = scheduledReminders[item.id] || {};
     const stored = {
       id:item.id,
       title:item.title,
-      due:item.due,
+      due: getReminderScheduleIso(item),
       notifyAt: typeof item.notifyAt === 'string' ? item.notifyAt : null,
+      recurrence: normalizeRecurrence(item.recurrence),
+      snoozedUntil: normalizeIsoString(item.snoozedUntil),
+      notifyMinutesBefore: Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0,
       category: item.category || DEFAULT_CATEGORY,
       priority: item.priority || 'Medium',
       notes: typeof item.notes === 'string' ? item.notes : '',
@@ -5267,26 +5417,26 @@ export async function initReminders(sel = {}) {
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
     if(reminderNotifyTimers[item.id]){ clearTimeout(reminderNotifyTimers[item.id]); delete reminderNotifyTimers[item.id]; }
     if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
-    const dueTime = new Date(item.due).getTime();
+    const scheduleIso = stored.due;
+    if(!scheduleIso){ cancelReminder(item.id); return; }
+    const dueTime = new Date(scheduleIso).getTime();
     if(!Number.isFinite(dueTime)) return;
-    const notifyTime = typeof item.notifyAt === 'string'
-      ? new Date(item.notifyAt).getTime()
-      : NaN;
+    const notifyMinutesBefore = Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0;
+    const notifyTime = dueTime - (Math.max(0, notifyMinutesBefore) * 60000);
     const delay = dueTime - Date.now();
     if(delay<=0){
       if(scheduledReminders[item.id]?.viaTrigger){
         clearReminderState(item.id,{ closeNotification:false });
         return;
       }
-      showReminder(item);
-      clearReminderState(item.id,{ closeNotification:false });
+      handleReminderTriggered({ ...item, due: scheduleIso });
       return;
     }
     const useTriggers = supportsNotificationTriggers();
     if(Number.isFinite(notifyTime) && notifyTime > Date.now() && notifyTime < dueTime){
       const notifyDelay = notifyTime - Date.now();
       reminderNotifyTimers[item.id] = setTimeout(() => {
-        showReminder({ ...item, due: item.due || stored.due });
+        showReminder({ ...item, due: scheduleIso });
       }, notifyDelay);
     }
     if(useTriggers){
@@ -5302,8 +5452,7 @@ export async function initReminders(sel = {}) {
       if(useTriggers){
         cancelTriggerNotification(item.id);
       }
-      showReminder(item);
-      clearReminderState(item.id,{ closeNotification:false });
+      handleReminderTriggered({ ...item, due: scheduleIso });
     }, delay);
   }
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
@@ -5510,6 +5659,133 @@ export async function initReminders(sel = {}) {
     return name;
   }
 
+
+  function getUpcomingTodayReminders(reminders = []) {
+    const now = Date.now();
+    const tomorrow = now + 24 * 60 * 60 * 1000;
+    return (Array.isArray(reminders) ? reminders : [])
+      .filter((reminder) => {
+        if (!reminder || reminder.done) {
+          return false;
+        }
+        const scheduleIso = getReminderScheduleIso(reminder);
+        if (!scheduleIso) {
+          return false;
+        }
+        const time = new Date(scheduleIso).getTime();
+        return Number.isFinite(time) && time >= now && time <= tomorrow;
+      })
+      .sort((a, b) => new Date(getReminderScheduleIso(a)).getTime() - new Date(getReminderScheduleIso(b)).getTime());
+  }
+
+  function groupRemindersByDay(reminders = []) {
+    const grouped = {};
+    (Array.isArray(reminders) ? reminders : []).forEach((reminder) => {
+      if (!reminder || reminder.done) {
+        return;
+      }
+      const scheduleIso = getReminderScheduleIso(reminder);
+      if (!scheduleIso) {
+        return;
+      }
+      const date = new Date(scheduleIso);
+      if (Number.isNaN(date.getTime())) {
+        return;
+      }
+      const dayKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
+      if (!grouped[dayKey]) {
+        grouped[dayKey] = [];
+      }
+      grouped[dayKey].push(reminder);
+    });
+
+    Object.values(grouped).forEach((entries) => {
+      entries.sort((a, b) => new Date(getReminderScheduleIso(a)).getTime() - new Date(getReminderScheduleIso(b)).getTime());
+    });
+    return grouped;
+  }
+
+  function ensureReminderOverviewSection(upcoming = [], grouped = {}) {
+    if (!(listWrapper instanceof HTMLElement)) {
+      return;
+    }
+    let section = listWrapper.querySelector('[data-reminder-overview]');
+    if (!section) {
+      section = document.createElement('section');
+      section.setAttribute('data-reminder-overview', 'true');
+      section.className = 'space-y-3 mb-3';
+      listWrapper.insertBefore(section, listWrapper.firstChild || null);
+    }
+    section.replaceChildren();
+
+    const renderBlock = (label, rows) => {
+      const block = document.createElement('div');
+      const heading = document.createElement('h3');
+      heading.className = 'text-sm font-semibold text-base-content/80';
+      heading.textContent = label;
+      block.appendChild(heading);
+      if (!rows.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-base-content/60';
+        empty.textContent = 'No reminders.';
+        block.appendChild(empty);
+        section.appendChild(block);
+        return;
+      }
+      const ul = document.createElement('ul');
+      ul.className = 'text-xs text-base-content/80 space-y-1';
+      rows.forEach((entry) => {
+        const li = document.createElement('li');
+        const scheduleIso = getReminderScheduleIso(entry);
+        const scheduleDate = scheduleIso ? new Date(scheduleIso) : null;
+        const timeLabel = scheduleDate && !Number.isNaN(scheduleDate.getTime()) ? fmtTime(scheduleDate) : '';
+        li.textContent = `${entry.title || 'Untitled reminder'}${timeLabel ? ` · ${timeLabel}` : ''}`;
+        ul.appendChild(li);
+      });
+      block.appendChild(ul);
+      section.appendChild(block);
+    };
+
+    renderBlock('Upcoming Today', upcoming);
+
+    const agendaBlock = document.createElement('div');
+    const agendaHeading = document.createElement('h3');
+    agendaHeading.className = 'text-sm font-semibold text-base-content/80';
+    agendaHeading.textContent = 'Agenda';
+    agendaBlock.appendChild(agendaHeading);
+
+    const dayKeys = Object.keys(grouped).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    if (!dayKeys.length) {
+      const emptyAgenda = document.createElement('p');
+      emptyAgenda.className = 'text-xs text-base-content/60';
+      emptyAgenda.textContent = 'No scheduled reminders.';
+      agendaBlock.appendChild(emptyAgenda);
+      section.appendChild(agendaBlock);
+      return;
+    }
+
+    dayKeys.forEach((dayKey) => {
+      const date = new Date(dayKey);
+      const subHeading = document.createElement('h4');
+      subHeading.className = 'text-xs font-medium mt-2 text-base-content/70';
+      subHeading.textContent = date.toDateString();
+      agendaBlock.appendChild(subHeading);
+
+      const ul = document.createElement('ul');
+      ul.className = 'text-xs text-base-content/80 space-y-1';
+      (grouped[dayKey] || []).forEach((entry) => {
+        const li = document.createElement('li');
+        const scheduleIso = getReminderScheduleIso(entry);
+        const scheduleDate = scheduleIso ? new Date(scheduleIso) : null;
+        const timeLabel = scheduleDate && !Number.isNaN(scheduleDate.getTime()) ? fmtTime(scheduleDate) : '';
+        li.textContent = `${entry.title || 'Untitled reminder'}${timeLabel ? ` · ${timeLabel}` : ''}`;
+        ul.appendChild(li);
+      });
+      agendaBlock.appendChild(ul);
+    });
+    section.appendChild(agendaBlock);
+  }
+
   function setupMobileReminderTabs() {
     if (variant !== 'mobile') {
       return;
@@ -5596,6 +5872,10 @@ export async function initReminders(sel = {}) {
 
     const hasAny = items.length > 0;
     const hasRows = activeRows.length > 0;
+    const upcomingToday = getUpcomingTodayReminders(activeRows);
+    const agendaGroups = groupRemindersByDay(activeRows);
+    ensureReminderOverviewSection(upcomingToday, agendaGroups);
+    console.log('[reminder] upcoming_today_loaded', { count: upcomingToday.length });
 
     const pendingNotificationIds = (() => {
       if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
@@ -6032,6 +6312,9 @@ export async function initReminders(sel = {}) {
       setPriorityInputValue(nextPriority);
       if(categoryInput){ it.category = normalizeCategory(categoryInput.value); }
       it.due = due;
+      it.recurrence = normalizeRecurrence(it.recurrence);
+      it.snoozedUntil = normalizeIsoString(it.snoozedUntil);
+      it.notifyMinutesBefore = Number.isFinite(Number(it.notifyMinutesBefore)) ? Number(it.notifyMinutesBefore) : 0;
       if(details){ it.notes = details.value.trim(); }
       it.plannerLessonId = plannerLinkId || null;
       it.updatedAt=Date.now();
