@@ -4470,7 +4470,7 @@ export async function initReminders(sel = {}) {
     return Date.now();
   }
 
-  const normalizeFirestoreNote = (noteId, payload = {}) => {
+  function normalizeFirestoreNote(noteId, payload = {}) {
     if (!payload || typeof payload !== 'object') {
       return null;
     }
@@ -4478,7 +4478,7 @@ export async function initReminders(sel = {}) {
       ...payload,
       id: typeof payload.id === 'string' && payload.id ? payload.id : noteId,
     };
-  };
+  }
 
   async function migrateLocalNotesToFirestore(localNotes = []) {
     if (notesMigrationComplete || !userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function') {
