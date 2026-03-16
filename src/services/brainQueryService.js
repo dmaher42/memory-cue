@@ -135,16 +135,16 @@ export const queryBrain = async (question) => {
   if (!safeQuestion) {
     return {
       answer: '',
-      intent: { decisionType: 'query', parsedType: 'question' },
+      intent: { decisionType: 'query_memory', parsedType: 'question' },
       memories: [],
     };
   }
 
   const intent = classifyIntentLocally(safeQuestion, { source: 'brain-query-service' })
-    || { decisionType: 'query', parsedType: 'question' };
+    || { decisionType: 'query_memory', parsedType: 'question' };
   console.info('[brain] routing decision', {
     source: 'queryBrain',
-    decisionType: intent?.decisionType || 'query',
+    decisionType: intent?.decisionType || 'query_memory',
     parsedType: intent?.parsedType || 'question',
   });
 
@@ -171,7 +171,7 @@ export const queryBrain = async (question) => {
   return {
     answer,
     intent: {
-      decisionType: normalizeText(intent?.decisionType) || 'query',
+      decisionType: normalizeText(intent?.decisionType) || 'query_memory',
       parsedType: normalizeText(intent?.parsedType) || 'question',
     },
     memories,
