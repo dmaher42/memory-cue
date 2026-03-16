@@ -5470,7 +5470,9 @@ export async function initReminders(sel = {}) {
     }
   }
 
-  const PIN_TOGGLE_HANDLER_PROP = '__mcPinToggleHandler';
+  function getPinToggleHandlerProp() {
+    return '__mcPinToggleHandler';
+  }
   var pinToggleSyncScheduled = false;
 
   function updatePinToggleVisualState(toggle, pinned) {
@@ -5487,7 +5489,7 @@ export async function initReminders(sel = {}) {
     if (!(element instanceof HTMLElement)) {
       return;
     }
-    if (element[PIN_TOGGLE_HANDLER_PROP]) {
+    if (element[getPinToggleHandlerProp()]) {
       return;
     }
     if (!element.hasAttribute('role')) {
@@ -5530,7 +5532,7 @@ export async function initReminders(sel = {}) {
     };
     element.addEventListener('click', handleToggle);
     element.addEventListener('keydown', handleKeyDown);
-    element[PIN_TOGGLE_HANDLER_PROP] = { click: handleToggle, keydown: handleKeyDown };
+    element[getPinToggleHandlerProp()] = { click: handleToggle, keydown: handleKeyDown };
   }
 
   function syncPinToggleStates() {
