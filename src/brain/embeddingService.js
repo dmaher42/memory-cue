@@ -1,6 +1,6 @@
-const OPENAI_API_KEY = import.meta.env?.VITE_OPENAI_API_KEY || null;
+const OPENAI_KEY = (typeof window !== 'undefined' ? window.__ENV?.OPENAI_API_KEY : '') || import.meta.env?.VITE_OPENAI_API_KEY || null;
 
-if (!OPENAI_API_KEY) {
+if (!OPENAI_KEY) {
   console.warn('[embedding] no OpenAI key configured');
 }
 
@@ -18,7 +18,7 @@ const normalizeEmbedding = (value) => {
 
 export async function generateEmbedding(text) {
   const normalizedText = normalizeText(text);
-  if (!normalizedText || !OPENAI_API_KEY) {
+  if (!normalizedText || !OPENAI_KEY) {
     return [];
   }
 
@@ -26,7 +26,7 @@ export async function generateEmbedding(text) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_KEY}`,
     },
     body: JSON.stringify({
       model: 'text-embedding-3-small',
