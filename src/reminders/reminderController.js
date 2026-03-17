@@ -3,6 +3,7 @@ import { captureInput, getInboxEntries } from '../../js/services/capture-service
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
 import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
 import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
+import * as reminderDataService from './reminderService.js';
 import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
@@ -4608,58 +4609,58 @@ export async function initReminders(sel = {}) {
       activityLabelPrefix = 'Reminder added',
     } = options;
 
-    const titleText = typeof payload.title === 'string' ? payload.title.trim() : '';
-    if (!titleText) {
+    const item = reminderDataService.createReminder(payload, {
+      normalizeReminder: (record) => normalizeReminderRecord(record),
+      createId: uid,
+      defaultCategory: categoryInput ? categoryInput.value : DEFAULT_CATEGORY,
+      pendingSync: !userId,
+      onCreated: (createdReminder) => {
+        assignOrderIndexForNewItem(createdReminder, { position: 'start' });
+        items = [createdReminder, ...items];
+        sortItemsByOrder(items);
+
+        const rebalanced = maybeRebalanceOrderSpacing(items);
+        suppressRenderMemoryEvent = true;
+        render();
+        persistItems();
+        updateDefaultsFrom(createdReminder);
+        if (rebalanced) {
+          items.forEach((entry) => saveToFirebase(entry));
+        } else {
+          saveToFirebase(createdReminder);
+        }
+
+        const notifyMinutesBefore = (() => {
+          if (typeof createdReminder.notifyAt !== 'string' || !createdReminder.notifyAt || typeof createdReminder.due !== 'string' || !createdReminder.due) {
+            return 0;
+          }
+          const dueMs = new Date(createdReminder.due).getTime();
+          const notifyMs = new Date(createdReminder.notifyAt).getTime();
+          if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
+            return 0;
+          }
+          return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
+        })();
+
+        scheduleReminderNotification({
+          id: createdReminder.id,
+          text: createdReminder.title,
+          dueAt: createdReminder.due,
+          notifyMinutesBefore,
+        });
+        ensureNotificationPermission();
+        tryCalendarSync(createdReminder);
+        scheduleReminder(createdReminder);
+        rescheduleAllReminders();
+        emitReminderUpdates();
+        dispatchCueEvent('memoryCue:remindersUpdated', { items });
+      },
+    });
+
+    if (!item) {
       return null;
     }
 
-    const item = normalizeReminderRecord({
-      ...payload,
-      id: uid(),
-      title: titleText,
-      priority: payload.priority || getPriorityInputValue(),
-      category: payload.category ?? (categoryInput ? categoryInput.value : DEFAULT_CATEGORY),
-      done: false,
-      pendingSync: !userId,
-    });
-
-    assignOrderIndexForNewItem(item, { position: 'start' });
-    items = [item, ...items];
-    sortItemsByOrder(items);
-
-    const rebalanced = maybeRebalanceOrderSpacing(items);
-    suppressRenderMemoryEvent = true;
-    render();
-    persistItems();
-    updateDefaultsFrom(item);
-    if (rebalanced) {
-      items.forEach((entry) => saveToFirebase(entry));
-    } else {
-      saveToFirebase(item);
-    }
-    const notifyMinutesBefore = (() => {
-      if (typeof item.notifyAt !== 'string' || !item.notifyAt || typeof item.due !== 'string' || !item.due) {
-        return 0;
-      }
-      const dueMs = new Date(item.due).getTime();
-      const notifyMs = new Date(item.notifyAt).getTime();
-      if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
-        return 0;
-      }
-      return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
-    })();
-    scheduleReminderNotification({
-      id: item.id,
-      text: item.title,
-      dueAt: item.due,
-      notifyMinutesBefore,
-    });
-    ensureNotificationPermission();
-    tryCalendarSync(item);
-    scheduleReminder(item);
-    rescheduleAllReminders();
-    emitReminderUpdates();
-    dispatchCueEvent('memoryCue:remindersUpdated', { items });
     if (closeSheet) {
       closeCreateSheetIfOpen();
     }
@@ -4670,10 +4671,16 @@ export async function initReminders(sel = {}) {
     return item;
   }
 
+
   const createReminderFromUi = (payload = {}) => createReminderFromPayload(buildReminderPayload(payload), { closeSheet: true });
 
   function addItem(obj){
-    return createReminderViaService(obj);
+    return reminderDataService.createReminder(obj, {
+      normalizeReminder: (record) => normalizeReminderRecord(record),
+      createId: uid,
+      defaultCategory: DEFAULT_CATEGORY,
+      pendingSync: !userId,
+    }) || createReminderViaService(obj);
   }
 
   setReminderCreationHandler(createReminderFromUi);
@@ -4701,8 +4708,17 @@ export async function initReminders(sel = {}) {
   function toggleDone(id){
     const it = items.find(x=>x.id===id);
     if(!it) return;
-    it.done = !it.done;
-    it.updatedAt = Date.now();
+    const completed = !it.done;
+    const updated = reminderDataService.completeReminder(id, completed, {
+      onCompleted: (record) => {
+        it.done = !!record.done;
+        it.completed = !!record.completed;
+        it.updatedAt = record.updatedAt;
+      },
+    });
+    if (!updated) {
+      return;
+    }
     saveToFirebase(it);
     tryCalendarSync(it);
     render();
@@ -4798,7 +4814,11 @@ export async function initReminders(sel = {}) {
     }
     render();
     persistItems();
-    deleteFromFirebase(id);
+    reminderDataService.deleteReminder(id, {
+      onDeleted: () => {
+        deleteFromFirebase(id);
+      },
+    });
     cancelReminder(id);
     const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
     emitActivity({ action: 'deleted', label: activityLabel });
@@ -6398,6 +6418,19 @@ export function render() {
 
 export async function setupReminderFirestoreSync() {
   return activeReminderControllerApi?.setupReminderFirestoreSync?.();
+}
+
+
+export function updateReminder(id, updates = {}, options = {}) {
+  return reminderDataService.updateReminder(id, updates, options);
+}
+
+export function deleteReminder(id, options = {}) {
+  return reminderDataService.deleteReminder(id, options);
+}
+
+export function completeReminder(id, completed = true, options = {}) {
+  return reminderDataService.completeReminder(id, completed, options);
 }
 
 // Backward-compatible alias while callers migrate away from the old Supabase name.

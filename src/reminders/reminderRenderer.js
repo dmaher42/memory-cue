@@ -1,13 +1,26 @@
+let renderHandlers = {
+  renderReminderList: null,
+  renderReminderItem: null,
+  renderTodayReminders: null,
+};
+
+export function setupReminderRenderer(handlers = {}) {
+  renderHandlers = { ...renderHandlers, ...handlers };
+}
+
 export function renderReminderList(renderFn, ...args) {
-  const result = typeof renderFn === 'function' ? renderFn(...args) : undefined;
-  console.log('[reminder-render] rendered');
+  const handler = typeof renderFn === 'function' ? renderFn : renderHandlers.renderReminderList;
+  const result = typeof handler === 'function' ? handler(...args) : undefined;
+  console.log('[reminder-renderer] rendered reminder list');
   return result;
 }
 
 export function renderReminderItem(renderFn, ...args) {
-  return typeof renderFn === 'function' ? renderFn(...args) : undefined;
+  const handler = typeof renderFn === 'function' ? renderFn : renderHandlers.renderReminderItem;
+  return typeof handler === 'function' ? handler(...args) : undefined;
 }
 
 export function renderTodayReminders(renderFn, ...args) {
-  return typeof renderFn === 'function' ? renderFn(...args) : undefined;
+  const handler = typeof renderFn === 'function' ? renderFn : renderHandlers.renderTodayReminders;
+  return typeof handler === 'function' ? handler(...args) : undefined;
 }
