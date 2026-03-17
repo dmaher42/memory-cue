@@ -1,4 +1,9 @@
-const OPENAI_KEY = (typeof window !== 'undefined' ? window.__ENV?.OPENAI_API_KEY : '') || import.meta.env?.VITE_OPENAI_API_KEY || null;
+if (!window.__ENV) {
+  window.__ENV = {};
+}
+
+const OPENAI_KEY =
+  window.__ENV?.OPENAI_API_KEY || import.meta.env?.VITE_OPENAI_API_KEY;
 
 if (!OPENAI_KEY) {
   console.warn('[embedding] no OpenAI key configured');

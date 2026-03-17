@@ -1,3 +1,10 @@
+if (!window.__ENV) {
+  window.__ENV = {
+    SUPABASE_URL: 'https://lycwdurbwdoacgsidfuk.supabase.co',
+    SUPABASE_ANON_KEY: 'sb_publishable_2y6z8d4_SCHbVIWPA3EI3Q_5As_3J_u',
+  };
+}
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 let cachedClient = null;
@@ -26,8 +33,9 @@ export function getSupabaseClient() {
 
   attemptedInitialisation = true;
 
-  const SUPABASE_URL = normalise((typeof window !== 'undefined' ? window.__ENV?.SUPABASE_URL : '') || import.meta.env?.VITE_SUPABASE_URL);
-  const SUPABASE_ANON_KEY = normalise((typeof window !== 'undefined' ? window.__ENV?.SUPABASE_ANON_KEY : '') || import.meta.env?.VITE_SUPABASE_ANON_KEY);
+  const SUPABASE_URL = normalise(window.__ENV?.SUPABASE_URL || import.meta.env?.VITE_SUPABASE_URL);
+
+  const SUPABASE_ANON_KEY = normalise(window.__ENV?.SUPABASE_ANON_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY);
 
   console.log('ENV URL:', SUPABASE_URL);
 
