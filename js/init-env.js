@@ -1,5 +1,9 @@
 if (typeof window !== 'undefined') {
-  const env = (window.__ENV = window.__ENV || {});
-  env.SUPABASE_URL = env.SUPABASE_URL || '';
-  env.SUPABASE_ANON_KEY = env.SUPABASE_ANON_KEY || '';
+  window.__ENV = {
+    ...(window.__ENV || {}),
+    SUPABASE_URL: window.__ENV?.SUPABASE_URL || '',
+    SUPABASE_ANON_KEY: window.__ENV?.SUPABASE_ANON_KEY || '',
+  };
+
+  console.log('[ENV INIT]', window.__ENV);
 }
