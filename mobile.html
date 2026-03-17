@@ -11,6 +11,13 @@ Legacy shells remain for reference only.
 <html lang="en" data-theme="light" class="h-full">
 <head>
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
+  <script>
+    window.__ENV = {
+      ...(window.__ENV || {}),
+      SUPABASE_URL: 'https://lycwdurbwdoacgsidfuk.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_2y6z8d4_SCHbVIWPA3EI3Q_5As_3J_u',
+    };
+  </script>
   <script src="./js/storage.js"></script>
   <script type="module" src="./js/init-env.js" defer></script>
   <script type="module" src="./js/config-supabase.js" defer></script>

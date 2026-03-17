@@ -26,22 +26,22 @@ export function getSupabaseClient() {
 
   attemptedInitialisation = true;
 
-  const supabaseUrl = normalise(import.meta.env?.VITE_SUPABASE_URL);
-  const supabaseAnonKey = normalise(import.meta.env?.VITE_SUPABASE_ANON_KEY);
+  const SUPABASE_URL = normalise((typeof window !== 'undefined' ? window.__ENV?.SUPABASE_URL : '') || import.meta.env?.VITE_SUPABASE_URL);
+  const SUPABASE_ANON_KEY = normalise((typeof window !== 'undefined' ? window.__ENV?.SUPABASE_ANON_KEY : '') || import.meta.env?.VITE_SUPABASE_ANON_KEY);
 
-  console.log('ENV URL:', supabaseUrl);
+  console.log('ENV URL:', SUPABASE_URL);
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn('[supabase] env not set — running local only');
     return null;
   }
 
   try {
-    cachedClient = createClient(supabaseUrl, supabaseAnonKey);
+    cachedClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (typeof window !== 'undefined') {
       window.supabase = cachedClient;
     }
-    console.log('[supabase] active');
+    console.log('[supabase] connected');
   } catch (error) {
     console.error('[supabase] Failed to initialise client.', error);
     cachedClient = null;
