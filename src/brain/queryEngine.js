@@ -1,6 +1,7 @@
 import { classifyIntentLocally } from '../services/intentRouter.js';
-import { getRecentMemories, searchMemories as searchStoredMemories } from '../services/memoryService.js';
+import { getMemories } from '../services/memoryService.js';
 import { getReminderList } from '../reminders/reminderService.js';
+import { semanticSearch } from './semanticSearchService.js';
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -89,16 +90,29 @@ function searchMemories(memories, query) {
 }
 
 async function handleMemoryQuery(intent, query) {
-  const directMatches = searchStoredMemories(query);
-  const memories = directMatches.length
-    ? directMatches
-    : searchMemories(getRecentMemories(50), query);
+  console.log('[semantic] query:', query);
+
+  const memories = getMemories();
+  const keywordResults = searchMemories(memories, query);
+  const semanticResults = await semanticSearch(query);
+  console.log('[semantic] results:', semanticResults.length);
+
+  const merged = mergeResults(keywordResults, semanticResults);
 
   return {
     type: 'memory_results',
-    items: memories,
+    items: merged,
     intent,
   };
+}
+
+function mergeResults(keyword, semantic) {
+  const map = new Map();
+
+  keyword.forEach((item) => map.set(item.id, item));
+  semantic.forEach((item) => map.set(item.id, item));
+
+  return Array.from(map.values()).slice(0, 10);
 }
 
 async function handleMixedQuery(intent, query) {
