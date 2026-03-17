@@ -36,8 +36,10 @@ export function getSupabaseClient() {
       ENV?.SUPABASE_ANON_KEY,
   );
 
+  console.log('ENV URL:', typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_URL : undefined);
+
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.info('[supabase] SUPABASE_URL or SUPABASE_ANON_KEY not set; sync remains local.');
+    console.warn('[supabase] env not set — running local only');
     return null;
   }
 
@@ -46,12 +48,7 @@ export function getSupabaseClient() {
     if (typeof window !== 'undefined') {
       window.supabase = cachedClient;
     }
-    try {
-      const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
-      console.info('[supabase] Client initialised for project:', projectRef);
-    } catch {
-      console.info('[supabase] Client initialised.');
-    }
+    console.log('[supabase] active');
   } catch (error) {
     console.error('[supabase] Failed to initialise client.', error);
     cachedClient = null;
