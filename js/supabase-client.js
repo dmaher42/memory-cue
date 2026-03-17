@@ -1,4 +1,3 @@
-import { ENV } from './env.js';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 let cachedClient = null;
@@ -27,16 +26,10 @@ export function getSupabaseClient() {
 
   attemptedInitialisation = true;
 
-  const supabaseUrl = normalise(
-    (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_URL : undefined) ||
-      ENV?.SUPABASE_URL,
-  );
-  const supabaseAnonKey = normalise(
-    (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_ANON_KEY : undefined) ||
-      ENV?.SUPABASE_ANON_KEY,
-  );
+  const supabaseUrl = normalise(import.meta.env?.VITE_SUPABASE_URL);
+  const supabaseAnonKey = normalise(import.meta.env?.VITE_SUPABASE_ANON_KEY);
 
-  console.log('ENV URL:', typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_URL : undefined);
+  console.log('ENV URL:', supabaseUrl);
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('[supabase] env not set — running local only');
