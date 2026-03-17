@@ -121,7 +121,10 @@ const mapChatToRow = (item, userId) => ({
 
 async function syncDomain({ key, table, mapToRow, mapFromRow = (row) => row }) {
   const supabase = getSupabaseClient();
-  if (!supabase) return readLocal(key);
+  if (!supabase) {
+    console.warn('[storage] supabase unavailable — using local only');
+    return readLocal(key);
+  }
 
   const userId = await getCurrentUserId();
   if (!userId) return readLocal(key);
