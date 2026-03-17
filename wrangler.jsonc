@@ -2,6 +2,7 @@
   "name": "memory-cue",
   "compatibility_date": "2026-03-14",
   "pages_build_output_dir": "dist",
+
   "vars": {
     "VITE_SUPABASE_URL": "https://lycwdurbwdoacgsidfuk.supabase.co",
     "VITE_SUPABASE_ANON_KEY": "sb_publishable_2y6z8d4_SCHbVIWPA3EI3Q_5As_3J_u"
