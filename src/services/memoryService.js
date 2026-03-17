@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../../js/supabase-client.js';
 import { learnPattern } from './patternLearningService.js';
+import { generateEmbedding } from '../brain/embeddingService.js';
 
 const MEMORY_CACHE_KEY = 'memoryCueCache';
 const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];
@@ -326,6 +327,10 @@ const lexicalSearch = (query, limit = DEFAULT_SEARCH_LIMIT) => {
 };
 
 const semanticSearch = (queryEmbedding, limit = DEFAULT_SEARCH_LIMIT) => memoryCache
+  .filter((memory) => {
+    if (!memory.embedding) return false;
+    return true;
+  })
   .map((memory) => ({
     memory,
     score: cosineSimilarity(queryEmbedding, memory.embedding),
@@ -371,10 +376,6 @@ export const saveMemory = async (memory = {}) => {
     memoryWithEmbedding,
   ]);
 
-  if (Array.isArray(embedding) && embedding.length) {
-    storeEmbedding(memoryWithEmbedding.id, embedding);
-  }
-
   writeCacheToStorage(memoryCache);
   learnPattern(nextMemory);
   console.info('[brain] memory_saved', {
@@ -411,6 +412,14 @@ export const getRecentMemories = (limit = DEFAULT_RECENT_LIMIT) => {
   return [...memoryCache]
     .sort((left, right) => right.updatedAt - left.updatedAt)
     .slice(0, safeLimit);
+};
+
+export const getMemories = () => {
+  ensureCacheLoaded();
+  void triggerSync();
+
+  return [...memoryCache]
+    .sort((left, right) => right.updatedAt - left.updatedAt);
 };
 
 export const searchMemories = (queryEmbedding, limit = DEFAULT_SEARCH_LIMIT) => {
