@@ -2,11 +2,27 @@ let syncHandlers = {
   loadRemindersFromFirestore: null,
   saveReminderToFirestore: null,
   listenForReminderUpdates: null,
+  init: null,
+  syncNow: null,
 };
 
 export function setupSyncHandlers(handlers = {}) {
   syncHandlers = { ...syncHandlers, ...handlers };
-  console.log('[reminder-sync] firestore sync started');
+  console.log('[reminder-sync] handlers configured');
+}
+
+export async function init(...args) {
+  if (typeof syncHandlers.init !== 'function') {
+    return null;
+  }
+  return syncHandlers.init(...args);
+}
+
+export async function syncNow(...args) {
+  if (typeof syncHandlers.syncNow !== 'function') {
+    return null;
+  }
+  return syncHandlers.syncNow(...args);
 }
 
 export async function loadRemindersFromFirestore(...args) {

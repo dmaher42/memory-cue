@@ -2,6 +2,7 @@ import { classifyIntentLocally, routeIntent } from '../services/intentRouter.js'
 import { saveMemory } from '../services/memoryService.js';
 import { createReminder } from '../services/reminderService.js';
 import { semanticSearch } from '../services/semanticSearchService.js';
+import { handleQuery } from '../brain/queryEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 
@@ -154,10 +155,10 @@ export async function captureInput({
       };
     }
     case 'query_memory': {
-      const results = await semanticSearch(normalizedText, metadata.uid);
+      const queryResults = await handleQuery(normalizedText);
       return {
         decision,
-        data: results,
+        data: queryResults,
         message: '',
       };
     }
