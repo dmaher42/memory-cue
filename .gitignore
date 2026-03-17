@@ -1,3 +1,4 @@
+# Codex PR hygiene
 node_modules/
 .DS_Store
 # Build outputs
