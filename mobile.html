@@ -12,11 +12,8 @@ Legacy shells remain for reference only.
 <head>
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
   <script src="./js/storage.js"></script>
-  <script type="module" src="./js/init-env.js" defer></script>
-  <script type="module" src="./js/config-supabase.js" defer></script>
   <script defer src="./js/firebase-config.js"></script>
-  <script type="module" src="./js/services/capture-service.js"></script>
-  <script type="module" src="./js/services/assistant-service.js"></script>
+  <script type="module" src="/src/main.js"></script>
   <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
@@ -4893,7 +4890,6 @@ body, main, section, div, p, span, li {
 
   <script defer src="./js/services/navigation-service.js"></script>
   <script defer src="./js/navigation.js"></script>
-  <script type="module" defer src="./js/entries.js"></script>
   <script defer src="./js/ui.js"></script>
 
 
@@ -6120,9 +6116,6 @@ body, main, section, div, p, span, li {
 
   <!-- Load mobile runtime scripts directly from source files -->
   <script src="./js/register-service-worker.js" defer></script>
-  <script type="module" src="./js/reminders.js"></script>
-  <script type="module" src="./mobile.js"></script>
-  <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {
       background: radial-gradient(circle at 50% 10%, rgba(104, 65, 144, 0.14), transparent 38%),
