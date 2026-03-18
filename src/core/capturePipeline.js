@@ -6,6 +6,9 @@ import { handleQuery } from '../brain/queryEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 
+// Lightweight in-memory conversation state for one-step clarifications.
+let pendingIntent = null;
+
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
     return '';
@@ -40,6 +43,56 @@ const normalizeParsedEntry = (parsed, text = '') => {
   };
 };
 
+const buildAssistantResponse = (message, extra = {}) => ({
+  type: 'assistant_response',
+  message,
+  ...extra,
+});
+
+const toIsoString = (date) => (date instanceof Date && Number.isFinite(date.getTime()) ? date.toISOString() : null);
+
+const setTimeOnDate = (date, hours, minutes = 0) => {
+  const nextDate = new Date(date.getTime());
+  nextDate.setHours(hours, minutes, 0, 0);
+  return nextDate;
+};
+
+const parseFollowUpDueAt = (text, now = new Date()) => {
+  const normalized = normalizeText(text).toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  const tomorrowMatch = normalized.match(/\btomorrow(?:\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)?\b/);
+  if (tomorrowMatch) {
+    const dueDate = new Date(now.getTime());
+    dueDate.setDate(dueDate.getDate() + 1);
+
+    if (tomorrowMatch[1]) {
+      let hours = Number.parseInt(tomorrowMatch[1], 10);
+      const minutes = tomorrowMatch[2] ? Number.parseInt(tomorrowMatch[2], 10) : 0;
+      const meridiem = tomorrowMatch[3];
+      if (meridiem === 'pm' && hours < 12) hours += 12;
+      if (meridiem === 'am' && hours === 12) hours = 0;
+      return toIsoString(setTimeOnDate(dueDate, hours, minutes));
+    }
+
+    return toIsoString(setTimeOnDate(dueDate, 9, 0));
+  }
+
+  if (/\btonight\b/.test(normalized)) {
+    return toIsoString(setTimeOnDate(now, 19, 0));
+  }
+
+  if (/\bnext week\b/.test(normalized)) {
+    const dueDate = new Date(now.getTime());
+    dueDate.setDate(dueDate.getDate() + 7);
+    return toIsoString(setTimeOnDate(dueDate, 9, 0));
+  }
+
+  return null;
+};
+
 const parseEntry = async (text) => {
   const response = await fetch('/api/parse-entry', {
     method: 'POST',
@@ -63,6 +116,7 @@ const resolveDecision = async (text, hints) => {
       parsedType: initialIntent.payload.parsedType,
       text,
       parsedEntry: initialIntent.payload.parsedEntry,
+      missing: Array.isArray(initialIntent?.payload?.missing) ? initialIntent.payload.missing : [],
       hints,
     };
   }
@@ -81,8 +135,56 @@ const resolveDecision = async (text, hints) => {
     parsedType: routedIntent?.payload?.parsedType || 'unknown',
     text,
     parsedEntry: routedIntent?.payload?.parsedEntry || parsedEntry,
+    missing: Array.isArray(routedIntent?.payload?.missing) ? routedIntent.payload.missing : [],
     hints,
   };
+};
+
+const buildPendingReminderDecision = (intent, dueAt) => {
+  const parsedEntry = intent?.parsedEntry && typeof intent.parsedEntry === 'object'
+    ? intent.parsedEntry
+    : {};
+
+  return {
+    decisionType: 'persist_reminder',
+    parsedType: intent?.parsedType || 'reminder',
+    text: intent?.text || parsedEntry?.title || '',
+    parsedEntry: {
+      ...parsedEntry,
+      type: 'reminder',
+      title: intent?.payload?.text || parsedEntry?.title || intent?.text || '',
+      reminderDate: dueAt,
+      metadata: {
+        ...(parsedEntry?.metadata && typeof parsedEntry.metadata === 'object' ? parsedEntry.metadata : {}),
+        dueAt,
+      },
+    },
+    missing: dueAt ? [] : ['dueAt'],
+    hints: intent?.hints || {},
+  };
+};
+
+const maybeResolvePendingIntent = async (text) => {
+  if (!pendingIntent) {
+    return null;
+  }
+
+  // Follow-up replies are treated as clarification answers for the pending reminder.
+  const dueAt = parseFollowUpDueAt(text);
+  const decision = buildPendingReminderDecision(pendingIntent, dueAt);
+
+  if (decision.missing.length) {
+    pendingIntent = {
+      ...pendingIntent,
+      lastFollowUpText: text,
+    };
+    return {
+      clarification: buildAssistantResponse('When should I remind you?'),
+    };
+  }
+
+  pendingIntent = null;
+  return { decision };
 };
 
 const saveNoteMemory = async (text, decision, context) => {
@@ -132,7 +234,12 @@ export async function captureInput({
     ...metadata,
   };
 
-  const decision = await resolveDecision(normalizedText, hints);
+  const pendingResolution = await maybeResolvePendingIntent(normalizedText);
+  if (pendingResolution?.clarification) {
+    return pendingResolution.clarification;
+  }
+
+  const decision = pendingResolution?.decision || await resolveDecision(normalizedText, hints);
 
   console.log('[capture]', {
     source: context.source,
@@ -150,16 +257,28 @@ export async function captureInput({
       };
     }
     case 'persist_reminder': {
+      if (Array.isArray(decision?.missing) && decision.missing.includes('dueAt')) {
+        pendingIntent = {
+          ...decision,
+          payload: {
+            text: decision?.parsedEntry?.title || normalizedText,
+            dueAt: decision?.parsedEntry?.reminderDate || null,
+          },
+        };
+        return buildAssistantResponse('When should I remind you?', {
+          decision,
+        });
+      }
+
       const reminder = await createReminder({
         text: decision?.parsedEntry?.title || normalizedText,
         dueAt: decision?.parsedEntry?.reminderDate || undefined,
         source: 'capture',
       });
-      return {
+      return buildAssistantResponse('Reminder created.', {
         decision,
         data: reminder,
-        message: 'Reminder created.',
-      };
+      });
     }
     case 'query_memory': {
       const queryResults = await handleQuery(normalizedText);

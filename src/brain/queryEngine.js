@@ -20,16 +20,17 @@ export function detectIntent(query) {
     source: 'query_engine',
     entryPoint: 'queryEngine.detectIntent',
   });
+  const normalizedType = routedIntent?.payload?.intentType || routedIntent?.type;
 
-  if (routedIntent?.type === 'reminder') {
+  if (normalizedType === 'reminder') {
     return { type: 'reminder_query', source: 'intent_router' };
   }
 
-  if (routedIntent?.type === 'query') {
+  if (normalizedType === 'query') {
     return { type: 'memory_query', source: 'intent_router' };
   }
 
-  if (routedIntent?.type !== 'unknown') {
+  if (normalizedType !== 'unknown') {
     return { type: 'mixed_query', source: 'intent_router' };
   }
 

@@ -336,6 +336,9 @@ export const intentRouter = (query, context = {}) => {
       type: 'unknown',
       payload: {
         query: text,
+        text,
+        dueAt: null,
+        missing: [],
         decisionType: 'unresolved',
         parsedType: 'unknown',
         hints,
@@ -343,13 +346,28 @@ export const intentRouter = (query, context = {}) => {
     };
   }
 
+  const reminderText = typeof decision?.parsedEntry?.title === 'string' && decision.parsedEntry.title.trim()
+    ? decision.parsedEntry.title.trim()
+    : text;
+  const reminderDueAt =
+    (typeof decision?.parsedEntry?.reminderDate === 'string' && decision.parsedEntry.reminderDate.trim())
+    || (typeof decision?.parsedEntry?.metadata?.dueAt === 'string' && decision.parsedEntry.metadata.dueAt.trim())
+    || null;
+  const missing = decision.decisionType === 'persist_reminder' && !reminderDueAt
+    ? ['dueAt']
+    : [];
+
   return {
-    type: mapDecisionTypeToIntentType(decision.decisionType),
+    type: decision.decisionType,
     payload: {
       query: text,
+      text: reminderText,
+      dueAt: reminderDueAt,
+      missing,
       decisionType: decision.decisionType,
       parsedType: decision.parsedType || 'unknown',
       parsedEntry: decision.parsedEntry || null,
+      intentType: mapDecisionTypeToIntentType(decision.decisionType),
       hints,
     },
   };
