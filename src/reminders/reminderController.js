@@ -428,8 +428,8 @@ let activeReminderControllerApi = null;
 
 export async function initReminders(sel = {}) {
   console.log('[reminder-controller] initialized');
-  const $ = (s) => (s ? document.querySelector(s) : null);
-  const $$ = (s) => (s ? Array.from(document.querySelectorAll(s)) : []);
+  const $ = (s) => (typeof s === 'string' && s ? document.querySelector(s) : null);
+  const $$ = (s) => (typeof s === 'string' && s ? Array.from(document.querySelectorAll(s)) : []);
 
   // Elements
   const title = $(sel.titleSel);
