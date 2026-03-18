@@ -1,4 +1,4 @@
-import { classifyIntentLocally, routeIntent } from '../services/intentRouter.js';
+import { intentRouter } from '../services/intentRouter.js';
 import { saveMemory } from '../services/memoryService.js';
 import { createReminder } from '../services/reminderService.js';
 import { semanticSearch } from '../services/semanticSearchService.js';
@@ -56,9 +56,15 @@ const parseEntry = async (text) => {
 };
 
 const resolveDecision = async (text, hints) => {
-  const localDecision = classifyIntentLocally(text, hints);
-  if (localDecision) {
-    return localDecision;
+  const initialIntent = intentRouter(text, hints);
+  if (initialIntent?.payload?.decisionType && initialIntent.payload.decisionType !== 'unresolved') {
+    return {
+      decisionType: initialIntent.payload.decisionType,
+      parsedType: initialIntent.payload.parsedType,
+      text,
+      parsedEntry: initialIntent.payload.parsedEntry,
+      hints,
+    };
   }
 
   let parsedEntry = null;
@@ -69,7 +75,14 @@ const resolveDecision = async (text, hints) => {
     parsedEntry = normalizeParsedEntry({ type: 'unknown', title: text }, text);
   }
 
-  return routeIntent(parsedEntry, text, hints);
+  const routedIntent = intentRouter(text, { ...hints, parsedEntry });
+  return {
+    decisionType: routedIntent?.payload?.decisionType || 'persist_inbox',
+    parsedType: routedIntent?.payload?.parsedType || 'unknown',
+    text,
+    parsedEntry: routedIntent?.payload?.parsedEntry || parsedEntry,
+    hints,
+  };
 };
 
 const saveNoteMemory = async (text, decision, context) => {

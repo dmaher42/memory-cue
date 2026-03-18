@@ -1,4 +1,4 @@
-import { classifyIntentLocally } from '../services/intentRouter.js';
+import { intentRouter } from '../services/intentRouter.js';
 import { getMemories } from '../services/memoryService.js';
 import { getReminderList } from '../reminders/reminderService.js';
 import { semanticSearch } from './semanticSearchService.js';
@@ -16,10 +16,13 @@ const normalizeReminderDate = (reminder) => {
 
 export function detectIntent(query) {
   const text = normalizeText(query);
+  const routedIntent = intentRouter(text, {
+    source: 'query_engine',
+    entryPoint: 'queryEngine.detectIntent',
+  });
   const q = text.toLowerCase();
-  const localIntent = classifyIntentLocally(text, { source: 'query_engine' });
 
-  if (localIntent?.decisionType === 'persist_reminder') {
+  if (routedIntent?.type === 'reminder') {
     return { type: 'reminder_query' };
   }
 
@@ -34,7 +37,7 @@ export function detectIntent(query) {
     return { type: 'reminder_query' };
   }
 
-  if (hasMemoryKeywords || localIntent?.decisionType === 'query_memory') {
+  if (hasMemoryKeywords || routedIntent?.type === 'query') {
     return { type: 'memory_query' };
   }
 

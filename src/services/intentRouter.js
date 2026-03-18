@@ -297,6 +297,64 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   return logRoutingDecision('routeIntent', text, decision);
 };
 
+const mapDecisionTypeToIntentType = (decisionType) => {
+  switch (decisionType) {
+    case 'persist_reminder':
+      return 'reminder';
+    case 'persist_note':
+      return 'note';
+    case 'query_memory':
+    case 'assistant_query':
+      return 'query';
+    case 'plan_day':
+      return 'plan_day';
+    case 'learn_pattern':
+      return 'learn_pattern';
+    case 'persist_inbox':
+    default:
+      return 'inbox';
+  }
+};
+
+/**
+ * Canonical classification entry point for user text.
+ * This is intentionally pure routing metadata: callers decide how to execute.
+ */
+export const intentRouter = (query, context = {}) => {
+  const text = typeof query === 'string' ? query.trim() : '';
+  const hints = context && typeof context === 'object' ? context : {};
+  const parsedEntry = hints?.parsedEntry && typeof hints.parsedEntry === 'object'
+    ? hints.parsedEntry
+    : null;
+
+  const decision = parsedEntry
+    ? routeIntent(parsedEntry, text, hints)
+    : classifyIntentLocally(text, hints);
+
+  if (!decision) {
+    return {
+      type: 'unknown',
+      payload: {
+        query: text,
+        decisionType: 'unresolved',
+        parsedType: 'unknown',
+        hints,
+      },
+    };
+  }
+
+  return {
+    type: mapDecisionTypeToIntentType(decision.decisionType),
+    payload: {
+      query: text,
+      decisionType: decision.decisionType,
+      parsedType: decision.parsedType || 'unknown',
+      parsedEntry: decision.parsedEntry || null,
+      hints,
+    },
+  };
+};
+
 export const createChatIntentInput = (parsedEntry, rawText, hints = {}) => ({
   parsedEntry,
   rawText,

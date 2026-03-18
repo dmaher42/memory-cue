@@ -2,6 +2,7 @@ import { captureInput } from './capturePipeline.js';
 import { loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
 import { searchMemoryIndex } from '../../js/modules/memory-index.js';
 import { createReminder } from '../services/reminderService.js';
+import { handleQuery } from '../brain/queryEngine.js';
 
 const parseAssistantReply = (payload) => {
   if (typeof payload?.reply === 'string' && payload.reply.trim()) {
@@ -163,7 +164,9 @@ export const executeCommand = async (type, payload = {}) => {
           break;
         }
         const query = typeof payload?.query === 'string' ? payload.query : '';
-        const data = await searchMemoryIndex(query);
+        const data = query
+          ? await handleQuery(query)
+          : await searchMemoryIndex(query);
         result = {
           status: 'success',
           message: 'Search complete.',
