@@ -121,7 +121,7 @@ function uniqueElements(elements) {
 }
 
 function queryAll(root, selectorValue) {
-  const selectors = toArray(selectorValue).filter(Boolean);
+  const selectors = toArray(selectorValue).filter((selector) => typeof selector === 'string' && selector);
   if (!selectors.length) {
     return [];
   }
