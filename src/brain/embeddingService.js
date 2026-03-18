@@ -1,13 +1,25 @@
-if (!window.__ENV) {
+if (typeof window !== 'undefined' && !window.__ENV) {
   window.__ENV = {};
 }
 
-const OPENAI_KEY =
-  window.__ENV?.OPENAI_API_KEY || import.meta.env?.VITE_OPENAI_API_KEY;
+const resolveOpenAiKey = () => {
+  if (typeof window !== 'undefined') {
+    const runtimeKey = typeof window.__ENV?.OPENAI_API_KEY === 'string'
+      ? window.__ENV.OPENAI_API_KEY.trim()
+      : '';
+    if (runtimeKey) {
+      return runtimeKey;
+    }
+  }
 
-if (!OPENAI_KEY) {
-  console.warn('[embedding] no OpenAI key configured');
-}
+  if (typeof process !== 'undefined' && typeof process.env?.OPENAI_API_KEY === 'string') {
+    return process.env.OPENAI_API_KEY.trim();
+  }
+
+  return '';
+};
+
+export const isEmbeddingEnabled = () => Boolean(resolveOpenAiKey());
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -23,7 +35,9 @@ const normalizeEmbedding = (value) => {
 
 export async function generateEmbedding(text) {
   const normalizedText = normalizeText(text);
-  if (!normalizedText || !OPENAI_KEY) {
+  const openAiKey = resolveOpenAiKey();
+
+  if (!normalizedText || !openAiKey) {
     return [];
   }
 
@@ -31,7 +45,7 @@ export async function generateEmbedding(text) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_KEY}`,
+      Authorization: `Bearer ${openAiKey}`,
     },
     body: JSON.stringify({
       model: 'text-embedding-3-small',
