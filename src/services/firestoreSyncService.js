@@ -1,3 +1,5 @@
+import { normalizeReminder, normalizeReminderList } from '../reminders/reminderNormalizer.js';
+
 const NOTES_KEY = 'memoryCueNotes';
 const INBOX_KEY = 'memoryCueInbox';
 const REMINDERS_KEY = 'memoryCue:offlineReminders';
@@ -41,7 +43,7 @@ export const syncNotes = async (localItemsOverride = null) => {
 };
 
 export const syncInbox = async () => readLocal(INBOX_KEY);
-export const syncReminders = async () => readLocal(REMINDERS_KEY);
+export const syncReminders = async () => normalizeReminderList(readLocal(REMINDERS_KEY));
 export const syncChatHistory = async () => readLocal(CHAT_KEY);
 export const pushChanges = async () => {};
 export const pullChanges = async () => {};
@@ -54,9 +56,11 @@ export const upsertInboxEntry = async (entry) => {
 };
 
 export const upsertReminder = async (reminder) => {
-  if (!reminder?.id) return;
-  const cached = readLocal(REMINDERS_KEY).filter((item) => String(item?.id) !== String(reminder.id));
-  cached.unshift({ ...reminder, pendingSync: false, updatedAt: Date.now() });
+  const normalizedReminder = normalizeReminder(reminder);
+  if (!normalizedReminder?.id) return;
+  const cached = normalizeReminderList(readLocal(REMINDERS_KEY))
+    .filter((item) => String(item?.id) !== String(normalizedReminder.id));
+  cached.unshift(normalizeReminder({ ...normalizedReminder, updatedAt: Date.now() }));
   writeLocal(REMINDERS_KEY, cached);
 };
 

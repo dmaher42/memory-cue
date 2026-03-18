@@ -1,3 +1,5 @@
+import { normalizeReminder } from './reminderNormalizer.js';
+
 import {
   createReminder as createReminderInStore,
   updateReminder as updateReminderInStore,
@@ -14,33 +16,27 @@ function runHook(hook, payload) {
 }
 
 export function createReminder(payload = {}, options = {}) {
-  const titleText = typeof payload.title === 'string' ? payload.title.trim() : '';
-  if (!titleText) {
+  const reminderText = typeof payload.text === 'string' && payload.text.trim()
+    ? payload.text.trim()
+    : typeof payload.title === 'string'
+      ? payload.title.trim()
+      : '';
+  if (!reminderText) {
     return null;
   }
 
-  const normalizeReminder = options.normalizeReminder;
+  const normalizeReminderRecord = typeof options.normalizeReminder === 'function' ? options.normalizeReminder : normalizeReminder;
   const createId = options.createId;
   const category = options.defaultCategory;
-  const reminder = typeof normalizeReminder === 'function'
-    ? normalizeReminder({
-      ...payload,
-      id: typeof createId === 'function' ? createId() : payload.id,
-      title: titleText,
-      done: false,
-      pendingSync: !!options.pendingSync,
-      category: payload.category ?? category,
-      priority: payload.priority || 'Medium',
-    })
-    : {
-      ...payload,
-      id: typeof createId === 'function' ? createId() : payload.id,
-      title: titleText,
-      done: false,
-      pendingSync: !!options.pendingSync,
-      category: payload.category ?? category,
-      priority: payload.priority || 'Medium',
-    };
+  const reminder = normalizeReminderRecord({
+    ...payload,
+    id: typeof createId === 'function' ? createId() : payload.id,
+    text: payload.text ?? payload.title,
+    completed: false,
+    pendingSync: !!options.pendingSync,
+    category: payload.category ?? category,
+    priority: payload.priority || 'medium',
+  });
 
   console.log('[reminder-service] created reminder', reminder);
   createReminderInStore(reminder);
