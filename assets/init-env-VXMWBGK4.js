@@ -1,1 +1,0 @@
-import{b as n}from"./chunk-RCZ4YZVR.js";var i=n(()=>{if(typeof window<"u"){let e=window.__ENV||{};!!(e.FIREBASE_API_KEY&&e.FIREBASE_AUTH_DOMAIN&&e.FIREBASE_PROJECT_ID&&e.FIREBASE_APP_ID)||console.warn("[ENV INIT] Missing Firebase env values; auth and Firestore are disabled.")}});export default i();
