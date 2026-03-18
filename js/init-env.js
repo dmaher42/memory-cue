@@ -1,12 +1,10 @@
 if (typeof window !== 'undefined') {
   const env = window.__ENV || {};
+  const hasFirebaseConfig = Boolean(
+    env.FIREBASE_API_KEY && env.FIREBASE_AUTH_DOMAIN && env.FIREBASE_PROJECT_ID && env.FIREBASE_APP_ID
+  );
 
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    console.warn('[ENV INIT] Missing Supabase env values.', {
-      hasSupabaseUrl: Boolean(env.SUPABASE_URL),
-      hasSupabaseAnonKey: Boolean(env.SUPABASE_ANON_KEY)
-    });
+  if (!hasFirebaseConfig) {
+    console.warn('[ENV INIT] Missing Firebase env values; auth and Firestore are disabled.');
   }
-
-  console.log('[ENV INIT]', env);
 }

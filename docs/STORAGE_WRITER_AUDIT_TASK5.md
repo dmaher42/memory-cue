@@ -5,7 +5,7 @@
   - `js/modules/notes-storage.js` via `saveAllNotes()` and `createAndSaveNote()`.
   - `js/entries.js` legacy capture bridge writes direct note list.
   - `src/reminders/reminderController.js` AI enrichment path updates note fields in-place.
-  - `src/services/supabaseSyncService.js` remote pull/merge writes canonical local cache.
+  - `src/services/firebaseSyncService.js` remote pull/merge writes canonical local cache.
 - **Reads**
   - `js/modules/notes-storage.js` (`loadAllNotes`).
   - `src/reminders/reminderController.js` note sync/enrichment paths.
@@ -15,11 +15,11 @@
 - **Writes**
   - `src/services/inboxService.js` (`saveInboxEntry`, `persistInboxEntries`) canonical writer.
   - `js/entries.js` legacy inbox writer.
-  - `src/services/supabaseSyncService.js` remote pull/merge writes canonical local cache.
+  - `src/services/firebaseSyncService.js` remote pull/merge writes canonical local cache.
 - **Reads**
   - `src/services/inboxService.js` (`getInboxEntries`).
   - `js/modules/daily-log.js` and `js/entries.js` listeners/views.
-  - `src/services/supabaseSyncService.js` merge helpers.
+  - `src/services/firebaseSyncService.js` merge helpers.
 
 ## Local key: `memoryCueCache`
 - **Writes**
@@ -31,7 +31,7 @@
 - **Writes**
   - `src/reminders/reminderStore.js` canonical reminder offline storage.
   - `src/reminders/reminderController.js` one-time migration/flush helpers and offline fallback.
-  - `src/services/supabaseSyncService.js` remote pull/merge writes canonical local cache.
+  - `src/services/firebaseSyncService.js` remote pull/merge writes canonical local cache.
 - **Reads**
   - `src/reminders/reminderStore.js` (`getReminders`, `loadReminders`).
   - `src/reminders/reminderController.js` migration/offline upload paths.
@@ -45,7 +45,7 @@
   - `src/reminders/reminderController.js` note/reminder hydration from Firestore.
   - `js/modules/notes-sync.js` pulls note snapshots from Firestore.
 
-## Supabase `memories`
+## Firebase `memories`
 - **Writes**
   - `src/services/memoryService.js` (`triggerSync` upsert to `memories`) from `saveMemory()`.
 - **Reads**

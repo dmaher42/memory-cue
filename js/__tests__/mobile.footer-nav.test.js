@@ -15,10 +15,10 @@ function loadMobileModule() {
   const preamble = `
 const initViewportHeight = window.__mobileMocks?.initViewportHeight || (() => () => {});
 const initReminders = window.__initReminders || window.__mobileMocks?.initReminders || (async () => {});
-const initSupabaseAuth = window.__initSupabaseAuth || window.__mobileMocks?.initSupabaseAuth || (() => {});
+const initFirebaseAuth = window.__initFirebaseAuth || window.__mobileMocks?.initFirebaseAuth || (() => {});
 const startSignInFlow = window.__startSignInFlow || window.__mobileMocks?.startSignInFlow || (async () => {});
 const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__notesModule || window.__mobileMocks || { loadAllNotes: () => [], saveAllNotes: () => {}, createNote: (n) => n, NOTES_STORAGE_KEY: 'memoryCue:notes' };
-const initNotesSync = window.__initNotesSync || window.__mobileMocks?.initNotesSync || (() => ({ handleSessionChange() {}, setSupabaseClient() {} }));
+const initNotesSync = window.__initNotesSync || window.__mobileMocks?.initNotesSync || (() => ({ handleSessionChange() {}, setFirebaseClient() {} }));
 const { getFolders, getFolderNameById, assignNoteToFolder, saveFolders } = window.__notesModule || window.__mobileMocks || { getFolders: () => [], getFolderNameById: () => '', assignNoteToFolder: () => {}, saveFolders: () => {} };
 const ModalController = window.__notesModule?.ModalController || window.__mobileMocks?.ModalController || class { constructor(){} show(){} hide(){} };
 `;
@@ -32,8 +32,8 @@ const ModalController = window.__notesModule?.ModalController || window.__mobile
     'const { initReminders } = window.__mobileMocks;'
   );
   source = source.replace(
-    "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    "const { initSupabaseAuth, startSignInFlow } = window.__mobileMocks;"
+    "import { initFirebaseAuth } from './js/firebase-auth.js';",
+    "const { initFirebaseAuth, startSignInFlow } = window.__mobileMocks;"
   );
   source = source.replace(
     "import { ModalController } from './js/modules/modal-controller.js';",
@@ -72,7 +72,7 @@ describe('mobile footer navigation', () => {
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
-      initSupabaseAuth: jest.fn(),
+      initFirebaseAuth: jest.fn(),
       startSignInFlow: jest.fn(),
       ModalController: class ModalController {
         constructor() {}

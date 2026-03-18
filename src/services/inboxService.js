@@ -1,4 +1,4 @@
-import { syncInbox, upsertInboxEntry } from './supabaseSyncService.js';
+import { syncInbox, upsertInboxEntry } from './firestoreSyncService.js';
 import { indexSourceEmbedding } from './embeddingService.js';
 import { saveMemory, normalizeMemoryEntry } from './memoryService.js';
 
@@ -152,7 +152,7 @@ export const saveInboxEntry = (entryInput = {}) => {
   persistInboxEntries(entries);
   dispatchInboxUpdated();
   upsertInboxEntry(entry).catch((error) => {
-    console.warn('[inbox-service] Supabase inbox sync failed', error);
+    console.warn('[inbox-service] Firebase inbox sync failed', error);
   });
 
   indexSourceEmbedding({
@@ -194,7 +194,7 @@ export const removeInboxEntry = (id) => {
   persistInboxEntries(nextEntries);
   dispatchInboxUpdated();
   syncInbox().catch((error) => {
-    console.warn('[inbox-service] Supabase inbox deletion sync failed', error);
+    console.warn('[inbox-service] Firebase inbox deletion sync failed', error);
   });
   return true;
 };

@@ -149,7 +149,7 @@ const URL = process.env.URL || 'http://localhost:3000/mobile.html';
     signInInfo.exists = !!signInBtn;
     if (signInBtn) {
       signInInfo.wired = await page.evaluate(() => !!(document.getElementById('googleSignInBtn') && document.getElementById('googleSignInBtn')._mcAuthWired));
-      signInInfo.supabasePresent = await page.evaluate(() => typeof window.supabase !== 'undefined');
+      signInInfo.authModulePresent = await page.evaluate(() => typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string');
       signInInfo.startSignInFlowPresent = await page.evaluate(() => typeof window.startSignInFlow === 'function');
       signInInfo.inlineTriggerPresent = await page.evaluate(() => typeof window.__mcTriggerSignIn === 'function');
       // Attempt to click the sign-in button and capture any console messages

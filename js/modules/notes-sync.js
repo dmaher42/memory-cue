@@ -3,7 +3,7 @@ import {
   saveAllNotes,
   setRemoteSyncHandler,
 } from './notes-storage.js';
-import { syncNotes } from '../../src/services/supabaseSyncService.js';
+import { syncNotes } from '../../src/services/firestoreSyncService.js';
 
 const mapRemoteNote = (note = {}) => {
   if (!note || typeof note !== 'object' || typeof note.id !== 'string' || !note.id) {
@@ -49,7 +49,7 @@ export const initNotesSync = (options = {}) => {
     }
 
     try {
-      logDebug('[notes-sync] Starting Supabase pull');
+      logDebug('[notes-sync] Starting Firebase pull');
       const remoteNotes = await syncNotes();
       const normalized = Array.isArray(remoteNotes)
         ? remoteNotes.map((note) => mapRemoteNote(note)).filter(Boolean)
@@ -64,7 +64,7 @@ export const initNotesSync = (options = {}) => {
       isApplyingRemote = false;
 
       if (!saved) {
-        console.warn('[notes-sync] Unable to replace local notes cache from Supabase.');
+        console.warn('[notes-sync] Unable to replace local notes cache from Firebase.');
       }
 
       if (typeof onRemotePull === 'function') {
@@ -75,7 +75,7 @@ export const initNotesSync = (options = {}) => {
         }
       }
     } catch (error) {
-      console.error('[notes-sync] Failed to sync notes with Supabase.', error);
+      console.error('[notes-sync] Failed to sync notes with Firebase.', error);
     } finally {
       isApplyingRemote = false;
     }
@@ -102,7 +102,7 @@ export const initNotesSync = (options = {}) => {
     try {
       await syncNotes(Array.isArray(notes) ? notes : loadAllNotes());
     } catch (error) {
-      console.error('[notes-sync] Failed to sync notes to Supabase.', error);
+      console.error('[notes-sync] Failed to sync notes to Firebase.', error);
     }
   });
 
@@ -127,7 +127,7 @@ export const initNotesSync = (options = {}) => {
   }
 
   return {
-    setSupabaseClient() {
+    setFirebaseClient() {
       // No-op for backward compatibility with existing mobile bootstrap code.
     },
     handleSessionChange,

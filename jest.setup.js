@@ -43,13 +43,13 @@ if (typeof global.Response === 'undefined') {
   if (typeof window !== 'undefined') window.Response = Response;
 }
 
-// Provide a safe default for initSupabaseAuth so tests that call it without mocking
+// Provide a safe default for initFirebaseAuth so tests that call it without mocking
 // don't crash. Individual tests may still override `window.__mobileMocks` as needed.
-if (typeof global.initSupabaseAuth !== 'function') {
-  global.initSupabaseAuth = function () {
-    return { supabase: null };
+if (typeof global.initFirebaseAuth !== 'function') {
+  global.initFirebaseAuth = function () {
+    return { firebase: null };
   };
-  if (typeof window !== 'undefined') window.initSupabaseAuth = global.initSupabaseAuth;
+  if (typeof window !== 'undefined') window.initFirebaseAuth = global.initFirebaseAuth;
 }
 
 // Wire a simple helper for the new-folder tests: if a button with id

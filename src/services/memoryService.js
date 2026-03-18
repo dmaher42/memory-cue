@@ -1,4 +1,3 @@
-import { getSupabaseClient } from '../../js/supabase-client.js';
 import { learnPattern } from './patternLearningService.js';
 import { generateEmbedding } from '../brain/embeddingService.js';
 
@@ -13,7 +12,6 @@ const MEMORY_TYPE_ALIASES = Object.freeze({
 });
 const DEFAULT_RECENT_LIMIT = 20;
 const DEFAULT_SEARCH_LIMIT = 10;
-const SUPABASE_TABLE = 'memories';
 
 let memoryCache = [];
 let migrationChecked = false;
@@ -160,7 +158,7 @@ const mergeByLatest = (entries = []) => {
   return Array.from(merged.values());
 };
 
-const fromSupabaseRow = (row = {}) => toMemoryShape({
+const fromFirebaseRow = (row = {}) => toMemoryShape({
   id: row.id,
   userId: row.user_id,
   text: row.text,
@@ -174,7 +172,7 @@ const fromSupabaseRow = (row = {}) => toMemoryShape({
   pendingSync: false,
 });
 
-const toSupabaseRow = (memory = {}) => ({
+const toFirebaseRow = (memory = {}) => ({
   id: memory.id,
   user_id: memory.userId,
   text: memory.text,
@@ -270,44 +268,7 @@ const cosineSimilarity = (left = [], right = []) => {
 };
 
 const triggerSync = async () => {
-  if (syncInFlight) {
-    return syncInFlight;
-  }
-
-  syncInFlight = (async () => {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      return;
-    }
-
-    const userId = getCurrentUserId();
-    const pending = memoryCache.filter((item) => item.pendingSync !== false && item.userId === userId);
-
-    if (pending.length) {
-      const { error } = await supabase.from(SUPABASE_TABLE).upsert(pending.map((item) => toSupabaseRow(item)));
-      if (error) {
-        console.warn('[memory-service] Failed pushing memories', error);
-      } else {
-        const syncedIds = new Set(pending.map((item) => item.id));
-        memoryCache = memoryCache.map((item) => (syncedIds.has(item.id) ? { ...item, pendingSync: false } : item));
-      }
-    }
-
-    const { data, error } = await supabase.from(SUPABASE_TABLE).select('*').eq('user_id', userId);
-    if (error) {
-      console.warn('[memory-service] Failed pulling memories', error);
-      return;
-    }
-
-    const remote = Array.isArray(data) ? data.map((row) => fromSupabaseRow(row)) : [];
-    memoryCache = mergeByLatest([...memoryCache, ...remote]);
-    writeCacheToStorage(memoryCache);
-  })()
-    .finally(() => {
-      syncInFlight = null;
-    });
-
-  return syncInFlight;
+  writeCacheToStorage(memoryCache);
 };
 
 const lexicalSearch = (query, limit = DEFAULT_SEARCH_LIMIT) => {
@@ -453,20 +414,6 @@ export const deleteMemory = async (id) => {
 
   memoryCache = memoryCache.filter((item) => item.id !== targetId);
   writeCacheToStorage(memoryCache);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    const { error } = await supabase
-      .from(SUPABASE_TABLE)
-      .delete()
-      .eq('id', targetId)
-      .eq('user_id', existing.userId);
-
-    if (error) {
-      console.warn('[memory-service] Failed deleting memory', error);
-      return false;
-    }
-  }
 
   return true;
 };

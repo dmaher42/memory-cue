@@ -18,8 +18,8 @@ function runMobileModule(window) {
     'const initReminders = window.__initReminders;',
   );
   source = source.replace(
-    "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const initSupabaseAuth = window.__initSupabaseAuth;',
+    "import { initFirebaseAuth } from './js/firebase-auth.js';",
+    'const initFirebaseAuth = window.__initFirebaseAuth;',
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -69,7 +69,7 @@ function runMobileModule(window) {
       NOTES_STORAGE_KEY: 'memoryCue:notes',
     };
   context.window.__initNotesSync =
-    context.window.__initNotesSync || (() => ({ handleSessionChange() {}, setSupabaseClient() {} }));
+    context.window.__initNotesSync || (() => ({ handleSessionChange() {}, setFirebaseClient() {} }));
 
   vm.runInContext(source, context, { filename: filePath });
 }
@@ -96,13 +96,13 @@ describe('mobile create sheet interactions', () => {
   afterEach(() => {
     window.__initReminders = undefined;
     window.__saveClicks = undefined;
-    window.__initSupabaseAuth = undefined;
+    window.__initFirebaseAuth = undefined;
     window.__notesModule = undefined;
   });
 
   test('clicking Save Reminder triggers handlers when sheet content stops bubbling', async () => {
     window.__saveClicks = 0;
-    window.__initSupabaseAuth = jest.fn();
+    window.__initFirebaseAuth = jest.fn();
     window.__notesModule = {
       loadAllNotes: () => [],
       saveAllNotes: () => {},
