@@ -132,6 +132,27 @@ async function copyStatic() {
   }
 }
 
+async function ensureRootHtml() {
+  const rootIndexPath = path.join(distDir, 'index.html');
+  const mobileShellPath = path.join(distDir, 'mobile.html');
+
+  try {
+    await fs.access(rootIndexPath);
+    return;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+
+  try {
+    await fs.copyFile(mobileShellPath, rootIndexPath);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error('Build failed: no root HTML entry was generated. Expected dist/index.html or dist/mobile.html.');
+    }
+    throw error;
+  }
+}
+
 async function rewriteHtml(assetMap, cssPath) {
   const htmlFiles = ['index.html', '404.html', 'mobile.html'];
   for (const file of htmlFiles) {
@@ -150,12 +171,27 @@ async function rewriteHtml(assetMap, cssPath) {
   }
 }
 
+async function validateBuildOutput() {
+  const rootIndexPath = path.join(distDir, 'index.html');
+
+  try {
+    await fs.access(rootIndexPath);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error('Build failed: dist/index.html is required for the Cloudflare Pages root entry point.');
+    }
+    throw error;
+  }
+}
+
 async function main() {
   await cleanDist();
   const cssPath = await buildCss();
   const assetMap = await buildScripts();
   await copyStatic();
+  await ensureRootHtml();
   await rewriteHtml(assetMap, cssPath);
+  await validateBuildOutput();
 }
 
 main().catch((error) => {
