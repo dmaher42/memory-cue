@@ -32,7 +32,15 @@ const ALLOWED_ORIGINS = buildAllowedOrigins();
 const MAX_INPUT_MESSAGE_CHARS = 2600;
 const MAX_ASSISTANT_MESSAGES = 2;
 const MAX_ASSISTANT_MESSAGE_CHARS = 2600;
+const RETRIEVAL_DEBUG_ENABLED = process.env.ASSISTANT_CHAT_RETRIEVAL_DEBUG === '1';
 
+function logRetrievalDebug(stage, payload) {
+  if (!RETRIEVAL_DEBUG_ENABLED) {
+    return;
+  }
+
+  console.info(`[assistant-chat][retrieval] ${stage}`, payload);
+}
 
 function applyCors(req, res) {
   const origin = req.headers.origin;
@@ -121,8 +129,27 @@ function normalizeSemanticResult(item) {
   }, toText(item?.type) || 'entry');
 }
 
+function summarizeEntries(entries) {
+  return entries.map((entry) => ({
+    id: entry.id,
+    type: entry.type,
+    parsedType: entry.parsedType || null,
+    title: entry.title,
+  }));
+}
+
 async function selectAssistantContext(message, contextEntries) {
-  const keywordFallback = () => buildKeywordSelectedContext(message, contextEntries);
+  const keywordFallback = (reason) => {
+    const keywordSelected = buildKeywordSelectedContext(message, contextEntries);
+    logRetrievalDebug('keyword-fallback', {
+      reason,
+      message,
+      contextCount: contextEntries.length,
+      selectedCount: keywordSelected.length,
+      selected: summarizeEntries(keywordSelected),
+    });
+    return keywordSelected;
+  };
 
   try {
     const queryResult = await handleQuery(message);
@@ -134,8 +161,15 @@ async function selectAssistantContext(message, contextEntries) {
       ];
 
     if (!candidateItems.length) {
-      return keywordFallback();
+      return keywordFallback('semantic-empty');
     }
+
+    logRetrievalDebug('semantic-query-result', {
+      message,
+      contextCount: contextEntries.length,
+      semanticCandidateCount: candidateItems.length,
+      semanticCandidates: summarizeEntries(candidateItems.map((item) => normalizeSemanticResult(item)).filter(Boolean)),
+    });
 
     const contextById = new Map();
     const contextByKey = new Map();
@@ -168,10 +202,35 @@ async function selectAssistantContext(message, contextEntries) {
       selected.push(resolvedEntry);
     });
 
-    return selected.length ? selected.slice(0, 8) : keywordFallback();
+    const semanticSelected = selected.slice(0, 8);
+
+    if (!semanticSelected.length) {
+      return keywordFallback('semantic-unmatched');
+    }
+
+    const keywordSelected = buildKeywordSelectedContext(message, contextEntries);
+    const semanticKeys = new Set(semanticSelected.map((entry) => buildContextMatchKey(entry)));
+    const keywordKeys = new Set(keywordSelected.map((entry) => buildContextMatchKey(entry)));
+    const overlapCount = semanticSelected.filter((entry) => keywordKeys.has(buildContextMatchKey(entry))).length;
+    const mode = overlapCount === semanticSelected.length
+      ? 'semantic-only'
+      : overlapCount > 0
+        ? 'mixed'
+        : 'semantic-different-from-keyword';
+
+    logRetrievalDebug('semantic-selected', {
+      mode,
+      message,
+      selectedCount: semanticSelected.length,
+      overlapCount,
+      semanticSelected: summarizeEntries(semanticSelected),
+      keywordPreview: summarizeEntries(keywordSelected.filter((entry) => !semanticKeys.has(buildContextMatchKey(entry))).slice(0, 3)),
+    });
+
+    return semanticSelected;
   } catch (error) {
     console.warn('[assistant-chat] Semantic retrieval bridge failed; using keyword fallback.', error);
-    return keywordFallback();
+    return keywordFallback('semantic-error');
   }
 }
 
