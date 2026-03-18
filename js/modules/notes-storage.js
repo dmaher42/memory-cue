@@ -16,6 +16,7 @@ const normalizeSemanticEmbedding = (value) => {
 
 let remoteSyncHandler = null;
 let memoryServiceModulePromise = null;
+let embeddingServiceModulePromise = null;
 
 export const setRemoteSyncHandler = (handler) => {
   remoteSyncHandler = typeof handler === 'function' ? handler : null;
@@ -226,6 +227,50 @@ const syncNoteToMemoryService = (note, payload = {}) => {
     });
 };
 
+const ensureNoteEmbedding = (note, notes, options = {}) => {
+  if (!note || typeof note !== 'object' || normalizeSemanticEmbedding(note.semanticEmbedding)) {
+    return;
+  }
+
+  const embeddingText = [note.title, note.bodyText, note.body]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .join('\n')
+    .trim();
+
+  if (!embeddingText) {
+    return;
+  }
+
+  if (!embeddingServiceModulePromise) {
+    embeddingServiceModulePromise = import('../../src/brain/embeddingService.js').catch((error) => {
+      console.warn('[notes-storage] Failed to load embedding service', error);
+      return null;
+    });
+  }
+
+  embeddingServiceModulePromise
+    .then(async (embeddingServiceModule) => {
+      const generateEmbedding = embeddingServiceModule?.generateEmbedding;
+      if (typeof generateEmbedding !== 'function') {
+        return;
+      }
+
+      const embedding = normalizeSemanticEmbedding(await generateEmbedding(embeddingText));
+      if (!embedding) {
+        return;
+      }
+
+      note.semanticEmbedding = embedding;
+      const nextNotes = Array.isArray(notes)
+        ? notes.map((entry) => (entry?.id === note.id ? { ...entry, semanticEmbedding: embedding } : entry))
+        : [note];
+      saveAllNotes(nextNotes, options);
+    })
+    .catch((error) => {
+      console.warn('[notes-storage] Failed to generate note embedding', error);
+    });
+};
+
 export const createAndSaveNote = (payload = {}, options = {}) => {
   const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
   const text = typeof normalizedPayload.text === 'string' ? normalizedPayload.text.trim() : '';
@@ -263,6 +308,7 @@ export const createAndSaveNote = (payload = {}, options = {}) => {
   const saved = saveAllNotes([note, ...notes], options);
   if (saved) {
     syncNoteToMemoryService(note, normalizedPayload);
+    ensureNoteEmbedding(note, [note, ...notes], options);
   }
   return saved ? note : null;
 };
