@@ -151,15 +151,9 @@ export async function captureInput({
     }
     case 'persist_reminder': {
       const reminder = await createReminder({
-        title: decision?.parsedEntry?.title || normalizedText,
-        text: normalizedText,
-        due: decision?.parsedEntry?.reminderDate || undefined,
-        notes: normalizedText,
-        metadata: {
-          source: context.source,
-          entryPoint: context.entryPoint,
-          capturedAt: context.capturedAt,
-        },
+        text: decision?.parsedEntry?.title || normalizedText,
+        dueAt: decision?.parsedEntry?.reminderDate || undefined,
+        source: 'capture',
       });
       return {
         decision,

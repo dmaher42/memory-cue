@@ -2145,7 +2145,7 @@ export async function initReminders(sel = {}) {
                 : null;
 
           if (optionDueIso) {
-            basePayload.due = optionDueIso;
+            basePayload.dueAt = optionDueIso;
           }
           if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
             basePayload.notifyAt = options.notifyAt.toISOString();
@@ -2171,9 +2171,10 @@ export async function initReminders(sel = {}) {
 
           entry = addItem(basePayload);
         } else {
-          entry = await captureInput(routedText, {
+          entry = await captureInput({
+            text: routedText,
             source: 'quick-add',
-            entryPoint: 'reminders.quickAddNow',
+            metadata: { entryPoint: 'reminders.quickAddNow' },
           });
         }
       }
@@ -5710,13 +5711,14 @@ export async function initReminders(sel = {}) {
         title:trimmedTitle,
         priority: priorityValue,
         category: normalizedCategory,
-        due,
+        dueAt: due,
         notes: noteText,
         plannerLessonId: plannerLinkId || null,
       })
-      : captureInput(trimmedTitle, {
+      : captureInput({
+        text: trimmedTitle,
         source: 'reminder',
-        entryPoint: 'reminders.handleSaveAction',
+        metadata: { entryPoint: 'reminders.handleSaveAction' },
       });
 
     const createdItemResolved = createdItem && typeof createdItem.then === 'function'

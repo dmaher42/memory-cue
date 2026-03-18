@@ -12,55 +12,41 @@ export const setReminderCreationHandler = (handler) => {
 export const buildReminderPayload = (payload = {}) => {
   const source = payload && typeof payload === 'object' ? payload : {};
   const now = Date.now();
-  const titleCandidates = [source.title, source.text, source.name];
-  const title = titleCandidates.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
-
-  const dueCandidates = [source.due, source.dueAt, source.dueDate];
-  const dueValue = dueCandidates.find((value) => value instanceof Date || (typeof value === 'string' && value.trim()));
-  const due = dueValue instanceof Date
-    ? dueValue.toISOString()
-    : typeof dueValue === 'string' && dueValue.trim()
-      ? dueValue.trim()
-      : null;
-
-  const normalized = {
-    id: typeof source.id === 'string' && source.id.trim() ? source.id.trim() : '',
-    title,
-    notes: typeof source.notes === 'string' ? source.notes.trim() : '',
-    due,
-    priority: typeof source.priority === 'string' && source.priority.trim() ? source.priority.trim() : 'Medium',
-    category: typeof source.category === 'string' && source.category.trim() ? source.category.trim() : 'General',
-    done: source.done === true || source.completed === true || source.isDone === true || source.status === 'done',
-    createdAt: Number.isFinite(Number(source.createdAt)) ? Number(source.createdAt) : now,
-    updatedAt: Number.isFinite(Number(source.updatedAt)) ? Number(source.updatedAt) : now,
-    keywords: Array.isArray(source.keywords)
-      ? source.keywords.filter((value) => typeof value === 'string' && value.trim()).map((value) => value.trim().toLowerCase())
-      : [],
-    metadata: source.metadata && typeof source.metadata === 'object' ? source.metadata : null,
-  };
-  const passthroughKeys = [
-    'priority',
-    'category',
-    'notes',
-    'notifyAt',
-    'plannerLessonId',
-    'pinToToday',
-    'semanticEmbedding',
-    'recurrence',
-    'snoozedUntil',
-    'notifyMinutesBefore',
-  ];
-
-  passthroughKeys.forEach((key) => {
-    if (source[key] !== undefined) {
-      normalized[key] = source[key];
+  const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
+  const normalizeEpochMs = (value) => {
+    if (value == null || value === '') return null;
+    if (value instanceof Date) return Number.isFinite(value.getTime()) ? value.getTime() : null;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) return numeric;
+    if (typeof value === 'string') {
+      const parsed = Date.parse(value);
+      return Number.isFinite(parsed) ? parsed : null;
     }
-  });
+    return null;
+  };
+  const normalizePriority = (value) => {
+    const normalized = normalizeText(value).toLowerCase();
+    return ['low', 'medium', 'high'].includes(normalized) ? normalized : null;
+  };
+  const normalizeSource = (value) => {
+    const normalized = normalizeText(value).toLowerCase();
+    if (!normalized) return 'manual';
+    if (normalized === 'quick-add' || normalized === 'quick_add' || normalized === 'quick capture' || normalized === 'quick_capture') return 'manual';
+    return ['capture', 'manual', 'inbox', 'system'].includes(normalized) ? normalized : 'manual';
+  };
+  const text = normalizeText(source.text || source.title || source.name || source.notes);
 
-  delete normalized.dueAt;
-  delete normalized.dueDate;
-
-  return normalized;
+  return {
+    id: normalizeText(source.id),
+    text,
+    dueAt: normalizeEpochMs(source.dueAt ?? source.due ?? source.dueDate),
+    createdAt: normalizeEpochMs(source.createdAt) ?? now,
+    updatedAt: normalizeEpochMs(source.updatedAt) ?? now,
+    completed: source.completed === true || source.done === true || source.isDone === true || source.status === 'done',
+    category: normalizeText(source.category) || null,
+    priority: normalizePriority(source.priority) || 'medium',
+    source: normalizeSource(source.source ?? source.metadata?.source),
+  };
 };
 
 export const createReminder = async (payload = {}, options = {}) => {
@@ -78,7 +64,7 @@ export const createReminder = async (payload = {}, options = {}) => {
   const normalizedPayload = buildReminderPayload(payload);
   const reminder = await handler(normalizedPayload);
   const reminderId = typeof reminder?.id === 'string' ? reminder.id : null;
-  const reminderText = [normalizedPayload.title, normalizedPayload.notes].filter(Boolean).join(' ').trim();
+  const reminderText = typeof normalizedPayload.text === 'string' ? normalizedPayload.text.trim() : '';
 
   if (reminderId && reminderText) {
     indexSourceEmbedding({
