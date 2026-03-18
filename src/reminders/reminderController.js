@@ -60,6 +60,17 @@ const uid = () => {
   }
   return `reminder-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
+function debounce(fn, delay = 300) {
+  let timeoutId;
+  return (...args) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
+}
 function normalizeReminderRecord(reminder = {}, options = {}) {
   return normalizeReminderRecordHelper(reminder, {
     ...options,
