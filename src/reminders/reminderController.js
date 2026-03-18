@@ -51,6 +51,7 @@ const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
 let serviceWorkerReadyPromise = null;
 let backgroundSyncRegistrationPromise = null;
 let backgroundSyncRegistrationSucceeded = false;
+let embeddingServiceModulePromise = null;
 const DEFAULT_CATEGORY = 'General';
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
@@ -103,8 +104,27 @@ async function generateEmbedding(text) {
   if (!normalized) {
     return null;
   }
-  // TODO: Replace this stub with a real embeddings API integration.
-  return null;
+
+  if (!embeddingServiceModulePromise) {
+    embeddingServiceModulePromise = import('../brain/embeddingService.js').catch((error) => {
+      console.warn('[embedding] Failed to load embedding service', error);
+      return null;
+    });
+  }
+
+  const embeddingServiceModule = await embeddingServiceModulePromise;
+  const generateEmbeddingViaService = embeddingServiceModule?.generateEmbedding;
+  if (typeof generateEmbeddingViaService !== 'function') {
+    return null;
+  }
+
+  try {
+    const embedding = await generateEmbeddingViaService(normalized);
+    return normalizeSemanticEmbedding(embedding);
+  } catch (error) {
+    console.warn('[embedding] Failed to generate embedding', error);
+    return null;
+  }
 }
 
 async function ensureEmbeddingForItem(item) {
@@ -4254,6 +4274,18 @@ export async function initReminders(sel = {}) {
         rescheduleAllReminders();
         emitReminderUpdates();
         dispatchCueEvent('memoryCue:remindersUpdated', { items });
+
+        ensureEmbeddingForItem(createdReminder)
+          .then((embeddedReminder) => {
+            if (!normalizeSemanticEmbedding(embeddedReminder?.semanticEmbedding)) {
+              return;
+            }
+            persistItems();
+            dispatchCueEvent('memoryCue:remindersUpdated', { items });
+          })
+          .catch((error) => {
+            console.warn('Failed to generate reminder embedding', error);
+          });
       },
     });
 

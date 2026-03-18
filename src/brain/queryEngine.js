@@ -1,6 +1,8 @@
 import { intentRouter } from '../services/intentRouter.js';
 import { getMemories } from '../services/memoryService.js';
 import { getReminderList } from '../reminders/reminderService.js';
+import { loadAllNotes } from '../../js/modules/notes-storage.js';
+import { generateEmbedding } from './embeddingService.js';
 import { semanticSearch } from './semanticSearchService.js';
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -12,6 +14,37 @@ const normalizeReminderDate = (reminder) => {
   }
   const due = normalizeText(reminder?.due);
   return due;
+};
+
+const normalizeEmbedding = (value) => (
+  Array.isArray(value)
+    ? value.map((item) => Number(item)).filter((item) => Number.isFinite(item))
+    : []
+);
+
+const cosineSimilarity = (left, right) => {
+  const a = normalizeEmbedding(left);
+  const b = normalizeEmbedding(right);
+  if (!a.length || !b.length) {
+    return -1;
+  }
+
+  const dimensions = Math.min(a.length, b.length);
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+
+  for (let index = 0; index < dimensions; index += 1) {
+    dot += a[index] * b[index];
+    magA += a[index] * a[index];
+    magB += b[index] * b[index];
+  }
+
+  if (!magA || !magB) {
+    return -1;
+  }
+
+  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 };
 
 export function detectIntent(query) {
@@ -81,10 +114,12 @@ async function handleReminderQuery(intent, query) {
   }
 
   reminders = filterRemindersByQuery(reminders, query);
+  const semanticMatches = (await searchSemanticEntries(query))
+    .filter((entry) => entry.type === 'reminder');
 
   return {
     type: 'reminder_results',
-    items: reminders,
+    items: mergeResults(reminders, semanticMatches),
     intent,
   };
 }
@@ -101,15 +136,74 @@ function searchMemories(memories, query) {
   });
 }
 
+function getSemanticSourceEntries() {
+  const notes = loadAllNotes().map((note) => ({
+    id: note?.id,
+    type: 'note',
+    title: note?.title || '',
+    text: note?.bodyText || note?.body || '',
+    embedding: note?.semanticEmbedding,
+    source: 'note',
+  }));
+
+  const reminders = getReminderList().map((reminder) => ({
+    id: reminder?.id,
+    type: 'reminder',
+    title: reminder?.title || reminder?.text || '',
+    text: reminder?.notes || reminder?.text || reminder?.title || '',
+    embedding: reminder?.semanticEmbedding,
+    due: normalizeReminderDate(reminder),
+    source: 'reminder',
+  }));
+
+  return [...notes, ...reminders];
+}
+
+async function searchSemanticEntries(query) {
+  const normalizedQuery = normalizeText(query);
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const sourceEntries = getSemanticSourceEntries();
+  if (!sourceEntries.length) {
+    return [];
+  }
+
+  let queryEmbedding = [];
+  try {
+    queryEmbedding = normalizeEmbedding(await generateEmbedding(normalizedQuery));
+  } catch (error) {
+    console.warn('[queryEngine] Failed to generate query embedding', error);
+    return [];
+  }
+
+  if (!queryEmbedding.length) {
+    return [];
+  }
+
+  return sourceEntries
+    .map((entry) => ({
+      ...entry,
+      score: cosineSimilarity(queryEmbedding, entry?.embedding),
+    }))
+    .filter((entry) => Number.isFinite(entry.score) && entry.score > -1)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 10);
+}
+
 async function handleMemoryQuery(intent, query) {
   console.log('[semantic] query:', query);
 
   const memories = getMemories();
   const keywordResults = searchMemories(memories, query);
-  const semanticResults = await semanticSearch(query);
+  const [semanticResults, semanticEntries] = await Promise.all([
+    semanticSearch(query),
+    searchSemanticEntries(query),
+  ]);
   console.log('[semantic] results:', semanticResults.length);
 
-  const merged = mergeResults(keywordResults, semanticResults);
+  const merged = mergeResults(keywordResults, [...semanticResults, ...semanticEntries]);
 
   return {
     type: 'memory_results',
@@ -128,15 +222,16 @@ function mergeResults(keyword, semantic) {
 }
 
 async function handleMixedQuery(intent, query) {
-  const [memories, reminders] = await Promise.all([
+  const [memories, reminders, semanticEntries] = await Promise.all([
     handleMemoryQuery({ type: 'memory_query' }, query),
     handleReminderQuery({ type: 'reminder_query' }, query),
+    searchSemanticEntries(query),
   ]);
 
   return {
     type: 'mixed_results',
     memories: memories.items,
-    reminders: reminders.items,
+    reminders: mergeResults(reminders.items, semanticEntries.filter((entry) => entry.type === 'reminder')),
     intent,
   };
 }
