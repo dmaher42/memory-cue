@@ -16,9 +16,10 @@ export async function generateEmbedding(text) {
   const normalizedText = normalizeText(text);
 
   if (!normalizedText) {
-    return [];
+    return null;
   }
 
+  console.log('[embedding] using API route');
   const res = await fetch('/api/embed', {
     method: 'POST',
     headers: {
@@ -30,7 +31,8 @@ export async function generateEmbedding(text) {
   });
 
   if (!res.ok) {
-    throw new Error(`Embedding request failed (${res.status})`);
+    console.error('[embedding] API error', res.status);
+    return null;
   }
 
   const data = await res.json();

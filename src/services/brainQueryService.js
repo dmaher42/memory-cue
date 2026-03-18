@@ -107,7 +107,7 @@ export const retrieveRelevantMemories = async (question) => {
 
   try {
     const questionEmbedding = await generateEmbedding(safeQuestion);
-    if (questionEmbedding.length) {
+    if (Array.isArray(questionEmbedding) && questionEmbedding.length) {
       selectedMemories = similaritySearch(questionEmbedding, allMemories)
         .slice(0, MAX_CONTEXT_MEMORIES);
     }
