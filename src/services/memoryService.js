@@ -3,10 +3,14 @@ import { generateEmbedding } from '../brain/embeddingService.js';
 
 const MEMORY_CACHE_KEY = 'memoryCueCache';
 const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];
-const MEMORY_TYPES = new Set(['note', 'reminder', 'idea', 'task', 'inbox']);
+const MEMORY_TYPES = new Set(['note', 'inbox', 'memory', 'system']);
+const MEMORY_SOURCES = new Set(['capture', 'assistant', 'import']);
 const MEMORY_TYPE_ALIASES = Object.freeze({
-  lesson_idea: 'idea',
-  coaching_drill: 'idea',
+  reminder: 'memory',
+  idea: 'memory',
+  task: 'memory',
+  lesson_idea: 'memory',
+  coaching_drill: 'memory',
   question: 'note',
   unknown: 'inbox',
 });
@@ -52,12 +56,22 @@ const normalizeType = (value) => {
   return MEMORY_TYPES.has(type) ? type : 'note';
 };
 
+const normalizeSource = (value, fallback = 'capture') => {
+  const source = normalizeText(value).toLowerCase();
+  if (source === 'quick-add' || source === 'quick_add' || source === 'quick capture') {
+    return 'capture';
+  }
+  if (source === 'manual' || source === 'inbox' || source === 'reminder') {
+    return 'capture';
+  }
+  return MEMORY_SOURCES.has(source) ? source : fallback;
+};
+
 export const MEMORY_TYPE_USAGE = Object.freeze({
   note: 'General note or reference content.',
   inbox: 'Unprocessed capture awaiting triage.',
-  idea: 'Draft concept, brainstorm, or lesson/coaching idea.',
-  task: 'Actionable item that is not a scheduled reminder.',
-  reminder: 'Scheduled or time-based commitment.',
+  memory: 'Stored knowledge or captured item retained in the second brain.',
+  system: 'System-generated memory or app-created reference content.',
 });
 
 const getCurrentUserId = () => {
@@ -81,6 +95,33 @@ const normalizeEmbedding = (value) => {
   return numbers.length ? numbers : undefined;
 };
 
+const attachLegacyAccessors = (memory) => {
+  if (!memory || typeof memory !== 'object') {
+    return memory;
+  }
+
+  const accessors = {
+    content: { get: () => memory.text },
+    note: { get: () => memory.text },
+    body: { get: () => memory.text },
+    bodyText: { get: () => memory.text },
+    timestamp: { get: () => memory.createdAt },
+  };
+
+  Object.entries(accessors).forEach(([key, descriptor]) => {
+    if (Object.prototype.hasOwnProperty.call(memory, key)) {
+      return;
+    }
+    Object.defineProperty(memory, key, {
+      enumerable: false,
+      configurable: true,
+      ...descriptor,
+    });
+  });
+
+  return memory;
+};
+
 const toMemoryShape = (entry = {}, fallback = {}) => {
   const now = Date.now();
   const createdAt = normalizeNumber(entry.createdAt, now);
@@ -90,22 +131,35 @@ const toMemoryShape = (entry = {}, fallback = {}) => {
       ? crypto.randomUUID()
       : `memory-${updatedAt}`);
 
-  return {
+  const memory = {
     id: resolvedId,
     userId: normalizeText(entry.userId) || fallback.userId || getCurrentUserId(),
-    text: normalizeText(entry.text || entry.bodyText || entry.body || entry.title),
-    type: normalizeType(entry.type || entry.parsedType),
+    text: normalizeText(
+      entry.text
+      || entry.content
+      || entry.note
+      || entry.bodyText
+      || entry.body
+      || entry.title
+    ),
+    type: normalizeType(entry.type || entry.parsedType || fallback.type),
     createdAt,
     updatedAt,
-    source: normalizeText(entry.source) || fallback.source || 'capture',
+    source: normalizeSource(entry.source || entry.metadata?.source, fallback.source || 'capture'),
     entryPoint: normalizeText(entry.entryPoint) || fallback.entryPoint || 'capture',
-    tags: normalizeTags(entry.tags),
+    tags: normalizeTags(entry.tags || entry.metadata?.tags || entry.keywords),
     embedding: normalizeEmbedding(entry.embedding),
     pendingSync: entry.pendingSync === false ? false : true,
   };
+
+  return attachLegacyAccessors(memory);
 };
 
-export const normalizeMemoryEntry = (entry = {}, fallback = {}) => toMemoryShape(entry, fallback);
+export const normalizeMemory = (entry = {}, fallback = {}) => toMemoryShape(entry, fallback);
+export const normalizeMemoryEntry = normalizeMemory;
+export const normalizeMemoryList = (entries = [], fallback = {}) => (
+  Array.isArray(entries) ? entries.map((entry) => normalizeMemory(entry, fallback)).filter((entry) => entry.text) : []
+);
 
 const readCacheFromStorage = () => {
   if (typeof localStorage === 'undefined') {
@@ -123,7 +177,7 @@ const readCacheFromStorage = () => {
       return [];
     }
 
-    return parsed.map((item) => toMemoryShape(item)).filter((item) => item.text);
+    return normalizeMemoryList(parsed);
   } catch (error) {
     console.warn('[memory-service] Failed to read memory cache', error);
     return [];
@@ -307,8 +361,8 @@ void triggerSync();
 export const saveMemory = async (memory = {}) => {
   ensureCacheLoaded();
 
-  const nextMemory = toMemoryShape(memory, {
-    source: normalizeText(memory.source) || 'capture',
+  const nextMemory = normalizeMemory(memory, {
+    source: normalizeSource(memory.source, 'capture'),
     entryPoint: normalizeText(memory.entryPoint) || 'capture',
   });
 

@@ -1611,18 +1611,23 @@ export async function initReminders(sel = {}) {
     });
 
     const memoryEntries = readMemoryEntries().map((entry) => {
-      const updatedTime = typeof entry?.updatedAt === 'string' ? Date.parse(entry.updatedAt) : Number.NaN;
-      const createdTime = typeof entry?.createdAt === 'string' ? Date.parse(entry.createdAt) : Number.NaN;
+      const updatedTime = Number.isFinite(entry?.updatedAt)
+        ? entry.updatedAt
+        : (typeof entry?.updatedAt === 'string' ? Date.parse(entry.updatedAt) : Number.NaN);
+      const createdTime = Number.isFinite(entry?.createdAt)
+        ? entry.createdAt
+        : (typeof entry?.createdAt === 'string' ? Date.parse(entry.createdAt) : Number.NaN);
+      const entryText = typeof entry?.text === 'string' ? entry.text : '';
       return {
         id: typeof entry?.id === 'string' ? entry.id : '',
         type: normalizeMemoryEntryType(entry?.type),
-        title: typeof entry?.title === 'string' ? entry.title : '',
-        body: typeof entry?.body === 'string' ? entry.body : '',
+        title: entryText ? extractTitle(entryText) : (typeof entry?.title === 'string' ? entry.title : ''),
+        body: entryText || (typeof entry?.body === 'string' ? entry.body : ''),
         category: typeof entry?.category === 'string' ? entry.category : '',
         tags: Array.isArray(entry?.tags) ? entry.tags : [],
         relatedIds: Array.isArray(entry?.relatedIds) ? entry.relatedIds : [],
-        createdAt: typeof entry?.createdAt === 'string' ? entry.createdAt : '',
-        updatedAt: typeof entry?.updatedAt === 'string' ? entry.updatedAt : '',
+        createdAt: Number.isFinite(createdTime) ? new Date(createdTime).toISOString() : '',
+        updatedAt: Number.isFinite(updatedTime) ? new Date(updatedTime).toISOString() : '',
         timestamp: Number.isFinite(updatedTime) ? updatedTime : (Number.isFinite(createdTime) ? createdTime : null),
         semanticEmbedding: null,
       };
