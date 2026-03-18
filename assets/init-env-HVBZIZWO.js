@@ -1,1 +1,0 @@
-import{b as e}from"./chunk-RCZ4YZVR.js";var o=e(()=>{if(typeof window<"u"){let n=window.__ENV||{};(!n.SUPABASE_URL||!n.SUPABASE_ANON_KEY)&&console.warn("[ENV INIT] Missing Supabase env values.",{hasSupabaseUrl:!!n.SUPABASE_URL,hasSupabaseAnonKey:!!n.SUPABASE_ANON_KEY}),console.log("[ENV INIT]",n)}});export default o();
