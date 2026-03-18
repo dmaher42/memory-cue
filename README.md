@@ -50,18 +50,21 @@ Build the static app and deploy the generated `dist/` output with your preferred
 
 ## Configuration
 
-Memory Cue expects Firebase credentials to be available at runtime via `window.__ENV`. Add the following snippet to your production `index.html` (or equivalent template) **before** loading the main JavaScript bundle so the app can read the values when it starts:
+Memory Cue expects Firebase credentials to be available at runtime via `window.__ENV`.
 
-```html
-<script>
-  window.__ENV = {
-    FIREBASE_API_KEY: "https://YOUR-PROJECT.firebaseapp.com",
-    FIREBASE_APP_ID: "YOUR_ANON_KEY"
-  };
-</script>
-```
+For Cloudflare Pages, set these build environment variables so `npm run build` can write `dist/js/runtime-env.js` during deployment:
 
-Keep your real Firebase URL and anon key out of version control—set them through deployment-specific templating or secrets management rather than committing them to the repository.
+- `FIREBASE_API_KEY`
+- `FIREBASE_AUTH_DOMAIN`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_APP_ID`
+
+Optional Firebase runtime variables:
+
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_MESSAGING_SENDER_ID`
+
+For local development, place the same values in an untracked `.env.local` file before running `npm run build`. The generated runtime env script preserves any values already present in `window.__ENV`, and `js/init-env.js` remains the single runtime initializer.
 
 
 ## AI setup

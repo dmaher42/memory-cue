@@ -7,6 +7,16 @@ import crypto from 'node:crypto';
 const rootDir = process.cwd();
 const distDir = path.join(rootDir, 'dist');
 const assetsDir = path.join(distDir, 'assets');
+const runtimeEnvPath = path.join(distDir, 'js', 'runtime-env.js');
+
+const CLIENT_RUNTIME_ENV_KEYS = [
+  'FIREBASE_API_KEY',
+  'FIREBASE_AUTH_DOMAIN',
+  'FIREBASE_PROJECT_ID',
+  'FIREBASE_STORAGE_BUCKET',
+  'FIREBASE_MESSAGING_SENDER_ID',
+  'FIREBASE_APP_ID',
+];
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -30,6 +40,86 @@ async function cleanDist() {
   await fs.rm(distDir, { recursive: true, force: true });
   await fs.mkdir(distDir, { recursive: true });
   await fs.mkdir(assetsDir, { recursive: true });
+}
+
+async function readDotEnvFile(filePath) {
+  try {
+    const contents = await fs.readFile(filePath, 'utf8');
+    return contents
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+      .reduce((env, line) => {
+        const separatorIndex = line.indexOf('=');
+        if (separatorIndex === -1) {
+          return env;
+        }
+
+        const key = line.slice(0, separatorIndex).trim();
+        let value = line.slice(separatorIndex + 1).trim();
+
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
+          value = value.slice(1, -1);
+        }
+
+        if (key && typeof env[key] === 'undefined') {
+          env[key] = value;
+        }
+
+        return env;
+      }, {});
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return {};
+    }
+
+    throw error;
+  }
+}
+
+async function resolveRuntimeEnv() {
+  const [dotEnv, dotEnvLocal] = await Promise.all([
+    readDotEnvFile(path.join(rootDir, '.env')),
+    readDotEnvFile(path.join(rootDir, '.env.local')),
+  ]);
+
+  return CLIENT_RUNTIME_ENV_KEYS.reduce((env, key) => {
+    const value = process.env[key] ?? dotEnvLocal[key] ?? dotEnv[key] ?? '';
+    if (typeof value === 'string' && value.trim()) {
+      env[key] = value.trim();
+    }
+    return env;
+  }, {});
+}
+
+async function writeRuntimeEnvScript() {
+  const runtimeEnv = await resolveRuntimeEnv();
+  const script = `window.__ENV = {
+  ...(window.__ENV && typeof window.__ENV === 'object' && !Array.isArray(window.__ENV) ? window.__ENV : {}),
+  ${CLIENT_RUNTIME_ENV_KEYS.map((key) => {
+    const value = runtimeEnv[key];
+    return value ? `${JSON.stringify(key)}: ${JSON.stringify(value)},` : '';
+  })
+    .filter(Boolean)
+    .join('\n  ')}
+};
+
+window.textureUrl =
+  window.textureUrl ||
+  ((filename) => {
+    if (typeof filename !== 'string') {
+      return '';
+    }
+
+    return filename;
+  });
+`;
+
+  await fs.mkdir(path.dirname(runtimeEnvPath), { recursive: true });
+  await fs.writeFile(runtimeEnvPath, script);
 }
 
 async function buildCss() {
@@ -186,6 +276,7 @@ async function main() {
   const cssPath = await buildCss();
   const assetMap = await buildScripts();
   await copyStatic();
+  await writeRuntimeEnvScript();
   await ensureRootHtml();
   await rewriteHtml(assetMap, cssPath);
   await validateBuildOutput();
