@@ -17,15 +17,6 @@ const createActionResult = (intent, message, status) => ({
   status,
 });
 
-const shouldProcessInbox = (text) => {
-  const normalized = typeof text === 'string' ? text.trim().toLowerCase() : '';
-  if (!normalized) {
-    return false;
-  }
-
-  return normalized.includes('process') && (normalized.includes('notes') || normalized.includes('inbox'));
-};
-
 const routeCapture = async (text) => {
   const result = await executeCommand('capture', { text, source: 'capture' });
   return createActionResult('capture', result.message, result);
@@ -85,21 +76,17 @@ const routeProcessInbox = async (dependencies = {}) => {
 };
 
 export const routeAction = async (intent, text, dependencies = {}) => {
-  if (shouldProcessInbox(text)) {
-    return routeProcessInbox(dependencies);
+  switch (intent) {
+    case 'processInbox':
+      return routeProcessInbox(dependencies);
+    case 'reminder':
+      return routeReminder(text, dependencies);
+    case 'assistant':
+      return routeAssistant(text);
+    case 'memorySearch':
+      return routeMemorySearch(text);
+    case 'capture':
+    default:
+      return routeCapture(text);
   }
-
-  if (intent === 'reminder') {
-    return routeReminder(text, dependencies);
-  }
-
-  if (intent === 'assistant') {
-    return routeAssistant(text);
-  }
-
-  if (intent === 'memorySearch') {
-    return routeMemorySearch(text);
-  }
-
-  return routeCapture(text);
 };

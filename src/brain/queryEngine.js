@@ -20,28 +20,36 @@ export function detectIntent(query) {
     source: 'query_engine',
     entryPoint: 'queryEngine.detectIntent',
   });
-  const q = text.toLowerCase();
 
   if (routedIntent?.type === 'reminder') {
-    return { type: 'reminder_query' };
+    return { type: 'reminder_query', source: 'intent_router' };
   }
 
+  if (routedIntent?.type === 'query') {
+    return { type: 'memory_query', source: 'intent_router' };
+  }
+
+  if (routedIntent?.type !== 'unknown') {
+    return { type: 'mixed_query', source: 'intent_router' };
+  }
+
+  const q = text.toLowerCase();
   const hasReminderKeywords = q.includes('remind') || q.includes('today') || q.includes('due') || q.includes('reminder');
   const hasMemoryKeywords = q.includes('what did i') || q.includes('notes') || q.includes('write') || q.includes('ideas');
 
   if (hasReminderKeywords && hasMemoryKeywords) {
-    return { type: 'mixed_query' };
+    return { type: 'mixed_query', source: 'heuristic_fallback' };
   }
 
   if (hasReminderKeywords) {
-    return { type: 'reminder_query' };
+    return { type: 'reminder_query', source: 'heuristic_fallback' };
   }
 
-  if (hasMemoryKeywords || routedIntent?.type === 'query') {
-    return { type: 'memory_query' };
+  if (hasMemoryKeywords) {
+    return { type: 'memory_query', source: 'heuristic_fallback' };
   }
 
-  return { type: 'mixed_query' };
+  return { type: 'mixed_query', source: 'heuristic_fallback' };
 }
 
 function filterToday(reminders) {
