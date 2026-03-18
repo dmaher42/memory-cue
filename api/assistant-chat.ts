@@ -1,4 +1,5 @@
 import { helpContent } from '../src/assistant/help-content.js';
+import { handleQuery } from '../src/brain/queryEngine.js';
 
 const LOCALHOST_ORIGINS = [
   'http://localhost:3000',
@@ -90,6 +91,88 @@ function gatherContext(body) {
   ].filter(Boolean);
 
   return contextEntries;
+}
+
+function buildKeywordSelectedContext(message, contextEntries) {
+  return contextEntries
+    .map((entry) => ({ entry, score: keywordScore(message, `${entry.title} ${entry.body}`) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map((item) => item.entry);
+}
+
+function buildContextMatchKey(entry) {
+  return [
+    toText(entry?.id).toLowerCase(),
+    toText(entry?.type).toLowerCase(),
+    toText(entry?.title).toLowerCase(),
+    toText(entry?.body || entry?.text || entry?.notes).toLowerCase(),
+  ].join('|');
+}
+
+function normalizeSemanticResult(item) {
+  return normalizeEntry({
+    id: item?.id,
+    title: item?.title || item?.text,
+    body: item?.text || item?.body || item?.notes || item?.title,
+    createdAt: item?.createdAt || item?.timestamp,
+    parsedType: item?.parsedType || item?.metadata?.type || item?.source || item?.type,
+    metadata: item?.metadata,
+  }, toText(item?.type) || 'entry');
+}
+
+async function selectAssistantContext(message, contextEntries) {
+  const keywordFallback = () => buildKeywordSelectedContext(message, contextEntries);
+
+  try {
+    const queryResult = await handleQuery(message);
+    const candidateItems = Array.isArray(queryResult?.items)
+      ? queryResult.items
+      : [
+        ...(Array.isArray(queryResult?.memories) ? queryResult.memories : []),
+        ...(Array.isArray(queryResult?.reminders) ? queryResult.reminders : []),
+      ];
+
+    if (!candidateItems.length) {
+      return keywordFallback();
+    }
+
+    const contextById = new Map();
+    const contextByKey = new Map();
+    contextEntries.forEach((entry) => {
+      if (entry?.id) {
+        contextById.set(entry.id, entry);
+      }
+      contextByKey.set(buildContextMatchKey(entry), entry);
+    });
+
+    const selected = [];
+    const seen = new Set();
+
+    candidateItems.forEach((item) => {
+      const normalized = normalizeSemanticResult(item);
+      if (!normalized) {
+        return;
+      }
+
+      const matchedEntry = contextById.get(normalized.id)
+        || contextByKey.get(buildContextMatchKey(normalized));
+      const resolvedEntry = matchedEntry || normalized;
+      const dedupeKey = buildContextMatchKey(resolvedEntry);
+
+      if (seen.has(dedupeKey)) {
+        return;
+      }
+
+      seen.add(dedupeKey);
+      selected.push(resolvedEntry);
+    });
+
+    return selected.length ? selected.slice(0, 8) : keywordFallback();
+  } catch (error) {
+    console.warn('[assistant-chat] Semantic retrieval bridge failed; using keyword fallback.', error);
+    return keywordFallback();
+  }
 }
 
 function isHelpRequest(message) {
@@ -350,11 +433,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const selectedContext = contextEntries
-      .map((entry) => ({ entry, score: keywordScore(message, `${entry.title} ${entry.body}`) }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8)
-      .map((item) => item.entry);
+    const selectedContext = await selectAssistantContext(message, contextEntries);
 
     const prompt = buildPrompt(message, body.history, selectedContext);
     const assistantMessages = normalizeAssistantMessages(body.messages);
