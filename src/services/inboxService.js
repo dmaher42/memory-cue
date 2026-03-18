@@ -1,6 +1,6 @@
 import { syncInbox, upsertInboxEntry } from './firestoreSyncService.js';
 import { indexSourceEmbedding } from './embeddingService.js';
-import { saveMemory, normalizeMemoryEntry } from './memoryService.js';
+import { saveMemory, normalizeMemory } from './memoryService.js';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];
@@ -44,7 +44,7 @@ const normalizeTags = (tags) => {
 
 
 const normalizeInboxEntry = (entryInput = {}) => {
-  const canonical = normalizeMemoryEntry({
+  const canonical = normalizeMemory({
     ...entryInput,
     type: 'inbox',
     source: entryInput?.source,
@@ -57,13 +57,14 @@ const normalizeInboxEntry = (entryInput = {}) => {
   return {
     id: canonical.id,
     text: canonical.text,
+    type: canonical.type,
     tags: canonical.tags,
     createdAt: canonical.createdAt,
+    updatedAt: canonical.updatedAt,
     source: canonical.source,
     parsedType: normalizeParsedType(entryInput?.parsedType || 'unknown'),
     metadata: entryInput?.metadata && typeof entryInput.metadata === 'object' ? entryInput.metadata : {},
     pendingSync: canonical.pendingSync,
-    updatedAt: canonical.updatedAt,
     entryPoint: canonical.entryPoint,
   };
 };

@@ -1,4 +1,5 @@
 import { normalizeReminder, normalizeReminderList } from '../reminders/reminderNormalizer.js';
+import { normalizeMemoryList } from './memoryService.js';
 
 const NOTES_KEY = 'memoryCueNotes';
 const INBOX_KEY = 'memoryCueInbox';
@@ -42,7 +43,7 @@ export const syncNotes = async (localItemsOverride = null) => {
   return readLocal(NOTES_KEY);
 };
 
-export const syncInbox = async () => readLocal(INBOX_KEY);
+export const syncInbox = async () => normalizeMemoryList(readLocal(INBOX_KEY), { type: 'inbox', source: 'capture' });
 export const syncReminders = async () => normalizeReminderList(readLocal(REMINDERS_KEY));
 export const syncChatHistory = async () => readLocal(CHAT_KEY);
 export const pushChanges = async () => {};
@@ -50,8 +51,9 @@ export const pullChanges = async () => {};
 
 export const upsertInboxEntry = async (entry) => {
   if (!entry?.id) return;
-  const cached = readLocal(INBOX_KEY).filter((item) => String(item?.id) !== String(entry.id));
-  cached.unshift({ ...entry, pendingSync: false, updatedAt: Date.now() });
+  const cached = normalizeMemoryList(readLocal(INBOX_KEY), { type: 'inbox', source: 'capture' })
+    .filter((item) => String(item?.id) !== String(entry.id));
+  cached.unshift({ ...entry, type: 'inbox', pendingSync: false, updatedAt: Date.now() });
   writeLocal(INBOX_KEY, cached);
 };
 
