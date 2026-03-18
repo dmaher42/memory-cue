@@ -338,11 +338,17 @@
     } = config;
 
     const list = Array.isArray(items) ? items : [];
+    const selectorHost =
+      typeof document === 'undefined'
+        ? null
+        : typeof selector === 'string' && selector
+          ? document.querySelector(selector)
+          : (typeof Element !== 'undefined' && selector instanceof Element)
+            ? selector
+            : null;
     const host = container
       || (typeof document !== 'undefined'
-        ? document.querySelector(
-            selector || `[data-section="${section}"]`
-          )
+        ? selectorHost || document.querySelector(`[data-section="${section}"]`)
         : null);
 
     if (!host) {
