@@ -19,7 +19,9 @@ if (typeof window !== 'undefined') {
     env.FIREBASE_API_KEY && env.FIREBASE_AUTH_DOMAIN && env.FIREBASE_PROJECT_ID && env.FIREBASE_APP_ID
   );
 
-  if (!hasFirebaseConfig) {
+  if (hasFirebaseConfig) {
+    console.info('[ENV INIT] Firebase env loaded.');
+  } else {
     console.warn('[ENV INIT] Missing Firebase env values; auth and Firestore are disabled.');
   }
 }
