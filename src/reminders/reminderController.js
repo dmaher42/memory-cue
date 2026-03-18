@@ -28,6 +28,11 @@ import {
 // This module wires up Firebase-backed reminder UI handlers.
 
 function compareRemindersForDisplay(a, b) {
+  // Completed reminders go last.
+  if (a?.completed && !b?.completed) return 1;
+  if (!a?.completed && b?.completed) return -1;
+
+  // Sort by due date with no-date reminders after dated reminders.
   const aTime = a?.dueAt ?? Infinity;
   const bTime = b?.dueAt ?? Infinity;
 
