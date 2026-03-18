@@ -27,6 +27,13 @@ import {
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase-backed reminder UI handlers.
 
+function compareRemindersForDisplay(a, b) {
+  const aTime = a?.dueAt ?? Infinity;
+  const bTime = b?.dueAt ?? Infinity;
+
+  return aTime - bTime;
+}
+
 const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
 let notificationCleanupBound = false;
