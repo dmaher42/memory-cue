@@ -2,7 +2,7 @@ import { intentRouter } from '../services/intentRouter.js';
 import { getMemories } from '../services/memoryService.js';
 import { getReminderList } from '../reminders/reminderService.js';
 import { loadAllNotes } from '../../js/modules/notes-storage.js';
-import { generateEmbedding } from './embeddingService.js';
+import { generateEmbedding, isEmbeddingEnabled } from './embeddingService.js';
 import { semanticSearch } from './semanticSearchService.js';
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -161,7 +161,7 @@ function getSemanticSourceEntries() {
 
 async function searchSemanticEntries(query) {
   const normalizedQuery = normalizeText(query);
-  if (!normalizedQuery) {
+  if (!normalizedQuery || !isEmbeddingEnabled()) {
     return [];
   }
 
@@ -215,10 +215,35 @@ async function handleMemoryQuery(intent, query) {
 function mergeResults(keyword, semantic) {
   const map = new Map();
 
-  keyword.forEach((item) => map.set(item.id, item));
-  semantic.forEach((item) => map.set(item.id, item));
+  keyword.forEach((item, index) => {
+    if (!item?.id) {
+      return;
+    }
 
-  return Array.from(map.values()).slice(0, 10);
+    map.set(item.id, {
+      ...item,
+      score: Number.isFinite(item?.score) ? item.score : Math.max(0, 1 - (index * 0.01)),
+    });
+  });
+
+  semantic.forEach((item) => {
+    if (!item?.id) {
+      return;
+    }
+
+    const existing = map.get(item.id);
+    if (!existing || Number(item?.score) > Number(existing?.score)) {
+      map.set(item.id, {
+        ...existing,
+        ...item,
+        score: Number.isFinite(item?.score) ? item.score : Number(existing?.score) || 0,
+      });
+    }
+  });
+
+  return Array.from(map.values())
+    .sort((left, right) => (Number(right?.score) || 0) - (Number(left?.score) || 0))
+    .slice(0, 10);
 }
 
 async function handleMixedQuery(intent, query) {
