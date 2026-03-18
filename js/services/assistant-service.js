@@ -1,11 +1,6 @@
 import { loadAllNotes } from '../modules/notes-storage.js';
-import { getInboxEntries } from './capture-service.js';
+import { captureInput, getInboxEntries } from './capture-service.js';
 import { addMessage, clearMessages, getMessages } from '../../src/chat/messageStore.js';
-
-const toTimestamp = (value) => {
-  const parsed = Date.parse(typeof value === 'string' ? value : '');
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
 
 const readReminders = () => {
   if (typeof localStorage === 'undefined') return [];
@@ -87,59 +82,53 @@ const appendReferences = (container, references) => {
   container.appendChild(list);
 };
 
-const buildPayload = (message, history) => {
-  const notes = (Array.isArray(loadAllNotes()) ? loadAllNotes() : [])
-    .sort((a, b) => toTimestamp(b?.updatedAt || b?.createdAt) - toTimestamp(a?.updatedAt || a?.createdAt))
-    .slice(0, 20)
-    .map((note) => ({
-      id: note?.id,
-      title: note?.title,
-      body: note?.bodyText || note?.body || '',
-      createdAt: note?.createdAt,
-      updatedAt: note?.updatedAt,
-    }));
-
-  const reminders = readReminders().slice(0, 20).map((reminder) => ({
-    id: reminder?.id,
-    title: reminder?.title,
-    body: reminder?.notes || reminder?.body || '',
-    due: reminder?.due,
-    createdAt: reminder?.createdAt,
-  }));
-
-  const inboxEntries = getInboxEntries().slice(0, 20).map((entry) => ({
-    id: entry?.id,
-    text: entry?.text,
-    createdAt: entry?.createdAt,
-    source: entry?.source,
-  }));
-
-  return {
-    message,
-    history,
-    notes,
-    reminders,
-    inboxEntries,
-  };
-};
-
-const sendAssistantRequest = async (payload) => {
-  const response = await fetch('/api/assistant-chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Assistant request failed (${response.status})`);
+const formatReminderItems = (items = []) => {
+  if (!Array.isArray(items) || !items.length) {
+    return 'I could not find any matching reminders.';
   }
 
-  const data = await response.json();
-  return {
-    reply: typeof data?.reply === 'string' ? data.reply : 'I could not read the assistant response.',
-    references: Array.isArray(data?.references) ? data.references : [],
-  };
+  return [
+    'Here are the matching reminders:',
+    '',
+    ...items.slice(0, 10).map((item) => `• ${item?.title || item?.text || item?.notes || 'Untitled reminder'}`),
+  ].join('\n');
 };
+
+const formatMemoryItems = (items = []) => {
+  if (!Array.isArray(items) || !items.length) {
+    return 'I could not find any matching memories.';
+  }
+
+  return [
+    'Here is what I found:',
+    '',
+    ...items.slice(0, 10).map((item) => `• ${item?.title || item?.text || 'Untitled memory'}`),
+  ].join('\n');
+};
+
+const formatQueryResponse = (data) => {
+  if (!data || typeof data !== 'object') {
+    return '';
+  }
+
+  if (data.type === 'reminder_results') {
+    return formatReminderItems(data.items);
+  }
+
+  if (data.type === 'memory_results') {
+    return formatMemoryItems(data.items);
+  }
+
+  if (data.type === 'mixed_results') {
+    const memories = formatMemoryItems(data.memories);
+    const reminders = formatReminderItems(data.reminders);
+    return [memories, '', reminders].join('\n');
+  }
+
+  return '';
+};
+
+const shouldUseAssistantApi = (result) => result?.decision?.decisionType === 'assistant_query';
 
 const askAssistant = async ({ message, assistantMessages, assistantLoading }) => {
   const trimmedMessage = typeof message === 'string' ? message.trim() : '';
@@ -156,17 +145,37 @@ const askAssistant = async ({ message, assistantMessages, assistantLoading }) =>
     assistantLoading.classList.remove('hidden');
   }
 
-  const history = readConversation();
-
   try {
-    const payload = buildPayload(trimmedMessage, history);
-    const result = await sendAssistantRequest(payload);
-    if (assistantMessages instanceof HTMLElement) {
-      const replyNode = appendMessage(assistantMessages, result.reply, 'assistant-message assistant-message--reply');
-      appendReferences(replyNode, result.references);
+    const routed = await captureInput({
+      text: trimmedMessage,
+      source: 'assistant_service',
+      metadata: {
+        entryPoint: 'assistant-service.askAssistant',
+      },
+    });
+
+    let reply = typeof routed?.message === 'string' ? routed.message.trim() : '';
+    let references = [];
+
+    if (!reply) {
+      reply = formatQueryResponse(routed?.data);
     }
-    addMessage(createStoredMessage('assistant', result.reply));
-    return result;
+
+    if (!reply && shouldUseAssistantApi(routed)) {
+      reply = typeof routed?.data?.reply === 'string' ? routed.data.reply : '';
+      references = Array.isArray(routed?.data?.references) ? routed.data.references : [];
+    }
+
+    if (!reply) {
+      reply = 'Added to inbox for later review.';
+    }
+
+    if (assistantMessages instanceof HTMLElement) {
+      const replyNode = appendMessage(assistantMessages, reply, 'assistant-message assistant-message--reply');
+      appendReferences(replyNode, references);
+    }
+    addMessage(createStoredMessage('assistant', reply));
+    return { reply, references, routed };
   } catch (error) {
     console.error('[assistant-service] Assistant unavailable', error);
     if (assistantMessages instanceof HTMLElement) {
