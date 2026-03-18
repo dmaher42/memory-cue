@@ -1,4 +1,5 @@
 window.__ENV = {
+  ...window.__ENV,
   GOOGLE_SCRIPT_ENDPOINT: "https://script.google.com/macros/s/AKfycbylH5GmqeojNoZ-MA9WRg-w1S-ei9cv8Jo1M0qL7t5cn59LBRCCJ779WOyLi7qQwkSx/exec"
 };
 

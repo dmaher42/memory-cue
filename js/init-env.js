@@ -1,11 +1,12 @@
 if (typeof window !== 'undefined') {
-window.__ENV = window.__ENV || {};
+  const env = window.__ENV || {};
 
-window.__ENV = {
-...window.__ENV,
-SUPABASE_URL: window.__ENV.SUPABASE_URL || '',
-SUPABASE_ANON_KEY: window.__ENV.SUPABASE_ANON_KEY || ''
-};
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    console.warn('[ENV INIT] Missing Supabase env values.', {
+      hasSupabaseUrl: Boolean(env.SUPABASE_URL),
+      hasSupabaseAnonKey: Boolean(env.SUPABASE_ANON_KEY)
+    });
+  }
 
-console.log('[ENV INIT]', window.__ENV);
+  console.log('[ENV INIT]', env);
 }
