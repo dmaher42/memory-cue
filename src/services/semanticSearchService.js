@@ -41,7 +41,7 @@ export const semanticSearch = async (query, uid) => {
   const queryEmbedding = await generateEmbedding(normalizedQuery);
   console.info('[semantic-search] query embedding generated');
 
-  if (!queryEmbedding.length) {
+  if (!Array.isArray(queryEmbedding) || !queryEmbedding.length) {
     return [];
   }
 
