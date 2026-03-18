@@ -26,7 +26,7 @@ Simple, minimal writing area
 
 Autosave-first design (no Save button UI)
 
-Optional cloud syncing (Supabase)
+Optional cloud syncing (Firebase)
 
 Should expand vertically and horizontally for a “full-page writing” feel
 
@@ -132,7 +132,7 @@ js/modules/notes-sync.js
 
 Handles:
 
-Cloud sync for notes (Supabase)
+Cloud sync for notes (Firebase)
 
 Merging remote changes
 
@@ -230,7 +230,7 @@ Many layout changes seem to “not work” because they’re overridden by more 
 
 Changes need to be applied consistently across layers, or they may conflict.
 
-❗ 4. Notes sync depends on Supabase auth.
+❗ 4. Notes sync depends on Firebase auth.
 
 Notebook changes should not break:
 
@@ -294,11 +294,11 @@ Notes autosave works even offline.
 
 Cloud sync requires:
 
-initSupabaseAuth → user signs in
+initFirebaseAuth → user signs in
 
 initNotesSync receives the active user
 
-Local notes changes propagate to Supabase
+Local notes changes propagate to Firebase
 
 Remote changes merge into local storage
 

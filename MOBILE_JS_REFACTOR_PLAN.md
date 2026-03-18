@@ -50,7 +50,7 @@ The goal of this plan is to split responsibilities into focused modules **withou
 
 8. **Persistence and sync/auth integration**
    - localStorage reads/writes and key normalization
-   - Supabase auth/sync wiring
+   - Firebase auth/sync wiring
    - External sync controls and status handling
 
 ## Proposed modular file structure
@@ -196,7 +196,7 @@ The goal of this plan is to split responsibilities into focused modules **withou
 - Generic local storage utilities (except via `storage.js`).
 
 **Examples to move**
-- Supabase auth + note sync bridge code.
+- Firebase auth + note sync bridge code.
 - Manual sync/test-sync button behavior and fetch orchestration.
 
 ## Refactor Rules

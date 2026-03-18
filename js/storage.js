@@ -75,22 +75,22 @@ window.__ENV = {
   let currentSearchIndex = 0;
   let searchMatches = [];
 
-  let supabaseSyncPromise = null;
+  let firestoreSyncPromise = null;
   let remoteSaveTimeout = null;
   let remoteSyncActive = false;
   let isApplyingRemoteUpdate = false;
   let lastStoredLocalContent = '';
   let lastRemoteContent = '';
 
-  const getSupabaseSync = () => {
-    if (!supabaseSyncPromise) {
-      supabaseSyncPromise = import('../src/services/supabaseSyncService.js')
+  const getFirestoreSync = () => {
+    if (!firestoreSyncPromise) {
+      firestoreSyncPromise = import('../src/services/firestoreSyncService.js')
         .catch((error) => {
-          console.warn('Notes sync: Supabase module unavailable; remote sync disabled.', error);
+          console.warn('Notes sync: Firebase module unavailable; remote sync disabled.', error);
           return null;
         });
     }
-    return supabaseSyncPromise;
+    return firestoreSyncPromise;
   };
 
   const getCurrentUserId = () => {
@@ -127,7 +127,7 @@ window.__ENV = {
 
     remoteSaveTimeout = setTimeout(async () => {
       try {
-        const syncModule = await getSupabaseSync();
+        const syncModule = await getFirestoreSync();
         if (!syncModule?.syncNotes) {
           setStatus('saved', 'Saved');
           setTimeout(() => setStatus('ready', 'Ready'), 1200);
@@ -151,7 +151,7 @@ window.__ENV = {
     }
 
     try {
-      const syncModule = await getSupabaseSync();
+      const syncModule = await getFirestoreSync();
       const remoteNotes = await syncModule?.syncNotes?.();
       const firstNote = Array.isArray(remoteNotes) && remoteNotes.length ? remoteNotes[0] : null;
       const remoteContent = typeof firstNote?.bodyHtml === 'string'

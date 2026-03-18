@@ -17,8 +17,8 @@ function loadMobileModuleWithStartSignIn() {
     'const initReminders = window.__initReminders || window.__mobileMocks?.initReminders;',
   );
   source = source.replace(
-     "import { initSupabaseAuth } from './js/supabase-auth.js';",
-     'const initSupabaseAuth = (window.__initSupabaseAuth || (window.__mobileMocks && window.__mobileMocks.initSupabaseAuth)) || (function(){ return function(){ return { supabase: null }; }; })(); const startSignInFlow = (window.__startSignInFlow || (window.__mobileMocks && window.__mobileMocks.startSignInFlow)) || (function(){ return function(){}; })();'
+     "import { initFirebaseAuth } from './js/firebase-auth.js';",
+     'const initFirebaseAuth = (window.__initFirebaseAuth || (window.__mobileMocks && window.__mobileMocks.initFirebaseAuth)) || (function(){ return function(){ return { firebase: null }; }; })(); const startSignInFlow = (window.__startSignInFlow || (window.__mobileMocks && window.__mobileMocks.startSignInFlow)) || (function(){ return function(){}; })();'
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -46,14 +46,14 @@ function loadMobileModuleWithStartSignIn() {
   );
   // Replace named import of startSignInFlow so we can mock it by setting window.__startSignIn
   source = source.replace(
-     "import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';",
-     "const initSupabaseAuth = (window.__mobileMocks && window.__mobileMocks.initSupabaseAuth) || (window.__initSupabaseAuth || (function(){ return function(){ return { supabase: null }; }; })()); const startSignInFlow = (window.__mobileMocks && window.__mobileMocks.startSignInFlow) || (window.__startSignInFlow || (function(){ return function(){}; })());"
+     "import { initFirebaseAuth, startSignInFlow } from './js/firebase-auth.js';",
+     "const initFirebaseAuth = (window.__mobileMocks && window.__mobileMocks.initFirebaseAuth) || (window.__initFirebaseAuth || (function(){ return function(){ return { firebase: null }; }; })()); const startSignInFlow = (window.__mobileMocks && window.__mobileMocks.startSignInFlow) || (window.__startSignInFlow || (function(){ return function(){}; })());"
   );
 
   // ensure the real `window` has the helpers the replaced module code will look for
   if (typeof window.__mobileMocks !== 'undefined') {
     if (window.__mobileMocks.startSignInFlow) window.__startSignInFlow = window.__mobileMocks.startSignInFlow;
-    if (window.__mobileMocks.initSupabaseAuth) window.__initSupabaseAuth = window.__mobileMocks.initSupabaseAuth;
+    if (window.__mobileMocks.initFirebaseAuth) window.__initFirebaseAuth = window.__mobileMocks.initFirebaseAuth;
     if (window.__mobileMocks.initReminders) window.__initReminders = window.__mobileMocks.initReminders;
     // also expose a non-namespaced alias some code/e2e checks expect
     if (window.__mobileMocks.startSignInFlow) window.startSignInFlow = window.__mobileMocks.startSignInFlow;
@@ -79,26 +79,26 @@ function loadMobileModuleWithStartSignIn() {
     createNote: (note) => note || {},
     NOTES_STORAGE_KEY: 'memoryCue:notes',
   };
-  context.window.__initNotesSync = context.window.__initNotesSync || (() => ({ handleSessionChange() {}, setSupabaseClient() {} }));
+  context.window.__initNotesSync = context.window.__initNotesSync || (() => ({ handleSessionChange() {}, setFirebaseClient() {} }));
   const script = new vm.Script(source, { filename: filePath });
   script.runInContext(context);
-  // If the test provides a mocked Supabase client with signInWithOAuth, wire it
-  // to the sign-in buttons so the 'Supabase available' test path fires correctly.
+  // If the test provides a mocked Firebase client with signInWithOAuth, wire it
+  // to the sign-in buttons so the 'Firebase available' test path fires correctly.
   try {
-    const initAuthFn = window.__initSupabaseAuth || (window.__mobileMocks && window.__mobileMocks.initSupabaseAuth);
+    const initAuthFn = window.__initFirebaseAuth || (window.__mobileMocks && window.__mobileMocks.initFirebaseAuth);
     if (typeof initAuthFn === 'function') {
       const maybe = initAuthFn();
-      const signInFn = maybe && maybe.supabase && maybe.supabase.auth && maybe.supabase.auth.signInWithOAuth;
+      const signInFn = maybe && maybe.firebase && maybe.firebase.auth && maybe.firebase.auth.signInWithOAuth;
       if (typeof signInFn === 'function') {
         const btn = document.getElementById('googleSignInBtn');
         const btnMenu = document.getElementById('googleSignInBtnMenu');
-        if (btn && !btn._supabaseWired) {
+        if (btn && !btn._firebaseWired) {
           btn.addEventListener('click', () => signInFn());
-          btn._supabaseWired = true;
+          btn._firebaseWired = true;
         }
-        if (btnMenu && !btnMenu._supabaseWired) {
+        if (btnMenu && !btnMenu._firebaseWired) {
           btnMenu.addEventListener('click', () => signInFn());
-          btnMenu._supabaseWired = true;
+          btnMenu._firebaseWired = true;
         }
       }
     }
@@ -107,21 +107,21 @@ function loadMobileModuleWithStartSignIn() {
   }
   // ensure sign-in buttons are bound to our mocked fallback in the test VM
   try {
-    // only bind the test fallback if there's no Supabase signInWithOAuth available
-    let hasSupabaseSignIn = false;
+    // only bind the test fallback if there's no Firebase signInWithOAuth available
+    let hasFirebaseSignIn = false;
     try {
-      const initAuth = window.__initSupabaseAuth || (window.__mobileMocks && window.__mobileMocks.initSupabaseAuth);
+      const initAuth = window.__initFirebaseAuth || (window.__mobileMocks && window.__mobileMocks.initFirebaseAuth);
       if (typeof initAuth === 'function') {
         const maybe = initAuth();
-        if (maybe && maybe.supabase && maybe.supabase.auth && typeof maybe.supabase.auth.signInWithOAuth === 'function') {
-          hasSupabaseSignIn = true;
+        if (maybe && maybe.firebase && maybe.firebase.auth && typeof maybe.firebase.auth.signInWithOAuth === 'function') {
+          hasFirebaseSignIn = true;
         }
       }
     } catch (e) {
       /* ignore */
     }
 
-    if (!hasSupabaseSignIn && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
+    if (!hasFirebaseSignIn && window.__mobileMocks && typeof window.__mobileMocks.startSignInFlow === 'function') {
       const btn = document.getElementById('googleSignInBtn');
       const btnMenu = document.getElementById('googleSignInBtnMenu');
       if (btn && !btn._testAuthWired) {
@@ -152,7 +152,7 @@ describe('mobile sign-in wiring', () => {
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
-      initSupabaseAuth: jest.fn().mockReturnValue({ supabase: null }),
+      initFirebaseAuth: jest.fn().mockReturnValue({ firebase: null }),
       ModalController: class ModalController {
         constructor() {}
         show() {}
@@ -168,7 +168,7 @@ describe('mobile sign-in wiring', () => {
     jest.clearAllMocks();
   });
 
-  test('clicking sign-in calls startSignInFlow fallback when supabase is not available', async () => {
+  test('clicking sign-in calls startSignInFlow fallback when firebase is not available', async () => {
     // Load mobile.js with our mocked startSignInFlow
     loadMobileModuleWithStartSignIn();
 
@@ -183,7 +183,7 @@ describe('mobile sign-in wiring', () => {
     expect(window.__mobileMocks.startSignInFlow).toHaveBeenCalled();
   });
 
-  test('clicking overflow menu sign-in button calls startSignInFlow fallback when supabase is not available', async () => {
+  test('clicking overflow menu sign-in button calls startSignInFlow fallback when firebase is not available', async () => {
     // Load mobile.js with our mocked startSignInFlow
     loadMobileModuleWithStartSignIn();
 
@@ -198,9 +198,9 @@ describe('mobile sign-in wiring', () => {
     expect(window.__mobileMocks.startSignInFlow).toHaveBeenCalled();
   });
 
-  test('clicking sign-in calls supabase.auth.signInWithOAuth when available', async () => {
+  test('clicking sign-in calls firebase.auth.signInWithOAuth when available', async () => {
     const signInFn = jest.fn(() => Promise.resolve());
-    window.__mobileMocks.initSupabaseAuth = jest.fn().mockReturnValue({ supabase: { auth: { signInWithOAuth: signInFn } } });
+    window.__mobileMocks.initFirebaseAuth = jest.fn().mockReturnValue({ firebase: { auth: { signInWithOAuth: signInFn } } });
     window.__mobileMocks.startSignInFlow = jest.fn(() => Promise.resolve());
 
     loadMobileModuleWithStartSignIn();

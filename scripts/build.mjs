@@ -75,7 +75,6 @@ async function buildScripts() {
 
   const moduleEntries = {
     './mobile.js': 'mobile',
-    './js/config-supabase.js': 'config-supabase',
     './js/init-env.js': 'init-env',
     './js/mobile-theme-toggle.js': 'mobile-theme-toggle',
   };

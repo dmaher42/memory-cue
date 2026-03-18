@@ -1,5 +1,6 @@
-import { initSupabaseAuth, startSignInFlow, startSignOutFlow } from '../../js/supabase-auth.js';
-import { syncNotes, syncReminders, upsertReminder, deleteReminder as deleteSupabaseReminder } from '../services/supabaseSyncService.js';
+import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
+import { listReminders, saveReminder, removeReminder } from '../repositories/reminderRepository.js';
+import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
 import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
@@ -24,7 +25,7 @@ import {
 } from './reminderSchemaHelpers.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
-// This module wires up Supabase-backed reminder UI handlers.
+// This module wires up Firebase-backed reminder UI handlers.
 
 const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
@@ -53,6 +54,12 @@ const SEEDED_CATEGORIES = Object.freeze([
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
+const uid = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `reminder-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 function normalizeReminderRecord(reminder = {}, options = {}) {
   return normalizeReminderRecordHelper(reminder, {
     ...options,
@@ -3633,7 +3640,7 @@ export async function initReminders(sel = {}) {
     console.log('[brain] local reminders found:', localReminders.length);
 
     for (const reminder of localReminders) {
-      await upsertReminder({
+      await saveReminder(userId, {
         ...reminder,
         id: reminder?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid()),
         userId,
@@ -3643,7 +3650,7 @@ export async function initReminders(sel = {}) {
     }
 
     console.log('[brain] migrated reminders:', localReminders.length);
-    console.log('[brain] reminders migrated to supabase');
+    console.log('[brain] reminders migrated to firebase');
     localStorage.removeItem('memoryCue:offlineReminders');
   }
 
@@ -3852,9 +3859,7 @@ export async function initReminders(sel = {}) {
 
   saveBtn?.addEventListener('click', handleSaveAction);
 
-  const authReady = true;
-
-  authController = initSupabaseAuth({
+    authController = await initAuth({
     selectors: {
       signInButtons: googleSignInBtns,
       signOutButtons: googleSignOutBtns,
@@ -3863,7 +3868,7 @@ export async function initReminders(sel = {}) {
     },
     disableButtonBinding: true,
     onSessionChange: async (user) => {
-      const nextUserId = typeof user?.id === 'string' ? user.id : null;
+      const nextUserId = typeof user?.uid === 'string' ? user.uid : (typeof user?.id === 'string' ? user.id : null);
       userId = nextUserId;
 
       if (nextUserId) {
@@ -3985,11 +3990,11 @@ export async function initReminders(sel = {}) {
     }
     try {
       const localItems = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
-      const remoteItems = await syncReminders();
+      const remoteItems = await listReminders(userId);
       const normalizedRemoteItems = Array.isArray(remoteItems)
         ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
         : [];
-      console.log('[brain] reminders_loaded_from_supabase', { count: normalizedRemoteItems.length });
+      console.log('[brain] reminders_loaded_from_firestore', { count: normalizedRemoteItems.length });
 
       const remoteById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
       const remindersToSync = localItems.filter((entry) => {
@@ -4039,7 +4044,7 @@ export async function initReminders(sel = {}) {
       persistItems();
       rescheduleAllReminders();
     } catch (error){
-      console.error('Supabase reminders sync error:', error);
+      console.error('Firestore reminders sync error:', error);
       if(syncStatus){
         renderSyncIndicator('error', 'Sync Error');
       }
@@ -4063,7 +4068,7 @@ export async function initReminders(sel = {}) {
     persistItems();
 
     try {
-      await upsertReminder({
+      await saveReminder(userId, {
         ...normalizedItem,
         id: reminderId,
         createdAt,
@@ -4073,7 +4078,7 @@ export async function initReminders(sel = {}) {
       });
       item.pendingSync = false;
       persistItems();
-      console.log('[brain] reminder_saved_to_supabase', { id: reminderId });
+      console.log('[brain] reminder_saved_to_firestore', { id: reminderId });
       return true;
     } catch (error) {
       item.pendingSync = true;
@@ -4084,7 +4089,7 @@ export async function initReminders(sel = {}) {
   }
   async function deleteFromFirebase(id){
     try {
-      await deleteSupabaseReminder(id);
+      await removeReminder(userId, id);
     } catch {
       toast('Delete queued (offline)');
     }
@@ -5997,9 +6002,4 @@ export function deleteReminder(id, options = {}) {
 
 export function completeReminder(id, completed = true, options = {}) {
   return reminderDataService.completeReminder(id, completed, options);
-}
-
-// Backward-compatible alias while callers migrate away from the old Supabase name.
-export async function setupSupabaseSync() {
-  return setupReminderFirestoreSync();
 }

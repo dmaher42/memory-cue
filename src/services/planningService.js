@@ -1,4 +1,4 @@
-import { pullChanges } from './supabaseSyncService.js';
+import { pullChanges } from './firestoreSyncService.js';
 
 const resolveUid = async (uid) => {
   if (typeof uid === 'string' && uid.trim()) {

@@ -5,7 +5,7 @@ This file gives concise, actionable guidance for AI coding agents working in thi
 ## Big picture
 - App Type: Progressive Web App (PWA) implemented as a static site with a service worker. Key front-end code lives under `js/`, `modules/`, and top-level entry files like `app.js`, `mobile.js`, and `index.html`.
 - Build: A custom `scripts/build.mjs` bundles JS with `esbuild` and produces a hashed CSS asset via `npx tailwindcss` into `dist/` (see `package.json` `build` script).
-- Runtime env: Runtime secrets/config are injected into the page as `window.__ENV` (see `js/init-env.js` and README). Supabase config is read from `window.supabase` or `window.__ENV` (see `js/config-supabase.js`).
+- Runtime env: Runtime secrets/config are injected into the page as `window.__ENV` (see `js/init-env.js` and README). Firebase config is read from `window.firebase` or `window.__ENV` (see `js/config-firebase.js`).
 
 ## Important files to inspect before coding
 - `scripts/build.mjs` — esbuild entry maps (`moduleEntries` + `legacyEntries`), CSS hashing, `dist/` rewrite rules and `copyStatic()` list. When you add/remove entrypoints, update this file.
@@ -29,8 +29,8 @@ This file gives concise, actionable guidance for AI coding agents working in thi
 - Reminders persistence: Service worker uses IndexedDB store `memory-cue-reminders` / object store `scheduled`. Messages to SW use `type: 'memoryCue:updateScheduledReminders'` and `'memoryCue:checkScheduledReminders'` — prefer those shapes when driving the SW from pages.
 
 ## Integration points & external deps
-- Supabase: Look at `js/supabase-client.js` + `js/config-supabase.js`. The runtime expects `window.__ENV` or a global `supabase` client.
-- Firebase references: README documents optional Firebase hosting; repo includes firebase-related tests in `js/__tests__/` but Supabase is the primary runtime integration.
+- Firebase: Look at `js/firebase-client.js` + `js/config-firebase.js`. The runtime expects `window.__ENV` or a global `firebase` client.
+- Firebase references: README documents optional Firebase hosting; repo includes firebase-related tests in `js/__tests__/` but Firebase is the primary runtime integration.
 - Browser APIs: service worker uses Notification Triggers, Push, Periodic Sync, and IndexedDB. Tests and local manual QA should account for feature availability across browsers.
 
 ## Concrete examples / gotchas for changes

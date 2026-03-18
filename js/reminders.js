@@ -15,7 +15,7 @@ export async function initReminders(sel = {}) {
     globalThis.render = (...args) => controller.render(...args);
     globalThis.setupReminderFirestoreSync = (...args) => controller.setupReminderFirestoreSync(...args);
     // Backward-compatible alias for legacy callers.
-    globalThis.setupSupabaseSync = (...args) => controller.setupReminderFirestoreSync(...args);
+    globalThis.setupFirebaseSync = (...args) => controller.setupReminderFirestoreSync(...args);
     globalThis.initReminders = (...args) => controller.initReminders(...args);
   }
 

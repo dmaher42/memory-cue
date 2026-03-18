@@ -35,7 +35,7 @@
 | LocalStorage | `mc:lastDefaults` | Last-used reminder defaults (`priority`, `category`, etc.) | Reminder defaults helpers | Reminder UX defaults (not capture content) |
 | LocalStorage | `syncUrl` | URL string for external webhook sync | Reminder settings UI | Integration setting |
 | LocalStorage | `memoryCueDB` | Structured assistant DB shape with `schemaVersion`, `settings`, `memoryEntries/entries` | Read by root `assistant.js` (legacy assistant context path) | Assistant context store (separate layer) |
-| Supabase (remote) | `notes` table (default) | Upserted note rows: `id`, `user_id`, `title`, `body`, `body_html`, `body_text`, `folder_id`, `updated_at` | Notes sync (`notes-sync` via remote sync handler in notes storage) | Remote notes sync |
+| Firebase (remote) | `notes` table (default) | Upserted note rows: `id`, `user_id`, `title`, `body`, `body_html`, `body_text`, `folder_id`, `updated_at` | Notes sync (`notes-sync` via remote sync handler in notes storage) | Remote notes sync |
 | Firebase Firestore (remote) | `users/{userId}/reminders/{id}` | Reminder document with title, due, category, done, timestamps, etc. | `saveToFirebase()` in reminders module | Remote reminders sync |
 | IndexedDB (via Firebase SDK persistence) | Firestore client persistence | Firestore offline cache (SDK-managed) | Firebase init (`enableMultiTabIndexedDbPersistence` / `enableIndexedDbPersistence`) | Offline persistence layer for reminders sync |
 | In-memory runtime | `items` array in reminders module | Active reminder list objects | `createReminderFromPayload()`, edits/toggles/reorder | Working reminder state |
@@ -125,7 +125,7 @@ User taps New Note (button/footer/FAB) and edits title/body
 ↓  
 Save button (or autosave) builds note via `createNote()`  
 ↓  
-`saveAllNotes()` writes to `memoryCueNotes` and optionally remote Supabase sync handler  
+`saveAllNotes()` writes to `memoryCueNotes` and optionally remote Firebase sync handler  
 ↓  
 Notebook refreshes from storage and emits note update behavior.
 
@@ -229,7 +229,7 @@ Convert to Note or Reminder
    AI enrichment updates reminders/notes asynchronously after initial save; centralizing capture must not drop delayed updates.
 
 6. **Remote sync divergence**  
-   Notes (Supabase) and reminders (Firestore) have separate sync lifecycles; conversion paths must avoid duplicate creation or sync loops.
+   Notes (Firebase) and reminders (Firestore) have separate sync lifecycles; conversion paths must avoid duplicate creation or sync loops.
 
 7. **Keyboard/voice shortcuts**  
    Enter submit, voice transcript auto-submit, and `/`/`q` focus shortcuts must still target the new unified capture entry point.

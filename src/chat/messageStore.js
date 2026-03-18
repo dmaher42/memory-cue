@@ -1,4 +1,4 @@
-import { appendChatMessage, syncChatHistory } from '../services/supabaseSyncService.js';
+import { appendChatMessage, syncChatHistory } from '../services/firestoreSyncService.js';
 const CHAT_HISTORY_STORAGE_KEY = 'memoryCueChatHistory';
 
 const readMessages = () => {

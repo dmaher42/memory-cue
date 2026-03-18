@@ -50,18 +50,18 @@ Build the static app and deploy the generated `dist/` output with your preferred
 
 ## Configuration
 
-Memory Cue expects Supabase credentials to be available at runtime via `window.__ENV`. Add the following snippet to your production `index.html` (or equivalent template) **before** loading the main JavaScript bundle so the app can read the values when it starts:
+Memory Cue expects Firebase credentials to be available at runtime via `window.__ENV`. Add the following snippet to your production `index.html` (or equivalent template) **before** loading the main JavaScript bundle so the app can read the values when it starts:
 
 ```html
 <script>
   window.__ENV = {
-    SUPABASE_URL: "https://YOUR-PROJECT.supabase.co",
-    SUPABASE_ANON_KEY: "YOUR_ANON_KEY"
+    FIREBASE_API_KEY: "https://YOUR-PROJECT.firebaseapp.com",
+    FIREBASE_APP_ID: "YOUR_ANON_KEY"
   };
 </script>
 ```
 
-Keep your real Supabase URL and anon key out of version control—set them through deployment-specific templating or secrets management rather than committing them to the repository.
+Keep your real Firebase URL and anon key out of version control—set them through deployment-specific templating or secrets management rather than committing them to the repository.
 
 
 ## AI setup
@@ -75,7 +75,7 @@ If this variable is missing, these endpoints return a `500` JSON error indicatin
 
 ## Privacy & Data
 
-Memory Cue stores synced notes and reminders through Supabase-backed services. Review your Supabase Row Level Security policies to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. Do not commit private service credentials to the repository.
+Memory Cue stores synced notes and reminders through Firebase-backed services. Review your Firebase Row Level Security policies to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. Do not commit private service credentials to the repository.
 
 ## Desktop theme architecture
 

@@ -34,20 +34,20 @@
     lines.push('hash: ' + location.hash);
     debugEl.textContent = lines.join('\n');
 
-    // Try to detect Supabase client and session (best-effort). If present and session exists,
+    // Try to detect Firebase client and session (best-effort). If present and session exists,
     // redirect to app. Otherwise perform a timed redirect back to `/`.
     (async function() {
       try {
-        if (window.supabase && window.supabase.auth && typeof window.supabase.auth.getSession === 'function') {
+        if (window.firebase && window.firebase.auth && typeof window.firebase.auth.getSession === 'function') {
           try {
-            const { data: sessionData } = await window.supabase.auth.getSession();
+            const { data: sessionData } = await window.firebase.auth.getSession();
             if (sessionData && sessionData.session) {
               document.getElementById('status').textContent = 'Sign-in successful — redirecting to the app...';
               setTimeout(() => (location.href = '/'), 800);
               return;
             }
           } catch (e) {
-            console.debug && console.debug('supabase getSession error', e);
+            console.debug && console.debug('firebase getSession error', e);
           }
         }
       } catch (err) {

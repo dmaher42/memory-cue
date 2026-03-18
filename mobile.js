@@ -1,6 +1,6 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
 import { initReminders } from './js/reminders.js';
-import { initSupabaseAuth, startSignInFlow } from './js/supabase-auth.js';
+import { initAuth, startSignInFlow } from './js/auth.js';
 import {
   loadAllNotes,
   saveAllNotes,
@@ -1071,8 +1071,8 @@ const bootstrapReminders = () => {
     voiceBtnSel: '#startVoiceCaptureGlobal, #quickAddVoice',
   })
     .then(() => {
-      // Wire Supabase auth + notes sync for mobile
-      wireMobileNotesSupabaseAuth();
+      // Wire Firebase auth + notes sync for mobile
+      wireMobileNotesFirebaseAuth();
     })
     .catch((error) => {
       console.error('Failed to initialise reminders:', error);
@@ -3781,7 +3781,7 @@ if (document.readyState === 'loading') {
   initMobileNotes();
 }
 
-function wireMobileNotesSupabaseAuth() {
+async function wireMobileNotesFirebaseAuth() {
   const debugLog = (...args) => {
     if (isNotesSyncDebugEnabled) {
       try {
@@ -3821,7 +3821,7 @@ function wireMobileNotesSupabaseAuth() {
   }
 
   // 2. Initialise auth, binding to mobile sign-in / sign-out buttons
-  const authController = initSupabaseAuth({
+  const authController = await initAuth({
     selectors: {
       // Main sign-in button in the UI, if present
       signInButtons: ['#googleSignInBtn', '#googleSignInBtnMenu'],
@@ -3849,7 +3849,7 @@ function wireMobileNotesSupabaseAuth() {
     return;
   }
 
-  // 3. Prime notes sync with the current Supabase session (if there is one)
+  // 3. Prime notes sync with the current Firebase session (if there is one)
   if (typeof window !== 'undefined' && typeof notesSync.handleSessionChange === 'function') {
     const initialUserId = typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string' ? window.__MEMORY_CUE_AUTH_USER_ID.trim() : '';
     if (initialUserId) {

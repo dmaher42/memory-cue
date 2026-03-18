@@ -19,8 +19,8 @@ function loadMobileModule() {
     'const { initReminders } = window.__mobileMocks;'
   );
   source = source.replace(
-    "import { initSupabaseAuth } from './js/supabase-auth.js';",
-    'const { initSupabaseAuth } = window.__mobileMocks;'
+    "import { initFirebaseAuth } from './js/firebase-auth.js';",
+    'const { initFirebaseAuth } = window.__mobileMocks;'
   );
   source = source.replace(
     "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
@@ -98,12 +98,12 @@ describe('mobile sheet opener events', () => {
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
-      initSupabaseAuth: jest.fn(),
+      initFirebaseAuth: jest.fn(),
       loadAllNotes: () => [],
       saveAllNotes: () => {},
       createNote: () => ({}),
       NOTES_STORAGE_KEY: 'memoryCue:notes',
-      initNotesSync: () => ({ handleSessionChange() {}, setSupabaseClient() {} }),
+      initNotesSync: () => ({ handleSessionChange() {}, setFirebaseClient() {} }),
       getFolders: () => [],
       getFolderNameById: () => 'General',
       assignNoteToFolder: () => {},
