@@ -5,7 +5,6 @@
   <!-- === SUPABASE CONFIG (put before your main JS) === -->
   <script type="module" src="./assets/init-env-MQHJLMJ2.js" defer></script>
   <script type="module" src="./assets/config-supabase-MP3TZUE5.js" defer></script>
-  <script defer src="./js/firebase-config.js"></script>
   <!-- === /SUPABASE CONFIG === -->
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
@@ -6547,9 +6546,9 @@
         firebaseContextPromise = (async () => {
           try {
             const [appMod, firestoreMod, authMod] = await Promise.all([
-              import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
-              import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'),
-              import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'),
+              Promise.reject(new Error('Firebase removed')),
+              Promise.reject(new Error('Firebase removed')),
+              Promise.reject(new Error('Firebase removed')),
             ]);
 
             const { initializeApp, getApps, getApp } = appMod || {};
@@ -6652,7 +6651,7 @@
             const user = firebaseContext?.auth?.currentUser;
             console.log(
               'Notes sync debug:',
-              'user.uid =',
+              'user.id =',
               user?.uid,
               'remoteNotesDocRef path =',
               remoteNotesDocRef.path
@@ -6717,11 +6716,11 @@
         stopRemoteNotesSync();
         firebaseContext = context;
         remoteSyncActive = true;
-        remoteNotesDocRef = context.doc(context.db, 'users', user.uid, 'notebook', 'scratch');
-        remoteUserId = user.uid;
+        remoteNotesDocRef = context.doc(context.db, 'users', user.id, 'notebook', 'scratch');
+        remoteUserId = user.id;
 
         const ensureRemoteDoc = typeof context.setDoc === 'function'
-          ? context.setDoc(remoteNotesDocRef, { ownerUid: user.uid }, { merge: true }).catch((error) => {
+          ? context.setDoc(remoteNotesDocRef, { ownerUid: user.id }, { merge: true }).catch((error) => {
               console.error('Notes sync: Unable to prepare remote notebook', error);
               if (error && error.code === 'permission-denied') {
                 setStatus('error', 'Sync unavailable');
@@ -6772,7 +6771,7 @@
 
           firebaseContext = context;
           context.onAuthStateChanged(context.auth, (user) => {
-            if (user && user.uid) {
+            if (user && user.id) {
               startRemoteNotesSync(user, context);
             } else {
               stopRemoteNotesSync();

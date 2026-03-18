@@ -3836,7 +3836,7 @@ function wireMobileNotesSupabaseAuth() {
     },
     disableButtonBinding: false,
     onSessionChange(user, session) {
-      const normalizedUser = user && typeof user.uid === 'string' ? { ...user, id: user.uid } : null;
+      const normalizedUser = user && typeof user.id === 'string' ? user : null;
       debugLog('[notes-sync] Mobile session change', { userId: normalizedUser?.id || null });
       if (notesSync && typeof notesSync.handleSessionChange === 'function') {
         notesSync.handleSessionChange(normalizedUser, session ?? null);
@@ -3849,12 +3849,14 @@ function wireMobileNotesSupabaseAuth() {
     return;
   }
 
-  // 3. Prime notes sync with the current Firebase session (if there is one)
-  const initialUser = auth?.currentUser;
-  if (initialUser && typeof notesSync.handleSessionChange === 'function') {
-    const normalizedUser = { ...initialUser, id: initialUser.uid };
-    debugLog('[notes-sync] Mobile initial session', { userId: normalizedUser.id || null });
-    notesSync.handleSessionChange(normalizedUser, { user: initialUser });
+  // 3. Prime notes sync with the current Supabase session (if there is one)
+  if (typeof window !== 'undefined' && typeof notesSync.handleSessionChange === 'function') {
+    const initialUserId = typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string' ? window.__MEMORY_CUE_AUTH_USER_ID.trim() : '';
+    if (initialUserId) {
+      const normalizedUser = { id: initialUserId, uid: initialUserId, email: '' };
+      debugLog('[notes-sync] Mobile initial session', { userId: normalizedUser.id || null });
+      notesSync.handleSessionChange(normalizedUser, { user: normalizedUser });
+    }
   }
 
   const requestRemoteSync = () => {

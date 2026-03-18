@@ -119,7 +119,7 @@ const mapChatToRow = (item, userId) => ({
   conversation_id: item.conversationId || 'default',
 });
 
-async function syncDomain({ key, table, mapToRow, mapFromRow = (row) => row }) {
+async function syncDomain({ key, table, mapToRow, mapFromRow = (row) => row, localItemsOverride = null }) {
   const supabase = getSupabaseClient();
   if (!supabase) {
     console.warn('[storage] supabase unavailable — using local only');
@@ -129,7 +129,7 @@ async function syncDomain({ key, table, mapToRow, mapFromRow = (row) => row }) {
   const userId = await getCurrentUserId();
   if (!userId) return readLocal(key);
 
-  const localItems = readLocal(key);
+  const localItems = Array.isArray(localItemsOverride) ? localItemsOverride : readLocal(key);
   const pendingItems = localItems.filter((item) => item?.id && item.pendingSync !== false);
 
   if (pendingItems.length) {
@@ -206,7 +206,7 @@ const mapChatFromRow = (row = {}) => ({
   pendingSync: false,
 });
 
-export const syncNotes = () => syncDomain({ key: NOTES_KEY, table: TABLES.notes, mapToRow: mapNoteToRow, mapFromRow: mapNoteFromRow });
+export const syncNotes = (localItemsOverride = null) => syncDomain({ key: NOTES_KEY, table: TABLES.notes, mapToRow: mapNoteToRow, mapFromRow: mapNoteFromRow, localItemsOverride });
 export const syncInbox = () => syncDomain({ key: INBOX_KEY, table: TABLES.inbox, mapToRow: mapInboxToRow, mapFromRow: mapInboxFromRow });
 export const syncReminders = () => syncDomain({ key: REMINDERS_KEY, table: TABLES.reminders, mapToRow: mapReminderToRow, mapFromRow: mapReminderFromRow });
 export const syncChatHistory = () => syncDomain({ key: CHAT_KEY, table: TABLES.chat, mapToRow: mapChatToRow, mapFromRow: mapChatFromRow });

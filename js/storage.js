@@ -75,111 +75,41 @@ window.__ENV = {
   let currentSearchIndex = 0;
   let searchMatches = [];
 
-  const FALLBACK_FIREBASE_CONFIG = Object.freeze({
-    apiKey: 'AIzaSyAmAMiz0zG3dAhZJhOy1DYj8fKVDObL36c',
-    authDomain: 'memory-cue-app.firebaseapp.com',
-    projectId: 'memory-cue-app',
-    storageBucket: 'memory-cue-app.appspot.com',
-    messagingSenderId: '751284466633',
-    appId: '1:751284466633:web:3b10742970bef1a5d5ee18',
-    measurementId: 'G-R0V4M7VCE6'
-  });
-
-  let firebaseContextPromise;
-  let firebaseContext;
-  let remoteNotesUnsubscribe = null;
-  let remoteNotesDocRef = null;
+  let supabaseSyncPromise = null;
   let remoteSaveTimeout = null;
   let remoteSyncActive = false;
   let isApplyingRemoteUpdate = false;
-  let remoteUserId = null;
   let lastStoredLocalContent = '';
   let lastRemoteContent = '';
 
-  const getFirebaseContext = () => {
-    if (firebaseContextPromise) {
-      return firebaseContextPromise;
+  const getSupabaseSync = () => {
+    if (!supabaseSyncPromise) {
+      supabaseSyncPromise = import('../src/services/supabaseSyncService.js')
+        .catch((error) => {
+          console.warn('Notes sync: Supabase module unavailable; remote sync disabled.', error);
+          return null;
+        });
     }
+    return supabaseSyncPromise;
+  };
 
-    firebaseContextPromise = (async () => {
-      try {
-        const [appMod, firestoreMod, authMod] = await Promise.all([
-          import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
-          import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'),
-          import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'),
-        ]);
-
-        const { initializeApp, getApps, getApp } = appMod || {};
-        const { getFirestore, doc, onSnapshot, setDoc, serverTimestamp } = firestoreMod || {};
-        const { getAuth, onAuthStateChanged } = authMod || {};
-
-        if (
-          typeof initializeApp !== 'function' ||
-          typeof getFirestore !== 'function' ||
-          typeof getAuth !== 'function'
-        ) {
-          return null;
-        }
-
-        const api = window?.memoryCueFirebase || {};
-        const configCandidate = typeof api.getFirebaseConfig === 'function'
-          ? api.getFirebaseConfig()
-          : null;
-        const config =
-          (configCandidate && typeof configCandidate === 'object' ? configCandidate : null)
-          || (api.DEFAULT_FIREBASE_CONFIG ? { ...api.DEFAULT_FIREBASE_CONFIG } : null)
-          || FALLBACK_FIREBASE_CONFIG;
-
-        if (!config || !config.projectId) {
-          console.warn('Notes sync: Firebase config unavailable; remote sync disabled.');
-          return null;
-        }
-
-        const app = (typeof getApps === 'function' && getApps().length)
-          ? getApp()
-          : initializeApp(config);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        return {
-          app,
-          db,
-          auth,
-          doc,
-          onSnapshot,
-          setDoc,
-          serverTimestamp,
-          onAuthStateChanged,
-        };
-      } catch (error) {
-        console.warn('Notes sync: Firebase modules unavailable; remote sync disabled.', error);
-        return null;
-      }
-    })();
-
-    return firebaseContextPromise;
+  const getCurrentUserId = () => {
+    const userId = typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string'
+      ? window.__MEMORY_CUE_AUTH_USER_ID.trim()
+      : '';
+    return userId || null;
   };
 
   const stopRemoteNotesSync = () => {
     remoteSyncActive = false;
-    remoteNotesDocRef = null;
-    remoteUserId = null;
     if (remoteSaveTimeout) {
       clearTimeout(remoteSaveTimeout);
       remoteSaveTimeout = null;
     }
-    if (typeof remoteNotesUnsubscribe === 'function') {
-      try {
-        remoteNotesUnsubscribe();
-      } catch (error) {
-        console.warn('Notes sync: Unable to clean up listener', error);
-      }
-    }
-    remoteNotesUnsubscribe = null;
   };
 
   const scheduleRemoteSave = (content) => {
-    if (!remoteSyncActive || !firebaseContext || !remoteNotesDocRef) {
+    if (!remoteSyncActive) {
       setStatus('saved', 'Saved');
       setTimeout(() => setStatus('ready', 'Ready'), 1500);
       return;
@@ -197,123 +127,57 @@ window.__ENV = {
 
     remoteSaveTimeout = setTimeout(async () => {
       try {
-        const payload = { content };
-        if (remoteUserId) {
-          payload.ownerUid = remoteUserId;
+        const syncModule = await getSupabaseSync();
+        if (!syncModule?.syncNotes) {
+          setStatus('saved', 'Saved');
+          setTimeout(() => setStatus('ready', 'Ready'), 1200);
+          return;
         }
-        if (typeof firebaseContext.serverTimestamp === 'function') {
-          payload.updatedAt = firebaseContext.serverTimestamp();
-        } else {
-          payload.updatedAt = new Date();
-        }
-        const user = firebaseContext?.auth?.currentUser;
-        console.log(
-          'Notes sync debug:',
-          'user.uid =',
-          user?.uid,
-          'remoteNotesDocRef path =',
-          remoteNotesDocRef.path
-        );
-        await firebaseContext.setDoc(remoteNotesDocRef, payload, { merge: true });
+
+        await syncModule.syncNotes();
         lastRemoteContent = content;
         setStatus('saved', 'Synced');
         setTimeout(() => setStatus('ready', 'Ready'), 1200);
       } catch (error) {
         console.error('Notes sync: Failed to sync notes', error);
-        if (error && error.code === 'permission-denied') {
-          setStatus('error', 'Sync unavailable');
-          stopRemoteNotesSync();
-        } else {
-          setStatus('error', 'Sync failed');
-        }
+        setStatus('error', 'Sync failed');
       }
     }, 400);
   };
 
-  const handleRemoteSnapshot = (snapshot) => {
-    if (!snapshot || typeof snapshot.exists !== 'function') {
+  const pullRemoteNotes = async () => {
+    if (!remoteSyncActive) {
       return;
     }
 
-    if (!snapshot.exists()) {
-      if (lastStoredLocalContent) {
-        setStatus('saving', 'Syncing...');
-        scheduleRemoteSave(lastStoredLocalContent);
-      }
-      return;
-    }
-
-    const data = snapshot.data();
-    const remoteContent = typeof data?.content === 'string' ? data.content : '';
-    lastRemoteContent = remoteContent;
-
-    if (remoteContent === (notesEditor.innerHTML || '')) {
-      return;
-    }
-
-    isApplyingRemoteUpdate = true;
-    notesEditor.innerHTML = remoteContent;
-    savedSelectionRange = null;
-    updateWordCount();
     try {
+      const syncModule = await getSupabaseSync();
+      const remoteNotes = await syncModule?.syncNotes?.();
+      const firstNote = Array.isArray(remoteNotes) && remoteNotes.length ? remoteNotes[0] : null;
+      const remoteContent = typeof firstNote?.bodyHtml === 'string'
+        ? firstNote.bodyHtml
+        : typeof firstNote?.body === 'string'
+          ? firstNote.body
+          : '';
+
+      if (!remoteContent || remoteContent === (notesEditor.innerHTML || '')) {
+        return;
+      }
+
+      isApplyingRemoteUpdate = true;
+      notesEditor.innerHTML = remoteContent;
+      savedSelectionRange = null;
+      updateWordCount();
       localStorage.setItem('memory-cue-notes', remoteContent);
       lastStoredLocalContent = remoteContent;
+      lastRemoteContent = remoteContent;
+      setStatus('saved', 'Synced');
+      setTimeout(() => setStatus('ready', 'Ready'), 1200);
     } catch (error) {
-      console.warn('Notes sync: Unable to persist remote notes locally', error);
+      console.warn('Notes sync: Unable to pull remote notes', error);
+    } finally {
+      isApplyingRemoteUpdate = false;
     }
-    setStatus('saved', 'Synced');
-    setTimeout(() => setStatus('ready', 'Ready'), 1200);
-    isApplyingRemoteUpdate = false;
-  };
-
-  const startRemoteNotesSync = (user, context) => {
-    if (!user || !context || !context.db || typeof context.doc !== 'function' || typeof context.onSnapshot !== 'function') {
-      return;
-    }
-
-    stopRemoteNotesSync();
-    firebaseContext = context;
-    remoteSyncActive = true;
-    remoteNotesDocRef = context.doc(context.db, 'users', user.uid, 'notebook', 'scratch');
-    remoteUserId = user.uid;
-
-    const ensureRemoteDoc = typeof context.setDoc === 'function'
-      ? context.setDoc(remoteNotesDocRef, { ownerUid: user.uid }, { merge: true }).catch((error) => {
-          console.error('Notes sync: Unable to prepare remote notebook', error);
-          if (error && error.code === 'permission-denied') {
-            setStatus('error', 'Sync unavailable');
-            stopRemoteNotesSync();
-          }
-          return null;
-        })
-      : Promise.resolve(null);
-
-    ensureRemoteDoc.then(() => {
-      if (!remoteSyncActive) {
-        return;
-      }
-
-      try {
-        remoteNotesUnsubscribe = context.onSnapshot(remoteNotesDocRef, handleRemoteSnapshot, (error) => {
-          console.error('Notes sync: Listener error', error);
-          if (error && error.code === 'permission-denied') {
-            setStatus('error', 'Sync unavailable');
-            stopRemoteNotesSync();
-          } else {
-            setStatus('error', 'Sync error');
-          }
-        });
-      } catch (error) {
-        console.error('Notes sync: Unable to subscribe to updates', error);
-        return;
-      }
-
-      const initialContent = notesEditor.innerHTML || lastStoredLocalContent;
-      if (initialContent && !isApplyingRemoteUpdate) {
-        setStatus('saving', 'Syncing...');
-        scheduleRemoteSave(initialContent);
-      }
-    });
   };
 
   const initRemoteNotebookSync = () => {
@@ -322,20 +186,22 @@ window.__ENV = {
     }
     initRemoteNotebookSync._started = true;
 
-    getFirebaseContext().then((context) => {
-      if (!context || !context.auth || typeof context.onAuthStateChanged !== 'function') {
+    const refreshSyncState = () => {
+      remoteSyncActive = Boolean(getCurrentUserId());
+      if (!remoteSyncActive) {
+        stopRemoteNotesSync();
+        setStatus('ready', 'Ready');
         return;
       }
+      void pullRemoteNotes();
+    };
 
-      firebaseContext = context;
-      context.onAuthStateChanged(context.auth, (user) => {
-        if (user && user.uid) {
-          startRemoteNotesSync(user, context);
-        } else {
-          stopRemoteNotesSync();
-          setStatus('ready', 'Ready');
-        }
-      });
+    refreshSyncState();
+    window.addEventListener('focus', refreshSyncState);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        refreshSyncState();
+      }
     });
   };
 

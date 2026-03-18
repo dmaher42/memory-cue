@@ -6,7 +6,7 @@
 
 ## Client/runtime configuration
 - Supabase settings are loaded via `js/config-supabase.js`, `js/supabase-client.js`, and runtime env shims in `js/init-env.js` / `js/env.js`.
-- Firebase settings are loaded via `js/firebase-config.js` and `js/firebase-init.js`.
+- Supabase settings are loaded from `window.__ENV` and `js/supabase-client.js`.
 - Google Apps Script endpoint configuration is managed through `syncUrl` in localStorage and notes sync modules.
 
 ## Notes

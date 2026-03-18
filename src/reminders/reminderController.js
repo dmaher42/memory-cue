@@ -1,4 +1,5 @@
-import { setAuthContext, startSignInFlow, startSignOutFlow } from '../../js/supabase-auth.js';
+import { initSupabaseAuth, startSignInFlow, startSignOutFlow } from '../../js/supabase-auth.js';
+import { syncNotes, syncReminders, upsertReminder, deleteReminder as deleteSupabaseReminder } from '../services/supabaseSyncService.js';
 import { captureInput, getInboxEntries } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
 import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
@@ -23,7 +24,7 @@ import {
 } from './reminderSchemaHelpers.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
-// This module wires up Firebase/Firestore and all reminder UI handlers.
+// This module wires up Supabase-backed reminder UI handlers.
 
 const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
@@ -97,49 +98,6 @@ async function ensureEmbeddingForItem(item) {
     item.semanticEmbedding = generated;
   }
   return item;
-}
-
-// Provide a safe fallback that does not embed production credentials in the
-// repository. Hosting environments are expected to inject their own Firebase
-// configuration via the memoryCueFirebase API or a local module export.
-const FALLBACK_FIREBASE_CONFIG = Object.freeze({});
-
-let cachedFirebaseConfig = null;
-
-function resolveFirebaseConfig() {
-  if (cachedFirebaseConfig) {
-    return { ...cachedFirebaseConfig };
-  }
-  const scope = getGlobalScope();
-  const memoryCueApi = scope?.memoryCueFirebase;
-  if (memoryCueApi && typeof memoryCueApi.getFirebaseConfig === 'function') {
-    cachedFirebaseConfig = memoryCueApi.getFirebaseConfig();
-    return { ...cachedFirebaseConfig };
-  }
-  if (typeof require === 'function') {
-    try {
-      const moduleValue = require('./firebase-config.js');
-      if (moduleValue) {
-        const getter = typeof moduleValue.getFirebaseConfig === 'function'
-          ? moduleValue.getFirebaseConfig
-          : typeof moduleValue.default?.getFirebaseConfig === 'function'
-            ? moduleValue.default.getFirebaseConfig
-            : null;
-        if (getter) {
-          cachedFirebaseConfig = getter();
-          return { ...cachedFirebaseConfig };
-        }
-      }
-    } catch {
-      // ignore – likely running in the browser without require
-    }
-  }
-  if (memoryCueApi && memoryCueApi.DEFAULT_FIREBASE_CONFIG) {
-    cachedFirebaseConfig = { ...memoryCueApi.DEFAULT_FIREBASE_CONFIG };
-    return { ...cachedFirebaseConfig };
-  }
-  cachedFirebaseConfig = { ...FALLBACK_FIREBASE_CONFIG };
-  return { ...cachedFirebaseConfig };
 }
 
 function getGlobalScope() {
@@ -2851,24 +2809,8 @@ export async function initReminders(sel = {}) {
   bindNotificationCleanupHandlers();
   setupVoiceEnhancement();
 
-  // Placeholder for Firebase modules loaded later
-  let initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence,
-    enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection,
-    query, where, getDocs, orderBy, serverTimestamp, getAuth, onAuthStateChanged,
-    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
-    signOut;
-
-  const firebaseDeps = sel.firebaseDeps;
-  const importModule = typeof sel.importModule === 'function'
-    ? sel.importModule
-    : (specifier) => import(specifier);
   const globalScope = getGlobalScope();
-
-  let firebaseModulesLoaded = false;
-  let firebaseReady = false;
-  let app = null;
-  let db = null;
-  let auth = null;
+  let authController = null;
 
   // State
   let items = [];
@@ -3670,12 +3612,11 @@ export async function initReminders(sel = {}) {
 
   ensureAllEmbeddings();
 
-  async function migrateLocalReminders(authInstance, firestoreDb) {
-    if (!authInstance?.currentUser || !firestoreDb) {
+  async function migrateLocalReminders() {
+    if (!userId) {
       return;
     }
 
-    const uid = authInstance.currentUser.uid;
     let localReminders = [];
 
     try {
@@ -3685,31 +3626,24 @@ export async function initReminders(sel = {}) {
       localReminders = [];
     }
 
-    if (!Array.isArray(localReminders)) {
-      localReminders = [];
+    if (!Array.isArray(localReminders) || !localReminders.length) {
+      return;
     }
 
     console.log('[brain] local reminders found:', localReminders.length);
 
-    if (!localReminders.length) {
-      return;
-    }
-
     for (const reminder of localReminders) {
-      const reminderRef = doc(
-        collection(firestoreDb, 'users', uid, 'reminders'),
-        reminder?.id || crypto.randomUUID(),
-      );
-
-      await setDoc(reminderRef, {
+      await upsertReminder({
         ...reminder,
-        userId: uid,
+        id: reminder?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid()),
+        userId,
         migratedAt: Date.now(),
+        pendingSync: true,
       });
     }
 
     console.log('[brain] migrated reminders:', localReminders.length);
-    console.log('[brain] reminders migrated to firestore');
+    console.log('[brain] reminders migrated to supabase');
     localStorage.removeItem('memoryCue:offlineReminders');
   }
 
@@ -3718,7 +3652,7 @@ export async function initReminders(sel = {}) {
       items = loadOfflineRemindersFromStorage();
       return;
     }
-    await migrateLocalReminders(auth, db);
+    await migrateLocalReminders();
   }
   try {
     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
@@ -3918,293 +3852,42 @@ export async function initReminders(sel = {}) {
 
   saveBtn?.addEventListener('click', handleSaveAction);
 
-  if (firebaseDeps) {
-    ({ initializeApp, getApps, getApp, getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, serverTimestamp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = firebaseDeps);
-    firebaseModulesLoaded = true;
-  } else {
-    try {
-      ({ initializeApp, getApps, getApp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'));
-      ({ getFirestore, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence, doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, serverTimestamp } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js'));
-      ({ getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } = await importModule('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'));
-      firebaseModulesLoaded = true;
-    } catch (err) {
-      firebaseModulesLoaded = false;
-      console.warn('Firebase modules failed to load:', err);
-      toast('Firebase failed to load; notes available offline');
-      recordFirebaseAvailability(false);
-    }
-  }
+  const authReady = true;
 
-  if (firebaseModulesLoaded && typeof initializeApp === 'function' && typeof getFirestore === 'function' && typeof getAuth === 'function') {
-    try {
-      const firebaseConfig = resolveFirebaseConfig();
-      if (!firebaseConfig || typeof firebaseConfig !== 'object') {
-        throw new Error('Firebase config unavailable');
-      }
-      if (!firebaseConfig.projectId) {
-        throw new Error('Firebase projectId missing from configuration');
-      }
-      console.log('[auth] firebase project:', firebaseConfig.projectId);
-      console.log('[auth] domain:', (typeof window !== 'undefined' && window.location)
-        ? window.location.hostname
-        : 'unknown');
-      console.info('[Firebase] Initialising Memory Cue', firebaseConfig.projectId);
-      app = (typeof getApps === 'function' && getApps().length && typeof getApp === 'function')
-        ? getApp()
-        : initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      firebaseReady = true;
-      console.info('[Firebase] Firestore initialised', firebaseConfig.projectId);
-      recordFirebaseAvailability(true);
-    } catch (err) {
-      firebaseReady = false;
-      console.warn('Firebase initialization failed:', err);
-      toast('Firebase failed to load; notes available offline');
-      recordFirebaseAvailability(false);
-    }
-  } else if (!firebaseModulesLoaded) {
-    firebaseReady = false;
-  } else {
-    firebaseReady = false;
-    recordFirebaseAvailability(false);
-  }
+  authController = initSupabaseAuth({
+    selectors: {
+      signInButtons: googleSignInBtns,
+      signOutButtons: googleSignOutBtns,
+      userName: googleUserName ? [googleUserName] : [],
+      syncStatus: syncStatus ? [syncStatus] : [],
+    },
+    disableButtonBinding: true,
+    onSessionChange: async (user) => {
+      const nextUserId = typeof user?.id === 'string' ? user.id : null;
+      userId = nextUserId;
 
-  if (firebaseReady && typeof enableMultiTabIndexedDbPersistence === 'function' && typeof enableIndexedDbPersistence === 'function') {
-    // Firestore offline persistence: prefer multi-tab, fallback to single-tab
-    // Runs once per app load, before any reads/writes/listeners.
-    (function initFirestorePersistence() {
-      const scope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
-      if (!scope) {
+      if (nextUserId) {
+        if (notesMigrationUserId !== nextUserId) {
+          notesMigrationUserId = nextUserId;
+          notesMigrationComplete = false;
+          lastSyncedNoteIds = new Set();
+        }
+        renderSyncIndicator('online');
+        googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
+        googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
+        if (googleUserName) googleUserName.textContent = user.email || '';
+        await setupReminderFirestoreSync();
+        await syncNotesFromFirestoreOnLogin();
+        await migrateOfflineRemindersIfNeeded();
+        await ensureNotificationPermission();
         return;
       }
-      // Guard against accidental double-initialization
-      if (scope.__persistenceInitialized__) return;
-      scope.__persistenceInitialized__ = true;
 
-      (async () => {
-        try {
-          await enableMultiTabIndexedDbPersistence(db);
-          console.info('[Firestore] Persistence: multi-tab enabled');
-        } catch (err) {
-          if (err && err.code === 'failed-precondition') {
-            // Multi-tab not available (e.g., private mode or another constraint) -> try single-tab
-            try {
-              await enableIndexedDbPersistence(db);
-              console.info('[Firestore] Persistence: single-tab fallback enabled');
-            } catch (e2) {
-              console.warn('[Firestore] Persistence disabled (single-tab fallback failed):', e2?.code || e2);
-            }
-          } else if (err && err.code === 'unimplemented') {
-            // IndexedDB not supported in this browser/environment
-            console.warn('[Firestore] Persistence not supported in this browser (online-only).');
-          } else {
-            console.warn('[Firestore] Persistence initialization error:', err?.code || err);
-          }
-        }
-      })();
-    })();
-  }
-
-  if (firebaseReady && typeof getAuth === 'function') {
-    auth = getAuth(app);
-  }
-
-  // Formatting helpers
-  function sanitizeLocaleTag(tag) {
-    if (typeof tag !== 'string') return '';
-    let value = tag.trim();
-    if (!value) return '';
-    const atIndex = value.indexOf('@');
-    if (atIndex >= 0) {
-      value = value.slice(0, atIndex);
-    }
-    value = value.replace(/_/g, '-');
-    try {
-      // Validate via Intl API – throws if the tag is invalid.
-      new Intl.DateTimeFormat(value);
-      return value;
-    } catch {
-      return '';
-    }
-  }
-
-  const navigatorLocaleRaw = typeof navigator !== 'undefined' && navigator.language ? navigator.language : '';
-  const navigatorLocale = sanitizeLocaleTag(navigatorLocaleRaw);
-  let locale = navigatorLocale || 'en-US';
-  let TZ = 'UTC';
-  try {
-    const resolved = new Intl.DateTimeFormat().resolvedOptions();
-    if (resolved.timeZone) TZ = resolved.timeZone;
-    if (!navigatorLocale && resolved.locale) locale = resolved.locale;
-  } catch {
-    // Intl not supported; fall back to defaults already set
-  }
-  const timeFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-  const dayFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
-  const dateOnlyFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
-  const desktopDayLabelFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: 'long' });
-  const desktopShortDateFmt = new Intl.DateTimeFormat(locale, { timeZone: TZ, month: 'short', day: 'numeric' });
-  function formatDateLocal(d) {
-    const parts = dateOnlyFmt.formatToParts(d);
-    const y = parts.find(p => p.type === 'year').value;
-    const m = parts.find(p => p.type === 'month').value;
-    const da = parts.find(p => p.type === 'day').value;
-    return `${y}-${m}-${da}`;
-  }
-  function localDateTimeToISO(dstr, tstr) {
-    const [Y, M, D] = dstr.split('-').map(n => parseInt(n, 10));
-    const [h, m] = tstr.split(':').map(n => parseInt(n, 10));
-    const dt = new Date();
-    dt.setFullYear(Y, (M || 1) - 1, D || 1);
-    dt.setHours(h || 0, m || 0, 0, 0);
-    return dt.toISOString();
-  }
-
-  function parseManualDueInput(dateValue, timeValue) {
-    const dateText = typeof dateValue === 'string' ? dateValue.trim() : '';
-    const timeText = typeof timeValue === 'string' ? timeValue.trim() : '';
-
-    if (!dateText && !timeText) {
-      return null;
-    }
-
-    const isoDateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/;
-    const isoTimeMatch = /^\d{2}:\d{2}(?::\d{2})?$/;
-    const isoDateTimeMatch = /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(?::\d{2})?$/;
-
-    if (isoDateTimeMatch.test(dateText)) {
-      const parsedIso = new Date(dateText.replace(' ', 'T'));
-      return Number.isNaN(parsedIso.getTime()) ? null : parsedIso.toISOString();
-    }
-
-    if (isoDateOnlyMatch.test(dateText) && isoTimeMatch.test(timeText || '09:00')) {
-      const cleanTime = (timeText || '09:00').slice(0, 5);
-      return localDateTimeToISO(dateText, cleanTime);
-    }
-
-    if (isoDateOnlyMatch.test(dateText) && !timeText) {
-      return localDateTimeToISO(dateText, '09:00');
-    }
-
-    const fallbackParsed = new Date([dateText, timeText].filter(Boolean).join(' '));
-    if (!Number.isNaN(fallbackParsed.getTime())) {
-      return fallbackParsed.toISOString();
-    }
-
-    return null;
-  }
-  const datePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
-  const timePartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
-  function isoToLocalDate(iso) {
-    try {
-      const d = new Date(iso);
-      const parts = datePartsFmt.formatToParts(d);
-      const y = parts.find(p => p.type === 'year')?.value || '0000';
-      const m = parts.find(p => p.type === 'month')?.value || '00';
-      const da = parts.find(p => p.type === 'day')?.value || '00';
-      return `${y}-${m}-${da}`;
-    } catch { return ''; }
-  }
-  function isoToLocalTime(iso) {
-    try {
-      const d = new Date(iso);
-      const parts = timePartsFmt.formatToParts(d);
-      const h = parts.find(p => p.type === 'hour')?.value?.padStart(2, '0') || '00';
-      const m = parts.find(p => p.type === 'minute')?.value?.padStart(2, '0') || '00';
-      return `${h}:${m}`;
-    } catch { return ''; }
-  }
-  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-  function todayISO() { return formatDateLocal(new Date()); }
-  function startOfWeek(d) { const n = new Date(d); const day = (n.getDay() + 6) % 7; n.setDate(n.getDate() - day); n.setHours(0,0,0,0); return n; }
-  function endOfWeek(d) { const s = startOfWeek(d); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
-  function priorityWeight(p) { return p === 'High' ? 3 : p === 'Medium' ? 2 : 1; }
-  function compareRemindersForDisplay(a, b) {
-    const aDone = a?.done ? 1 : 0;
-    const bDone = b?.done ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    const aDue = a?.due ? new Date(a.due).getTime() : Infinity;
-    const bDue = b?.due ? new Date(b.due).getTime() : Infinity;
-    if (aDue !== bDue) return aDue - bDue;
-    const priorityDiff = priorityWeight(b?.priority) - priorityWeight(a?.priority);
-    if (priorityDiff) return priorityDiff;
-    return (b?.updatedAt || 0) - (a?.updatedAt || 0);
-  }
-  function smartCompare(a,b){ const pr = priorityWeight(b.priority)-priorityWeight(a.priority); if(pr) return pr; const at=+new Date(a.due||0), bt=+new Date(b.due||0); if(at!==bt) return at-bt; return (a.updatedAt||0)>(b.updatedAt||0)?-1:1; }
-  function fmtDayDate(iso){ if(!iso) return '—'; try{ const d = new Date(iso+'T00:00:00'); return dayFmt.format(d); }catch{ return iso; } }
-  function fmtTime(d){ return timeFmt.format(d); }
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-  function notesToHtml(note){
-    if(!note) return '';
-    const safe = escapeHtml(note).replace(/\r\n/g,'\n');
-    return safe.replace(/\n/g,'<br>');
-  }
-  function toast(msg){
-    if(!statusEl) return;
-    clearUndoDeleteState();
-    statusEl.dataset.statusKind = 'toast';
-    statusEl.textContent = msg;
-    clearTimeout(toast._t);
-    toast._t = setTimeout(()=>{
-      if(statusEl && statusEl.dataset.statusKind === 'toast'){
-        statusEl.textContent='';
-        delete statusEl.dataset.statusKind;
-      }
-    },2500);
-  }
-  function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
-  // Quick when parser (subset from mobile)
-  function parseQuickWhen(text){
-    text = String(text||'').toLowerCase();
-    let when = { date: todayISO(), time: '' };
-    const getNextDayOfWeek = (dayIndex)=>{ const today=new Date(); const current=today.getDay(); const days=(dayIndex-current+7)%7; const target=new Date(today); target.setDate(today.getDate()+(days===0?7:days)); return target; };
-    const getThisDayOfWeek = (dayIndex)=>{ const today=new Date(); const current=today.getDay(); const days=(dayIndex-current+7)%7; const target=new Date(today); target.setDate(today.getDate()+days); return target; };
-    const dayNames={ 'sunday':0,'sun':0,'monday':1,'mon':1,'tuesday':2,'tue':2,'tues':2,'wednesday':3,'wed':3,'thursday':4,'thu':4,'thur':4,'thurs':4,'friday':5,'fri':5,'saturday':6,'sat':6 };
-    const monthNames={ 'january':0,'jan':0,'february':1,'feb':1,'march':2,'mar':2,'april':3,'apr':3,'may':4,'june':5,'jun':5,'july':6,'jul':6,'august':7,'aug':7,'september':8,'sep':8,'sept':8,'october':9,'oct':9,'november':10,'nov':10,'december':11,'dec':11 };
-    if(/\btomorrow\b/.test(text)){ const d=new Date(); d.setDate(d.getDate()+1); when.date=formatDateLocal(d); }
-    else if(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)){ const m=text.match(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/); const dayIndex=dayNames[m[1]]; const d=getNextDayOfWeek(dayIndex); when.date=formatDateLocal(d); }
-    else if(/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)){ const m=text.match(/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/); const dayIndex=dayNames[m[1]]; const d=getThisDayOfWeek(dayIndex); when.date=formatDateLocal(d); }
-    else if(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/.test(text)){ const m=text.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)\b/); const dayIndex=dayNames[m[1]]; const d=getNextDayOfWeek(dayIndex); when.date=formatDateLocal(d); }
-    else if(/\bin\s+(\d+)\s+days?\b/.test(text)){ const m=text.match(/\bin\s+(\d+)\s+days?\b/); const days=parseInt(m[1],10); const d=new Date(); d.setDate(d.getDate()+days); when.date=formatDateLocal(d); }
-    else if(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/.test(text)){ const m=text.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/); const day=parseInt(m[1],10); const month=parseInt(m[2],10)-1; const year=m[3]?parseInt(m[3],10):(new Date()).getFullYear(); const d=new Date(year,month,day); when.date=formatDateLocal(d); }
-    else {
-      for (const [name, idx] of Object.entries(monthNames)) {
-        const re = new RegExp(`\\b${name}\\s+(\\d{1,2})(?:st|nd|rd|th)?`, 'i');
-        if (re.test(text)) {
-          const m = text.match(re);
-          const day = parseInt(m[1], 10);
-          const year = new Date().getFullYear();
-          const d = new Date(year, idx, day);
-          when.date = formatDateLocal(d);
-          break;
-        }
-      }
-    }
-    const timeMatch = text.match(/(\d{1,2})(?:[:\.](\d{2}))?\s*(am|pm)?/);
-    if(timeMatch){
-      let h=parseInt(timeMatch[1],10);
-      let m=timeMatch[2]?parseInt(timeMatch[2],10):0;
-      const ap=timeMatch[3];
-      if(ap){ if(ap==='pm' && h<12) h+=12; if(ap==='am' && h===12) h=0; }
-      when.time=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    }
-    return when;
-  }
-
-  // Auth
-  const authReady = firebaseReady && auth && typeof GoogleAuthProvider === 'function';
-
-  setAuthContext({
-    authReady,
-    auth,
-    GoogleAuthProvider,
-    onAuthStateChanged,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    signOut,
-    toast,
+      notesMigrationComplete = false;
+      notesMigrationUserId = null;
+      lastSyncedNoteIds = new Set();
+      applySignedOutState();
+    },
   });
 
   const shouldWireAuthButtons = autoWireAuthButtons;
@@ -4232,168 +3915,65 @@ export async function initReminders(sel = {}) {
     googleSignInBtns.forEach((btn) => wireAuthButton(btn, startSignInFlow));
   }
 
-  if (authReady && typeof getRedirectResult === 'function') {
-    try {
-      await getRedirectResult(auth);
-    } catch (error) {
-      console.warn('[auth] Redirect sign-in result handling failed.', error);
-    }
-  }
-
   if (shouldWireAuthButtons && googleSignOutBtns.length) {
     googleSignOutBtns.forEach((btn) => wireAuthButton(btn, startSignOutFlow));
   }
 
-  if (authReady && typeof onAuthStateChanged === 'function') {
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        userId = user.uid;
-        if (notesMigrationUserId !== user.uid) {
-          notesMigrationUserId = user.uid;
-          notesMigrationComplete = false;
-          lastSyncedNoteIds = new Set();
-        }
-        if (typeof window !== 'undefined') {
-          window.__MEMORY_CUE_AUTH_USER_ID = user.uid;
-        }
-        renderSyncIndicator('online');
-        googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
-        googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
-        if(googleUserName) googleUserName.textContent = user.email || '';
-        await setupReminderFirestoreSync();
-        await syncNotesFromFirestoreOnLogin();
-        await migrateOfflineRemindersIfNeeded();
-        await ensureNotificationPermission();
-      } else {
-        notesMigrationComplete = false;
-        notesMigrationUserId = null;
-        lastSyncedNoteIds = new Set();
-        if (typeof window !== 'undefined') {
-          window.__MEMORY_CUE_AUTH_USER_ID = '';
-        }
-        applySignedOutState();
-      }
-    });
-    const initialUser = auth?.currentUser || null;
-    if (initialUser) {
-      userId = initialUser.uid;
-      if (notesMigrationUserId !== initialUser.uid) {
-        notesMigrationUserId = initialUser.uid;
-        notesMigrationComplete = false;
-        lastSyncedNoteIds = new Set();
-      }
-      if (typeof window !== 'undefined') {
-        window.__MEMORY_CUE_AUTH_USER_ID = initialUser.uid;
-      }
-      renderSyncIndicator('online');
-      await setupReminderFirestoreSync();
-      await syncNotesFromFirestoreOnLogin();
-      await ensureNotificationPermission();
-    }
-  } else {
+  const initialScopedUserId = typeof window !== 'undefined' && typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string'
+    ? window.__MEMORY_CUE_AUTH_USER_ID.trim()
+    : '';
+
+  if (!initialScopedUserId) {
     applySignedOutState();
   }
 
-  function normalizeFirestoreTimestamp(value) {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value;
-    }
-    if (value && typeof value.toMillis === 'function') {
-      return value.toMillis();
-    }
-    return Date.now();
-  }
-
-  function normalizeFirestoreNote(noteId, payload = {}) {
-    if (!payload || typeof payload !== 'object') {
-      return null;
-    }
-    return {
-      ...payload,
-      id: typeof payload.id === 'string' && payload.id ? payload.id : noteId,
-    };
-  }
-
-  async function migrateLocalNotesToFirestore(localNotes = []) {
-    if (notesMigrationComplete || !userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function') {
-      return;
-    }
-    notesMigrationComplete = true;
-
-    for (const note of localNotes) {
-      if (!note || typeof note !== 'object' || typeof note.id !== 'string' || !note.id) {
-        continue;
-      }
-      await setDoc(
-        doc(db, 'users', userId, 'notes', note.id),
-        note,
-      );
-    }
-  }
-
   async function syncNotesFromFirestoreOnLogin() {
-    if (!userId || !db || typeof collection !== 'function' || typeof getDocs !== 'function') {
+    if (!userId) {
       return;
     }
 
-    const notesCollection = collection(db, 'users', userId, 'notes');
-    const snapshot = await getDocs(notesCollection);
+    const notesFromRemote = await syncNotes();
+    const normalizedNotes = Array.isArray(notesFromRemote)
+      ? notesFromRemote.filter((note) => note && typeof note.id === 'string' && note.id)
+      : [];
 
-    if (snapshot.size > 0) {
-      const notesFromFirestore = snapshot.docs
-        .map((noteDoc) => normalizeFirestoreNote(noteDoc.id, noteDoc.data()))
-        .filter(Boolean);
-      saveAllNotes(notesFromFirestore, { skipRemoteSync: true });
-      lastSyncedNoteIds = new Set(notesFromFirestore.map((note) => note.id));
+    if (normalizedNotes.length) {
+      saveAllNotes(normalizedNotes, { skipRemoteSync: true });
+      lastSyncedNoteIds = new Set(normalizedNotes.map((note) => note.id));
       return;
     }
 
     const localNotes = loadAllNotes();
-    if (snapshot.size === 0 && localNotes.length) {
-      await migrateLocalNotesToFirestore(localNotes);
+    if (localNotes.length) {
+      await syncNotes(localNotes);
     }
     lastSyncedNoteIds = new Set(localNotes.map((note) => note?.id).filter((id) => typeof id === 'string' && id));
   }
 
   setRemoteSyncHandler(async (notes) => {
-    if (!userId || !db || typeof setDoc !== 'function' || typeof deleteDoc !== 'function' || typeof doc !== 'function') {
+    if (!userId) {
       return;
     }
 
     const serializable = Array.isArray(notes)
       ? notes.filter((note) => note && typeof note.id === 'string' && note.id)
       : [];
-    const localIds = new Set(serializable.map((note) => note.id));
 
-    for (const note of serializable) {
-      await setDoc(
-        doc(db, 'users', userId, 'notes', note.id),
-        note,
-      );
-    }
-
-    const idsToDelete = [...lastSyncedNoteIds].filter((noteId) => !localIds.has(noteId));
-    for (const noteId of idsToDelete) {
-      await deleteDoc(
-        doc(db, 'users', userId, 'notes', noteId),
-      );
-    }
-
-    lastSyncedNoteIds = localIds;
+    await syncNotes(serializable);
+    lastSyncedNoteIds = new Set(serializable.map((note) => note.id));
   });
 
   function mapFirestoreReminder(reminderId, payload = {}) {
     return normalizeReminderRecord({
       ...payload,
       id: typeof payload.id === 'string' && payload.id ? payload.id : reminderId,
-      createdAt: normalizeFirestoreTimestamp(payload.createdAt),
-      updatedAt: normalizeFirestoreTimestamp(payload.updatedAt || payload.createdAt),
+      createdAt: payload.createdAt,
+      updatedAt: payload.updatedAt || payload.createdAt,
       userId: typeof payload.userId === 'string' ? payload.userId : userId,
       pendingSync: false,
     }, { fallbackId: reminderId });
   }
 
-  // Historical name was setupSupabaseSync, but this flow reads/writes Firestore reminders.
   async function setupReminderFirestoreSync(){
     if(!userId){
       hydrateOfflineReminders();
@@ -4405,13 +3985,13 @@ export async function initReminders(sel = {}) {
     }
     try {
       const localItems = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
-      const remindersCollection = collection(db, 'users', userId, 'reminders');
-      const remindersSnapshot = await getDocs(remindersCollection);
-      const remoteItems = remindersSnapshot.docs
-        .map((reminderDoc) => mapFirestoreReminder(reminderDoc.id, reminderDoc.data()));
-      console.log('[brain] reminders_loaded_from_firestore', { count: remoteItems.length });
+      const remoteItems = await syncReminders();
+      const normalizedRemoteItems = Array.isArray(remoteItems)
+        ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
+        : [];
+      console.log('[brain] reminders_loaded_from_supabase', { count: normalizedRemoteItems.length });
 
-      const remoteById = new Map(remoteItems.map((entry) => [entry.id, entry]));
+      const remoteById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
       const remindersToSync = localItems.filter((entry) => {
         if (!entry || typeof entry !== 'object' || !entry.id) return false;
         return !!entry.pendingSync || !remoteById.has(entry.id);
@@ -4459,7 +4039,7 @@ export async function initReminders(sel = {}) {
       persistItems();
       rescheduleAllReminders();
     } catch (error){
-      console.error('Firestore reminders sync error:', error);
+      console.error('Supabase reminders sync error:', error);
       if(syncStatus){
         renderSyncIndicator('error', 'Sync Error');
       }
@@ -4467,46 +4047,33 @@ export async function initReminders(sel = {}) {
   }
 
   async function saveToFirebase(item){
-    if(!userId || !db || typeof setDoc !== 'function' || typeof doc !== 'function' || typeof collection !== 'function') return false;
+    const normalizedItem = normalizeReminderRecord(item, { fallbackId: uid() });
+    const reminderId = normalizedItem.id;
+    const createdAt = normalizedItem.createdAt;
+    const updatedAt = Date.now();
+
+    Object.assign(item, {
+      ...normalizedItem,
+      id: reminderId,
+      createdAt,
+      updatedAt,
+      userId,
+      pendingSync: true,
+    });
+    persistItems();
+
     try {
-      const normalizedItem = normalizeReminderRecord(item, { fallbackId: uid() });
-      const reminderId = normalizedItem.id;
-      const createdAt = normalizedItem.createdAt;
-      const updatedAt = Date.now();
-      const dueDate = normalizedItem.due;
-      await setDoc(doc(collection(db, 'reminders'), reminderId), {
-        id: reminderId,
-        text: normalizedItem.title,
-        dueDate,
-        createdAt,
-        updatedAt,
-        userId,
-        title: normalizedItem.title,
-        due: dueDate,
-        recurrence: normalizedItem.recurrence,
-        snoozedUntil: normalizedItem.snoozedUntil,
-        notifyMinutesBefore: normalizedItem.notifyMinutesBefore,
-        priority: normalizedItem.priority,
-        category: normalizedItem.category || DEFAULT_CATEGORY,
-        notes: normalizedItem.notes,
-        done: normalizedItem.done,
-        orderIndex: Number.isFinite(normalizedItem.orderIndex) ? normalizedItem.orderIndex : null,
-        plannerLessonId: normalizedItem.plannerLessonId,
-        pinToToday: normalizedItem.pinToToday,
-        semanticEmbedding: normalizeSemanticEmbedding(normalizedItem.semanticEmbedding),
-        metadata: normalizedItem.metadata,
-        keywords: normalizeReminderKeywords(normalizedItem.keywords),
-      }, { merge: true });
-      Object.assign(item, {
+      await upsertReminder({
         ...normalizedItem,
         id: reminderId,
         createdAt,
         updatedAt,
         userId,
-        pendingSync: false,
+        pendingSync: true,
       });
-      console.log('[brain] reminder_saved_to_firestore', { id: reminderId });
+      item.pendingSync = false;
       persistItems();
+      console.log('[brain] reminder_saved_to_supabase', { id: reminderId });
       return true;
     } catch (error) {
       item.pendingSync = true;
@@ -4516,9 +4083,8 @@ export async function initReminders(sel = {}) {
     }
   }
   async function deleteFromFirebase(id){
-    if(!userId || !db || typeof deleteDoc !== 'function' || typeof doc !== 'function') return;
     try {
-      await deleteDoc(doc(db, 'reminders', id));
+      await deleteSupabaseReminder(id);
     } catch {
       toast('Delete queued (offline)');
     }

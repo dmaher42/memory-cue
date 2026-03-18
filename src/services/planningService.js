@@ -1,48 +1,4 @@
-const FIREBASE_VERSION = '12.2.1';
-const FIREBASE_APP_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`;
-const FIREBASE_AUTH_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`;
-const FIREBASE_FIRESTORE_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`;
-
-let plannerContextPromise = null;
-
-const resolveFirebaseConfig = () => {
-  if (typeof globalThis === 'undefined') {
-    return null;
-  }
-
-  return globalThis?.memoryCueFirebase?.getFirebaseConfig?.() || null;
-};
-
-const ensurePlannerContext = async () => {
-  if (plannerContextPromise) {
-    return plannerContextPromise;
-  }
-
-  plannerContextPromise = (async () => {
-    const config = resolveFirebaseConfig();
-    if (!config?.projectId) {
-      console.warn('[planner] Firebase config unavailable.');
-      return null;
-    }
-
-    const appModule = await import(FIREBASE_APP_URL);
-    const authModule = await import(FIREBASE_AUTH_URL);
-    const firestoreModule = await import(FIREBASE_FIRESTORE_URL);
-
-    const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-    const auth = authModule.getAuth(app);
-    const db = firestoreModule.getFirestore(app);
-
-    return {
-      auth,
-      db,
-      collection: firestoreModule.collection,
-      getDocs: firestoreModule.getDocs,
-    };
-  })();
-
-  return plannerContextPromise;
-};
+import { pullChanges } from './supabaseSyncService.js';
 
 const resolveUid = async (uid) => {
   if (typeof uid === 'string' && uid.trim()) {
@@ -56,8 +12,7 @@ const resolveUid = async (uid) => {
     }
   }
 
-  const context = await ensurePlannerContext();
-  return context?.auth?.currentUser?.uid || null;
+  return null;
 };
 
 const normalizeItemTitle = (item = {}, fallback = 'Untitled') => {
@@ -93,14 +48,37 @@ const isToday = (date) => {
     && date.getDate() === now.getDate();
 };
 
-const loadCollection = async (uid, collectionName) => {
-  const context = await ensurePlannerContext();
-  if (!context || !uid) {
+const readLocalCollection = (key) => {
+  if (typeof localStorage === 'undefined') {
     return [];
   }
 
-  const snapshot = await context.getDocs(context.collection(context.db, 'users', uid, collectionName));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('[planner] Failed to read local collection', key, error);
+    return [];
+  }
+};
+
+const loadCollection = async (uid, collectionName) => {
+  if (!uid) {
+    return [];
+  }
+
+  await pullChanges().catch((error) => {
+    console.warn('[planner] Failed pulling latest data before planning', error);
+  });
+
+  const keyMap = {
+    reminders: 'memoryCue:offlineReminders',
+    notes: 'memoryCueNotes',
+    inbox: 'memoryCueInbox',
+  };
+
+  return readLocalCollection(keyMap[collectionName] || collectionName);
 };
 
 export const loadReminders = async (uid) => {
