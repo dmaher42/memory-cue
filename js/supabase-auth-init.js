@@ -1,7 +1,7 @@
-import { initFirebaseAuth } from './supabase-auth.js';
+import { initSupabaseAuth } from './supabase-auth.js';
 import { pullChanges } from '../src/services/supabaseSyncService.js';
 
-initFirebaseAuth({
+initSupabaseAuth({
   onSessionChange: (user) => {
     if (!user) {
       return;

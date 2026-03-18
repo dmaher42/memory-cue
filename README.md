@@ -44,15 +44,9 @@ npm run deploy
 
 This command publishes the site to the `gh-pages` branch via the `gh-pages` CLI, making it available at `<username>.github.io/memory-cue`.
 
-### Firebase Hosting
+### Deployment
 
-Configure Firebase Hosting to serve the repository root (or a `public` directory of your choice) and deploy with:
-
-```bash
-firebase deploy --only hosting
-```
-
-Refer to Firebase documentation for setup steps such as creating a project, initializing hosting, and adding a `firebase.json` configuration file.
+Build the static app and deploy the generated `dist/` output with your preferred static hosting provider.
 
 ## Configuration
 
@@ -81,7 +75,7 @@ If this variable is missing, these endpoints return a `500` JSON error indicatin
 
 ## Privacy & Data
 
-Memory Cue stores notes and reminders in Firebase services (e.g., Firestore or Realtime Database). Review your Firebase security rules to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. As with any Firebase-backed app, do not commit private API keys or service credentials to the repository.
+Memory Cue stores synced notes and reminders through Supabase-backed services. Review your Supabase Row Level Security policies to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. Do not commit private service credentials to the repository.
 
 ## Desktop theme architecture
 

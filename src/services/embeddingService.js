@@ -1,52 +1,4 @@
-const FIREBASE_VERSION = '12.2.1';
-const FIREBASE_APP_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`;
-const FIREBASE_AUTH_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`;
-const FIREBASE_FIRESTORE_URL = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`;
-
-let embeddingContextPromise = null;
-
-const resolveFirebaseConfig = () => {
-  if (typeof globalThis === 'undefined') {
-    return null;
-  }
-
-  return globalThis?.memoryCueFirebase?.getFirebaseConfig?.() || null;
-};
-
-const ensureEmbeddingContext = async () => {
-  if (embeddingContextPromise) {
-    return embeddingContextPromise;
-  }
-
-  embeddingContextPromise = (async () => {
-    const config = resolveFirebaseConfig();
-    if (!config?.projectId) {
-      console.warn('[embedding] Firebase config unavailable.');
-      return null;
-    }
-
-    const appModule = await import(FIREBASE_APP_URL);
-    const authModule = await import(FIREBASE_AUTH_URL);
-    const firestoreModule = await import(FIREBASE_FIRESTORE_URL);
-
-    const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-    const auth = authModule.getAuth(app);
-    const db = firestoreModule.getFirestore(app);
-
-    return {
-      auth,
-      db,
-      addDoc: firestoreModule.addDoc,
-      collection: firestoreModule.collection,
-      getDocs: firestoreModule.getDocs,
-      limit: firestoreModule.limit,
-      query: firestoreModule.query,
-      where: firestoreModule.where,
-    };
-  })();
-
-  return embeddingContextPromise;
-};
+import { getMemories, saveMemory } from './memoryService.js';
 
 const resolveUid = async (uid) => {
   if (typeof uid === 'string' && uid.trim()) {
@@ -60,8 +12,7 @@ const resolveUid = async (uid) => {
     }
   }
 
-  const context = await ensureEmbeddingContext();
-  return context?.auth?.currentUser?.uid || null;
+  return null;
 };
 
 const normalizeText = (text) => {
@@ -129,29 +80,24 @@ export async function generateEmbedding(text) {
 
 export const getEmbeddingsForUser = async (uid) => {
   const resolvedUid = await resolveUid(uid);
-  const context = await ensureEmbeddingContext();
-  if (!context || !resolvedUid) {
+  if (!resolvedUid) {
     return [];
   }
 
-  const snapshot = await context.getDocs(context.collection(context.db, 'users', resolvedUid, 'embeddings'));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return getMemories().filter((memory) => memory?.userId === resolvedUid && Array.isArray(memory?.embedding) && memory.embedding.length);
 };
 
 const findEmbeddingBySourceId = async ({ uid, sourceId }) => {
-  const context = await ensureEmbeddingContext();
-  if (!context || !uid || !sourceId) {
+  if (!uid || !sourceId) {
     return null;
   }
 
-  const embeddingsRef = context.collection(context.db, 'users', uid, 'embeddings');
-  const existingQuery = context.query(
-    embeddingsRef,
-    context.where('sourceId', '==', sourceId),
-    context.limit(1),
-  );
-  const snapshot = await context.getDocs(existingQuery);
-  return snapshot.empty ? null : snapshot.docs[0];
+  return getMemories().find((memory) => (
+    memory?.userId === uid
+    && Array.isArray(memory?.embedding)
+    && memory.embedding.length
+    && memory?.metadata?.sourceId === sourceId
+  )) || null;
 };
 
 export const storeEmbedding = async (payload, legacyEmbedding) => {
@@ -166,13 +112,12 @@ export const storeEmbedding = async (payload, legacyEmbedding) => {
     : (payload && typeof payload === 'object' ? payload : {});
 
   const resolvedUid = await resolveUid(normalizedPayload.uid);
-  const context = await ensureEmbeddingContext();
   const normalizedText = normalizeText(normalizedPayload.text);
   const normalizedSourceType = typeof normalizedPayload.sourceType === 'string' ? normalizedPayload.sourceType.trim() : '';
   const normalizedSourceId = typeof normalizedPayload.sourceId === 'string' ? normalizedPayload.sourceId.trim() : '';
   const normalizedVector = normalizeEmbedding(normalizedPayload.embedding);
 
-  if (!context || !resolvedUid || !normalizedText || !normalizedSourceType || !normalizedSourceId || !normalizedVector.length) {
+  if (!resolvedUid || !normalizedText || !normalizedSourceType || !normalizedSourceId || !normalizedVector.length) {
     return null;
   }
 
@@ -181,15 +126,21 @@ export const storeEmbedding = async (payload, legacyEmbedding) => {
     return existing.id;
   }
 
-  const added = await context.addDoc(context.collection(context.db, 'users', resolvedUid, 'embeddings'), {
+  const saved = await saveMemory({
+    id: normalizedSourceId,
+    userId: resolvedUid,
     text: normalizedText,
-    sourceType: normalizedSourceType,
-    sourceId: normalizedSourceId,
+    type: normalizedSourceType,
     embedding: normalizedVector,
-    createdAt: Date.now(),
+    entryPoint: 'embedding-service',
+    source: normalizedSourceType,
+    metadata: {
+      sourceId: normalizedSourceId,
+      sourceType: normalizedSourceType,
+    },
   });
 
-  return added.id;
+  return saved?.id || null;
 };
 
 export const similaritySearch = (queryEmbedding, memories = []) => {

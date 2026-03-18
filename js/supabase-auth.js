@@ -1,95 +1,11 @@
-// Module-level external auth context (populated by callers such as reminders.js)
+import { getSupabaseClient } from './supabase-client.js';
+
 let _externalAuthContext = {
   authReady: false,
   auth: null,
-  GoogleAuthProvider: null,
-  signInWithPopup: null,
-  signInWithRedirect: null,
-  getRedirectResult: null,
-  signOut: null,
+  supabase: null,
   toast: null,
-  onAuthStateChanged: null,
 };
-
-/**
- * Allow other modules to supply a small auth context (handlers + helpers).
- * Defensive: merges values and tolerates invalid input.
- */
-export function setAuthContext(ctx = {}) {
-  try {
-    Object.assign(_externalAuthContext, ctx || {});
-  } catch (err) {
-    // non-fatal; keep module usable even if callers pass odd values
-    // eslint-disable-next-line no-console
-    console.warn('[auth] setAuthContext failed', err);
-  }
-}
-
-/**
- * Start a sign-in flow via Firebase popup auth.
- * Uses Firebase auth handlers supplied via setAuthContext.
- * Resolves null when no auth facilities are available.
- */
-export async function startSignInFlow() {
-  try {
-    if (
-      _externalAuthContext &&
-      _externalAuthContext.auth &&
-      typeof _externalAuthContext.GoogleAuthProvider === 'function' &&
-      typeof _externalAuthContext.signInWithPopup === 'function'
-    ) {
-      const provider = new _externalAuthContext.GoogleAuthProvider();
-      // eslint-disable-next-line no-console
-      console.log('[auth] popup login attempt');
-      try {
-        return await _externalAuthContext.signInWithPopup(_externalAuthContext.auth, provider);
-      } catch (err) {
-        if (
-          err?.code === 'auth/popup-blocked'
-          || err?.code === 'auth/popup-closed-by-user'
-          || err?.code === 'auth/cancelled-popup-request'
-        ) {
-          if (typeof _externalAuthContext.signInWithRedirect === 'function') {
-            // eslint-disable-next-line no-console
-            console.log('[auth] redirect fallback triggered');
-            return await _externalAuthContext.signInWithRedirect(_externalAuthContext.auth, provider);
-          }
-        } else {
-          throw err;
-        }
-
-        throw err;
-      }
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('[auth] startSignInFlow error', err);
-    try {
-      _externalAuthContext?.toast?.('Sign-in failed');
-    } catch (toastErr) {
-      // eslint-disable-next-line no-console
-      console.warn('[auth] toast handler failed', toastErr);
-    }
-    throw err;
-  }
-  return Promise.resolve(null);
-}
-
-/**
- * Start sign-out flow using the supplied Firebase signOut handler.
- */
-export async function startSignOutFlow() {
-  try {
-    if (_externalAuthContext && typeof _externalAuthContext.signOut === 'function') {
-      return _externalAuthContext.signOut(_externalAuthContext.auth);
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('[auth] startSignOutFlow error', err);
-    throw err;
-  }
-  return Promise.resolve(null);
-}
 
 const DEFAULT_SELECTORS = {
   authForm: '#auth-form',
@@ -114,6 +30,80 @@ const DEFAULT_MESSAGES = {
     signedIn: 'Online',
   },
 };
+
+export function setAuthContext(ctx = {}) {
+  try {
+    Object.assign(_externalAuthContext, ctx || {});
+  } catch (err) {
+    console.warn('[auth] setAuthContext failed', err);
+  }
+}
+
+const setScopedUserId = (user) => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const userId = typeof user?.id === 'string' ? user.id.trim() : '';
+  window.__MEMORY_CUE_AUTH_USER_ID = userId;
+  return userId || null;
+};
+
+const normalizeSupabaseUser = (user) => {
+  if (!user || typeof user !== 'object') {
+    return null;
+  }
+
+  const id = typeof user.id === 'string' ? user.id.trim() : '';
+  if (!id) {
+    return null;
+  }
+
+  return {
+    ...user,
+    id,
+    uid: id,
+    email: typeof user.email === 'string' ? user.email : '',
+  };
+};
+
+const getSupabase = () => _externalAuthContext.supabase || getSupabaseClient();
+
+export async function startSignInFlow() {
+  const supabase = getSupabase();
+  if (!supabase?.auth?.signInWithOAuth) {
+    return null;
+  }
+
+  const redirectTo = typeof window !== 'undefined' ? window.location.href : undefined;
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: redirectTo ? { redirectTo } : undefined,
+  });
+
+  if (error) {
+    console.error('[auth] startSignInFlow error', error);
+    _externalAuthContext?.toast?.('Sign-in failed');
+    throw error;
+  }
+
+  return data || null;
+}
+
+export async function startSignOutFlow() {
+  const supabase = getSupabase();
+  if (!supabase?.auth?.signOut) {
+    return null;
+  }
+
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('[auth] startSignOutFlow error', error);
+    throw error;
+  }
+
+  setScopedUserId(null);
+  return null;
+}
 
 function toArray(value) {
   if (!value) return [];
@@ -277,7 +267,6 @@ function bindSignInButtons(elements) {
     }
 
     button.dataset.authBound = 'true';
-
     button.addEventListener('click', async () => {
       try {
         await startSignInFlow();
@@ -295,7 +284,6 @@ function bindSignOutButtons(elements) {
     }
 
     button.dataset.authBound = 'true';
-
     button.addEventListener('click', async () => {
       try {
         await startSignOutFlow();
@@ -306,9 +294,8 @@ function bindSignOutButtons(elements) {
   });
 }
 
-export function initFirebaseAuth(options = {}) {
+export function initSupabaseAuth(options = {}) {
   const {
-    auth: suppliedAuth,
     scope = document,
     selectors: selectorOverrides = {},
     messages: messageOverrides = {},
@@ -323,85 +310,79 @@ export function initFirebaseAuth(options = {}) {
 
   const elements = collectAuthElements(selectors, scope);
   const messages = resolveMessages(messageOverrides);
+  const supabase = getSupabase();
+
+  setAuthContext({
+    ..._externalAuthContext,
+    authReady: Boolean(supabase?.auth),
+    auth: supabase?.auth || null,
+    supabase,
+  });
 
   applyAuthState(elements, { user: null, messages });
-
-  const auth = suppliedAuth || _externalAuthContext?.auth || null;
-
-  if (auth && typeof _externalAuthContext?.getRedirectResult === 'function') {
-    void (async () => {
-      try {
-        await _externalAuthContext.getRedirectResult(auth);
-      } catch (error) {
-        console.warn('[auth] Redirect sign-in result handling failed.', error);
-      }
-    })();
-  }
 
   if (!disableButtonBinding) {
     bindSignInButtons(elements);
     bindSignOutButtons(elements);
   }
 
-  const cleanupFns = [];
-
-  if (!auth || typeof _externalAuthContext?.onAuthStateChanged !== 'function') {
+  if (!supabase?.auth) {
     return {
       auth: null,
+      supabase: null,
       elements,
       applyAuthState: (state) => applyAuthState(elements, { ...state, messages }),
       destroy() {},
     };
   }
 
-  const unsubscribe = _externalAuthContext.onAuthStateChanged(auth, (user) => {
-    applyAuthState(elements, { user: user ?? null, messages });
+  const handleSession = async (session) => {
+    const normalizedUser = normalizeSupabaseUser(session?.user || null);
+    setScopedUserId(normalizedUser);
+    applyAuthState(elements, { user: normalizedUser, messages });
     if (typeof onSessionChange === 'function') {
       try {
-        onSessionChange(user ?? null, user ? { user } : null);
+        onSessionChange(normalizedUser, session || null);
       } catch (error) {
         console.error('[auth] onSessionChange handler failed.', error);
       }
     }
+  };
+
+  void supabase.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      console.warn('[auth] Failed to read current session.', error);
+      return;
+    }
+    return handleSession(data?.session || null);
   });
 
-  if (typeof unsubscribe === 'function') {
-    cleanupFns.push(() => {
-      try {
-        unsubscribe();
-      } catch {
-        /* noop */
-      }
-    });
-  }
-
-  applyAuthState(elements, { user: auth.currentUser ?? null, messages });
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    void handleSession(session || null);
+  });
 
   return {
-    auth,
+    auth: supabase.auth,
+    supabase,
     elements,
     applyAuthState: (state) => applyAuthState(elements, { ...state, messages }),
     destroy() {
-      cleanupFns.forEach((fn) => {
-        try {
-          fn();
-        } catch {
-          /* noop */
-        }
-      });
+      try {
+        data?.subscription?.unsubscribe?.();
+      } catch {
+        /* noop */
+      }
     },
   };
 }
 
+export const initFirebaseAuth = initSupabaseAuth;
 export { DEFAULT_SELECTORS as SUPABASE_AUTH_DEFAULT_SELECTORS };
 export { DEFAULT_MESSAGES as SUPABASE_AUTH_DEFAULT_MESSAGES };
-export function getFirebaseAuthElements(selectors = {}, scope = document) {
+export function getSupabaseAuthElements(selectors = {}, scope = document) {
   return collectAuthElements({
     ...DEFAULT_SELECTORS,
     ...selectors,
   }, scope);
 }
-
-// Backward-compatible exports while modules migrate away from legacy Supabase naming.
-export const initSupabaseAuth = initFirebaseAuth;
-export const getSupabaseAuthElements = getFirebaseAuthElements;
+export const getFirebaseAuthElements = getSupabaseAuthElements;

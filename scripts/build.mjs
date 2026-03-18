@@ -106,8 +106,6 @@ async function copyStatic() {
     { source: '404.html' },
     { source: 'index.html' },
     { source: 'mobile.html' },
-    { source: 'js/firebase-config.js' },
-    { source: 'js/firebase-config.js', destination: 'firebase-config.js' },
   ];
 
   for (const file of filesToCopy) {
