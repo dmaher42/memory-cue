@@ -52,6 +52,32 @@ let serviceWorkerReadyPromise = null;
 let backgroundSyncRegistrationPromise = null;
 let backgroundSyncRegistrationSucceeded = false;
 let embeddingServiceModulePromise = null;
+let firestoreMemoryBackfillModulePromise = null;
+
+async function syncFirestoreMemoriesToLocalCache(notes = []) {
+  if (!Array.isArray(notes) || !notes.length) {
+    return;
+  }
+
+  if (!firestoreMemoryBackfillModulePromise) {
+    firestoreMemoryBackfillModulePromise = import('../brain/backfillEmbeddings.js').catch((error) => {
+      console.warn('[backfill] Failed to load Firestore memory backfill module', error);
+      return null;
+    });
+  }
+
+  const backfillModule = await firestoreMemoryBackfillModulePromise;
+  const syncMemoriesFromFirestore = backfillModule?.syncMemoriesFromFirestore;
+  if (typeof syncMemoriesFromFirestore !== 'function') {
+    return;
+  }
+
+  try {
+    await syncMemoriesFromFirestore(notes);
+  } catch (error) {
+    console.warn('[backfill] Failed to sync Firestore memories', error);
+  }
+}
 const DEFAULT_CATEGORY = 'General';
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
@@ -3993,6 +4019,7 @@ export async function initReminders(sel = {}) {
 
     if (normalizedNotes.length) {
       saveAllNotes(normalizedNotes, { skipRemoteSync: true });
+      await syncFirestoreMemoriesToLocalCache(normalizedNotes);
       lastSyncedNoteIds = new Set(normalizedNotes.map((note) => note.id));
       return;
     }
