@@ -1,0 +1,1 @@
+import{a as r}from"./chunk-RCZ4YZVR.js";async function s(n){console.log("[embedding] using API route");let e=await fetch("/api/embed",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:n})});return e.ok?(await e.json()).embedding:(console.error("[embedding] API error",e.status),null)}var o,t=r(()=>{o=()=>!0});export{o as a,s as b,t as c};
