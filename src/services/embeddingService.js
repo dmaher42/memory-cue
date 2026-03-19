@@ -1,5 +1,8 @@
 import { getMemories, saveMemory } from './memoryService.js';
-import { generateEmbedding } from '../brain/embeddingService.js';
+import { generateEmbedding as generateBrainEmbedding } from '../brain/embeddingService.js';
+
+
+export const generateEmbedding = async (text) => generateBrainEmbedding(text);
 
 const resolveUid = async (uid) => {
   if (typeof uid === 'string' && uid.trim()) {
