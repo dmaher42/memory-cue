@@ -5,6 +5,33 @@ import {
 } from './notes-storage.js';
 import { syncNotes } from '../../src/services/firestoreSyncService.js';
 
+let backfillEmbeddingsModulePromise = null;
+
+const syncFirestoreMemoriesToLocalCache = async (notes = []) => {
+  if (!Array.isArray(notes) || !notes.length) {
+    return;
+  }
+
+  if (!backfillEmbeddingsModulePromise) {
+    backfillEmbeddingsModulePromise = import('../../src/brain/backfillEmbeddings.js').catch((error) => {
+      console.warn('[notes-sync] Failed to load memory backfill module.', error);
+      return null;
+    });
+  }
+
+  const backfillModule = await backfillEmbeddingsModulePromise;
+  const syncMemoriesFromFirestore = backfillModule?.syncMemoriesFromFirestore;
+  if (typeof syncMemoriesFromFirestore !== 'function') {
+    return;
+  }
+
+  try {
+    await syncMemoriesFromFirestore(notes);
+  } catch (error) {
+    console.warn('[notes-sync] Failed to backfill Firestore memory embeddings.', error);
+  }
+};
+
 const mapRemoteNote = (note = {}) => {
   if (!note || typeof note !== 'object' || typeof note.id !== 'string' || !note.id) {
     return null;
@@ -61,6 +88,9 @@ export const initNotesSync = (options = {}) => {
 
       isApplyingRemote = true;
       const saved = saveAllNotes(normalized, { skipRemoteSync: true });
+      if (saved) {
+        await syncFirestoreMemoriesToLocalCache(normalized);
+      }
       isApplyingRemote = false;
 
       if (!saved) {

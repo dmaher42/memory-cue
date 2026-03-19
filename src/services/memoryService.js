@@ -325,6 +325,39 @@ const triggerSync = async () => {
   writeCacheToStorage(memoryCache);
 };
 
+const mergeMemoryIntoCache = (memory = {}) => {
+  const normalized = normalizeMemory(memory, {
+    source: normalizeSource(memory.source, 'capture'),
+    entryPoint: normalizeText(memory.entryPoint) || 'capture',
+  });
+
+  if (!normalized.text) {
+    return null;
+  }
+
+  const existing = normalized.id
+    ? memoryCache.find((entry) => entry.id === normalized.id) || null
+    : null;
+
+  const nextMemory = {
+    ...(existing || {}),
+    ...normalized,
+    embedding: normalizeEmbedding(memory.embedding)
+      || normalizeEmbedding(normalized.embedding)
+      || normalizeEmbedding(existing?.embedding),
+    pendingSync: memory.pendingSync === false ? false : normalized.pendingSync,
+  };
+
+  memoryCache = mergeByLatest([
+    ...memoryCache,
+    nextMemory,
+  ]);
+
+  writeCacheToStorage(memoryCache);
+  void triggerSync();
+  return nextMemory;
+};
+
 const lexicalSearch = (query, limit = DEFAULT_SEARCH_LIMIT) => {
   const normalizedQuery = normalizeText(query).toLowerCase();
   if (!normalizedQuery) {
@@ -379,19 +412,17 @@ export const saveMemory = async (memory = {}) => {
     }
   }
 
-  const memoryWithEmbedding = {
+  const memoryWithEmbedding = mergeMemoryIntoCache({
     ...nextMemory,
     embedding,
     updatedAt: Date.now(),
     pendingSync: true,
-  };
+  });
 
-  memoryCache = mergeByLatest([
-    ...memoryCache,
-    memoryWithEmbedding,
-  ]);
+  if (!memoryWithEmbedding) {
+    return null;
+  }
 
-  writeCacheToStorage(memoryCache);
   learnPattern(nextMemory);
   console.info('[brain] memory_saved', {
     id: memoryWithEmbedding.id,
@@ -399,8 +430,25 @@ export const saveMemory = async (memory = {}) => {
     source: memoryWithEmbedding.source,
   });
 
-  void triggerSync();
   return memoryWithEmbedding;
+};
+
+export const updateMemory = async (id, updates = {}) => {
+  ensureCacheLoaded();
+
+  const targetId = normalizeText(id);
+  if (!targetId) {
+    return null;
+  }
+
+  const existing = memoryCache.find((memory) => memory.id === targetId) || {};
+
+  return mergeMemoryIntoCache({
+    ...existing,
+    ...updates,
+    id: targetId,
+    updatedAt: Date.now(),
+  });
 };
 
 export const getMemoryById = (id) => {
