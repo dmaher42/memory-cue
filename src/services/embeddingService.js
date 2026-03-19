@@ -59,25 +59,23 @@ const cosineSimilarity = (left, right) => {
 };
 
 export async function generateEmbedding(text) {
-  const normalizedText = normalizeText(text);
-  if (!normalizedText) {
-    return null;
-  }
-
   console.log('[embedding] using API route');
-  const response = await fetch('/api/embed', {
+
+  const res = await fetch('/api/embed', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: normalizedText }),
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ text })
   });
 
-  if (!response.ok) {
-    console.error('[embedding] API error', response.status);
+  if (!res.ok) {
+    console.error('[embedding] API error', res.status);
     return null;
   }
 
-  const data = await response.json();
-  return normalizeEmbedding(data?.embedding);
+  const data = await res.json();
+  return data.embedding;
 }
 
 export const getEmbeddingsForUser = async (uid) => {

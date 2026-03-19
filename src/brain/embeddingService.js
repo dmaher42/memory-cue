@@ -13,21 +13,14 @@ const normalizeEmbedding = (value) => {
 };
 
 export async function generateEmbedding(text) {
-  const normalizedText = normalizeText(text);
-
-  if (!normalizedText) {
-    return null;
-  }
-
   console.log('[embedding] using API route');
+
   const res = await fetch('/api/embed', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      text: normalizedText,
-    }),
+    body: JSON.stringify({ text })
   });
 
   if (!res.ok) {
@@ -36,5 +29,5 @@ export async function generateEmbedding(text) {
   }
 
   const data = await res.json();
-  return normalizeEmbedding(data?.embedding);
+  return data.embedding;
 }
