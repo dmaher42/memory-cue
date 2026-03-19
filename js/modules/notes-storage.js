@@ -16,7 +16,6 @@ const normalizeSemanticEmbedding = (value) => {
 
 let remoteSyncHandler = null;
 let memoryServiceModulePromise = null;
-let embeddingServiceModulePromise = null;
 
 export const setRemoteSyncHandler = (handler) => {
   remoteSyncHandler = typeof handler === 'function' ? handler : null;
@@ -241,16 +240,8 @@ const ensureNoteEmbedding = (note, notes, options = {}) => {
     return;
   }
 
-  if (!embeddingServiceModulePromise) {
-    embeddingServiceModulePromise = import('../../src/brain/embeddingService.js').catch((error) => {
-      console.warn('[notes-storage] Failed to load embedding service', error);
-      return null;
-    });
-  }
-
-  embeddingServiceModulePromise
-    .then(async (embeddingServiceModule) => {
-      const generateEmbedding = embeddingServiceModule?.generateEmbedding;
+  import('../../src/brain/embeddingService.js')
+    .then(async ({ generateEmbedding }) => {
       if (typeof generateEmbedding !== 'function') {
         return;
       }

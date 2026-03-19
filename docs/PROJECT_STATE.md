@@ -94,20 +94,6 @@ GeolocationPositionError: Timeout expired
 
 ---
 
-## ❌ AI System Status (NOT ACTIVE YET)
-
-From logs:
-
-```text
-[embedding] no OpenAI key configured
-```
-
-### What this means:
-
-The following features are NOT working yet:
-- Semantic search
-- Smart memory recall
-- Summarisation
 - AI assistant reasoning
 
 ---

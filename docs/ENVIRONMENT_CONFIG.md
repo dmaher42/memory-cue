@@ -1,7 +1,7 @@
 # Environment Configuration
 
 ## Server variables
-- `OPENAI_API_KEY`: required for `/api/assistant-chat`, client-side embeddings, and semantic search to call OpenAI APIs. When it is missing, note/reminder creation and query handling keep the existing keyword-only behavior.
+- `OPENAI_API_KEY`: required for server-side API routes such as `/api/assistant-chat` and `/api/embed`.
 - `APP_URL` (optional): historical endpoint base URL. Current assistant flow uses relative `/api/assistant-chat`.
 
 ## Client/runtime configuration

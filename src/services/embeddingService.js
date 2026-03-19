@@ -1,4 +1,5 @@
 import { getMemories, saveMemory } from './memoryService.js';
+import { generateEmbedding } from '../brain/embeddingService.js';
 
 const resolveUid = async (uid) => {
   if (typeof uid === 'string' && uid.trim()) {
@@ -58,25 +59,6 @@ const cosineSimilarity = (left, right) => {
   return dotProduct / (Math.sqrt(leftMagnitude) * Math.sqrt(rightMagnitude));
 };
 
-export async function generateEmbedding(text) {
-  console.log('[embedding] using API route');
-
-  const res = await fetch('/api/embed', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ text })
-  });
-
-  if (!res.ok) {
-    console.error('[embedding] API error', res.status);
-    return null;
-  }
-
-  const data = await res.json();
-  return data.embedding;
-}
 
 export const getEmbeddingsForUser = async (uid) => {
   const resolvedUid = await resolveUid(uid);
