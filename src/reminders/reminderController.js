@@ -10,6 +10,7 @@ import { renderReminderList, renderReminderItem, renderTodayReminders } from './
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
+import { generateEmbedding } from '../brain/embeddingService.js';
 import { buildRagAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 import {
   normalizeReminderKeywords,
@@ -51,7 +52,6 @@ const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
 let serviceWorkerReadyPromise = null;
 let backgroundSyncRegistrationPromise = null;
 let backgroundSyncRegistrationSucceeded = false;
-let embeddingServiceModulePromise = null;
 let firestoreMemoryBackfillModulePromise = null;
 
 async function syncFirestoreMemoriesToLocalCache(notes = []) {
@@ -124,35 +124,6 @@ function normalizeReminderList(list = []) {
     normalizeCategory,
   });
 }
-
-async function generateEmbedding(text) {
-  const normalized = typeof text === 'string' ? text.trim() : '';
-  if (!normalized) {
-    return null;
-  }
-
-  if (!embeddingServiceModulePromise) {
-    embeddingServiceModulePromise = import('../brain/embeddingService.js').catch((error) => {
-      console.warn('[embedding] Failed to load embedding service', error);
-      return null;
-    });
-  }
-
-  const embeddingServiceModule = await embeddingServiceModulePromise;
-  const generateEmbeddingViaService = embeddingServiceModule?.generateEmbedding;
-  if (typeof generateEmbeddingViaService !== 'function') {
-    return null;
-  }
-
-  try {
-    const embedding = await generateEmbeddingViaService(normalized);
-    return normalizeSemanticEmbedding(embedding);
-  } catch (error) {
-    console.warn('[embedding] Failed to generate embedding', error);
-    return null;
-  }
-}
-
 async function ensureEmbeddingForItem(item) {
   if (!item || typeof item !== 'object') {
     return item;
