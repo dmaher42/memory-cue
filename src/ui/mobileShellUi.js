@@ -650,7 +650,9 @@ export const initSettingsModal = () => {
   ).filter((btn) => btn instanceof HTMLElement);
 
   const modal = document.getElementById('settingsModal');
-  const closeBtn = document.getElementById('closeSettings');
+  const closeBtn =
+    document.getElementById('settingsCloseBtn') ||
+    document.getElementById('closeSettings');
 
   if (!openButtons.length || !(modal instanceof HTMLElement) || !(closeBtn instanceof HTMLElement)) {
     return;
@@ -658,10 +660,12 @@ export const initSettingsModal = () => {
 
   function open() {
     modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
   }
 
   function close() {
     modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
   }
 
   openButtons.forEach((btn) => {
