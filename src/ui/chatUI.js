@@ -3,8 +3,23 @@ import { captureInput } from '../core/capturePipeline.js';
 export function initChatUI() {
   const assistantFormEl = document.getElementById('assistantForm');
   const assistantInputEl = document.getElementById('assistantInput');
+  const mobileThinkingBarForm = document.getElementById('thinkingBarForm');
   const isAssistantInput = assistantInputEl instanceof HTMLInputElement || assistantInputEl instanceof HTMLTextAreaElement;
   if (!(assistantFormEl instanceof HTMLFormElement) || !isAssistantInput) return;
+
+  // The mobile shell owns the thinking-bar assistant flow in mobile.js.
+  // This module should only bind a dedicated assistant form.
+  if (
+    mobileThinkingBarForm instanceof HTMLFormElement
+    && assistantFormEl === mobileThinkingBarForm
+  ) {
+    return;
+  }
+
+  if (assistantFormEl.dataset.chatUiBound === 'true') {
+    return;
+  }
+  assistantFormEl.dataset.chatUiBound = 'true';
 
   assistantFormEl.addEventListener('submit', async (event) => {
     const text = (assistantInputEl.value || '').trim();
