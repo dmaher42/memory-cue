@@ -43,6 +43,28 @@ export const initHeaderOverflowMenu = () => {
   const getFocusableItems = () =>
     Array.from(menu.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isVisible);
 
+  const focusElement = (element) => {
+    if (!(element instanceof HTMLElement) || typeof element.focus !== 'function') {
+      return false;
+    }
+
+    try {
+      element.focus();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const focusFirstDescendant = (container) => {
+    if (!(container instanceof HTMLElement)) {
+      return false;
+    }
+
+    const firstFocusable = Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).find(isVisible);
+    return focusElement(firstFocusable);
+  };
+
   const updateAriaHidden = () => {
     const hidden = menu.classList.contains('hidden');
     menu.setAttribute('aria-hidden', hidden ? 'true' : 'false');
@@ -85,8 +107,9 @@ export const initHeaderOverflowMenu = () => {
     }
   };
 
-  const getSafeFocusTarget = ({ restoreFocus = true } = {}) => {
+  const getSafeFocusTarget = ({ restoreFocus = true, focusTarget = null } = {}) => {
     const candidates = [
+      focusTarget instanceof HTMLElement ? focusTarget : null,
       restoreFocus ? restoreFocusTo : null,
       menuBtn,
       document.body instanceof HTMLElement ? document.body : null,
@@ -111,15 +134,17 @@ export const initHeaderOverflowMenu = () => {
     }
   };
 
-  const closeMenu = ({ restoreFocus = true } = {}) => {
+  const closeMenu = ({ restoreFocus = true, focusTarget = null } = {}) => {
     if (menu.classList.contains('hidden')) return;
 
     const activeElement = document.activeElement;
     const activeInsideMenu = activeElement instanceof HTMLElement && menu.contains(activeElement);
-    const focusTarget = activeInsideMenu ? getSafeFocusTarget({ restoreFocus }) : null;
+    const safeFocusTarget = activeInsideMenu
+      ? getSafeFocusTarget({ restoreFocus, focusTarget })
+      : null;
 
-    if (focusTarget && focusTarget !== activeElement) {
-      moveFocusSafely(focusTarget);
+    if (safeFocusTarget && safeFocusTarget !== activeElement) {
+      moveFocusSafely(safeFocusTarget);
     }
 
     menu.classList.add('hidden');
@@ -128,12 +153,33 @@ export const initHeaderOverflowMenu = () => {
     document.removeEventListener('focusin', handleFocusIn);
 
     if (
-      focusTarget &&
-      document.activeElement !== focusTarget &&
+      safeFocusTarget &&
+      document.activeElement !== safeFocusTarget &&
       !menu.contains(document.activeElement)
     ) {
-      moveFocusSafely(focusTarget);
+      moveFocusSafely(safeFocusTarget);
     }
+  };
+
+  const runMenuAction = (callback, options = {}) => {
+    const {
+      restoreFocus = false,
+      focusTarget = menuBtn,
+    } = options;
+
+    closeMenu({ restoreFocus, focusTarget });
+
+    if (typeof callback !== 'function') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      try {
+        callback();
+      } catch (error) {
+        console.warn('[overflow-menu] action failed', error);
+      }
+    });
   };
 
   const applyTheme = (theme) => {
@@ -169,25 +215,11 @@ export const initHeaderOverflowMenu = () => {
     return target.closest('[data-menu-action]');
   };
 
-  const closeMenuThenRun = (callback, options = {}) => {
-    closeMenu(options);
-
-    if (typeof callback !== 'function') return;
-
-    const defer =
-      typeof window !== 'undefined' && typeof window.setTimeout === 'function'
-        ? window.setTimeout
-        : setTimeout;
-
-    defer(() => {
-      callback();
-    }, 0);
-  };
-
   const handleMenuAction = (event) => {
     const button = getMenuActionTarget(event);
     if (!button) return;
 
+    event.preventDefault();
     event.stopPropagation();
 
     const action = button.getAttribute('data-menu-action');
@@ -199,32 +231,42 @@ export const initHeaderOverflowMenu = () => {
         const completedTab =
           document.querySelector('[data-reminders-tab="completed"]') ||
           document.querySelector('[data-reminders-filter="completed"]');
-        if (completedTab instanceof HTMLElement) {
-          completedTab.click();
-        } else if (typeof window.setMobileRemindersFilter === 'function') {
-          window.setMobileRemindersFilter('completed');
-        }
+        runMenuAction(() => {
+          if (completedTab instanceof HTMLElement) {
+            completedTab.click();
+            focusElement(completedTab);
+          } else if (typeof window.setMobileRemindersFilter === 'function') {
+            window.setMobileRemindersFilter('completed');
+          }
+        });
         break;
       }
 
       case 'settings': {
-        closeMenuThenRun(() => {
-          const settingsTrigger = document.querySelector('[data-open="settings"]');
+        const settingsTrigger = document.querySelector('[data-open="settings"]');
+        const settingsModal = document.getElementById('settingsModal');
+        runMenuAction(() => {
           if (settingsTrigger instanceof HTMLElement) {
             settingsTrigger.click();
-          } else {
-            const settingsModal = document.getElementById('settingsModal');
-            if (settingsModal instanceof HTMLElement) {
-              settingsModal.classList.remove('hidden');
-              settingsModal.removeAttribute('aria-hidden');
-            }
+          } else if (settingsModal instanceof HTMLElement) {
+            settingsModal.classList.remove('hidden');
+            settingsModal.removeAttribute('aria-hidden');
+          }
+
+          const primaryFocusTarget =
+            document.getElementById('settingsCloseBtn') ||
+            document.getElementById('closeSettings') ||
+            settingsModal;
+
+          if (!focusElement(primaryFocusTarget)) {
+            focusFirstDescendant(settingsModal);
           }
         });
-        return;
+        break;
       }
 
       case 'saved-notes': {
-        closeMenuThenRun(() => {
+        runMenuAction(() => {
           try {
             if (typeof window.showSavedNotesSheet === 'function') {
               window.showSavedNotesSheet();
@@ -237,80 +279,100 @@ export const initHeaderOverflowMenu = () => {
                 document.querySelector('.open-saved-notes-global');
               if (trigger instanceof HTMLElement) {
                 trigger.click();
+                focusElement(trigger);
               }
             }
           } catch (error) {
             console.warn('[overflow-menu] failed to open saved notes sheet', error);
           }
         });
-        return;
+        break;
       }
 
       case 'sign-in': {
         const primarySignInBtn = document.getElementById('googleSignInBtn');
-        if (primarySignInBtn instanceof HTMLElement) {
-          primarySignInBtn.click();
-        }
+        runMenuAction(() => {
+          if (primarySignInBtn instanceof HTMLElement) {
+            primarySignInBtn.click();
+            focusElement(primarySignInBtn);
+          }
+        });
         break;
       }
 
       case 'sign-out': {
         const primarySignOutBtn = document.getElementById('googleSignOutBtn');
-        if (primarySignOutBtn instanceof HTMLElement) {
-          primarySignOutBtn.click();
-        }
+        runMenuAction(() => {
+          if (primarySignOutBtn instanceof HTMLElement) {
+            primarySignOutBtn.click();
+            focusElement(primarySignOutBtn);
+          }
+        });
         break;
       }
 
       case 'sync-all':
       case 'sync-now': {
         const syncBtn = document.getElementById('syncAll');
-        if (syncBtn instanceof HTMLElement) {
-          syncBtn.click();
-        } else if (window.remindersController && typeof window.remindersController.syncAll === 'function') {
-          window.remindersController.syncAll().catch(() => {});
-        } else if (typeof window.syncAllReminders === 'function') {
-          window.syncAllReminders();
-        }
+        runMenuAction(() => {
+          if (syncBtn instanceof HTMLElement) {
+            syncBtn.click();
+            focusElement(syncBtn);
+          } else if (window.remindersController && typeof window.remindersController.syncAll === 'function') {
+            window.remindersController.syncAll().catch(() => {});
+          } else if (typeof window.syncAllReminders === 'function') {
+            window.syncAllReminders();
+          }
+        });
         break;
       }
 
       case 'theme-light':
-        applyTheme('light');
+        runMenuAction(() => {
+          applyTheme('light');
+        });
         break;
       case 'theme-dark':
-        applyTheme('dark');
+        runMenuAction(() => {
+          applyTheme('dark');
+        });
         break;
       case 'theme-professional-dark':
-        applyTheme('professional-dark');
+        runMenuAction(() => {
+          applyTheme('professional-dark');
+        });
         break;
 
       case 'layout-cozy':
-        applyLayout('cozy');
+        runMenuAction(() => {
+          applyLayout('cozy');
+        });
         break;
       case 'layout-compact':
-        applyLayout('compact');
+        runMenuAction(() => {
+          applyLayout('compact');
+        });
         break;
 
       case 'about': {
-        closeMenuThenRun(() => {
-          const aboutTrigger =
-            document.querySelector('[data-open="about"]') ||
-            document.getElementById('aboutMemoryCueBtn');
+        const aboutTrigger =
+          document.querySelector('[data-open="about"]') ||
+          document.getElementById('aboutMemoryCueBtn');
+        runMenuAction(() => {
           if (aboutTrigger instanceof HTMLElement) {
             aboutTrigger.click();
+            focusElement(aboutTrigger);
           } else if (typeof window.showAboutMemoryCue === 'function') {
             window.showAboutMemoryCue();
           }
         });
-        return;
+        break;
       }
 
       default:
+        closeMenu();
         break;
     }
-
-    closeMenu();
   };
 
   menuBtn.addEventListener('click', (event) => {
@@ -345,9 +407,6 @@ export const initHeaderOverflowMenu = () => {
 
   menu.addEventListener('click', (event) => {
     event.stopPropagation();
-    if (event.target instanceof HTMLElement && event.target.closest('button')) {
-      closeMenu({ restoreFocus: false });
-    }
   });
 
   menu.addEventListener('keydown', (event) => {
