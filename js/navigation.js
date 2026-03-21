@@ -638,6 +638,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // The canonical owner now lives in src/ui/mobileShellUi.js.
   if (!menuBtn || !menu || menuBtn.dataset.overflowMenuHandled) return;
 
+  var isClaimedByAnotherController = function () {
+    return !!menuBtn.dataset.overflowMenuHandled;
+  };
+
   var isOpen = function () {
     return menuBtn.getAttribute('aria-expanded') === 'true';
   };
@@ -656,6 +660,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Toggle on button click (tap)
   menuBtn.addEventListener('click', function (ev) {
+    if (isClaimedByAnotherController()) {
+      return;
+    }
     ev.preventDefault();
     ev.stopPropagation();
     if (isOpen()) {
@@ -667,6 +674,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Close when tapping outside the menu
   document.addEventListener('click', function (ev) {
+    if (isClaimedByAnotherController()) {
+      return;
+    }
     var target = ev.target;
     if (!menu.contains(target) && target !== menuBtn) {
       closeMenu();
@@ -675,6 +685,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Optional: close on Escape for accessibility
   document.addEventListener('keydown', function (ev) {
+    if (isClaimedByAnotherController()) {
+      return;
+    }
     if (ev.key === 'Escape' && isOpen()) {
       closeMenu();
     }
