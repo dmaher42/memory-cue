@@ -634,9 +634,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('headerMenuSlim') ||
     document.getElementById('headerMenu');
 
-  // Skip binding if the mobile.js controller has already taken over to
-  // prevent duplicate toggle listeners firing on tap.
-  if (!menuBtn || !menu || menuBtn.dataset.overflowMenuHandled === 'mobile-js') return;
+  // Skip binding when any newer controller has already claimed the menu.
+  // The canonical owner now lives in src/ui/mobileShellUi.js.
+  if (!menuBtn || !menu || menuBtn.dataset.overflowMenuHandled) return;
 
   var isOpen = function () {
     return menuBtn.getAttribute('aria-expanded') === 'true';
