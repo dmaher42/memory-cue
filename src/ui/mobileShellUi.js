@@ -46,6 +46,11 @@ export const initHeaderOverflowMenu = () => {
   const updateAriaHidden = () => {
     const hidden = menu.classList.contains('hidden');
     menu.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    if (hidden) {
+      menu.setAttribute('inert', '');
+    } else {
+      menu.removeAttribute('inert');
+    }
   };
 
   updateAriaHidden();
@@ -82,14 +87,35 @@ export const initHeaderOverflowMenu = () => {
 
   const closeMenu = ({ restoreFocus = true } = {}) => {
     if (menu.classList.contains('hidden')) return;
+    const focusTarget =
+      restoreFocus && restoreFocusTo instanceof HTMLElement
+        ? restoreFocusTo
+        : null;
+
+    if (
+      focusTarget &&
+      menu.contains(document.activeElement) &&
+      typeof focusTarget.focus === 'function'
+    ) {
+      try {
+        focusTarget.focus();
+      } catch {
+        /* ignore */
+      }
+    }
+
     menu.classList.add('hidden');
     menuBtn.setAttribute('aria-expanded', 'false');
     updateAriaHidden();
     document.removeEventListener('focusin', handleFocusIn);
 
-    if (restoreFocus && restoreFocusTo instanceof HTMLElement) {
+    if (
+      focusTarget &&
+      document.activeElement !== focusTarget &&
+      typeof focusTarget.focus === 'function'
+    ) {
       try {
-        restoreFocusTo.focus();
+        focusTarget.focus();
       } catch {
         /* ignore */
       }
