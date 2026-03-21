@@ -1,3 +1,5 @@
+import { startSignInFlow, startSignOutFlow } from '../../js/auth.js';
+
 export const initHeaderIconShortcuts = () => {
   const notifShortcutButton = document.getElementById('notifHeaderBtn');
   const notificationCta = document.getElementById('notifBtn');
@@ -94,12 +96,43 @@ export const initHeaderOverflowMenu = () => {
     }
   };
 
+  const positionMenu = () => {
+    if (menu.classList.contains('hidden')) {
+      menu.style.left = '';
+      menu.style.right = '';
+      menu.style.top = '';
+      return;
+    }
+
+    const parentRect = menu.parentElement?.getBoundingClientRect?.() || menuBtn.parentElement?.getBoundingClientRect?.();
+    const buttonRect = menuBtn.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+
+    if (!parentRect) {
+      return;
+    }
+
+    const top = Math.max(0, buttonRect.bottom - parentRect.top + 6);
+    const left = Math.max(
+      8,
+      Math.min(
+        buttonRect.right - parentRect.left - menuRect.width,
+        parentRect.width - menuRect.width - 8,
+      ),
+    );
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.right = 'auto';
+  };
+
   const openMenu = () => {
     if (!menu.classList.contains('hidden')) return;
     restoreFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : menuBtn;
     menu.classList.remove('hidden');
     menuBtn.setAttribute('aria-expanded', 'true');
     updateAriaHidden();
+    positionMenu();
     document.addEventListener('focusin', handleFocusIn);
 
     if (!menu.contains(document.activeElement)) {
@@ -165,6 +198,7 @@ export const initHeaderOverflowMenu = () => {
     const {
       restoreFocus = false,
       focusTarget = menuBtn,
+      defer = true,
     } = options;
 
     closeMenu({ restoreFocus, focusTarget });
@@ -173,13 +207,20 @@ export const initHeaderOverflowMenu = () => {
       return;
     }
 
-    requestAnimationFrame(() => {
+    const runCallback = () => {
       try {
         callback();
       } catch (error) {
         console.warn('[overflow-menu] action failed', error);
       }
-    });
+    };
+
+    if (!defer) {
+      runCallback();
+      return;
+    }
+
+    requestAnimationFrame(runCallback);
   };
 
   const applyTheme = (theme) => {
@@ -295,8 +336,12 @@ export const initHeaderOverflowMenu = () => {
           if (primarySignInBtn instanceof HTMLElement) {
             primarySignInBtn.click();
             focusElement(primarySignInBtn);
+          } else {
+            startSignInFlow().catch((error) => {
+              console.warn('[overflow-menu] sign-in failed', error);
+            });
           }
-        });
+        }, { defer: false });
         break;
       }
 
@@ -306,8 +351,12 @@ export const initHeaderOverflowMenu = () => {
           if (primarySignOutBtn instanceof HTMLElement) {
             primarySignOutBtn.click();
             focusElement(primarySignOutBtn);
+          } else {
+            startSignOutFlow().catch((error) => {
+              console.warn('[overflow-menu] sign-out failed', error);
+            });
           }
-        });
+        }, { defer: false });
         break;
       }
 
@@ -400,6 +449,12 @@ export const initHeaderOverflowMenu = () => {
     if (event.key === 'ArrowDown' && !menu.classList.contains('hidden')) {
       event.preventDefault();
       focusFirstItem();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!menu.classList.contains('hidden')) {
+      positionMenu();
     }
   });
 
