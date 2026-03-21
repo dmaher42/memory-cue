@@ -50,6 +50,39 @@ const normalizeUserId = (user) => {
   return null;
 };
 
+const toTimestamp = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return 0;
+};
+
+const mergeNotesByLatest = (localNotes = [], remoteNotes = []) => {
+  const merged = new Map();
+
+  [...remoteNotes, ...localNotes].forEach((note) => {
+    const normalized = mapRemoteNote(note);
+    if (!normalized?.id) {
+      return;
+    }
+
+    const existing = merged.get(normalized.id);
+    if (!existing || toTimestamp(normalized.updatedAt) >= toTimestamp(existing.updatedAt)) {
+      merged.set(normalized.id, normalized);
+    }
+  });
+
+  return Array.from(merged.values()).sort((left, right) => (
+    toTimestamp(right.updatedAt) - toTimestamp(left.updatedAt)
+  ));
+};
+
 export const initNotesSync = (options = {}) => {
   const {
     onRemotePull = null,
@@ -81,15 +114,22 @@ export const initNotesSync = (options = {}) => {
       const normalized = Array.isArray(remoteNotes)
         ? remoteNotes.map((note) => mapRemoteNote(note)).filter(Boolean)
         : [];
+      const localNotes = loadAllNotes();
 
       if (!normalized.length) {
+        if (Array.isArray(localNotes) && localNotes.length) {
+          logDebug('[notes-sync] Remote notes empty; pushing local cache');
+          await syncNotes(localNotes);
+        }
         return;
       }
 
+      const merged = mergeNotesByLatest(localNotes, normalized);
+
       isApplyingRemote = true;
-      const saved = saveAllNotes(normalized, { skipRemoteSync: true });
+      const saved = saveAllNotes(merged, { skipRemoteSync: true });
       if (saved) {
-        await syncFirestoreMemoriesToLocalCache(normalized);
+        await syncFirestoreMemoriesToLocalCache(merged);
       }
       isApplyingRemote = false;
 
@@ -99,7 +139,7 @@ export const initNotesSync = (options = {}) => {
 
       if (typeof onRemotePull === 'function') {
         try {
-          onRemotePull({ mergedCount: normalized.length, remoteCount: normalized.length });
+          onRemotePull({ mergedCount: merged.length, remoteCount: normalized.length });
         } catch (callbackError) {
           console.warn('[notes-sync] onRemotePull callback failed.', callbackError);
         }

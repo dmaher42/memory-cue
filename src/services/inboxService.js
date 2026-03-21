@@ -194,7 +194,7 @@ export const removeInboxEntry = (id) => {
 
   persistInboxEntries(nextEntries);
   dispatchInboxUpdated();
-  syncInbox().catch((error) => {
+  syncInbox(nextEntries).catch((error) => {
     console.warn('[inbox-service] Firebase inbox deletion sync failed', error);
   });
   return true;

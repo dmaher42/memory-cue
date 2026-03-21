@@ -48,7 +48,7 @@ export const clearMessages = () => {
 
   try {
     localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
-    syncChatHistory().catch(() => {});
+    syncChatHistory([]).catch(() => {});
   } catch (error) {
     console.warn('[chat/messageStore] Failed to clear chat history', error);
   }
