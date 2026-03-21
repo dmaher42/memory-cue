@@ -77,14 +77,7 @@ function initAssistant() {
     };
     const assistantThread = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
     const assistantLoading = document.getElementById('assistantLoading');
-    const thinkingBarInput = document.getElementById('thinkingBarInput')
-      || document.getElementById('captureInput')
-      || document.getElementById('reminderQuickAdd');
-    const captureInputField = document.getElementById('captureInput')
-      || document.getElementById('reminderQuickAdd')
-      || thinkingBarInput;
-    const captureForm = document.getElementById('captureForm');
-    const captureSaveBtn = document.getElementById('captureSaveBtn');
+    const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarForm = document.getElementById('thinkingBarForm');
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
     const recentCapturesList = document.getElementById('recentCapturesList');
@@ -100,8 +93,6 @@ function initAssistant() {
     const recallList = document.getElementById('memoryRecallList');
     let lastRecallNotificationKey = '';
     let isAssistantSending = false;
-    const assistantConversationHistory = [];
-
     if (!isTextEntryElement(thinkingBarInput)) {
       return;
     }
@@ -603,47 +594,6 @@ function initAssistant() {
         recentCapturesList.appendChild(item);
       });
     };
-
-    if (ENABLE_CHAT_INTERFACE && isTextEntryElement(captureInputField)) {
-      captureInputField.placeholder = 'Message Memory Cue...';
-      if (captureSaveBtn instanceof HTMLElement) {
-        captureSaveBtn.textContent = 'Send';
-      }
-    }
-
-    captureForm?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (!isTextEntryElement(captureInputField) || isAssistantSending) {
-        return;
-      }
-
-      const message = typeof captureInputField.value === 'string' ? captureInputField.value.trim() : '';
-      if (!message) {
-        return;
-      }
-
-      isAssistantSending = true;
-      try {
-        appendConversationMessage('user', message);
-        if (ENABLE_CHAT_INTERFACE) {
-          const reply = await handleChatMessage(message);
-          const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
-            ? reply.message.trim()
-            : 'Added to inbox.';
-          appendConversationMessage('assistant', replyMessage, reply?.quickActions);
-          setThinkingBarStatus(replyMessage);
-          renderConversationHistory();
-        } else {
-          await executeCommand('capture', { text: message, source: 'capture' });
-        }
-        captureInputField.value = '';
-        renderRecentCaptures();
-      } catch (error) {
-        console.error('[capture] failed to save capture', error);
-      } finally {
-        isAssistantSending = false;
-      }
-    });
 
     document.addEventListener('memoryCue:entriesUpdated', renderRecentCaptures);
     renderRecentCaptures();
