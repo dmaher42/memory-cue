@@ -167,6 +167,18 @@ export const initHeaderOverflowMenu = () => {
     }
   };
 
+  const blurElementSafely = (target) => {
+    if (!(target instanceof HTMLElement) || typeof target.blur !== 'function') {
+      return;
+    }
+
+    try {
+      target.blur();
+    } catch {
+      /* ignore */
+    }
+  };
+
   const closeMenu = ({ restoreFocus = true, focusTarget = null } = {}) => {
     if (menu.classList.contains('hidden')) return;
 
@@ -177,6 +189,21 @@ export const initHeaderOverflowMenu = () => {
       : null;
 
     if (safeFocusTarget && safeFocusTarget !== activeElement) {
+      moveFocusSafely(safeFocusTarget);
+    }
+
+    const focusStillInsideMenu =
+      document.activeElement instanceof HTMLElement && menu.contains(document.activeElement);
+
+    if (focusStillInsideMenu) {
+      blurElementSafely(document.activeElement);
+    }
+
+    if (
+      safeFocusTarget &&
+      document.activeElement instanceof HTMLElement &&
+      menu.contains(document.activeElement)
+    ) {
       moveFocusSafely(safeFocusTarget);
     }
 
@@ -262,6 +289,9 @@ export const initHeaderOverflowMenu = () => {
 
     event.preventDefault();
     event.stopPropagation();
+    if (button instanceof HTMLElement) {
+      blurElementSafely(button);
+    }
 
     const action = button.getAttribute('data-menu-action');
     if (!action) return;
