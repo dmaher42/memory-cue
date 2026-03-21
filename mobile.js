@@ -60,6 +60,12 @@ if ('serviceWorker' in navigator) {
 
 
 function initAssistant() {
+    if (document.body?.dataset.memoryCueAssistantInit === 'true') {
+      return;
+    }
+    if (document.body) {
+      document.body.dataset.memoryCueAssistantInit = 'true';
+    }
     const isTextEntryElement = (value) => {
       if (typeof HTMLInputElement !== 'undefined' && value instanceof HTMLInputElement) {
         return true;
@@ -533,11 +539,9 @@ function initAssistant() {
     };
 
     createChatComposer({
+      form: thinkingBarForm,
       textarea: thinkingBarInput,
       button: thinkingBarSubmit,
-      onSubmit: async () => {
-        await sendAssistantMessage();
-      },
     });
 
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
@@ -678,7 +682,7 @@ function initAssistant() {
         }
       });
     }
-    // Assistant form submit is owned by js/services/assistant-service.js.
+    // The mobile thinking bar submits through this module's form handler.
 }
 
 if (document.readyState === 'loading') {
