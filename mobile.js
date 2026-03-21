@@ -18,7 +18,7 @@ import { getRecallItems } from './js/services/recall-service.js';
 import { getInboxEntries } from './js/services/capture-service.js';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
-import { getMessages } from './src/chat/messageStore.js';
+import { clearMessages, getMessages } from './src/chat/messageStore.js';
 import { createChatComposer } from './src/components/ChatComposer.js';
 import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
@@ -90,6 +90,8 @@ function initAssistant() {
     const recentCapturesList = document.getElementById('recentCapturesList');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const chatConversationContainer = document.getElementById('chatConversationContainer');
+    const assistantHelpBtn = document.getElementById('assistantHelpBtn');
+    const clearChatHistoryBtn = document.getElementById('clearChatHistoryBtn');
     const weeklyReflectionCard = document.getElementById('weeklyReflectionCard');
     const weeklyReflectionButton = document.getElementById('weeklyReflectionButton');
     const weeklyReflectionModal = document.getElementById('weeklyReflectionModal');
@@ -547,6 +549,33 @@ function initAssistant() {
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
 
     renderConversationHistory();
+
+    clearChatHistoryBtn?.addEventListener('click', () => {
+      clearMessages();
+      renderConversationHistory();
+      setThinkingBarStatus('');
+    });
+
+    assistantHelpBtn?.addEventListener('click', async () => {
+      if (isAssistantSending) {
+        return;
+      }
+
+      isAssistantSending = true;
+      try {
+        const reply = await handleChatMessage('help');
+        const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
+          ? reply.message.trim()
+          : 'Here is how Memory Cue works.';
+        setThinkingBarStatus(replyMessage);
+        renderConversationHistory();
+      } catch (error) {
+        console.error('[assistant] failed to load help content', error);
+        appendAssistantMessage("Sorry, I couldn't load help right now.", 'assistant-message assistant-message--error');
+      } finally {
+        isAssistantSending = false;
+      }
+    });
 
     const renderRecentCaptures = () => {
       if (!(recentCapturesList instanceof HTMLElement)) {
