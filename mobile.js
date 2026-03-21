@@ -24,7 +24,6 @@ import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
 import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 
-const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
     initMobileShellUi();
@@ -75,8 +74,6 @@ function initAssistant() {
       }
       return Boolean(value && (value.tagName === 'INPUT' || value.tagName === 'TEXTAREA'));
     };
-    const assistantThread = document.getElementById('assistantMessages') || document.getElementById('assistantThread');
-    const assistantLoading = document.getElementById('assistantLoading');
     const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarForm = document.getElementById('thinkingBarForm');
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
@@ -98,14 +95,6 @@ function initAssistant() {
     }
 
     const appendAssistantMessage = (text, className = 'assistant-message') => {
-      if (assistantThread instanceof HTMLElement) {
-        const message = document.createElement('div');
-        message.className = className;
-        message.textContent = text;
-        assistantThread.appendChild(message);
-        assistantThread.scrollTop = assistantThread.scrollHeight;
-      }
-
       if (chatConversationContainer instanceof HTMLElement) {
         const roleClass = className.includes('--error') ? 'chat-message--assistant' : 'chat-message--assistant';
         const chatMessage = document.createElement('div');
@@ -615,9 +604,6 @@ function initAssistant() {
         }
 
         isAssistantSending = true;
-        if (assistantLoading instanceof HTMLElement) {
-          assistantLoading.classList.remove('hidden');
-        }
         setThinkingBarStatus('Generating weekly reflection');
 
         try {
@@ -639,9 +625,6 @@ function initAssistant() {
           setThinkingBarStatus('');
         } finally {
           isAssistantSending = false;
-          if (assistantLoading instanceof HTMLElement) {
-            assistantLoading.classList.add('hidden');
-          }
         }
       });
     }
