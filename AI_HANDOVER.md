@@ -136,6 +136,7 @@ Do not treat those wrappers as the real implementation owner when the underlying
 Recent cleanup has created dedicated homes for parts of the mobile shell UI:
 - `src/ui/mobileShellUi.js` → shell-level UI controls that used to live in `mobile.js`
 - `src/ui/mobileSyncControls.js` → sync status and manual sync controls that used to live in `mobile.js`
+- `src/ui/mobileNotesShellUi.js` → notebook shell UI that used to live in `mobile.js`
 
 When extending shell-level mobile UI, prefer these extracted `src/ui/*` modules over putting more code back into `mobile.js`.
 
@@ -194,10 +195,11 @@ Live-code reality currently looks like this:
 - entries UI is mostly canonical through `js/entries.js` → `src/ui/*`
 - shell-level mobile UI now has an extracted home in `src/ui/mobileShellUi.js`
 - mobile sync controls now have an extracted home in `src/ui/mobileSyncControls.js`
+- notebook shell UI now has an extracted home in `src/ui/mobileNotesShellUi.js`
 - notes remain mixed, with storage centered in `js/modules/notes-storage.js` and heavy UI/orchestration still in `mobile.js`
 - assistant backend/orchestration is still one of the most duplicated areas
 - navigation still overlaps across multiple mechanisms
-- `mobile.js` is still the biggest structural hotspot, but smaller than before
+- `mobile.js` is still the biggest structural hotspot, but notebook shell UI has been reduced further
 - Cloudflare Pages is the canonical hosting target
 
 This means:
@@ -312,7 +314,7 @@ Navigation currently overlaps across hash routes, events, and local togglers.
 Do not create another routing mechanism.
 
 ### Mobile shell UI
-For low-risk shell controls and sync/status UI, prefer the extracted `src/ui/mobileShellUi.js` and `src/ui/mobileSyncControls.js` modules instead of growing `mobile.js` again.
+For low-risk shell controls and sync/status UI, prefer the extracted `src/ui/mobileShellUi.js`, `src/ui/mobileSyncControls.js`, and `src/ui/mobileNotesShellUi.js` modules instead of putting more shell-level notebook UI back into `mobile.js`.
 
 ### Hosting
 Cloudflare Pages is the canonical deploy target.
