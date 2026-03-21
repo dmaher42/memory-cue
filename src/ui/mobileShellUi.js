@@ -316,21 +316,30 @@ export const initHeaderOverflowMenu = () => {
       case 'settings': {
         const settingsTrigger = document.querySelector('[data-open="settings"]');
         const settingsModal = document.getElementById('settingsModal');
-        runMenuAction(() => {
-          if (settingsTrigger instanceof HTMLElement) {
-            settingsTrigger.click();
-          } else if (settingsModal instanceof HTMLElement) {
-            settingsModal.classList.remove('hidden');
-            settingsModal.removeAttribute('aria-hidden');
-          }
 
-          const primaryFocusTarget =
-            document.getElementById('settingsCloseBtn') ||
-            document.getElementById('closeSettings') ||
-            settingsModal;
+        // Settings needs an explicit focus handoff before the menu becomes aria-hidden.
+        moveFocusSafely(menuBtn);
+        closeMenu({ restoreFocus: false, focusTarget: menuBtn });
 
-          if (!focusElement(primaryFocusTarget)) {
-            focusFirstDescendant(settingsModal);
+        requestAnimationFrame(() => {
+          try {
+            if (settingsTrigger instanceof HTMLElement) {
+              settingsTrigger.click();
+            } else if (settingsModal instanceof HTMLElement) {
+              settingsModal.classList.remove('hidden');
+              settingsModal.removeAttribute('aria-hidden');
+            }
+
+            const primaryFocusTarget =
+              document.getElementById('settingsCloseBtn') ||
+              document.getElementById('closeSettings') ||
+              settingsModal;
+
+            if (!focusElement(primaryFocusTarget)) {
+              focusFirstDescendant(settingsModal);
+            }
+          } catch (error) {
+            console.warn('[overflow-menu] action failed', error);
           }
         });
         break;
