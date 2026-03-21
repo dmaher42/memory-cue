@@ -38,15 +38,18 @@ If a domain is unclear, do not guess. Resolve ownership first.
 | **Capture** | `src/core/capturePipeline.js` | public wrapper: `js/services/capture-service.js`; related callers: `mobile.js`, `api/capture.js`, `src/services/intentRouter.js` | root `assistant.js` capture flow, any new raw capture path | The real capture implementation lives in `src/core/capturePipeline.js`. Treat `js/services/capture-service.js` as the public wrapper, not the implementation owner. |
 | **Inbox / entry processing** | `src/services/inboxService.js` | `js/services/capture-service.js`, `mobile.js`, `src/services/memoryService.js` | `memoryCueState` style legacy entry storage, duplicate inbox-like stores | Inbox is the canonical processing layer for raw captured items. `memoryEntries` is legacy and is migrated by the service. |
 | **Entries UI** | `src/ui/quickCapture.js`, `src/ui/reminderUI.js`, `src/ui/inboxUI.js`, `src/ui/chatUI.js` | wrapper: `js/entries.js` | older entry-specific runtime code once superseded | `js/entries.js` is now a compatibility wrapper into `src/ui/*`. |
-| **Notes storage and folders** | `js/modules/notes-storage.js` | `js/modules/notes-sync.js`, `mobile.js`, `src/services/adapters/notePersistenceAdapter.js`, `src/services/firestoreSyncService.js` | legacy note keys and legacy note runtimes | Do not create another note store. Storage ownership is still older-layer, while large parts of note UI remain embedded in `mobile.js`. |
+| **Mobile shell UI** | `src/ui/mobileShellUi.js` | `mobile.js`, `src/ui/uiEvents.js` | duplicated shell-level UI wiring inside `mobile.js` once fully removed | Shell UI controls now have a dedicated home outside `mobile.js`. Continue moving low-risk shell wiring here instead of adding more to `mobile.js`. |
+| **Mobile sync controls** | `src/ui/mobileSyncControls.js` | `mobile.js` | duplicated sync-controls logic inside `mobile.js` once fully removed | Sync status and manual sync UI now have a dedicated module. Keep sync-controls ownership here rather than re-embedding it into `mobile.js`. |
+| **Mobile notebook shell UI** | `src/ui/mobileNotesShellUi.js` | `mobile.js` | duplicated notebook shell UI wiring inside `mobile.js` once fully removed | Notebook shell controls now have a dedicated module. Keep saved-notes sheet, note options sheet, folder-picker shell UI, and notebook panel toggles here rather than re-growing `mobile.js`. |
+| **Notes storage and folders** | `js/modules/notes-storage.js` | `js/modules/notes-sync.js`, `mobile.js`, `src/services/adapters/notePersistenceAdapter.js`, `src/services/firestoreSyncService.js` | legacy note keys and legacy note runtimes | Do not create another note store. Storage ownership is still older-layer, while some notebook rendering/state orchestration remains embedded in `mobile.js`. |
 | **Reminders** | `src/reminders/reminderController.js` | wrapper: `js/reminders.js`; related modules: `src/reminders/*`, `src/services/reminderService.js`, `src/repositories/reminderRepository.js`, `service-worker.js` | any parallel reminder store or reminder-specific raw capture path | `js/reminders.js` is now a loader/shim. The live reminder implementation is centered in `src/reminders/reminderController.js`. |
 | **Assistant UI** | `js/assistant.js`, `src/ui/chatUI.js` | `mobile.js`, `js/services/assistant-service.js`, `src/components/*` | root `assistant.js` in old runtime contexts | Assistant UI is still split and should be changed carefully. |
 | **Assistant backend / orchestration** | `api/assistant-chat.ts`, `src/services/assistantOrchestrator.js` | `api/assistant.ts`, `api/chat.ts`, `api/search.ts`, `api/parse-entry.js`, `src/chat/*`, `src/brain/*`, `src/services/brainAgent.js`, `src/services/brainQueryService.js` | any new assistant endpoint without convergence plan | Assistant remains one of the most duplicated areas. Prefer converging on the existing API + orchestrator path. |
 | **Navigation** | `js/navigation.js`, `js/router.js`, `mobile.html`, `mobile.js` | `js/entries.js`, local event-driven view toggles, hash-route overlap | any new routing layer | Navigation still overlaps across multiple mechanisms. Do not add another one. |
-| **Sync / persistence** | `src/services/firestoreSyncService.js`, `js/modules/notes-sync.js`, `service-worker.js` | `src/reminders/reminderController.js`, localStorage mirrors, IndexedDB/service worker scheduling | `supabase/*`, leftover Supabase sync assumptions, duplicate remote backends | Firestore is the target remote direction. localStorage and service-worker persistence should support the app, not become rival sources of truth. |
+| **Sync / persistence** | `src/services/firestoreSyncService.js`, `js/modules/notes-sync.js`, `service-worker.js` | `src/reminders/reminderController.js`, `src/ui/mobileSyncControls.js`, localStorage mirrors, IndexedDB/service worker scheduling | `supabase/*`, leftover Supabase sync assumptions, duplicate remote backends | Firestore is the target remote direction. localStorage and service-worker persistence should support the app, not become rival sources of truth. |
 | **Service worker / notifications** | `service-worker.js`, `js/register-service-worker.js` | `sw.js`, reminder scheduling logic inside `src/reminders/reminderController.js` | duplicate service worker registration paths | Keep one clear service worker registration path and reduce overlap over time. |
 | **Styling** | `styles/*`, `css/*`, `mobile.css` | inline style logic in `mobile.html` if still present | large new inline CSS blocks in runtime HTML | Prefer moving runtime styling into CSS files rather than expanding inline styling. |
-| **Hosting / deployment** | `wrangler.jsonc` | `vercel.json` | `.github/workflows/deploy.yml`, GitHub Pages deploy script in `package.json` | Cloudflare Pages is the canonical hosting target. Treat Vercel config as transitional unless confirmed active. Remove GitHub Pages deployment automation. |
+| **Hosting / deployment** | `wrangler.jsonc` | `README.md`, `AI_HANDOVER.md` | removed GitHub Pages workflow, removed GitHub Pages deploy script, removed `vercel.json` | Cloudflare Pages is the canonical hosting target. Do not add another hosting path unless the project direction explicitly changes. |
 | **Legacy runtime** | none | `legacy/*`, `memory/*` | all legacy runtime files for new feature work | These are cleanup/archival areas, not feature-development targets. |
 | **Supabase residue** | none | `supabase/unified_sync_tables.sql`, any leftover Supabase helper references | all new Supabase work | Supabase is residue, not target direction. Do not expand it. |
 
@@ -85,12 +88,11 @@ If yes, extend the existing implementation rather than creating a parallel one.
 ## Current uncertainty markers
 
 The following domains are still **not fully converged** and should be treated carefully:
-- notes ownership between storage and mobile shell
+- notes ownership between storage and remaining notebook orchestration in `mobile.js`
 - assistant UI and assistant backend
 - navigation
-- sync ownership boundaries inside reminders and notes
+- sync ownership boundaries inside reminders, notes, and sync UI
 - final responsibility split inside `mobile.js`
-- whether `vercel.json` is still needed
 
 When working in these areas, prefer:
 - documenting the current ownership first
