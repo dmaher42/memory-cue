@@ -94,17 +94,6 @@ function initAssistant() {
       return;
     }
 
-    const appendAssistantMessage = (text, className = 'assistant-message') => {
-      if (chatConversationContainer instanceof HTMLElement) {
-        const roleClass = className.includes('--error') ? 'chat-message--assistant' : 'chat-message--assistant';
-        const chatMessage = document.createElement('div');
-        chatMessage.className = `chat-message ${roleClass}`;
-        chatMessage.textContent = text;
-        chatConversationContainer.appendChild(chatMessage);
-        chatConversationContainer.scrollTop = chatConversationContainer.scrollHeight;
-      }
-    };
-
     const appendConversationMessage = (role, content, quickActions = []) => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
@@ -132,6 +121,10 @@ function initAssistant() {
 
       chatConversationContainer.appendChild(row);
       chatConversationContainer.scrollTop = chatConversationContainer.scrollHeight;
+    };
+
+    const appendAssistantMessage = (text, className = 'assistant-message') => {
+      appendConversationMessage('assistant', text);
     };
 
     const renderConversationHistory = () => {
