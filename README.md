@@ -26,27 +26,27 @@ Each notification links back to the Reminders board; tapping it reopens the PWA 
 
 ## Deployment
 
-### GitHub Pages
+### Canonical hosting: Cloudflare Pages
 
-Before deploying, create the production CSS bundle:
+Memory Cue is deployed through **Cloudflare Pages**.
+
+Build command:
 
 ```bash
 npm run build
 ```
 
-This runs the Tailwind and PostCSS pipeline, generating a hashed asset reference inside `dist/` that static hosts can cache aggressively.
-
-Deploy the current contents of the repository to GitHub Pages with:
+Build output directory:
 
 ```bash
-npm run deploy
+dist
 ```
 
-This command publishes the site to the `gh-pages` branch via the `gh-pages` CLI, making it available at `<username>.github.io/memory-cue`.
+The repo contains `wrangler.jsonc` to document the Cloudflare Pages build output. Cloudflare Pages should be treated as the primary hosting target.
 
-### Deployment
+### Legacy hosting residue
 
-Build the static app and deploy the generated `dist/` output with your preferred static hosting provider.
+The repo may still contain historical hosting residue from GitHub Pages or Vercel. Those paths should be treated as transitional or cleanup candidates unless they are explicitly confirmed active.
 
 ## Configuration
 
@@ -66,7 +66,6 @@ Optional Firebase runtime variables:
 
 For local development, place the same values in an untracked `.env.local` file before running `npm run build`. The generated runtime env script preserves any values already present in `window.__ENV`, and `js/init-env.js` remains the single runtime initializer.
 
-
 ## AI setup
 
 The serverless AI endpoints require an OpenAI API key at runtime:
@@ -78,7 +77,7 @@ If this variable is missing, these endpoints return a `500` JSON error indicatin
 
 ## Privacy & Data
 
-Memory Cue stores synced notes and reminders through Firebase-backed services. Review your Firebase Row Level Security policies to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. Do not commit private service credentials to the repository.
+Memory Cue stores synced notes and reminders through Firebase-backed services. Review your Firebase security rules to ensure only authorized users can read or write their data, and communicate the data retention policy to your users. Do not commit private service credentials to the repository.
 
 ## Desktop theme architecture
 

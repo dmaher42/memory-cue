@@ -97,6 +97,12 @@ If a proposed change violates `PRODUCT_RULES.md`, do not implement it.
 - one user, one account, one cloud source of truth
 - reduce split-brain behavior between local and cloud stores
 
+### Hosting / deployment
+- Canonical hosting: Cloudflare Pages
+- Canonical hosting config: `wrangler.jsonc`
+- GitHub Pages deployment config is legacy and should not be extended
+- Vercel config should be treated as transitional unless it is explicitly confirmed active
+
 ### Supabase
 - Supabase has historical residue in the repo
 - it is not the target direction
@@ -154,12 +160,14 @@ If deeper architectural context is needed, then read:
 - `docs/CAPTURE_PIPELINE_MAP.md`
 - `docs/DATA_STORAGE_MAP.md`
 - `docs/UI_NAVIGATION_MAP.md`
+- `README.md`
 
 ### How to interpret the docs
 - `PRODUCT_RULES.md` = non-negotiable architectural rules
 - `CANONICAL_MAP.md` = current file ownership by domain
 - `REPO_AUDIT_AND_CLEANUP_PLAN.md` = cleanup direction
 - `FEATURE_INVENTORY.md` = overlap and duplication audit
+- `README.md` = project setup and canonical hosting/deployment notes
 - `ARCHITECTURE_CURRENT.md` and `docs/ARCHITECTURE_CURRENT_STATE.md` = current repo reality, but may lag behind the newest migrations
 - `CAPTURE_FLOW_MAP.md` and `docs/CAPTURE_PIPELINE_MAP.md` = capture references, but verify against the live code before trusting them as current
 - `docs/ARCHITECTURE.md` and `docs/CAPTURE_FLOW.md` may be more aspirational than fully implemented
@@ -181,6 +189,7 @@ Live-code reality currently looks like this:
 - assistant backend/orchestration is still one of the most duplicated areas
 - navigation still overlaps across multiple mechanisms
 - `mobile.js` is still the biggest structural hotspot
+- Cloudflare Pages is the canonical hosting target
 
 This means:
 - do not create new parallel systems
@@ -193,7 +202,7 @@ This means:
 ## Change Rules for Future Sessions and Codex
 
 ### Rule 1: Do not invent new architecture
-Do not create a new service, module, or endpoint unless:
+Do not create a new service, module, endpoint, or hosting path unless:
 - the canonical one truly does not exist, and
 - the change is explicitly part of cleanup or convergence
 
@@ -206,6 +215,7 @@ Before adding any file, check whether the same domain already exists in:
 - `src/reminders/*`
 - `src/ui/*`
 - `api/*`
+- existing hosting/deployment config files
 
 If it exists, prefer extending or migrating into the canonical file rather than creating another parallel file.
 
@@ -221,6 +231,7 @@ Domains:
 - assistant
 - navigation
 - sync
+- hosting
 
 Any task should begin by identifying:
 - canonical file(s)
@@ -234,7 +245,7 @@ Every meaningful change should do one of these:
 - delete or archive duplicate logic
 - update docs to reflect reality
 
-Avoid changes that merely add another wrapper, adapter, or alternate path.
+Avoid changes that merely add another wrapper, adapter, alternate path, or second hosting story.
 
 ### Rule 5: Do not add new storage keys casually
 Before introducing a new key, table, collection, or structure:
@@ -247,6 +258,7 @@ Do not add:
 - Firebase and Supabase parallel write paths
 - multiple auth systems
 - multiple remote databases for the same domain
+- multiple active hosting paths in repo automation
 
 ### Rule 7: Respect the current phase
 The repo is in cleanup and stabilisation phase.
@@ -290,6 +302,11 @@ Do not add another assistant endpoint or orchestration layer without first ident
 Navigation currently overlaps across hash routes, events, and local togglers.
 Do not create another routing mechanism.
 
+### Hosting
+Cloudflare Pages is the canonical deploy target.
+Do not extend GitHub Pages deployment automation.
+Treat Vercel config as transitional unless confirmed active.
+
 ---
 
 ## What Not To Do
@@ -303,6 +320,7 @@ Do not:
 - move files around without clarifying canonical ownership
 - build features into `legacy/*` unless explicitly doing cleanup
 - assume docs and implementation are already aligned
+- keep multiple active hosting stories in the repo
 
 ---
 
@@ -310,7 +328,7 @@ Do not:
 
 For every new coding task:
 1. Identify the domain
-   - auth, capture, inbox, notes, reminders, assistant, navigation, or sync
+   - auth, capture, inbox, notes, reminders, assistant, navigation, sync, or hosting
 2. Identify the canonical implementation
    - which file(s) are the real ones for that domain
 3. Identify overlap
@@ -336,7 +354,8 @@ Broad cleanup direction:
 5. remove Supabase residue
 6. simplify assistant paths
 7. simplify navigation overlap
-8. archive or delete legacy layers and stale docs
+8. remove stale hosting/deployment paths
+9. archive or delete legacy layers and stale docs
 
 ---
 
@@ -352,6 +371,7 @@ The desired end state is:
 - one assistant entry point
 - one mobile runtime
 - one clear navigation mechanism
+- one canonical hosting target (Cloudflare Pages)
 - local cache only as support, not as a rival source of truth
 
 ---
