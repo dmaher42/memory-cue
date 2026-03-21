@@ -512,14 +512,12 @@ function initAssistant() {
       isAssistantSending = true;
 
       try {
-        appendConversationMessage('user', trimmedMessage);
         const reply = await handleChatMessage(trimmedMessage);
         const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
           ? reply.message.trim()
           : 'Saved to Inbox';
-        appendConversationMessage('assistant', replyMessage, reply?.quickActions);
-        setThinkingBarStatus(replyMessage);
         renderConversationHistory();
+        setThinkingBarStatus(replyMessage);
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
