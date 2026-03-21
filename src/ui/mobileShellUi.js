@@ -85,23 +85,41 @@ export const initHeaderOverflowMenu = () => {
     }
   };
 
-  const closeMenu = ({ restoreFocus = true } = {}) => {
-    if (menu.classList.contains('hidden')) return;
-    const focusTarget =
-      restoreFocus && restoreFocusTo instanceof HTMLElement
-        ? restoreFocusTo
-        : null;
+  const getSafeFocusTarget = ({ restoreFocus = true } = {}) => {
+    const candidates = [
+      restoreFocus ? restoreFocusTo : null,
+      menuBtn,
+      document.body instanceof HTMLElement ? document.body : null,
+    ];
 
-    if (
-      focusTarget &&
-      menu.contains(document.activeElement) &&
-      typeof focusTarget.focus === 'function'
-    ) {
+    return candidates.find((candidate) => isVisible(candidate)) || null;
+  };
+
+  const moveFocusSafely = (target) => {
+    if (!(target instanceof HTMLElement) || typeof target.focus !== 'function') {
+      return;
+    }
+
+    try {
+      target.focus({ preventScroll: true });
+    } catch {
       try {
-        focusTarget.focus();
+        target.focus();
       } catch {
         /* ignore */
       }
+    }
+  };
+
+  const closeMenu = ({ restoreFocus = true } = {}) => {
+    if (menu.classList.contains('hidden')) return;
+
+    const activeElement = document.activeElement;
+    const activeInsideMenu = activeElement instanceof HTMLElement && menu.contains(activeElement);
+    const focusTarget = activeInsideMenu ? getSafeFocusTarget({ restoreFocus }) : null;
+
+    if (focusTarget && focusTarget !== activeElement) {
+      moveFocusSafely(focusTarget);
     }
 
     menu.classList.add('hidden');
@@ -112,13 +130,9 @@ export const initHeaderOverflowMenu = () => {
     if (
       focusTarget &&
       document.activeElement !== focusTarget &&
-      typeof focusTarget.focus === 'function'
+      !menu.contains(document.activeElement)
     ) {
-      try {
-        focusTarget.focus();
-      } catch {
-        /* ignore */
-      }
+      moveFocusSafely(focusTarget);
     }
   };
 
@@ -155,6 +169,21 @@ export const initHeaderOverflowMenu = () => {
     return target.closest('[data-menu-action]');
   };
 
+  const closeMenuThenRun = (callback, options = {}) => {
+    closeMenu(options);
+
+    if (typeof callback !== 'function') return;
+
+    const defer =
+      typeof window !== 'undefined' && typeof window.setTimeout === 'function'
+        ? window.setTimeout
+        : setTimeout;
+
+    defer(() => {
+      callback();
+    }, 0);
+  };
+
   const handleMenuAction = (event) => {
     const button = getMenuActionTarget(event);
     if (!button) return;
@@ -179,38 +208,42 @@ export const initHeaderOverflowMenu = () => {
       }
 
       case 'settings': {
-        const settingsTrigger = document.querySelector('[data-open="settings"]');
-        if (settingsTrigger instanceof HTMLElement) {
-          settingsTrigger.click();
-        } else {
-          const settingsModal = document.getElementById('settingsModal');
-          if (settingsModal instanceof HTMLElement) {
-            settingsModal.classList.remove('hidden');
-            settingsModal.removeAttribute('aria-hidden');
+        closeMenuThenRun(() => {
+          const settingsTrigger = document.querySelector('[data-open="settings"]');
+          if (settingsTrigger instanceof HTMLElement) {
+            settingsTrigger.click();
+          } else {
+            const settingsModal = document.getElementById('settingsModal');
+            if (settingsModal instanceof HTMLElement) {
+              settingsModal.classList.remove('hidden');
+              settingsModal.removeAttribute('aria-hidden');
+            }
           }
-        }
-        break;
+        });
+        return;
       }
 
       case 'saved-notes': {
-        try {
-          if (typeof window.showSavedNotesSheet === 'function') {
-            window.showSavedNotesSheet();
-          } else {
-            const trigger =
-              document.getElementById('openSavedNotesGlobal') ||
-              document.getElementById('openSavedNotesSheetButton') ||
-              document.getElementById('openSavedNotesSheet') ||
-              document.getElementById('savedNotesShortcut') ||
-              document.querySelector('.open-saved-notes-global');
-            if (trigger instanceof HTMLElement) {
-              trigger.click();
+        closeMenuThenRun(() => {
+          try {
+            if (typeof window.showSavedNotesSheet === 'function') {
+              window.showSavedNotesSheet();
+            } else {
+              const trigger =
+                document.getElementById('openSavedNotesGlobal') ||
+                document.getElementById('openSavedNotesSheetButton') ||
+                document.getElementById('openSavedNotesSheet') ||
+                document.getElementById('savedNotesShortcut') ||
+                document.querySelector('.open-saved-notes-global');
+              if (trigger instanceof HTMLElement) {
+                trigger.click();
+              }
             }
+          } catch (error) {
+            console.warn('[overflow-menu] failed to open saved notes sheet', error);
           }
-        } catch (error) {
-          console.warn('[overflow-menu] failed to open saved notes sheet', error);
-        }
-        break;
+        });
+        return;
       }
 
       case 'sign-in': {
@@ -260,15 +293,17 @@ export const initHeaderOverflowMenu = () => {
         break;
 
       case 'about': {
-        const aboutTrigger =
-          document.querySelector('[data-open="about"]') ||
-          document.getElementById('aboutMemoryCueBtn');
-        if (aboutTrigger instanceof HTMLElement) {
-          aboutTrigger.click();
-        } else if (typeof window.showAboutMemoryCue === 'function') {
-          window.showAboutMemoryCue();
-        }
-        break;
+        closeMenuThenRun(() => {
+          const aboutTrigger =
+            document.querySelector('[data-open="about"]') ||
+            document.getElementById('aboutMemoryCueBtn');
+          if (aboutTrigger instanceof HTMLElement) {
+            aboutTrigger.click();
+          } else if (typeof window.showAboutMemoryCue === 'function') {
+            window.showAboutMemoryCue();
+          }
+        });
+        return;
       }
 
       default:
