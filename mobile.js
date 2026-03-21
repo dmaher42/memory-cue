@@ -22,6 +22,7 @@ import { getMessages } from './src/chat/messageStore.js';
 import { createChatComposer } from './src/components/ChatComposer.js';
 import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
+import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 
 const aiCaptureSaveModulePromise = import('./js/modules/ai-capture-save.js').catch(() => ({}));
 const runMobileShellUiInit = () => {
@@ -1422,7 +1423,6 @@ const initMobileNotes = () => {
   let notesOverviewStateValue = 'all';
   let notesMode = 'notebooks';
   let skipAutoSelectOnce = false;
-  let savedNotesSheetHideTimeout = null;
 
   const clearSearchFilter = () => {
     filterQuery = '';
@@ -1431,104 +1431,14 @@ const initMobileNotes = () => {
     }
   };
 
-  const applyNotesMode = (mode = 'notebooks') => {
-    notesMode = mode === 'overview' ? 'overview' : 'notebooks';
-    if (notesOverviewPanel instanceof HTMLElement) {
-      notesOverviewPanel.classList.toggle('hidden', notesMode !== 'overview');
-    }
-    if (noteEditorSheet instanceof HTMLElement) {
-      noteEditorSheet.classList.toggle('hidden', notesMode === 'overview');
-    }
-  };
-
-  const isSavedNotesSheetOpen = () =>
-    savedNotesSheet?.dataset.open === 'true';
-
-  const showSavedNotesSheet = () => {
-    if (!savedNotesSheet) {
-      return;
-    }
-    if (savedNotesSheetHideTimeout) {
-      clearTimeout(savedNotesSheetHideTimeout);
-      savedNotesSheetHideTimeout = null;
-    }
-    savedNotesSheet.classList.remove('hidden');
-    savedNotesSheet.dataset.open = 'true';
-    savedNotesSheet.removeAttribute('inert');
-    savedNotesSheet.setAttribute('aria-hidden', 'false');
-    document.body.dataset.savedNotesOpen = 'true';
-    document.documentElement.dataset.savedNotesOpen = 'true';
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    // Sidebar is now the primary folder selector; just render notes and ensure FAB exists
-    try {
-      renderFilteredNotes();
-    } catch (e) {
-      /* ignore */
-    }
-    // ensure floating FAB exists once the sheet is ready
-    try {
-      ensureFloatingNewFolderFab();
-    } catch (e) {
-      /* ignore */
-    }
-  };
-
-  const hideSavedNotesSheet = () => {
-    if (!savedNotesSheet) {
-      return;
-    }
-    const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLElement && savedNotesSheet.contains(activeElement)) {
-      if (openSavedNotesButton instanceof HTMLElement && typeof openSavedNotesButton.focus === 'function') {
-        openSavedNotesButton.focus();
-      } else if (typeof activeElement.blur === 'function') {
-        activeElement.blur();
-      }
-    }
-    savedNotesSheet.dataset.open = 'false';
-    savedNotesSheet.setAttribute('inert', '');
-    savedNotesSheet.setAttribute('aria-hidden', 'true');
-    delete document.body.dataset.savedNotesOpen;
-    delete document.documentElement.dataset.savedNotesOpen;
-    if (savedNotesSheetHideTimeout) {
-      clearTimeout(savedNotesSheetHideTimeout);
-    }
-    savedNotesSheetHideTimeout = setTimeout(() => {
-      savedNotesSheet?.classList.add('hidden');
-    }, 200);
-  };
-
-  const bindSavedNotesSheetEvents = () => {
-    if (!savedNotesSheet) {
-      return;
-    }
-    openSavedNotesButton?.addEventListener('click', (event) => {
-      event.preventDefault();
-      showSavedNotesSheet();
-
-      const notesListMobileEl = document.getElementById('notesListMobile');
-
-      if (notesListMobileEl) {
-        notesListMobileEl.scrollTop = 0;
-      }
-    });
-    closeSavedNotesButton?.addEventListener('click', (event) => {
-      event.preventDefault();
-      hideSavedNotesSheet();
-    });
-    savedNotesSheet.addEventListener('click', (event) => {
-      if (event.target === savedNotesSheet) {
-        hideSavedNotesSheet();
-      }
-    });
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && isSavedNotesSheetOpen()) {
-        hideSavedNotesSheet();
-      }
-    });
-  };
-
-  bindSavedNotesSheetEvents();
+  let applyNotesMode = () => {};
+  let isSavedNotesSheetOpen = () => false;
+  let showSavedNotesSheet = () => {};
+  let hideSavedNotesSheet = () => {};
+  let openNoteOptionsMenu = () => {};
+  let openFolderSelectorForNote = () => {};
+  let closeMoveFolderSheet = () => {};
+  let closeNoteFolderSheet = () => {};
 
   if (relatedNotesPanel instanceof HTMLElement) {
     relatedNotesPanel.classList.add('hidden');
@@ -1836,14 +1746,6 @@ const initMobileNotes = () => {
 
     document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
   };
-
-  document.addEventListener('thinkingBar:openNote', (event) => {
-    const noteId = event?.detail?.noteId;
-    if (!noteId) {
-      return;
-    }
-    openNoteFromDashboard(noteId);
-  });
 
   const renderDashboardPanel = () => {
     const dashboardPanel = document.getElementById('dashboardPanel');
@@ -2775,116 +2677,6 @@ const initMobileNotes = () => {
     }
   };
 
-  const noteOptionsOverlay = document.getElementById('note-options-overlay');
-  const noteOptionsSheet = document.getElementById('note-options-sheet');
-  const noteActionMoveBtn = noteOptionsSheet?.querySelector('.note-action-move');
-  const noteActionTogglePinBtn = noteOptionsSheet?.querySelector('.note-action-toggle-pin');
-  const noteActionDeleteBtn = noteOptionsSheet?.querySelector('.note-action-delete');
-  let currentNoteOptionsNoteId = null;
-
-  const isNoteOptionsOpen = () =>
-    noteOptionsSheet && noteOptionsSheet.classList.contains('open');
-
-  const closeNoteOptionsMenu = () => {
-    currentNoteOptionsNoteId = null;
-    if (noteOptionsSheet) {
-      noteOptionsSheet.classList.remove('open');
-      noteOptionsSheet.setAttribute('aria-hidden', 'true');
-      noteOptionsSheet.removeAttribute('data-note-id');
-    }
-    if (noteOptionsOverlay) {
-      noteOptionsOverlay.classList.remove('open');
-      noteOptionsOverlay.setAttribute('aria-hidden', 'true');
-    }
-  };
-
-  const handleNoteOptionsKeydown = (event) => {
-    if (event.key === 'Escape' && isNoteOptionsOpen()) {
-      event.preventDefault();
-      closeNoteOptionsMenu();
-    }
-  };
-
-  const openNoteOptionsMenu = (noteId) => {
-    if (!noteId || !noteOptionsSheet || !noteOptionsOverlay) {
-      return;
-    }
-    closeNoteOptionsMenu();
-    closeOverflowMenu();
-    currentNoteOptionsNoteId = noteId;
-    const note = allNotes.find((item) => item.id === noteId);
-    if (noteActionTogglePinBtn) {
-      const isPinned = Boolean(note?.pinned);
-      noteActionTogglePinBtn.textContent = isPinned ? 'Unpin note' : 'Pin note';
-    }
-    noteOptionsSheet.classList.add('open');
-    noteOptionsSheet.setAttribute('aria-hidden', 'false');
-    noteOptionsSheet.setAttribute('data-note-id', noteId);
-    noteOptionsOverlay.classList.add('open');
-    noteOptionsOverlay.setAttribute('aria-hidden', 'false');
-  };
-
-  if (noteOptionsOverlay) {
-    noteOptionsOverlay.addEventListener('click', (event) => {
-      event.preventDefault();
-      closeNoteOptionsMenu();
-    });
-  }
-
-  if (noteOptionsSheet && noteActionMoveBtn) {
-    noteActionMoveBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      const note = allNotes.find((item) => item.id === currentNoteOptionsNoteId);
-      closeNoteOptionsMenu();
-      if (!currentNoteOptionsNoteId) return;
-      openFolderSelectorForNote(currentNoteOptionsNoteId, {
-        initialFolderId:
-          note && note.folderId && typeof note.folderId === 'string'
-            ? note.folderId
-            : 'unsorted',
-        triggerEl: noteActionMoveBtn,
-      });
-    });
-  }
-
-  if (noteOptionsSheet && noteActionTogglePinBtn) {
-    noteActionTogglePinBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      if (!currentNoteOptionsNoteId) {
-        return;
-      }
-      const existingNotes = loadAllNotes();
-      let changed = false;
-      const updatedNotes = (Array.isArray(existingNotes) ? existingNotes : []).map((note) => {
-        if (note && note.id === currentNoteOptionsNoteId) {
-          changed = true;
-          const nextPinned = !Boolean(note.pinned);
-          return { ...note, pinned: nextPinned, updatedAt: new Date().toISOString() };
-        }
-        return note;
-      });
-      if (changed) {
-        saveAllNotes(updatedNotes);
-        refreshFromStorage({ preserveDraft: true });
-      }
-      closeNoteOptionsMenu();
-    });
-  }
-
-  if (noteOptionsSheet && noteActionDeleteBtn) {
-    noteActionDeleteBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      if (currentNoteOptionsNoteId) {
-        handleDeleteNote(currentNoteOptionsNoteId);
-      }
-      closeNoteOptionsMenu();
-    });
-  }
-
-  if (noteOptionsSheet && noteOptionsOverlay) {
-    document.addEventListener('keydown', handleNoteOptionsKeydown);
-  }
-
   const handleMoveNoteToFolder = (noteId, targetFolderId) => {
     if (!noteId) return;
     const normalizedTarget = targetFolderId === 'unsorted' ? null : targetFolderId;
@@ -2918,211 +2710,8 @@ const initMobileNotes = () => {
     closeOverflowMenu();
   };
 
-  const closeNoteFolderSheet = () => {
-    if (noteFolderSheet) {
-      noteFolderSheet.classList.remove('open');
-      noteFolderSheet.setAttribute('aria-hidden', 'true');
-    }
-    if (noteFolderSheetBackdrop) {
-      noteFolderSheetBackdrop.classList.remove('open');
-      noteFolderSheetBackdrop.setAttribute('aria-hidden', 'true');
-    }
-    currentMoveFolderSheetNoteId = null;
-    document.removeEventListener('keydown', handleNoteFolderSheetKeydown);
-    if (noteFolderSheetList) {
-      noteFolderSheetList.innerHTML = '';
-    }
-  };
 
-  const handleNoteFolderSelection = (folderId) => {
-    const targetNoteId = currentMoveFolderSheetNoteId || currentNoteId;
-    if (targetNoteId) {
-      handleMoveNoteToFolder(targetNoteId, folderId || 'unsorted');
-    }
-    closeNoteFolderSheet();
-  };
 
-  const handleCreateNewFolderFromSheet = (event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    const targetNoteId = currentMoveFolderSheetNoteId || currentNoteId;
-    afterFolderCreated = (createdId) => {
-      if (targetNoteId) {
-        handleMoveNoteToFolder(targetNoteId, createdId || 'unsorted');
-      }
-      closeNoteFolderSheet();
-    };
-    openNewFolderDialog();
-  };
-
-  const handleNoteFolderSheetKeydown = (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeNoteFolderSheet();
-    }
-  };
-
-  if (noteFolderSheetList) {
-    noteFolderSheetList.addEventListener('click', (event) => {
-      const row = event.target instanceof HTMLElement ? event.target.closest('.note-folder-row') : null;
-      if (!row || !noteFolderSheetList.contains(row)) return;
-      if (row.classList.contains('note-folder-row-new')) {
-        handleCreateNewFolderFromSheet(event);
-        return;
-      }
-      event.preventDefault();
-      handleNoteFolderSelection(row.dataset.folderId || 'unsorted');
-    });
-
-    noteFolderSheetList.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      const row = event.target instanceof HTMLElement ? event.target.closest('.note-folder-row') : null;
-      if (!row || !noteFolderSheetList.contains(row)) return;
-      if (row.classList.contains('note-folder-row-new')) {
-        handleCreateNewFolderFromSheet(event);
-        return;
-      }
-      event.preventDefault();
-      handleNoteFolderSelection(row.dataset.folderId || 'unsorted');
-    });
-  }
-
-  if (noteFolderSheetClose) {
-    noteFolderSheetClose.addEventListener('click', (event) => {
-      event.preventDefault();
-      closeNoteFolderSheet();
-    });
-  }
-
-  if (noteFolderSheetBackdrop) {
-    noteFolderSheetBackdrop.addEventListener('click', (event) => {
-      event.preventDefault();
-      closeNoteFolderSheet();
-    });
-  }
-
-  const handleFolderSelection = (folderId) => {
-    const normalized = folderId || 'unsorted';
-    if (folderSelectorOnSelect) {
-      folderSelectorOnSelect(normalized);
-    } else if (currentFolderMoveNoteId) {
-      handleMoveNoteToFolder(currentFolderMoveNoteId, normalized);
-    } else {
-      currentEditingNoteFolderId = normalized;
-      const labelEl = document.getElementById('note-folder-label');
-      if (labelEl) {
-        labelEl.textContent = getFolderNameById(currentEditingNoteFolderId) || 'Unsorted';
-      }
-    }
-    closeMoveFolderSheet();
-  };
-
-  const closeMoveFolderSheet = () => {
-    if (folderSelectorEl) {
-      folderSelectorEl.classList.add('hidden');
-      folderSelectorEl.setAttribute('aria-hidden', 'true');
-    }
-    if (folderSelectorListEl) {
-      folderSelectorListEl.innerHTML = '';
-    }
-    currentFolderMoveNoteId = null;
-    folderSelectorOnSelect = null;
-    afterFolderCreated = null;
-    if (noteFolderBtn) {
-      noteFolderBtn.setAttribute('aria-expanded', 'false');
-    }
-    if (activeFolderSheetOpener instanceof HTMLElement) {
-      try {
-        activeFolderSheetOpener.focus({ preventScroll: true });
-      } catch {
-        /* ignore */
-      }
-    }
-    activeFolderSheetOpener = null;
-  };
-
-  const openFolderSelectorForNote = (noteId, options = {}) => {
-    if (!folderSelectorEl || !folderSelectorListEl) {
-      return;
-    }
-
-    const { onSelect = null, initialFolderId = null, triggerEl = null } = options;
-    currentFolderMoveNoteId = noteId || null;
-    folderSelectorOnSelect = typeof onSelect === 'function' ? onSelect : null;
-    activeFolderSheetOpener = triggerEl || document.activeElement;
-
-    let folders = [];
-    try {
-      folders = Array.isArray(getFolders()) ? getFolders() : [];
-    } catch {
-      folders = [];
-    }
-
-    const unsortedFolder = { id: 'unsorted', name: getFolderNameById('unsorted') || 'Unsorted' };
-    const activeNote = noteId ? allNotes.find((n) => n.id === noteId) || null : null;
-    const activeFolderId =
-      initialFolderId ||
-      (activeNote && typeof activeNote.folderId === 'string' && activeNote.folderId
-        ? activeNote.folderId
-        : currentEditingNoteFolderId || 'unsorted');
-
-    const sortedFolders = folders
-      .filter((folder) => folder && folder.id && folder.id !== 'unsorted')
-      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
-    const folderOptions = [unsortedFolder, ...sortedFolders];
-    folderSelectorListEl.innerHTML = '';
-    folderOptions.forEach((folder) => {
-      const row = document.createElement('li');
-      row.dataset.folderId = folder.id || 'unsorted';
-      row.textContent = folder.name || String(folder.id);
-      row.setAttribute('role', 'option');
-      if (row.dataset.folderId === String(activeFolderId)) {
-        row.setAttribute('aria-current', 'true');
-      }
-      folderSelectorListEl.appendChild(row);
-    });
-
-    folderSelectorEl.classList.remove('hidden');
-    folderSelectorEl.setAttribute('aria-hidden', 'false');
-    if (triggerEl === noteFolderBtn) {
-      noteFolderBtn.setAttribute('aria-expanded', 'true');
-    }
-  };
-
-  if (folderSelectorListEl) {
-    folderSelectorListEl.addEventListener('click', (event) => {
-      const row =
-        event.target instanceof HTMLElement ? event.target.closest('li') : null;
-      if (!row || !folderSelectorListEl.contains(row)) return;
-      event.preventDefault();
-      handleFolderSelection(row.dataset.folderId || 'unsorted');
-    });
-
-    folderSelectorListEl.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      const row = event.target instanceof HTMLElement ? event.target.closest('li') : null;
-      if (!row || !folderSelectorListEl.contains(row)) return;
-      event.preventDefault();
-      handleFolderSelection(row.dataset.folderId || 'unsorted');
-    });
-  }
-
-  if (folderSelectorBackdrop) {
-    folderSelectorBackdrop.addEventListener('click', (event) => {
-      event.preventDefault();
-      closeMoveFolderSheet();
-    });
-  }
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && folderSelectorEl && !folderSelectorEl.classList.contains('hidden')) {
-      event.preventDefault();
-      closeMoveFolderSheet();
-    }
-  });
 
   // Reorder folders by swapping `order` with neighbor and normalizing
   const reorderFolder = (folderId, direction) => {
@@ -3476,6 +3065,79 @@ const initMobileNotes = () => {
   const renderFilteredNotes = () => {
     renderNotesList(getVisibleNotes());
   };
+
+  const mobileNotesShellUi = initMobileNotesShellUi({
+    noteEditorSheet,
+    notesOverviewPanel,
+    savedNotesSheet,
+    openSavedNotesButton,
+    closeSavedNotesButton,
+    folderSelectorEl,
+    folderSelectorListEl,
+    folderSelectorBackdrop,
+    noteFolderSheet,
+    noteFolderSheetBackdrop,
+    noteFolderSheetList,
+    noteFolderSheetClose,
+    noteFolderButton: noteFolderBtn,
+    noteOptionsOverlay: document.getElementById('note-options-overlay'),
+    noteOptionsSheet: document.getElementById('note-options-sheet'),
+    noteActionMoveBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-move'),
+    noteActionTogglePinBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-toggle-pin'),
+    noteActionDeleteBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-delete'),
+    getAllNotes: () => allNotes,
+    renderFilteredNotes: () => renderFilteredNotes(),
+    ensureFloatingNewFolderFab: () => ensureFloatingNewFolderFab(),
+    getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
+    setCurrentEditingNoteFolderId: (value) => { currentEditingNoteFolderId = value; },
+    getCurrentNoteId: () => currentNoteId,
+    getCurrentFolderMoveNoteId: () => currentFolderMoveNoteId,
+    setCurrentFolderMoveNoteId: (value) => { currentFolderMoveNoteId = value; },
+    getCurrentMoveFolderSheetNoteId: () => currentMoveFolderSheetNoteId,
+    setCurrentMoveFolderSheetNoteId: (value) => { currentMoveFolderSheetNoteId = value; },
+    getFolderSelectorOnSelect: () => folderSelectorOnSelect,
+    setFolderSelectorOnSelect: (value) => { folderSelectorOnSelect = value; },
+    getActiveFolderSheetOpener: () => activeFolderSheetOpener,
+    setActiveFolderSheetOpener: (value) => { activeFolderSheetOpener = value; },
+    setAfterFolderCreated: (value) => { afterFolderCreated = value; },
+    getFolderOptions: () => {
+      try {
+        return Array.isArray(getFolders()) ? getFolders() : [];
+      } catch {
+        return [];
+      }
+    },
+    getFolderNameById,
+    handleMoveNoteToFolder,
+    openNewFolderDialog,
+    closeOverflowMenu,
+    handleDeleteNote,
+    refreshFromStorage,
+    saveAllNotes,
+    onOpenNoteOptionsMove: (noteId, note, triggerEl) => {
+      openFolderSelectorForNote(noteId, {
+        initialFolderId:
+          note && note.folderId && typeof note.folderId === 'string'
+            ? note.folderId
+            : 'unsorted',
+        triggerEl,
+      });
+    },
+    onOpenNoteFromDashboard: (noteId) => {
+      openNoteFromDashboard(noteId);
+    },
+  });
+
+  ({
+    applyNotesMode,
+    isSavedNotesSheetOpen,
+    showSavedNotesSheet,
+    hideSavedNotesSheet,
+    openNoteOptionsMenu,
+    openFolderSelectorForNote,
+    closeMoveFolderSheet,
+    closeNoteFolderSheet,
+  } = mobileNotesShellUi);
 
   if (filterInput) {
     const handleFilterInput = debounce(() => {
