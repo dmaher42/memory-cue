@@ -101,7 +101,7 @@ If a proposed change violates `PRODUCT_RULES.md`, do not implement it.
 - Canonical hosting: Cloudflare Pages
 - Canonical hosting config: `wrangler.jsonc`
 - GitHub Pages deployment config is legacy and should not be extended
-- Vercel config should be treated as transitional unless it is explicitly confirmed active
+- Vercel config has been removed from the repo
 
 ### Supabase
 - Supabase has historical residue in the repo
@@ -120,8 +120,8 @@ Primary entrypoints:
 - `mobile.html`
 - `mobile.js`
 
-The mobile shell is still overloaded and acts as the main orchestration layer.
-Future cleanup should reduce responsibilities inside `mobile.js`, not add more.
+The mobile shell is still the main orchestration layer, but low-risk UI responsibilities have started moving out of it.
+Future cleanup should continue reducing responsibilities inside `mobile.js`, not add more.
 
 ### Wrapper modules now in use
 Some older-looking `js/*` files are now wrappers or compatibility layers around newer `src/*` implementations.
@@ -131,6 +131,13 @@ Key examples:
 - `js/entries.js` → wrapper over `src/ui/quickCapture.js`, `src/ui/reminderUI.js`, `src/ui/inboxUI.js`, and `src/ui/chatUI.js`
 
 Do not treat those wrappers as the real implementation owner when the underlying `src/*` module is the true live owner.
+
+### Extracted mobile UI modules now in use
+Recent cleanup has created dedicated homes for parts of the mobile shell UI:
+- `src/ui/mobileShellUi.js` → shell-level UI controls that used to live in `mobile.js`
+- `src/ui/mobileSyncControls.js` → sync status and manual sync controls that used to live in `mobile.js`
+
+When extending shell-level mobile UI, prefer these extracted `src/ui/*` modules over putting more code back into `mobile.js`.
 
 ### Legacy runtime
 Treat these as legacy or transitional unless explicitly doing cleanup work:
@@ -185,10 +192,12 @@ Live-code reality currently looks like this:
 - inbox is mostly canonical through `src/services/inboxService.js`
 - reminders are mostly canonical through `js/reminders.js` → `src/reminders/reminderController.js`
 - entries UI is mostly canonical through `js/entries.js` → `src/ui/*`
+- shell-level mobile UI now has an extracted home in `src/ui/mobileShellUi.js`
+- mobile sync controls now have an extracted home in `src/ui/mobileSyncControls.js`
 - notes remain mixed, with storage centered in `js/modules/notes-storage.js` and heavy UI/orchestration still in `mobile.js`
 - assistant backend/orchestration is still one of the most duplicated areas
 - navigation still overlaps across multiple mechanisms
-- `mobile.js` is still the biggest structural hotspot
+- `mobile.js` is still the biggest structural hotspot, but smaller than before
 - Cloudflare Pages is the canonical hosting target
 
 This means:
@@ -302,10 +311,12 @@ Do not add another assistant endpoint or orchestration layer without first ident
 Navigation currently overlaps across hash routes, events, and local togglers.
 Do not create another routing mechanism.
 
+### Mobile shell UI
+For low-risk shell controls and sync/status UI, prefer the extracted `src/ui/mobileShellUi.js` and `src/ui/mobileSyncControls.js` modules instead of growing `mobile.js` again.
+
 ### Hosting
 Cloudflare Pages is the canonical deploy target.
 Do not extend GitHub Pages deployment automation.
-Treat Vercel config as transitional unless confirmed active.
 
 ---
 
