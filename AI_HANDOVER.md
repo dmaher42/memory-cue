@@ -67,6 +67,7 @@ Do not introduce major new features unless they directly support the priorities 
 ## Non-Negotiable Rules
 
 Read `PRODUCT_RULES.md` before coding.
+Then use `CANONICAL_MAP.md` to identify the real implementation files for the task.
 
 Summary:
 - one capture pipeline
@@ -113,14 +114,17 @@ Primary entrypoints:
 - `mobile.html`
 - `mobile.js`
 
-Key active runtime support files likely include:
-- `js/reminders.js`
-- `js/assistant.js`
-- `js/navigation.js`
-- `js/router.js`
-- `js/auth.js`
-- `js/modules/*`
-- `js/services/*`
+The mobile shell is still overloaded and acts as the main orchestration layer.
+Future cleanup should reduce responsibilities inside `mobile.js`, not add more.
+
+### Wrapper modules now in use
+Some older-looking `js/*` files are now wrappers or compatibility layers around newer `src/*` implementations.
+Key examples:
+- `js/services/capture-service.js` → wrapper over `src/core/capturePipeline.js` and `src/services/inboxService.js`
+- `js/reminders.js` → wrapper over `src/reminders/reminderController.js`
+- `js/entries.js` → wrapper over `src/ui/quickCapture.js`, `src/ui/reminderUI.js`, `src/ui/inboxUI.js`, and `src/ui/chatUI.js`
+
+Do not treat those wrappers as the real implementation owner when the underlying `src/*` module is the true live owner.
 
 ### Legacy runtime
 Treat these as legacy or transitional unless explicitly doing cleanup work:
@@ -137,12 +141,13 @@ Do not build new features into legacy runtime files.
 Before making code changes, read these docs in order:
 1. `AI_HANDOVER.md`
 2. `PRODUCT_RULES.md`
-3. `ARCHITECTURE_CURRENT.md`
-4. `CAPTURE_FLOW_MAP.md`
+3. `CANONICAL_MAP.md`
+4. `REPO_AUDIT_AND_CLEANUP_PLAN.md`
 5. `FEATURE_INVENTORY.md`
-6. `REPO_AUDIT_AND_CLEANUP_PLAN.md`
 
 If deeper architectural context is needed, then read:
+- `ARCHITECTURE_CURRENT.md`
+- `CAPTURE_FLOW_MAP.md`
 - `docs/ARCHITECTURE_CURRENT_STATE.md`
 - `docs/ARCHITECTURE.md`
 - `docs/CAPTURE_FLOW.md`
@@ -152,10 +157,11 @@ If deeper architectural context is needed, then read:
 
 ### How to interpret the docs
 - `PRODUCT_RULES.md` = non-negotiable architectural rules
-- `ARCHITECTURE_CURRENT.md` and `docs/ARCHITECTURE_CURRENT_STATE.md` = current repo reality
-- `CAPTURE_FLOW_MAP.md` and `docs/CAPTURE_PIPELINE_MAP.md` = actual current capture paths
-- `FEATURE_INVENTORY.md` = overlap and duplication audit
+- `CANONICAL_MAP.md` = current file ownership by domain
 - `REPO_AUDIT_AND_CLEANUP_PLAN.md` = cleanup direction
+- `FEATURE_INVENTORY.md` = overlap and duplication audit
+- `ARCHITECTURE_CURRENT.md` and `docs/ARCHITECTURE_CURRENT_STATE.md` = current repo reality, but may lag behind the newest migrations
+- `CAPTURE_FLOW_MAP.md` and `docs/CAPTURE_PIPELINE_MAP.md` = capture references, but verify against the live code before trusting them as current
 - `docs/ARCHITECTURE.md` and `docs/CAPTURE_FLOW.md` may be more aspirational than fully implemented
 
 Do not assume aspirational docs describe the live code exactly.
@@ -164,23 +170,23 @@ Do not assume aspirational docs describe the live code exactly.
 
 ## Current Repo Reality
 
-The repo contains overlapping systems and is in transition.
+The repo still contains overlapping systems, but several important domains are more converged than older docs imply.
 
-Known overlap areas:
-- capture
-- inbox storage
-- assistant backend and UI
-- reminder architecture
-- navigation
-- sync and persistence
-- duplicated architecture docs
+Live-code reality currently looks like this:
+- capture is mostly canonical through `js/services/capture-service.js` → `src/core/capturePipeline.js`
+- inbox is mostly canonical through `src/services/inboxService.js`
+- reminders are mostly canonical through `js/reminders.js` → `src/reminders/reminderController.js`
+- entries UI is mostly canonical through `js/entries.js` → `src/ui/*`
+- notes remain mixed, with storage centered in `js/modules/notes-storage.js` and heavy UI/orchestration still in `mobile.js`
+- assistant backend/orchestration is still one of the most duplicated areas
+- navigation still overlaps across multiple mechanisms
+- `mobile.js` is still the biggest structural hotspot
 
 This means:
 - do not create new parallel systems
 - do not assume a clean rewrite already happened
 - do not create a new service just because a better structure seems possible
-
-Always prefer convergence over redesign.
+- prefer convergence over redesign
 
 ---
 
@@ -198,6 +204,7 @@ Before adding any file, check whether the same domain already exists in:
 - `src/services/*`
 - `src/core/*`
 - `src/reminders/*`
+- `src/ui/*`
 - `api/*`
 
 If it exists, prefer extending or migrating into the canonical file rather than creating another parallel file.
@@ -255,9 +262,12 @@ Target direction:
 - inbox as entry point
 - conversion into notes or reminders happens after capture
 
-Be careful:
-- repo still contains multiple capture entry points and older write paths
-- do not add another capture mechanism
+Current live direction:
+- public entry through `js/services/capture-service.js`
+- implementation in `src/core/capturePipeline.js`
+- inbox owner in `src/services/inboxService.js`
+
+Do not add another capture mechanism.
 
 ### Inbox
 Inbox should be the canonical processing layer.
@@ -269,7 +279,7 @@ Do not add alternate note stores.
 
 ### Reminders
 Reminders are a core product surface.
-There is both old runtime logic and newer modular structure in the repo.
+The live implementation is centered in `src/reminders/reminderController.js`, with `js/reminders.js` acting as a wrapper.
 Prefer convergence, not parallel expansion.
 
 ### Assistant
@@ -319,14 +329,14 @@ If the canonical path is unclear, resolve that first.
 ## Current Cleanup Direction
 
 Broad cleanup direction:
-1. clarify canonical file ownership by domain
-2. unify capture flow
-3. align storage schema
-4. remove Supabase residue
-5. simplify assistant paths
-6. simplify navigation overlap
-7. archive or delete legacy layers
-8. update docs so they reflect reality
+1. keep repo control docs aligned with the live code
+2. reduce responsibility inside `mobile.js`
+3. keep capture on one canonical path
+4. align storage schema where needed
+5. remove Supabase residue
+6. simplify assistant paths
+7. simplify navigation overlap
+8. archive or delete legacy layers and stale docs
 
 ---
 
