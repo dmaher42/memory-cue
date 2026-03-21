@@ -1,12 +1,20 @@
 export const createChatComposer = ({
+  form,
   textarea,
   button,
-  onSubmit,
   maxHeight = 144,
 } = {}) => {
   if (!(textarea instanceof HTMLTextAreaElement) || !(button instanceof HTMLElement)) {
     return null;
   }
+
+  if (textarea.dataset.chatComposerBound === 'true') {
+    return {
+      autoResize: () => {},
+      submit: () => {},
+    };
+  }
+  textarea.dataset.chatComposerBound = 'true';
 
   const autoResize = () => {
     textarea.style.height = 'auto';
@@ -17,26 +25,27 @@ export const createChatComposer = ({
   textarea.addEventListener('input', autoResize);
   autoResize();
 
-  const submit = async () => {
-    if (typeof onSubmit !== 'function') {
+  const submit = () => {
+    if (form instanceof HTMLFormElement && typeof form.requestSubmit === 'function') {
+      form.requestSubmit(button);
       return;
     }
-    await onSubmit();
+
+    if (button instanceof HTMLElement && typeof button.click === 'function') {
+      button.click();
+      return;
+    }
+
     textarea.style.height = 'auto';
     autoResize();
   };
-
-  button.addEventListener('click', async (event) => {
-    event.preventDefault();
-    await submit();
-  });
 
   textarea.addEventListener('keydown', async (event) => {
     if (event.key !== 'Enter' || event.shiftKey) {
       return;
     }
     event.preventDefault();
-    await submit();
+    submit();
   });
 
   return {
