@@ -134,10 +134,6 @@ export const initHeaderOverflowMenu = () => {
     updateAriaHidden();
     positionMenu();
     document.addEventListener('focusin', handleFocusIn);
-
-    if (!menu.contains(document.activeElement)) {
-      focusFirstItem();
-    }
   };
 
   const getSafeFocusTarget = ({ restoreFocus = true, focusTarget = null } = {}) => {
