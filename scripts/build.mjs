@@ -20,11 +20,16 @@ const CLIENT_RUNTIME_ENV_KEYS = [
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const isWindows = process.platform === 'win32';
+    const child = spawn(
+      isWindows ? 'cmd.exe' : command,
+      isWindows ? ['/d', '/s', '/c', command, ...args] : args,
+      {
       stdio: 'inherit',
-      shell: process.platform === 'win32',
+      shell: false,
       ...options,
-    });
+      }
+    );
 
     child.on('close', (code) => {
       if (code === 0) {
@@ -192,6 +197,7 @@ async function copyStatic() {
   const filesToCopy = [
     { source: 'manifest.webmanifest' },
     { source: 'service-worker.js' },
+    { source: 'service-worker-v3.js' },
     { source: '404.html' },
     { source: 'index.html' },
     { source: 'mobile.html' },
@@ -208,7 +214,7 @@ async function copyStatic() {
     }
   }
 
-  const directories = ['icons', 'styles', 'css', 'memory'];
+  const directories = ['icons', 'styles', 'css', 'js', 'memory'];
   for (const dir of directories) {
     const source = path.join(rootDir, dir);
     try {
