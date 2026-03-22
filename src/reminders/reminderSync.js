@@ -8,7 +8,6 @@ let syncHandlers = {
 
 export function setupSyncHandlers(handlers = {}) {
   syncHandlers = { ...syncHandlers, ...handlers };
-  console.log('[reminder-sync] handlers configured');
 }
 
 export async function init(...args) {

@@ -241,12 +241,6 @@ export async function captureInput({
 
   const decision = pendingResolution?.decision || await resolveDecision(normalizedText, hints);
 
-  console.log('[capture]', {
-    source: context.source,
-    decision: decision?.decisionType,
-    text: normalizedText,
-  });
-
   switch (decision?.decisionType) {
     case 'persist_note': {
       const memory = await saveNoteMemory(normalizedText, decision, context);

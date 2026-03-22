@@ -10,9 +10,7 @@ export function setupReminderRenderer(handlers = {}) {
 
 export function renderReminderList(renderFn, ...args) {
   const handler = typeof renderFn === 'function' ? renderFn : renderHandlers.renderReminderList;
-  const result = typeof handler === 'function' ? handler(...args) : undefined;
-  console.log('[reminder-renderer] rendered reminder list');
-  return result;
+  return typeof handler === 'function' ? handler(...args) : undefined;
 }
 
 export function renderReminderItem(renderFn, ...args) {

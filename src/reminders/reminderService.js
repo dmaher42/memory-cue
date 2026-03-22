@@ -38,7 +38,6 @@ export function createReminder(payload = {}, options = {}) {
     priority: payload.priority || 'medium',
   });
 
-  console.log('[reminder-service] created reminder', reminder);
   createReminderInStore(reminder);
   runHook(options.onCreated, reminder);
   return reminder;
@@ -52,7 +51,6 @@ export function updateReminder(id, updates = {}, options = {}) {
   if (!updated) {
     return null;
   }
-  console.log('[reminder-service] updated reminder', { id, updates });
   runHook(options.onUpdated, updated);
   return updated;
 }
@@ -65,7 +63,6 @@ export function deleteReminder(id, options = {}) {
   if (!removed) {
     return false;
   }
-  console.log('[reminder-service] deleted reminder', { id });
   runHook(options.onDeleted, { id });
   return true;
 }
@@ -82,15 +79,12 @@ export function completeReminder(id, completed = true, options = {}) {
   if (!updated) {
     return null;
   }
-  console.log('[reminder-service] completed reminder', { id, completed: !!completed });
   runHook(options.onCompleted, updated);
   return updated;
 }
 
 export function loadReminderList() {
-  const reminders = loadReminders();
-  console.log('[reminder-service] loaded reminders', { count: reminders.length });
-  return reminders;
+  return loadReminders();
 }
 
 export function getReminderList() {

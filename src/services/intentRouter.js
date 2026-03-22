@@ -28,16 +28,7 @@ const createHeuristicParsedEntry = (type, text, hints = {}) => ({
 const isPlanDayPhrase = (normalizedText) => PLAN_DAY_PHRASES
   .some((phrase) => normalizedText.includes(phrase));
 
-const logRoutingDecision = (source, text, decision, details = {}) => {
-  console.info('[brain] routing decision', {
-    source,
-    text,
-    decisionType: decision?.decisionType,
-    parsedType: decision?.parsedType,
-    ...details,
-  });
-  return decision;
-};
+const logRoutingDecision = (_source, _text, decision, _details = {}) => decision;
 
 /**
  * Heuristic-first routing to reduce /api/parse-entry usage.
@@ -47,7 +38,6 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
   const normalized = text.toLowerCase();
   if (!normalized) {
-    console.debug('[brain] routing decision', { source: 'classifyIntentLocally', text, decisionType: 'unresolved' });
     return null;
   }
 
@@ -130,7 +120,6 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const [top, next] = scored;
   const isConfident = top.score >= 1 && top.score > (next?.score || 0);
   if (!isConfident) {
-    console.debug('[brain] routing decision', { source: 'classifyIntentLocally', text, decisionType: 'unresolved' });
     return null;
   }
 

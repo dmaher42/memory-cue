@@ -6,7 +6,6 @@ const reminderState = {
   reminders: [],
 };
 
-console.log('[reminder-store] loaded');
 
 export function getReminders() {
   return reminderState.reminders;

@@ -39,15 +39,11 @@ export const semanticSearch = async (query, uid) => {
   }
 
   const queryEmbedding = await generateEmbedding(normalizedQuery);
-  console.info('[semantic-search] query embedding generated');
-
   if (!Array.isArray(queryEmbedding) || !queryEmbedding.length) {
     return [];
   }
 
   const storedEmbeddings = await getEmbeddingsForUser(uid);
-  console.info('[semantic-search] embeddings loaded');
-
   const matches = storedEmbeddings
     .map((item) => ({
       ...item,
@@ -62,6 +58,5 @@ export const semanticSearch = async (query, uid) => {
     }))
     .filter((item) => item.text);
 
-  console.info('[semantic-search] matches found', { count: matches.length });
   return matches;
 };

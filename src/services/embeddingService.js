@@ -161,7 +161,6 @@ export const indexSourceEmbedding = async ({ uid, text, sourceType, sourceId }) 
     return existing.id;
   }
 
-  console.debug('[embedding] generating embedding', { sourceType, sourceId: normalizedSourceId });
   const embedding = await generateEmbedding(normalizedText);
   if (!Array.isArray(embedding) || !embedding.length) {
     return null;
@@ -174,10 +173,6 @@ export const indexSourceEmbedding = async ({ uid, text, sourceType, sourceId }) 
     sourceId: normalizedSourceId,
     embedding,
   });
-
-  if (embeddingId) {
-    console.debug('[embedding] embedding stored', { sourceType, sourceId: normalizedSourceId, embeddingId });
-  }
 
   return embeddingId;
 };

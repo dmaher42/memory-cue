@@ -47,12 +47,6 @@ export const retrieveRelevantMemories = async (question) => {
     console.warn('[brain-query-service] Embedding retrieval failed', error);
   }
 
-  console.info('[brain] memory_retrieved', {
-    source: 'retrieveRelevantMemories',
-    query: safeQuestion,
-    count: selectedMemories.length,
-  });
-
   return selectedMemories;
 };
 
@@ -74,11 +68,6 @@ export const queryBrain = async (question) => {
 
   const intent = classifyIntentLocally(safeQuestion, { source: 'brain-query-service' })
     || { decisionType: 'query_memory', parsedType: 'question' };
-  console.info('[brain] routing decision', {
-    source: 'queryBrain',
-    decisionType: intent?.decisionType || 'query_memory',
-    parsedType: intent?.parsedType || 'question',
-  });
 
   const memories = await retrieveRelevantMemories(safeQuestion);
 
@@ -93,12 +82,6 @@ export const queryBrain = async (question) => {
     });
     answer = 'I found relevant memories, but could not generate an AI summary right now.';
   }
-
-  console.info('[brain] query_answered', {
-    source: 'queryBrain',
-    question: safeQuestion,
-    memories: memories.length,
-  });
 
   return {
     answer,

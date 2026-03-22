@@ -281,7 +281,6 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
     : 'unknown';
 
   if (decision.decisionType === 'persist_reminder') {
-    console.log('Capture routed to:', 'reminder');
     await executeCommand('reminder', {
       text: typeof parsed?.title === 'string' && parsed.title.trim() ? parsed.title.trim() : text,
       keywords: Array.isArray(parsed?.metadata?.keywords) ? parsed.metadata.keywords : [],

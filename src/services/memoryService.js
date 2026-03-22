@@ -286,7 +286,6 @@ const migrateLegacyEntries = () => {
 
   memoryCache = mergeByLatest([...memoryCache, ...migrated]);
   writeCacheToStorage(memoryCache);
-  console.info('[brain] memory_migrated', { count: migrated.length });
 };
 
 const ensureCacheLoaded = () => {
@@ -424,12 +423,6 @@ export const saveMemory = async (memory = {}) => {
   }
 
   learnPattern(nextMemory);
-  console.info('[brain] memory_saved', {
-    id: memoryWithEmbedding.id,
-    type: memoryWithEmbedding.type,
-    source: memoryWithEmbedding.source,
-  });
-
   return memoryWithEmbedding;
 };
 

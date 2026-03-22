@@ -199,11 +199,6 @@ function scheduleReminderNotification(reminder) {
     return;
   }
 
-  console.log('[notifications] scheduled reminder', {
-    id: reminder.id,
-    dueAt: dueAtValue,
-  });
-
   setTimeout(() => {
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       new Notification('Reminder', {
@@ -474,7 +469,6 @@ function normalizeCategory(value) {
 let activeReminderControllerApi = null;
 
 export async function initReminders(sel = {}) {
-  console.log('[reminder-controller] initialized');
   const $ = (s) => (typeof s === 'string' && s ? document.querySelector(s) : null);
   const $$ = (s) => (typeof s === 'string' && s ? Array.from(document.querySelectorAll(s)) : []);
 
@@ -3683,8 +3677,6 @@ export async function initReminders(sel = {}) {
       return;
     }
 
-    console.log('[brain] local reminders found:', localReminders.length);
-
     for (const reminder of localReminders) {
       await saveReminder(userId, {
         ...reminder,
@@ -3695,8 +3687,6 @@ export async function initReminders(sel = {}) {
       });
     }
 
-    console.log('[brain] migrated reminders:', localReminders.length);
-    console.log('[brain] reminders migrated to firebase');
     localStorage.removeItem('memoryCue:offlineReminders');
   }
 
@@ -4041,8 +4031,6 @@ export async function initReminders(sel = {}) {
       const normalizedRemoteItems = Array.isArray(remoteItems)
         ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
         : [];
-      console.log('[brain] reminders_loaded_from_firestore', { count: normalizedRemoteItems.length });
-
       const remoteById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
       const remindersToSync = localItems.filter((entry) => {
         if (!entry || typeof entry !== 'object' || !entry.id) return false;
@@ -4056,10 +4044,6 @@ export async function initReminders(sel = {}) {
           syncedFromLocalCount += 1;
         }
       }
-      if (syncedFromLocalCount > 0) {
-        console.log('[brain] reminders_synced_from_local', { count: syncedFromLocalCount });
-      }
-
       localItems.forEach((localItem) => {
         if (!localItem || !localItem.id) return;
         const remoteMatch = remoteById.get(localItem.id);
@@ -4125,7 +4109,6 @@ export async function initReminders(sel = {}) {
       });
       item.pendingSync = false;
       persistItems();
-      console.log('[brain] reminder_saved_to_firestore', { id: reminderId });
       return true;
     } catch (error) {
       item.pendingSync = true;
@@ -5284,8 +5267,6 @@ export async function initReminders(sel = {}) {
     const upcomingToday = getUpcomingTodayReminders(activeRows);
     const agendaGroups = groupRemindersByDay(activeRows);
     ensureReminderOverviewSection(upcomingToday, agendaGroups);
-    console.log('[reminder] upcoming_today_loaded', { count: upcomingToday.length });
-
     const pendingNotificationIds = (() => {
       if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
         return new Set();
@@ -5701,7 +5682,6 @@ export async function initReminders(sel = {}) {
 
   function handleSaveAction(){
     // Debug: log when save handler invoked to help trace click issues
-    try { console.log('handleSaveAction invoked', { editingId, title: title?.value }); } catch (e) {}
 
     const rawTitle = typeof title?.value === 'string' ? title.value : '';
     const trimmedTitle = rawTitle.trim();
