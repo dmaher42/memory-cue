@@ -4,7 +4,7 @@ import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
 import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
-import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
+import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js?v=20260322a';
 import * as reminderDataService from './reminderService.js';
 import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
