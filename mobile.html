@@ -10,10 +10,9 @@ Legacy shells remain for reference only.
 
 <html lang="en" data-theme="light" class="h-full">
 <head>
-    <script src="./js/storage.js"></script>
+  <script src="./js/storage.js"></script>
   <script src="./js/runtime-env.js"></script>
   <script type="module" src="./js/init-env.js" defer></script>
-  <script type="module" src="./js/services/capture-service.js"></script>
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <link rel="stylesheet" href="./mobile.css" />
@@ -6113,9 +6112,8 @@ body, main, section, div, p, span, li {
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
-  <!-- Load mobile runtime scripts directly from source files -->
+  <!-- Load the canonical mobile runtime bundle and supporting scripts -->
   <script src="./js/register-service-worker-v2.js" defer></script>
-  <script type="module" src="./js/reminders.js"></script>
   <script type="module" src="./mobile.js"></script>
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <style id="reminder-editor-premium">
