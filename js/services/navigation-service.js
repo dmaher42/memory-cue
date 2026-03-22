@@ -53,22 +53,27 @@
     navigate(view);
   });
 
-  document.addEventListener('click', (event) => {
-    const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
-    if (!(button instanceof HTMLElement)) {
-      return;
-    }
+  const bindNavButtons = () => {
+    document.querySelectorAll('[data-nav-target]').forEach((button) => {
+      if (!(button instanceof HTMLElement) || button.dataset.navigationBound === 'true') {
+        return;
+      }
 
-    const targetView = button.getAttribute('data-nav-target');
-    if (!targetView) {
-      return;
-    }
+      button.dataset.navigationBound = 'true';
+      button.addEventListener('click', (event) => {
+        const targetView = button.getAttribute('data-nav-target');
+        if (!targetView) {
+          return;
+        }
 
-    event.preventDefault();
-    navigate(targetView);
-  });
+        event.preventDefault();
+        navigate(targetView);
+      });
+    });
+  };
 
   const init = () => {
+    bindNavButtons();
     const initial = document.querySelector('[data-nav-target].active')?.getAttribute('data-nav-target') || 'capture';
     navigate(initial);
   };
