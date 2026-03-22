@@ -1,31 +1,62 @@
-import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
+import fs from 'node:fs/promises';
+import http from 'node:http';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const PORT = process.env.PORT || '4173';
-const BASE_URL = process.env.URL || `http://127.0.0.1:${PORT}/mobile.html`;
 const REMINDER_STORAGE_KEY = 'memoryCue:offlineReminders';
 const SERVER_BOOT_TIMEOUT_MS = 15000;
 
-function startStaticServer(cwd) {
-  const serveCliPath = path.resolve(cwd, 'node_modules/serve/build/main.js');
-  const child = spawn(process.execPath, [serveCliPath, '-l', PORT, '.'], {
-    cwd,
-    stdio: ['ignore', 'pipe', 'pipe'],
+function getContentType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const contentTypes = {
+    '.css': 'text/css; charset=utf-8',
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.mjs': 'text/javascript; charset=utf-8',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.webmanifest': 'application/manifest+json; charset=utf-8',
+  };
+  return contentTypes[ext] || 'application/octet-stream';
+}
+
+async function startStaticServer(cwd) {
+  const server = http.createServer(async (req, res) => {
+    try {
+      const requestUrl = new URL(req.url || '/', 'http://127.0.0.1');
+      let pathname = decodeURIComponent(requestUrl.pathname);
+      if (pathname === '/') {
+        pathname = '/mobile.html';
+      }
+
+      const resolvedPath = path.resolve(cwd, `.${pathname}`);
+      if (!resolvedPath.startsWith(cwd)) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+      }
+
+      const file = await fs.readFile(resolvedPath);
+      res.writeHead(200, { 'Content-Type': getContentType(resolvedPath) });
+      res.end(file);
+    } catch (error) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
+    }
   });
 
-  const output = [];
-  child.stdout.on('data', (chunk) => {
-    output.push(chunk.toString());
-  });
-  child.stderr.on('data', (chunk) => {
-    output.push(chunk.toString());
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(process.env.PORT ? Number(process.env.PORT) : 0, '127.0.0.1', resolve);
   });
 
+  const address = server.address();
+  const port = address && typeof address === 'object' ? address.port : process.env.PORT;
   return {
-    child,
-    getOutput: () => output.join(''),
+    server,
+    baseUrl: process.env.URL || `http://127.0.0.1:${port}/mobile.html`,
   };
 }
 
@@ -47,10 +78,10 @@ async function waitForServer(url) {
 
 async function main() {
   const cwd = process.cwd();
-  const server = startStaticServer(cwd);
+  const { server, baseUrl } = await startStaticServer(cwd);
 
   try {
-    await waitForServer(BASE_URL);
+    await waitForServer(baseUrl);
 
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
@@ -85,23 +116,24 @@ async function main() {
       MockDate.UTC = NativeDate.UTC;
       MockDate.parse = NativeDate.parse;
       globalThis.Date = MockDate;
-
-      const seededReminders = [
-        {
-          id: 'seed-reminder-1',
-          title: 'add remider tomorrow at 8:30 am get naplan',
-          category: 'Tasks',
-          priority: 'Medium',
-          done: false,
-          createdAt: fixedNow.getTime(),
-          updatedAt: fixedNow.getTime(),
-        },
-      ];
-
-      localStorage.setItem(reminderStorageKey, JSON.stringify(seededReminders));
+      globalThis.toast = () => {};
+      localStorage.setItem(reminderStorageKey, JSON.stringify([]));
     }, { reminderStorageKey: REMINDER_STORAGE_KEY });
 
-    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof window.memoryCueQuickAddNow === 'function');
+    await page.evaluate(() => {
+      window.memoryCueQuickAddNow({ forceText: 'add remider tomorrow at 8:30 am get naplan' });
+      return true;
+    });
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return Array.isArray(reminders) && reminders.length > 0;
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
     await page.click('#mobile-footer-reminders');
     await page.waitForFunction(() => {
       const panel = document.getElementById('view-reminders');
@@ -117,6 +149,22 @@ async function main() {
 
     if (!/Tomorrow,\s*8:30\s?AM/i.test(metaText || '')) {
       throw new Error(`Unexpected reminder meta: ${metaText}`);
+    }
+
+    const persistedReminders = await page.evaluate((reminderStorageKey) => {
+      try {
+        return JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+      } catch {
+        return [];
+      }
+    }, REMINDER_STORAGE_KEY);
+
+    if (!Array.isArray(persistedReminders) || persistedReminders.length === 0) {
+      throw new Error('No reminders were persisted to local storage.');
+    }
+
+    if (typeof persistedReminders[0]?.due !== 'string' || !persistedReminders[0].due) {
+      throw new Error(`Expected persisted reminder to include a due value, received: ${JSON.stringify(persistedReminders[0] || null)}`);
     }
 
     const blockingErrors = logs.filter((entry) => {
@@ -135,15 +183,16 @@ async function main() {
 
     console.log(JSON.stringify({
       ok: true,
-      checkedUrl: BASE_URL,
+      checkedUrl: baseUrl,
       titleText: (titleText || '').trim(),
       metaText: (metaText || '').trim(),
+      persistedDue: persistedReminders[0].due,
       blockingErrors,
     }, null, 2));
 
     await browser.close();
   } finally {
-    server.child.kill();
+    server.close();
   }
 }
 

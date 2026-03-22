@@ -96,12 +96,43 @@ const SEEDED_CATEGORIES = Object.freeze([
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
+const locale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : undefined;
+const TZ = (() => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+})();
 const uid = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   return `reminder-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
+function fmtTime(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleTimeString(locale, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: TZ,
+  });
+}
+function fmtDayDate(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleDateString(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: TZ,
+  });
+}
 function debounce(fn, delay = 300) {
   let timeoutId;
   return (...args) => {
@@ -2178,12 +2209,18 @@ export async function initReminders(sel = {}) {
     try {
       const routed = parseQuickAddPrefixRoute(t);
       const routedText = routed.text || t;
+      const inferredSchedule = hasStructuredReminderPayload
+        ? { dueDate: null, notifyAt: null, cleanedText: routedText }
+        : parseReminderScheduleFromText(routedText);
+      const shouldCreateStructuredReminder =
+        hasStructuredReminderPayload
+        || (inferredSchedule.dueDate instanceof Date && !Number.isNaN(inferredSchedule.dueDate.getTime()));
 
       if (routed.kind === 'reflection') {
         entry = saveReflectionQuickNote(routedText);
       } else {
-        if (hasStructuredReminderPayload) {
-          const basePayload = buildQuickReminder(routedText);
+        if (shouldCreateStructuredReminder) {
+          const basePayload = buildQuickReminder(inferredSchedule.cleanedText || routedText);
           const optionDueIso =
             options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
               ? options.dueDate.toISOString()
@@ -2193,11 +2230,15 @@ export async function initReminders(sel = {}) {
 
           if (optionDueIso) {
             basePayload.dueAt = optionDueIso;
+          } else if (inferredSchedule.dueDate instanceof Date && !Number.isNaN(inferredSchedule.dueDate.getTime())) {
+            basePayload.dueAt = inferredSchedule.dueDate.toISOString();
           }
           if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
             basePayload.notifyAt = options.notifyAt.toISOString();
           } else if (typeof options?.notifyAt === 'string' && options.notifyAt.trim()) {
             basePayload.notifyAt = options.notifyAt.trim();
+          } else if (inferredSchedule.notifyAt instanceof Date && !Number.isNaN(inferredSchedule.notifyAt.getTime())) {
+            basePayload.notifyAt = inferredSchedule.notifyAt.toISOString();
           }
 
           if (typeof options?.category === 'string' && options.category.trim()) {
@@ -2216,7 +2257,7 @@ export async function initReminders(sel = {}) {
             basePayload.category = 'Footy – Drills';
           }
 
-          entry = addItem(basePayload);
+          entry = createReminderFromPayload(basePayload, { closeSheet: false });
         } else {
           entry = await captureInput({
             text: routedText,
@@ -2227,11 +2268,13 @@ export async function initReminders(sel = {}) {
       }
 
       if (entry && typeof document !== 'undefined') {
-        quickInput.value = '';
-        try {
-          quickInput.focus({ preventScroll: true });
-        } catch {
-          quickInput.focus();
+        if (quickInput instanceof HTMLInputElement) {
+          quickInput.value = '';
+          try {
+            quickInput.focus({ preventScroll: true });
+          } catch {
+            quickInput.focus();
+          }
         }
         try {
           document.dispatchEvent(
@@ -2497,40 +2540,107 @@ export async function initReminders(sel = {}) {
     return text;
   }
 
-  function parseNaturalDateTime(rawText) {
-    const result = { dueDate: null, notifyAt: null };
-    if (!rawText) return result;
+  function parseTimePartsFromReminderText(rawText) {
+    const text = typeof rawText === 'string' ? rawText.trim() : '';
+    if (!text) {
+      return null;
+    }
 
-    const text = rawText.toLowerCase().trim();
+    const compactMeridiemMatch = text.match(/\b(?:at\s*)?(\d{3,4})\s*(am|pm)\b/i);
+    if (compactMeridiemMatch) {
+      const digits = compactMeridiemMatch[1];
+      const hourDigits = digits.length === 3 ? digits.slice(0, 1) : digits.slice(0, 2);
+      const minuteDigits = digits.length === 3 ? digits.slice(1) : digits.slice(2);
+      return {
+        hours: Number.parseInt(hourDigits, 10),
+        minutes: Number.parseInt(minuteDigits, 10),
+        meridiem: compactMeridiemMatch[2],
+      };
+    }
 
-    const now = new Date();
-    let target = new Date(now);
+    const meridiemMatch = text.match(/\b(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+    if (meridiemMatch) {
+      return {
+        hours: Number.parseInt(meridiemMatch[1], 10),
+        minutes: meridiemMatch[2] ? Number.parseInt(meridiemMatch[2], 10) : 0,
+        meridiem: meridiemMatch[3],
+      };
+    }
 
+    const twentyFourHourMatch = text.match(/\b(?:at\s*)?([01]?\d|2[0-3]):([0-5]\d)\b/);
+    if (twentyFourHourMatch) {
+      return {
+        hours: Number.parseInt(twentyFourHourMatch[1], 10),
+        minutes: Number.parseInt(twentyFourHourMatch[2], 10),
+        meridiem: '',
+      };
+    }
+
+    return null;
+  }
+
+  function parseReminderScheduleFromText(rawText, nowOverride = null) {
+    const result = { dueDate: null, notifyAt: null, cleanedText: '' };
+    if (!rawText) {
+      return result;
+    }
+
+    const sourceText = typeof rawText === 'string' ? rawText.trim() : '';
+    const text = sourceText.toLowerCase();
+    const now = nowOverride instanceof Date && !Number.isNaN(nowOverride.getTime())
+      ? new Date(nowOverride)
+      : new Date();
+    const target = new Date(now);
+    const timeParts = parseTimePartsFromReminderText(sourceText);
+    const displayParts = extractReminderInlineSchedule(sourceText);
+
+    result.cleanedText = displayParts.textWithoutSchedule || stripReminderPromptPrefix(sourceText) || sourceText;
+
+    if (!timeParts) {
+      return result;
+    }
+
+    const weekdayMatch = text.match(/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i);
     if (text.includes('tomorrow')) {
       target.setDate(target.getDate() + 1);
-    } else if (text.includes('today')) {
+    } else if (text.includes('today') || text.includes('tonight')) {
       // same day
+    } else if (weekdayMatch) {
+      const weekdayOrder = {
+        sun: 0,
+        sunday: 0,
+        mon: 1,
+        monday: 1,
+        tue: 2,
+        tues: 2,
+        tuesday: 2,
+        wed: 3,
+        wednesday: 3,
+        thu: 4,
+        thur: 4,
+        thurs: 4,
+        thursday: 4,
+        fri: 5,
+        friday: 5,
+        sat: 6,
+        saturday: 6,
+      };
+      const targetDay = weekdayOrder[(weekdayMatch[2] || '').toLowerCase()];
+      if (!Number.isFinite(targetDay)) {
+        return result;
+      }
+      let dayOffset = (targetDay - target.getDay() + 7) % 7;
+      if (dayOffset === 0 && weekdayMatch[1]) {
+        dayOffset = 7;
+      }
+      target.setDate(target.getDate() + dayOffset);
     } else {
       return result;
     }
 
-    const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
-    if (!timeMatch) {
-      return result;
-    }
-
-    let hours = parseInt(timeMatch[1], 10);
-    const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-    let meridiem = timeMatch[3];
-
-    // Extra meridiem detection for formats like "3 p.m.", "3 p m", etc.
-    if (!meridiem) {
-      if (/\b(p\.?m\.?|p m)\b/.test(text)) {
-        meridiem = 'pm';
-      } else if (/\b(a\.?m\.?|a m)\b/.test(text)) {
-        meridiem = 'am';
-      }
-    }
+    let hours = timeParts.hours;
+    const minutes = timeParts.minutes;
+    const meridiem = typeof timeParts.meridiem === 'string' ? timeParts.meridiem.toLowerCase() : '';
 
     if (meridiem === 'pm' && hours < 12) {
       hours += 12;
@@ -2542,12 +2652,18 @@ export async function initReminders(sel = {}) {
     target.setHours(hours, minutes, 0, 0);
 
     const dueDate = new Date(target);
-    const notifyAt = new Date(dueDate.getTime() - 10 * 60 * 1000);
+    if (Number.isNaN(dueDate.getTime())) {
+      return result;
+    }
 
     result.dueDate = dueDate;
-    result.notifyAt = notifyAt;
-
+    result.notifyAt = new Date(dueDate.getTime() - 10 * 60 * 1000);
     return result;
+  }
+
+  function parseNaturalDateTime(rawText) {
+    const { dueDate, notifyAt } = parseReminderScheduleFromText(rawText);
+    return { dueDate, notifyAt };
   }
 
   function handleVoiceReminderTranscript(rawText) {
