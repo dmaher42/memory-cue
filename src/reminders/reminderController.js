@@ -5543,10 +5543,11 @@ export async function initReminders(sel = {}) {
         cardCheckbox.setAttribute('aria-label', `Mark reminder as done: ${reminderTitle}`);
         cardCheckbox.setAttribute('data-reminder-control', 'toggle');
         cardCheckbox.setAttribute('data-no-swipe', 'true');
+        cardCheckbox.setAttribute('draggable', 'false');
+        cardCheckbox.addEventListener('pointerdown', stopControlGesture);
+        cardCheckbox.addEventListener('mousedown', stopControlGesture);
+        cardCheckbox.addEventListener('touchstart', stopControlGesture, { passive: true });
         cardCheckbox.addEventListener('click', (event) => {
-          event.stopPropagation();
-        });
-        cardCheckbox.addEventListener('change', (event) => {
           event.preventDefault();
           event.stopPropagation();
           toggleDone(summary.id);
