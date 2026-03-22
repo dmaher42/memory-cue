@@ -4857,7 +4857,10 @@ export async function initReminders(sel = {}) {
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
 
   function formatDesktopDue(item){
-    if(!item?.due) return 'No due date';
+    if(!item?.due) {
+      const fallbackLabel = extractReminderInlineSchedule(getReminderDisplaySourceText(item)).label;
+      return fallbackLabel || 'No due date';
+    }
     try {
       const due = new Date(item.due);
       const dayLabel = desktopDayLabelFmt.format(due);
@@ -5069,6 +5072,7 @@ export async function initReminders(sel = {}) {
     }
 
     const metaParts = [];
+    const inlineSchedule = extractReminderInlineSchedule(getReminderDisplaySourceText(reminder), todayRange);
     const dueDate = reminder.due ? new Date(reminder.due) : null;
     const hasValidDueDate = dueDate instanceof Date && !Number.isNaN(dueDate.getTime());
 
@@ -5089,6 +5093,8 @@ export async function initReminders(sel = {}) {
       } else {
         metaParts.push(formatDesktopDue(reminder));
       }
+    } else if (inlineSchedule.label) {
+      metaParts.push(inlineSchedule.label);
     } else if (reminder.pinToToday === true) {
       metaParts.push('Pinned for today');
     }
@@ -5163,15 +5169,191 @@ export async function initReminders(sel = {}) {
     setupReminderSortControl._wired = true;
   }
 
-  function resolveReminderDisplayTitle(reminder) {
+  const DISPLAY_TITLE_SMALL_WORDS = new Set([
+    'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with',
+  ]);
+
+  function getReminderDisplaySourceText(reminder) {
     if (!reminder || typeof reminder !== 'object') {
       return '';
     }
-    const title = typeof reminder.title === 'string' ? reminder.title.trim() : '';
-    if (title) {
-      return title;
+    const raw = [reminder.title, reminder.text, reminder.notes]
+      .find((value) => typeof value === 'string' && value.trim());
+    return typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim() : '';
+  }
+
+  function formatDisplayTitleCase(text) {
+    const normalized = typeof text === 'string' ? text.trim() : '';
+    if (!normalized) {
+      return '';
     }
-    return 'Untitled reminder';
+    return normalized
+      .split(/\s+/)
+      .map((word, index, words) => {
+        if (!word) {
+          return word;
+        }
+        if (/[A-Z]{2,}/.test(word)) {
+          return word;
+        }
+        const lower = word.toLowerCase();
+        if (index > 0 && index < words.length - 1 && DISPLAY_TITLE_SMALL_WORDS.has(lower)) {
+          return lower;
+        }
+        return lower.replace(/(^|['-])([a-z])/g, (_, prefix, char) => `${prefix}${char.toUpperCase()}`);
+      })
+      .join(' ');
+  }
+
+  function stripReminderPromptPrefix(text) {
+    let cleaned = typeof text === 'string' ? text.trim() : '';
+    if (!cleaned) {
+      return '';
+    }
+
+    const prefixPatterns = [
+      /^(?:and\s+)+/i,
+      /^(?:(?:please|hey|ok(?:ay)?)\s+)?(?:(?:add|set|create|make)\s+)?(?:(?:me\s+)?(?:a|an)\s+)?(?:new\s+)?(?:reminder|remider|remind(?:er)?(?:\s+me)?|reminder\s+me)\b[\s:,-]*/i,
+      /^(?:and\s+)?(?:remind(?:er)?\s+me\s+to|remind\s+me\s+to|remember\s+to)\b[\s:,-]*/i,
+    ];
+
+    let updated = true;
+    while (updated && cleaned) {
+      updated = false;
+      prefixPatterns.forEach((pattern) => {
+        const next = cleaned.replace(pattern, '').trim();
+        if (next !== cleaned) {
+          cleaned = next;
+          updated = true;
+        }
+      });
+    }
+
+    return cleaned;
+  }
+
+  function formatDisplayTimeLabel(hours, minutes, meridiemHint = '') {
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+      return '';
+    }
+
+    let normalizedHours = hours;
+    const normalizedMeridiem = typeof meridiemHint === 'string' ? meridiemHint.trim().toLowerCase() : '';
+    if (normalizedMeridiem === 'pm' && normalizedHours < 12) {
+      normalizedHours += 12;
+    }
+    if (normalizedMeridiem === 'am' && normalizedHours === 12) {
+      normalizedHours = 0;
+    }
+
+    const date = new Date();
+    date.setHours(normalizedHours, minutes, 0, 0);
+    return date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  function extractReminderInlineSchedule(rawText, todayRange) {
+    const sourceText = typeof rawText === 'string' ? rawText.replace(/\s+/g, ' ').trim() : '';
+    if (!sourceText) {
+      return { textWithoutSchedule: '', label: '' };
+    }
+
+    let cleaned = stripReminderPromptPrefix(sourceText);
+    let dayLabel = '';
+    let dayPattern = null;
+    const lower = cleaned.toLowerCase();
+    const weekdayMatch = lower.match(/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i);
+    const weekdayLabels = {
+      mon: 'Monday',
+      monday: 'Monday',
+      tue: 'Tuesday',
+      tues: 'Tuesday',
+      tuesday: 'Tuesday',
+      wed: 'Wednesday',
+      wednesday: 'Wednesday',
+      thu: 'Thursday',
+      thur: 'Thursday',
+      thurs: 'Thursday',
+      thursday: 'Thursday',
+      fri: 'Friday',
+      friday: 'Friday',
+      sat: 'Saturday',
+      saturday: 'Saturday',
+      sun: 'Sunday',
+      sunday: 'Sunday',
+    };
+
+    if (/\btomorrow\b/i.test(cleaned)) {
+      dayLabel = 'Tomorrow';
+      dayPattern = /\btomorrow\b/i;
+    } else if (/\btonight\b/i.test(cleaned)) {
+      dayLabel = 'Tonight';
+      dayPattern = /\btonight\b/i;
+    } else if (/\btoday\b/i.test(cleaned)) {
+      dayLabel = 'Today';
+      dayPattern = /\btoday\b/i;
+    } else if (weekdayMatch) {
+      dayLabel = weekdayLabels[(weekdayMatch[2] || '').toLowerCase()] || '';
+      dayPattern = weekdayMatch[0] ? new RegExp(weekdayMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
+    }
+
+    let timeLabel = '';
+    let timePattern = null;
+    const meridiemMatch = cleaned.match(/\b(?:at\s*)?(\d{1,2})(?::?(\d{2}))\s*(am|pm)\b/i)
+      || cleaned.match(/\b(?:at\s*)?(\d{1,2})\s*(am|pm)\b/i);
+
+    if (meridiemMatch) {
+      const hour = Number.parseInt(meridiemMatch[1], 10);
+      const minute = meridiemMatch.length >= 4 && meridiemMatch[3]
+        ? Number.parseInt(meridiemMatch[2], 10)
+        : 0;
+      const meridiem = meridiemMatch.length >= 4 ? meridiemMatch[3] : meridiemMatch[2];
+      timeLabel = formatDisplayTimeLabel(hour, minute, meridiem);
+      timePattern = meridiemMatch[0] ? new RegExp(meridiemMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
+    }
+
+    if (!timeLabel) {
+      const twentyFourHourMatch = cleaned.match(/\b(?:at\s*)?([01]?\d|2[0-3]):([0-5]\d)\b/);
+      if (twentyFourHourMatch) {
+        timeLabel = formatDisplayTimeLabel(
+          Number.parseInt(twentyFourHourMatch[1], 10),
+          Number.parseInt(twentyFourHourMatch[2], 10),
+        );
+        timePattern = twentyFourHourMatch[0]
+          ? new RegExp(twentyFourHourMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+          : null;
+      }
+    }
+
+    if (dayPattern) {
+      cleaned = cleaned.replace(dayPattern, ' ').trim();
+    }
+    if (timePattern) {
+      cleaned = cleaned.replace(timePattern, ' ').trim();
+    }
+
+    cleaned = cleaned
+      .replace(/\b(?:remind(?:er)?\s+me|reminder\s+me)\b/gi, ' ')
+      .replace(/^[,.\-:;\s]+|[,.\-:;\s]+$/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/^(?:and|to)\b\s*/i, '')
+      .replace(/\b(?:at|on|by|for)\b\s*$/i, '')
+      .trim();
+
+    const label = [dayLabel, timeLabel].filter(Boolean).join(', ');
+    return {
+      textWithoutSchedule: cleaned,
+      label,
+    };
+  }
+
+  function resolveReminderDisplayTitle(reminder) {
+    const sourceText = getReminderDisplaySourceText(reminder);
+    const { textWithoutSchedule } = extractReminderInlineSchedule(sourceText);
+    const cleanedTitle = formatDisplayTitleCase(textWithoutSchedule || sourceText);
+    return cleanedTitle || 'Untitled reminder';
   }
 
 
