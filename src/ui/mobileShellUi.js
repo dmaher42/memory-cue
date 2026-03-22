@@ -493,16 +493,6 @@ export const initHeaderOverflowMenu = () => {
     }
   });
 
-  menu.addEventListener('mousedown', (event) => {
-    const button = getMenuActionTarget(event);
-    if (!button) {
-      return;
-    }
-
-    // Keep pointer activation from stealing focus just before the menu is hidden.
-    event.preventDefault();
-  });
-
   menu.addEventListener('click', handleMenuAction);
 
   menu.addEventListener('click', (event) => {
