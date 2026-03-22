@@ -13,8 +13,6 @@ const normalizeEmbedding = (value) => {
 };
 
 export async function generateEmbedding(text) {
-  console.log('[embedding] using API route');
-
   const res = await fetch('/api/embed', {
     method: 'POST',
     headers: {

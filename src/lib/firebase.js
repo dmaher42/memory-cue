@@ -41,11 +41,21 @@ export const getFirebaseContext = async () => {
         import(`${FIREBASE_MODULE_BASE}/firebase-firestore.js`),
       ]);
 
-      const app = getApps().length ? getApp() : initializeApp(config);
+      const appAlreadyInitialized = getApps().length > 0;
+      const app = appAlreadyInitialized ? getApp() : initializeApp(config);
+      const db = appAlreadyInitialized
+        ? firestoreModule.getFirestore(app)
+        : firestoreModule.initializeFirestore(app, {
+            experimentalAutoDetectLongPolling: true,
+            experimentalLongPollingOptions: {
+              timeoutSeconds: 25,
+            },
+          });
+
       return {
         app,
         auth: authModule.getAuth(app),
-        db: firestoreModule.getFirestore(app),
+        db,
         GoogleAuthProvider: authModule.GoogleAuthProvider,
         signInWithPopup: authModule.signInWithPopup,
         signOut: authModule.signOut,
