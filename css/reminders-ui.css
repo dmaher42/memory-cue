@@ -44,6 +44,54 @@
   font-weight: 600;
 }
 
+.reminders-screen-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.reminders-screen-header-copy {
+  min-width: 0;
+}
+
+.reminders-screen-title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  font-weight: 650;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.reminders-screen-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.reminders-sort-trigger,
+#reminderSortToggle {
+  border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
+  background: color-mix(in srgb, #ffffff 72%, transparent);
+  color: var(--text-main);
+  border-radius: 999px;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.reminders-sort-trigger:hover,
+.reminders-sort-trigger:focus-visible,
+#reminderSortToggle:hover,
+#reminderSortToggle:focus-visible {
+  background: color-mix(in srgb, var(--text-main) 7%, #ffffff);
+}
+
 #reminderList {
   display: grid;
   grid-template-columns: 1fr !important;
@@ -113,6 +161,12 @@
 #view-reminders .reminders-screen-controls {
   gap: 0.75rem;
   margin-bottom: 0.9rem;
+}
+
+#view-reminders #remindersListMobile > .mb-2.flex.items-center.justify-end {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.7rem;
 }
 
 #view-reminders .reminders-top-controls-row {
@@ -207,16 +261,37 @@
   padding-top: 0;
 }
 
+#view-reminders .reminder-mobile-section-heading {
+  list-style: none;
+  margin: 0;
+  padding: 1rem 0 0.45rem;
+}
+
+#view-reminders .reminder-mobile-section-heading:first-child {
+  padding-top: 0.15rem;
+}
+
+#view-reminders .reminder-mobile-section-heading-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
 #view-reminders .reminder-row {
   display: flex;
   align-items: center;
-  min-height: 48px;
+  min-height: 56px;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 0.45rem 0.25rem;
+  padding: 0.7rem 0.2rem;
   gap: 0.5rem;
   transform: none;
   transition: background-color 0.16s ease;
@@ -247,20 +322,27 @@
 #view-reminders .reminder-row-main {
   display: flex;
   flex-direction: column;
-  gap: 0.14rem;
+  gap: 0.2rem;
   justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 #view-reminders .reminder-row-title {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   line-height: 1.35;
-  font-weight: 450;
+  font-weight: 520;
   color: var(--text-main);
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 #view-reminders .reminder-row-meta {
   margin-top: 0;
-  font-size: 0.77rem;
+  font-size: 0.79rem;
   color: var(--text-secondary);
 }
 
