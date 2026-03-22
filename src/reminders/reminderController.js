@@ -5441,9 +5441,30 @@ export async function initReminders(sel = {}) {
       controls.className = 'task-toolbar flex items-start gap-1';
       controls.setAttribute('role', 'toolbar');
       controls.setAttribute('aria-label', 'Reminder actions');
+      controls.setAttribute('draggable', 'false');
       if (isMobile) {
         controls.classList.add('flex-shrink-0');
       }
+
+      const stopControlGesture = (event) => {
+        event.stopPropagation();
+      };
+
+      const bindReminderControlAction = (element, handler) => {
+        if (!(element instanceof HTMLElement) || typeof handler !== 'function') {
+          return;
+        }
+
+        element.setAttribute('draggable', 'false');
+        element.addEventListener('pointerdown', stopControlGesture);
+        element.addEventListener('mousedown', stopControlGesture);
+        element.addEventListener('touchstart', stopControlGesture, { passive: true });
+        element.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          handler();
+        });
+      };
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
@@ -5485,9 +5506,7 @@ export async function initReminders(sel = {}) {
       toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
       toggleBtn.setAttribute('data-reminder-control', 'toggle');
       toggleBtn.setAttribute('data-no-swipe', 'true');
-      toggleBtn.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      bindReminderControlAction(toggleBtn, () => {
         toggleDone(summary.id);
       });
 
@@ -5602,10 +5621,7 @@ export async function initReminders(sel = {}) {
       deleteBtn.setAttribute('data-action', 'delete');
       deleteBtn.setAttribute('data-reminder-control', 'delete');
       deleteBtn.setAttribute('data-no-swipe', 'true');
-      deleteBtn.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        // remove the reminder
+      bindReminderControlAction(deleteBtn, () => {
         try {
           removeItem(summary.id);
         } catch (err) {
