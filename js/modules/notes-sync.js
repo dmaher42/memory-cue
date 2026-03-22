@@ -3,7 +3,7 @@ import {
   saveAllNotes,
   setRemoteSyncHandler,
 } from './notes-storage.js';
-import { syncNotes } from '../../src/services/firestoreSyncService.js';
+import { syncNotes, subscribeToNotesChanges } from '../../src/services/firestoreSyncService.js';
 
 let backfillEmbeddingsModulePromise = null;
 
@@ -63,26 +63,6 @@ const toTimestamp = (value) => {
   return 0;
 };
 
-const mergeNotesByLatest = (localNotes = [], remoteNotes = []) => {
-  const merged = new Map();
-
-  [...remoteNotes, ...localNotes].forEach((note) => {
-    const normalized = mapRemoteNote(note);
-    if (!normalized?.id) {
-      return;
-    }
-
-    const existing = merged.get(normalized.id);
-    if (!existing || toTimestamp(normalized.updatedAt) >= toTimestamp(existing.updatedAt)) {
-      merged.set(normalized.id, normalized);
-    }
-  });
-
-  return Array.from(merged.values()).sort((left, right) => (
-    toTimestamp(right.updatedAt) - toTimestamp(left.updatedAt)
-  ));
-};
-
 export const initNotesSync = (options = {}) => {
   const {
     onRemotePull = null,
@@ -92,6 +72,7 @@ export const initNotesSync = (options = {}) => {
   let currentUserId = null;
   let isApplyingRemote = false;
   let remoteSyncPromise = null;
+  let stopRemoteSubscription = null;
 
   const logDebug = (...args) => {
     if (typeof debugLogger === 'function') {
@@ -101,6 +82,66 @@ export const initNotesSync = (options = {}) => {
         // Debug logging failures should never break sync.
       }
     }
+  };
+
+  const stopLiveSync = () => {
+    if (typeof stopRemoteSubscription === 'function') {
+      try {
+        stopRemoteSubscription();
+      } catch {
+        // Ignore unsubscribe issues during session transitions.
+      }
+    }
+    stopRemoteSubscription = null;
+  };
+
+  const applyRemoteNotes = async (remoteNotes = [], meta = {}) => {
+    const normalized = Array.isArray(remoteNotes)
+      ? remoteNotes.map((note) => mapRemoteNote(note)).filter(Boolean)
+      : [];
+
+    isApplyingRemote = true;
+    const saved = saveAllNotes(normalized, { skipRemoteSync: true });
+    if (saved && normalized.length) {
+      await syncFirestoreMemoriesToLocalCache(normalized);
+    }
+    isApplyingRemote = false;
+
+    if (!saved) {
+      console.warn('[notes-sync] Unable to replace local notes cache from Firebase.');
+    }
+
+    if (typeof onRemotePull === 'function') {
+      try {
+        onRemotePull({
+          mergedCount: normalized.length,
+          remoteCount: normalized.length,
+          ...meta,
+        });
+      } catch (callbackError) {
+        console.warn('[notes-sync] onRemotePull callback failed.', callbackError);
+      }
+    }
+  };
+
+  const startLiveSync = async () => {
+    stopLiveSync();
+    if (!currentUserId) {
+      return;
+    }
+
+    stopRemoteSubscription = await subscribeToNotesChanges({
+      uid: currentUserId,
+      onItems: (remoteNotes) => {
+        if (isApplyingRemote) {
+          return;
+        }
+
+        applyRemoteNotes(remoteNotes, { source: 'snapshot' }).catch((error) => {
+          console.error('[notes-sync] Failed to apply live Firebase note updates.', error);
+        });
+      },
+    });
   };
 
   const pullFromRemote = async () => {
@@ -123,27 +164,7 @@ export const initNotesSync = (options = {}) => {
         }
         return;
       }
-
-      const merged = mergeNotesByLatest(localNotes, normalized);
-
-      isApplyingRemote = true;
-      const saved = saveAllNotes(merged, { skipRemoteSync: true });
-      if (saved) {
-        await syncFirestoreMemoriesToLocalCache(merged);
-      }
-      isApplyingRemote = false;
-
-      if (!saved) {
-        console.warn('[notes-sync] Unable to replace local notes cache from Firebase.');
-      }
-
-      if (typeof onRemotePull === 'function') {
-        try {
-          onRemotePull({ mergedCount: merged.length, remoteCount: normalized.length });
-        } catch (callbackError) {
-          console.warn('[notes-sync] onRemotePull callback failed.', callbackError);
-        }
-      }
+      await applyRemoteNotes(normalized, { source: 'pull' });
     } catch (error) {
       console.error('[notes-sync] Failed to sync notes with Firebase.', error);
     } finally {
@@ -180,9 +201,11 @@ export const initNotesSync = (options = {}) => {
     currentUserId = normalizeUserId(user);
     logDebug('[notes-sync] Session change', { userId: currentUserId });
     if (!currentUserId) {
+      stopLiveSync();
       return;
     }
     await pullFromRemote();
+    await startLiveSync();
   };
 
   if (typeof window !== 'undefined') {
@@ -202,5 +225,6 @@ export const initNotesSync = (options = {}) => {
     },
     handleSessionChange,
     syncFromRemote: pullFromRemote,
+    stopLiveSync,
   };
 };

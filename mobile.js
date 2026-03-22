@@ -19,6 +19,7 @@ import { getInboxEntries } from './js/services/capture-service.js';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
 import { clearMessages, getMessages } from './src/chat/messageStore.js';
+import { subscribeToInboxChanges, subscribeToChatHistoryChanges } from './src/services/firestoreSyncService.js';
 import { createChatComposer } from './src/components/ChatComposer.js';
 import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
@@ -520,6 +521,7 @@ function initAssistant() {
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
 
     renderConversationHistory();
+    document.addEventListener('memoryCue:chatUpdated', renderConversationHistory);
 
     clearChatHistoryBtn?.addEventListener('click', () => {
       clearMessages();
@@ -3409,6 +3411,9 @@ if (document.readyState === 'loading') {
 }
 
 async function wireMobileNotesFirebaseAuth() {
+  let stopInboxLiveSync = null;
+  let stopChatLiveSync = null;
+
   const debugLog = (...args) => {
     if (isNotesSyncDebugEnabled) {
       try {
@@ -3447,6 +3452,36 @@ async function wireMobileNotesFirebaseAuth() {
     };
   }
 
+  const stopRealtimeCollections = () => {
+    if (typeof stopInboxLiveSync === 'function') {
+      try {
+        stopInboxLiveSync();
+      } catch {
+        /* ignore unsubscribe issues */
+      }
+    }
+    if (typeof stopChatLiveSync === 'function') {
+      try {
+        stopChatLiveSync();
+      } catch {
+        /* ignore unsubscribe issues */
+      }
+    }
+    stopInboxLiveSync = null;
+    stopChatLiveSync = null;
+  };
+
+  const startRealtimeCollections = async (uid) => {
+    stopRealtimeCollections();
+
+    if (typeof uid !== 'string' || !uid.trim()) {
+      return;
+    }
+
+    stopInboxLiveSync = await subscribeToInboxChanges({ uid });
+    stopChatLiveSync = await subscribeToChatHistoryChanges({ uid });
+  };
+
   // 2. Initialise auth, binding to mobile sign-in / sign-out buttons
   if (typeof initAuth !== 'function') {
     return;
@@ -3466,16 +3501,21 @@ async function wireMobileNotesFirebaseAuth() {
       feedback: ['#notesSyncMessage'],
     },
     disableButtonBinding: false,
-    onSessionChange(user, session) {
+    async onSessionChange(user, session) {
       const normalizedUser = user && typeof user.id === 'string' ? user : null;
       debugLog('[notes-sync] Mobile session change', { userId: normalizedUser?.id || null });
       if (notesSync && typeof notesSync.handleSessionChange === 'function') {
-        notesSync.handleSessionChange(normalizedUser, session ?? null);
+        await notesSync.handleSessionChange(normalizedUser, session ?? null);
+      }
+
+      if (normalizedUser?.id) {
+        await startRealtimeCollections(normalizedUser.id);
+      } else {
+        stopRealtimeCollections();
       }
     },
   });
 
-  const auth = authController?.auth;
   if (!notesSync) {
     return;
   }
@@ -3487,6 +3527,9 @@ async function wireMobileNotesFirebaseAuth() {
       const normalizedUser = { id: initialUserId, uid: initialUserId, email: '' };
       debugLog('[notes-sync] Mobile initial session', { userId: normalizedUser.id || null });
       notesSync.handleSessionChange(normalizedUser, { user: normalizedUser });
+      startRealtimeCollections(normalizedUser.id).catch((error) => {
+        console.warn('[sync] Failed to start realtime inbox/chat sync.', error);
+      });
     }
   }
 

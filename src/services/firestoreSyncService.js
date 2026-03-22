@@ -13,6 +13,12 @@ const COLLECTIONS = Object.freeze({
   chat: 'chatHistory',
 });
 
+const SYNC_EVENTS = Object.freeze({
+  [NOTES_KEY]: 'memoryCue:notesUpdated',
+  [INBOX_KEY]: 'memoryCue:entriesUpdated',
+  [CHAT_KEY]: 'memoryCue:chatUpdated',
+});
+
 const normalizeUid = (value) => (typeof value === 'string' ? value.trim() : '');
 
 const resolveUid = (uidOverride = null) => {
@@ -57,6 +63,24 @@ const writeLocal = (key, items) => {
   } catch (error) {
     console.warn('[firestore-sync] Failed writing local cache', key, error);
   }
+};
+
+const dispatchSyncEvent = (key, items) => {
+  if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
+    return;
+  }
+
+  const eventName = SYNC_EVENTS[key];
+  if (!eventName) {
+    return;
+  }
+
+  document.dispatchEvent(new CustomEvent(eventName, {
+    detail: {
+      key,
+      items: Array.isArray(items) ? items : [],
+    },
+  }));
 };
 
 const mergeById = (items = []) => {
@@ -227,7 +251,51 @@ const pullCollection = async ({
 
   const normalized = mergeById(remoteItems.map((item) => normalizeItem(item)).filter(Boolean));
   writeLocal(localKey, normalized);
+  dispatchSyncEvent(localKey, normalized);
   return normalized;
+};
+
+const subscribeToCollection = async ({
+  localKey,
+  collectionName,
+  normalizeItem,
+  uid,
+  orderField = 'updatedAt',
+  onItems = null,
+}) => {
+  const firebase = await getFirebaseContext();
+  const resolvedUid = resolveUid(uid);
+
+  if (!firebase || !resolvedUid || typeof firebase.onSnapshot !== 'function') {
+    return () => {};
+  }
+
+  const collectionRef = getCollectionRef(firebase, resolvedUid, collectionName);
+  const queryRef = typeof firebase.query === 'function' && typeof firebase.orderBy === 'function'
+    ? firebase.query(collectionRef, firebase.orderBy(orderField, 'desc'))
+    : collectionRef;
+
+  return firebase.onSnapshot(queryRef, (snapshot) => {
+    const normalized = mergeById(
+      snapshot.docs
+        .map((entry) => ({ id: entry.id, ...entry.data() }))
+        .map((item) => normalizeItem(item))
+        .filter(Boolean)
+    );
+
+    writeLocal(localKey, normalized);
+    dispatchSyncEvent(localKey, normalized);
+
+    if (typeof onItems === 'function') {
+      try {
+        onItems(normalized);
+      } catch (error) {
+        console.warn('[firestore-sync] Subscriber callback failed', error);
+      }
+    }
+  }, (error) => {
+    console.warn(`[firestore-sync] Live sync failed for ${collectionName}`, error);
+  });
 };
 
 export const syncNotes = async (localItemsOverride = null, options = {}) => {
@@ -295,6 +363,33 @@ export const syncChatHistory = async (localItemsOverride = null, options = {}) =
     orderField: 'createdAt',
   });
 };
+
+export const subscribeToNotesChanges = async (options = {}) => subscribeToCollection({
+  localKey: NOTES_KEY,
+  collectionName: COLLECTIONS.notes,
+  normalizeItem: normalizeNote,
+  uid: options.uid,
+  orderField: 'updatedAt',
+  onItems: options.onItems,
+});
+
+export const subscribeToInboxChanges = async (options = {}) => subscribeToCollection({
+  localKey: INBOX_KEY,
+  collectionName: COLLECTIONS.inbox,
+  normalizeItem: normalizeInboxEntry,
+  uid: options.uid,
+  orderField: 'updatedAt',
+  onItems: options.onItems,
+});
+
+export const subscribeToChatHistoryChanges = async (options = {}) => subscribeToCollection({
+  localKey: CHAT_KEY,
+  collectionName: COLLECTIONS.chat,
+  normalizeItem: (item) => normalizeChatEntry(item, item?.conversationId || 'default'),
+  uid: options.uid,
+  orderField: 'createdAt',
+  onItems: options.onItems,
+});
 
 export const pushChanges = async (options = {}) => Promise.all([
   syncNotes(readLocal(NOTES_KEY), options),
