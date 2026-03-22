@@ -17,6 +17,18 @@ const normalizeSemanticEmbedding = (value) => {
 let remoteSyncHandler = null;
 let memoryServiceModulePromise = null;
 
+const dispatchNotesUpdated = (notes = []) => {
+  if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
+    return;
+  }
+
+  document.dispatchEvent(new CustomEvent('memoryCue:notesUpdated', {
+    detail: {
+      items: Array.isArray(notes) ? notes : [],
+    },
+  }));
+};
+
 export const setRemoteSyncHandler = (handler) => {
   remoteSyncHandler = typeof handler === 'function' ? handler : null;
 };
@@ -503,6 +515,7 @@ export const saveAllNotes = (notes, options = {}) => {
 
   try {
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(serializable));
+    dispatchNotesUpdated(serializable);
     if (!options.skipRemoteSync && typeof remoteSyncHandler === 'function') {
       try {
         const maybePromise = remoteSyncHandler(serializable);

@@ -1,6 +1,19 @@
 import { appendChatMessage, syncChatHistory } from '../services/firestoreSyncService.js';
 const CHAT_HISTORY_STORAGE_KEY = 'memoryCueChatHistory';
 
+const dispatchChatUpdated = (messages = []) => {
+  if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
+    return;
+  }
+
+  document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated', {
+    detail: {
+      key: CHAT_HISTORY_STORAGE_KEY,
+      items: Array.isArray(messages) ? messages : [],
+    },
+  }));
+};
+
 const readMessages = () => {
   if (typeof localStorage === 'undefined') {
     return [];
@@ -33,6 +46,7 @@ export const addMessage = (message) => {
   const nextMessage = { ...message, pendingSync: true };
   const nextMessages = [...messages, nextMessage];
   writeMessages(nextMessages);
+  dispatchChatUpdated(nextMessages);
   appendChatMessage(nextMessage, message?.conversationId || 'default').catch((error) => {
     console.warn('[chat/messageStore] Failed to sync chat message', error);
   });
@@ -48,6 +62,7 @@ export const clearMessages = () => {
 
   try {
     localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
+    dispatchChatUpdated([]);
     syncChatHistory([]).catch(() => {});
   } catch (error) {
     console.warn('[chat/messageStore] Failed to clear chat history', error);
