@@ -19,6 +19,7 @@
       const target = normalizeViewName(button.getAttribute('data-nav-target'));
       const active = target === viewName;
       button.classList.toggle('active', active);
+      button.classList.toggle('nav-active', active);
       button.setAttribute('aria-current', active ? 'page' : 'false');
     });
   };
@@ -50,6 +51,21 @@
     const view = event?.detail?.view;
     if (!view) return;
     navigate(view);
+  });
+
+  document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-nav-target]') : null;
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+
+    const targetView = button.getAttribute('data-nav-target');
+    if (!targetView) {
+      return;
+    }
+
+    event.preventDefault();
+    navigate(targetView);
   });
 
   const init = () => {
