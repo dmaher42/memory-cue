@@ -79,6 +79,9 @@ async function syncFirestoreMemoriesToLocalCache(notes = []) {
   }
 }
 const DEFAULT_CATEGORY = 'General';
+const DISPLAY_TITLE_SMALL_WORDS = new Set([
+  'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with',
+]);
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
   'General Appointments',
@@ -5168,10 +5171,6 @@ export async function initReminders(sel = {}) {
 
     setupReminderSortControl._wired = true;
   }
-
-  const DISPLAY_TITLE_SMALL_WORDS = new Set([
-    'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with',
-  ]);
 
   function getReminderDisplaySourceText(reminder) {
     if (!reminder || typeof reminder !== 'object') {
