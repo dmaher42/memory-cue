@@ -1,7 +1,7 @@
 import { predictIntent, recordPattern } from './patternLearningService.js';
 
 const NOTEBOOK_CAPTURE_PATTERN = /(meeting notes|lesson idea|remember\b|notes?\s+from|journal|plan\b|scored\b)/i;
-const REMINDER_KEYWORDS = ['remind', 'tomorrow', 'tonight', 'later', 'buy', 'pick up'];
+const REMINDER_KEYWORDS = ['remind', 'reminder', 'tomorrow', 'tonight', 'later', 'buy', 'pick up'];
 const NOTE_KEYWORDS = ['idea', 'note', 'remember', 'lesson'];
 const DRILL_KEYWORDS = ['drill', 'training', 'coaching'];
 const QUESTION_PREFIXES = ['what', 'when', 'how', 'where'];

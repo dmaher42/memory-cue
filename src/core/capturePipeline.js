@@ -57,37 +57,96 @@ const setTimeOnDate = (date, hours, minutes = 0) => {
   return nextDate;
 };
 
-const parseFollowUpDueAt = (text, now = new Date()) => {
+const REMINDER_TIMING_REPLY_PATTERN = /\b(today|tomorrow|tonight|next week|morning|afternoon|evening|night|am|pm|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|(?:^|\s)\d{1,2}:\d{2}(?:\s*[ap]m)?\b|\b\d{3,4}\s*(?:am|pm)?\b|\b\d{1,2}\s*(?:am|pm)\b/i;
+
+const extractTimeParts = (normalizedText) => {
+  if (typeof normalizedText !== 'string' || !normalizedText.trim()) {
+    return null;
+  }
+
+  const explicitMeridiemMatch = normalizedText.match(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
+  if (explicitMeridiemMatch) {
+    let hours = Number.parseInt(explicitMeridiemMatch[1], 10);
+    const minutes = explicitMeridiemMatch[2] ? Number.parseInt(explicitMeridiemMatch[2], 10) : 0;
+    const meridiem = explicitMeridiemMatch[3];
+
+    if (meridiem === 'pm' && hours < 12) hours += 12;
+    if (meridiem === 'am' && hours === 12) hours = 0;
+
+    return { hours, minutes };
+  }
+
+  const colonTimeMatch = normalizedText.match(/\b(?:at\s+)?(\d{1,2}):(\d{2})\b/);
+  if (colonTimeMatch) {
+    return {
+      hours: Number.parseInt(colonTimeMatch[1], 10),
+      minutes: Number.parseInt(colonTimeMatch[2], 10),
+    };
+  }
+
+  const compactTimeMatch = normalizedText.match(/\b(?:at\s+)?(\d{3,4})\b/);
+  if (compactTimeMatch) {
+    const compactValue = compactTimeMatch[1];
+    const hoursDigits = compactValue.length === 3 ? compactValue.slice(0, 1) : compactValue.slice(0, 2);
+    const minutesDigits = compactValue.length === 3 ? compactValue.slice(1) : compactValue.slice(2);
+    const hours = Number.parseInt(hoursDigits, 10);
+    const minutes = Number.parseInt(minutesDigits, 10);
+
+    if (Number.isFinite(hours) && Number.isFinite(minutes) && minutes < 60) {
+      return { hours, minutes };
+    }
+  }
+
+  return null;
+};
+
+const buildReminderDate = (normalizedText, now) => {
+  if (/\bnext week\b/.test(normalizedText)) {
+    const dueDate = new Date(now.getTime());
+    dueDate.setDate(dueDate.getDate() + 7);
+    return dueDate;
+  }
+
+  if (/\btomorrow\b/.test(normalizedText)) {
+    const dueDate = new Date(now.getTime());
+    dueDate.setDate(dueDate.getDate() + 1);
+    return dueDate;
+  }
+
+  if (/\b(today|tonight)\b/.test(normalizedText)) {
+    return new Date(now.getTime());
+  }
+
+  return null;
+};
+
+const looksLikeReminderTimingReply = (text) => REMINDER_TIMING_REPLY_PATTERN.test(normalizeText(text));
+
+const parseReminderDueAt = (text, now = new Date(), options = {}) => {
   const normalized = normalizeText(text).toLowerCase();
   if (!normalized) {
     return null;
   }
 
-  const tomorrowMatch = normalized.match(/\btomorrow(?:\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)?\b/);
-  if (tomorrowMatch) {
-    const dueDate = new Date(now.getTime());
-    dueDate.setDate(dueDate.getDate() + 1);
-
-    if (tomorrowMatch[1]) {
-      let hours = Number.parseInt(tomorrowMatch[1], 10);
-      const minutes = tomorrowMatch[2] ? Number.parseInt(tomorrowMatch[2], 10) : 0;
-      const meridiem = tomorrowMatch[3];
-      if (meridiem === 'pm' && hours < 12) hours += 12;
-      if (meridiem === 'am' && hours === 12) hours = 0;
-      return toIsoString(setTimeOnDate(dueDate, hours, minutes));
-    }
-
-    return toIsoString(setTimeOnDate(dueDate, 9, 0));
-  }
-
   if (/\btonight\b/.test(normalized)) {
-    return toIsoString(setTimeOnDate(now, 19, 0));
+    const tonightTime = extractTimeParts(normalized) || { hours: 19, minutes: 0 };
+    return toIsoString(setTimeOnDate(now, tonightTime.hours, tonightTime.minutes));
   }
 
-  if (/\bnext week\b/.test(normalized)) {
-    const dueDate = new Date(now.getTime());
-    dueDate.setDate(dueDate.getDate() + 7);
-    return toIsoString(setTimeOnDate(dueDate, 9, 0));
+  const dueDate = buildReminderDate(normalized, now);
+  const timeParts = extractTimeParts(normalized);
+
+  if (dueDate) {
+    const resolvedTime = timeParts || { hours: 9, minutes: 0 };
+    return toIsoString(setTimeOnDate(dueDate, resolvedTime.hours, resolvedTime.minutes));
+  }
+
+  if (options.allowTimeOnly && timeParts) {
+    const candidate = setTimeOnDate(now, timeParts.hours, timeParts.minutes);
+    if (candidate.getTime() <= now.getTime()) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+    return toIsoString(candidate);
   }
 
   return null;
@@ -164,14 +223,52 @@ const buildPendingReminderDecision = (intent, dueAt) => {
   };
 };
 
+const enrichReminderDecision = (decision, text) => {
+  if (decision?.decisionType !== 'persist_reminder') {
+    return decision;
+  }
+
+  const parsedEntry = decision?.parsedEntry && typeof decision.parsedEntry === 'object'
+    ? decision.parsedEntry
+    : {};
+  const dueAt = typeof parsedEntry?.reminderDate === 'string' && parsedEntry.reminderDate.trim()
+    ? parsedEntry.reminderDate.trim()
+    : parseReminderDueAt(text);
+  const missing = Array.isArray(decision?.missing)
+    ? decision.missing.filter((value) => value !== 'dueAt')
+    : [];
+
+  if (!dueAt) {
+    missing.push('dueAt');
+  }
+
+  return {
+    ...decision,
+    parsedEntry: {
+      ...parsedEntry,
+      type: 'reminder',
+      reminderDate: dueAt,
+      metadata: {
+        ...(parsedEntry?.metadata && typeof parsedEntry.metadata === 'object' ? parsedEntry.metadata : {}),
+        ...(dueAt ? { dueAt } : {}),
+      },
+    },
+    missing,
+  };
+};
+
 const maybeResolvePendingIntent = async (text) => {
   if (!pendingIntent) {
     return null;
   }
 
-  // Follow-up replies are treated as clarification answers for the pending reminder.
-  const dueAt = parseFollowUpDueAt(text);
+  const dueAt = parseReminderDueAt(text, new Date(), { allowTimeOnly: true });
   const decision = buildPendingReminderDecision(pendingIntent, dueAt);
+
+  if (!dueAt && !looksLikeReminderTimingReply(text)) {
+    pendingIntent = null;
+    return null;
+  }
 
   if (decision.missing.length) {
     pendingIntent = {
@@ -239,7 +336,8 @@ export async function captureInput({
     return pendingResolution.clarification;
   }
 
-  const decision = pendingResolution?.decision || await resolveDecision(normalizedText, hints);
+  const resolvedDecision = pendingResolution?.decision || await resolveDecision(normalizedText, hints);
+  const decision = enrichReminderDecision(resolvedDecision, normalizedText);
 
   switch (decision?.decisionType) {
     case 'persist_note': {
