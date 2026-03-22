@@ -1,5 +1,8 @@
 import { getFirebaseContext } from '../src/lib/firebase.js';
 
+let signInPromise = null;
+let signOutPromise = null;
+
 const setScopedUserId = (userId) => {
   if (typeof window === 'undefined') {
     return;
@@ -13,24 +16,50 @@ const setScopedUserId = (userId) => {
 };
 
 export const startSignInFlow = async () => {
-  const firebase = await getFirebaseContext();
-  if (!firebase?.auth) {
-    return null;
+  if (signInPromise) {
+    return signInPromise;
   }
-  const provider = new firebase.GoogleAuthProvider();
-  const result = await firebase.signInWithPopup(firebase.auth, provider);
-  return result?.user || null;
+
+  signInPromise = (async () => {
+    const firebase = await getFirebaseContext();
+    if (!firebase?.auth) {
+      return null;
+    }
+
+    const provider = new firebase.GoogleAuthProvider();
+    const result = await firebase.signInWithPopup(firebase.auth, provider);
+    return result?.user || null;
+  })();
+
+  try {
+    return await signInPromise;
+  } finally {
+    signInPromise = null;
+  }
 };
 
 export const startSignOutFlow = async () => {
-  const firebase = await getFirebaseContext();
-  if (!firebase?.auth) {
+  if (signOutPromise) {
+    return signOutPromise;
+  }
+
+  signOutPromise = (async () => {
+    const firebase = await getFirebaseContext();
+    if (!firebase?.auth) {
+      setScopedUserId(null);
+      return null;
+    }
+
+    await firebase.signOut(firebase.auth);
     setScopedUserId(null);
     return null;
+  })();
+
+  try {
+    return await signOutPromise;
+  } finally {
+    signOutPromise = null;
   }
-  await firebase.signOut(firebase.auth);
-  setScopedUserId(null);
-  return null;
 };
 
 export const initAuth = async ({ onSessionChange } = {}) => {

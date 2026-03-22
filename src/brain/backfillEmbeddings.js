@@ -30,8 +30,6 @@ export async function backfillEmbeddings(memories = []) {
       continue;
     }
 
-    console.log('[backfill] generating embedding for:', text);
-
     const embedding = await generateEmbedding(text);
 
     if (!Array.isArray(embedding) || !embedding.length) {
@@ -43,8 +41,6 @@ export async function backfillEmbeddings(memories = []) {
       embedding,
       pendingSync: memory.pendingSync === false ? false : true,
     });
-
-    console.log('[backfill] stored embedding for:', memory.id);
   }
 }
 
