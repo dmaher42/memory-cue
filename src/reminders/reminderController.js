@@ -5510,6 +5510,29 @@ export async function initReminders(sel = {}) {
         toggleDone(summary.id);
       });
 
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn reminder-icon-btn';
+      deleteBtn.innerHTML = `
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--accent-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <path d="M3 6h18" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/>
+          <line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/>
+        </svg>`;
+      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminderTitle}`);
+      deleteBtn.setAttribute('data-action', 'delete');
+      deleteBtn.setAttribute('data-reminder-control', 'delete');
+      deleteBtn.setAttribute('data-no-swipe', 'true');
+      bindReminderControlAction(deleteBtn, () => {
+        try {
+          removeItem(summary.id);
+        } catch (err) {
+          console.warn('Delete handler failed', err);
+        }
+      });
+
       const openReminder = () => openEditReminderSheet(reminder);
 
       if (isMobile) {
@@ -5549,7 +5572,8 @@ export async function initReminders(sel = {}) {
           itemEl.classList.add('reminder-row-completed');
         }
 
-        itemEl.append(cardCheckbox, rowMain);
+        controls.append(deleteBtn);
+        itemEl.append(cardCheckbox, rowMain, controls);
 
         itemEl.addEventListener('click', (event) => {
           if (event.defaultPrevented) return;
@@ -5605,29 +5629,6 @@ export async function initReminders(sel = {}) {
       }
 
       itemEl.appendChild(content);
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn reminder-icon-btn';
-      deleteBtn.innerHTML = `
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--accent-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" focusable="false">
-          <path d="M3 6h18" />
-          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-          <line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/>
-          <line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/>
-        </svg>`;
-      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminderTitle}`);
-      deleteBtn.setAttribute('data-action', 'delete');
-      deleteBtn.setAttribute('data-reminder-control', 'delete');
-      deleteBtn.setAttribute('data-no-swipe', 'true');
-      bindReminderControlAction(deleteBtn, () => {
-        try {
-          removeItem(summary.id);
-        } catch (err) {
-          console.warn('Delete handler failed', err);
-        }
-      });
 
       controls.append(toggleBtn, deleteBtn);
       itemEl.appendChild(controls);
