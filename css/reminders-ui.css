@@ -49,8 +49,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.65rem;
-  margin-bottom: 0.25rem;
-  padding: 0.8rem 0.9rem;
+  margin-bottom: 0;
+  padding: 0.72rem 0.9rem 0.35rem;
   height: auto;
   min-height: 0;
   max-height: none;
@@ -178,7 +178,7 @@
 #view-reminders #remindersListMobile > .mb-2.flex.items-center.justify-end {
   display: flex;
   justify-content: flex-end;
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.1rem;
 }
 
 #view-reminders .reminders-top-controls-row {
@@ -274,7 +274,7 @@
 }
 
 #view-reminders #reminderListSection {
-  margin-top: 0;
+  margin-top: -0.1rem;
 }
 
 #view-reminders #reminderList {
