@@ -583,14 +583,15 @@ Legacy shells remain for reference only.
   /* Center the notebook folder pill */
   #noteFolderPillMobile {
     display: inline-flex;
-    margin-left: auto;
+    margin-left: 0;
     margin-right: auto;
   }
 
   .scratch-notes-header-block {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    gap: 0.35rem;
   }
 
   /* Hide notebook action buttons: top "Saved notes" pill and bottom New/Save bar */
@@ -681,8 +682,8 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 
   .mobile-panel--notes .scratch-notes-header-block {
     width: 100%;
-    padding: 0rem 0rem;
-    margin-top: 0.1rem;
+    padding: 0.65rem 0.8rem;
+    margin-top: 0;
     border-radius: 1rem;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.16)) 80%, transparent);
     background: color-mix(in srgb, #ffffff 92%, #f2ecff 8%);
@@ -690,7 +691,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   }
 
   .mobile-panel--notes .scratch-notes-header-block input#noteTitleMobile {
-    padding: 1.0rem 1.3rem;
+    padding: 0.85rem 1rem;
   }
 
 .mobile-panel--notes #scratch-notes-card .notes-editor {
@@ -5075,7 +5076,7 @@ body, main, section, div, p, span, li {
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
         <div id="noteEditorSheet" class="note-sheet-wrapper scratch-notes-wrapper">
-         <div id="scratch-notes-card" class="writing-panel scratch-notes-card p-0 space-y-3 pb-3 bg-white rounded-none shadow-none" style="background:white; border-radius:0; box-shadow:none; padding: 0 !important; width: 100vw; margin: 0 -1rem;">
+         <div id="scratch-notes-card" class="writing-panel scratch-notes-card p-0 space-y-3 pb-3 bg-white rounded-none shadow-none" style="background:white; border-radius:0; box-shadow:none; padding: 0 !important; width: 100%; margin: 0;">
             <!-- Top-right Saved notes pill in notebook view -->
             <div class="note-actions-top">
               <button
