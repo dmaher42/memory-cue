@@ -117,7 +117,17 @@ async function main() {
       MockDate.parse = NativeDate.parse;
       globalThis.Date = MockDate;
       globalThis.toast = () => {};
-      localStorage.setItem(reminderStorageKey, JSON.stringify([]));
+      localStorage.setItem(reminderStorageKey, JSON.stringify([
+        {
+          id: 'seed-unscheduled-title',
+          title: 'call tuesday about roster',
+          category: 'General',
+          priority: 'Medium',
+          done: false,
+          createdAt: fixedNow.getTime() - 60000,
+          updatedAt: fixedNow.getTime() - 60000,
+        },
+      ]));
     }, { reminderStorageKey: REMINDER_STORAGE_KEY });
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
@@ -140,15 +150,22 @@ async function main() {
       return panel && !panel.classList.contains('hidden');
     });
 
-    const titleText = await page.locator('#view-reminders .reminder-row-title').first().textContent();
-    const metaText = await page.locator('#view-reminders .reminder-row-meta').first().textContent();
+    const titleTexts = await page.locator('#view-reminders .reminder-row-title').allTextContents();
+    const metaTexts = await page.locator('#view-reminders .reminder-row-meta').allTextContents();
+    const titleText = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Get Naplan');
+    const metaText = (metaTexts || []).map((text) => (text || '').trim()).find((text) => /Tomorrow,\s*8:30\s?AM/i.test(text || ''));
+    const unscheduledTitle = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Call Tuesday About Roster');
 
-    if ((titleText || '').trim() !== 'Get Naplan') {
-      throw new Error(`Unexpected reminder title: ${titleText}`);
+    if (titleText !== 'Get Naplan') {
+      throw new Error(`Expected rendered reminders to include "Get Naplan", received: ${JSON.stringify(titleTexts)}`);
     }
 
     if (!/Tomorrow,\s*8:30\s?AM/i.test(metaText || '')) {
-      throw new Error(`Unexpected reminder meta: ${metaText}`);
+      throw new Error(`Unexpected reminder meta values: ${JSON.stringify(metaTexts)}`);
+    }
+
+    if (unscheduledTitle !== 'Call Tuesday About Roster') {
+      throw new Error(`Expected unscheduled reminder title to preserve weekday text, received: ${JSON.stringify(titleTexts)}`);
     }
 
     const persistedReminders = await page.evaluate((reminderStorageKey) => {
@@ -184,8 +201,9 @@ async function main() {
     console.log(JSON.stringify({
       ok: true,
       checkedUrl: baseUrl,
-      titleText: (titleText || '').trim(),
-      metaText: (metaText || '').trim(),
+      titleText,
+      metaText,
+      unscheduledTitle,
       persistedDue: persistedReminders[0].due,
       blockingErrors,
     }, null, 2));

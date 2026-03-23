@@ -5464,10 +5464,20 @@ export async function initReminders(sel = {}) {
     };
   }
 
+  function hasReminderDueValue(reminder) {
+    if (!reminder || typeof reminder !== 'object' || !reminder.due) {
+      return false;
+    }
+    const dueDate = new Date(reminder.due);
+    return !Number.isNaN(dueDate.getTime());
+  }
+
   function resolveReminderDisplayTitle(reminder) {
     const sourceText = getReminderDisplaySourceText(reminder);
-    const { textWithoutSchedule } = extractReminderInlineSchedule(sourceText);
-    const cleanedTitle = formatDisplayTitleCase(textWithoutSchedule || sourceText);
+    const titleSource = hasReminderDueValue(reminder)
+      ? (extractReminderInlineSchedule(sourceText).textWithoutSchedule || sourceText)
+      : sourceText;
+    const cleanedTitle = formatDisplayTitleCase(titleSource);
     return cleanedTitle || 'Untitled reminder';
   }
 
