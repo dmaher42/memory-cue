@@ -9,7 +9,7 @@
     "dev": "tailwindcss -i src/input.css -o styles/tailwind.css --watch",
     "build": "node scripts/build.mjs",
     "verify": "node scripts/verify-build.mjs",
-    "check:reminders": "node scripts/e2e-reminders-regression.mjs"
+    "check:reminders": "npm run build && node scripts/e2e-reminders-regression.mjs"
   },
   "keywords": [],
   "author": "Daniel Maher",

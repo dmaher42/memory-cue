@@ -22,7 +22,18 @@ function getContentType(filePath) {
   return contentTypes[ext] || 'application/octet-stream';
 }
 
-async function startStaticServer(cwd) {
+async function resolveBuiltAppDir(cwd) {
+  const distDir = path.resolve(cwd, 'dist');
+  const mobileHtmlPath = path.join(distDir, 'mobile.html');
+  try {
+    await fs.access(mobileHtmlPath);
+    return distDir;
+  } catch {
+    throw new Error(`Built app not found at ${mobileHtmlPath}. Run "npm run build" before "npm run check:reminders".`);
+  }
+}
+
+async function startStaticServer(appDir) {
   const server = http.createServer(async (req, res) => {
     try {
       const requestUrl = new URL(req.url || '/', 'http://127.0.0.1');
@@ -31,8 +42,8 @@ async function startStaticServer(cwd) {
         pathname = '/mobile.html';
       }
 
-      const resolvedPath = path.resolve(cwd, `.${pathname}`);
-      if (!resolvedPath.startsWith(cwd)) {
+      const resolvedPath = path.resolve(appDir, `.${pathname}`);
+      if (!resolvedPath.startsWith(appDir)) {
         res.writeHead(403);
         res.end('Forbidden');
         return;
@@ -78,7 +89,8 @@ async function waitForServer(url) {
 
 async function main() {
   const cwd = process.cwd();
-  const { server, baseUrl } = await startStaticServer(cwd);
+  const appDir = await resolveBuiltAppDir(cwd);
+  const { server, baseUrl } = await startStaticServer(appDir);
 
   try {
     await waitForServer(baseUrl);
@@ -180,8 +192,13 @@ async function main() {
       throw new Error('No reminders were persisted to local storage.');
     }
 
-    if (typeof persistedReminders[0]?.due !== 'string' || !persistedReminders[0].due) {
-      throw new Error(`Expected persisted reminder to include a due value, received: ${JSON.stringify(persistedReminders[0] || null)}`);
+    const persistedQuickAddReminder = persistedReminders.find((reminder) => {
+      const title = typeof reminder?.title === 'string' ? reminder.title.trim().toLowerCase() : '';
+      return title === 'get naplan';
+    });
+
+    if (typeof persistedQuickAddReminder?.due !== 'string' || !persistedQuickAddReminder.due) {
+      throw new Error(`Expected persisted reminder to include a due value, received: ${JSON.stringify(persistedReminders)}`);
     }
 
     const blockingErrors = logs.filter((entry) => {
@@ -204,7 +221,7 @@ async function main() {
       titleText,
       metaText,
       unscheduledTitle,
-      persistedDue: persistedReminders[0].due,
+      persistedDue: persistedQuickAddReminder.due,
       blockingErrors,
     }, null, 2));
 
