@@ -1653,9 +1653,7 @@ const initMobileNotes = () => {
       .filter(Boolean);
 
     if (!related.length) {
-      const empty = document.createElement('p');
-      empty.textContent = 'No related notes.';
-      relatedNotesList.appendChild(empty);
+      relatedNotesPanel.classList.add('hidden');
       return;
     }
 

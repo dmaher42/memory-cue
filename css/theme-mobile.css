@@ -3442,6 +3442,19 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   margin-top: 0 !important;
 }
 
+#view-notebook .note-editor-card {
+  padding: 0.65rem 0.8rem;
+}
+
+#view-notebook .note-content-wrapper {
+  margin-top: 0.25rem;
+  padding: 0.35rem 0;
+}
+
+#view-notebook .note-editor-content {
+  padding: 0.55rem 0.75rem;
+}
+
 /* Allow the scratch-notes card to use the full vertical space */
 .mobile-shell #view-notebook #scratch-notes-card {
   max-height: none;
