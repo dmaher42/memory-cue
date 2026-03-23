@@ -54,11 +54,6 @@ const isNotesSyncDebugEnabled = (() => {
 initViewportHeight();
 
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
-}
-
-
 function initAssistant() {
     if (document.body?.dataset.memoryCueAssistantInit === 'true') {
       return;
