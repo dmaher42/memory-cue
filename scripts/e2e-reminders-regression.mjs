@@ -129,6 +129,7 @@ async function main() {
       MockDate.parse = NativeDate.parse;
       globalThis.Date = MockDate;
       globalThis.toast = () => {};
+      localStorage.setItem('memoryCueInbox', JSON.stringify([]));
       localStorage.setItem(reminderStorageKey, JSON.stringify([
         {
           id: 'seed-unscheduled-title',
@@ -201,6 +202,22 @@ async function main() {
       throw new Error(`Expected persisted reminder to include a due value, received: ${JSON.stringify(persistedReminders)}`);
     }
 
+    const inboxEntries = await page.evaluate(() => {
+      try {
+        return JSON.parse(localStorage.getItem('memoryCueInbox') || '[]');
+      } catch {
+        return [];
+      }
+    });
+    const mirroredInboxEntry = inboxEntries.find((entry) => {
+      const text = typeof entry?.text === 'string' ? entry.text.trim().toLowerCase() : '';
+      return text === 'add remider tomorrow at 8:30 am get naplan';
+    });
+
+    if (!mirroredInboxEntry || mirroredInboxEntry.entryPoint !== 'reminders.quickAddNow') {
+      throw new Error(`Expected quick-add reminder to mirror into inbox, received: ${JSON.stringify(inboxEntries)}`);
+    }
+
     const blockingErrors = logs.filter((entry) => {
       const text = entry.text || '';
       return (
@@ -222,6 +239,8 @@ async function main() {
       metaText,
       unscheduledTitle,
       persistedDue: persistedQuickAddReminder.due,
+      mirroredInboxSource: mirroredInboxEntry.source,
+      mirroredInboxEntryPoint: mirroredInboxEntry.entryPoint,
       blockingErrors,
     }, null, 2));
 

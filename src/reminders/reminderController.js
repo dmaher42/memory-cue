@@ -1,7 +1,7 @@
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
 import { listReminders, saveReminder, removeReminder } from '../repositories/reminderRepository.js';
 import { syncNotes } from '../services/firestoreSyncService.js';
-import { captureInput, getInboxEntries } from '../../js/services/capture-service.js';
+import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
 import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
 import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
@@ -2229,6 +2229,9 @@ export async function initReminders(sel = {}) {
       || (typeof options?.category === 'string' && options.category.trim())
       || (typeof options?.priority === 'string' && options.priority.trim())
       || (typeof options?.notes === 'string' && options.notes.trim());
+    const quickAddSource = typeof options?.source === 'string' && options.source.trim()
+      ? options.source.trim()
+      : 'quick-add';
 
     isQuickAddSubmitting = true;
     if (quickInput && typeof quickInput.disabled !== 'undefined') {
@@ -2296,10 +2299,21 @@ export async function initReminders(sel = {}) {
           }
 
           entry = createReminderFromPayload(basePayload, { closeSheet: false });
+          if (quickAddSource !== 'inbox-swipe') {
+            saveInboxEntry({
+              text: t,
+              source: quickAddSource,
+              parsedType: 'reminder',
+              entryPoint: 'reminders.quickAddNow',
+              metadata: {
+                mirroredReminderId: entry?.id || null,
+              },
+            });
+          }
         } else {
           entry = await captureInput({
             text: routedText,
-            source: 'quick-add',
+            source: quickAddSource,
             metadata: { entryPoint: 'reminders.quickAddNow' },
           });
         }
