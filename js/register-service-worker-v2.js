@@ -33,8 +33,7 @@
     let status;
     try {
       status = await navigator.permissions.query({ name: PERIODIC_PERMISSION_NAME });
-    } catch (error) {
-      console.warn('Periodic sync permission query failed', error);
+    } catch {
       return;
     }
 
@@ -47,8 +46,9 @@
         minInterval: ONE_DAY_MS,
       });
       await registration.periodicSync.unregister(PERIODIC_PROBE_TAG);
-    } catch (error) {
-      console.warn('Periodic sync permission request failed', error);
+    } catch {
+      // Browsers commonly reject periodic background sync probing without a user-visible
+      // capability difference. Keep the app quiet unless registration itself fails later.
     }
   };
 
