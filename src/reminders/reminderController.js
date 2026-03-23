@@ -533,9 +533,35 @@ export async function initReminders(sel = {}) {
   const googleSignOutBtns = $$(sel.googleSignOutBtnSel);
   const statusEl = $(sel.statusSel);
   const syncStatus = $(sel.syncStatusSel);
-  const SYNC_STATUS_LABELS = {
-    online: 'Connected. Changes sync automatically.',
-    offline: "Offline. Changes are saved on this device until you reconnect.",
+  const syncStatusPanel = typeof document !== 'undefined' ? document.getElementById('syncStatus') : null;
+  const syncStatusDot = typeof document !== 'undefined' ? document.getElementById('mcStatus') : null;
+  const syncStatusHeading = typeof document !== 'undefined' ? document.getElementById('drawerSyncHeading') : null;
+  const syncStatusMessage = typeof document !== 'undefined' ? document.getElementById('sync-status') : null;
+  const SYNC_STATUS_CONTENT = {
+    online: {
+      heading: 'Sync',
+      label: 'Sync is on',
+      message: 'Changes sync automatically while you are signed in.',
+      tone: 'online',
+    },
+    local: {
+      heading: 'Storage',
+      label: 'Saved on this device',
+      message: 'Your reminders are stored locally and ready to use.',
+      tone: 'offline',
+    },
+    offline: {
+      heading: 'Sync',
+      label: 'Offline for now',
+      message: 'Your reminders stay saved here and will sync again when you reconnect.',
+      tone: 'offline',
+    },
+    error: {
+      heading: 'Sync',
+      label: 'Sync paused',
+      message: 'Your reminders are still saved here. We will retry syncing shortly.',
+      tone: 'error',
+    },
   };
   const UNDO_DELETE_TIMEOUT_MS = 6000;
   const QUICK_ACTION_LONG_PRESS_MS = 500;
@@ -798,40 +824,52 @@ export async function initReminders(sel = {}) {
 
   renderDetailPanel(null);
 
-  function renderSyncIndicator(state, message) {
-    if (!syncStatus) return;
+  function renderSyncIndicator(state, overrides = {}) {
+    const config = SYNC_STATUS_CONTENT[state] || SYNC_STATUS_CONTENT.local;
+    const details = typeof overrides === 'string'
+      ? { message: overrides }
+      : (overrides && typeof overrides === 'object' ? overrides : {});
+    const heading = typeof details.heading === 'string' ? details.heading : config.heading;
+    const label = typeof details.label === 'string' ? details.label : config.label;
+    const message = typeof details.message === 'string' ? details.message : config.message;
+    const tone = typeof details.tone === 'string' ? details.tone : config.tone;
+    const indicatorStates = ['online', 'offline', 'error', 'local'];
 
-    const indicatorStates = ['online', 'offline', 'error'];
-    indicatorStates.forEach((cls) => syncStatus.classList.remove(cls));
-    if (indicatorStates.includes(state)) {
-      syncStatus.classList.add(state);
+    if (syncStatus) {
+      indicatorStates.forEach((cls) => syncStatus.classList.remove(cls));
+      if (indicatorStates.includes(state)) {
+        syncStatus.classList.add(state);
+      }
+      syncStatus.dataset.state = state;
+      syncStatus.textContent = label;
+      if (label) {
+        syncStatus.setAttribute('aria-label', label);
+        syncStatus.setAttribute('title', label);
+      } else {
+        syncStatus.removeAttribute('aria-label');
+        syncStatus.removeAttribute('title');
+      }
     }
 
-    syncStatus.dataset.state = state;
+    if (syncStatusPanel instanceof HTMLElement) {
+      indicatorStates.forEach((cls) => syncStatusPanel.classList.remove(cls));
+      syncStatusPanel.classList.add(tone);
+      syncStatusPanel.dataset.state = state;
+      syncStatusPanel.setAttribute('title', message || label || '');
+    }
 
-    const label = typeof message === 'string' ? message : SYNC_STATUS_LABELS[state] || '';
-    const isDotState = state === 'online' || state === 'offline';
+    if (syncStatusDot instanceof HTMLElement) {
+      ['online', 'offline', 'error', 'local'].forEach((cls) => syncStatusDot.classList.remove(cls));
+      syncStatusDot.classList.add(tone === 'online' ? 'online' : 'offline');
+      syncStatusDot.setAttribute('aria-label', label || message || '');
+    }
 
-    if (isDotState) {
-      syncStatus.textContent = '';
-      syncStatus.dataset.compact = 'true';
-      if (label) {
-        syncStatus.setAttribute('aria-label', label);
-        syncStatus.setAttribute('title', label);
-      } else {
-        syncStatus.removeAttribute('aria-label');
-        syncStatus.removeAttribute('title');
-      }
-    } else {
-      syncStatus.textContent = label;
-      syncStatus.removeAttribute('data-compact');
-      if (label) {
-        syncStatus.setAttribute('aria-label', label);
-        syncStatus.setAttribute('title', label);
-      } else {
-        syncStatus.removeAttribute('aria-label');
-        syncStatus.removeAttribute('title');
-      }
+    if (syncStatusHeading instanceof HTMLElement) {
+      syncStatusHeading.textContent = heading;
+    }
+
+    if (syncStatusMessage instanceof HTMLElement) {
+      syncStatusMessage.textContent = message;
     }
   }
   const notesEl = $(sel.notesSel);
@@ -3693,7 +3731,7 @@ export async function initReminders(sel = {}) {
 
   function applySignedOutState() {
     userId = null;
-    renderSyncIndicator('offline');
+    renderSyncIndicator('local');
     googleSignInBtns.forEach((btn) => btn.classList.remove('hidden'));
     googleSignOutBtns.forEach((btn) => btn.classList.add('hidden'));
     if (googleUserName) {
@@ -4201,7 +4239,7 @@ export async function initReminders(sel = {}) {
     } catch (error){
       console.error('Firestore reminders sync error:', error);
       if(syncStatus){
-        renderSyncIndicator('error', 'Sync Error');
+        renderSyncIndicator(typeof navigator !== 'undefined' && navigator.onLine ? 'error' : 'offline');
       }
     }
   }
@@ -5712,11 +5750,11 @@ export async function initReminders(sel = {}) {
 
     if(emptyStateEl){
       if(!hasRows){
-        const description = hasAny ? 'No reminders to show right now.' : emptyInitialText;
+        const description = hasAny ? 'You are all caught up for now.' : emptyInitialText;
         if(sharedEmptyStateMount){
           sharedEmptyStateMount(emptyStateEl, {
             icon: hasAny ? 'sparkles' : 'bell',
-            title: hasAny ? 'Nothing to display' : 'Create your first cue',
+            title: hasAny ? 'All clear' : 'Create your first cue',
             description,
             action: hasAny
               ? undefined
