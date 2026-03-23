@@ -1,5 +1,5 @@
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
-import { listReminders, saveReminder, removeReminder } from '../repositories/reminderRepository.js';
+import { listReminders, saveReminder, removeReminder, subscribeReminders } from '../repositories/reminderRepository.js';
 import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
@@ -4204,8 +4204,41 @@ export async function initReminders(sel = {}) {
     }, { fallbackId: reminderId });
   }
 
+  function applyRemoteReminderItems(remoteItems = []) {
+    const normalizedRemoteItems = Array.isArray(remoteItems)
+      ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
+      : [];
+    const mergedById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
+
+    items
+      .filter((entry) => entry && entry.id && entry.pendingSync)
+      .forEach((entry) => {
+        if (!mergedById.has(entry.id)) {
+          mergedById.set(entry.id, normalizeReminderRecord({
+            ...entry,
+            userId,
+          }, { fallbackId: entry.id }));
+        }
+      });
+
+    items = ensureOrderIndicesInitialized(Array.from(mergedById.values()));
+    items.forEach((reminder) => {
+      scheduleReminderNotification({
+        ...reminder,
+        dueAt: reminder.due,
+        text: reminder.title,
+      });
+    });
+    render();
+    updateMobileRemindersHeaderSubtitle();
+    persistItems();
+    rescheduleAllReminders();
+  }
+
   async function setupReminderFirestoreSync(){
     if(!userId){
+      unsubscribe?.();
+      unsubscribe = null;
       hydrateOfflineReminders();
       render();
       updateMobileRemindersHeaderSubtitle();
@@ -4214,7 +4247,10 @@ export async function initReminders(sel = {}) {
       return;
     }
     try {
-      const localItems = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
+      unsubscribe?.();
+      unsubscribe = null;
+
+      const localItems = ensureOrderIndicesInitialized(loadReminders());
       const remoteItems = await listReminders(userId);
       const normalizedRemoteItems = Array.isArray(remoteItems)
         ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
@@ -4222,7 +4258,7 @@ export async function initReminders(sel = {}) {
       const remoteById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
       const remindersToSync = localItems.filter((entry) => {
         if (!entry || typeof entry !== 'object' || !entry.id) return false;
-        return !!entry.pendingSync || !remoteById.has(entry.id);
+        return !!entry.pendingSync;
       });
 
       let syncedFromLocalCount = 0;
@@ -4230,38 +4266,25 @@ export async function initReminders(sel = {}) {
         const saved = await saveToFirebase({ ...entry, userId });
         if (saved) {
           syncedFromLocalCount += 1;
+          remoteById.set(entry.id, mapFirestoreReminder(entry.id, {
+            ...entry,
+            pendingSync: false,
+            userId,
+          }));
+        } else {
+          remoteById.set(entry.id, normalizeReminderRecord({
+            ...entry,
+            userId,
+          }, { fallbackId: entry.id }));
         }
       }
-      localItems.forEach((localItem) => {
-        if (!localItem || !localItem.id) return;
-        const remoteMatch = remoteById.get(localItem.id);
-        if (!remoteMatch) {
-          remoteById.set(localItem.id, { ...localItem, pendingSync: false, userId });
-          return;
-        }
-        const localUpdatedAt = Number.isFinite(localItem.updatedAt) ? localItem.updatedAt : 0;
-        const remoteUpdatedAt = Number.isFinite(remoteMatch.updatedAt) ? remoteMatch.updatedAt : 0;
-        if (localUpdatedAt > remoteUpdatedAt) {
-          remoteById.set(localItem.id, { ...localItem, pendingSync: false, userId });
-        }
-      });
+      applyRemoteReminderItems(Array.from(remoteById.values()));
 
-      items = ensureOrderIndicesInitialized(Array.from(remoteById.values()).map((item) => normalizeReminderRecord({
-        ...item,
-        pendingSync: false,
-        userId,
-      }, { fallbackId: uid() })));
-      items.forEach((reminder) => {
-        scheduleReminderNotification({
-          ...reminder,
-          dueAt: reminder.due,
-          text: reminder.title,
-        });
+      unsubscribe = await subscribeReminders(userId, (nextRemoteItems) => {
+        applyRemoteReminderItems(nextRemoteItems);
+      }, (error) => {
+        console.error('Firestore reminders listener error:', error);
       });
-      render();
-      updateMobileRemindersHeaderSubtitle();
-      persistItems();
-      rescheduleAllReminders();
     } catch (error){
       console.error('Firestore reminders sync error:', error);
       if(syncStatus){

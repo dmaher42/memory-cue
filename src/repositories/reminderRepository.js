@@ -36,3 +36,29 @@ export const removeReminder = async (uid, reminderId) => {
   }
   await firebase.deleteDoc(firebase.doc(firebase.db, 'users', requireUid(uid), 'reminders', requireUid(reminderId)));
 };
+
+export const subscribeReminders = async (uid, onItems, onError = null) => {
+  const firebase = await getFirebaseContext();
+  if (!firebase || typeof firebase.onSnapshot !== 'function') {
+    return () => {};
+  }
+
+  const queryRef = firebase.query(
+    remindersCollection(firebase, uid),
+    firebase.orderBy('updatedAt', 'desc')
+  );
+
+  return firebase.onSnapshot(queryRef, (snapshot) => {
+    const items = normalizeReminderList(
+      snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))
+    );
+
+    if (typeof onItems === 'function') {
+      onItems(items);
+    }
+  }, (error) => {
+    if (typeof onError === 'function') {
+      onError(error);
+    }
+  });
+};
