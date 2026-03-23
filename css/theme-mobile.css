@@ -3434,7 +3434,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 /* Make the scratch-notes wrapper fill and the card extend properly */
 #view-notebook .scratch-notes-wrapper {
   margin-top: 0;
-  padding-top: 1rem;
+  padding-top: 0.25rem;
 }
 
 #view-notebook #scratch-notes-card > .note-editor-card {
@@ -3514,7 +3514,7 @@ body {
 
 /* Reduce top padding to shorten the space between the header and title */
 #view-notebook {
-  padding-top: calc(env(safe-area-inset-top, 0) + 24px);
+  padding-top: calc(env(safe-area-inset-top, 0) + 4px);
 }
 
 /* Light theme overrides for the writing panel */
