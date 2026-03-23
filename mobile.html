@@ -4133,13 +4133,17 @@ body, main, section, div, p, span, li {
     border-radius: 9999px;
     background: color-mix(in srgb, var(--text-primary) 4%, transparent);
   }
-  .dark #mcStatus.sync-inline {
-    background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
-  }
-  /* keep the verbose status text accessible but visually hidden */
-  #mcStatusText {
-    position: static !important;
-    width: auto;
+    .dark #mcStatus.sync-inline {
+      background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
+    }
+    /* Keep the drawer sync summary out of the main reading area; settings handle sync actions. */
+    body.mobile-shell .drawer-sync-panel {
+      display: none !important;
+    }
+    /* keep the verbose status text accessible but visually hidden */
+    #mcStatusText {
+      position: static !important;
+      width: auto;
     height: auto;
     padding: 0;
     margin: 0;
