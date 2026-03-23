@@ -82,9 +82,10 @@ body.mobile-shell #mobile-shell #main {
 .mobile-shell #reminderListSection,
 .mobile-shell #remindersWrapper {
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .mobile-shell #remindersWrapper {
