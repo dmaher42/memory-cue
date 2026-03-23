@@ -2146,8 +2146,6 @@ const initMobileNotes = () => {
 
       const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
       const folderName = getFolderNameById(folderId) || 'Unsorted';
-      const timestamp = formatNoteTimestamp(note.updatedAt);
-
       const metaRow = document.createElement('div');
       metaRow.className = 'note-row-meta note-list-meta note-card-meta';
 
@@ -2166,16 +2164,6 @@ const initMobileNotes = () => {
       });
 
       metaRow.appendChild(folderButton);
-      if (timestamp) {
-        const separator = document.createElement('span');
-        separator.className = 'note-row-dot note-list-dot note-card-meta-dot';
-        separator.textContent = '•';
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'note-row-timestamp note-list-date note-card-timestamp';
-        timeSpan.textContent = timestamp;
-        metaRow.appendChild(separator);
-        metaRow.appendChild(timeSpan);
-      }
 
       cardMain.appendChild(titleRow);
       cardMain.appendChild(metaRow);

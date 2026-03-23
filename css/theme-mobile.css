@@ -1072,7 +1072,7 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .premium-note-card {
     width: 100%;
     margin: 0;
-    padding: 10px 12px;
+    padding: 8px 12px;
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(230, 224, 242, 0.5);
@@ -1121,24 +1121,25 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-main {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     width: 100%;
   }
 
   .mobile-shell #notesListMobile .note-card-header {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .mobile-shell #notesListMobile .note-card-meta-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .mobile-shell #notesListMobile .note-card-preview,
   .mobile-shell #notesListMobile .note-card-meta,
+  .mobile-shell #notesListMobile .note-card-meta-dot,
   .mobile-shell #notesListMobile .notebook-note-timestamp {
     display: none;
   }
@@ -1146,7 +1147,7 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-folder {
     flex-shrink: 0;
     padding: 2px 8px;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     background: rgba(81, 38, 99, 0.08);
     color: var(--primary-dark, #3E1D4C);
     border-radius: 999px;
@@ -1155,7 +1156,7 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-action {
     flex-shrink: 0;
     background: transparent;
-    padding: 6px;
+    padding: 5px;
     border-radius: 8px;
     opacity: 1;
   }
@@ -2336,7 +2337,7 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .premium-note-card {
     width: 100%;
     margin: 0;
-    padding: 10px 12px;
+    padding: 8px 12px;
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(230, 224, 242, 0.5);
@@ -2385,24 +2386,25 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-main {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     width: 100%;
   }
 
   .mobile-shell #notesListMobile .note-card-header {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .mobile-shell #notesListMobile .note-card-meta-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .mobile-shell #notesListMobile .note-card-preview,
   .mobile-shell #notesListMobile .note-card-meta,
+  .mobile-shell #notesListMobile .note-card-meta-dot,
   .mobile-shell #notesListMobile .notebook-note-timestamp {
     display: none;
   }
@@ -2410,7 +2412,7 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-folder {
     flex-shrink: 0;
     padding: 2px 8px;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     background: rgba(81, 38, 99, 0.08);
     color: var(--primary-dark, #3E1D4C);
     border-radius: 999px;
@@ -2419,7 +2421,7 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-action {
     flex-shrink: 0;
     background: transparent;
-    padding: 6px;
+    padding: 5px;
     border-radius: 8px;
     opacity: 1;
   }
