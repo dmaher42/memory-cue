@@ -3256,7 +3256,8 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 }
 
 #view-notebook #notesOverviewPanel .flex.flex-col.gap-2.mt-2 {
-  gap: 0.4rem;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
 }
 
 #view-notebook #notesOverviewPanel input,
@@ -3274,7 +3275,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 }
 
 #view-notebook #notesOverviewPanel .flex.gap-2 > * {
-  min-height: 2.2rem;
+  min-height: 2rem;
 }
 
 /* Notebook toolbar: minimal inline group */
