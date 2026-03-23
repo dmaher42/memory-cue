@@ -3136,7 +3136,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0rem;  /* title → folder label → toolbar closer together */
+  gap: 0.2rem;  /* keep the notebook header compact but not cramped */
   align-items: stretch;
 }
 
@@ -3241,6 +3241,40 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
 .note-editor-toolbar .list-label {
   display: none;
+}
+
+#view-notebook #notesOverviewPanel {
+  border: 1px solid color-mix(in srgb, var(--card-border) 68%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-elevated) 92%, #ffffff 8%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+#view-notebook #notesOverviewPanel h2 {
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+#view-notebook #notesOverviewPanel .flex.flex-col.gap-2.mt-2 {
+  gap: 0.5rem;
+}
+
+#view-notebook #notesOverviewPanel input,
+#view-notebook #notesOverviewPanel select {
+  border-color: color-mix(in srgb, var(--card-border) 68%, transparent);
+  background: color-mix(in srgb, #ffffff 88%, var(--surface-elevated));
+  color: var(--text-main);
+  border-radius: 0.9rem;
+}
+
+#view-notebook #notesOverviewPanel input:focus,
+#view-notebook #notesOverviewPanel select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
+}
+
+#view-notebook #notesOverviewPanel .flex.gap-2 > * {
+  min-height: 2.35rem;
 }
 
 /* Notebook toolbar: minimal inline group */
