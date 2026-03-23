@@ -3884,7 +3884,9 @@ export async function initReminders(sel = {}) {
       items = loadOfflineRemindersFromStorage();
       return;
     }
-    await migrateLocalReminders();
+    // The current offline reminder cache is the canonical local store.
+    // setupReminderFirestoreSync() already reconciles pending local changes,
+    // so replaying the whole local cache here can resurrect stale reminders.
   }
   try {
     scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
