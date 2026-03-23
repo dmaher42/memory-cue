@@ -1097,6 +1097,7 @@ const initMobileNotes = () => {
   const noteEditorSheet = document.getElementById('noteEditorSheet');
   const savedNotesSheet = document.getElementById('savedNotesSheet');
   const openSavedNotesButton =
+    document.getElementById('openSavedNotesSheet') ||
     document.getElementById('openSavedNotesGlobal') ||
     document.getElementById('savedNotesShortcut');
   const closeSavedNotesButton = document.querySelector('[data-action="close-saved-notes"]');
