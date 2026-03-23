@@ -3803,11 +3803,11 @@ export async function initReminders(sel = {}) {
 
   function persistItems() {
     sortItemsByOrder(items);
-    persistOfflineReminders(items);
+    items = setStoredReminders(items);
   }
 
   function hydrateOfflineReminders() {
-    items = ensureOrderIndicesInitialized(loadOfflineRemindersFromStorage());
+    items = ensureOrderIndicesInitialized(loadReminders());
   }
 
   hydrateOfflineReminders();
@@ -4623,22 +4623,8 @@ export async function initReminders(sel = {}) {
     }
     render();
     persistItems();
-    const deletedLocally = reminderDataService.deleteReminder(id);
-    if (!deletedLocally) {
-      items.splice(index, 0, removed);
-      render();
-      persistItems();
-      toast('Could not delete reminder');
-      return;
-    }
     const deletedRemotely = await deleteFromFirebase(id);
     if (!deletedRemotely) {
-      reminderDataService.createReminder(removed, {
-        normalizeReminder: (record) => normalizeReminderRecord(record),
-        createId: () => removed.id,
-        defaultCategory: removed.category || DEFAULT_CATEGORY,
-        pendingSync: false,
-      });
       items.splice(index, 0, removed);
       sortItemsByOrder(items);
       render();
