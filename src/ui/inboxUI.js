@@ -2,8 +2,8 @@ import { executeCommand } from '../core/commandEngine.js';
 import { processInbox as runInboxProcessor } from '../ai/inboxProcessor.js';
 import { createReminder } from '../services/reminderService.js';
 import { getInboxEntries, removeInboxEntry, saveInboxEntry } from '../services/inboxService.js';
-import { saveMemory } from '../services/memoryService.js';
-import { captureInput } from '../core/capturePipeline.js';
+import { saveMemory } from '../services/memoryService.js?v=20260323a';
+import { captureInput } from '../core/capturePipeline.js?v=20260323a';
 import { dispatchReminderSheetOpen } from './quickCapture.js';
 
 const categories = ['Inbox', 'Teaching', 'Coaching', 'Ideas', 'Tasks'];

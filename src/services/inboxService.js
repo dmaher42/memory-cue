@@ -1,6 +1,6 @@
 import { syncInbox, upsertInboxEntry } from './firestoreSyncService.js';
-import { indexSourceEmbedding } from './embeddingService.js';
-import { saveMemory, normalizeMemory } from './memoryService.js';
+import { indexSourceEmbedding } from './embeddingService.js?v=20260323a';
+import { saveMemory, normalizeMemory } from './memoryService.js?v=20260323a';
 
 export const INBOX_STORAGE_KEY = 'memoryCueInbox';
 const LEGACY_INBOX_STORAGE_KEYS = ['memoryEntries'];

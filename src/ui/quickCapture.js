@@ -1,5 +1,5 @@
-import { captureInput } from '../core/capturePipeline.js';
-import { addDelegatedEvent } from './uiEvents.js';
+import { captureInput } from '../core/capturePipeline.js?v=20260323a';
+import { addDelegatedEvent } from './uiEvents.js?v=20260323a';
 
 export const dispatchReminderSheetOpen = (trigger, prefillText = '') => {
   const detail = {

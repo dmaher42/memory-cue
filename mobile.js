@@ -1,5 +1,5 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
-import { initReminders } from './js/reminders.js';
+import { initReminders } from './js/reminders.js?v=20260323a';
 import { initAuth } from './js/auth.js';
 import {
   loadAllNotes,
@@ -15,7 +15,7 @@ import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
 import { getRecallItems } from './js/services/recall-service.js';
-import { getInboxEntries } from './js/services/capture-service.js';
+import { getInboxEntries } from './js/services/capture-service.js?v=20260323a';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
 import { clearMessages, getMessages } from './src/chat/messageStore.js';

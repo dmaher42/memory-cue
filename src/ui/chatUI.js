@@ -1,4 +1,4 @@
-import { captureInput } from '../core/capturePipeline.js';
+import { captureInput } from '../core/capturePipeline.js?v=20260323a';
 
 export function initChatUI() {
   const assistantFormEl = document.getElementById('assistantForm');

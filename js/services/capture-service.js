@@ -3,9 +3,9 @@ import {
   saveInboxEntry,
   removeInboxEntry,
   INBOX_STORAGE_KEY,
-} from '../../src/services/inboxService.js';
-import { captureInput as captureFromPipeline } from '../../src/core/capturePipeline.js';
-import { saveMemory } from '../../src/services/memoryService.js';
+} from '../../src/services/inboxService.js?v=20260323a';
+import { captureInput as captureFromPipeline } from '../../src/core/capturePipeline.js?v=20260323a';
+import { saveMemory } from '../../src/services/memoryService.js?v=20260323a';
 
 export { INBOX_STORAGE_KEY, getInboxEntries, removeInboxEntry, saveInboxEntry };
 

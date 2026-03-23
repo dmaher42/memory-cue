@@ -1,16 +1,16 @@
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
 import { listReminders, saveReminder, removeReminder } from '../repositories/reminderRepository.js';
 import { syncNotes } from '../services/firestoreSyncService.js';
-import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
-import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
+import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js?v=20260323a';
+import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js?v=20260323a';
 import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
-import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
-import * as reminderDataService from './reminderService.js';
+import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js?v=20260323a';
+import * as reminderDataService from './reminderService.js?v=20260323a';
 import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
-import { generateEmbedding } from '../brain/embeddingService.js';
+import { generateEmbedding } from '../brain/embeddingService.js?v=20260323a';
 import { buildRagAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 import {
   normalizeReminderKeywords,
