@@ -3054,6 +3054,7 @@ export async function initReminders(sel = {}) {
   let notesMigrationComplete = false;
   let notesMigrationUserId = null;
   let lastSyncedNoteIds = new Set();
+  const pendingDeletionItems = new Map();
   let unsubscribe = null;
   let editingId = null;
   let currentReminderMode = null;
@@ -4208,10 +4209,20 @@ export async function initReminders(sel = {}) {
     const normalizedRemoteItems = Array.isArray(remoteItems)
       ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
       : [];
-    const mergedById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
+    const remoteIds = new Set(normalizedRemoteItems.map((entry) => entry.id));
+    pendingDeletionItems.forEach((_entry, reminderId) => {
+      if (!remoteIds.has(reminderId)) {
+        pendingDeletionItems.delete(reminderId);
+      }
+    });
+    const mergedById = new Map(
+      normalizedRemoteItems
+        .filter((entry) => !pendingDeletionItems.has(entry.id))
+        .map((entry) => [entry.id, entry])
+    );
 
     items
-      .filter((entry) => entry && entry.id && entry.pendingSync)
+      .filter((entry) => entry && entry.id && entry.pendingSync && !pendingDeletionItems.has(entry.id))
       .forEach((entry) => {
         if (!mergedById.has(entry.id)) {
           mergedById.set(entry.id, normalizeReminderRecord({
@@ -4644,10 +4655,12 @@ export async function initReminders(sel = {}) {
     if (!removed) {
       return;
     }
+    pendingDeletionItems.set(id, removed);
     render();
     persistItems();
     const deletedRemotely = await deleteFromFirebase(id);
     if (!deletedRemotely) {
+      pendingDeletionItems.delete(id);
       items.splice(index, 0, removed);
       sortItemsByOrder(items);
       render();
