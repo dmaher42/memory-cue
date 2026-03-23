@@ -1,4 +1,4 @@
-import { syncInbox, upsertInboxEntry } from './firestoreSyncService.js';
+import { deleteInboxEntry, upsertInboxEntry } from './firestoreSyncService.js';
 import { indexSourceEmbedding } from './embeddingService.js';
 import { saveMemory, normalizeMemory } from './memoryService.js';
 
@@ -194,7 +194,7 @@ export const removeInboxEntry = (id) => {
 
   persistInboxEntries(nextEntries);
   dispatchInboxUpdated();
-  syncInbox(nextEntries).catch((error) => {
+  deleteInboxEntry(targetId).catch((error) => {
     console.warn('[inbox-service] Firebase inbox deletion sync failed', error);
   });
   return true;

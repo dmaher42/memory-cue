@@ -19,7 +19,7 @@ import { getInboxEntries } from './js/services/capture-service.js?v=20260323a';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
 import { clearMessages, getMessages } from './src/chat/messageStore.js';
-import { subscribeToInboxChanges, subscribeToChatHistoryChanges } from './src/services/firestoreSyncService.js';
+import { deleteNote, subscribeToInboxChanges, subscribeToChatHistoryChanges } from './src/services/firestoreSyncService.js';
 import { createChatComposer } from './src/components/ChatComposer.js';
 import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
@@ -2007,6 +2007,9 @@ const initMobileNotes = () => {
     }
 
     saveAllNotes(filteredNotes);
+    deleteNote(noteId).catch((error) => {
+      console.warn('[notes-sync] Failed to delete note from Firebase.', error);
+    });
     updateStoredSnapshot();
 
     if (currentNoteId === noteId) {

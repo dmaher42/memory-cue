@@ -1,4 +1,4 @@
-import { appendChatMessage, syncChatHistory } from '../services/firestoreSyncService.js';
+import { appendChatMessage, clearRemoteChatHistory } from '../services/firestoreSyncService.js';
 const CHAT_HISTORY_STORAGE_KEY = 'memoryCueChatHistory';
 
 const dispatchChatUpdated = (messages = []) => {
@@ -63,7 +63,7 @@ export const clearMessages = () => {
   try {
     localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
     dispatchChatUpdated([]);
-    syncChatHistory([]).catch(() => {});
+    clearRemoteChatHistory().catch(() => {});
   } catch (error) {
     console.warn('[chat/messageStore] Failed to clear chat history', error);
   }

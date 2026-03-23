@@ -214,13 +214,6 @@ const reconcileCollection = async ({
   }
 
   const remoteItems = await readRemoteCollection(collectionName, { uid: resolvedUid, orderField });
-  const remoteIds = new Set(
-    Array.isArray(remoteItems)
-      ? remoteItems.map((item) => String(item?.id || '')).filter(Boolean)
-      : []
-  );
-  const localIds = new Set(localItems.map((item) => String(item.id)));
-
   await Promise.all(localItems.map((item) => (
     firebase.setDoc(
       firebase.doc(firebase.db, 'users', resolvedUid, collectionName, requireUid(item.id)),
@@ -229,12 +222,70 @@ const reconcileCollection = async ({
     )
   )));
 
-  await Promise.all(Array.from(remoteIds)
-    .filter((id) => !localIds.has(id))
-    .map((id) => firebase.deleteDoc(firebase.doc(firebase.db, 'users', resolvedUid, collectionName, requireUid(id)))));
-
   writeLocal(localKey, localItems);
   return localItems;
+};
+
+const deleteCollectionItem = async ({
+  localKey,
+  collectionName,
+  normalizeItem,
+  id,
+  uid,
+}) => {
+  const normalizedId = typeof id === 'string' ? id.trim() : String(id || '').trim();
+  if (!normalizedId) {
+    return false;
+  }
+
+  const remainingItems = mergeById(
+    readLocal(localKey)
+      .map((item) => normalizeItem(item))
+      .filter(Boolean)
+      .filter((item) => String(item.id) !== normalizedId)
+  );
+
+  writeLocal(localKey, remainingItems);
+  dispatchSyncEvent(localKey, remainingItems);
+
+  const firebase = await getFirebaseContext();
+  const resolvedUid = resolveUid(uid);
+  if (!firebase || !resolvedUid) {
+    return true;
+  }
+
+  await firebase.deleteDoc(
+    firebase.doc(firebase.db, 'users', resolvedUid, collectionName, requireUid(normalizedId))
+  );
+
+  return true;
+};
+
+const clearCollection = async ({
+  localKey,
+  collectionName,
+  uid,
+}) => {
+  writeLocal(localKey, []);
+  dispatchSyncEvent(localKey, []);
+
+  const remoteItems = await readRemoteCollection(collectionName, { uid });
+  const firebase = await getFirebaseContext();
+  const resolvedUid = resolveUid(uid);
+  if (!firebase || !resolvedUid || !Array.isArray(remoteItems) || !remoteItems.length) {
+    return [];
+  }
+
+  await Promise.all(
+    remoteItems
+      .map((item) => String(item?.id || '').trim())
+      .filter(Boolean)
+      .map((id) => firebase.deleteDoc(
+        firebase.doc(firebase.db, 'users', resolvedUid, collectionName, requireUid(id))
+      ))
+  );
+
+  return [];
 };
 
 const pullCollection = async ({
@@ -425,6 +476,28 @@ export const upsertReminder = async (reminder) => {
 export const deleteReminder = async (id) => {
   writeLocal(REMINDERS_KEY, readLocal(REMINDERS_KEY).filter((item) => String(item?.id) !== String(id)));
 };
+
+export const deleteNote = async (id, options = {}) => deleteCollectionItem({
+  localKey: NOTES_KEY,
+  collectionName: COLLECTIONS.notes,
+  normalizeItem: normalizeNote,
+  id,
+  uid: options.uid,
+});
+
+export const deleteInboxEntry = async (id, options = {}) => deleteCollectionItem({
+  localKey: INBOX_KEY,
+  collectionName: COLLECTIONS.inbox,
+  normalizeItem: normalizeInboxEntry,
+  id,
+  uid: options.uid,
+});
+
+export const clearRemoteChatHistory = async (options = {}) => clearCollection({
+  localKey: CHAT_KEY,
+  collectionName: COLLECTIONS.chat,
+  uid: options.uid,
+});
 
 export const appendChatMessage = async (message, conversationId = 'default', options = {}) => {
   const entry = normalizeChatEntry(message, conversationId);
