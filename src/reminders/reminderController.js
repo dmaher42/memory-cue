@@ -764,6 +764,34 @@ export async function initReminders(sel = {}) {
     statusEl.dataset.undoToken = state.tokenId;
   }
 
+  function captureReminderScrollPosition() {
+    return {
+      windowY: typeof window !== 'undefined' ? window.scrollY : 0,
+      windowX: typeof window !== 'undefined' ? window.scrollX : 0,
+      wrapperTop: listWrapper instanceof HTMLElement ? listWrapper.scrollTop : 0,
+    };
+  }
+
+  function restoreReminderScrollPosition(position) {
+    if (!position) {
+      return;
+    }
+
+    const apply = () => {
+      if (listWrapper instanceof HTMLElement) {
+        listWrapper.scrollTop = position.wrapperTop || 0;
+      }
+      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+        window.scrollTo(position.windowX || 0, position.windowY || 0);
+      }
+    };
+
+    apply();
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(apply);
+    }
+  }
+
   function renderDetailPanel(reminder) {
     if (!detailPanel) {
       return;
@@ -4649,6 +4677,7 @@ export async function initReminders(sel = {}) {
     toast('Reminder restored');
   }
   async function removeItem(id){
+    const scrollPosition = captureReminderScrollPosition();
     const index = items.findIndex(x=>x.id===id);
     const removed = index >= 0 ? items.splice(index,1)[0] : null;
     if (removed && editingId === id) {
@@ -4660,6 +4689,7 @@ export async function initReminders(sel = {}) {
     pendingDeletionItems.set(id, removed);
     render();
     persistItems();
+    restoreReminderScrollPosition(scrollPosition);
     const deletedRemotely = await deleteFromFirebase(id);
     if (!deletedRemotely) {
       pendingDeletionItems.delete(id);
@@ -4667,6 +4697,7 @@ export async function initReminders(sel = {}) {
       sortItemsByOrder(items);
       render();
       persistItems();
+      restoreReminderScrollPosition(scrollPosition);
       toast('Could not delete reminder. It was restored.');
       return;
     }
@@ -4683,6 +4714,7 @@ export async function initReminders(sel = {}) {
         timeoutId: null,
       };
       showDeleteUndoMessage(deleteUndoState);
+      restoreReminderScrollPosition(scrollPosition);
       deleteUndoState.timeoutId = setTimeout(()=>{
         clearUndoDeleteState(tokenId);
       }, UNDO_DELETE_TIMEOUT_MS);
