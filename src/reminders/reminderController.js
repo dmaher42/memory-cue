@@ -1010,16 +1010,15 @@ export async function initReminders(sel = {}) {
                 updateMobileRemindersHeaderSubtitle();
               }
             })
-            .catch((err) => {
-              console.warn('Failed to fetch current temperature', err);
+            .catch(() => {
+              // Weather enrichment is optional; ignore transient network/API failures.
             });
-        } catch (err) {
-          console.warn('Failed to process geolocation weather data', err);
+        } catch {
+          // Weather enrichment is optional; ignore geolocation payload issues.
         }
       },
-      (error) => {
-        // Geolocation permission denied or failed; do not surface to user.
-        console.warn('Geolocation error for weather', error);
+      () => {
+        // Geolocation permission denied or unavailable; weather remains optional.
       },
       {
         enableHighAccuracy: false,
@@ -5999,9 +5998,9 @@ export async function initReminders(sel = {}) {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-error task-toolbar-btn reminder-icon-btn';
+      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-base-content/60 task-toolbar-btn reminder-icon-btn';
       deleteBtn.innerHTML = `
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--accent-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" focusable="false">
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
