@@ -4293,10 +4293,15 @@ export async function initReminders(sel = {}) {
     }
   }
   async function deleteFromFirebase(id){
+    if (!userId) {
+      return true;
+    }
     try {
       await removeReminder(userId, id);
-    } catch {
-      toast('Delete queued (offline)');
+      return true;
+    } catch (error) {
+      console.error('Delete failed:', error);
+      return false;
     }
   }
 
@@ -4594,19 +4599,40 @@ export async function initReminders(sel = {}) {
     });
     toast('Reminder restored');
   }
-  function removeItem(id){
+  async function removeItem(id){
     const index = items.findIndex(x=>x.id===id);
     const removed = index >= 0 ? items.splice(index,1)[0] : null;
     if (removed && editingId === id) {
       resetForm();
     }
+    if (!removed) {
+      return;
+    }
     render();
     persistItems();
-    reminderDataService.deleteReminder(id, {
-      onDeleted: () => {
-        deleteFromFirebase(id);
-      },
-    });
+    const deletedLocally = reminderDataService.deleteReminder(id);
+    if (!deletedLocally) {
+      items.splice(index, 0, removed);
+      render();
+      persistItems();
+      toast('Could not delete reminder');
+      return;
+    }
+    const deletedRemotely = await deleteFromFirebase(id);
+    if (!deletedRemotely) {
+      reminderDataService.createReminder(removed, {
+        normalizeReminder: (record) => normalizeReminderRecord(record),
+        createId: () => removed.id,
+        defaultCategory: removed.category || DEFAULT_CATEGORY,
+        pendingSync: false,
+      });
+      items.splice(index, 0, removed);
+      sortItemsByOrder(items);
+      render();
+      persistItems();
+      toast('Could not delete reminder. It was restored.');
+      return;
+    }
     cancelReminder(id);
     const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
     emitActivity({ action: 'deleted', label: activityLabel });
