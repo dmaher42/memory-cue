@@ -1,5 +1,5 @@
 import { learnPattern } from './patternLearningService.js';
-import { generateEmbedding } from '../brain/embeddingService.js?v=20260323a';
+import { generateEmbedding } from '../brain/embeddingService.js';
 
 const MEMORY_CACHE_KEY = 'memoryCueCache';
 const LEGACY_KEYS = ['memoryCueNotes', 'mobileNotes', 'memory-cue-notes', 'memoryCueInbox'];

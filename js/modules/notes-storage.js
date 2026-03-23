@@ -206,7 +206,7 @@ const syncNoteToMemoryService = (note, payload = {}) => {
   }
 
   if (!memoryServiceModulePromise) {
-    memoryServiceModulePromise = import('../../src/services/memoryService.js?v=20260323a').catch((error) => {
+    memoryServiceModulePromise = import('../../src/services/memoryService.js').catch((error) => {
       console.warn('[notes-storage] Failed to load memory service bridge', error);
       return null;
     });
@@ -252,7 +252,7 @@ const ensureNoteEmbedding = (note, notes, options = {}) => {
     return;
   }
 
-  import('../../src/brain/embeddingService.js?v=20260323a')
+  import('../../src/brain/embeddingService.js')
     .then(async ({ generateEmbedding }) => {
       if (typeof generateEmbedding !== 'function') {
         return;

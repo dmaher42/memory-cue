@@ -1,5 +1,5 @@
 import { intentRouter } from '../services/intentRouter.js';
-import { saveMemory } from '../services/memoryService.js?v=20260323a';
+import { saveMemory } from '../services/memoryService.js';
 import { createReminder } from '../services/reminderService.js';
 import { semanticSearch } from '../services/semanticSearchService.js';
 import { handleQuery } from '../brain/queryEngine.js';

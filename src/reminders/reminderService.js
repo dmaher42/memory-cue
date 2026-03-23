@@ -6,7 +6,7 @@ import {
   deleteReminder as deleteReminderInStore,
   loadReminders,
   getReminders,
-} from './reminderStore.js?v=20260323a';
+} from './reminderStore.js';
 
 function runHook(hook, payload) {
   if (typeof hook === 'function') {

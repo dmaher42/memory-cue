@@ -1,5 +1,5 @@
-import { getMemories, saveMemory } from './memoryService.js?v=20260323a';
-import { generateEmbedding as generateBrainEmbedding } from '../brain/embeddingService.js?v=20260323a';
+import { getMemories, saveMemory } from './memoryService.js';
+import { generateEmbedding as generateBrainEmbedding } from '../brain/embeddingService.js';
 
 
 export const generateEmbedding = async (text) => generateBrainEmbedding(text);
