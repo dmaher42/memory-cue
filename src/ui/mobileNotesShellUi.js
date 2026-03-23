@@ -34,7 +34,6 @@ export const initMobileNotesShellUi = (options = {}) => {
     noteActionDeleteBtn = null,
     getAllNotes = () => [],
     renderFilteredNotes = () => {},
-    ensureFloatingNewFolderFab = () => {},
     getCurrentEditingNoteFolderId = () => 'unsorted',
     setCurrentEditingNoteFolderId = () => {},
     getCurrentNoteId = () => null,
@@ -92,11 +91,6 @@ export const initMobileNotesShellUi = (options = {}) => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     try {
       renderFilteredNotes();
-    } catch {
-      /* ignore */
-    }
-    try {
-      ensureFloatingNewFolderFab();
     } catch {
       /* ignore */
     }

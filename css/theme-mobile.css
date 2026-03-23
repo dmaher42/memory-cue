@@ -1166,13 +1166,6 @@ input.notebook-notes-search::placeholder {
   }
 }
 
-/* Floating Action Button for New Folder */
-.fab-new-folder {
-  z-index: 1100;
-  box-shadow: 0 8px 22px rgba(81, 38, 99, 0.12);
-  border: none;
-}
-
 .notebook-note-row {
   display: flex;
   align-items: center;
@@ -2429,13 +2422,6 @@ input.notebook-notes-search::placeholder {
   .mobile-shell #notesListMobile .note-card-action:hover {
     background: rgba(81, 38, 99, 0.08);
   }
-}
-
-/* Floating Action Button for New Folder */
-.fab-new-folder {
-  z-index: 1100;
-  box-shadow: 0 8px 22px rgba(81, 38, 99, 0.12);
-  border: none;
 }
 
 .notebook-note-row {

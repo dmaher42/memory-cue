@@ -2377,45 +2377,6 @@ const initMobileNotes = () => {
     buildFolderFilterSelect(chipModel);
   };
 
-  // Ensure a floating action button (FAB) exists and is anchored to the viewport
-  const ensureFloatingNewFolderFab = () => {
-    if (!savedNotesSheet) return;
-
-    // remove any legacy new-chip that might remain
-    try {
-      const folderBar = document.getElementById('notebook-folder-bar');
-      if (folderBar) {
-        const legacy = folderBar.querySelector('[data-folder-id="new-folder"], .new-folder-btn, .notebook-folder-chip--new');
-        if (legacy) legacy.remove();
-      }
-    } catch (e) {
-      /* ignore */
-    }
-
-    if (document.getElementById('fabNewFolder')) return;
-
-    const fab = document.createElement('button');
-    fab.id = 'fabNewFolder';
-    fab.type = 'button';
-    fab.className = 'fab-new-folder fab-button';
-    fab.setAttribute('aria-label', 'Create new folder');
-    fab.setAttribute('title', 'Create new folder');
-    fab.innerHTML = `
-      <span aria-hidden="true">+</span>
-      <span class="sr-only">New folder</span>
-    `;
-    fab.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      try {
-        openNewFolderDialog();
-      } catch (err) {
-        console.warn('[notebook] openNewFolderDialog() not available', err);
-      }
-    });
-
-    document.body.appendChild(fab);
-  };
-
   /* New Folder modal setup */
   const newFolderModalEl = document.getElementById('newFolderModal');
   const newFolderNameInput = document.getElementById('newFolderName');
@@ -3031,7 +2992,6 @@ const initMobileNotes = () => {
     noteActionDeleteBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-delete'),
     getAllNotes: () => allNotes,
     renderFilteredNotes: () => renderFilteredNotes(),
-    ensureFloatingNewFolderFab: () => ensureFloatingNewFolderFab(),
     getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
     setCurrentEditingNoteFolderId: (value) => { currentEditingNoteFolderId = value; },
     getCurrentNoteId: () => currentNoteId,
@@ -3605,9 +3565,3 @@ document.addEventListener('click', (ev) => {
 })();
 /* END GPT CHANGE */
 
-// DIAGNOSIS (HTML): #savedNotesSheet is a fixed, full-viewport overlay (z-index 95) with no top padding; nothing else in the markup has a higher z-index in this scope.
-// DIAGNOSIS (CSS): The sheet is styled to cover the viewport with a 100dvh panel and no top margin; scrolling is meant to occur inside .saved-notes-list-shell, not on the body.
-// DIAGNOSIS (JS): showSavedNotesSheet() marks the overlay open but ensureFloatingNewFolderFab() later forces savedNotesSheet.style.position = 'relative', removing its fixed overlay behavior; window.scrollTo uses an unsupported behavior value that browsers ignore.
-// ROOT CAUSE:
-// 1) ensureFloatingNewFolderFab() overrides the #savedNotesSheet position to relative, pulling the overlay into normal flow so it appears lower on the page when the body is scrolled.
-// 2) The attempted scrollTo uses an unsupported behavior value and may not reliably reset scroll before opening, reinforcing the impression that the sheet opens from the current scroll position.
