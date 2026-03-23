@@ -144,6 +144,19 @@ function debounce(fn, delay = 300) {
     }, delay);
   };
 }
+
+function toast(message) {
+  const scope = getGlobalScope();
+  const notify = scope && typeof scope.toast === 'function' ? scope.toast : null;
+  if (notify) {
+    return notify(message);
+  }
+  if (typeof message === 'string' && message.trim()) {
+    console.info('[reminder]', message);
+  }
+  return null;
+}
+
 function normalizeReminderRecord(reminder = {}, options = {}) {
   return normalizeReminderRecordHelper(reminder, {
     ...options,
