@@ -1458,28 +1458,6 @@ input.notebook-notes-search::placeholder {
   }
 }
 
-.pick-folder-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
-  cursor: pointer;
-}
-
-.pick-folder-row:hover {
-  background: rgba(244, 236, 255, 0.6);
-  border-color: rgba(188, 164, 237, 0.5);
-}
-
-.pick-folder-row.is-active {
-  background: linear-gradient(120deg, #f3edff, #e4dbff);
-  border-color: rgba(188, 164, 237, 0.8);
-  box-shadow: 0 10px 22px rgba(101, 74, 155, 0.12);
-}
-
 /* New folder modal tweaks */
 #newFolderModal {
   border: none;
@@ -2734,28 +2712,6 @@ input.notebook-notes-search::placeholder {
     opacity: 0;
     transform: translate(-50%, 10px);
   }
-}
-
-.pick-folder-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
-  cursor: pointer;
-}
-
-.pick-folder-row:hover {
-  background: rgba(244, 236, 255, 0.6);
-  border-color: rgba(188, 164, 237, 0.5);
-}
-
-.pick-folder-row.is-active {
-  background: linear-gradient(120deg, #f3edff, #e4dbff);
-  border-color: rgba(188, 164, 237, 0.8);
-  box-shadow: 0 10px 22px rgba(101, 74, 155, 0.12);
 }
 
 /* New folder modal tweaks */

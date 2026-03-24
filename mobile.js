@@ -1578,10 +1578,6 @@ const initMobileNotes = () => {
       setEditorContent('');
       delete titleInput.dataset.noteOriginalTitle;
       scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
-      const labelElClear = document.getElementById('note-folder-label');
-      if (labelElClear) {
-        labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
-      }
       syncNoteFolderButtonLabel(currentEditingNoteFolderId);
       renderRelatedNotes(null);
       return;
@@ -2614,10 +2610,7 @@ const initMobileNotes = () => {
     }
     if (noteId === currentNoteId) {
       currentEditingNoteFolderId = normalizedTarget || 'unsorted';
-      const labelEl = document.getElementById('note-folder-label');
-      if (labelEl) {
-        labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
-      }
+      syncNoteFolderButtonLabel(currentEditingNoteFolderId);
     }
     closeOverflowMenu();
   };
