@@ -201,6 +201,7 @@ async function copyStatic() {
     { source: '404.html' },
     { source: 'index.html' },
     { source: 'mobile.html' },
+    { source: 'mobile.css' },
   ];
 
   for (const file of filesToCopy) {
