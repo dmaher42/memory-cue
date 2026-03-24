@@ -3832,11 +3832,16 @@ export async function initReminders(sel = {}) {
 
   function persistItems() {
     sortItemsByOrder(items);
-    items = setStoredReminders(items);
+    setStoredReminders(items);
+    items = ensureOrderIndicesInitialized(
+      normalizeReminderList(items)
+    );
   }
 
   function hydrateOfflineReminders() {
-    items = ensureOrderIndicesInitialized(loadReminders());
+    items = ensureOrderIndicesInitialized(
+      normalizeReminderList(loadReminders())
+    );
   }
 
   hydrateOfflineReminders();
@@ -4291,7 +4296,9 @@ export async function initReminders(sel = {}) {
       unsubscribe?.();
       unsubscribe = null;
 
-      const localItems = ensureOrderIndicesInitialized(loadReminders());
+      const localItems = ensureOrderIndicesInitialized(
+        normalizeReminderList(loadReminders())
+      );
       const remoteItems = await listReminders(userId);
       const normalizedRemoteItems = Array.isArray(remoteItems)
         ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
