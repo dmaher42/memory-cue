@@ -170,6 +170,7 @@ async function buildScripts() {
 
   const moduleEntries = {
     './mobile.js': 'mobile',
+    './js/entries.js': 'entries',
     './js/init-env.js': 'init-env',
     './js/mobile-theme-toggle.js': 'mobile-theme-toggle',
   };
