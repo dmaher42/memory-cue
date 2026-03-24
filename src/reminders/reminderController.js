@@ -6346,13 +6346,15 @@ export async function initReminders(sel = {}) {
     );
 
     const createdItem = isStructuredReminderPayload
-      ? addItem({
+      ? createReminderFromPayload({
         title:trimmedTitle,
         priority: priorityValue,
         category: normalizedCategory,
         dueAt: due,
         notes: noteText,
         plannerLessonId: plannerLinkId || null,
+      }, {
+        closeSheet: false,
       })
       : captureInput({
         text: trimmedTitle,
