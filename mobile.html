@@ -13,6 +13,9 @@ Legacy shells remain for reference only.
   <script src="./js/storage.js"></script>
   <script src="./js/runtime-env.js"></script>
   <script type="module" src="./js/init-env.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
   <!-- Production CSS: compiled via Tailwind/PostCSS; build rewrites this to a hashed asset -->
   <link rel="stylesheet" href="./styles/index.css" />
   <link rel="stylesheet" href="./mobile.css" />
@@ -35,7 +38,7 @@ Legacy shells remain for reference only.
       --text-main: #1F1A24;               /* deep neutral */
       --text-secondary: #4A4153;          /* softer label text */
       --text-placeholder: var(--text-muted);        /* subtle, elegant placeholder */
-      --font-primary: 'Inter', system-ui, sans-serif;
+      --font-primary: 'Poppins', 'Segoe UI', system-ui, sans-serif;
       --font-size-title: 1.1rem;
       --font-size-body: 0.95rem;
       --accent-color: #512663; /* Deep violet accent */
@@ -84,7 +87,7 @@ Legacy shells remain for reference only.
     }
 
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: var(--font-primary);
       line-height: 1.5;
     }
 
