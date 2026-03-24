@@ -178,7 +178,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     const note = getAllNotes().find((item) => item.id === noteId);
     if (noteActionTogglePinBtn) {
       const isPinned = Boolean(note?.pinned);
-      noteActionTogglePinBtn.textContent = isPinned ? 'Unpin note' : 'Pin note';
+      noteActionTogglePinBtn.textContent = isPinned ? 'Unpin' : 'Pin';
     }
     noteOptionsSheet.classList.add('open');
     noteOptionsSheet.setAttribute('aria-hidden', 'false');
