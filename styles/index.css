@@ -4180,9 +4180,13 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   padding: 12px 12px 14px;
   width: 100%;
   max-height: 44%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   z-index: 10;
   gap: 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .move-to-folder-sheet .sheet-body h3 {
@@ -4206,7 +4210,11 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .move-to-folder-sheet .folder-option-list li {
