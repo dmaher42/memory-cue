@@ -587,7 +587,7 @@ Legacy shells remain for reference only.
   #noteFolderPillMobile {
     display: inline-flex;
     margin-left: 0;
-    margin-right: auto;
+    margin-right: 0;
   }
 
   .scratch-notes-header-block {
@@ -595,6 +595,91 @@ Legacy shells remain for reference only.
     flex-direction: column;
     align-items: stretch;
     gap: 0.35rem;
+  }
+
+  .note-editor-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  #view-notebook .note-inline-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.16)) 82%, transparent);
+    background: color-mix(in srgb, #ffffff 94%, #efe8fb 6%);
+    color: var(--text-main, #231B2E);
+    font-size: 0.82rem;
+    line-height: 1;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+  }
+
+  #view-notebook .note-inline-action:hover,
+  #view-notebook .note-inline-action:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, #512663) 10%, #ffffff 90%);
+    border-color: color-mix(in srgb, var(--accent-color, #512663) 22%, var(--card-border, #d8dce6));
+    outline: none;
+  }
+
+  #view-notebook #newNoteMobile.note-inline-action {
+    background: color-mix(in srgb, var(--accent-color, #512663) 10%, #ffffff 90%);
+    color: color-mix(in srgb, var(--accent-color, #512663) 80%, #241a2f 20%);
+  }
+
+  #view-notebook #notesOverviewList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  #view-notebook .notes-overview-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.38rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, #d8dce6) 74%, transparent);
+    border-radius: 0.95rem;
+    background: color-mix(in srgb, #ffffff 96%, #f3eefc 4%);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    text-align: left;
+  }
+
+  #view-notebook .notes-overview-item-title {
+    font-size: 0.98rem;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--text-main, #231B2E);
+    letter-spacing: -0.01em;
+  }
+
+  #view-notebook .notes-overview-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    color: var(--text-secondary, #667085);
+  }
+
+  #view-notebook .notes-overview-item-meta-dot {
+    opacity: 0.5;
+  }
+
+  #view-notebook .notes-overview-item-tags {
+    font-size: 0.76rem;
+    line-height: 1.35;
+    color: var(--text-secondary, #667085);
   }
 
   /* Hide notebook action buttons: top "Saved notes" pill and bottom New/Save bar */
@@ -5135,18 +5220,18 @@ body, main, section, div, p, span, li {
                   autocomplete="off"
                 />
               </div>
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="note-editor-actions-row">
                 <button
                   type="button"
                   id="newNoteMobile"
-                  class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium bg-[rgba(81,38,99,0.08)] text-[rgba(47,27,63,0.9)] hover:bg-[rgba(81,38,99,0.14)] transition"
+                  class="note-inline-action"
                 >
                   New note
                 </button>
                 <button
                   type="button"
                   id="noteFolderPillMobile"
-                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[rgba(81,38,99,0.06)] text-[rgba(47,27,63,0.85)] hover:bg-[rgba(81,38,99,0.12)] transition notebook-folder-pill"
+                  class="note-inline-action notebook-folder-pill"
                   data-action="open-note-folder-sheet"
                 >
                   Unsorted

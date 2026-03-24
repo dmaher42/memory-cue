@@ -1521,10 +1521,23 @@ const initMobileNotes = () => {
     items.slice(0, 30).forEach((note) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'w-full text-left memory-glass-card-soft p-2';
+      button.className = 'notes-overview-item';
       const folder = getFolderNameById(note?.folderId || 'unsorted') || 'Unsorted';
-      const tags = Array.isArray(note?.tags) && note.tags.length ? note.tags.join(', ') : 'none';
-      button.innerHTML = `<div class="font-medium">${note?.title || 'Untitled note'}</div><div class="text-xs text-base-content/70">Notebook: ${folder}</div><div class="text-xs text-base-content/70">Tags: ${tags}</div><div class="text-xs text-base-content/70">Created: ${formatNoteTimestamp(note?.createdAt || note?.updatedAt)}</div>`;
+      const tags = Array.isArray(note?.tags) && note.tags.length ? note.tags.join(', ') : '';
+      const timestamp = formatNoteTimestamp(note?.createdAt || note?.updatedAt);
+      const safeTitle = note?.title || 'Untitled note';
+      const tagsMarkup = tags
+        ? `<div class="notes-overview-item-tags">Tags: ${tags}</div>`
+        : '';
+      button.innerHTML = `
+        <div class="notes-overview-item-title">${safeTitle}</div>
+        <div class="notes-overview-item-meta">
+          <span>${folder}</span>
+          <span class="notes-overview-item-meta-dot" aria-hidden="true">•</span>
+          <span>${timestamp}</span>
+        </div>
+        ${tagsMarkup}
+      `;
       button.addEventListener('click', () => {
         setEditorValues(note);
         updateListSelection();
