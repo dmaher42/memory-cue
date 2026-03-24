@@ -5135,14 +5135,23 @@ body, main, section, div, p, span, li {
                   autocomplete="off"
                 />
               </div>
-              <button
-                type="button"
-                id="noteFolderPillMobile"
-                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[rgba(81,38,99,0.06)] text-[rgba(47,27,63,0.85)] hover:bg-[rgba(81,38,99,0.12)] transition notebook-folder-pill"
-                data-action="open-note-folder-sheet"
-              >
-                Unsorted
-              </button>
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  id="newNoteMobile"
+                  class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium bg-[rgba(81,38,99,0.08)] text-[rgba(47,27,63,0.9)] hover:bg-[rgba(81,38,99,0.14)] transition"
+                >
+                  New note
+                </button>
+                <button
+                  type="button"
+                  id="noteFolderPillMobile"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[rgba(81,38,99,0.06)] text-[rgba(47,27,63,0.85)] hover:bg-[rgba(81,38,99,0.12)] transition notebook-folder-pill"
+                  data-action="open-note-folder-sheet"
+                >
+                  Unsorted
+                </button>
+              </div>
             </div>
 
               <div
@@ -5225,14 +5234,6 @@ body, main, section, div, p, span, li {
 
           <!-- Fixed bottom action bar for notebook -->
           <div class="note-actions fixed-bottom flex items-center justify-between gap-2">
-            <button
-              type="button"
-              id="newNoteMobile"
-              class="btn btn-sm"
-            >
-              New
-            </button>
-
             <div class="flex items-center gap-2 text-xs text-base-content/60 font-medium">
                 <span id="notesSyncStatus" class="sync-dot hidden"></span>
                 <span id="notesStatusText" role="status">Ready</span>
