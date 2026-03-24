@@ -62,6 +62,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let savedNotesSheetHideTimeout = null;
   let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
+  let currentNoteOptionsFocusRestoreEl = null;
 
   const isVisibleFocusableElement = (element) => {
     if (!(element instanceof HTMLElement) || !element.isConnected) {
@@ -217,15 +218,48 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   const isNoteOptionsOpen = () => noteOptionsSheet && noteOptionsSheet.classList.contains('open');
 
-  const closeNoteOptionsMenu = () => {
+  const closeNoteOptionsMenu = ({ focusTarget = null } = {}) => {
+    const activeElement = document.activeElement;
+    const preferredFocusTarget =
+      focusTarget instanceof HTMLElement && noteOptionsSheet?.contains(focusTarget)
+        ? null
+        : focusTarget;
+    const restoreTarget = [
+      preferredFocusTarget,
+      currentNoteOptionsFocusRestoreEl,
+      openSavedNotesButton,
+      document.body,
+    ].find((candidate) => isVisibleFocusableElement(candidate));
+
+    if (activeElement instanceof HTMLElement && noteOptionsSheet?.contains(activeElement)) {
+      if (restoreTarget) {
+        focusVisibleElement(restoreTarget);
+      }
+
+      if (
+        document.activeElement instanceof HTMLElement
+        && noteOptionsSheet.contains(document.activeElement)
+        && typeof activeElement.blur === 'function'
+      ) {
+        try {
+          activeElement.blur();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
     currentNoteOptionsNoteId = null;
+    currentNoteOptionsFocusRestoreEl = null;
     if (noteOptionsSheet) {
       noteOptionsSheet.classList.remove('open');
+      noteOptionsSheet.setAttribute('inert', '');
       noteOptionsSheet.setAttribute('aria-hidden', 'true');
       noteOptionsSheet.removeAttribute('data-note-id');
     }
     if (noteOptionsOverlay) {
       noteOptionsOverlay.classList.remove('open');
+      noteOptionsOverlay.setAttribute('inert', '');
       noteOptionsOverlay.setAttribute('aria-hidden', 'true');
     }
   };
@@ -237,21 +271,25 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
   };
 
-  const openNoteOptionsMenu = (noteId) => {
+  const openNoteOptionsMenu = (noteId, triggerEl = null) => {
     if (!noteId || !noteOptionsSheet || !noteOptionsOverlay) {
       return;
     }
     closeNoteOptionsMenu();
     closeOverflowMenu();
     currentNoteOptionsNoteId = noteId;
+    currentNoteOptionsFocusRestoreEl =
+      isVisibleFocusableElement(triggerEl) ? triggerEl : document.activeElement;
     const note = getAllNotes().find((item) => item.id === noteId);
     if (noteActionTogglePinBtn) {
       const isPinned = Boolean(note?.pinned);
       noteActionTogglePinBtn.textContent = isPinned ? 'Unpin' : 'Pin';
     }
+    noteOptionsSheet.removeAttribute('inert');
     noteOptionsSheet.classList.add('open');
     noteOptionsSheet.setAttribute('aria-hidden', 'false');
     noteOptionsSheet.setAttribute('data-note-id', noteId);
+    noteOptionsOverlay.removeAttribute('inert');
     noteOptionsOverlay.classList.add('open');
     noteOptionsOverlay.setAttribute('aria-hidden', 'false');
   };

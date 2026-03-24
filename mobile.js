@@ -2924,7 +2924,7 @@ const initMobileNotes = () => {
         if (!noteId) {
           return;
         }
-        openNoteOptionsMenu(noteId);
+        openNoteOptionsMenu(noteId, menuTrigger);
         return;
       }
 
@@ -2961,7 +2961,7 @@ const initMobileNotes = () => {
           menuTrigger.getAttribute('data-note-id')
           || (menuTrigger.closest('[data-note-id]') || menuTrigger).getAttribute('data-note-id');
         if (!noteId) return;
-        openNoteOptionsMenu(noteId);
+        openNoteOptionsMenu(noteId, menuTrigger);
         return;
       }
     });
