@@ -4473,27 +4473,33 @@ export async function initReminders(sel = {}) {
       defaultCategory: categoryInput ? categoryInput.value : DEFAULT_CATEGORY,
       pendingSync: !userId,
       onCreated: (createdReminder) => {
-        assignOrderIndexForNewItem(createdReminder, { position: 'start' });
-        items = [createdReminder, ...items];
+        const createdEntry = normalizeReminderRecord({
+          ...createdReminder,
+          userId,
+          pendingSync: !userId,
+        }, { fallbackId: createdReminder?.id });
+
+        assignOrderIndexForNewItem(createdEntry, { position: 'start' });
+        items = [createdEntry, ...items];
         sortItemsByOrder(items);
 
         const rebalanced = maybeRebalanceOrderSpacing(items);
         suppressRenderMemoryEvent = true;
         render();
         persistItems();
-        updateDefaultsFrom(createdReminder);
+        updateDefaultsFrom(createdEntry);
         if (rebalanced) {
           items.forEach((entry) => saveToFirebase(entry));
         } else {
-          saveToFirebase(createdReminder);
+          saveToFirebase(createdEntry);
         }
 
         const notifyMinutesBefore = (() => {
-          if (typeof createdReminder.notifyAt !== 'string' || !createdReminder.notifyAt || typeof createdReminder.due !== 'string' || !createdReminder.due) {
+          if (typeof createdEntry.notifyAt !== 'string' || !createdEntry.notifyAt || typeof createdEntry.due !== 'string' || !createdEntry.due) {
             return 0;
           }
-          const dueMs = new Date(createdReminder.due).getTime();
-          const notifyMs = new Date(createdReminder.notifyAt).getTime();
+          const dueMs = new Date(createdEntry.due).getTime();
+          const notifyMs = new Date(createdEntry.notifyAt).getTime();
           if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
             return 0;
           }
@@ -4501,19 +4507,19 @@ export async function initReminders(sel = {}) {
         })();
 
         scheduleReminderNotification({
-          id: createdReminder.id,
-          text: createdReminder.title,
-          dueAt: createdReminder.due,
+          id: createdEntry.id,
+          text: createdEntry.title,
+          dueAt: createdEntry.due,
           notifyMinutesBefore,
         });
         ensureNotificationPermission();
-        tryCalendarSync(createdReminder);
-        scheduleReminder(createdReminder);
+        tryCalendarSync(createdEntry);
+        scheduleReminder(createdEntry);
         rescheduleAllReminders();
         emitReminderUpdates();
         dispatchCueEvent('memoryCue:remindersUpdated', { items });
 
-        ensureEmbeddingForItem(createdReminder)
+        ensureEmbeddingForItem(createdEntry)
           .then((embeddedReminder) => {
             if (!normalizeSemanticEmbedding(embeddedReminder?.semanticEmbedding)) {
               return;
