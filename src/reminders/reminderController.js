@@ -3,7 +3,7 @@ import { listReminders, saveReminder, removeReminder, subscribeReminders } from 
 import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
-import { loadAllNotes, saveAllNotes, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
+import { getFolders, loadAllNotes, saveAllNotes, saveFolders, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
 import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
 import * as reminderDataService from './reminderService.js';
 import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
@@ -12,6 +12,8 @@ import { setupNotificationHandlers, startReminderScheduler, sendReminderNotifica
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { generateEmbedding } from '../brain/embeddingService.js';
 import { buildRagAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
+import { replaceInboxEntries } from '../services/inboxService.js';
+import { getMessages, replaceMessages } from '../chat/messageStore.js';
 import {
   normalizeReminderKeywords,
   extractReminderKeywords,
@@ -96,6 +98,7 @@ const SEEDED_CATEGORIES = Object.freeze([
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const ORDER_INDEX_GAP = 1024;
+const BACKUP_VERSION = 1;
 const locale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : undefined;
 const TZ = (() => {
   try {
@@ -926,6 +929,7 @@ export async function initReminders(sel = {}) {
   const copyMtlBtn = $(sel.copyMtlBtnSel);
   const importFile = $(sel.importFileSel);
   const exportBtn = $(sel.exportBtnSel);
+  const importBtn = $(sel.importBtnSel);
   const syncAllBtn = $(sel.syncAllBtnSel);
   const syncUrlInput = $(sel.syncUrlInputSel);
   const saveSettings = $(sel.saveSettingsSel);
@@ -3844,6 +3848,41 @@ export async function initReminders(sel = {}) {
     );
   }
 
+  function buildBackupPayload() {
+    return {
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      reminders: items.map((item) => normalizeReminderRecord(item, { fallbackId: item?.id || uid() })),
+      notes: loadAllNotes(),
+      folders: getFolders(),
+      inbox: getInboxEntries(),
+      chatHistory: getMessages(),
+    };
+  }
+
+  function applyBackupPayload(payload = {}) {
+    const backup = payload && typeof payload === 'object' ? payload : {};
+    const nextFolders = Array.isArray(backup.folders) ? backup.folders : getFolders();
+    const nextNotes = Array.isArray(backup.notes) ? backup.notes : [];
+    const nextInbox = Array.isArray(backup.inbox) ? backup.inbox : [];
+    const nextChatHistory = Array.isArray(backup.chatHistory) ? backup.chatHistory : [];
+    const nextReminders = Array.isArray(backup.reminders) ? backup.reminders : [];
+
+    saveFolders(nextFolders);
+    saveAllNotes(nextNotes);
+    replaceInboxEntries(nextInbox);
+    replaceMessages(nextChatHistory);
+
+    pendingDeletionItems.clear();
+    items = ensureOrderIndicesInitialized(normalizeReminderList(nextReminders));
+    render();
+    persistItems();
+    updateMobileRemindersHeaderSubtitle();
+    rescheduleAllReminders();
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+  }
+
   hydrateOfflineReminders();
 
   async function ensureAllEmbeddings() {
@@ -6462,43 +6501,49 @@ export async function initReminders(sel = {}) {
     closeMenu();
   });
 
-  importFile?.addEventListener('change', () => {
-    const f = importFile.files[0]; if(!f) return;
-    const rd = new FileReader();
-    rd.onload = () => {
-      try {
-        const importedItems = JSON.parse(String(rd.result) || '[]').slice(0,500);
-        const newlyAdded = [];
-        importedItems.forEach(item => {
-          const entry = {
-            ...item,
-            id: uid(),
-            category: normalizeCategory(item.category),
-            pendingSync: !userId,
-            orderIndex: null,
-          };
-          assignOrderIndexForNewItem(entry, { position: 'start' });
-          items = [entry, ...items];
-          newlyAdded.push(entry);
-        });
-        sortItemsByOrder(items);
-        const rebalanced = maybeRebalanceOrderSpacing(items);
-        render();
-        persistItems();
-        if (rebalanced) {
-          items.forEach((entry) => saveToFirebase(entry));
-        } else {
-          newlyAdded.forEach((entry) => saveToFirebase(entry));
-        }
-        toast('Import successful');
-      } catch { toast('Invalid JSON'); }
-    };
-    rd.readAsText(f); importFile.value='';
+  exportBtn?.addEventListener('click', () => {
+    const backup = buildBackupPayload();
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `memory-cue-backup-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Backup exported');
     closeMenu();
   });
-  exportBtn?.addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(items,null,2)], { type:'application/json' });
-    const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='memory-cue-mobile.json'; a.click(); URL.revokeObjectURL(url); closeMenu();
+  importBtn?.addEventListener('click', () => {
+    if (!(importFile instanceof HTMLInputElement)) {
+      return;
+    }
+    importFile.click();
+    closeMenu();
+  });
+  importFile?.addEventListener('change', () => {
+    const file = importFile.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result) || '{}');
+        if (!window.confirm('Restore this backup on the current device? This will replace the current local copy.')) {
+          importFile.value = '';
+          return;
+        }
+        applyBackupPayload(parsed);
+        toast('Backup restored');
+      } catch (error) {
+        console.warn('Backup restore failed', error);
+        toast('Backup restore failed');
+      } finally {
+        importFile.value = '';
+      }
+    };
+    reader.readAsText(file);
   });
   syncAllBtn?.addEventListener('click', async () => {
     const url=(localStorage.getItem('syncUrl')||'').trim();

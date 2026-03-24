@@ -199,3 +199,15 @@ export const removeInboxEntry = (id) => {
   });
   return true;
 };
+
+export const replaceInboxEntries = (entriesInput = []) => {
+  const entries = Array.isArray(entriesInput)
+    ? entriesInput
+        .map((entry) => normalizeInboxEntry(entry))
+        .filter((entry) => entry.text)
+    : [];
+
+  persistInboxEntries(entries);
+  dispatchInboxUpdated();
+  return entries;
+};

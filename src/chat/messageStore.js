@@ -55,6 +55,15 @@ export const addMessage = (message) => {
 
 export const getMessages = () => readMessages();
 
+export const replaceMessages = (messages = []) => {
+  const nextMessages = Array.isArray(messages)
+    ? messages.filter((message) => message && typeof message === 'object')
+    : [];
+  writeMessages(nextMessages);
+  dispatchChatUpdated(nextMessages);
+  return nextMessages;
+};
+
 export const clearMessages = () => {
   if (typeof localStorage === 'undefined') {
     return;

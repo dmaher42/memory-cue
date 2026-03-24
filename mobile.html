@@ -6684,7 +6684,19 @@ body, main, section, div, p, span, li {
           <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
-      
+      <div class="card bg-base-100 border-0">
+        <div class="card-body gap-4 compact">
+          <h2 class="card-title text-base">Backup</h2>
+          <p class="text-sm text-base-content/70">Export a JSON backup of your notes, folders, inbox, reminders, and chat history so you can keep a manual safety copy.</p>
+          <div class="card-actions flex-col gap-2">
+            <button id="exportBackupBtn" class="btn btn-outline w-full" type="button">Export Backup</button>
+            <button id="importBackupBtn" class="btn btn-outline w-full" type="button">Restore Backup</button>
+          </div>
+          <input id="importBackupFile" type="file" accept="application/json,.json" class="hidden" />
+          <p class="text-xs text-base-content/60">Restore replaces the current device copy with the selected backup file.</p>
+        </div>
+      </div>
+
     </div>
     <div class="modal-backdrop" data-close></div>
   </div>
