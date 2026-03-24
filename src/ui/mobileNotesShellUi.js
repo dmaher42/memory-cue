@@ -60,7 +60,36 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   let notesMode = 'notebooks';
   let savedNotesSheetHideTimeout = null;
+  let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
+
+  const isVisibleFocusableElement = (element) => {
+    if (!(element instanceof HTMLElement) || !element.isConnected) {
+      return false;
+    }
+    if (element.getAttribute('aria-hidden') === 'true' || element.hasAttribute('disabled')) {
+      return false;
+    }
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 || rect.height > 0;
+  };
+
+  const focusVisibleElement = (element) => {
+    if (!isVisibleFocusableElement(element) || typeof element.focus !== 'function') {
+      return false;
+    }
+    try {
+      element.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        element.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  };
 
   const applyNotesMode = (mode = 'notebooks') => {
     notesMode = mode === 'overview' ? 'overview' : 'notebooks';
@@ -78,6 +107,10 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (!savedNotesSheet) {
       return;
     }
+    savedNotesSheetFocusRestoreEl =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : openSavedNotesButton;
     if (savedNotesSheetHideTimeout) {
       clearTimeout(savedNotesSheetHideTimeout);
       savedNotesSheetHideTimeout = null;
@@ -96,15 +129,51 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
   };
 
-  const hideSavedNotesSheet = () => {
+  const hideSavedNotesSheet = ({ focusTarget = null } = {}) => {
     if (!savedNotesSheet) {
       return;
     }
     const activeElement = document.activeElement;
     if (activeElement instanceof HTMLElement && savedNotesSheet.contains(activeElement)) {
-      if (openSavedNotesButton instanceof HTMLElement && typeof openSavedNotesButton.focus === 'function') {
-        openSavedNotesButton.focus();
-      } else if (typeof activeElement.blur === 'function') {
+      const safeFocusTarget = [
+        focusTarget,
+        savedNotesSheetFocusRestoreEl,
+        openSavedNotesButton,
+      ].find((candidate) => isVisibleFocusableElement(candidate));
+
+      if (safeFocusTarget) {
+        focusVisibleElement(safeFocusTarget);
+      }
+
+      if (document.activeElement instanceof HTMLElement && savedNotesSheet.contains(document.activeElement)) {
+        if (typeof activeElement.blur === 'function') {
+          try {
+            activeElement.blur();
+          } catch {
+            /* ignore */
+          }
+        }
+        if (safeFocusTarget) {
+          focusVisibleElement(safeFocusTarget);
+        }
+      }
+
+      if (
+        document.activeElement instanceof HTMLElement
+        && savedNotesSheet.contains(document.activeElement)
+        && document.body instanceof HTMLElement
+      ) {
+        const hadTabIndex = document.body.hasAttribute('tabindex');
+        if (!hadTabIndex) {
+          document.body.setAttribute('tabindex', '-1');
+        }
+        focusVisibleElement(document.body);
+        if (!hadTabIndex) {
+          document.body.removeAttribute('tabindex');
+        }
+      }
+
+      if (document.activeElement instanceof HTMLElement && savedNotesSheet.contains(document.activeElement)) {
         activeElement.blur();
       }
     }
@@ -132,7 +201,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     });
     closeSavedNotesButton?.addEventListener('click', (event) => {
       event.preventDefault();
-      hideSavedNotesSheet();
+      hideSavedNotesSheet({ focusTarget: openSavedNotesButton });
     });
     savedNotesSheet.addEventListener('click', (event) => {
       if (event.target === savedNotesSheet) {
