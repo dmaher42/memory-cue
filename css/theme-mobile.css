@@ -1498,6 +1498,26 @@ input.notebook-notes-search::placeholder {
   color: #e11d48; /* text-error */
 }
 
+#renameFolderModal,
+#deleteFolderModal {
+  border: none;
+  max-width: 420px;
+  width: calc(100% - 36px);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-main, #231b2e);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+#renameFolderModal .modal-actions .btn,
+#deleteFolderModal .modal-actions .btn {
+  min-width: 84px;
+}
+
+#deleteFolderModal .mt-3.text-sm {
+  display: none;
+}
+
 /* Note editor folder chip */
 .note-folder-chip {
   display: inline-flex;
