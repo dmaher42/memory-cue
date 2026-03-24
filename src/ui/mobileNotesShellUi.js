@@ -361,14 +361,18 @@ export const initMobileNotesShellUi = (options = {}) => {
     const folderSelectorOnSelect = getFolderSelectorOnSelect();
     if (folderSelectorOnSelect) {
       folderSelectorOnSelect(normalized);
-    } else if (getCurrentFolderMoveNoteId()) {
-      handleMoveNoteToFolder(getCurrentFolderMoveNoteId(), normalized);
+      closeMoveFolderSheet();
+      return;
+    }
+
+    const moveNoteId = getCurrentFolderMoveNoteId();
+    const noteExists = Boolean(
+      moveNoteId && getAllNotes().some((note) => note && note.id === moveNoteId),
+    );
+    if (moveNoteId && noteExists) {
+      handleMoveNoteToFolder(moveNoteId, normalized);
     } else {
       setCurrentEditingNoteFolderId(normalized);
-      const labelEl = document.getElementById('note-folder-label');
-      if (labelEl) {
-        labelEl.textContent = getFolderNameById(normalized) || 'Unsorted';
-      }
     }
     closeMoveFolderSheet();
   };

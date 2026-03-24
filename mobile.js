@@ -1582,6 +1582,7 @@ const initMobileNotes = () => {
       if (labelElClear) {
         labelElClear.textContent = getFolderNameById(currentEditingNoteFolderId || 'unsorted');
       }
+      syncNoteFolderButtonLabel(currentEditingNoteFolderId);
       renderRelatedNotes(null);
       return;
     }
@@ -1598,10 +1599,7 @@ const initMobileNotes = () => {
     scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
     currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
-    const labelEl = document.getElementById('note-folder-label');
-    if (labelEl) {
-      labelEl.textContent = getFolderNameById(currentEditingNoteFolderId);
-    }
+    syncNoteFolderButtonLabel(currentEditingNoteFolderId);
     renderRelatedNotes(note);
   };
 
@@ -2535,6 +2533,12 @@ const initMobileNotes = () => {
   const noteFolderBtn =
     document.getElementById('note-folder-button') ||
     document.getElementById('noteFolderPillMobile');
+  const syncNoteFolderButtonLabel = (folderId) => {
+    if (!(noteFolderBtn instanceof HTMLElement)) {
+      return;
+    }
+    noteFolderBtn.textContent = getFolderNameById(folderId || 'unsorted') || 'Unsorted';
+  };
   if (noteFolderBtn) {
     noteFolderBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2996,7 +3000,10 @@ const initMobileNotes = () => {
     getAllNotes: () => allNotes,
     renderFilteredNotes: () => renderFilteredNotes(),
     getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
-    setCurrentEditingNoteFolderId: (value) => { currentEditingNoteFolderId = value; },
+    setCurrentEditingNoteFolderId: (value) => {
+      currentEditingNoteFolderId = value;
+      syncNoteFolderButtonLabel(currentEditingNoteFolderId);
+    },
     getCurrentNoteId: () => currentNoteId,
     getCurrentFolderMoveNoteId: () => currentFolderMoveNoteId,
     setCurrentFolderMoveNoteId: (value) => { currentFolderMoveNoteId = value; },
@@ -3137,13 +3144,10 @@ const initMobileNotes = () => {
     if (!note) return;
     currentEditingNoteFolderId =
       note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
+    syncNoteFolderButtonLabel(currentEditingNoteFolderId);
     resetEditorScroll();
     setEditorValues(note, { isNew: true });
     updateListSelection();
-    const labelElNew = document.getElementById('note-folder-label');
-    if (labelElNew) {
-      labelElNew.textContent = getFolderNameById(currentEditingNoteFolderId);
-    }
   };
 
   const startNewNoteFromUI = () => {
