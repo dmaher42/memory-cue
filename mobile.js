@@ -3043,6 +3043,14 @@ const initMobileNotes = () => {
     closeNoteFolderSheet,
   } = mobileNotesShellUi);
 
+  const savedNotesGlobalButton = document.getElementById('openSavedNotesGlobal');
+  if (savedNotesGlobalButton) {
+    savedNotesGlobalButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      showSavedNotesSheet();
+    });
+  }
+
   if (filterInput) {
     const handleFilterInput = debounce(() => {
       filterQuery = typeof filterInput.value === 'string' ? filterInput.value.trim() : '';
