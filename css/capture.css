@@ -1,7 +1,7 @@
 #view-capture {
   display: flex;
   justify-content: center;
-  padding: 1.5rem 0.95rem 2.35rem;
+  padding: 0.9rem 0.85rem 1.75rem;
   background: linear-gradient(180deg, #f7f8fc 0%, #f2f5fb 100%);
 }
 
@@ -10,8 +10,8 @@
   max-width: 42rem;
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
-  padding: 1.35rem;
+  gap: 1rem;
+  padding: 1rem;
   border-radius: 1.25rem;
   background: var(--card-bg, #ffffff);
   border: 1px solid color-mix(in srgb, var(--card-border, #e5e7eb) 62%, #ffffff 38%);
