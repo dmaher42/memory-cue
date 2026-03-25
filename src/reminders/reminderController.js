@@ -1,5 +1,5 @@
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
-import { listReminders, saveReminder, removeReminder, subscribeReminders } from '../repositories/reminderRepository.js';
+import { saveReminder, removeReminder } from '../repositories/reminderRepository.js';
 import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
@@ -14,6 +14,7 @@ import { generateEmbedding } from '../brain/embeddingService.js';
 import { buildRagAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 import { replaceInboxEntries } from '../services/inboxService.js';
 import { getMessages, replaceMessages } from '../chat/messageStore.js';
+import { createReminderFirestoreSync } from './reminderFirestoreSync.js';
 import {
   normalizeReminderKeywords,
   extractReminderKeywords,
@@ -4255,124 +4256,31 @@ export async function initReminders(sel = {}) {
     await syncNotes(serializable);
     lastSyncedNoteIds = new Set(serializable.map((note) => note.id));
   });
-
-  function mapFirestoreReminder(reminderId, payload = {}) {
-    return normalizeReminderRecord({
-      ...payload,
-      id: typeof payload.id === 'string' && payload.id ? payload.id : reminderId,
-      createdAt: payload.createdAt,
-      updatedAt: payload.updatedAt || payload.createdAt,
-      userId: typeof payload.userId === 'string' ? payload.userId : userId,
-      pendingSync: false,
-    }, { fallbackId: reminderId });
-  }
-
-  function applyRemoteReminderItems(remoteItems = []) {
-    const normalizedRemoteItems = Array.isArray(remoteItems)
-      ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
-      : [];
-    const remoteIds = new Set(normalizedRemoteItems.map((entry) => entry.id));
-    pendingDeletionItems.forEach((_entry, reminderId) => {
-      if (!remoteIds.has(reminderId)) {
-        pendingDeletionItems.delete(reminderId);
-      }
-    });
-    const mergedById = new Map(
-      normalizedRemoteItems
-        .filter((entry) => !pendingDeletionItems.has(entry.id))
-        .map((entry) => [entry.id, entry])
-    );
-
-    items
-      .filter((entry) => entry && entry.id && entry.pendingSync && !pendingDeletionItems.has(entry.id))
-      .forEach((entry) => {
-        if (!mergedById.has(entry.id)) {
-          mergedById.set(entry.id, normalizeReminderRecord({
-            ...entry,
-            userId,
-          }, { fallbackId: entry.id }));
-        }
-      });
-
-    items = ensureOrderIndicesInitialized(Array.from(mergedById.values()));
-    items.forEach((reminder) => {
-      scheduleReminderNotification({
-        ...reminder,
-        dueAt: reminder.due,
-        text: reminder.title,
-      });
-    });
-    render();
-    updateMobileRemindersHeaderSubtitle();
-    persistItems();
-    rescheduleAllReminders();
-  }
+  const reminderFirestoreSync = createReminderFirestoreSync({
+    normalizeReminderRecord,
+    normalizeReminderList,
+    ensureOrderIndicesInitialized,
+    loadReminders,
+    saveToFirebase: (...args) => saveToFirebase(...args),
+    getItems: () => items,
+    setItems: (nextItems) => {
+      items = nextItems;
+    },
+    getPendingDeletionItems: () => pendingDeletionItems,
+    scheduleReminderNotification,
+    render,
+    updateMobileRemindersHeaderSubtitle,
+    persistItems,
+    rescheduleAllReminders,
+    renderSyncIndicator,
+  });
 
   async function setupReminderFirestoreSync(){
-    if(!userId){
-      unsubscribe?.();
-      unsubscribe = null;
-      hydrateOfflineReminders();
-      render();
-      updateMobileRemindersHeaderSubtitle();
-      persistItems();
-      rescheduleAllReminders();
-      return;
-    }
-    const localItems = ensureOrderIndicesInitialized(
-      normalizeReminderList(loadReminders())
-    );
-    try {
-      unsubscribe?.();
-      unsubscribe = null;
-      const remoteItems = await listReminders(userId);
-      const normalizedRemoteItems = Array.isArray(remoteItems)
-        ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
-        : [];
-      const remoteById = new Map(normalizedRemoteItems.map((entry) => [entry.id, entry]));
-      const remindersToSync = localItems.filter((entry) => {
-        if (!entry || typeof entry !== 'object' || !entry.id) return false;
-        return !!entry.pendingSync;
-      });
-
-      let syncedFromLocalCount = 0;
-      for (const entry of remindersToSync) {
-        const saved = await saveToFirebase({ ...entry, userId });
-        if (saved) {
-          syncedFromLocalCount += 1;
-          remoteById.set(entry.id, mapFirestoreReminder(entry.id, {
-            ...entry,
-            pendingSync: false,
-            userId,
-          }));
-        } else {
-          remoteById.set(entry.id, normalizeReminderRecord({
-            ...entry,
-            userId,
-          }, { fallbackId: entry.id }));
-        }
-      }
-      applyRemoteReminderItems(Array.from(remoteById.values()));
-
-      unsubscribe = await subscribeReminders(userId, (nextRemoteItems) => {
-        applyRemoteReminderItems(nextRemoteItems);
-      }, (error) => {
-        console.error('Firestore reminders listener error:', error);
-        if (syncStatus) {
-          renderSyncIndicator(typeof navigator !== 'undefined' && navigator.onLine ? 'error' : 'offline');
-        }
-      });
-    } catch (error){
-      console.error('Firestore reminders sync error:', error);
-      items = ensureOrderIndicesInitialized(normalizeReminderList(localItems));
-      render();
-      updateMobileRemindersHeaderSubtitle();
-      persistItems();
-      rescheduleAllReminders();
-      if(syncStatus){
-        renderSyncIndicator(typeof navigator !== 'undefined' && navigator.onLine ? 'error' : 'offline');
-      }
-    }
+    unsubscribe = await reminderFirestoreSync.setupReminderFirestoreSync({
+      userId,
+      currentUnsubscribe: unsubscribe,
+      hydrateOfflineReminders,
+    });
   }
 
   async function saveToFirebase(item){
