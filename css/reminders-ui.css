@@ -84,6 +84,27 @@
   max-width: 22rem;
 }
 
+.reminders-add-button {
+  flex: 0 0 auto;
+  align-self: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.56rem 0.9rem;
+  background: #5080BF;
+  color: #ffffff;
+  font-size: 0.8rem;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(80, 128, 191, 0.22);
+}
+
+.reminders-add-button:hover,
+.reminders-add-button:focus-visible {
+  background: #3f6aa0;
+  outline: 3px solid rgba(80, 128, 191, 0.22);
+  outline-offset: 2px;
+}
+
 .reminders-sort-trigger,
 #reminderSortToggle {
   border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
