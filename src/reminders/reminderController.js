@@ -6321,6 +6321,22 @@ export async function initReminders(sel = {}) {
   });
   document.addEventListener('DOMContentLoaded', () => { settingsSection?.classList.add('hidden'); });
 
+  function parseManualDueInput(dateValue, timeValue){
+    const normalizedDate = typeof dateValue === 'string' ? dateValue.trim() : '';
+    const normalizedTime = typeof timeValue === 'string' ? timeValue.trim() : '';
+
+    if(!normalizedDate && !normalizedTime){
+      return null;
+    }
+
+    const fallbackDate = new Date().toISOString().slice(0, 10);
+    const resolvedDate = normalizedDate || fallbackDate;
+    const resolvedTime = normalizedTime || '00:00';
+    const parsed = new Date(`${resolvedDate}T${resolvedTime}:00`);
+
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }
+
   function handleSaveAction(){
     // Debug: log when save handler invoked to help trace click issues
 
