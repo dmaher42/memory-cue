@@ -6237,6 +6237,7 @@ export async function initReminders(sel = {}) {
     };
   }
 
+  if (false) {
   handleSaveAction = function handleSaveActionLegacy(){
     // Debug: log when save handler invoked to help trace click issues
 
@@ -6343,6 +6344,7 @@ export async function initReminders(sel = {}) {
     clearPlannerReminderContext();
     dispatchCueEvent('cue:close', { reason: 'created' });
   };
+  }
 
   ({
     resetForm,
