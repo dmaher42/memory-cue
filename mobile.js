@@ -988,6 +988,9 @@ function openEditor() {
         if (saveBtn.matches(':disabled')) {
           return;
         }
+        if (event.submitter === saveBtn) {
+          return;
+        }
         saveBtn.click();
       });
     }
