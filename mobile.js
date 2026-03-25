@@ -24,6 +24,7 @@ import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
 import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
+import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -3139,6 +3140,40 @@ const initMobileNotes = () => {
     });
   }
 
+  initMobileNotesBrowserUi({
+    filterInput,
+    notesOverviewSearch,
+    notesOverviewSort,
+    notesOverviewState,
+    notebookBrowserList,
+    folderFilterSelect,
+    debounce,
+    getFolders,
+    normalizeFolderId,
+    setCurrentFolderId: (value) => {
+      currentFolderId = value;
+    },
+    setFilterQuery: (value) => {
+      filterQuery = value;
+    },
+    setNotesOverviewQuery: (value) => {
+      notesOverviewQuery = value;
+    },
+    setNotesOverviewSortValue: (value) => {
+      notesOverviewSortValue = value;
+    },
+    setNotesOverviewStateValue: (value) => {
+      notesOverviewStateValue = value;
+    },
+    setActiveFolderFilter,
+    setActiveFolderChip,
+    renderFilteredNotes: () => renderFilteredNotes(),
+    renderNotesOverview,
+    applyNotesMode,
+    getNotesMode: () => notesMode,
+  });
+
+  if (false) {
   if (filterInput) {
     const handleFilterInput = debounce(() => {
       filterQuery = typeof filterInput.value === 'string' ? filterInput.value.trim() : '';
@@ -3212,6 +3247,7 @@ const initMobileNotes = () => {
       currentFolderId = selectedFolderId || 'all';
       renderFilteredNotes();
     });
+  }
   }
 
   const applyInitialSelection = () => {
