@@ -3107,7 +3107,7 @@ export async function initReminders(sel = {}) {
 
     if (reminderSheetTitle instanceof HTMLElement) {
       reminderSheetTitle.textContent =
-        currentReminderMode === 'edit' ? 'Edit reminder' : 'New reminder';
+        currentReminderMode === 'edit' ? 'Edit reminder' : 'Add reminder';
     }
   };
 
@@ -4431,7 +4431,7 @@ export async function initReminders(sel = {}) {
     } else {
       editingId = currentReminderMode === 'edit' ? currentReminderId : null;
     }
-    if(saveBtn) saveBtn.textContent='Save';
+    if(saveBtn) saveBtn.textContent='Add reminder';
     cancelEditBtn?.classList.add('hidden');
     clearPlannerReminderContext();
     if (!preserveDetail) {
@@ -4450,7 +4450,7 @@ export async function initReminders(sel = {}) {
     if(plannerLessonInput) plannerLessonInput.value = typeof it.plannerLessonId === 'string' ? it.plannerLessonId : '';
     clearPlannerReminderContext();
     applyDetailSelection(it);
-    if(saveBtn) saveBtn.textContent='Update';
+    if(saveBtn) saveBtn.textContent='Save changes';
     cancelEditBtn?.classList.remove('hidden');
     window.scrollTo({top:0,behavior:'smooth'});
     focusTitleField();

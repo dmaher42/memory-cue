@@ -6363,6 +6363,70 @@ body, main, section, div, p, span, li {
       gap: 12px;
     }
 
+    .reminder-sheet-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .reminder-sheet-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 245, 255, 0.96) 100%);
+      border-color: rgba(81, 38, 99, 0.08);
+      box-shadow:
+        0 12px 26px rgba(15, 23, 42, 0.06),
+        0 2px 10px rgba(81, 38, 99, 0.07);
+    }
+
+    .reminder-sheet-card > .reminder-section + .reminder-section {
+      padding-top: 14px;
+      border-top: 1px solid rgba(81, 38, 99, 0.08);
+    }
+
+    .reminder-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .reminder-section-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .reminder-section-title {
+      margin: 0;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      letter-spacing: 0;
+    }
+
+    .reminder-section-hint {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: rgba(47, 27, 63, 0.62);
+    }
+
+    .reminder-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .reminder-datetime-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .reminder-field {
       display: flex;
       flex-direction: column;
@@ -6407,12 +6471,49 @@ body, main, section, div, p, span, li {
       .reminder-field--row {
         grid-template-columns: 1fr;
       }
+
+      .reminder-datetime-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .reminder-chip-row {
       display: flex;
       flex-wrap: nowrap;
       gap: 6px;
+    }
+
+    .reminder-sheet-helper {
+      margin: -2px 0 2px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: rgba(47, 27, 63, 0.7);
+    }
+
+    .reminder-sheet-actions {
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0 -2px;
+      padding: 10px 2px 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.96) 42%);
+    }
+
+    .reminder-save-cta {
+      min-height: 2.8rem;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      box-shadow: 0 10px 20px rgba(81, 38, 99, 0.18);
+    }
+
+    .reminder-status-message {
+      min-height: 1.25rem;
+      margin: 0;
+      font-size: 0.82rem;
+      color: rgba(47, 27, 63, 0.72);
     }
 
     .reminder-chip,
@@ -6597,19 +6698,20 @@ body, main, section, div, p, span, li {
           <header class="reminder-editor-header reminder-sheet-header">
             <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
             <div class="reminder-header-title-group">
-              <span class="reminder-header-eyebrow">Reminder</span>
-              <h2 class="reminder-header-title" id="createSheetTitle">New reminder</h2>
+              <span class="reminder-header-eyebrow">Create</span>
+              <h2 class="reminder-header-title" id="createSheetTitle">Add reminder</h2>
             </div>
           </header>
           <!-- Stack the reminder editor into grouped sections for a mobile-first flow -->
           <form id="createReminderForm" class="reminder-editor-form">
+            <p class="reminder-sheet-helper">Leave date and time blank if you just want it saved in your reminder list.</p>
             <div class="reminder-sheet-content">
               <div class="reminder-sheet-card card bg-base-100 border border-base-200 shadow-xl">
               <!-- Group reminder basics together for quick scanning -->
               <section class="reminder-section" aria-labelledby="reminderDetailsHeading">
                 <div class="reminder-section-heading">
-                  <p id="reminderDetailsHeading" class="reminder-section-title">Reminder details</p>
-                  <p class="reminder-section-hint">Add a clear title and any optional notes.</p>
+                  <p id="reminderDetailsHeading" class="reminder-section-title">What to remember</p>
+                  <p class="reminder-section-hint">Add the reminder title first. Notes are optional.</p>
                 </div>
                 <div class="reminder-field-group">
                   <div class="reminder-field">
@@ -6639,7 +6741,7 @@ body, main, section, div, p, span, li {
               <section class="reminder-section" aria-labelledby="reminderWhenHeading">
                 <div class="reminder-section-heading">
                   <p id="reminderWhenHeading" class="reminder-section-title">When</p>
-                  <p class="reminder-section-hint">Choose the date and time for this reminder.</p>
+                  <p class="reminder-section-hint">Optional. Add a date, a time, or both.</p>
                 </div>
                 <div class="reminder-field-group reminder-datetime-grid">
                   <div class="reminder-field">
@@ -6663,8 +6765,8 @@ body, main, section, div, p, span, li {
               <!-- Keep optional controls together in a compact options stack -->
               <section class="reminder-section" aria-labelledby="reminderOptionsHeading">
                 <div class="reminder-section-heading">
-                  <p id="reminderOptionsHeading" class="reminder-section-title">Options</p>
-                  <p class="reminder-section-hint">Adjust priority, category, and notifications.</p>
+                  <p id="reminderOptionsHeading" class="reminder-section-title">More options</p>
+                  <p class="reminder-section-hint">Priority, category, and notifications.</p>
                 </div>
                 <div class="reminder-field-group">
                   <div class="reminder-field">
@@ -6729,12 +6831,12 @@ body, main, section, div, p, span, li {
                 id="saveReminder"
                 class="btn btn-primary reminder-save-cta"
               >
-                Save reminder
+                Add reminder
               </button>
               <button id="cancelEditBtn" class="btn btn-ghost btn-sm w-full hidden" type="button">Cancel</button>
             </div>
 
-            <p id="statusMessage" class="text-sm text-base-content/70" role="status" aria-live="polite"></p>
+            <p id="statusMessage" class="reminder-status-message" role="status" aria-live="polite"></p>
           </form>
         </div>
       </div>
