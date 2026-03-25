@@ -6316,7 +6316,7 @@ export async function initReminders(sel = {}) {
     if(details) details.value='';
     clearPlannerReminderContext();
     dispatchCueEvent('cue:close', { reason: 'created' });
-  }
+  };
 
   ({
     resetForm,
