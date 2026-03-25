@@ -25,6 +25,7 @@ import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
 import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
+import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -3254,189 +3255,55 @@ const initMobileNotes = () => {
     refreshFromStorage({ preserveDraft: false });
   };
 
-  const openNoteEditorForNewNote = (note) => {
-    if (!note) return;
-    currentEditingNoteFolderId =
-      note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
-    syncNoteFolderButtonLabel(currentEditingNoteFolderId);
-    resetEditorScroll();
-    setEditorValues(note, { isNew: true });
-    updateListSelection();
-  };
-
-  const startNewNoteFromUI = () => {
-    const timestamp = new Date().toISOString();
-    const activeFolderId = currentFolderId && currentFolderId !== 'all' ? currentFolderId : 'everyday';
-    const draftNote = createNote('', '', { folderId: activeFolderId, updatedAt: timestamp });
-    const newNote = {
-      ...draftNote,
-      title: '',
-      body: '',
-      bodyHtml: '',
-      bodyText: '',
-      updatedAt: timestamp,
-      folderId: activeFolderId,
-    };
-    openNoteEditorForNewNote(newNote);
-  };
-
-  saveButton.addEventListener('click', () => {
-    if (currentNoteIsNew && !currentNoteHasChanged && !hasMeaningfulContent()) {
-      return;
-    }
-    const existingNotes = loadAllNotes();
-    const notesArray = Array.isArray(existingNotes) ? [...existingNotes] : [];
-    const noteBodyHtml = getEditorBodyHtml() || '';
-    const noteBodyText = getEditorBodyText(noteBodyHtml);
-    const rawTitle = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
-    const sanitizedTitle = rawTitle || 'Untitled note';
-    const timestamp = new Date().toISOString();
-    const normalizedFolderId =
-      currentEditingNoteFolderId && currentEditingNoteFolderId !== 'all'
-        ? currentEditingNoteFolderId
-        : 'everyday';
-
-    if (currentNoteId) {
-      const noteIndex = notesArray.findIndex((note) => note.id === currentNoteId);
-      if (noteIndex >= 0) {
-        notesArray[noteIndex] = {
-          ...notesArray[noteIndex],
-          title: sanitizedTitle,
-          body: noteBodyHtml,
-          bodyHtml: noteBodyHtml,
-          bodyText: noteBodyText,
-          updatedAt: timestamp,
-          folderId: normalizedFolderId,
-        };
-      } else {
-        const newNote = createNote(sanitizedTitle, noteBodyHtml, {
-          updatedAt: timestamp,
-          folderId: normalizedFolderId,
-          bodyText: noteBodyText,
-        });
-        currentNoteId = newNote.id;
-        notesArray.unshift(newNote);
-      }
-    } else {
-      const newNote = createNote(sanitizedTitle, noteBodyHtml, {
-        folderId: normalizedFolderId,
-        bodyText: noteBodyText,
-      });
-      currentNoteId = newNote.id;
-      notesArray.unshift(newNote);
-    }
-
-    saveAllNotes(notesArray);
-    updateStoredSnapshot();
-    currentNoteIsNew = false;
-    currentNoteHasChanged = false;
-    refreshFromStorage({ preserveDraft: false });
-  });
-
-  // Also wire the footer 'New note' floating button to the same behavior
   const footerNewNoteBtn = document.getElementById('mobile-footer-new-note');
-  if (footerNewNoteBtn) {
-    footerNewNoteBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      // switch navigation/view if needed
-      try {
-        // If app uses data-nav-target, attempt to activate the notebook/add-note view
-        const target = footerNewNoteBtn.getAttribute('data-nav-target');
-        if (target) {
-          const navBtns = document.querySelectorAll('[data-nav-target]');
-          navBtns.forEach((b) => b.classList.remove('active'));
-          footerNewNoteBtn.classList.add('active');
-        }
-      } catch (err) {
-        /* ignore nav activation errors */
-      }
-      startNewNoteFromUI();
-    });
-  }
-
   const newNoteButton = document.getElementById('newNoteMobile');
-  if (newNoteButton) {
-    newNoteButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      startNewNoteFromUI();
-    });
-  }
-
   const fabNewNoteButton = document.getElementById('mobile-fab-new-note');
-  if (fabNewNoteButton) {
-    fabNewNoteButton.addEventListener('click', () => {
-      // inline script handles navigation; we trigger the editor reset
-      startNewNoteFromUI();
-    });
-  }
 
-  // Autosave: debounce saving when user edits title or body
-  const AUTOSAVE_DELAY = 1500; // ms
-  const debouncedAutoSave = debounce(() => {
-    try {
-      if (currentNoteIsNew && !currentNoteHasChanged) {
-        return;
-      }
-      if (!hasUnsavedChanges()) return;
-      if (saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
-        saveButton.click();
-      }
-    } catch (e) {
-      /* ignore autosave errors */
-    }
-  }, AUTOSAVE_DELAY);
-
-  const handleNoteEditorInput = () => {
-    if (currentNoteIsNew) {
-      if (!hasMeaningfulContent()) {
-        currentNoteHasChanged = false;
-        return;
-      }
-      currentNoteHasChanged = true;
-    } else {
-      currentNoteHasChanged = true;
-    }
-    debouncedAutoSave();
-  };
-
-  // Listen for input changes on title and editor
-  try {
-    titleInput.addEventListener('input', handleNoteEditorInput);
-  } catch (e) {
-    /* ignore */
-  }
-
-  try {
-    // contenteditable should emit input events
-    scratchNotesEditorElement.addEventListener('input', debouncedAutoSave);
-    scratchNotesEditorElement.addEventListener('input', updateToolbarState);
-    scratchNotesEditorElement.addEventListener('keyup', updateToolbarState);
-    scratchNotesEditorElement.addEventListener('mouseup', updateToolbarState);
-    scratchNotesEditorElement.addEventListener('keydown', handleListShortcuts);
-    scratchNotesEditorElement.addEventListener('keydown', handleFormattingShortcuts);
-    // also save on blur (user leaving editor)
-    scratchNotesEditorElement.addEventListener('blur', () => {
-      // flush any pending autosave immediately
-      debouncedAutoSave();
-    });
-    titleInput.addEventListener('blur', () => debouncedAutoSave());
-  } catch (e) {
-    /* ignore */
-  }
-
-  // Save when the page is about to unload
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', (evt) => {
-      try {
-        if (hasUnsavedChanges() && saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
-          // attempt to synchronously save by invoking click
-          saveButton.click();
-        }
-      } catch (e) {
-        /* ignore */
-      }
-    });
-  }
+  const {
+    openNoteEditorForNewNote,
+    startNewNoteFromUI,
+  } = initMobileNotesEditorUi({
+    saveButton,
+    titleInput,
+    scratchNotesEditorElement,
+    footerNewNoteBtn,
+    newNoteButton,
+    fabNewNoteButton,
+    debounce,
+    createNote,
+    loadAllNotes,
+    saveAllNotes,
+    getEditorBodyHtml,
+    getEditorBodyText,
+    getCurrentNoteId: () => currentNoteId,
+    setCurrentNoteId: (value) => {
+      currentNoteId = value;
+    },
+    getCurrentFolderId: () => currentFolderId,
+    getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
+    setCurrentEditingNoteFolderId: (value) => {
+      currentEditingNoteFolderId = value;
+    },
+    getCurrentNoteIsNew: () => currentNoteIsNew,
+    setCurrentNoteIsNew: (value) => {
+      currentNoteIsNew = value;
+    },
+    getCurrentNoteHasChanged: () => currentNoteHasChanged,
+    setCurrentNoteHasChanged: (value) => {
+      currentNoteHasChanged = value;
+    },
+    hasMeaningfulContent,
+    hasUnsavedChanges,
+    resetEditorScroll,
+    setEditorValues,
+    updateListSelection,
+    updateStoredSnapshot,
+    refreshFromStorage,
+    syncNoteFolderButtonLabel,
+    updateToolbarState,
+    handleListShortcuts,
+    handleFormattingShortcuts,
+  });
 
   updateToolbarState();
   applyInitialSelection();
