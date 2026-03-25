@@ -2297,14 +2297,9 @@ export async function initReminders(sel = {}) {
       const inferredSchedule = hasStructuredReminderPayload
         ? { dueDate: null, notifyAt: null, cleanedText: routedText }
         : parseReminderScheduleFromText(routedText);
-      const shouldCreateStructuredReminder =
-        hasStructuredReminderPayload
-        || (inferredSchedule.dueDate instanceof Date && !Number.isNaN(inferredSchedule.dueDate.getTime()));
-
       if (routed.kind === 'reflection') {
         entry = saveReflectionQuickNote(routedText);
       } else {
-        if (shouldCreateStructuredReminder) {
           const basePayload = buildQuickReminder(inferredSchedule.cleanedText || routedText);
           const optionDueIso =
             options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
@@ -2354,13 +2349,6 @@ export async function initReminders(sel = {}) {
               },
             });
           }
-        } else {
-          entry = await captureInput({
-            text: routedText,
-            source: quickAddSource,
-            metadata: { entryPoint: 'reminders.quickAddNow' },
-          });
-        }
       }
 
       if (entry && typeof document !== 'undefined') {
@@ -6389,30 +6377,16 @@ export async function initReminders(sel = {}) {
           summary: plannerLessonInput?.dataset?.lessonSummary || '',
         }
       : null;
-    const isStructuredReminderPayload = Boolean(
-      due
-      || noteText
-      || plannerLinkId
-      || normalizedCategory !== DEFAULT_CATEGORY
-      || priorityValue !== 'Medium',
-    );
-
-    const createdItem = isStructuredReminderPayload
-      ? createReminderFromPayload({
-        title:trimmedTitle,
-        priority: priorityValue,
-        category: normalizedCategory,
-        dueAt: due,
-        notes: noteText,
-        plannerLessonId: plannerLinkId || null,
-      }, {
-        closeSheet: false,
-      })
-      : captureInput({
-        text: trimmedTitle,
-        source: 'reminder',
-        metadata: { entryPoint: 'reminders.handleSaveAction' },
-      });
+    const createdItem = createReminderFromPayload({
+      title:trimmedTitle,
+      priority: priorityValue,
+      category: normalizedCategory,
+      dueAt: due,
+      notes: noteText,
+      plannerLessonId: plannerLinkId || null,
+    }, {
+      closeSheet: false,
+    });
 
     const createdItemResolved = createdItem && typeof createdItem.then === 'function'
       ? null
