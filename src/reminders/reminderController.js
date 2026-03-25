@@ -4673,6 +4673,9 @@ export async function initReminders(sel = {}) {
       clearUndoDeleteState(tokenId);
       return;
     }
+    if (item.id) {
+      pendingDeletionItems.delete(item.id);
+    }
     clearUndoDeleteState(tokenId);
     const insertAt = Number.isInteger(index) ? Math.min(Math.max(index, 0), items.length) : items.length;
     item.pendingSync = !userId;
