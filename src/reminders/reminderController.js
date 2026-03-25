@@ -6337,6 +6337,31 @@ export async function initReminders(sel = {}) {
     return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
   }
 
+  function parseQuickWhen(rawText){
+    const parsed = parseReminderScheduleFromText(rawText);
+    const dueDate = parsed?.dueDate instanceof Date && !Number.isNaN(parsed.dueDate.getTime())
+      ? parsed.dueDate
+      : null;
+
+    if (!dueDate) {
+      return {
+        date: new Date().toISOString().slice(0, 10),
+        time: '',
+      };
+    }
+
+    const year = dueDate.getFullYear();
+    const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+    const day = String(dueDate.getDate()).padStart(2, '0');
+    const hours = String(dueDate.getHours()).padStart(2, '0');
+    const minutes = String(dueDate.getMinutes()).padStart(2, '0');
+
+    return {
+      date: `${year}-${month}-${day}`,
+      time: `${hours}:${minutes}`,
+    };
+  }
+
   function handleSaveAction(){
     // Debug: log when save handler invoked to help trace click issues
 
