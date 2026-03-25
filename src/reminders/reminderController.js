@@ -4146,7 +4146,6 @@ export async function initReminders(sel = {}) {
    }
    initNotebook();
 
-  saveBtn?.addEventListener('click', handleSaveAction);
 
     authController = await initAuth({
     selectors: {
@@ -6378,6 +6377,8 @@ export async function initReminders(sel = {}) {
     window.openNewReminderSheet = openNewReminderSheet;
     window.openEditReminderSheet = openEditReminderSheet;
   }
+
+  saveBtn?.addEventListener('click', handleSaveAction);
 
   if (emptyStateEl instanceof HTMLElement) {
     emptyStateEl.addEventListener('click', (event) => {
