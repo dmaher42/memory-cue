@@ -4319,13 +4319,12 @@ export async function initReminders(sel = {}) {
       rescheduleAllReminders();
       return;
     }
+    const localItems = ensureOrderIndicesInitialized(
+      normalizeReminderList(loadReminders())
+    );
     try {
       unsubscribe?.();
       unsubscribe = null;
-
-      const localItems = ensureOrderIndicesInitialized(
-        normalizeReminderList(loadReminders())
-      );
       const remoteItems = await listReminders(userId);
       const normalizedRemoteItems = Array.isArray(remoteItems)
         ? remoteItems.map((entry) => mapFirestoreReminder(entry?.id, entry)).filter(Boolean)
@@ -4359,9 +4358,17 @@ export async function initReminders(sel = {}) {
         applyRemoteReminderItems(nextRemoteItems);
       }, (error) => {
         console.error('Firestore reminders listener error:', error);
+        if (syncStatus) {
+          renderSyncIndicator(typeof navigator !== 'undefined' && navigator.onLine ? 'error' : 'offline');
+        }
       });
     } catch (error){
       console.error('Firestore reminders sync error:', error);
+      items = ensureOrderIndicesInitialized(normalizeReminderList(localItems));
+      render();
+      updateMobileRemindersHeaderSubtitle();
+      persistItems();
+      rescheduleAllReminders();
       if(syncStatus){
         renderSyncIndicator(typeof navigator !== 'undefined' && navigator.onLine ? 'error' : 'offline');
       }
