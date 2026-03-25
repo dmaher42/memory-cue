@@ -10,7 +10,6 @@ import {
 import { getFolders } from './js/modules/notes-storage.js';
 import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
-import { ModalController } from './js/modules/modal-controller.js';
 import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
@@ -24,6 +23,7 @@ import { createChatComposer } from './src/components/ChatComposer.js';
 import { initMobileShellUi } from './src/ui/mobileShellUi.js';
 import { initMobileSyncControls } from './src/ui/mobileSyncControls.js';
 import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
+import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -2390,6 +2390,63 @@ const initMobileNotes = () => {
     buildFolderFilterSelect(chipModel);
   };
 
+  const noteFolderBtn =
+    document.getElementById('note-folder-button') ||
+    document.getElementById('noteFolderPillMobile');
+  let setAfterFolderCreated = () => {};
+  let openNewFolderDialog = () => {};
+  let syncNoteFolderButtonLabel = () => {};
+  let closeOverflowMenu = () => {};
+  let handleMoveNoteToFolder = () => {};
+  let openFolderOverflowMenu = () => {};
+
+  ({
+    setAfterFolderCreated,
+    openNewFolderDialog,
+    syncNoteFolderButtonLabel,
+    closeOverflowMenu,
+    handleMoveNoteToFolder,
+    openFolderOverflowMenu,
+  } = initMobileNotesFolderManager({
+    folderFilterNewButton,
+    newFolderModalEl: document.getElementById('newFolderModal'),
+    newFolderNameInput: document.getElementById('newFolderName'),
+    newFolderError: document.getElementById('newFolderError'),
+    newFolderCreateBtn: document.getElementById('newFolderCreate'),
+    newFolderCancelBtn: document.getElementById('newFolderCancel'),
+    noteFolderBtn,
+    renameFolderModalEl: document.getElementById('renameFolderModal'),
+    renameFolderNameInput: document.getElementById('renameFolderName'),
+    renameFolderError: document.getElementById('renameFolderError'),
+    renameFolderSaveBtn: document.getElementById('renameFolderSave'),
+    renameFolderCancelBtn: document.getElementById('renameFolderCancel'),
+    deleteFolderModalEl: document.getElementById('deleteFolderModal'),
+    deleteFolderConfirmBtn: document.getElementById('deleteFolderConfirm'),
+    deleteFolderCancelBtn: document.getElementById('deleteFolderCancel'),
+    getFolders,
+    saveFolders,
+    getFolderNameById,
+    assignNoteToFolder,
+    buildFolderChips,
+    buildFolderFilterSelect,
+    renderFilteredNotes: () => renderFilteredNotes(),
+    refreshFromStorage,
+    showMoveToast,
+    loadAllNotes,
+    saveAllNotes,
+    clearSearchFilter,
+    getCurrentNoteId: () => currentNoteId,
+    getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
+    setCurrentEditingNoteFolderId: (value) => {
+      currentEditingNoteFolderId = value;
+    },
+    getCurrentFolderId: () => currentFolderId,
+    setCurrentFolderId: (value) => {
+      currentFolderId = value;
+    },
+  }));
+
+  if (false) {
   /* New Folder modal setup */
   const newFolderModalEl = document.getElementById('newFolderModal');
   const newFolderNameInput = document.getElementById('newFolderName');
@@ -2923,6 +2980,8 @@ const initMobileNotes = () => {
     deleteFolderConfirmBtn.addEventListener('click', (e) => { e.preventDefault(); confirmDeleteFolder(); });
   }
 
+  }
+
   if (listElement) {
     listElement.addEventListener('click', (event) => {
       const target = event.target;
@@ -3061,6 +3120,16 @@ const initMobileNotes = () => {
     closeMoveFolderSheet,
     closeNoteFolderSheet,
   } = mobileNotesShellUi);
+
+  if (noteFolderBtn) {
+    noteFolderBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      openFolderSelectorForNote(currentNoteId, {
+        initialFolderId: currentEditingNoteFolderId,
+        triggerEl: noteFolderBtn,
+      });
+    });
+  }
 
   const savedNotesGlobalButton = document.getElementById('openSavedNotesGlobal');
   if (savedNotesGlobalButton) {
