@@ -15,6 +15,7 @@ import { buildRagAssistantRequest, requestAssistantChat } from '../services/assi
 import { replaceInboxEntries } from '../services/inboxService.js';
 import { getMessages, replaceMessages } from '../chat/messageStore.js';
 import { createReminderFirestoreSync } from './reminderFirestoreSync.js';
+import { createReminderFormHandlers } from './reminderFormHandlers.js';
 import {
   normalizeReminderKeywords,
   extractReminderKeywords,
@@ -4333,81 +4334,11 @@ export async function initReminders(sel = {}) {
 
   async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
 
-  function resetForm({ preserveDetail = false, resetMode = true } = {}){
-    if(title) title.value='';
-    if(date) date.value='';
-    if(time) time.value='';
-    if(details) details.value='';
-    setPriorityInputValue('Medium');
-    if(categoryInput) categoryInput.value = DEFAULT_CATEGORY;
-    applyStoredDefaultsToInputs();
-    if (resetMode) {
-      setReminderMode(null);
-    } else {
-      editingId = currentReminderMode === 'edit' ? currentReminderId : null;
-    }
-    if(saveBtn) saveBtn.textContent='Add reminder';
-    cancelEditBtn?.classList.add('hidden');
-    clearPlannerReminderContext();
-    if (!preserveDetail) {
-      clearDetailSelection();
-    }
-  }
-  function loadForEdit(id){
-    const it = items.find(x=>x.id===id);
-    if(!it) return;
-    setReminderMode('edit', id);
-    if(title) title.value=it.title||'';
-    if(date&&time){ if(it.due){ date.value=isoToLocalDate(it.due); time.value=isoToLocalTime(it.due); } else { date.value=''; time.value=''; } }
-    setPriorityInputValue(it?.priority || 'Medium');
-    if(categoryInput) categoryInput.value = normalizeCategory(it.category);
-    if(details) details.value = typeof it.notes === 'string' ? it.notes : '';
-    if(plannerLessonInput) plannerLessonInput.value = typeof it.plannerLessonId === 'string' ? it.plannerLessonId : '';
-    clearPlannerReminderContext();
-    applyDetailSelection(it);
-    if(saveBtn) saveBtn.textContent='Save changes';
-    cancelEditBtn?.classList.remove('hidden');
-    window.scrollTo({top:0,behavior:'smooth'});
-    focusTitleField();
-    dispatchCueEvent('cue:open', { mode: 'edit' });
-  }
-
-  function openEditReminderSheet(reminder) {
-    const reminderId = reminder?.id || reminder;
-    if (!reminderId) {
-      return;
-    }
-    setReminderMode('edit', reminderId);
-    loadForEdit(reminderId);
-  }
-
-  function openNewReminderSheet(trigger = null) {
-    resetForm({ resetMode: false });
-    setReminderMode('new');
-    const detail = { mode: 'create', trigger };
-    dispatchCueEvent('cue:prepare', detail);
-    dispatchCueEvent('cue:open', detail);
-    focusTitleField();
-  }
-
-  if (typeof window !== 'undefined') {
-    window.openNewReminderSheet = openNewReminderSheet;
-    window.openEditReminderSheet = openEditReminderSheet;
-  }
-
-  if (emptyStateEl instanceof HTMLElement) {
-    emptyStateEl.addEventListener('click', (event) => {
-      const trigger = event.target instanceof Element
-        ? event.target.closest('#emptyStateCreateBtn')
-        : null;
-      if (!(trigger instanceof HTMLElement)) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      openNewReminderSheet(trigger);
-    });
-  }
+  let resetForm = () => {};
+  let loadForEdit = () => {};
+  let openEditReminderSheet = () => {};
+  let openNewReminderSheet = () => {};
+  let handleSaveAction = () => {};
 
   function createReminderFromPayload(payload = {}, options = {}) {
     const {
@@ -6280,7 +6211,7 @@ export async function initReminders(sel = {}) {
     };
   }
 
-  function handleSaveAction(){
+  handleSaveAction = function handleSaveActionLegacy(){
     // Debug: log when save handler invoked to help trace click issues
 
     const rawTitle = typeof title?.value === 'string' ? title.value : '';
@@ -6385,6 +6316,81 @@ export async function initReminders(sel = {}) {
     if(details) details.value='';
     clearPlannerReminderContext();
     dispatchCueEvent('cue:close', { reason: 'created' });
+  }
+
+  ({
+    resetForm,
+    loadForEdit,
+    openEditReminderSheet,
+    openNewReminderSheet,
+    handleSaveAction,
+  } = createReminderFormHandlers({
+    title,
+    date,
+    time,
+    details,
+    categoryInput,
+    plannerLessonInput,
+    saveBtn,
+    cancelEditBtn,
+    DEFAULT_CATEGORY,
+    getItems: () => items,
+    getCurrentReminderMode: () => currentReminderMode,
+    getEditingId: () => editingId,
+    setReminderMode,
+    syncEditingIdFromMode: () => {
+      editingId = currentReminderMode === 'edit' ? currentReminderId : null;
+    },
+    setPriorityInputValue,
+    getPriorityInputValue,
+    normalizeCategory,
+    normalizeRecurrence,
+    normalizeIsoString,
+    applyStoredDefaultsToInputs,
+    clearPlannerReminderContext,
+    clearDetailSelection,
+    applyDetailSelection,
+    focusTitleField,
+    dispatchCueEvent,
+    closeCreateSheetIfOpen,
+    emitActivity,
+    toast,
+    parseManualDueInput,
+    parseQuickWhen,
+    createReminderFromPayload,
+    saveToFirebase,
+    tryCalendarSync,
+    render,
+    scheduleReminder,
+    persistItems,
+    emitReminderUpdates,
+    setSuppressRenderMemoryEvent: (value) => {
+      suppressRenderMemoryEvent = value;
+    },
+    isoToLocalDate,
+    isoToLocalTime,
+    scrollToTop: () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+  }));
+
+  if (typeof window !== 'undefined') {
+    window.openNewReminderSheet = openNewReminderSheet;
+    window.openEditReminderSheet = openEditReminderSheet;
+  }
+
+  if (emptyStateEl instanceof HTMLElement) {
+    emptyStateEl.addEventListener('click', (event) => {
+      const trigger = event.target instanceof Element
+        ? event.target.closest('#emptyStateCreateBtn')
+        : null;
+      if (!(trigger instanceof HTMLElement)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      openNewReminderSheet(trigger);
+    });
   }
 
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleSaveAction(); });
