@@ -2407,6 +2407,7 @@ const initMobileNotes = () => {
   let closeOverflowMenu = () => {};
   let handleMoveNoteToFolder = () => {};
   let openFolderOverflowMenu = () => {};
+  let afterFolderCreated = null;
 
   ({
     setAfterFolderCreated,
@@ -3179,83 +3180,7 @@ const initMobileNotes = () => {
     applyNotesMode,
     getNotesMode: () => notesMode,
   });
-
-  if (false) {
-  if (filterInput) {
-    const handleFilterInput = debounce(() => {
-      filterQuery = typeof filterInput.value === 'string' ? filterInput.value.trim() : '';
-      renderFilteredNotes();
-    }, 200);
-
-    filterInput.addEventListener('input', handleFilterInput);
-    filterInput.addEventListener('search', handleFilterInput);
-  }
-
-  if (notesOverviewSearch instanceof HTMLElement) {
-    notesOverviewSearch.addEventListener('input', () => {
-      notesOverviewQuery = typeof notesOverviewSearch.value === 'string' ? notesOverviewSearch.value.trim() : '';
-      renderNotesOverview();
-    });
-  }
-
-  if (notesOverviewSort instanceof HTMLSelectElement) {
-    notesOverviewSort.addEventListener('change', () => {
-      notesOverviewSortValue = notesOverviewSort.value || 'recent';
-      renderNotesOverview();
-    });
-  }
-
-  if (notesOverviewState instanceof HTMLSelectElement) {
-    notesOverviewState.addEventListener('change', () => {
-      notesOverviewStateValue = notesOverviewState.value || 'all';
-      renderNotesOverview();
-    });
-  }
-
-  if (notebookBrowserList instanceof HTMLElement) {
-    notebookBrowserList.addEventListener('click', (event) => {
-      const trigger = event.target instanceof HTMLElement ? event.target.closest('[data-notebook-folder]') : null;
-      if (!(trigger instanceof HTMLElement)) {
-        return;
-      }
-      const requestedName = String(trigger.dataset.notebookFolder || '').trim();
-      if (!requestedName) {
-        return;
-      }
-
-      const allFolderOptions = Array.isArray(getFolders()) ? getFolders() : [];
-      const normalizedName = requestedName.toLowerCase();
-      const folderMatch = allFolderOptions.find((folder) => {
-        const folderName = typeof folder?.name === 'string' ? folder.name.trim().toLowerCase() : '';
-        return folderName === normalizedName;
-      });
-
-      currentFolderId = folderMatch?.id || (normalizedName === 'unsorted' ? 'unsorted' : 'all');
-      setActiveFolderFilter(currentFolderId);
-      setActiveFolderChip(currentFolderId);
-      renderFilteredNotes();
-    });
-  }
-
-  window.addEventListener('memorycue:notes:mode', (event) => {
-    applyNotesMode(event?.detail?.mode);
-    if (notesMode === 'overview') {
-      renderNotesOverview();
-    }
-  });
-
-  if (folderFilterSelect) {
-    folderFilterSelect.addEventListener('change', (event) => {
-      const target = event?.target;
-      if (!(target instanceof HTMLSelectElement)) {
-        return;
-      }
-      const selectedFolderId = normalizeFolderId(target.value, { fallback: 'all' });
-      currentFolderId = selectedFolderId || 'all';
-      renderFilteredNotes();
-    });
-  }
-  }
+  // Legacy notebook browser wiring lives in src/ui/mobileNotesBrowserUi.js.
 
   const applyInitialSelection = () => {
     refreshFromStorage({ preserveDraft: false });
