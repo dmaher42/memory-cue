@@ -27,6 +27,9 @@ export const startSignInFlow = async () => {
     }
 
     const provider = new firebase.GoogleAuthProvider();
+    if (typeof provider?.setCustomParameters === 'function') {
+      provider.setCustomParameters({ prompt: 'select_account' });
+    }
     const result = await firebase.signInWithPopup(firebase.auth, provider);
     return result?.user || null;
   })();
