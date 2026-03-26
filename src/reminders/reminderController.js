@@ -4372,8 +4372,26 @@ export async function initReminders(sel = {}) {
       activityAction = 'created',
       activityLabelPrefix = 'Reminder added',
     } = options;
+    const sourceText = typeof payload?.text === 'string' && payload.text.trim()
+      ? payload.text.trim()
+      : typeof payload?.title === 'string' && payload.title.trim()
+        ? payload.title.trim()
+        : '';
+    const parsedSchedule = sourceText ? parseReminderScheduleFromText(sourceText) : { dueDate: null, cleanedText: '' };
+    const hasExplicitDue = typeof payload?.dueAt === 'string' && payload.dueAt.trim()
+      || typeof payload?.due === 'string' && payload.due.trim()
+      || payload?.dueAt instanceof Date
+      || payload?.due instanceof Date;
+    const cleanedTitle = parsedSchedule.cleanedText || stripReminderPromptPrefix(sourceText);
+    const normalizedPayload = cleanedTitle && (hasExplicitDue || parsedSchedule.dueDate instanceof Date)
+      ? {
+        ...payload,
+        text: cleanedTitle,
+        title: cleanedTitle,
+      }
+      : payload;
 
-    const item = reminderDataService.createReminder(payload, {
+    const item = reminderDataService.createReminder(normalizedPayload, {
       normalizeReminder: (record) => normalizeReminderRecord(record),
       createId: uid,
       defaultCategory: categoryInput ? categoryInput.value : DEFAULT_CATEGORY,
