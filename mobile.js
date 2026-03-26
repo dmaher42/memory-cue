@@ -1085,6 +1085,12 @@ const initMobileNotes = () => {
   if (typeof document === 'undefined') {
     return;
   }
+  if (typeof window !== 'undefined' && window.__memoryCueMobileNotesInit === true) {
+    return;
+  }
+  if (typeof window !== 'undefined') {
+    window.__memoryCueMobileNotesInit = true;
+  }
 
   const titleInput = document.getElementById('noteTitleMobile');
   const scratchNotesEditorElement = document.getElementById('notebook-editor-body');
