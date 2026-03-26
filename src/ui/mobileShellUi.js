@@ -32,6 +32,10 @@ export const initHeaderOverflowMenu = () => {
     'button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
 
   let restoreFocusTo = menuBtn;
+  const signInMenuItem = menu.querySelector('[data-menu-action="sign-in"]');
+  const signOutMenuItem = menu.querySelector('[data-menu-action="sign-out"]');
+  const accountSection = menu.querySelector('[data-menu-section="account"]');
+  const themeMenuButtons = Array.from(menu.querySelectorAll('[data-menu-action^="theme-"]'));
 
   const isVisible = (element) => {
     if (!(element instanceof HTMLElement)) return false;
@@ -96,6 +100,51 @@ export const initHeaderOverflowMenu = () => {
     }
   };
 
+  const setMenuItemHidden = (item, hidden) => {
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+
+    item.hidden = Boolean(hidden);
+    if (hidden) {
+      item.setAttribute('aria-hidden', 'true');
+      item.tabIndex = -1;
+    } else {
+      item.removeAttribute('aria-hidden');
+      item.removeAttribute('tabindex');
+    }
+  };
+
+  const syncMenuState = () => {
+    const signOutSource = document.getElementById('googleSignOutBtn');
+    const signedIn =
+      signOutSource instanceof HTMLElement && !signOutSource.classList.contains('hidden');
+
+    setMenuItemHidden(signInMenuItem, signedIn);
+    setMenuItemHidden(signOutMenuItem, !signedIn);
+
+    if (accountSection instanceof HTMLElement) {
+      const hasVisibleAccountAction =
+        (signInMenuItem instanceof HTMLElement && !signInMenuItem.hidden) ||
+        (signOutMenuItem instanceof HTMLElement && !signOutMenuItem.hidden);
+      accountSection.hidden = !hasVisibleAccountAction;
+    }
+
+    const currentTheme = document.documentElement?.getAttribute('data-theme') || 'light';
+    themeMenuButtons.forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const action = button.getAttribute('data-menu-action');
+      const isActive =
+        (action === 'theme-light' && currentTheme === 'light')
+        || (action === 'theme-dark' && currentTheme === 'dark')
+        || (action === 'theme-professional-dark' && currentTheme === 'professional-dark');
+      button.classList.toggle('overflow-menu-item--active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  };
+
   const positionMenu = () => {
     if (menu.classList.contains('hidden')) {
       menu.style.left = '';
@@ -129,6 +178,7 @@ export const initHeaderOverflowMenu = () => {
   const openMenu = () => {
     if (!menu.classList.contains('hidden')) return;
     restoreFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : menuBtn;
+    syncMenuState();
     menu.classList.remove('hidden');
     menuBtn.setAttribute('aria-expanded', 'true');
     updateAriaHidden();
