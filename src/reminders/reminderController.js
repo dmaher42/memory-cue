@@ -2662,6 +2662,22 @@ export async function initReminders(sel = {}) {
       };
     }
 
+    const compactTimeMatch = text.match(/\b(?:at\s*)?(\d{3,4})\b/);
+    if (compactTimeMatch) {
+      const digits = compactTimeMatch[1];
+      const hourDigits = digits.length === 3 ? digits.slice(0, 1) : digits.slice(0, 2);
+      const minuteDigits = digits.length === 3 ? digits.slice(1) : digits.slice(2);
+      const hours = Number.parseInt(hourDigits, 10);
+      const minutes = Number.parseInt(minuteDigits, 10);
+      if (Number.isFinite(hours) && Number.isFinite(minutes) && hours <= 23 && minutes < 60) {
+        return {
+          hours,
+          minutes,
+          meridiem: '',
+        };
+      }
+    }
+
     return null;
   }
 
@@ -5518,6 +5534,23 @@ export async function initReminders(sel = {}) {
         timePattern = twentyFourHourMatch[0]
           ? new RegExp(twentyFourHourMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
           : null;
+      }
+    }
+
+    if (!timeLabel) {
+      const compactTimeMatch = cleaned.match(/\b(?:at\s*)?(\d{3,4})\b/);
+      if (compactTimeMatch) {
+        const digits = compactTimeMatch[1];
+        const hourDigits = digits.length === 3 ? digits.slice(0, 1) : digits.slice(0, 2);
+        const minuteDigits = digits.length === 3 ? digits.slice(1) : digits.slice(2);
+        const hours = Number.parseInt(hourDigits, 10);
+        const minutes = Number.parseInt(minuteDigits, 10);
+        if (Number.isFinite(hours) && Number.isFinite(minutes) && hours <= 23 && minutes < 60) {
+          timeLabel = formatDisplayTimeLabel(hours, minutes);
+          timePattern = compactTimeMatch[0]
+            ? new RegExp(compactTimeMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+            : null;
+        }
       }
     }
 
