@@ -59,6 +59,53 @@ const setTimeOnDate = (date, hours, minutes = 0) => {
 
 const REMINDER_TIMING_REPLY_PATTERN = /\b(today|tomorrow|tonight|next week|morning|afternoon|evening|night|am|pm|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|(?:^|\s)\d{1,2}:\d{2}(?:\s*[ap]m)?\b|\b\d{3,4}\s*(?:am|pm)?\b|\b\d{1,2}\s*(?:am|pm)\b/i;
 
+const stripReminderPromptPrefix = (text) => {
+  let cleaned = normalizeText(text);
+  if (!cleaned) {
+    return '';
+  }
+
+  const prefixPatterns = [
+    /^(?:and\s+)+/i,
+    /^(?:(?:please|hey|ok(?:ay)?)\s+)?(?:(?:add|set|create|make)\s+)?(?:(?:me\s+)?(?:a|an)\s+)?(?:new\s+)?(?:reminder|remider|remind(?:er)?(?:\s+me)?|reminder\s+me)\b[\s:,-]*/i,
+    /^(?:and\s+)?(?:remind(?:er)?\s+me\s+to|remind\s+me\s+to|remember\s+to)\b[\s:,-]*/i,
+  ];
+
+  let updated = true;
+  while (updated && cleaned) {
+    updated = false;
+    prefixPatterns.forEach((pattern) => {
+      const next = cleaned.replace(pattern, '').trim();
+      if (next !== cleaned) {
+        cleaned = next;
+        updated = true;
+      }
+    });
+  }
+
+  return cleaned;
+};
+
+const cleanReminderTitle = (text) => {
+  let cleaned = stripReminderPromptPrefix(text);
+  if (!cleaned) {
+    return '';
+  }
+
+  cleaned = cleaned
+    .replace(/\b(?:today|tomorrow|tonight|next week|morning|afternoon|evening|night)\b/gi, ' ')
+    .replace(/\b(?:(?:next)\s+)?(?:monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/gi, ' ')
+    .replace(/\b(?:at\s*)?(?:\d{1,2}(?::\d{2})?|\d{3,4})\s*(?:am|pm)\b/gi, ' ')
+    .replace(/\b(?:at\s*)?\d{1,2}:\d{2}\b/gi, ' ')
+    .replace(/^[,.\-:;\s]+|[,.\-:;\s]+$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^(?:and|to)\b\s*/i, '')
+    .replace(/\b(?:at|on|by|for)\b\s*$/i, '')
+    .trim();
+
+  return cleaned;
+};
+
 const extractTimeParts = (normalizedText) => {
   if (typeof normalizedText !== 'string' || !normalizedText.trim()) {
     return null;
@@ -203,6 +250,7 @@ const buildPendingReminderDecision = (intent, dueAt) => {
   const parsedEntry = intent?.parsedEntry && typeof intent.parsedEntry === 'object'
     ? intent.parsedEntry
     : {};
+  const resolvedTitle = cleanReminderTitle(intent?.payload?.text || parsedEntry?.title || intent?.text || '');
 
   return {
     decisionType: 'persist_reminder',
@@ -211,7 +259,7 @@ const buildPendingReminderDecision = (intent, dueAt) => {
     parsedEntry: {
       ...parsedEntry,
       type: 'reminder',
-      title: intent?.payload?.text || parsedEntry?.title || intent?.text || '',
+      title: resolvedTitle || intent?.payload?.text || parsedEntry?.title || intent?.text || '',
       reminderDate: dueAt,
       metadata: {
         ...(parsedEntry?.metadata && typeof parsedEntry.metadata === 'object' ? parsedEntry.metadata : {}),
