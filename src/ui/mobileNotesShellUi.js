@@ -13,6 +13,72 @@ const escapeHtml = (value = '') => String(value)
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
+const NOTEBOOK_POLISH_STYLE_ID = 'memory-cue-notebook-polish';
+const NOTEBOOK_POLISH_CSS = `
+  .mobile-panel--notes .scratch-notes-header-block {
+    gap: 0.5rem;
+    padding: 0.7rem 0.8rem 0.75rem;
+    background: color-mix(in srgb, #ffffff 95%, #f2ecff 5%);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .mobile-panel--notes .note-editor-actions-row {
+    gap: 0.45rem;
+  }
+
+  #view-notebook .note-inline-action {
+    min-height: 32px;
+    padding: 0.42rem 0.78rem;
+    font-size: 0.78rem;
+    background: color-mix(in srgb, #ffffff 96%, #efe8fb 4%);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] > div {
+    border-color: color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action {
+    min-height: 30px;
+    padding: 0.35rem 0.72rem;
+    font-size: 0.76rem;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] p {
+    margin: 0;
+  }
+
+  .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
+    gap: 0.6rem;
+    padding: 0.52rem 0.6rem;
+    background: color-mix(in srgb, #ffffff 94%, #f3eefc 6%);
+    box-shadow: 0 10px 24px rgba(17, 17, 26, 0.1);
+  }
+
+  #view-notebook #relatedNotesPanel {
+    margin: 0.35rem 0 0.1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid color-mix(in srgb, var(--card-border, #d8dce6) 72%, transparent);
+  }
+
+  #view-notebook #relatedNotesPanel h3 {
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    color: color-mix(in srgb, var(--text-main, #231B2E) 82%, #7c8798 18%);
+  }
+
+  #view-notebook #relatedNotesList {
+    display: grid;
+    gap: 0.38rem;
+  }
+
+  body[data-active-view="notebooks"] .note-editor-card {
+    padding-bottom: 12px !important;
+  }
+`;
+
 export const initMobileNotesShellUi = (options = {}) => {
   if (typeof document === 'undefined') {
     return {
@@ -82,6 +148,22 @@ export const initMobileNotesShellUi = (options = {}) => {
   let currentNoteOptionsFocusRestoreEl = null;
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
+
+  const ensureNotebookPolishStyles = () => {
+    if (!(document.head instanceof HTMLElement)) {
+      return;
+    }
+    const existingStyle = document.getElementById(NOTEBOOK_POLISH_STYLE_ID);
+    if (existingStyle instanceof HTMLStyleElement) {
+      return;
+    }
+    const styleEl = document.createElement('style');
+    styleEl.id = NOTEBOOK_POLISH_STYLE_ID;
+    styleEl.textContent = NOTEBOOK_POLISH_CSS;
+    document.head.appendChild(styleEl);
+  };
+
+  ensureNotebookPolishStyles();
 
   const ensureSheetActionButton = (button, className, label, insertAfterSelector = null) => {
     if (button instanceof HTMLButtonElement) {
