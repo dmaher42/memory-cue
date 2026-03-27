@@ -2,6 +2,7 @@ import {
   createLessonCueFromNote,
   getActiveLessonNote,
   getLessonCueFields,
+  getTeacherLessonContext,
   isActiveLessonNoteId,
   setActiveLessonNoteId,
 } from '../services/teacherModeService.js';
@@ -70,6 +71,13 @@ const NOTEBOOK_POLISH_CSS = `
     min-height: 30px;
     padding: 0.35rem 0.72rem;
     font-size: 0.76rem;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action[data-selected="true"] {
+    background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #512663) 30%, transparent);
+    color: var(--text-main, #231B2E);
+    font-weight: 600;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] p {
@@ -347,11 +355,22 @@ export const initMobileNotesShellUi = (options = {}) => {
     const currentNote = currentNoteId
       ? getAllNotes().find((note) => note?.id === currentNoteId) || null
       : null;
-    const cueLabel = currentNote?.metadata?.noteType === 'lesson-cue' ? 'Refresh Lesson Cue' : 'Create Lesson Cue';
-    const activeLessonLabel = currentNote && isActiveLessonNoteId(currentNote.id) ? 'Active Lesson' : 'Use as Active Lesson';
-    const helperText = currentNote
-      ? 'Create a short teaching cue or pin this as the active lesson.'
-      : 'Save this note first, then use teacher tools here.';
+    const lessonContext = currentNote ? getTeacherLessonContext(currentNote, getAllNotes()) : null;
+    const hasCurrentNote = Boolean(currentNote);
+    const sourceNoteId = lessonContext?.sourceNoteId || null;
+    const cueNoteId = lessonContext?.cueNoteId || null;
+    const canShowPlanToggle = Boolean(sourceNoteId && (lessonContext?.isCueNote || lessonContext?.hasLessonPair));
+    const canShowCueToggle = Boolean(cueNoteId || sourceNoteId);
+    const cueLabel = cueNoteId ? 'Refresh Cue' : 'Create Cue';
+    const activeLessonTargetId = cueNoteId || sourceNoteId || currentNoteId || '';
+    const activeLessonLabel = activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId)
+      ? 'Active Lesson'
+      : 'Set Active Lesson';
+    const helperText = !hasCurrentNote
+      ? 'Save this note first, then use teacher tools here.'
+      : cueNoteId
+        ? 'Switch between the full lesson plan and the cue without leaving this editor.'
+        : 'Create a cue once, then switch between your lesson plan and cue here.';
 
     bar.innerHTML = `
       <div class="w-full rounded-xl border border-base-300 bg-base-100/80 px-3 py-2">
@@ -365,15 +384,32 @@ export const initMobileNotesShellUi = (options = {}) => {
               type="button"
               class="note-inline-action"
               data-teacher-mode-action="cue"
-              ${currentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
+              ${hasCurrentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
             >${escapeHtml(cueLabel)}</button>
             <button
               type="button"
               class="note-inline-action"
               data-teacher-mode-action="active"
-              ${currentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
+              ${activeLessonTargetId ? `data-note-id="${escapeHtml(activeLessonTargetId)}"` : 'disabled'}
             >${escapeHtml(activeLessonLabel)}</button>
           </div>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button
+            type="button"
+            class="note-inline-action"
+            data-teacher-mode-action="lesson-plan"
+            ${canShowPlanToggle ? `data-note-id="${escapeHtml(sourceNoteId || '')}"` : 'disabled'}
+            ${currentNoteId && currentNoteId === sourceNoteId ? 'data-selected="true"' : 'data-selected="false"'}
+          >Lesson Plan</button>
+          <button
+            type="button"
+            class="note-inline-action"
+            data-teacher-mode-action="lesson-cue"
+            ${canShowCueToggle ? `data-note-id="${escapeHtml(cueNoteId || sourceNoteId || '')}"` : 'disabled'}
+            ${cueNoteId ? '' : 'data-generate-cue="true"'}
+            ${currentNoteId && cueNoteId && currentNoteId === cueNoteId ? 'data-selected="true"' : 'data-selected="false"'}
+          >Lesson Cue</button>
         </div>
       </div>
     `;
@@ -395,14 +431,34 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
 
     if (actionButton.dataset.teacherModeAction === 'cue') {
-      await createLessonCueFromNote(noteId);
+      const cueNote = await createLessonCueFromNote(noteId);
       refreshFromStorage({ preserveDraft: true });
+      if (cueNote?.id && typeof onOpenNoteFromDashboard === 'function') {
+        onOpenNoteFromDashboard(cueNote.id, { isSavedNotesSheetOpen, hideSavedNotesSheet });
+      }
       return;
     }
 
     if (actionButton.dataset.teacherModeAction === 'active') {
       setActiveLessonNoteId(noteId);
       refreshFromStorage({ preserveDraft: true });
+      return;
+    }
+
+    if (actionButton.dataset.teacherModeAction === 'lesson-cue'
+      && actionButton.dataset.generateCue === 'true') {
+      const cueNote = await createLessonCueFromNote(noteId);
+      refreshFromStorage({ preserveDraft: true });
+      if (cueNote?.id && typeof onOpenNoteFromDashboard === 'function') {
+        onOpenNoteFromDashboard(cueNote.id, { isSavedNotesSheetOpen, hideSavedNotesSheet });
+      }
+      return;
+    }
+
+    if ((actionButton.dataset.teacherModeAction === 'lesson-plan' || actionButton.dataset.teacherModeAction === 'lesson-cue')
+      && noteId
+      && typeof onOpenNoteFromDashboard === 'function') {
+      onOpenNoteFromDashboard(noteId, { isSavedNotesSheetOpen, hideSavedNotesSheet });
     }
   };
 

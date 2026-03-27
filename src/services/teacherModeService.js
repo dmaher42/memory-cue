@@ -528,6 +528,65 @@ const ensureTeacherMetadata = (note = {}, noteType = 'lesson-source', extra = {}
   ...extra,
 });
 
+const getNoteType = (note = {}) => (
+  typeof note?.metadata?.noteType === 'string' ? note.metadata.noteType.trim() : ''
+);
+
+export const findLessonCueNote = (sourceNoteId, notes = null) => {
+  const normalizedSourceNoteId = typeof sourceNoteId === 'string' ? sourceNoteId.trim() : '';
+  if (!normalizedSourceNoteId) {
+    return null;
+  }
+  const sourceNotes = Array.isArray(notes) ? notes : loadAllNotes();
+  return sourceNotes.find((note) => (
+    getNoteType(note) === 'lesson-cue'
+    && typeof note?.metadata?.sourceNoteId === 'string'
+    && note.metadata.sourceNoteId.trim() === normalizedSourceNoteId
+  )) || null;
+};
+
+export const getTeacherLessonContext = (noteOrNoteId, notes = null) => {
+  const sourceNotes = Array.isArray(notes) ? notes : loadAllNotes();
+  const currentNote = typeof noteOrNoteId === 'string'
+    ? sourceNotes.find((entry) => entry?.id === noteOrNoteId) || null
+    : noteOrNoteId && typeof noteOrNoteId === 'object'
+      ? noteOrNoteId
+      : null;
+
+  if (!currentNote) {
+    return {
+      currentNote: null,
+      sourceNote: null,
+      cueNote: null,
+      sourceNoteId: null,
+      cueNoteId: null,
+      isCueNote: false,
+      isLessonSource: false,
+      hasLessonPair: false,
+    };
+  }
+
+  const currentType = getNoteType(currentNote);
+  const isCueNote = currentType === 'lesson-cue';
+  const sourceNote = isCueNote
+    ? sourceNotes.find((entry) => entry?.id === currentNote?.metadata?.sourceNoteId) || null
+    : currentNote;
+  const cueNote = isCueNote
+    ? currentNote
+    : findLessonCueNote(currentNote?.id, sourceNotes);
+
+  return {
+    currentNote,
+    sourceNote,
+    cueNote,
+    sourceNoteId: sourceNote?.id || null,
+    cueNoteId: cueNote?.id || null,
+    isCueNote,
+    isLessonSource: getNoteType(sourceNote) === 'lesson-source' || Boolean(sourceNote?.metadata?.teaching),
+    hasLessonPair: Boolean(sourceNote && cueNote),
+  };
+};
+
 export const getActiveLessonNoteId = () => {
   if (typeof localStorage === 'undefined') {
     return null;
@@ -580,7 +639,9 @@ export const createLessonCueFromNote = async (noteId) => {
   }
 
   const notes = loadAllNotes();
-  const sourceNote = notes.find((note) => note?.id === normalizedId);
+  const lessonContext = getTeacherLessonContext(normalizedId, notes);
+  const sourceNote = lessonContext.sourceNote;
+  const existingCueNote = lessonContext.cueNote;
   if (!sourceNote) {
     return null;
   }
@@ -614,10 +675,11 @@ export const createLessonCueFromNote = async (noteId) => {
   const cueHtml = formatCueHtml(cueFields);
   const timestamp = new Date().toISOString();
   const cueNote = createNote(buildCueTitle(sourceNote), normalizedCueBody, {
+    id: existingCueNote?.id || undefined,
     folderId: sourceNote.folderId,
     bodyHtml: cueHtml || normalizedCueBody,
     bodyText: normalizedCueBody,
-    createdAt: timestamp,
+    createdAt: existingCueNote?.createdAt || timestamp,
     updatedAt: timestamp,
     metadata: ensureTeacherMetadata(sourceNote, 'lesson-cue', {
       sourceNoteId: sourceNote.id,
@@ -634,7 +696,8 @@ export const createLessonCueFromNote = async (noteId) => {
       : note
   ));
 
-  saveAllNotes([cueNote, ...updatedNotes]);
+  const notesWithoutPreviousCue = updatedNotes.filter((note) => note?.id !== existingCueNote?.id);
+  saveAllNotes([cueNote, ...notesWithoutPreviousCue]);
   setActiveLessonNoteId(cueNote.id);
   return cueNote;
 };
