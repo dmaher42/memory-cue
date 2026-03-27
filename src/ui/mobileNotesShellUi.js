@@ -15,6 +15,32 @@ const escapeHtml = (value = '') => String(value)
 
 const NOTEBOOK_POLISH_STYLE_ID = 'memory-cue-notebook-polish';
 const NOTEBOOK_POLISH_CSS = `
+  #view-notebook #notesOverviewPanel {
+    padding: 0.8rem;
+    margin: 0.6rem 0.75rem 0.75rem;
+    border-radius: 1.1rem;
+    background: color-mix(in srgb, #ffffff 95%, #f3eefc 5%);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  #view-notebook #notesOverviewPanel > h2 {
+    margin: 0;
+    font-size: 0.98rem;
+    letter-spacing: 0.01em;
+  }
+
+  #view-notebook #notesOverviewList {
+    gap: 0.5rem;
+  }
+
+  #view-notebook [data-active-lesson-card] {
+    margin-top: 0.55rem;
+    margin-bottom: 0.4rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, #ffffff 96%, #efe8fb 4%);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  }
+
   .mobile-panel--notes .scratch-notes-header-block {
     gap: 0.5rem;
     padding: 0.7rem 0.8rem 0.75rem;
@@ -72,6 +98,66 @@ const NOTEBOOK_POLISH_CSS = `
   #view-notebook #relatedNotesList {
     display: grid;
     gap: 0.38rem;
+  }
+
+  #savedNotesSheet .saved-notes-panel {
+    background: color-mix(in srgb, #ffffff 97%, #f4f0fb 3%);
+    box-shadow: -10px 0 28px rgba(15, 23, 42, 0.18);
+  }
+
+  #savedNotesSheet .saved-notes-header {
+    gap: 0.55rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--card-border, #d8dce6) 70%, transparent);
+  }
+
+  #savedNotesSheet .saved-notes-list-shell {
+    padding-top: 0.15rem;
+  }
+
+  #savedNotesSheet .saved-notes-list {
+    gap: 0.2rem;
+  }
+
+  #savedNotesSheet .note-item-mobile {
+    border-bottom-color: color-mix(in srgb, var(--text-secondary, #cbd5e1) 18%, transparent);
+  }
+
+  #savedNotesSheet .note-list-item {
+    border-radius: 0.95rem;
+    margin: 0.12rem 0;
+    padding: 0.15rem 0.1rem;
+    transition: background-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  #savedNotesSheet .note-list-item:hover,
+  #savedNotesSheet .note-list-item:focus-within {
+    background: color-mix(in srgb, #ffffff 88%, #efe8fb 12%);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--card-border, #d8dce6) 54%, transparent);
+  }
+
+  #savedNotesSheet .note-card-title {
+    font-size: 0.92rem;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+
+  #savedNotesSheet .note-card-meta {
+    gap: 0.38rem;
+    margin-top: 0.2rem;
+  }
+
+  #savedNotesSheet .note-card-action {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--text-main, #231B2E) 62%, #7c8798 38%);
+  }
+
+  #savedNotesSheet .note-card-action:hover,
+  #savedNotesSheet .note-card-action:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, #512663) 10%, #ffffff 90%);
+    color: var(--text-main, #231B2E);
   }
 
   body[data-active-view="notebooks"] .note-editor-card {
