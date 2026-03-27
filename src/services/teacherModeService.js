@@ -96,6 +96,63 @@ const firstQuestionLine = (lines = []) => (
     : ''
 ) || '';
 
+const findLines = (lines = [], patterns = []) => {
+  if (!Array.isArray(lines) || !lines.length) {
+    return [];
+  }
+  const matcher = Array.isArray(patterns) ? patterns : [];
+  return lines.filter((line) => matcher.some((pattern) => pattern.test(line)));
+};
+
+const uniqueLines = (lines = []) => {
+  const seen = new Set();
+  return (Array.isArray(lines) ? lines : []).filter((line) => {
+    const normalized = normalizeText(line).toLowerCase();
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+    seen.add(normalized);
+    return true;
+  });
+};
+
+const toSentenceCase = (value = '') => {
+  const normalized = normalizeText(value);
+  if (!normalized) {
+    return '';
+  }
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
+
+const stripLeadIn = (value = '', patterns = []) => {
+  let result = normalizeText(value);
+  patterns.forEach((pattern) => {
+    result = result.replace(pattern, '').trim();
+  });
+  return result;
+};
+
+const buildSayLine = (title = '', goal = '', source = '') => {
+  const cleanedSource = stripLeadIn(source, [
+    /^say[:\s-]*/i,
+    /^(teacher says?|explain|introduce|share)[:\s-]*/i,
+  ]);
+  if (cleanedSource) {
+    return toSentenceCase(cleanedSource);
+  }
+
+  const cleanedGoal = stripLeadIn(goal, [
+    /^(goal|objective|learning intention|success criteria)[:\s-]*/i,
+    /^students will\b[:\s-]*/i,
+    /^we are learning to\b[:\s-]*/i,
+  ]);
+  if (cleanedGoal) {
+    return `Today we are learning to ${cleanedGoal.replace(/\.$/, '')}.`;
+  }
+
+  return `Today we will focus on ${title}.`;
+};
+
 const buildFallbackCueBody = (note = {}) => {
   const title = normalizeText(note?.title) || 'Lesson';
   const text = toPlainText(note);
@@ -105,25 +162,56 @@ const buildFallbackCueBody = (note = {}) => {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const goal = findLine(lines, [/\b(goal|objective|learning intention|success criteria)\b/i])
-    || lines[0]
-    || `Teach the main idea from ${title}.`;
+  const goalCandidates = uniqueLines([
+    ...findLines(lines, [/\b(learning intention|objective|goal|success criteria|walt|students will)\b/i]),
+    ...findLines(sentences, [/\b(learning intention|objective|goal|success criteria|walt|students will)\b/i]),
+    lines[0],
+  ]);
+  const goal = goalCandidates[0] || `Teach the main idea from ${title}.`;
 
-  const say = findLine(lines, [/^say[:\s-]/i, /\b(explain|introduce|model)\b/i])
-    || sentences[0]
-    || `Today we will focus on ${title}.`;
+  const saySource = findLine(lines, [
+    /^say[:\s-]/i,
+    /\b(explain|introduce|share|teacher says?)\b/i,
+    /\bwe are learning to\b/i,
+  ]) || sentences[0];
+  const say = buildSayLine(title, goal, saySource);
 
-  const teachCandidates = lines.filter((line) => line !== goal && line !== say && !line.includes('?'));
-  const teach = teachCandidates.slice(0, 2).join('; ') || `Model one clear example from ${title}.`;
+  const teachCandidates = uniqueLines(lines.filter((line) => (
+    line
+    && line !== goal
+    && line !== saySource
+    && !line.includes('?')
+  )));
+  const focusedTeachCandidates = uniqueLines([
+    ...findLines(teachCandidates, [/\b(model|teach|explain|demonstrate|show|review|mentor sentence|example)\b/i]),
+    ...teachCandidates,
+  ]);
+  const teach = focusedTeachCandidates.slice(0, 2).join('; ') || `Model one clear example from ${title}.`;
 
-  const ask = firstQuestionLine(lines) || 'What do you notice first?';
+  const ask = firstQuestionLine(uniqueLines([
+    ...findLines(lines, [/\b(hinge question|question to ask|ask students|check understanding|discuss)\b/i]),
+    ...lines,
+  ])) || 'What do you notice first?';
 
-  const next = findLine(lines, [/\b(next|then|after that|independent|guided|practice|plenary|closing)\b/i])
-    || teachCandidates[3]
+  const nextCandidates = uniqueLines([
+    ...findLines(lines, [/\b(next|then|after that|guided practice|independent practice|plenary|closing|turn and talk|paired practice)\b/i]),
+    ...findLines(sentences, [/\b(next|then|after that|guided practice|independent practice|plenary|closing|turn and talk|paired practice)\b/i]),
+  ]);
+  const next = nextCandidates[0]
+    || focusedTeachCandidates[2]
     || 'Model one example, then guide practice.';
 
-  const materials = findLine(lines, [/\b(materials|resources|bring|worksheet|slides)\b/i]) || 'Slides, example text, and workbook.';
-  const reminder = findLine(lines, [/\b(remind|check|collect|follow up|before class|after class)\b/i]) || 'Check understanding before independent work.';
+  const materialCandidates = uniqueLines([
+    ...findLines(lines, [/\b(materials|resources|bring|worksheet|slides|whiteboard|mentor sentence|text)\b/i]),
+    ...findLines(sentences, [/\b(materials|resources|bring|worksheet|slides|whiteboard|mentor sentence|text)\b/i]),
+  ]);
+  const materials = materialCandidates[0] || 'Slides, example text, and workbook.';
+
+  const reminderCandidates = uniqueLines([
+    ...findLines(lines, [/\b(remind|check|collect|follow up|before class|after class|watch for|listen for)\b/i]),
+    ...findLines(sentences, [/\b(remind|check|collect|follow up|before class|after class|watch for|listen for)\b/i]),
+  ]);
+  const reminder = reminderCandidates[0] || 'Check understanding before independent work.';
 
   return formatCueFields({
     Goal: goal,
@@ -150,6 +238,11 @@ const buildCueRequest = (note = {}) => {
           'Be concise, spoken-language friendly, and practical.',
           'Each line must be short enough to scan quickly during class.',
           'Do not add headings, bullets, numbering, or extra explanation.',
+          'Prefer exact teacher wording over broad summaries.',
+          'If the lesson includes a learning intention, success criteria, model, hinge question, guided practice, or resources, use them.',
+          'Keep "Say" as one sentence the teacher could say aloud.',
+          'Keep "Ask" as one usable question.',
+          'Keep "Next" as the immediate next teaching step, not the whole lesson sequence.',
           'Return exactly these seven lines:',
           'Goal: ...',
           'Say: ...',
