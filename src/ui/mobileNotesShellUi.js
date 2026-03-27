@@ -3,7 +3,10 @@ import {
   getActiveLessonNote,
   getLessonCueFields,
   getTeacherLessonContext,
+  getTeacherLessonStep,
+  getTeacherLessonSteps,
   isActiveLessonNoteId,
+  setTeacherLessonStep,
   setActiveLessonNoteId,
 } from '../services/teacherModeService.js';
 
@@ -77,6 +80,32 @@ const NOTEBOOK_POLISH_CSS = `
     background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #512663) 30%, transparent);
     color: var(--text-main, #231B2E);
+    font-weight: 600;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-row,
+  #view-notebook [data-active-lesson-card] .teacher-step-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-chip,
+  #view-notebook [data-active-lesson-card] .teacher-step-chip {
+    min-height: 29px;
+    padding: 0.32rem 0.62rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 68%, transparent);
+    background: color-mix(in srgb, #ffffff 96%, #f3eefc 4%);
+    font-size: 0.74rem;
+    line-height: 1;
+    color: var(--text-main, #231B2E);
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-chip[data-selected="true"],
+  #view-notebook [data-active-lesson-card] .teacher-step-chip[data-selected="true"] {
+    background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
+    border-color: color-mix(in srgb, var(--accent-color, #512663) 34%, transparent);
     font-weight: 600;
   }
 
@@ -361,6 +390,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     const cueNoteId = lessonContext?.cueNoteId || null;
     const canShowPlanToggle = Boolean(sourceNoteId && (lessonContext?.isCueNote || lessonContext?.hasLessonPair));
     const canShowCueToggle = Boolean(cueNoteId || sourceNoteId);
+    const lessonStepId = lessonContext ? getTeacherLessonStep(lessonContext.currentNote, getAllNotes()) : null;
+    const stepTargetId = sourceNoteId || cueNoteId || currentNoteId || '';
     const cueLabel = cueNoteId ? 'Refresh Cue' : 'Create Cue';
     const activeLessonTargetId = cueNoteId || sourceNoteId || currentNoteId || '';
     const activeLessonLabel = activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId)
@@ -371,6 +402,25 @@ export const initMobileNotesShellUi = (options = {}) => {
       : cueNoteId
         ? 'Switch between the full lesson plan and the cue without leaving this editor.'
         : 'Create a cue once, then switch between your lesson plan and cue here.';
+    const lessonStepMarkup = stepTargetId
+      ? `
+        <div class="mt-3">
+          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60 mb-2">Current step</p>
+          <div class="teacher-step-row">
+            ${getTeacherLessonSteps().map((step) => `
+              <button
+                type="button"
+                class="teacher-step-chip"
+                data-teacher-mode-action="step"
+                data-note-id="${escapeHtml(stepTargetId)}"
+                data-step-id="${escapeHtml(step.id)}"
+                data-selected="${lessonStepId === step.id ? 'true' : 'false'}"
+              >${escapeHtml(step.label)}</button>
+            `).join('')}
+          </div>
+        </div>
+      `
+      : '';
 
     bar.innerHTML = `
       <div class="w-full rounded-xl border border-base-300 bg-base-100/80 px-3 py-2">
@@ -411,6 +461,7 @@ export const initMobileNotesShellUi = (options = {}) => {
             ${currentNoteId && cueNoteId && currentNoteId === cueNoteId ? 'data-selected="true"' : 'data-selected="false"'}
           >Lesson Cue</button>
         </div>
+        ${lessonStepMarkup}
       </div>
     `;
   };
@@ -441,6 +492,12 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     if (actionButton.dataset.teacherModeAction === 'active') {
       setActiveLessonNoteId(noteId);
+      refreshFromStorage({ preserveDraft: true });
+      return;
+    }
+
+    if (actionButton.dataset.teacherModeAction === 'step') {
+      setTeacherLessonStep(noteId, actionButton.dataset.stepId || '', getAllNotes());
       refreshFromStorage({ preserveDraft: true });
       return;
     }
@@ -504,6 +561,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
 
     const cueFields = getLessonCueFields(activeLessonNote);
+    const currentStepId = getTeacherLessonStep(activeLessonNote, getAllNotes());
     const previewRows = [
       ['Goal', cueFields.Goal],
       ['Say', cueFields.Say],
@@ -512,6 +570,23 @@ export const initMobileNotesShellUi = (options = {}) => {
     const noteType = activeLessonNote?.metadata?.noteType === 'lesson-cue' ? 'Lesson Cue' : 'Lesson Note';
     const safeTitle = escapeHtml(activeLessonNote?.title || 'Active lesson');
     const safeType = escapeHtml(noteType);
+    const stepMarkup = `
+      <div class="mt-3">
+        <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60 mb-2">Current step</p>
+        <div class="teacher-step-row">
+          ${getTeacherLessonSteps().map((step) => `
+            <button
+              type="button"
+              class="teacher-step-chip"
+              data-active-lesson-action="step"
+              data-note-id="${escapeHtml(activeLessonNote.id || '')}"
+              data-step-id="${escapeHtml(step.id)}"
+              data-selected="${currentStepId === step.id ? 'true' : 'false'}"
+            >${escapeHtml(step.label)}</button>
+          `).join('')}
+        </div>
+      </div>
+    `;
     const rowsMarkup = previewRows.length
       ? previewRows.map(([label, value]) => (
         `<div class="space-y-1">
@@ -535,6 +610,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       <div class="space-y-3 mt-3">
         ${rowsMarkup}
       </div>
+      ${stepMarkup}
       <div class="flex flex-wrap gap-2 mt-3">
         <button
           type="button"
@@ -559,6 +635,16 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (actionButton.dataset.activeLessonAction === 'clear') {
       setActiveLessonNoteId(null);
       refreshFromStorage({ preserveDraft: true });
+      return;
+    }
+
+    if (actionButton.dataset.activeLessonAction === 'step') {
+      const noteId = actionButton.dataset.noteId || '';
+      const stepId = actionButton.dataset.stepId || '';
+      if (noteId && stepId) {
+        setTeacherLessonStep(noteId, stepId, getAllNotes());
+        refreshFromStorage({ preserveDraft: true });
+      }
       return;
     }
 
@@ -1101,6 +1187,11 @@ export const initMobileNotesShellUi = (options = {}) => {
   });
 
   document.addEventListener('memoryCue:activeLessonUpdated', () => {
+    renderActiveLessonCard();
+    renderTeacherModeEditorBar();
+  });
+
+  document.addEventListener('memoryCue:activeLessonStepUpdated', () => {
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
   });

@@ -2,7 +2,16 @@ import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-s
 import { requestAssistantChat } from './assistantOrchestrator.js';
 
 const ACTIVE_LESSON_NOTE_ID_KEY = 'memoryCue:activeLessonNoteId';
+const LESSON_STEP_MAP_KEY = 'memoryCue:teacherLessonSteps';
 const CUE_LABELS = ['Goal', 'Say', 'Teach', 'Ask', 'Next', 'Materials', 'Reminder'];
+const TEACHER_LESSON_STEPS = [
+  { id: 'opener', label: 'Opener' },
+  { id: 'teach', label: 'Teach' },
+  { id: 'model', label: 'Model' },
+  { id: 'guided', label: 'Guided' },
+  { id: 'independent', label: 'Independent' },
+  { id: 'close', label: 'Close' },
+];
 const MAX_CUE_VALUE_LENGTH = 140;
 const LESSON_SECTION_ALIASES = [
   'Learning intention',
@@ -36,6 +45,19 @@ const dispatchActiveLessonUpdated = (noteId = null) => {
   document.dispatchEvent(new CustomEvent('memoryCue:activeLessonUpdated', {
     detail: {
       noteId: typeof noteId === 'string' && noteId.trim() ? noteId.trim() : null,
+    },
+  }));
+};
+
+const dispatchActiveLessonStepUpdated = (lessonId = null, stepId = null) => {
+  if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
+    return;
+  }
+
+  document.dispatchEvent(new CustomEvent('memoryCue:activeLessonStepUpdated', {
+    detail: {
+      lessonId: typeof lessonId === 'string' && lessonId.trim() ? lessonId.trim() : null,
+      stepId: typeof stepId === 'string' && stepId.trim() ? stepId.trim() : null,
     },
   }));
 };
@@ -587,6 +609,69 @@ export const getTeacherLessonContext = (noteOrNoteId, notes = null) => {
   };
 };
 
+const normalizeLessonStepId = (stepId) => {
+  const normalizedStepId = typeof stepId === 'string' ? stepId.trim().toLowerCase() : '';
+  return TEACHER_LESSON_STEPS.some((step) => step.id === normalizedStepId) ? normalizedStepId : null;
+};
+
+const getTeacherLessonStorageId = (noteOrNoteId, notes = null) => {
+  const lessonContext = getTeacherLessonContext(noteOrNoteId, notes);
+  return lessonContext.sourceNoteId || lessonContext.cueNoteId || lessonContext.currentNote?.id || null;
+};
+
+const readTeacherLessonStepMap = () => {
+  if (typeof localStorage === 'undefined') {
+    return {};
+  }
+  try {
+    const raw = localStorage.getItem(LESSON_STEP_MAP_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeTeacherLessonStepMap = (value = {}) => {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    localStorage.setItem(LESSON_STEP_MAP_KEY, JSON.stringify(value && typeof value === 'object' ? value : {}));
+  } catch {
+    /* ignore storage errors */
+  }
+};
+
+export const getTeacherLessonSteps = () => TEACHER_LESSON_STEPS.map((step) => ({ ...step }));
+
+export const getTeacherLessonStep = (noteOrNoteId, notes = null) => {
+  const lessonId = getTeacherLessonStorageId(noteOrNoteId, notes);
+  if (!lessonId) {
+    return null;
+  }
+  const stepMap = readTeacherLessonStepMap();
+  return normalizeLessonStepId(stepMap[lessonId]);
+};
+
+export const getTeacherLessonStepLabel = (stepId) => (
+  TEACHER_LESSON_STEPS.find((step) => step.id === normalizeLessonStepId(stepId))?.label || ''
+);
+
+export const setTeacherLessonStep = (noteOrNoteId, stepId, notes = null) => {
+  const lessonId = getTeacherLessonStorageId(noteOrNoteId, notes);
+  const normalizedStepId = normalizeLessonStepId(stepId);
+  if (!lessonId || !normalizedStepId) {
+    return null;
+  }
+
+  const stepMap = readTeacherLessonStepMap();
+  stepMap[lessonId] = normalizedStepId;
+  writeTeacherLessonStepMap(stepMap);
+  dispatchActiveLessonStepUpdated(lessonId, normalizedStepId);
+  return normalizedStepId;
+};
+
 export const getActiveLessonNoteId = () => {
   if (typeof localStorage === 'undefined') {
     return null;
@@ -730,6 +815,11 @@ const buildCueContextBlock = (note = {}) => {
     .join('\n');
 };
 
+const buildStepContextLine = (stepId = null) => {
+  const stepLabel = getTeacherLessonStepLabel(stepId);
+  return stepLabel ? `Current step: ${stepLabel}` : '';
+};
+
 const isDirectCuePrompt = (question = '') => {
   const normalizedQuestion = normalizeText(question).toLowerCase();
   if (!normalizedQuestion) {
@@ -751,7 +841,7 @@ const isDirectCuePrompt = (question = '') => {
   ].some((pattern) => pattern.test(normalizedQuestion));
 };
 
-const buildLessonFallbackAnswer = (question, note) => {
+const buildLessonFallbackAnswer = (question, note, stepId = null) => {
   const normalizedQuestion = normalizeText(question).toLowerCase();
   const title = normalizeText(note?.title) || 'this lesson';
   const next = getCueLine(note, 'Next');
@@ -759,24 +849,39 @@ const buildLessonFallbackAnswer = (question, note) => {
   const ask = getCueLine(note, 'Ask');
   const teach = getCueLine(note, 'Teach');
   const goal = getCueLine(note, 'Goal');
+  const reminder = getCueLine(note, 'Reminder');
+  const stepLabel = getTeacherLessonStepLabel(stepId);
+  const withStep = (value = '') => {
+    const normalizedValue = normalizeText(value);
+    if (!normalizedValue) {
+      return '';
+    }
+    return stepLabel ? `${stepLabel}: ${normalizedValue}` : normalizedValue;
+  };
 
   if (/\bnext\b/.test(normalizedQuestion) && next) {
-    return next;
+    return withStep(next);
   }
   if (/\b(say|explain|simpler|simple)\b/.test(normalizedQuestion) && say) {
-    return teach && teach !== say ? `${say}\n${teach}` : say;
+    if (stepId === 'guided' && ask) {
+      return withStep(`${ask}\n${teach || say}`);
+    }
+    if (stepId === 'independent' && reminder) {
+      return withStep(reminder);
+    }
+    return withStep(teach && teach !== say ? `${say}\n${teach}` : say);
   }
   if (/\b(question|ask)\b/.test(normalizedQuestion) && ask) {
-    return ask;
+    return withStep(ask);
   }
   if (/\b(goal|main point|focus)\b/.test(normalizedQuestion) && goal) {
-    return goal;
+    return withStep(goal);
   }
   if (/\b(complex|compound|simple|clause|sentence|mentor sentence)\b/.test(normalizedQuestion) && teach) {
-    return say && say !== teach ? `${teach}\n${say}` : teach;
+    return withStep(say && say !== teach ? `${teach}\n${say}` : teach);
   }
   if (teach) {
-    return `Teach: ${teach}`;
+    return withStep(`Teach: ${teach}`);
   }
   return `Use the active lesson cue for ${title} and give the next step in one short sentence.`;
 };
@@ -821,9 +926,11 @@ export const answerFromActiveLesson = async (question) => {
   const sourceNote = lessonContext.sourceNote || note;
   const cueContext = buildCueContextBlock(cueNote);
   const lessonOutline = buildLessonSourceBrief(sourceNote);
+  const currentStepId = getTeacherLessonStep(cueNote, [cueNote, sourceNote].filter(Boolean));
+  const currentStepLine = buildStepContextLine(currentStepId);
 
   if (isDirectCuePrompt(safeQuestion)) {
-    return buildLessonFallbackAnswer(safeQuestion, cueNote);
+    return buildLessonFallbackAnswer(safeQuestion, cueNote, currentStepId);
   }
 
   try {
@@ -847,6 +954,7 @@ export const answerFromActiveLesson = async (question) => {
           role: 'user',
           content: [
             `Active lesson: ${normalizeText(sourceNote.title) || normalizeText(cueNote.title) || 'Lesson cue'}`,
+            ...(currentStepLine ? ['', currentStepLine] : []),
             '',
             'Cue card:',
             cueContext || 'No cue card available.',
@@ -871,5 +979,5 @@ export const answerFromActiveLesson = async (question) => {
     /* fall back to local cue extraction */
   }
 
-  return buildLessonFallbackAnswer(safeQuestion, cueNote);
+  return buildLessonFallbackAnswer(safeQuestion, cueNote, currentStepId);
 };
