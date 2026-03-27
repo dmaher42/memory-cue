@@ -2,6 +2,8 @@ import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-s
 import { requestAssistantChat } from './assistantOrchestrator.js';
 
 const ACTIVE_LESSON_NOTE_ID_KEY = 'memoryCue:activeLessonNoteId';
+const CUE_LABELS = ['Goal', 'Say', 'Teach', 'Ask', 'Next', 'Materials', 'Reminder'];
+const MAX_CUE_VALUE_LENGTH = 140;
 
 const dispatchActiveLessonUpdated = (noteId = null) => {
   if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
@@ -39,6 +41,47 @@ const extractLines = (text = '') => normalizeText(text)
   .map((line) => line.replace(/^[\s\-*•\d.)]+/, '').trim())
   .filter(Boolean);
 
+const stripCueLabelPrefix = (value = '') => normalizeText(value)
+  .replace(/^(Goal|Say|Teach|Ask|Next|Materials|Reminder)\s*:\s*/i, '')
+  .trim();
+
+const clampCueValue = (value = '') => {
+  const normalized = normalizeText(value).replace(/\s+/g, ' ');
+  if (normalized.length <= MAX_CUE_VALUE_LENGTH) {
+    return normalized;
+  }
+  const sliced = normalized.slice(0, MAX_CUE_VALUE_LENGTH + 1);
+  const trimmed = sliced.replace(/\s+\S*$/, '').trim() || normalized.slice(0, MAX_CUE_VALUE_LENGTH).trim();
+  return `${trimmed}...`;
+};
+
+const cleanCueValue = (value = '', fallback = '') => {
+  const candidate = stripCueLabelPrefix(value) || stripCueLabelPrefix(fallback);
+  if (!candidate) {
+    return '';
+  }
+  return clampCueValue(candidate.replace(/\s+/g, ' ').trim());
+};
+
+const parseCueFields = (text = '') => {
+  const fields = {};
+  extractLines(text).forEach((line) => {
+    const match = line.match(/^(Goal|Say|Teach|Ask|Next|Materials|Reminder)\s*:\s*(.+)$/i);
+    if (!match) {
+      return;
+    }
+    const label = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+    if (!fields[label]) {
+      fields[label] = match[2].trim();
+    }
+  });
+  return fields;
+};
+
+const formatCueFields = (fields = {}) => CUE_LABELS
+  .map((label) => `${label}: ${cleanCueValue(fields[label])}`)
+  .join('\n');
+
 const findLine = (lines = [], patterns = []) => {
   if (!Array.isArray(lines) || !lines.length) {
     return '';
@@ -64,33 +107,33 @@ const buildFallbackCueBody = (note = {}) => {
 
   const goal = findLine(lines, [/\b(goal|objective|learning intention|success criteria)\b/i])
     || lines[0]
-    || `Teach the main idea in ${title}.`;
+    || `Teach the main idea from ${title}.`;
 
   const say = findLine(lines, [/^say[:\s-]/i, /\b(explain|introduce|model)\b/i])
     || sentences[0]
-    || `Introduce ${title} clearly and simply.`;
+    || `Today we will focus on ${title}.`;
 
   const teachCandidates = lines.filter((line) => line !== goal && line !== say && !line.includes('?'));
-  const teach = teachCandidates.slice(0, 3).join(' | ') || `Focus on the most important example from ${title}.`;
+  const teach = teachCandidates.slice(0, 2).join('; ') || `Model one clear example from ${title}.`;
 
-  const ask = firstQuestionLine(lines) || `Ask students what they notice about ${title.toLowerCase()}.`;
+  const ask = firstQuestionLine(lines) || 'What do you notice first?';
 
   const next = findLine(lines, [/\b(next|then|after that|independent|guided|practice|plenary|closing)\b/i])
     || teachCandidates[3]
-    || 'Model one example, then move students into guided practice.';
+    || 'Model one example, then guide practice.';
 
-  const materials = findLine(lines, [/\b(materials|resources|bring|worksheet|slides)\b/i]) || 'Use the materials already prepared for this lesson.';
-  const reminder = findLine(lines, [/\b(remind|check|collect|follow up|before class|after class)\b/i]) || 'Pause to check understanding before moving on.';
+  const materials = findLine(lines, [/\b(materials|resources|bring|worksheet|slides)\b/i]) || 'Slides, example text, and workbook.';
+  const reminder = findLine(lines, [/\b(remind|check|collect|follow up|before class|after class)\b/i]) || 'Check understanding before independent work.';
 
-  return [
-    `Goal: ${goal}`,
-    `Say: ${say}`,
-    `Teach: ${teach}`,
-    `Ask: ${ask}`,
-    `Next: ${next}`,
-    `Materials: ${materials}`,
-    `Reminder: ${reminder}`,
-  ].join('\n');
+  return formatCueFields({
+    Goal: goal,
+    Say: say,
+    Teach: teach,
+    Ask: ask,
+    Next: next,
+    Materials: materials,
+    Reminder: reminder,
+  });
 };
 
 const buildCueRequest = (note = {}) => {
@@ -105,6 +148,8 @@ const buildCueRequest = (note = {}) => {
           'You are Memory Cue in Teacher Mode.',
           'Turn lesson material into a short cue card for a teacher under pressure.',
           'Be concise, spoken-language friendly, and practical.',
+          'Each line must be short enough to scan quickly during class.',
+          'Do not add headings, bullets, numbering, or extra explanation.',
           'Return exactly these seven lines:',
           'Goal: ...',
           'Say: ...',
@@ -135,17 +180,23 @@ const normalizeCueBody = (text = '', note = {}) => {
     return buildFallbackCueBody(note);
   }
 
-  const lines = extractLines(normalized);
-  const requiredLabels = ['Goal', 'Say', 'Teach', 'Ask', 'Next', 'Materials', 'Reminder'];
-  const hasAllLabels = requiredLabels.every((label) => lines.some((line) => new RegExp(`^${label}:`, 'i').test(line)));
-  if (hasAllLabels) {
-    return lines.join('\n');
+  const fallbackFields = parseCueFields(buildFallbackCueBody(note));
+  const parsedFields = parseCueFields(normalized);
+  const normalizedFields = {};
+
+  CUE_LABELS.forEach((label) => {
+    normalizedFields[label] = cleanCueValue(parsedFields[label], fallbackFields[label]);
+  });
+
+  const hasAnyFields = CUE_LABELS.some((label) => normalizedFields[label]);
+  if (!hasAnyFields) {
+    return buildFallbackCueBody({
+      ...note,
+      bodyText: normalized,
+    });
   }
 
-  return buildFallbackCueBody({
-    ...note,
-    bodyText: normalized,
-  });
+  return formatCueFields(normalizedFields);
 };
 
 const buildCueTitle = (note = {}) => {
@@ -253,11 +304,22 @@ export const createLessonCueFromNote = async (noteId) => {
   return cueNote;
 };
 
-const getCueLine = (note, prefix) => {
-  const lines = extractLines(toPlainText(note));
-  const match = lines.find((line) => line.toLowerCase().startsWith(`${prefix.toLowerCase()}:`));
-  return match ? match.slice(prefix.length + 1).trim() : '';
+export const getLessonCueFields = (note = {}) => {
+  const cueText = toPlainText(note);
+  if (!cueText) {
+    return parseCueFields(buildFallbackCueBody(note));
+  }
+
+  const fallbackFields = parseCueFields(buildFallbackCueBody(note));
+  const parsedFields = parseCueFields(cueText);
+  const fields = {};
+  CUE_LABELS.forEach((label) => {
+    fields[label] = cleanCueValue(parsedFields[label], fallbackFields[label]);
+  });
+  return fields;
 };
+
+const getCueLine = (note, prefix) => getLessonCueFields(note)[prefix] || '';
 
 const buildLessonFallbackAnswer = (question, note) => {
   const normalizedQuestion = normalizeText(question).toLowerCase();

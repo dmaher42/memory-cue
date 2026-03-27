@@ -1,8 +1,17 @@
 import {
   createLessonCueFromNote,
+  getActiveLessonNote,
+  getLessonCueFields,
   isActiveLessonNoteId,
   setActiveLessonNoteId,
 } from '../services/teacherModeService.js';
+
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 export const initMobileNotesShellUi = (options = {}) => {
   if (typeof document === 'undefined') {
@@ -35,8 +44,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     noteFolderButton = null,
     noteOptionsOverlay = null,
     noteOptionsSheet = null,
-    noteActionCreateLessonCueBtn = null,
-    noteActionSetActiveLessonBtn = null,
+    noteActionCreateLessonCueBtn: initialNoteActionCreateLessonBtn = null,
+    noteActionSetActiveLessonBtn: initialNoteActionSetActiveLessonBtn = null,
     noteActionMoveBtn = null,
     noteActionTogglePinBtn = null,
     noteActionDeleteBtn = null,
@@ -71,6 +80,8 @@ export const initMobileNotesShellUi = (options = {}) => {
   let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
   let currentNoteOptionsFocusRestoreEl = null;
+  let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
+  let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
 
   const ensureSheetActionButton = (button, className, label, insertAfterSelector = null) => {
     if (button instanceof HTMLButtonElement) {
@@ -110,6 +121,112 @@ export const initMobileNotesShellUi = (options = {}) => {
     '.note-action-create-lesson-cue',
   );
 
+  const ensureActiveLessonCard = () => {
+    if (!(notesOverviewPanel instanceof HTMLElement)) {
+      return null;
+    }
+
+    const existingCard = notesOverviewPanel.querySelector('[data-active-lesson-card]');
+    if (existingCard instanceof HTMLElement) {
+      return existingCard;
+    }
+
+    const card = document.createElement('section');
+    card.dataset.activeLessonCard = 'true';
+    card.className = 'memory-glass-card-soft p-3 mt-2 mb-2 hidden';
+    card.setAttribute('aria-hidden', 'true');
+    const notesOverviewListEl = notesOverviewPanel.querySelector('#notesOverviewList');
+    if (notesOverviewListEl instanceof HTMLElement) {
+      notesOverviewPanel.insertBefore(card, notesOverviewListEl);
+    } else {
+      notesOverviewPanel.appendChild(card);
+    }
+    return card;
+  };
+
+  const renderActiveLessonCard = () => {
+    const card = ensureActiveLessonCard();
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+
+    const activeLessonNote = getActiveLessonNote(getAllNotes());
+    if (!activeLessonNote) {
+      card.classList.add('hidden');
+      card.setAttribute('aria-hidden', 'true');
+      card.innerHTML = '';
+      return;
+    }
+
+    const cueFields = getLessonCueFields(activeLessonNote);
+    const previewRows = [
+      ['Goal', cueFields.Goal],
+      ['Say', cueFields.Say],
+      ['Next', cueFields.Next],
+    ].filter(([, value]) => typeof value === 'string' && value.trim());
+    const noteType = activeLessonNote?.metadata?.noteType === 'lesson-cue' ? 'Lesson Cue' : 'Lesson Note';
+    const safeTitle = escapeHtml(activeLessonNote?.title || 'Active lesson');
+    const safeType = escapeHtml(noteType);
+    const rowsMarkup = previewRows.length
+      ? previewRows.map(([label, value]) => (
+        `<div class="space-y-1">
+          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60">${escapeHtml(label)}</p>
+          <p class="text-sm leading-5">${escapeHtml(value)}</p>
+        </div>`
+      )).join('')
+      : `<p class="text-sm leading-5">${escapeHtml(activeLessonNote?.bodyText || activeLessonNote?.body || '')}</p>`;
+
+    card.classList.remove('hidden');
+    card.setAttribute('aria-hidden', 'false');
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.2em] opacity-60">Active Lesson</p>
+          <h3 class="text-sm font-semibold leading-5 mt-1">${safeTitle}</h3>
+          <p class="text-xs opacity-70 mt-1">${safeType}</p>
+        </div>
+        <button type="button" class="btn btn-xs btn-ghost" data-active-lesson-action="clear">Clear</button>
+      </div>
+      <div class="space-y-3 mt-3">
+        ${rowsMarkup}
+      </div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost"
+          data-active-lesson-action="open"
+          data-note-id="${escapeHtml(activeLessonNote.id || '')}"
+        >Open Lesson</button>
+      </div>
+    `;
+  };
+
+  const handleActiveLessonCardClick = (event) => {
+    const actionButton = event.target instanceof HTMLElement
+      ? event.target.closest('[data-active-lesson-action]')
+      : null;
+    if (!(actionButton instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (actionButton.dataset.activeLessonAction === 'clear') {
+      setActiveLessonNoteId(null);
+      refreshFromStorage({ preserveDraft: true });
+      return;
+    }
+
+    if (actionButton.dataset.activeLessonAction === 'open' && typeof onOpenNoteFromDashboard === 'function') {
+      const noteId = actionButton.dataset.noteId || '';
+      if (noteId) {
+        onOpenNoteFromDashboard(noteId, { isSavedNotesSheetOpen, hideSavedNotesSheet });
+      }
+    }
+  };
+
+  ensureActiveLessonCard()?.addEventListener('click', handleActiveLessonCardClick);
+
   const isVisibleFocusableElement = (element) => {
     if (!(element instanceof HTMLElement) || !element.isConnected) {
       return false;
@@ -146,6 +263,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (noteEditorSheet instanceof HTMLElement) {
       noteEditorSheet.classList.toggle('hidden', notesMode === 'overview');
     }
+    renderActiveLessonCard();
   };
 
   const isSavedNotesSheetOpen = () => savedNotesSheet?.dataset.open === 'true';
@@ -636,6 +754,14 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
   });
 
+  document.addEventListener('memoryCue:activeLessonUpdated', () => {
+    renderActiveLessonCard();
+  });
+
+  document.addEventListener('memoryCue:notesUpdated', () => {
+    renderActiveLessonCard();
+  });
+
   document.addEventListener('thinkingBar:openNote', (event) => {
     const noteId = event?.detail?.noteId;
     if (!noteId || typeof onOpenNoteFromDashboard !== 'function') {
@@ -643,6 +769,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
     onOpenNoteFromDashboard(noteId, { isSavedNotesSheetOpen, hideSavedNotesSheet });
   });
+
+  renderActiveLessonCard();
 
   return {
     applyNotesMode,
