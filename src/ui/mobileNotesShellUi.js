@@ -84,25 +84,17 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-copy {
-    margin: 0.2rem 0 0;
-    font-size: 0.78rem;
-    line-height: 1.35;
-    opacity: 0.76;
+    display: none;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-section {
     display: grid;
-    gap: 0.38rem;
-    margin-top: 0.65rem;
+    gap: 0.34rem;
+    margin-top: 0.52rem;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-label {
-    margin: 0;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    opacity: 0.52;
+    display: none;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-row {
@@ -435,16 +427,10 @@ export const initMobileNotesShellUi = (options = {}) => {
     const stepTargetId = sourceNoteId || cueNoteId || currentNoteId || '';
     const cueLabel = cueNoteId ? 'Refresh Cue' : 'Create Cue';
     const activeLessonTargetId = cueNoteId || sourceNoteId || currentNoteId || '';
-    const activeLessonLabel = 'Active Lesson';
-    const helperText = !hasCurrentNote
-      ? 'Save first to use teacher tools here.'
-      : cueNoteId
-        ? 'Switch between plan and cue, then mark your current step.'
-        : 'Create a cue, then switch between plan and cue here.';
+    const activeLessonLabel = 'Active';
     const lessonStepMarkup = stepTargetId
       ? `
         <div class="teacher-toolbar-section">
-          <p class="teacher-toolbar-label">Current step</p>
           <div class="teacher-step-row">
             ${getTeacherLessonSteps().map((step) => `
               <button
@@ -465,10 +451,8 @@ export const initMobileNotesShellUi = (options = {}) => {
       <div class="teacher-toolbar-shell w-full rounded-xl border border-base-300 bg-base-100/80">
         <div class="min-w-0">
           <p class="teacher-toolbar-title">Teaching tools</p>
-          <p class="teacher-toolbar-copy">${escapeHtml(helperText)}</p>
         </div>
         <div class="teacher-toolbar-section">
-          <p class="teacher-toolbar-label">Actions</p>
           <div class="teacher-toolbar-row">
             <button
               type="button"
@@ -486,7 +470,6 @@ export const initMobileNotesShellUi = (options = {}) => {
           </div>
         </div>
         <div class="teacher-toolbar-section">
-          <p class="teacher-toolbar-label">View</p>
           <div class="teacher-toolbar-row">
           <button
             type="button"
