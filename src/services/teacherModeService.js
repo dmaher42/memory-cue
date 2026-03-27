@@ -719,6 +719,38 @@ export const getLessonCueFields = (note = {}) => {
 
 const getCueLine = (note, prefix) => getLessonCueFields(note)[prefix] || '';
 
+const buildCueContextBlock = (note = {}) => {
+  const fields = getLessonCueFields(note);
+  return CUE_LABELS
+    .map((label) => {
+      const value = cleanCueValue(fields[label]);
+      return value ? `${label}: ${value}` : '';
+    })
+    .filter(Boolean)
+    .join('\n');
+};
+
+const isDirectCuePrompt = (question = '') => {
+  const normalizedQuestion = normalizeText(question).toLowerCase();
+  if (!normalizedQuestion) {
+    return false;
+  }
+
+  return [
+    /\bnext\b/,
+    /\bwhat comes next\b/,
+    /\bwhat do i do\b/,
+    /\bwhat do i say\b/,
+    /\bhow do i explain\b/,
+    /\bsimpler\b/,
+    /\bquestion to ask\b/,
+    /\bwhat question\b/,
+    /\bmain point\b/,
+    /\bgoal\b/,
+    /\bfocus\b/,
+  ].some((pattern) => pattern.test(normalizedQuestion));
+};
+
 const buildLessonFallbackAnswer = (question, note) => {
   const normalizedQuestion = normalizeText(question).toLowerCase();
   const title = normalizeText(note?.title) || 'this lesson';
@@ -732,13 +764,16 @@ const buildLessonFallbackAnswer = (question, note) => {
     return next;
   }
   if (/\b(say|explain|simpler|simple)\b/.test(normalizedQuestion) && say) {
-    return say;
+    return teach && teach !== say ? `${say}\n${teach}` : say;
   }
   if (/\b(question|ask)\b/.test(normalizedQuestion) && ask) {
     return ask;
   }
   if (/\b(goal|main point|focus)\b/.test(normalizedQuestion) && goal) {
     return goal;
+  }
+  if (/\b(complex|compound|simple|clause|sentence|mentor sentence)\b/.test(normalizedQuestion) && teach) {
+    return say && say !== teach ? `${teach}\n${say}` : teach;
   }
   if (teach) {
     return `Teach: ${teach}`;
@@ -776,10 +811,19 @@ export const answerFromActiveLesson = async (question) => {
     return null;
   }
 
-  const noteText = toPlainText(note).slice(0, 4000);
   const safeQuestion = normalizeText(question);
   if (!safeQuestion) {
     return null;
+  }
+
+  const lessonContext = getTeacherLessonContext(note);
+  const cueNote = lessonContext.cueNote || note;
+  const sourceNote = lessonContext.sourceNote || note;
+  const cueContext = buildCueContextBlock(cueNote);
+  const lessonOutline = buildLessonSourceBrief(sourceNote);
+
+  if (isDirectCuePrompt(safeQuestion)) {
+    return buildLessonFallbackAnswer(safeQuestion, cueNote);
   }
 
   try {
@@ -792,15 +836,23 @@ export const answerFromActiveLesson = async (question) => {
             'Answer using only the active lesson context.',
             'Be brief, calm, and easy to say out loud.',
             'Prefer 1 to 3 short lines.',
+            'Use the cue card first, then the lesson outline if needed.',
+            'Do not restate the whole lesson.',
+            'If the teacher asks for wording, give a line they can say aloud.',
+            'If the teacher asks what to do next, give one immediate step.',
+            'If the teacher asks a grammar or sentence question, answer simply first, then optionally add one short reason.',
           ].join('\n'),
         },
         {
           role: 'user',
           content: [
-            `Active lesson: ${normalizeText(note.title) || 'Lesson cue'}`,
+            `Active lesson: ${normalizeText(sourceNote.title) || normalizeText(cueNote.title) || 'Lesson cue'}`,
             '',
-            'Lesson context:',
-            noteText,
+            'Cue card:',
+            cueContext || 'No cue card available.',
+            '',
+            'Lesson outline:',
+            lessonOutline,
             '',
             `Question: ${safeQuestion}`,
           ].join('\n'),
@@ -819,5 +871,5 @@ export const answerFromActiveLesson = async (question) => {
     /* fall back to local cue extraction */
   }
 
-  return buildLessonFallbackAnswer(safeQuestion, note);
+  return buildLessonFallbackAnswer(safeQuestion, cueNote);
 };
