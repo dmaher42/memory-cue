@@ -4,6 +4,29 @@ import { requestAssistantChat } from './assistantOrchestrator.js';
 const ACTIVE_LESSON_NOTE_ID_KEY = 'memoryCue:activeLessonNoteId';
 const CUE_LABELS = ['Goal', 'Say', 'Teach', 'Ask', 'Next', 'Materials', 'Reminder'];
 const MAX_CUE_VALUE_LENGTH = 140;
+const LESSON_SECTION_ALIASES = [
+  'Learning intention',
+  'Success criteria',
+  'Objective',
+  'Goal',
+  'Say',
+  'Teacher says',
+  'Teach',
+  'Model',
+  'Question to ask',
+  'Hinge question',
+  'Guided practice',
+  'Independent practice',
+  'Next',
+  'Then',
+  'Plenary',
+  'Closing',
+  'Materials',
+  'Resources',
+  'Reminder',
+  'Before class',
+  'After class',
+];
 
 const dispatchActiveLessonUpdated = (noteId = null) => {
   if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
@@ -35,6 +58,8 @@ const toPlainText = (note = {}) => {
   }
   return body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 };
+
+const toFlatText = (note = {}) => normalizeText(toPlainText(note)).replace(/\s+/g, ' ');
 
 const extractLines = (text = '') => normalizeText(text)
   .split('\n')
@@ -153,35 +178,80 @@ const buildSayLine = (title = '', goal = '', source = '') => {
   return `Today we will focus on ${title}.`;
 };
 
+const extractLessonSections = (text = '') => {
+  const normalized = normalizeText(text).replace(/\s+/g, ' ');
+  if (!normalized) {
+    return {};
+  }
+
+  const escapedAliases = LESSON_SECTION_ALIASES
+    .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+  const sectionPattern = new RegExp(`(?:^|\\s)(${escapedAliases}):\\s*`, 'ig');
+  const matches = Array.from(normalized.matchAll(sectionPattern));
+  if (!matches.length) {
+    return {};
+  }
+
+  const sections = {};
+  matches.forEach((match, index) => {
+    const rawLabel = match[1];
+    const start = (match.index || 0) + match[0].length;
+    const end = index + 1 < matches.length ? (matches[index + 1].index || normalized.length) : normalized.length;
+    const value = normalized.slice(start, end).trim().replace(/\s+$/, '');
+    if (!value) {
+      return;
+    }
+    const key = rawLabel.toLowerCase();
+    if (!sections[key]) {
+      sections[key] = value.replace(/\s+/g, ' ').trim();
+    }
+  });
+
+  return sections;
+};
+
 const buildFallbackCueBody = (note = {}) => {
   const title = normalizeText(note?.title) || 'Lesson';
   const text = toPlainText(note);
+  const flatText = toFlatText(note);
   const lines = extractLines(text);
   const sentences = text
     .split(/(?<=[.!?])\s+/)
     .map((line) => line.trim())
     .filter(Boolean);
+  const sections = extractLessonSections(flatText);
 
   const goalCandidates = uniqueLines([
+    sections['learning intention'],
+    sections['objective'],
+    sections['goal'],
+    sections['success criteria'],
     ...findLines(lines, [/\b(learning intention|objective|goal|success criteria|walt|students will)\b/i]),
     ...findLines(sentences, [/\b(learning intention|objective|goal|success criteria|walt|students will)\b/i]),
     lines[0],
   ]);
   const goal = goalCandidates[0] || `Teach the main idea from ${title}.`;
 
-  const saySource = findLine(lines, [
+  const saySource = sections.say
+    || sections['teacher says']
+    || findLine(lines, [
     /^say[:\s-]/i,
     /\b(explain|introduce|share|teacher says?)\b/i,
     /\bwe are learning to\b/i,
-  ]) || sentences[0];
+    ]) || sentences[0];
   const say = buildSayLine(title, goal, saySource);
 
-  const teachCandidates = uniqueLines(lines.filter((line) => (
-    line
-    && line !== goal
-    && line !== saySource
-    && !line.includes('?')
-  )));
+  const teachCandidates = uniqueLines([
+    sections.teach,
+    sections.model,
+    ...lines.filter((line) => (
+      line
+      && line !== goal
+      && line !== saySource
+      && !line.includes('?')
+    )),
+  ]);
   const focusedTeachCandidates = uniqueLines([
     ...findLines(teachCandidates, [/\b(model|teach|explain|demonstrate|show|review|mentor sentence|example)\b/i]),
     ...teachCandidates,
@@ -189,11 +259,19 @@ const buildFallbackCueBody = (note = {}) => {
   const teach = focusedTeachCandidates.slice(0, 2).join('; ') || `Model one clear example from ${title}.`;
 
   const ask = firstQuestionLine(uniqueLines([
+    sections['question to ask'],
+    sections['hinge question'],
     ...findLines(lines, [/\b(hinge question|question to ask|ask students|check understanding|discuss)\b/i]),
     ...lines,
   ])) || 'What do you notice first?';
 
   const nextCandidates = uniqueLines([
+    sections.next,
+    sections.then,
+    sections['guided practice'],
+    sections['independent practice'],
+    sections.plenary,
+    sections.closing,
     ...findLines(lines, [/\b(next|then|after that|guided practice|independent practice|plenary|closing|turn and talk|paired practice)\b/i]),
     ...findLines(sentences, [/\b(next|then|after that|guided practice|independent practice|plenary|closing|turn and talk|paired practice)\b/i]),
   ]);
@@ -202,12 +280,17 @@ const buildFallbackCueBody = (note = {}) => {
     || 'Model one example, then guide practice.';
 
   const materialCandidates = uniqueLines([
+    sections.materials,
+    sections.resources,
     ...findLines(lines, [/\b(materials|resources|bring|worksheet|slides|whiteboard|mentor sentence|text)\b/i]),
     ...findLines(sentences, [/\b(materials|resources|bring|worksheet|slides|whiteboard|mentor sentence|text)\b/i]),
   ]);
   const materials = materialCandidates[0] || 'Slides, example text, and workbook.';
 
   const reminderCandidates = uniqueLines([
+    sections.reminder,
+    sections['before class'],
+    sections['after class'],
     ...findLines(lines, [/\b(remind|check|collect|follow up|before class|after class|watch for|listen for)\b/i]),
     ...findLines(sentences, [/\b(remind|check|collect|follow up|before class|after class|watch for|listen for)\b/i]),
   ]);
