@@ -1377,6 +1377,7 @@ const initMobileNotes = () => {
   };
 
   let currentNoteId = null;
+  let currentTeacherView = 'plan';
   let currentNoteIsNew = false;
   let currentNoteHasChanged = false;
   let allNotes = [];
@@ -1589,32 +1590,44 @@ const initMobileNotes = () => {
   };
 
   const setEditorValues = (note, options = {}) => {
-    const { isNew = false } = options;
-    if (note && currentNoteId === note.id && !isNew) {
+    const { isNew = false, teacherView = null, force = false } = options;
+    const nextTeacherView = note ? resolveTeacherView(note, teacherView || currentTeacherView) : 'plan';
+    if (note && currentNoteId === note.id && !isNew && nextTeacherView === currentTeacherView && !force) {
       renderRelatedNotes(note);
       return;
     }
     if (!note) {
+      currentTeacherView = 'plan';
       currentNoteIsNew = false;
       currentNoteHasChanged = false;
       currentNoteId = null;
       titleInput.value = '';
       setEditorContent('');
+      setEditorReadOnlyState(false);
       delete titleInput.dataset.noteOriginalTitle;
       scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
       syncNoteFolderButtonLabel(currentEditingNoteFolderId);
       renderRelatedNotes(null);
       return;
     }
+    currentTeacherView = nextTeacherView;
     currentNoteIsNew = Boolean(isNew);
     currentNoteHasChanged = false;
     currentNoteId = note.id;
     const nextTitle = note.title || '';
-    const preferredHtml = typeof note.bodyHtml === 'string' ? note.bodyHtml : null;
+    const preferredHtml = currentTeacherView === 'cue'
+      ? (typeof note?.metadata?.lessonCueHtml === 'string' ? note.metadata.lessonCueHtml : null)
+      : typeof note.bodyHtml === 'string'
+        ? note.bodyHtml
+        : null;
     const fallbackBody = typeof note.body === 'string' ? note.body : '';
-    const nextBody = (preferredHtml ?? fallbackBody) || '';
+    const cueFallbackBody = typeof note?.metadata?.lessonCueBody === 'string' ? note.metadata.lessonCueBody : '';
+    const nextBody = currentTeacherView === 'cue'
+      ? (preferredHtml ?? cueFallbackBody) || ''
+      : (preferredHtml ?? fallbackBody) || '';
     titleInput.value = isNew ? '' : nextTitle;
     setEditorContent(isNew ? '' : nextBody);
+    setEditorReadOnlyState(currentTeacherView === 'cue');
     titleInput.dataset.noteOriginalTitle = isNew ? '' : nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
@@ -1636,6 +1649,37 @@ const initMobileNotes = () => {
         ? note.body
         : '';
     return extractPlainText(source);
+  };
+
+  const hasEmbeddedLessonCue = (note) => (
+    typeof note?.metadata?.lessonCueBody === 'string' && note.metadata.lessonCueBody.trim().length > 0
+  );
+
+  const resolveTeacherView = (note, requestedView = currentTeacherView) => {
+    if (requestedView === 'cue' && hasEmbeddedLessonCue(note)) {
+      return 'cue';
+    }
+    return 'plan';
+  };
+
+  const setEditorReadOnlyState = (isReadOnly = false) => {
+    if (titleInput instanceof HTMLElement) {
+      titleInput.readOnly = isReadOnly;
+    }
+    if (scratchNotesEditorElement instanceof HTMLElement) {
+      scratchNotesEditorElement.contentEditable = isReadOnly ? 'false' : 'true';
+      scratchNotesEditorElement.setAttribute('aria-readonly', isReadOnly ? 'true' : 'false');
+    }
+    if (saveButton instanceof HTMLButtonElement) {
+      saveButton.disabled = isReadOnly;
+    }
+    if (noteFolderBtn instanceof HTMLButtonElement) {
+      noteFolderBtn.disabled = isReadOnly;
+    }
+    if (toolbarEl instanceof HTMLElement) {
+      toolbarEl.classList.toggle('opacity-50', isReadOnly);
+      toolbarEl.classList.toggle('pointer-events-none', isReadOnly);
+    }
   };
 
   const getDashboardItemLabel = (note) => {
@@ -1703,7 +1747,7 @@ const initMobileNotes = () => {
     ];
   };
 
-  const openNoteFromDashboard = (noteId) => {
+  const openNoteFromDashboard = (noteId, options = {}) => {
     if (!noteId) {
       return;
     }
@@ -1712,7 +1756,10 @@ const initMobileNotes = () => {
       return;
     }
 
-    setEditorValues(note);
+    setEditorValues(note, {
+      teacherView: options?.teacherView || 'plan',
+      force: options?.force === true,
+    });
     updateListSelection();
     if (isSavedNotesSheetOpen()) {
       hideSavedNotesSheet();
@@ -1820,6 +1867,9 @@ const initMobileNotes = () => {
   };
 
   const hasUnsavedChanges = () => {
+    if (currentTeacherView === 'cue') {
+      return false;
+    }
     if (currentNoteIsNew && !currentNoteHasChanged) {
       return false;
     }
@@ -2445,6 +2495,7 @@ const initMobileNotes = () => {
     saveAllNotes,
     clearSearchFilter,
     getCurrentNoteId: () => currentNoteId,
+    getCurrentTeacherView: () => currentTeacherView,
     getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
     setCurrentEditingNoteFolderId: (value) => {
       currentEditingNoteFolderId = value;
@@ -2487,7 +2538,7 @@ const initMobileNotes = () => {
         }
         const note = allNotes.find((item) => item.id === noteId);
         if (note) {
-          setEditorValues(note);
+          setEditorValues(note, { teacherView: 'plan' });
           updateListSelection();
           if (isSavedNotesSheetOpen()) {
             hideSavedNotesSheet();
@@ -2580,8 +2631,11 @@ const initMobileNotes = () => {
         triggerEl,
       });
     },
-    onOpenNoteFromDashboard: (noteId) => {
-      openNoteFromDashboard(noteId);
+    onOpenNoteFromDashboard: (noteId, options = {}) => {
+      openNoteFromDashboard(noteId, options);
+    },
+    onOpenTeacherNoteView: (noteId, teacherView = 'plan') => {
+      openNoteFromDashboard(noteId, { teacherView, force: true });
     },
   });
 
@@ -2957,4 +3011,3 @@ document.addEventListener('click', (ev) => {
   io.observe(sentinel);
 })();
 /* END GPT CHANGE */
-

@@ -180,6 +180,18 @@ const sanitizeMetadata = (value) => {
     metadata.sourceNoteId = value.sourceNoteId.trim();
   }
 
+  if (typeof value.lessonCueBody === 'string' && value.lessonCueBody.trim()) {
+    metadata.lessonCueBody = value.lessonCueBody.trim();
+  }
+
+  if (typeof value.lessonCueHtml === 'string' && value.lessonCueHtml.trim()) {
+    metadata.lessonCueHtml = value.lessonCueHtml;
+  }
+
+  if (typeof value.lessonCueUpdatedAt === 'string' && value.lessonCueUpdatedAt.trim()) {
+    metadata.lessonCueUpdatedAt = value.lessonCueUpdatedAt.trim();
+  }
+
   return Object.keys(metadata).length ? metadata : null;
 };
 

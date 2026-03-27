@@ -306,6 +306,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     getCurrentEditingNoteFolderId = () => 'unsorted',
     setCurrentEditingNoteFolderId = () => {},
     getCurrentNoteId = () => null,
+    getCurrentTeacherView = () => 'plan',
     getCurrentFolderMoveNoteId = () => null,
     setCurrentFolderMoveNoteId = () => {},
     getCurrentMoveFolderSheetNoteId = () => null,
@@ -325,6 +326,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     saveAllNotes = () => {},
     onOpenNoteOptionsMove = null,
     onOpenNoteFromDashboard = null,
+    onOpenTeacherNoteView = null,
   } = options;
 
   let notesMode = 'notebooks';
@@ -421,12 +423,13 @@ export const initMobileNotesShellUi = (options = {}) => {
     const hasCurrentNote = Boolean(currentNote);
     const sourceNoteId = lessonContext?.sourceNoteId || null;
     const cueNoteId = lessonContext?.cueNoteId || null;
+    const currentTeacherView = getCurrentTeacherView() === 'cue' ? 'cue' : 'plan';
     const canShowPlanToggle = Boolean(sourceNoteId && (lessonContext?.isCueNote || lessonContext?.hasLessonPair));
     const canShowCueToggle = Boolean(cueNoteId || sourceNoteId);
     const lessonStepId = lessonContext ? getTeacherLessonStep(lessonContext.currentNote, getAllNotes()) : null;
     const stepTargetId = sourceNoteId || cueNoteId || currentNoteId || '';
     const cueLabel = cueNoteId ? 'Refresh Cue' : 'Create Cue';
-    const activeLessonTargetId = cueNoteId || sourceNoteId || currentNoteId || '';
+    const activeLessonTargetId = sourceNoteId || currentNoteId || '';
     const activeLessonLabel = 'Active';
     const lessonStepMarkup = stepTargetId
       ? `
@@ -476,7 +479,7 @@ export const initMobileNotesShellUi = (options = {}) => {
             class="note-inline-action"
             data-teacher-mode-action="lesson-plan"
             ${canShowPlanToggle ? `data-note-id="${escapeHtml(sourceNoteId || '')}"` : 'disabled'}
-            ${currentNoteId && currentNoteId === sourceNoteId ? 'data-selected="true"' : 'data-selected="false"'}
+            ${currentTeacherView === 'plan' ? 'data-selected="true"' : 'data-selected="false"'}
           >Lesson Plan</button>
           <button
             type="button"
@@ -484,7 +487,7 @@ export const initMobileNotesShellUi = (options = {}) => {
             data-teacher-mode-action="lesson-cue"
             ${canShowCueToggle ? `data-note-id="${escapeHtml(cueNoteId || sourceNoteId || '')}"` : 'disabled'}
             ${cueNoteId ? '' : 'data-generate-cue="true"'}
-            ${currentNoteId && cueNoteId && currentNoteId === cueNoteId ? 'data-selected="true"' : 'data-selected="false"'}
+            ${currentTeacherView === 'cue' && canShowCueToggle ? 'data-selected="true"' : 'data-selected="false"'}
           >Lesson Cue</button>
           </div>
         </div>
@@ -511,8 +514,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (actionButton.dataset.teacherModeAction === 'cue') {
       const cueNote = await createLessonCueFromNote(noteId);
       refreshFromStorage({ preserveDraft: true });
-      if (cueNote?.id && typeof onOpenNoteFromDashboard === 'function') {
-        onOpenNoteFromDashboard(cueNote.id, { isSavedNotesSheetOpen, hideSavedNotesSheet });
+      if (cueNote?.id && typeof onOpenTeacherNoteView === 'function') {
+        onOpenTeacherNoteView(noteId, 'cue');
       }
       return;
     }
@@ -533,16 +536,16 @@ export const initMobileNotesShellUi = (options = {}) => {
       && actionButton.dataset.generateCue === 'true') {
       const cueNote = await createLessonCueFromNote(noteId);
       refreshFromStorage({ preserveDraft: true });
-      if (cueNote?.id && typeof onOpenNoteFromDashboard === 'function') {
-        onOpenNoteFromDashboard(cueNote.id, { isSavedNotesSheetOpen, hideSavedNotesSheet });
+      if (cueNote?.id && typeof onOpenTeacherNoteView === 'function') {
+        onOpenTeacherNoteView(noteId, 'cue');
       }
       return;
     }
 
     if ((actionButton.dataset.teacherModeAction === 'lesson-plan' || actionButton.dataset.teacherModeAction === 'lesson-cue')
       && noteId
-      && typeof onOpenNoteFromDashboard === 'function') {
-      onOpenNoteFromDashboard(noteId, { isSavedNotesSheetOpen, hideSavedNotesSheet });
+      && typeof onOpenTeacherNoteView === 'function') {
+      onOpenTeacherNoteView(noteId, actionButton.dataset.teacherModeAction === 'lesson-cue' ? 'cue' : 'plan');
     }
   };
 

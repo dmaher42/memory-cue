@@ -554,6 +554,34 @@ const getNoteType = (note = {}) => (
   typeof note?.metadata?.noteType === 'string' ? note.metadata.noteType.trim() : ''
 );
 
+const getEmbeddedLessonCueBody = (note = {}) => (
+  typeof note?.metadata?.lessonCueBody === 'string' ? note.metadata.lessonCueBody.trim() : ''
+);
+
+const getEmbeddedLessonCueHtml = (note = {}) => (
+  typeof note?.metadata?.lessonCueHtml === 'string' ? note.metadata.lessonCueHtml : ''
+);
+
+const hasEmbeddedLessonCue = (note = {}) => Boolean(getEmbeddedLessonCueBody(note));
+
+const buildEmbeddedLessonCueNote = (sourceNote = {}) => {
+  const cueBody = getEmbeddedLessonCueBody(sourceNote);
+  if (!cueBody) {
+    return null;
+  }
+
+  return {
+    ...sourceNote,
+    title: buildCueTitle(sourceNote),
+    body: getEmbeddedLessonCueHtml(sourceNote) || cueBody,
+    bodyHtml: getEmbeddedLessonCueHtml(sourceNote) || cueBody,
+    bodyText: cueBody,
+    metadata: ensureTeacherMetadata(sourceNote, 'lesson-cue', {
+      sourceNoteId: sourceNote.id,
+    }),
+  };
+};
+
 export const findLessonCueNote = (sourceNoteId, notes = null) => {
   const normalizedSourceNoteId = typeof sourceNoteId === 'string' ? sourceNoteId.trim() : '';
   if (!normalizedSourceNoteId) {
@@ -593,16 +621,18 @@ export const getTeacherLessonContext = (noteOrNoteId, notes = null) => {
   const sourceNote = isCueNote
     ? sourceNotes.find((entry) => entry?.id === currentNote?.metadata?.sourceNoteId) || null
     : currentNote;
-  const cueNote = isCueNote
+  const embeddedCueNote = buildEmbeddedLessonCueNote(sourceNote);
+  const legacyCueNote = isCueNote
     ? currentNote
     : findLessonCueNote(currentNote?.id, sourceNotes);
+  const cueNote = embeddedCueNote || legacyCueNote;
 
   return {
     currentNote,
     sourceNote,
     cueNote,
     sourceNoteId: sourceNote?.id || null,
-    cueNoteId: cueNote?.id || null,
+    cueNoteId: embeddedCueNote ? sourceNote?.id || null : cueNote?.id || null,
     isCueNote,
     isLessonSource: getNoteType(sourceNote) === 'lesson-source' || Boolean(sourceNote?.metadata?.teaching),
     hasLessonPair: Boolean(sourceNote && cueNote),
@@ -726,7 +756,7 @@ export const createLessonCueFromNote = async (noteId) => {
   const notes = loadAllNotes();
   const lessonContext = getTeacherLessonContext(normalizedId, notes);
   const sourceNote = lessonContext.sourceNote;
-  const existingCueNote = lessonContext.cueNote;
+  const existingCueNote = findLessonCueNote(sourceNote?.id, notes);
   if (!sourceNote) {
     return null;
   }
@@ -759,36 +789,28 @@ export const createLessonCueFromNote = async (noteId) => {
   const cueFields = evaluatedCue.fields || parseCueFields(normalizedCueBody);
   const cueHtml = formatCueHtml(cueFields);
   const timestamp = new Date().toISOString();
-  const cueNote = createNote(buildCueTitle(sourceNote), normalizedCueBody, {
-    id: existingCueNote?.id || undefined,
-    folderId: sourceNote.folderId,
-    bodyHtml: cueHtml || normalizedCueBody,
-    bodyText: normalizedCueBody,
-    createdAt: existingCueNote?.createdAt || timestamp,
-    updatedAt: timestamp,
-    metadata: ensureTeacherMetadata(sourceNote, 'lesson-cue', {
-      sourceNoteId: sourceNote.id,
-    }),
-  });
-
   const updatedNotes = notes.map((note) => (
     note?.id === sourceNote.id
       ? {
         ...note,
-        metadata: ensureTeacherMetadata(note, 'lesson-source'),
-        updatedAt: note.updatedAt || timestamp,
+        metadata: ensureTeacherMetadata(note, 'lesson-source', {
+          lessonCueBody: normalizedCueBody,
+          lessonCueHtml: cueHtml || normalizedCueBody,
+          lessonCueUpdatedAt: timestamp,
+        }),
+        updatedAt: timestamp,
       }
       : note
   ));
 
   const notesWithoutPreviousCue = updatedNotes.filter((note) => note?.id !== existingCueNote?.id);
-  saveAllNotes([cueNote, ...notesWithoutPreviousCue]);
-  setActiveLessonNoteId(cueNote.id);
-  return cueNote;
+  saveAllNotes(notesWithoutPreviousCue);
+  setActiveLessonNoteId(sourceNote.id);
+  return buildEmbeddedLessonCueNote(notesWithoutPreviousCue.find((note) => note?.id === sourceNote.id) || sourceNote);
 };
 
 export const getLessonCueFields = (note = {}) => {
-  const cueText = toPlainText(note);
+  const cueText = getEmbeddedLessonCueBody(note) || toPlainText(note);
   if (!cueText) {
     return parseCueFields(buildFallbackCueBody(note));
   }
