@@ -70,10 +70,51 @@ const NOTEBOOK_POLISH_CSS = `
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-shell {
+    padding: 0.82rem 0.85rem;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-title {
+    margin: 0;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.62;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-copy {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    opacity: 0.76;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-section {
+    display: grid;
+    gap: 0.38rem;
+    margin-top: 0.65rem;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-label {
+    margin: 0;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.52;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
   .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action {
-    min-height: 30px;
-    padding: 0.35rem 0.72rem;
-    font-size: 0.76rem;
+    min-height: 29px;
+    padding: 0.32rem 0.66rem;
+    font-size: 0.74rem;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action[data-selected="true"] {
@@ -394,18 +435,16 @@ export const initMobileNotesShellUi = (options = {}) => {
     const stepTargetId = sourceNoteId || cueNoteId || currentNoteId || '';
     const cueLabel = cueNoteId ? 'Refresh Cue' : 'Create Cue';
     const activeLessonTargetId = cueNoteId || sourceNoteId || currentNoteId || '';
-    const activeLessonLabel = activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId)
-      ? 'Active Lesson'
-      : 'Set Active Lesson';
+    const activeLessonLabel = 'Active Lesson';
     const helperText = !hasCurrentNote
-      ? 'Save this note first, then use teacher tools here.'
+      ? 'Save first to use teacher tools here.'
       : cueNoteId
-        ? 'Switch between the full lesson plan and the cue without leaving this editor.'
-        : 'Create a cue once, then switch between your lesson plan and cue here.';
+        ? 'Switch between plan and cue, then mark your current step.'
+        : 'Create a cue, then switch between plan and cue here.';
     const lessonStepMarkup = stepTargetId
       ? `
-        <div class="mt-3">
-          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60 mb-2">Current step</p>
+        <div class="teacher-toolbar-section">
+          <p class="teacher-toolbar-label">Current step</p>
           <div class="teacher-step-row">
             ${getTeacherLessonSteps().map((step) => `
               <button
@@ -423,13 +462,14 @@ export const initMobileNotesShellUi = (options = {}) => {
       : '';
 
     bar.innerHTML = `
-      <div class="w-full rounded-xl border border-base-300 bg-base-100/80 px-3 py-2">
-        <div class="flex items-center justify-between gap-2">
-          <div class="min-w-0">
-            <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60">Teaching tools</p>
-            <p class="text-xs mt-1 opacity-75">${escapeHtml(helperText)}</p>
-          </div>
-          <div class="flex flex-wrap justify-end gap-2">
+      <div class="teacher-toolbar-shell w-full rounded-xl border border-base-300 bg-base-100/80">
+        <div class="min-w-0">
+          <p class="teacher-toolbar-title">Teaching tools</p>
+          <p class="teacher-toolbar-copy">${escapeHtml(helperText)}</p>
+        </div>
+        <div class="teacher-toolbar-section">
+          <p class="teacher-toolbar-label">Actions</p>
+          <div class="teacher-toolbar-row">
             <button
               type="button"
               class="note-inline-action"
@@ -441,10 +481,13 @@ export const initMobileNotesShellUi = (options = {}) => {
               class="note-inline-action"
               data-teacher-mode-action="active"
               ${activeLessonTargetId ? `data-note-id="${escapeHtml(activeLessonTargetId)}"` : 'disabled'}
+              ${activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId) ? 'data-selected="true"' : 'data-selected="false"'}
             >${escapeHtml(activeLessonLabel)}</button>
           </div>
         </div>
-        <div class="flex flex-wrap gap-2 mt-3">
+        <div class="teacher-toolbar-section">
+          <p class="teacher-toolbar-label">View</p>
+          <div class="teacher-toolbar-row">
           <button
             type="button"
             class="note-inline-action"
@@ -460,6 +503,7 @@ export const initMobileNotesShellUi = (options = {}) => {
             ${cueNoteId ? '' : 'data-generate-cue="true"'}
             ${currentNoteId && cueNoteId && currentNoteId === cueNoteId ? 'data-selected="true"' : 'data-selected="false"'}
           >Lesson Cue</button>
+          </div>
         </div>
         ${lessonStepMarkup}
       </div>
