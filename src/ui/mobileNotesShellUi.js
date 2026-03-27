@@ -121,6 +121,97 @@ export const initMobileNotesShellUi = (options = {}) => {
     '.note-action-create-lesson-cue',
   );
 
+  const ensureTeacherModeEditorBar = () => {
+    const headerBlock = noteEditorSheet?.querySelector('.scratch-notes-header-block');
+    if (!(headerBlock instanceof HTMLElement)) {
+      return null;
+    }
+
+    const existingBar = headerBlock.querySelector('[data-teacher-mode-editor-bar]');
+    if (existingBar instanceof HTMLElement) {
+      return existingBar;
+    }
+
+    const bar = document.createElement('div');
+    bar.dataset.teacherModeEditorBar = 'true';
+    bar.className = 'note-editor-actions-row';
+    headerBlock.appendChild(bar);
+    return bar;
+  };
+
+  const renderTeacherModeEditorBar = () => {
+    const bar = ensureTeacherModeEditorBar();
+    if (!(bar instanceof HTMLElement)) {
+      return;
+    }
+
+    const currentNoteId = getCurrentNoteId();
+    const currentNote = currentNoteId
+      ? getAllNotes().find((note) => note?.id === currentNoteId) || null
+      : null;
+    const cueLabel = currentNote?.metadata?.noteType === 'lesson-cue' ? 'Refresh Lesson Cue' : 'Create Lesson Cue';
+    const activeLessonLabel = currentNote && isActiveLessonNoteId(currentNote.id) ? 'Active Lesson' : 'Use as Active Lesson';
+    const helperText = currentNote
+      ? 'Create a short teaching cue or pin this as the active lesson.'
+      : 'Save this note first, then use teacher tools here.';
+
+    bar.innerHTML = `
+      <div class="w-full rounded-xl border border-base-300 bg-base-100/80 px-3 py-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60">Teaching tools</p>
+            <p class="text-xs mt-1 opacity-75">${escapeHtml(helperText)}</p>
+          </div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              class="note-inline-action"
+              data-teacher-mode-action="cue"
+              ${currentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
+            >${escapeHtml(cueLabel)}</button>
+            <button
+              type="button"
+              class="note-inline-action"
+              data-teacher-mode-action="active"
+              ${currentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
+            >${escapeHtml(activeLessonLabel)}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const handleTeacherModeEditorAction = async (event) => {
+    const actionButton = event.target instanceof HTMLElement
+      ? event.target.closest('[data-teacher-mode-action]')
+      : null;
+    if (!(actionButton instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const noteId = actionButton.dataset.noteId || '';
+    if (!noteId) {
+      return;
+    }
+
+    if (actionButton.dataset.teacherModeAction === 'cue') {
+      await createLessonCueFromNote(noteId);
+      refreshFromStorage({ preserveDraft: true });
+      return;
+    }
+
+    if (actionButton.dataset.teacherModeAction === 'active') {
+      setActiveLessonNoteId(noteId);
+      refreshFromStorage({ preserveDraft: true });
+    }
+  };
+
+  ensureTeacherModeEditorBar()?.addEventListener('click', (event) => {
+    void handleTeacherModeEditorAction(event);
+  });
+
   const ensureActiveLessonCard = () => {
     if (!(notesOverviewPanel instanceof HTMLElement)) {
       return null;
@@ -264,6 +355,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       noteEditorSheet.classList.toggle('hidden', notesMode === 'overview');
     }
     renderActiveLessonCard();
+    renderTeacherModeEditorBar();
   };
 
   const isSavedNotesSheetOpen = () => savedNotesSheet?.dataset.open === 'true';
@@ -756,10 +848,25 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   document.addEventListener('memoryCue:activeLessonUpdated', () => {
     renderActiveLessonCard();
+    renderTeacherModeEditorBar();
   });
 
   document.addEventListener('memoryCue:notesUpdated', () => {
     renderActiveLessonCard();
+    renderTeacherModeEditorBar();
+  });
+
+  noteEditorSheet?.addEventListener('click', () => {
+    window.setTimeout(() => {
+      renderTeacherModeEditorBar();
+    }, 0);
+  });
+
+  savedNotesSheet?.addEventListener('click', () => {
+    window.setTimeout(() => {
+      renderTeacherModeEditorBar();
+      renderActiveLessonCard();
+    }, 0);
   });
 
   document.addEventListener('thinkingBar:openNote', (event) => {
@@ -771,6 +878,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   });
 
   renderActiveLessonCard();
+  renderTeacherModeEditorBar();
 
   return {
     applyNotesMode,
