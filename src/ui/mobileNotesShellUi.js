@@ -76,6 +76,36 @@ const NOTEBOOK_POLISH_CSS = `
     margin: 0;
   }
 
+  .mobile-panel--notes .lesson-cue-note {
+    display: grid;
+    gap: 0.72rem;
+    padding: 0.15rem 0;
+  }
+
+  .mobile-panel--notes .lesson-cue-block {
+    padding: 0.78rem 0.9rem;
+    border-radius: 0.95rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 68%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #f3eefc 3%);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  .mobile-panel--notes .lesson-cue-label {
+    margin: 0 0 0.28rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--text-main, #231B2E) 62%, #7c8798 38%);
+  }
+
+  .mobile-panel--notes .lesson-cue-value {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.45;
+    color: var(--text-main, #231B2E);
+  }
+
   .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
     gap: 0.6rem;
     padding: 0.52rem 0.6rem;

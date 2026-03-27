@@ -80,6 +80,13 @@ const clampCueValue = (value = '') => {
   return `${trimmed}...`;
 };
 
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 const cleanCueValue = (value = '', fallback = '') => {
   const candidate = stripCueLabelPrefix(value) || stripCueLabelPrefix(fallback);
   if (!candidate) {
@@ -106,6 +113,30 @@ const parseCueFields = (text = '') => {
 const formatCueFields = (fields = {}) => CUE_LABELS
   .map((label) => `${label}: ${cleanCueValue(fields[label])}`)
   .join('\n');
+
+const formatCueHtml = (fields = {}) => {
+  const blocks = CUE_LABELS
+    .map((label) => {
+      const value = cleanCueValue(fields[label]);
+      if (!value) {
+        return '';
+      }
+      return `
+        <section class="lesson-cue-block" data-cue-label="${label.toLowerCase()}">
+          <p class="lesson-cue-label">${escapeHtml(label)}</p>
+          <p class="lesson-cue-value">${escapeHtml(value)}</p>
+        </section>
+      `.trim();
+    })
+    .filter(Boolean)
+    .join('');
+
+  if (!blocks) {
+    return '';
+  }
+
+  return `<div class="lesson-cue-note">${blocks}</div>`;
+};
 
 const hasLowQualityCueFields = (fields = {}, fallbackFields = {}) => {
   const values = CUE_LABELS
@@ -491,9 +522,12 @@ export const createLessonCueFromNote = async (noteId) => {
   }
 
   const normalizedCueBody = normalizeCueBody(cueBody, sourceNote);
+  const cueFields = parseCueFields(normalizedCueBody);
+  const cueHtml = formatCueHtml(cueFields);
   const timestamp = new Date().toISOString();
   const cueNote = createNote(buildCueTitle(sourceNote), normalizedCueBody, {
     folderId: sourceNote.folderId,
+    bodyHtml: cueHtml || normalizedCueBody,
     bodyText: normalizedCueBody,
     createdAt: timestamp,
     updatedAt: timestamp,
