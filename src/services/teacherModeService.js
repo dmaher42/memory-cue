@@ -107,6 +107,40 @@ const formatCueFields = (fields = {}) => CUE_LABELS
   .map((label) => `${label}: ${cleanCueValue(fields[label])}`)
   .join('\n');
 
+const hasLowQualityCueFields = (fields = {}, fallbackFields = {}) => {
+  const values = CUE_LABELS
+    .map((label) => cleanCueValue(fields[label], fallbackFields[label]))
+    .filter(Boolean);
+
+  if (values.length < 3) {
+    return true;
+  }
+
+  const normalizedValues = values.map((value) => value.toLowerCase());
+  const uniqueValues = new Set(normalizedValues);
+  if (uniqueValues.size <= 2) {
+    return true;
+  }
+
+  const repeatedPrefixes = normalizedValues.filter((value) => (
+    /\blearning intention\b/.test(value)
+    || /\bsuccess criteria\b/.test(value)
+  ));
+  if (repeatedPrefixes.length >= 3) {
+    return true;
+  }
+
+  const longestValue = normalizedValues.reduce((longest, value) => (
+    value.length > longest.length ? value : longest
+  ), '');
+  const dominantCount = normalizedValues.filter((value) => value === longestValue).length;
+  if (dominantCount >= 3) {
+    return true;
+  }
+
+  return false;
+};
+
 const findLine = (lines = [], patterns = []) => {
   if (!Array.isArray(lines) || !lines.length) {
     return '';
@@ -358,6 +392,9 @@ const normalizeCueBody = (text = '', note = {}) => {
 
   const fallbackFields = parseCueFields(buildFallbackCueBody(note));
   const parsedFields = parseCueFields(normalized);
+  if (hasLowQualityCueFields(parsedFields, fallbackFields)) {
+    return formatCueFields(fallbackFields);
+  }
   const normalizedFields = {};
 
   CUE_LABELS.forEach((label) => {
