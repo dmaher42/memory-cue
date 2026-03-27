@@ -1,6 +1,7 @@
 const FIREBASE_MODULE_BASE = 'https://www.gstatic.com/firebasejs/10.14.1';
 
 let firebaseContextPromise = null;
+let firebaseMessagingModulePromise = null;
 
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -16,6 +17,7 @@ const readFirebaseConfig = () => {
     projectId: normalize(env.FIREBASE_PROJECT_ID),
     storageBucket: normalize(env.FIREBASE_STORAGE_BUCKET),
     messagingSenderId: normalize(env.FIREBASE_MESSAGING_SENDER_ID),
+    webPushVapidKey: normalize(env.FIREBASE_WEB_PUSH_VAPID_KEY),
     appId: normalize(env.FIREBASE_APP_ID),
   };
 
@@ -77,6 +79,46 @@ export const getFirebaseContext = async () => {
   }
 
   return firebaseContextPromise;
+};
+
+export const getFirebaseMessagingContext = async () => {
+  const firebase = await getFirebaseContext();
+  const config = readFirebaseConfig();
+  if (!firebase?.app || !config?.messagingSenderId || !config?.webPushVapidKey) {
+    return null;
+  }
+  if (typeof window === 'undefined' || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+    return null;
+  }
+
+  if (!firebaseMessagingModulePromise) {
+    firebaseMessagingModulePromise = (async () => {
+      const messagingModule = await import(`${FIREBASE_MODULE_BASE}/firebase-messaging.js`);
+      if (typeof messagingModule.isSupported === 'function') {
+        const supported = await messagingModule.isSupported().catch(() => false);
+        if (!supported) {
+          return null;
+        }
+      }
+      return messagingModule;
+    })().catch((error) => {
+      firebaseMessagingModulePromise = null;
+      console.warn('[firebase] Failed to initialise Firebase Messaging.', error);
+      return null;
+    });
+  }
+
+  const messagingModule = await firebaseMessagingModulePromise;
+  if (!messagingModule) {
+    return null;
+  }
+
+  return {
+    messaging: messagingModule.getMessaging(firebase.app),
+    getToken: messagingModule.getToken,
+    deleteToken: messagingModule.deleteToken,
+    vapidKey: config.webPushVapidKey,
+  };
 };
 
 export const requireUid = (uid) => {

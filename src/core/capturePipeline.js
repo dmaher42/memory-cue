@@ -8,6 +8,7 @@ import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/a
 
 // Lightweight in-memory conversation state for one-step clarifications.
 let pendingIntent = null;
+let pendingCaptureKind = null;
 
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
@@ -23,6 +24,121 @@ const normalizeSource = (value) => {
   const normalized = value.trim();
   return normalized || 'unknown';
 };
+
+const QUICK_CAPTURE_PREFIXES = Object.freeze({
+  reminder: '!',
+  note: '+',
+});
+
+const CAPTURE_KIND_REPLY_MAP = Object.freeze({
+  '!': 'reminder',
+  '+': 'note',
+  reminder: 'reminder',
+  reminders: 'reminder',
+  task: 'reminder',
+  tasks: 'reminder',
+  note: 'note',
+  notes: 'note',
+  notebook: 'note',
+});
+
+const TASK_LIKE_PREFIXES = [
+  'add',
+  'ask',
+  'book',
+  'bring',
+  'buy',
+  'call',
+  'check',
+  'clean',
+  'collect',
+  'do',
+  'drop',
+  'email',
+  'finish',
+  'follow up',
+  'get',
+  'make',
+  'move',
+  'organise',
+  'organize',
+  'pack',
+  'pay',
+  'phone',
+  'pick up',
+  'post',
+  'prepare',
+  'put',
+  'return',
+  'ring',
+  'save',
+  'send',
+  'sort',
+  'start',
+  'take',
+  'text',
+  'tidy',
+  'update',
+  'wash',
+  'write',
+];
+
+const normalizeCaptureKind = (value) => {
+  const normalized = normalizeText(value).toLowerCase();
+  return CAPTURE_KIND_REPLY_MAP[normalized] || null;
+};
+
+const parseQuickCapturePrefix = (value) => {
+  const text = normalizeText(value);
+  if (!text) {
+    return null;
+  }
+
+  const prefix = text.charAt(0);
+  if (prefix === QUICK_CAPTURE_PREFIXES.reminder || prefix === QUICK_CAPTURE_PREFIXES.note) {
+    const body = text.slice(1).trim();
+    const kind = prefix === QUICK_CAPTURE_PREFIXES.reminder ? 'reminder' : 'note';
+    if (!body) {
+      return { kind, text: '' };
+    }
+    return { kind, text: body };
+  }
+
+  return null;
+};
+
+const looksLikeTaskCapture = (value) => {
+  const text = normalizeText(value).toLowerCase();
+  if (!text || text.endsWith('?')) {
+    return false;
+  }
+  if (parseQuickCapturePrefix(text)) {
+    return false;
+  }
+  if (/\b(remind|reminder|note|notes|idea|journal|meeting notes)\b/.test(text)) {
+    return false;
+  }
+
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  if (wordCount < 2 || wordCount > 8) {
+    return false;
+  }
+
+  return TASK_LIKE_PREFIXES.some((prefix) => text.startsWith(`${prefix} `) || text === prefix);
+};
+
+const createForcedParsedEntry = (kind, text, hints = {}) => ({
+  type: kind === 'reminder' ? 'reminder' : 'note',
+  title: text,
+  tags: [],
+  reminderDate: null,
+  metadata: {
+    source: hints?.source,
+    entryPoint: hints?.entryPoint,
+    capturedAt: hints?.capturedAt,
+    forcedCaptureKind: kind,
+  },
+});
 
 const normalizeParsedEntry = (parsed, text = '') => {
   const payload = parsed && typeof parsed === 'object' ? parsed : {};
@@ -271,6 +387,29 @@ const buildPendingReminderDecision = (intent, dueAt) => {
   };
 };
 
+const buildPendingCaptureKindDecision = (kind, originalText, hints = {}) => {
+  const parsedEntry = createForcedParsedEntry(kind, originalText, hints);
+  if (kind === 'reminder') {
+    return {
+      decisionType: 'persist_reminder',
+      parsedType: 'reminder',
+      text: originalText,
+      parsedEntry,
+      missing: [],
+      hints,
+    };
+  }
+
+  return {
+    decisionType: 'persist_note',
+    parsedType: 'note',
+    text: originalText,
+    parsedEntry,
+    missing: [],
+    hints,
+  };
+};
+
 const enrichReminderDecision = (decision, text) => {
   if (decision?.decisionType !== 'persist_reminder') {
     return decision;
@@ -282,12 +421,16 @@ const enrichReminderDecision = (decision, text) => {
   const dueAt = typeof parsedEntry?.reminderDate === 'string' && parsedEntry.reminderDate.trim()
     ? parsedEntry.reminderDate.trim()
     : parseReminderDueAt(text);
+  const resolvedTitle = cleanReminderTitle(parsedEntry?.title || text);
   const missing = Array.isArray(decision?.missing)
     ? decision.missing.filter((value) => value !== 'dueAt')
     : [];
 
   if (!dueAt) {
-    missing.push('dueAt');
+    const forcedCaptureKind = normalizeCaptureKind(parsedEntry?.metadata?.forcedCaptureKind);
+    if (forcedCaptureKind !== 'reminder') {
+      missing.push('dueAt');
+    }
   }
 
   return {
@@ -295,6 +438,7 @@ const enrichReminderDecision = (decision, text) => {
     parsedEntry: {
       ...parsedEntry,
       type: 'reminder',
+      title: resolvedTitle || parsedEntry?.title || text,
       reminderDate: dueAt,
       metadata: {
         ...(parsedEntry?.metadata && typeof parsedEntry.metadata === 'object' ? parsedEntry.metadata : {}),
@@ -306,6 +450,21 @@ const enrichReminderDecision = (decision, text) => {
 };
 
 const maybeResolvePendingIntent = async (text) => {
+  if (pendingCaptureKind) {
+    const selectedKind = normalizeCaptureKind(text);
+    if (selectedKind === 'reminder' || selectedKind === 'note') {
+      const decision = buildPendingCaptureKindDecision(
+        selectedKind,
+        pendingCaptureKind.originalText,
+        pendingCaptureKind.hints,
+      );
+      pendingCaptureKind = null;
+      return { decision };
+    }
+
+    pendingCaptureKind = null;
+  }
+
   if (!pendingIntent) {
     return null;
   }
@@ -354,6 +513,87 @@ const runAssistantQuery = async (text, metadata = {}) => {
   return requestAssistantChat(body, { fallbackReply: 'Here is what I found.' });
 };
 
+export async function analyzeCaptureInput({
+  text,
+  source = 'unknown',
+  metadata = {},
+}) {
+  const normalizedText = normalizeText(text);
+  if (!normalizedText) {
+    return null;
+  }
+
+  const context = {
+    source: normalizeSource(source),
+    entryPoint: typeof metadata?.entryPoint === 'string' && metadata.entryPoint.trim()
+      ? metadata.entryPoint.trim()
+      : normalizeSource(source),
+    capturedAt: Number.isFinite(metadata?.capturedAt) ? metadata.capturedAt : Date.now(),
+  };
+
+  const hints = {
+    source: context.source,
+    entryPoint: context.entryPoint,
+    capturedAt: context.capturedAt,
+    ...metadata,
+  };
+
+  const quickCapture = parseQuickCapturePrefix(normalizedText);
+  if (quickCapture?.kind && quickCapture.text) {
+    const parsedEntry = createForcedParsedEntry(quickCapture.kind, quickCapture.text, hints);
+    const decision = quickCapture.kind === 'reminder'
+      ? enrichReminderDecision({
+        decisionType: 'persist_reminder',
+        parsedType: 'reminder',
+        text: quickCapture.text,
+        parsedEntry,
+        missing: [],
+        hints,
+      }, quickCapture.text)
+      : {
+        decisionType: 'persist_note',
+        parsedType: 'note',
+        text: quickCapture.text,
+        parsedEntry,
+        missing: [],
+        hints,
+      };
+
+    return {
+      text: quickCapture.text,
+      context,
+      hints,
+      decision,
+    };
+  }
+
+  if (looksLikeTaskCapture(normalizedText)) {
+    return {
+      text: normalizedText,
+      context,
+      hints,
+      decision: {
+        decisionType: 'choose_capture_kind',
+        parsedType: 'unknown',
+        text: normalizedText,
+        parsedEntry: createForcedParsedEntry('note', normalizedText, hints),
+        missing: ['captureKind'],
+        hints,
+      },
+    };
+  }
+
+  const resolvedDecision = await resolveDecision(normalizedText, hints);
+  const decision = enrichReminderDecision(resolvedDecision, normalizedText);
+
+  return {
+    text: normalizedText,
+    context,
+    hints,
+    decision,
+  };
+}
+
 export async function captureInput({
   text,
   source = 'unknown',
@@ -383,11 +623,46 @@ export async function captureInput({
   if (pendingResolution?.clarification) {
     return pendingResolution.clarification;
   }
+  if (pendingResolution?.decision) {
+    const pendingDecision = pendingResolution.decision;
+    if (pendingDecision.decisionType === 'persist_note') {
+      const memory = await saveNoteMemory(pendingDecision.text, pendingDecision, context);
+      return {
+        decision: pendingDecision,
+        data: memory,
+        message: 'Saved note.',
+      };
+    }
+    if (pendingDecision.decisionType === 'persist_reminder') {
+      const reminder = await createReminder({
+        text: pendingDecision?.parsedEntry?.title || pendingDecision.text || normalizedText,
+        dueAt: pendingDecision?.parsedEntry?.reminderDate || undefined,
+        source: 'capture',
+      });
+      return buildAssistantResponse('Reminder created.', {
+        decision: pendingDecision,
+        data: reminder,
+      });
+    }
+  }
 
-  const resolvedDecision = pendingResolution?.decision || await resolveDecision(normalizedText, hints);
-  const decision = enrichReminderDecision(resolvedDecision, normalizedText);
+  const analyzedCapture = pendingResolution?.decision
+    ? { decision: pendingResolution.decision }
+    : await analyzeCaptureInput({
+      text: normalizedText,
+      source: context.source,
+      metadata: hints,
+    });
+  const decision = analyzedCapture?.decision || null;
 
   switch (decision?.decisionType) {
+    case 'choose_capture_kind': {
+      pendingCaptureKind = {
+        originalText: normalizedText,
+        hints,
+      };
+      return buildAssistantResponse('Should I save that as a reminder or a note?');
+    }
     case 'persist_note': {
       const memory = await saveNoteMemory(normalizedText, decision, context);
       return {
@@ -451,7 +726,7 @@ export async function captureInput({
       return {
         decision,
         data: inboxEntry,
-        message: 'Added to inbox for later review.',
+        message: 'Saved for later review.',
       };
     }
   }

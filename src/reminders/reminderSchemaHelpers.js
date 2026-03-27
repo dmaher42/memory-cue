@@ -81,6 +81,9 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
   const due = dueCandidate instanceof Date
     ? dueCandidate.toISOString()
     : normalizeIsoString(dueCandidate);
+  const notifyCandidate = source.notifyAt instanceof Date
+    ? source.notifyAt.toISOString()
+    : normalizeIsoString(source.notifyAt);
   const createdAt = Number.isFinite(Number(source.createdAt)) ? Number(source.createdAt) : now;
   const updatedAt = Number.isFinite(Number(source.updatedAt)) ? Number(source.updatedAt) : createdAt;
   const notes = typeof source.notes === 'string'
@@ -121,7 +124,7 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
         : null,
     pinToToday: source.pinToToday === true,
     semanticEmbedding: normalizeSemanticEmbedding(source.semanticEmbedding),
-    notifyAt: normalizeIsoString(source.notifyAt),
+    notifyAt: notifyCandidate || due,
   };
 
   normalized.metadata = {

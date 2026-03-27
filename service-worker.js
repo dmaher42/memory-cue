@@ -301,6 +301,7 @@ function sanitizeReminderEntry(entry) {
         : DEFAULT_REMINDER_URL_PATH,
     updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
     notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
+    viaTrigger: entry.viaTrigger === true,
   };
   if (sanitized.due) {
     const dueTime = Date.parse(sanitized.due);
@@ -330,6 +331,159 @@ async function writeScheduledReminders(reminders = []) {
     await done;
   } catch (error) {
     console.warn('Failed to persist reminder schedule', error);
+  }
+}
+
+async function upsertScheduledReminder(entry) {
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return;
+    }
+    const sanitized = sanitizeReminderEntry(entry);
+    if (!sanitized) {
+      return;
+    }
+    const tx = db.transaction(REMINDER_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(REMINDER_STORE_NAME);
+    const done = waitForTransaction(tx);
+    await idbRequestToPromise(store.put(sanitized));
+    await done;
+  } catch (error) {
+    console.warn('Failed to upsert scheduled reminder', error);
+  }
+}
+
+async function deleteScheduledReminder(id) {
+  if (!id) {
+    return;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return;
+    }
+    const tx = db.transaction(REMINDER_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(REMINDER_STORE_NAME);
+    const done = waitForTransaction(tx);
+    await idbRequestToPromise(store.delete(id));
+    await done;
+  } catch (error) {
+    console.warn('Failed to delete scheduled reminder', error);
+  }
+}
+
+function supportsTimestampTriggerScheduling() {
+  return typeof self.TimestampTrigger === 'function'
+    && !!self.registration
+    && typeof self.registration.showNotification === 'function';
+}
+
+async function scheduleTriggeredReminder(reminder) {
+  if (!supportsTimestampTriggerScheduling()) {
+    return false;
+  }
+  const dueTime = Number.isFinite(reminder?.dueTime)
+    ? reminder.dueTime
+    : (reminder?.due ? Date.parse(reminder.due) : NaN);
+  if (!Number.isFinite(dueTime) || dueTime <= Date.now()) {
+    return false;
+  }
+  try {
+    await self.registration.showNotification(reminder.title || 'Reminder', {
+      body: reminder.body || 'Due now',
+      tag: reminder.id,
+      data: {
+        id: reminder.id,
+        due: reminder.due,
+        priority: reminder.priority,
+        category: reminder.category,
+        body: reminder.body || 'Due now',
+        urlPath: reminder.urlPath,
+        source: 'push-sync',
+      },
+      renotify: true,
+      showTrigger: new self.TimestampTrigger(dueTime),
+    });
+    return true;
+  } catch (error) {
+    console.warn('Failed to schedule trigger reminder from push', error);
+    return false;
+  }
+}
+
+function buildReminderBodyFromPush(reminder) {
+  const notes = typeof reminder?.notes === 'string' ? reminder.notes.trim() : '';
+  return notes || 'Due now';
+}
+
+function buildScheduledReminderFromPush(reminder = {}) {
+  if (!reminder || typeof reminder !== 'object') {
+    return null;
+  }
+  const reminderId = typeof reminder.id === 'string' ? reminder.id.trim() : '';
+  if (!reminderId) {
+    return null;
+  }
+  const due = typeof reminder.snoozedUntil === 'string' && reminder.snoozedUntil
+    ? reminder.snoozedUntil
+    : (typeof reminder.due === 'string' ? reminder.due : null);
+  return sanitizeReminderEntry({
+    id: reminderId,
+    title: typeof reminder.title === 'string' && reminder.title ? reminder.title : 'Reminder',
+    body: buildReminderBodyFromPush(reminder),
+    due,
+    priority: typeof reminder.priority === 'string' && reminder.priority ? reminder.priority : 'Medium',
+    category:
+      typeof reminder.category === 'string' && reminder.category.trim()
+        ? reminder.category.trim()
+        : DEFAULT_REMINDER_CATEGORY,
+    notes: typeof reminder.notes === 'string' ? reminder.notes : '',
+    urlPath:
+      typeof reminder.urlPath === 'string' && reminder.urlPath
+        ? reminder.urlPath
+        : DEFAULT_REMINDER_URL_PATH,
+    updatedAt: Number.isFinite(Number(reminder.updatedAt)) ? Number(reminder.updatedAt) : Date.now(),
+    notifiedAt: null,
+  });
+}
+
+async function handleReminderSyncPush(data = {}) {
+  const action = typeof data.action === 'string' && data.action.trim() === 'delete'
+    ? 'delete'
+    : 'upsert';
+  const reminderPayload = (() => {
+    if (typeof data.reminder === 'string' && data.reminder.trim()) {
+      try {
+        return JSON.parse(data.reminder);
+      } catch {
+        return null;
+      }
+    }
+    if (data.reminder && typeof data.reminder === 'object') {
+      return data.reminder;
+    }
+    return null;
+  })();
+  const reminderId = typeof reminderPayload?.id === 'string' ? reminderPayload.id.trim() : '';
+  if (!reminderId) {
+    return;
+  }
+  if (action === 'delete') {
+    await deleteScheduledReminder(reminderId);
+    return;
+  }
+  const scheduledReminder = buildScheduledReminderFromPush(reminderPayload);
+  if (!scheduledReminder) {
+    return;
+  }
+  const viaTrigger = await scheduleTriggeredReminder(scheduledReminder);
+  await upsertScheduledReminder({
+    ...scheduledReminder,
+    viaTrigger,
+  });
+  if (!viaTrigger) {
+    await checkAndNotifyDueReminders({ source: 'push-sync' });
   }
 }
 
@@ -379,6 +533,9 @@ async function checkAndNotifyDueReminders({ source = 'unknown' } = {}) {
       ? reminder.notifiedAt
       : null;
     if (alreadyNotified && alreadyNotified >= dueTime) {
+      continue;
+    }
+    if (reminder.viaTrigger === true) {
       continue;
     }
     const options = {
@@ -439,6 +596,10 @@ self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data.json(); }
   catch { data = { body: event.data && event.data.text() }; }
+  if (data?.type === 'memoryCue:reminder-sync') {
+    event.waitUntil(handleReminderSyncPush(data));
+    return;
+  }
   const title = data.title || 'Memory Cue Reminder';
   const options = { body: data.body || '', data };
   event.waitUntil(self.registration.showNotification(title, options));

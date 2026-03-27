@@ -17,6 +17,11 @@ import { getMessages, replaceMessages } from '../chat/messageStore.js';
 import { createReminderFirestoreSync } from './reminderFirestoreSync.js';
 import { createReminderFormHandlers } from './reminderFormHandlers.js';
 import {
+  registerReminderPushDevice,
+  syncReminderToOtherDevices,
+  unregisterReminderPushDevice,
+} from './reminderPushSync.js';
+import {
   normalizeReminderKeywords,
   extractReminderKeywords,
   normalizeSemanticEmbedding,
@@ -3822,7 +3827,13 @@ export async function initReminders(sel = {}) {
   }
 
   function applySignedOutState() {
+    const previousUserId = userId;
     userId = null;
+    if (previousUserId) {
+      unregisterReminderPushDevice({ userId: previousUserId }).catch((error) => {
+        console.warn('[reminder-push] Failed to unregister push device', error);
+      });
+    }
     renderSyncIndicator('local');
     googleSignInBtns.forEach((btn) => btn.classList.remove('hidden'));
     googleSignOutBtns.forEach((btn) => btn.classList.add('hidden'));
@@ -4216,6 +4227,7 @@ export async function initReminders(sel = {}) {
         await syncNotesFromFirestoreOnLogin();
         await migrateOfflineRemindersIfNeeded();
         await ensureNotificationPermission();
+        await syncCurrentDevicePushRegistration();
         return;
       }
 
@@ -4326,6 +4338,34 @@ export async function initReminders(sel = {}) {
     });
   }
 
+  async function syncCurrentDevicePushRegistration() {
+    if (!userId) {
+      return null;
+    }
+    const registration = await ensureServiceWorkerRegistration().catch(() => null);
+    if (!registration) {
+      return null;
+    }
+    return registerReminderPushDevice({
+      userId,
+      serviceWorkerRegistration: registration,
+    });
+  }
+
+  async function syncReminderAcrossDevices(item, action = 'upsert') {
+    if (!userId || !item?.id) {
+      return null;
+    }
+    return syncReminderToOtherDevices({
+      userId,
+      reminder: item,
+      action,
+    }).catch((error) => {
+      console.warn('[reminder-push] Failed to sync reminder across devices', error);
+      return null;
+    });
+  }
+
   async function saveToFirebase(item){
     const normalizedItem = normalizeReminderRecord(item, { fallbackId: uid() });
     const reminderId = normalizedItem.id;
@@ -4353,6 +4393,17 @@ export async function initReminders(sel = {}) {
       });
       item.pendingSync = false;
       persistItems();
+      const pushAction = item.done || item.completed || !getReminderScheduleIso(normalizedItem)
+        ? 'delete'
+        : 'upsert';
+      await syncReminderAcrossDevices({
+        ...normalizedItem,
+        id: reminderId,
+        createdAt,
+        updatedAt,
+        userId,
+        pendingSync: false,
+      }, pushAction);
       return true;
     } catch (error) {
       item.pendingSync = true;
@@ -4453,6 +4504,7 @@ export async function initReminders(sel = {}) {
           notifyMinutesBefore,
         });
         ensureNotificationPermission();
+        syncCurrentDevicePushRegistration();
         tryCalendarSync(createdEntry);
         scheduleReminder(createdEntry);
         rescheduleAllReminders();
@@ -4616,6 +4668,7 @@ export async function initReminders(sel = {}) {
       notifyMinutesBefore,
     });
     ensureNotificationPermission();
+    syncCurrentDevicePushRegistration();
     tryCalendarSync(item);
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
@@ -4650,6 +4703,7 @@ export async function initReminders(sel = {}) {
       toast('Could not delete reminder. It was restored.');
       return;
     }
+    syncReminderAcrossDevices(removed, 'delete');
     cancelReminder(id);
     const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
     emitActivity({ action: 'deleted', label: activityLabel });
@@ -6588,6 +6642,7 @@ export async function initReminders(sel = {}) {
   notifBtn?.addEventListener('click', async () => {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }
     if(Notification.permission === 'granted'){
+      await syncCurrentDevicePushRegistration();
       toast('Notifications enabled');
       if(supportsNotificationTriggers()) {
         ensureServiceWorkerRegistration();
@@ -6602,6 +6657,7 @@ export async function initReminders(sel = {}) {
     try {
       const granted = await ensureNotificationPermission();
       if(granted){
+        await syncCurrentDevicePushRegistration();
         toast('Notifications enabled');
         if(supportsNotificationTriggers()) {
           ensureServiceWorkerRegistration();
