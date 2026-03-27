@@ -138,6 +138,51 @@ const formatCueHtml = (fields = {}) => {
   return `<div class="lesson-cue-note">${blocks}</div>`;
 };
 
+const normalizeCueFields = (fields = {}, fallbackFields = {}) => {
+  const normalizedFields = {};
+  CUE_LABELS.forEach((label) => {
+    normalizedFields[label] = cleanCueValue(fields[label], fallbackFields[label]);
+  });
+  return normalizedFields;
+};
+
+const evaluateCueBody = (text = '', note = {}) => {
+  const fallbackFields = parseCueFields(buildFallbackCueBody(note));
+  const normalized = normalizeText(text);
+  if (!normalized) {
+    return {
+      ok: false,
+      fields: fallbackFields,
+      body: formatCueFields(fallbackFields),
+    };
+  }
+
+  const parsedFields = parseCueFields(normalized);
+  if (hasLowQualityCueFields(parsedFields, fallbackFields)) {
+    return {
+      ok: false,
+      fields: fallbackFields,
+      body: formatCueFields(fallbackFields),
+    };
+  }
+
+  const normalizedFields = normalizeCueFields(parsedFields, fallbackFields);
+  const hasAnyFields = CUE_LABELS.some((label) => normalizedFields[label]);
+  if (!hasAnyFields) {
+    return {
+      ok: false,
+      fields: fallbackFields,
+      body: formatCueFields(fallbackFields),
+    };
+  }
+
+  return {
+    ok: true,
+    fields: normalizedFields,
+    body: formatCueFields(normalizedFields),
+  };
+};
+
 const hasLowQualityCueFields = (fields = {}, fallbackFields = {}) => {
   const values = CUE_LABELS
     .map((label) => cleanCueValue(fields[label], fallbackFields[label]))
@@ -276,6 +321,41 @@ const extractLessonSections = (text = '') => {
   return sections;
 };
 
+const buildLessonSourceBrief = (note = {}) => {
+  const title = normalizeText(note?.title) || 'Lesson';
+  const text = toPlainText(note);
+  const flatText = toFlatText(note);
+  const lines = extractLines(text);
+  const sections = extractLessonSections(flatText);
+
+  const detailLines = uniqueLines([
+    sections['learning intention'] ? `Learning intention: ${sections['learning intention']}` : '',
+    sections['success criteria'] ? `Success criteria: ${sections['success criteria']}` : '',
+    sections.say ? `Teacher wording: ${sections.say}` : '',
+    sections.teach ? `Teach: ${sections.teach}` : '',
+    sections.model ? `Model: ${sections.model}` : '',
+    sections['question to ask'] ? `Question to ask: ${sections['question to ask']}` : '',
+    sections['hinge question'] ? `Hinge question: ${sections['hinge question']}` : '',
+    sections['guided practice'] ? `Guided practice: ${sections['guided practice']}` : '',
+    sections['independent practice'] ? `Independent practice: ${sections['independent practice']}` : '',
+    sections.materials ? `Materials: ${sections.materials}` : '',
+    sections.resources ? `Resources: ${sections.resources}` : '',
+    sections.reminder ? `Reminder: ${sections.reminder}` : '',
+    sections['before class'] ? `Before class: ${sections['before class']}` : '',
+    sections['after class'] ? `After class: ${sections['after class']}` : '',
+  ]);
+
+  const fallbackLines = uniqueLines(lines).slice(0, 8);
+  const sourceLines = detailLines.length ? detailLines.slice(0, 10) : fallbackLines;
+
+  return [
+    `Title: ${title}`,
+    '',
+    'Lesson outline:',
+    ...(sourceLines.length ? sourceLines.map((line) => `- ${line}`) : [`- ${title}`]),
+  ].join('\n');
+};
+
 const buildFallbackCueBody = (note = {}) => {
   const title = normalizeText(note?.title) || 'Lesson';
   const text = toPlainText(note);
@@ -372,9 +452,11 @@ const buildFallbackCueBody = (note = {}) => {
   });
 };
 
-const buildCueRequest = (note = {}) => {
+const buildCueRequest = (note = {}, options = {}) => {
   const title = normalizeText(note?.title) || 'Lesson';
-  const sourceText = toPlainText(note).slice(0, 6000);
+  const sourceText = buildLessonSourceBrief(note);
+  const retry = options?.retry === true;
+  const previousAttempt = normalizeText(options?.previousAttempt);
 
   return {
     messages: [
@@ -384,13 +466,20 @@ const buildCueRequest = (note = {}) => {
           'You are Memory Cue in Teacher Mode.',
           'Turn lesson material into a short cue card for a teacher under pressure.',
           'Be concise, spoken-language friendly, and practical.',
+          'Write a real cue card, not a summary.',
           'Each line must be short enough to scan quickly during class.',
-          'Do not add headings, bullets, numbering, or extra explanation.',
+          'Do not add headings, bullets, numbering, quotation marks, or extra explanation.',
+          'Do not repeat the lesson title across multiple fields.',
+          'Do not copy the learning intention or success criteria into every field.',
           'Prefer exact teacher wording over broad summaries.',
-          'If the lesson includes a learning intention, success criteria, model, hinge question, guided practice, or resources, use them.',
-          'Keep "Say" as one sentence the teacher could say aloud.',
-          'Keep "Ask" as one usable question.',
-          'Keep "Next" as the immediate next teaching step, not the whole lesson sequence.',
+          'Use the lesson outline to infer the best teacher cue for each field.',
+          'Keep "Goal" to one short outcome.',
+          'Keep "Say" to one sentence the teacher could say aloud.',
+          'Keep "Teach" to one practical teaching move.',
+          'Keep "Ask" to one usable student question.',
+          'Keep "Next" to the immediate next teaching step only.',
+          'Keep "Materials" to a short comma-separated list.',
+          'Keep "Reminder" to one short actionable prompt.',
           'Return exactly these seven lines:',
           'Goal: ...',
           'Say: ...',
@@ -406,8 +495,18 @@ const buildCueRequest = (note = {}) => {
         content: [
           `Lesson title: ${title}`,
           '',
-          'Lesson source:',
+          retry
+            ? 'The previous cue copied too much source text and was not usable. Rewrite it as a true teacher cue.'
+            : 'Write a short teacher cue from this lesson.',
+          '',
           sourceText || title,
+          ...(previousAttempt
+            ? [
+              '',
+              'Bad previous draft to improve:',
+              previousAttempt,
+            ]
+            : []),
         ].join('\n'),
       },
     ],
@@ -415,33 +514,7 @@ const buildCueRequest = (note = {}) => {
   };
 };
 
-const normalizeCueBody = (text = '', note = {}) => {
-  const normalized = normalizeText(text);
-  if (!normalized) {
-    return buildFallbackCueBody(note);
-  }
-
-  const fallbackFields = parseCueFields(buildFallbackCueBody(note));
-  const parsedFields = parseCueFields(normalized);
-  if (hasLowQualityCueFields(parsedFields, fallbackFields)) {
-    return formatCueFields(fallbackFields);
-  }
-  const normalizedFields = {};
-
-  CUE_LABELS.forEach((label) => {
-    normalizedFields[label] = cleanCueValue(parsedFields[label], fallbackFields[label]);
-  });
-
-  const hasAnyFields = CUE_LABELS.some((label) => normalizedFields[label]);
-  if (!hasAnyFields) {
-    return buildFallbackCueBody({
-      ...note,
-      bodyText: normalized,
-    });
-  }
-
-  return formatCueFields(normalizedFields);
-};
+const normalizeCueBody = (text = '', note = {}) => evaluateCueBody(text, note).body;
 
 const buildCueTitle = (note = {}) => {
   const title = normalizeText(note?.title) || 'Lesson';
@@ -521,8 +594,23 @@ export const createLessonCueFromNote = async (noteId) => {
     cueBody = '';
   }
 
-  const normalizedCueBody = normalizeCueBody(cueBody, sourceNote);
-  const cueFields = parseCueFields(normalizedCueBody);
+  let evaluatedCue = evaluateCueBody(cueBody, sourceNote);
+  if (!evaluatedCue.ok) {
+    try {
+      const retryCueBody = await requestAssistantChat(buildCueRequest(sourceNote, {
+        retry: true,
+        previousAttempt: cueBody,
+      }), {
+        fallbackReply: '',
+      });
+      evaluatedCue = evaluateCueBody(retryCueBody, sourceNote);
+    } catch {
+      /* ignore retry errors */
+    }
+  }
+
+  const normalizedCueBody = evaluatedCue.body || normalizeCueBody('', sourceNote);
+  const cueFields = evaluatedCue.fields || parseCueFields(normalizedCueBody);
   const cueHtml = formatCueHtml(cueFields);
   const timestamp = new Date().toISOString();
   const cueNote = createNote(buildCueTitle(sourceNote), normalizedCueBody, {
