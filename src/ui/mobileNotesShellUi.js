@@ -93,6 +93,25 @@ const NOTEBOOK_POLISH_CSS = `
     margin-top: 0.52rem;
   }
 
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-section--steps {
+    position: sticky;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4.8rem);
+    z-index: 8;
+    margin: 0.85rem -0.15rem 0;
+    padding: 0;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-dock {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.55rem 0.6rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 72%, transparent);
+    background: color-mix(in srgb, #ffffff 90%, #f3eefc 10%);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(12px);
+  }
+
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-label {
     display: none;
   }
@@ -119,12 +138,21 @@ const NOTEBOOK_POLISH_CSS = `
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-row,
   #view-notebook [data-active-lesson-card] .teacher-step-row {
     display: flex;
-    flex-wrap: wrap;
     gap: 0.45rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.06rem;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-row::-webkit-scrollbar,
+  #view-notebook [data-active-lesson-card] .teacher-step-row::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-chip,
   #view-notebook [data-active-lesson-card] .teacher-step-chip {
+    flex: 0 0 auto;
     min-height: 29px;
     padding: 0.32rem 0.62rem;
     border-radius: 999px;
@@ -261,7 +289,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   body[data-active-view="notebooks"] .note-editor-card {
-    padding-bottom: 12px !important;
+    padding-bottom: 108px !important;
   }
 `;
 
@@ -433,8 +461,9 @@ export const initMobileNotesShellUi = (options = {}) => {
     const activeLessonLabel = 'Active';
     const lessonStepMarkup = stepTargetId
       ? `
-        <div class="teacher-toolbar-section">
-          <div class="teacher-step-row">
+        <div class="teacher-toolbar-section teacher-toolbar-section--steps">
+          <div class="teacher-step-dock">
+            <div class="teacher-step-row">
             ${getTeacherLessonSteps().map((step) => `
               <button
                 type="button"
@@ -445,6 +474,7 @@ export const initMobileNotesShellUi = (options = {}) => {
                 data-selected="${lessonStepId === step.id ? 'true' : 'false'}"
               >${escapeHtml(step.label)}</button>
             `).join('')}
+            </div>
           </div>
         </div>
       `
