@@ -168,6 +168,18 @@ const sanitizeMetadata = (value) => {
     metadata.source = value.source.trim();
   }
 
+  if (value.teaching === true) {
+    metadata.teaching = true;
+  }
+
+  if (typeof value.noteType === 'string' && value.noteType.trim()) {
+    metadata.noteType = value.noteType.trim();
+  }
+
+  if (typeof value.sourceNoteId === 'string' && value.sourceNoteId.trim()) {
+    metadata.sourceNoteId = value.sourceNoteId.trim();
+  }
+
   return Object.keys(metadata).length ? metadata : null;
 };
 

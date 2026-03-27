@@ -9,6 +9,7 @@ import { ensureFolderExistsByName } from '../../js/modules/ai-capture-save.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { generateDailyPlan, renderDailyPlan } from '../services/planningService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
+import { answerFromActiveLesson, looksLikeActiveLessonPrompt } from '../services/teacherModeService.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -332,6 +333,15 @@ export const handleChatMessage = async (text, dependencies = {}) => {
   }
 
   addMessage(createMessage('user', message));
+
+  if (looksLikeActiveLessonPrompt(message)) {
+    const lessonReply = await answerFromActiveLesson(message);
+    if (typeof lessonReply === 'string' && lessonReply.trim()) {
+      const lessonResponse = { message: lessonReply.trim(), quickActions: [], status: null };
+      addMessage(createMessage('assistant', lessonResponse.message, lessonResponse.quickActions));
+      return lessonResponse;
+    }
+  }
 
   const routeResult = await captureInput({
     text: message,

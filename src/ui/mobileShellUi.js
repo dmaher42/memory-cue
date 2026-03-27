@@ -380,7 +380,6 @@ export const initHeaderOverflowMenu = () => {
               document.getElementById('settingsCloseBtn') ||
               document.getElementById('closeSettings') ||
               settingsModal;
-
             if (!focusElement(primaryFocusTarget)) {
               focusFirstDescendant(settingsModal);
             }

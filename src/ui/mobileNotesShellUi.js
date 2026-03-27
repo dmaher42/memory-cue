@@ -1,3 +1,9 @@
+import {
+  createLessonCueFromNote,
+  isActiveLessonNoteId,
+  setActiveLessonNoteId,
+} from '../services/teacherModeService.js';
+
 export const initMobileNotesShellUi = (options = {}) => {
   if (typeof document === 'undefined') {
     return {
@@ -29,6 +35,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     noteFolderButton = null,
     noteOptionsOverlay = null,
     noteOptionsSheet = null,
+    noteActionCreateLessonCueBtn = null,
+    noteActionSetActiveLessonBtn = null,
     noteActionMoveBtn = null,
     noteActionTogglePinBtn = null,
     noteActionDeleteBtn = null,
@@ -63,6 +71,44 @@ export const initMobileNotesShellUi = (options = {}) => {
   let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
   let currentNoteOptionsFocusRestoreEl = null;
+
+  const ensureSheetActionButton = (button, className, label, insertAfterSelector = null) => {
+    if (button instanceof HTMLButtonElement) {
+      return button;
+    }
+    const actionsEl = noteOptionsSheet?.querySelector('.note-options-actions');
+    if (!(actionsEl instanceof HTMLElement)) {
+      return null;
+    }
+    const existingButton = actionsEl.querySelector(`.${className}`);
+    if (existingButton instanceof HTMLButtonElement) {
+      return existingButton;
+    }
+    const nextButton = document.createElement('button');
+    nextButton.type = 'button';
+    nextButton.className = `note-action-btn ${className}`;
+    nextButton.textContent = label;
+    const insertAfterEl = insertAfterSelector ? actionsEl.querySelector(insertAfterSelector) : null;
+    if (insertAfterEl?.nextSibling) {
+      actionsEl.insertBefore(nextButton, insertAfterEl.nextSibling);
+    } else {
+      actionsEl.appendChild(nextButton);
+    }
+    return nextButton;
+  };
+
+  noteActionCreateLessonCueBtn = ensureSheetActionButton(
+    noteActionCreateLessonCueBtn,
+    'note-action-create-lesson-cue',
+    'Create Lesson Cue',
+    '.note-action-toggle-pin',
+  );
+  noteActionSetActiveLessonBtn = ensureSheetActionButton(
+    noteActionSetActiveLessonBtn,
+    'note-action-set-active-lesson',
+    'Use as Active Lesson',
+    '.note-action-create-lesson-cue',
+  );
 
   const isVisibleFocusableElement = (element) => {
     if (!(element instanceof HTMLElement) || !element.isConnected) {
@@ -285,6 +331,13 @@ export const initMobileNotesShellUi = (options = {}) => {
       const isPinned = Boolean(note?.pinned);
       noteActionTogglePinBtn.textContent = isPinned ? 'Unpin' : 'Pin';
     }
+    if (noteActionCreateLessonCueBtn) {
+      const noteType = typeof note?.metadata?.noteType === 'string' ? note.metadata.noteType : '';
+      noteActionCreateLessonCueBtn.textContent = noteType === 'lesson-cue' ? 'Refresh Lesson Cue' : 'Create Lesson Cue';
+    }
+    if (noteActionSetActiveLessonBtn) {
+      noteActionSetActiveLessonBtn.textContent = isActiveLessonNoteId(noteId) ? 'Active Lesson' : 'Use as Active Lesson';
+    }
     noteOptionsSheet.removeAttribute('inert');
     noteOptionsSheet.classList.add('open');
     noteOptionsSheet.setAttribute('aria-hidden', 'false');
@@ -311,6 +364,32 @@ export const initMobileNotesShellUi = (options = {}) => {
       if (typeof onOpenNoteOptionsMove === 'function') {
         onOpenNoteOptionsMove(noteId, note, noteActionMoveBtn);
       }
+    });
+  }
+
+  if (noteOptionsSheet && noteActionCreateLessonCueBtn) {
+    noteActionCreateLessonCueBtn.addEventListener('click', async (event) => {
+      event.preventDefault();
+      const noteId = currentNoteOptionsNoteId;
+      closeNoteOptionsMenu();
+      if (!noteId) {
+        return;
+      }
+      await createLessonCueFromNote(noteId);
+      refreshFromStorage({ preserveDraft: true });
+    });
+  }
+
+  if (noteOptionsSheet && noteActionSetActiveLessonBtn) {
+    noteActionSetActiveLessonBtn.addEventListener('click', async (event) => {
+      event.preventDefault();
+      const noteId = currentNoteOptionsNoteId;
+      closeNoteOptionsMenu();
+      if (!noteId) {
+        return;
+      }
+      setActiveLessonNoteId(noteId);
+      refreshFromStorage({ preserveDraft: true });
     });
   }
 
