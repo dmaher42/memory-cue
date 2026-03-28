@@ -71,16 +71,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-shell {
-    padding: 0.82rem 0.85rem;
-  }
-
-  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-title {
-    margin: 0;
-    font-size: 0.66rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    opacity: 0.62;
+    padding: 0.58rem 0.62rem;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-copy {
@@ -89,26 +80,26 @@ const NOTEBOOK_POLISH_CSS = `
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-section {
     display: grid;
-    gap: 0.34rem;
-    margin-top: 0.52rem;
+    gap: 0.24rem;
+    margin-top: 0.34rem;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-section--steps {
     position: sticky;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 4.8rem);
     z-index: 8;
-    margin: 0.85rem -0.15rem 0;
+    margin: 0.55rem -0.08rem 0;
     padding: 0;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-dock {
     display: grid;
-    gap: 0.45rem;
-    padding: 0.55rem 0.6rem;
-    border-radius: 1rem;
+    gap: 0.3rem;
+    padding: 0.42rem 0.48rem;
+    border-radius: 0.88rem;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 72%, transparent);
     background: color-mix(in srgb, #ffffff 90%, #f3eefc 10%);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
     backdrop-filter: blur(12px);
   }
 
@@ -119,13 +110,13 @@ const NOTEBOOK_POLISH_CSS = `
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
+    gap: 0.32rem;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action {
-    min-height: 29px;
-    padding: 0.32rem 0.66rem;
-    font-size: 0.74rem;
+    min-height: 27px;
+    padding: 0.28rem 0.58rem;
+    font-size: 0.72rem;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action[data-selected="true"] {
@@ -138,7 +129,7 @@ const NOTEBOOK_POLISH_CSS = `
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-row,
   #view-notebook [data-active-lesson-card] .teacher-step-row {
     display: flex;
-    gap: 0.45rem;
+    gap: 0.32rem;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -153,12 +144,12 @@ const NOTEBOOK_POLISH_CSS = `
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-chip,
   #view-notebook [data-active-lesson-card] .teacher-step-chip {
     flex: 0 0 auto;
-    min-height: 29px;
-    padding: 0.32rem 0.62rem;
+    min-height: 27px;
+    padding: 0.26rem 0.54rem;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 68%, transparent);
     background: color-mix(in srgb, #ffffff 96%, #f3eefc 4%);
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     line-height: 1;
     color: var(--text-main, #231B2E);
   }
@@ -482,9 +473,6 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     bar.innerHTML = `
       <div class="teacher-toolbar-shell w-full rounded-xl border border-base-300 bg-base-100/80">
-        <div class="min-w-0">
-          <p class="teacher-toolbar-title">Teaching tools</p>
-        </div>
         <div class="teacher-toolbar-section">
           <div class="teacher-toolbar-row">
             <button
@@ -500,25 +488,21 @@ export const initMobileNotesShellUi = (options = {}) => {
               ${activeLessonTargetId ? `data-note-id="${escapeHtml(activeLessonTargetId)}"` : 'disabled'}
               ${activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId) ? 'data-selected="true"' : 'data-selected="false"'}
             >${escapeHtml(activeLessonLabel)}</button>
-          </div>
-        </div>
-        <div class="teacher-toolbar-section">
-          <div class="teacher-toolbar-row">
-          <button
-            type="button"
-            class="note-inline-action"
-            data-teacher-mode-action="lesson-plan"
-            ${canShowPlanToggle ? `data-note-id="${escapeHtml(sourceNoteId || '')}"` : 'disabled'}
-            ${currentTeacherView === 'plan' ? 'data-selected="true"' : 'data-selected="false"'}
-          >Lesson Plan</button>
-          <button
-            type="button"
-            class="note-inline-action"
-            data-teacher-mode-action="lesson-cue"
-            ${canShowCueToggle ? `data-note-id="${escapeHtml(cueNoteId || sourceNoteId || '')}"` : 'disabled'}
-            ${cueNoteId ? '' : 'data-generate-cue="true"'}
-            ${currentTeacherView === 'cue' && canShowCueToggle ? 'data-selected="true"' : 'data-selected="false"'}
-          >Lesson Cue</button>
+            <button
+              type="button"
+              class="note-inline-action"
+              data-teacher-mode-action="lesson-plan"
+              ${canShowPlanToggle ? `data-note-id="${escapeHtml(sourceNoteId || '')}"` : 'disabled'}
+              ${currentTeacherView === 'plan' ? 'data-selected="true"' : 'data-selected="false"'}
+            >Lesson Plan</button>
+            <button
+              type="button"
+              class="note-inline-action"
+              data-teacher-mode-action="lesson-cue"
+              ${canShowCueToggle ? `data-note-id="${escapeHtml(cueNoteId || sourceNoteId || '')}"` : 'disabled'}
+              ${cueNoteId ? '' : 'data-generate-cue="true"'}
+              ${currentTeacherView === 'cue' && canShowCueToggle ? 'data-selected="true"' : 'data-selected="false"'}
+            >Lesson Cue</button>
           </div>
         </div>
         ${lessonStepMarkup}
