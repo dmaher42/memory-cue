@@ -1204,10 +1204,16 @@ const initMobileNotes = () => {
 
   const applyFormatCommand = (command, value = null) => {
     if (!command || !scratchNotesEditorElement) return;
+    const previousScrollTop = scratchNotesEditorElement.scrollTop;
+    const previousScrollLeft = scratchNotesEditorElement.scrollLeft;
     try {
-      scratchNotesEditorElement.focus();
+      scratchNotesEditorElement.focus({ preventScroll: true });
     } catch {
-      /* ignore focus errors */
+      try {
+        scratchNotesEditorElement.focus();
+      } catch {
+        /* ignore focus errors */
+      }
     }
     try {
       if (command === 'foreColor' || command === 'hiliteColor' || command === 'backColor') {
@@ -1227,6 +1233,15 @@ const initMobileNotes = () => {
       scratchNotesEditorElement.dispatchEvent(syntheticInput);
     } catch {
       /* ignore synthetic event errors */
+    }
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => {
+        scratchNotesEditorElement.scrollTop = previousScrollTop;
+        scratchNotesEditorElement.scrollLeft = previousScrollLeft;
+      });
+    } else {
+      scratchNotesEditorElement.scrollTop = previousScrollTop;
+      scratchNotesEditorElement.scrollLeft = previousScrollLeft;
     }
   };
 
