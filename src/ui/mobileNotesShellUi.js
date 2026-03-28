@@ -611,59 +611,9 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (!(card instanceof HTMLElement)) {
       return;
     }
-
-    const activeLessonNote = getActiveLessonNote(getAllNotes());
-    if (!activeLessonNote) {
-      card.classList.add('hidden');
-      card.setAttribute('aria-hidden', 'true');
-      card.innerHTML = '';
-      return;
-    }
-
-    const cueFields = getLessonCueFields(activeLessonNote);
-    const currentStepId = getTeacherLessonStep(activeLessonNote, getAllNotes());
-    const noteType = activeLessonNote?.metadata?.noteType === 'lesson-cue' ? 'Lesson Cue' : 'Lesson Note';
-    const safeTitle = escapeHtml(activeLessonNote?.title || 'Active lesson');
-    const safeType = escapeHtml(noteType);
-    const stepMarkup = `
-      <div class="mt-3">
-        <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60 mb-2">Current step</p>
-        <div class="teacher-step-row">
-          ${getTeacherLessonSteps().map((step) => `
-            <button
-              type="button"
-              class="teacher-step-chip"
-              data-active-lesson-action="step"
-              data-note-id="${escapeHtml(activeLessonNote.id || '')}"
-              data-step-id="${escapeHtml(step.id)}"
-              data-selected="${currentStepId === step.id ? 'true' : 'false'}"
-            >${escapeHtml(step.label)}</button>
-          `).join('')}
-        </div>
-      </div>
-    `;
-
-    card.classList.remove('hidden');
-    card.setAttribute('aria-hidden', 'false');
-    card.innerHTML = `
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.2em] opacity-60">Active Lesson</p>
-          <h3 class="text-sm font-semibold leading-5 mt-1">${safeTitle}</h3>
-          <p class="text-xs opacity-70 mt-1">${safeType}</p>
-        </div>
-        <button type="button" class="btn btn-xs btn-ghost" data-active-lesson-action="clear">Clear</button>
-      </div>
-      ${stepMarkup}
-      <div class="flex flex-wrap gap-2 mt-3">
-        <button
-          type="button"
-          class="btn btn-sm btn-ghost"
-          data-active-lesson-action="open"
-          data-note-id="${escapeHtml(activeLessonNote.id || '')}"
-        >Open Lesson</button>
-      </div>
-    `;
+    card.classList.add('hidden');
+    card.setAttribute('aria-hidden', 'true');
+    card.innerHTML = '';
   };
 
   const handleActiveLessonCardClick = (event) => {
