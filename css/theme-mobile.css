@@ -3149,6 +3149,13 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   white-space: nowrap;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  padding-block: 0.4rem;
+  background: color-mix(in srgb, #ffffff 92%, #f3eefc 8%);
+  border-bottom: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 68%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .note-editor-toolbar::-webkit-scrollbar {
