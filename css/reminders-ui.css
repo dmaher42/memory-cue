@@ -46,31 +46,25 @@
 
 #view-reminders .reminders-screen-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
   margin-bottom: 0;
-  padding: 0.72rem 0.9rem 0.35rem;
+  padding: 0.7rem 0.9rem;
   height: auto;
   min-height: 0;
   max-height: none;
   border: 1px solid color-mix(in srgb, var(--card-border) 68%, transparent);
-  border-radius: 1rem;
+  border-radius: 0.88rem;
   background: color-mix(in srgb, var(--surface-elevated) 88%, #ffffff 12%);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
 }
 
 #view-reminders .reminders-screen-header-copy {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.12rem;
-}
-
-#view-reminders .reminders-screen-sort-row {
-  display: flex;
-  align-items: center;
-  margin-top: 0.28rem;
+  gap: 0;
 }
 
 #view-reminders .reminders-screen-header-actions {
@@ -78,6 +72,8 @@
   align-items: center;
   gap: 0.45rem;
   flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 #view-reminders .reminders-screen-title {
@@ -90,11 +86,7 @@
 }
 
 #view-reminders .reminders-screen-subtitle {
-  margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.35;
-  color: var(--text-secondary);
-  max-width: 22rem;
+  display: none;
 }
 
 .reminders-add-button {
@@ -102,7 +94,7 @@
   align-self: center;
   border: 0;
   border-radius: 999px;
-  padding: 0.56rem 0.9rem;
+  padding: 0.52rem 0.82rem;
   background: #5080BF;
   color: #ffffff;
   font-size: 0.8rem;
@@ -116,10 +108,10 @@
   align-self: center;
   border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
   border-radius: 999px;
-  padding: 0.54rem 0.82rem;
+  padding: 0.5rem 0.74rem;
   background: color-mix(in srgb, #ffffff 74%, transparent);
   color: var(--text-main);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   line-height: 1;
   font-weight: 700;
   box-shadow: none;
@@ -150,7 +142,7 @@
   background: color-mix(in srgb, #ffffff 72%, transparent);
   color: var(--text-main);
   border-radius: 999px;
-  padding: 0.42rem 0.8rem;
+  padding: 0.5rem 0.74rem;
   font-size: 0.78rem;
   line-height: 1;
   font-weight: 600;
@@ -366,7 +358,7 @@
 }
 
 #view-reminders #reminderListSection {
-  margin-top: -0.16rem;
+  margin-top: 0.04rem;
 }
 
 #view-reminders #reminderList {
