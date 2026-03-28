@@ -5,7 +5,6 @@ import {
   loadAllNotes,
   saveAllNotes,
   createNote,
-  createAndSaveNote,
   NOTES_STORAGE_KEY,
 } from './js/modules/notes-storage.js';
 import { getFolders } from './js/modules/notes-storage.js';
@@ -27,9 +26,6 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
-import { analyzeCaptureInput } from './src/core/capturePipeline.js';
-import { createReminder as createReminderViaService } from './src/services/reminderService.js';
-import { dispatchReminderSheetOpen } from './src/ui/quickCapture.js';
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -56,101 +52,6 @@ const isNotesSyncDebugEnabled = (() => {
   }
   return false;
 })();
-
-const MEMORY_CUE_IMPORT_QUEUE_KEY = 'memoryCuePendingNoteImports';
-
-const getPendingMemoryCueImportItems = () => {
-  if (typeof localStorage === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = localStorage.getItem(MEMORY_CUE_IMPORT_QUEUE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-    if (parsed && typeof parsed === 'object') {
-      if (Array.isArray(parsed.notes)) {
-        return parsed.notes;
-      }
-      if (parsed.note && typeof parsed.note === 'object') {
-        return [parsed.note];
-      }
-    }
-  } catch (error) {
-    console.warn('[memory-cue] Failed to parse pending teach-screen imports', error);
-  }
-
-  return [];
-};
-
-const clearPendingMemoryCueImportItems = () => {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-  try {
-    localStorage.removeItem(MEMORY_CUE_IMPORT_QUEUE_KEY);
-  } catch (error) {
-    console.warn('[memory-cue] Failed to clear pending teach-screen imports', error);
-  }
-};
-
-const getPendingImportPlainText = (bodyHtml = '') => {
-  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-    const temp = document.createElement('div');
-    temp.innerHTML = typeof bodyHtml === 'string' ? bodyHtml : '';
-    return (temp.textContent || temp.innerText || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  if (typeof bodyHtml !== 'string') {
-    return '';
-  }
-
-  return bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-};
-
-const normalizePendingMemoryCueImport = (entry) => {
-  const payload = entry && typeof entry === 'object' && entry.note && typeof entry.note === 'object'
-    ? entry.note
-    : entry;
-
-  if (!payload || typeof payload !== 'object') {
-    return null;
-  }
-
-  const title = typeof payload.title === 'string' ? payload.title.trim() : '';
-  const bodyHtml = typeof payload.bodyHtml === 'string' ? payload.bodyHtml : '';
-  const text =
-    typeof payload.text === 'string' && payload.text.trim()
-      ? payload.text.trim()
-      : getPendingImportPlainText(bodyHtml);
-
-  if (!text) {
-    return null;
-  }
-
-  return {
-    ...payload,
-    title: title || text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note',
-    text,
-    bodyHtml,
-    folderId:
-      typeof payload.folderId === 'string' && payload.folderId.trim()
-        ? payload.folderId.trim()
-        : 'school',
-    source:
-      typeof payload.source === 'string' && payload.source.trim()
-        ? payload.source.trim()
-        : 'teach-screen',
-  };
-};
 
 initViewportHeight();
 
@@ -594,7 +495,7 @@ function initAssistant() {
         const reply = await handleChatMessage(trimmedMessage);
         const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
           ? reply.message.trim()
-          : 'Saved for later review';
+          : 'Saved to Inbox';
         renderConversationHistory();
         setThinkingBarStatus(replyMessage);
 
@@ -1309,7 +1210,7 @@ const initMobileNotes = () => {
       /* ignore focus errors */
     }
     try {
-      if (command === 'foreColor' || command === 'hiliteColor') {
+      if (command === 'foreColor' || command === 'hiliteColor' || command === 'backColor') {
         try {
           document.execCommand('styleWithCSS', false, true);
         } catch {
@@ -1811,106 +1712,9 @@ const initMobileNotes = () => {
       noteFolderBtn.disabled = isReadOnly;
     }
     if (toolbarEl instanceof HTMLElement) {
-      toolbarEl.querySelectorAll('.rte-btn').forEach((button) => {
-        if (button instanceof HTMLButtonElement) {
-          button.disabled = isReadOnly;
-        }
-      });
       toolbarEl.classList.toggle('opacity-50', isReadOnly);
       toolbarEl.classList.toggle('pointer-events-none', isReadOnly);
     }
-  };
-
-  const normalizeReminderCandidateText = (value = '') => (
-    typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
-  );
-
-  const extractNoteTextBlocks = (note) => {
-    const bodyHtml = typeof note?.bodyHtml === 'string' && note.bodyHtml.trim().length
-      ? note.bodyHtml
-      : typeof note?.body === 'string'
-        ? note.body
-        : '';
-    if (!bodyHtml) {
-      return [];
-    }
-
-    const temp = document.createElement('div');
-    temp.innerHTML = bodyHtml;
-    temp.querySelectorAll('br').forEach((node) => node.replaceWith('\n'));
-    temp.querySelectorAll('li, p, div, h1, h2, h3, h4, h5, h6').forEach((node) => {
-      node.appendChild(document.createTextNode('\n'));
-    });
-
-    return (temp.textContent || '')
-      .split(/\n+/)
-      .map((line) => normalizeReminderCandidateText(line))
-      .filter(Boolean);
-  };
-
-  const getNoteReminderCandidateTexts = (note) => {
-    const title = normalizeReminderCandidateText(note?.title || '');
-    const bodyLines = extractNoteTextBlocks(note);
-    const fallbackBodyText = normalizeReminderCandidateText(getNoteBodyText(note));
-    const seen = new Set();
-    const candidates = [];
-
-    [title, ...bodyLines, fallbackBodyText]
-      .filter(Boolean)
-      .forEach((text) => {
-        const key = text.toLowerCase();
-        if (seen.has(key) || text.length < 4) {
-          return;
-        }
-        seen.add(key);
-        candidates.push(text);
-      });
-
-    return candidates.slice(0, 12);
-  };
-
-  const getReminderCandidatesFromNote = async (note) => {
-    const candidates = [];
-
-    for (const text of getNoteReminderCandidateTexts(note)) {
-      const analysis = await analyzeCaptureInput({
-        text,
-        source: 'capture',
-        metadata: {
-          entryPoint: 'mobile.noteReminderProcessing',
-          noteId: note?.id || null,
-        },
-      });
-      const decision = analysis?.decision;
-      if (decision?.decisionType !== 'persist_reminder') {
-        continue;
-      }
-
-      const candidateText = normalizeReminderCandidateText(
-        decision?.parsedEntry?.title || analysis?.text || text,
-      );
-      if (!candidateText) {
-        continue;
-      }
-
-      const dueAt = typeof decision?.parsedEntry?.reminderDate === 'string' && decision.parsedEntry.reminderDate.trim()
-        ? decision.parsedEntry.reminderDate.trim()
-        : null;
-      const duplicate = candidates.some((candidate) => (
-        candidate.text.toLowerCase() === candidateText.toLowerCase()
-        && String(candidate.dueAt || '') === String(dueAt || '')
-      ));
-      if (duplicate) {
-        continue;
-      }
-
-      candidates.push({
-        text: candidateText,
-        dueAt,
-      });
-    }
-
-    return candidates;
   };
 
   const getDashboardItemLabel = (note) => {
@@ -1974,6 +1778,7 @@ const initMobileNotes = () => {
       { title: 'Coaching', items: Array.isArray(dashboard.coaching) ? dashboard.coaching : [] },
       { title: 'Teaching', items: Array.isArray(dashboard.teaching) ? dashboard.teaching : [] },
       { title: 'Recent', items: Array.isArray(dashboard.recent) ? dashboard.recent : [] },
+      { title: 'Inbox', items: Array.isArray(dashboard.inbox) ? dashboard.inbox : [] },
     ];
   };
 
@@ -2245,127 +2050,6 @@ const initMobileNotes = () => {
   const showMoveToast = (folderName) => {
     const name = folderName || 'folder';
     showNoteToast(`Moved to ${name}`);
-  };
-
-  const importPendingTeachScreenNotes = () => {
-    const pendingItems = getPendingMemoryCueImportItems();
-    if (!pendingItems.length) {
-      return;
-    }
-
-    clearPendingMemoryCueImportItems();
-
-    const importedNotes = [];
-    let failedCount = 0;
-
-    pendingItems.forEach((entry) => {
-      const payload = normalizePendingMemoryCueImport(entry);
-      if (!payload) {
-        failedCount += 1;
-        return;
-      }
-
-      const savedNote = createAndSaveNote(payload);
-      if (savedNote) {
-        importedNotes.push(savedNote);
-      } else {
-        failedCount += 1;
-      }
-    });
-
-    if (importedNotes.length) {
-      try {
-        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
-      } catch {
-        /* ignore navigation errors */
-      }
-
-      applyNotesMode('notebooks');
-      refreshFromStorage({ preserveDraft: false });
-
-      const message =
-        importedNotes.length === 1
-          ? 'Imported 1 note from Teacher Screen.'
-          : `Imported ${importedNotes.length} notes from Teacher Screen.`;
-      showNoteToast(message);
-    }
-
-    if (failedCount) {
-      console.warn('[memory-cue] Some teach-screen notes could not be imported', { failedCount });
-      if (!importedNotes.length) {
-        showNoteToast('Could not import the note from Teacher Screen.');
-      }
-    }
-  };
-
-  const processNoteForReminders = async (noteId) => {
-    if (!noteId) {
-      return;
-    }
-
-    if (currentNoteId === noteId && hasUnsavedChanges() && saveButton instanceof HTMLElement) {
-      saveButton.click();
-    }
-
-    const note = loadAllNotes().find((entry) => entry?.id === noteId);
-    if (!note) {
-      showNoteToast('Save the note before processing reminders.');
-      return;
-    }
-
-    const candidates = await getReminderCandidatesFromNote(note);
-    if (!candidates.length) {
-      showNoteToast('No reminder candidates found in this note.');
-      return;
-    }
-
-    const readyCandidates = candidates.filter((candidate) => candidate.dueAt);
-    const reviewCandidates = candidates.filter((candidate) => !candidate.dueAt);
-    let createdCount = 0;
-
-    if (readyCandidates.length) {
-      const preview = readyCandidates
-        .slice(0, 3)
-        .map((candidate) => `- ${candidate.text}`)
-        .join('\n');
-      const extraCount = readyCandidates.length > 3 ? `\n- ${readyCandidates.length - 3} more` : '';
-      const confirmMessage = readyCandidates.length === 1
-        ? `Create this reminder from the note?\n\n${readyCandidates[0].text}`
-        : `Create ${readyCandidates.length} reminders from the note?\n\n${preview}${extraCount}`;
-
-      if (window.confirm(confirmMessage)) {
-        for (const candidate of readyCandidates) {
-          try {
-            await createReminderViaService({
-              text: candidate.text,
-              dueAt: candidate.dueAt,
-              source: 'capture',
-            });
-            createdCount += 1;
-          } catch (error) {
-            console.warn('[notes] Failed to create reminder from note candidate', error);
-          }
-        }
-      }
-    }
-
-    if (reviewCandidates.length) {
-      dispatchReminderSheetOpen(null, reviewCandidates[0].text);
-      const remainingReviewCount = reviewCandidates.length - 1;
-      const reviewMessage = remainingReviewCount > 0
-        ? `Review started. ${remainingReviewCount} more reminder candidates are still in the note.`
-        : 'Review the reminder details, then save it.';
-      if (createdCount > 0) {
-        showNoteToast(`Created ${createdCount} reminder${createdCount === 1 ? '' : 's'}. ${reviewMessage}`);
-      } else {
-        showNoteToast(`Found ${reviewCandidates.length} reminder candidate${reviewCandidates.length === 1 ? '' : 's'}. ${reviewMessage}`);
-      }
-      return;
-    }
-
-    if (createdCount > 0) {
-      showNoteToast(`Created ${createdCount} reminder${createdCount === 1 ? '' : 's'} from the note.`);
-    }
   };
   const scheduleNotebookFrame =
     typeof requestAnimationFrame === 'function'
@@ -2939,7 +2623,6 @@ const initMobileNotes = () => {
     noteFolderButton: noteFolderBtn,
     noteOptionsOverlay: document.getElementById('note-options-overlay'),
     noteOptionsSheet: document.getElementById('note-options-sheet'),
-    noteActionRemindersBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-reminders'),
     noteActionMoveBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-move'),
     noteActionTogglePinBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-toggle-pin'),
     noteActionDeleteBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-delete'),
@@ -2974,12 +2657,6 @@ const initMobileNotes = () => {
     handleDeleteNote,
     refreshFromStorage,
     saveAllNotes,
-    onProcessNoteForReminders: (noteId) => {
-      processNoteForReminders(noteId).catch((error) => {
-        console.warn('[notes] Failed to process note reminders', error);
-        showNoteToast('Unable to process reminders from this note.');
-      });
-    },
     onOpenNoteOptionsMove: (noteId, note, triggerEl) => {
       openFolderSelectorForNote(noteId, {
         initialFolderId:
@@ -3118,7 +2795,6 @@ const initMobileNotes = () => {
   applyInitialSelection();
   buildFolderFilterSelect();
   renderDashboardPanel();
-  importPendingTeachScreenNotes();
 
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (event) => {
@@ -3370,4 +3046,3 @@ document.addEventListener('click', (ev) => {
   io.observe(sentinel);
 })();
 /* END GPT CHANGE */
-
