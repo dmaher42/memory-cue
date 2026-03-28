@@ -622,11 +622,12 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     const cueFields = getLessonCueFields(activeLessonNote);
     const currentStepId = getTeacherLessonStep(activeLessonNote, getAllNotes());
-    const previewRows = [
-      ['Goal', cueFields.Goal],
-      ['Say', cueFields.Say],
-      ['Next', cueFields.Next],
-    ].filter(([, value]) => typeof value === 'string' && value.trim());
+    const previewText =
+      (typeof cueFields.Next === 'string' && cueFields.Next.trim())
+      || (typeof cueFields.Goal === 'string' && cueFields.Goal.trim())
+      || (typeof cueFields.Say === 'string' && cueFields.Say.trim())
+      || (typeof activeLessonNote?.bodyText === 'string' && activeLessonNote.bodyText.trim())
+      || '';
     const noteType = activeLessonNote?.metadata?.noteType === 'lesson-cue' ? 'Lesson Cue' : 'Lesson Note';
     const safeTitle = escapeHtml(activeLessonNote?.title || 'Active lesson');
     const safeType = escapeHtml(noteType);
@@ -647,14 +648,9 @@ export const initMobileNotesShellUi = (options = {}) => {
         </div>
       </div>
     `;
-    const rowsMarkup = previewRows.length
-      ? previewRows.map(([label, value]) => (
-        `<div class="space-y-1">
-          <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60">${escapeHtml(label)}</p>
-          <p class="text-sm leading-5">${escapeHtml(value)}</p>
-        </div>`
-      )).join('')
-      : `<p class="text-sm leading-5">${escapeHtml(activeLessonNote?.bodyText || activeLessonNote?.body || '')}</p>`;
+    const previewMarkup = previewText
+      ? `<p class="text-sm leading-5 opacity-85 line-clamp-3">${escapeHtml(previewText)}</p>`
+      : '';
 
     card.classList.remove('hidden');
     card.setAttribute('aria-hidden', 'false');
@@ -667,9 +663,7 @@ export const initMobileNotesShellUi = (options = {}) => {
         </div>
         <button type="button" class="btn btn-xs btn-ghost" data-active-lesson-action="clear">Clear</button>
       </div>
-      <div class="space-y-3 mt-3">
-        ${rowsMarkup}
-      </div>
+      ${previewMarkup ? `<div class="mt-3">${previewMarkup}</div>` : ''}
       ${stepMarkup}
       <div class="flex flex-wrap gap-2 mt-3">
         <button
