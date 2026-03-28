@@ -3138,16 +3138,21 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 .note-editor-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   padding: 2px 0;   /* less internal padding */
   margin: 3px 0;    /* less space above/below */
   background: transparent;
   border-radius: 0;
-  overflow-x: visible;
-  flex-wrap: wrap;
-  row-gap: 6px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
   box-sizing: border-box;
-  white-space: normal;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.note-editor-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .note-editor-toolbar .rte-btn {
@@ -3176,9 +3181,11 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 }
 
 .note-editor-toolbar .rte-select {
-  min-width: 68px;
+  width: auto;
+  min-width: 0;
+  max-width: 86px;
   height: 28px;
-  padding: 0 8px;
+  padding: 0 22px 0 8px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #ffffff;
@@ -3187,6 +3194,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   font-weight: 500;
   line-height: 1;
   flex: 0 0 auto;
+  box-sizing: border-box;
 }
 
 .note-editor-toolbar .rte-color-input {
