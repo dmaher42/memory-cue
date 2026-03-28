@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!--
 /*
 Memory Cue Primary Runtime Shell
@@ -721,7 +721,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   min-height: auto;
 }
 
-  /* Notebook â€œsheetâ€: full-width, flat, no card chrome */
+  /* Notebook “sheet”: full-width, flat, no card chrome */
   .mobile-panel--notes #scratch-notes-card {
     flex: 1;
     display: flex;
@@ -957,7 +957,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     transform: none;
   }
 
-  /* ===== Saved notes sheet â€“ slide in from right side ===== */
+  /* ===== Saved notes sheet – slide in from right side ===== */
   #savedNotesSheet {
     position: fixed;
     top: 50px;
@@ -975,7 +975,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     transition: opacity 0.25s ease;
   }
 
-  /* Open state â€“ JS sets data-open="true" */
+  /* Open state – JS sets data-open="true" */
   #savedNotesSheet[data-open="true"] {
     opacity: 1;
     pointer-events: auto;
@@ -1529,7 +1529,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     overflow: hidden;
   }
 
-  /* Remove old â€œglassâ€ card styling from legacy notebook-note-card */
+  /* Remove old “glass” card styling from legacy notebook-note-card */
   .notebook-note-card {
     background: transparent;
     border-radius: 0;
@@ -1540,7 +1540,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   }
 
 
-  /* ===== Move to folder sheet â€“ right-side sidebar ===== */
+  /* ===== Move to folder sheet – right-side sidebar ===== */
   #note-folder-sheet,
   #moveFolderSheet {
     position: fixed;
@@ -1898,7 +1898,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       height: 22px;
     }
 
-    /* Pill container in the header for quickâ€‘add and icons */
+    /* Pill container in the header for quick‑add and icons */
     #slimMobileHeader .header-pill {
       flex: 1;
       display: flex;
@@ -2322,13 +2322,13 @@ button, input, textarea, select {
   color: inherit;
 }
 
-/* 2) Primary body text â€“ crisp + confident */
+/* 2) Primary body text – crisp + confident */
 body, main, section, div, p, span, li {
   font-weight: 500;              /* iOS-style "Medium" as default */
   letter-spacing: -0.01em;       /* subtle tightening */
 }
 
-/* 3) Reminders list â€“ make items pop */
+/* 3) Reminders list – make items pop */
 .reminder-title,
 .reminder-list-item,
 .reminder-notes-preview {
@@ -2363,7 +2363,7 @@ body, main, section, div, p, span, li {
   font-size: 0.95rem;
 }
 
-/* 6) Note title â€“ like iOS Notes heading */
+/* 6) Note title – like iOS Notes heading */
 #noteTitleMobile {
   color: #000000 !important;
   font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
@@ -2373,7 +2373,7 @@ body, main, section, div, p, span, li {
   line-height: 1.4;
 }
 
-/* 7) Note body â€“ comfortable reading weight */
+/* 7) Note body – comfortable reading weight */
 .note-editor-content,
 .scratch-notes-body,
 .notebook-editor-body,
@@ -3944,7 +3944,7 @@ body, main, section, div, p, span, li {
 }
 
 .overflow-menu-item::after {
-  content: 'â€º';
+  content: '›';
   flex: 0 0 auto;
   font-size: 1rem;
   line-height: 1;
@@ -4013,7 +4013,7 @@ body, main, section, div, p, span, li {
     <div class="sheet-panel p-6">
       <div class="sheet-body mt-4">
         <div class="mobile-new-reminder-card p-4 rounded-2xl">
-          <button id="closeCreateSheet" class="close-sheet-btn btn-ghost" aria-label="Close sheet">âœ•</button>
+          <button id="closeCreateSheet" class="close-sheet-btn btn-ghost" aria-label="Close sheet">✕</button>
           <form id="createReminderForm" class="space-y-3">
             <div>
               <input id="reminderText" class="input input-lg w-full" type="text" placeholder="What do you want to remember?" aria-label="Reminder" />
@@ -4164,7 +4164,7 @@ body, main, section, div, p, span, li {
     }
     /* Optional small chevron indicator */
     .task-row-min::after {
-      content: "â–¾";
+      content: "▾";
       justify-self: end;
       opacity: .5;
       font-size: 12px;
@@ -4647,7 +4647,7 @@ body, main, section, div, p, span, li {
     }
 
     .mc-quick-add-bar {
-      /* No longer sticky â€“ just part of the normal flow under the header */
+      /* No longer sticky – just part of the normal flow under the header */
       position: static;
       background: var(--mobile-header-bg);
       border-bottom: 1px solid var(--mobile-header-border);
@@ -5108,9 +5108,9 @@ body, main, section, div, p, span, li {
       <h1 class="header-title title">Memory Cue</h1>
       <button id="assistantHelpBtn" type="button" class="icon-button control-icon-button" aria-label="How do I use this?">?</button>
       <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Saved notebooks" title="Saved notebooks">
-        ðŸ“š
+        📚
       </button>
-      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">â˜°</button>
+      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">Quick actions</div>
@@ -5220,7 +5220,7 @@ body, main, section, div, p, span, li {
               <option value="created" selected>Created</option>
               <option value="time-relevance">Time relevance</option>
             </select>
-            <button id="reminderSortToggle" type="button" class="btn btn-ghost btn-xs" aria-label="Sort reminders (Created)">Created â–¼</button>
+            <button id="reminderSortToggle" type="button" class="btn btn-ghost btn-xs" aria-label="Sort reminders (Created)">Created ▼</button>
           </div>
           <section
             id="reminderListSection"
@@ -5237,6 +5237,25 @@ body, main, section, div, p, span, li {
         </section>
       </div>
     </section>
+    <div id="view-categories" class="view-panel hidden" aria-hidden="true">
+      <div class="space-y-3">
+        <button id="categoriesBackButton" type="button" class="btn btn-sm btn-ghost">← Back</button>
+        <h2 class="text-lg font-semibold">Categories</h2>
+      </div>
+      <div id="categoryCardGrid" class="category-card-grid"></div>
+      <div id="categoryEntriesPanel" class="space-y-2 hidden" aria-live="polite">
+        <h3 id="categoryEntriesTitle" class="text-base font-semibold"></h3>
+        <div id="categoryEntriesList" class="category-entry-list"></div>
+      </div>
+    </div>
+    <div data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
+      <div class="space-y-3">
+        <h2 class="text-lg font-semibold">Inbox</h2>
+        <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Notes</button>
+        <p class="text-xs text-base-content/70">Each entry can be converted to a note, turned into a reminder, tagged, or deleted.</p>
+        <ul id="inboxEntriesList" class="category-entry-list list-disc pl-4" aria-live="polite"></ul>
+      </div>
+    </div>
     <!-- END GPT CHANGE -->
     <!-- BEGIN GPT CHANGE: notebook view -->
     <div id="notesView" class="view hidden" aria-hidden="true"></div>
@@ -5315,7 +5334,7 @@ body, main, section, div, p, span, li {
                   type="button"
                   title="Bulleted list"
                 >
-                  â€¢
+                  •
                 </button>
                 <button
                   class="rte-btn"
@@ -5329,19 +5348,19 @@ body, main, section, div, p, span, li {
                 <div class="rte-divider" aria-hidden="true"></div>
 
                 <button class="rte-btn" data-cmd="indent" type="button" title="Indent">
-                  â†’
+                  →
                 </button>
                 <button class="rte-btn" data-cmd="outdent" type="button" title="Outdent">
-                  â†
+                  ←
                 </button>
 
                 <div class="rte-divider" aria-hidden="true"></div>
 
                 <button class="rte-btn" data-cmd="undo" type="button" title="Undo">
-                  â†º
+                  ↺
                 </button>
                 <button class="rte-btn" data-cmd="redo" type="button" title="Redo">
-                  â†»
+                  ↻
                 </button>
               </div>
 
@@ -5353,7 +5372,7 @@ body, main, section, div, p, span, li {
                   class="note-editor-content note-editor-area notebook-editor-body minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg scratch-notes-body"
                   contenteditable="true"
                   spellcheck="true"
-                  data-placeholder="Start typing your noteâ€¦"
+                  data-placeholder="Start typing your note…"
                   role="textbox"
                   aria-label="Note body"
                   aria-multiline="true"
@@ -5458,7 +5477,7 @@ body, main, section, div, p, span, li {
                             <div class="note-row-main note-list-main note-card-main" data-note-id="" data-role="open-note">
                               <div class="note-row-title-row note-list-title-row note-card-header">
                                 <div class="note-row-title note-list-title note-card-title">Untitled</div>
-                                <span class="note-list-pin-icon" aria-hidden="true" hidden>ðŸ“Œ</span>
+                                <span class="note-list-pin-icon" aria-hidden="true" hidden>📌</span>
                                 <button
                                   type="button"
                                   class="note-row-overflow note-list-overflow note-card-action note-options-button note-actions"
@@ -5466,7 +5485,7 @@ body, main, section, div, p, span, li {
                                   data-role="note-menu"
                                   data-note-id=""
                                 >
-                                  â‹¯
+                                  ⋯
                                 </button>
                               </div>
                               <div class="note-row-meta note-list-meta note-card-meta">
@@ -5501,7 +5520,7 @@ body, main, section, div, p, span, li {
               <div id="note-folder-sheet" class="note-folder-sheet" aria-hidden="true">
                 <div class="note-folder-sheet-header">
                   <span class="note-folder-sheet-title">Move to folder</span>
-                  <button class="note-folder-sheet-close" type="button" aria-label="Close">âœ•</button>
+                  <button class="note-folder-sheet-close" type="button" aria-label="Close">✕</button>
                 </div>
                 <div class="note-folder-sheet-list" role="list">
                   <!-- folder rows injected by JS -->
@@ -5524,7 +5543,7 @@ body, main, section, div, p, span, li {
                       type="button"
                       aria-label="Close move to folder sheet"
                     >
-                      âœ•
+                      ✕
                     </button>
                   </div>
                   <div class="sheet-body folder-select-body">
@@ -5553,7 +5572,7 @@ body, main, section, div, p, span, li {
                     <button id="move-folder-create" class="folder-select-row folder-select-row--new" type="button">
                       <div class="folder-select-row__left">
                         <span class="folder-select-row__dot" aria-hidden="true">+</span>
-                        <span class="folder-select-row__name">New folderâ€¦</span>
+                        <span class="folder-select-row__name">New folder…</span>
                       </div>
                     </button>
                   </div>
@@ -5586,7 +5605,7 @@ body, main, section, div, p, span, li {
                       Notes in this folder will move to Unsorted. This cannot be undone.
                     </p>
                     <div class="mt-3 text-sm">
-                      Deleting this folder wonâ€™t delete your notes. They will be moved to â€œUnsortedâ€.
+                      Deleting this folder won’t delete your notes. They will be moved to “Unsorted”.
                     </div>
                     <div class="modal-actions mt-4 flex justify-end gap-3">
                       <button id="deleteFolderCancel" type="button" class="btn btn-ghost">Cancel</button>
@@ -5607,7 +5626,6 @@ body, main, section, div, p, span, li {
               </div>
               <div class="note-options-actions">
                 <button type="button" class="note-action-btn note-action-toggle-pin">Pin</button>
-                <button type="button" class="note-action-btn note-action-reminders">Find reminders</button>
                 <button type="button" class="note-action-btn note-action-move">Move</button>
                 <button type="button" class="note-action-btn note-action-delete">Delete</button>
               </div>
@@ -5625,7 +5643,7 @@ body, main, section, div, p, span, li {
     <div id="weeklyReflectionModal" class="reflection-modal hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="weeklyReflectionModalTitle">
       <div class="reflection-content">
         <h2 id="weeklyReflectionModalTitle">Weekly Reflection</h2>
-        <div id="weeklyReflectionContent" class="reflection-text">Tap â€œWeekly Reflectionâ€ to generate this weekâ€™s insight.</div>
+        <div id="weeklyReflectionContent" class="reflection-text">Tap “Weekly Reflection” to generate this week’s insight.</div>
         <button id="closeWeeklyReflectionButton" type="button" class="btn btn-outline btn-sm close-reflection">Close</button>
       </div>
     </div>
@@ -5635,8 +5653,8 @@ body, main, section, div, p, span, li {
   <section id="thinkingBarContainer" class="chat-composer" aria-label="Chat capture bar">
     <form id="thinkingBarForm" class="capture-form">
       <label for="thinkingBarInput" class="sr-only">Think or ask anything</label>
-      <textarea id="thinkingBarInput" class="capture-input" placeholder="Think or ask anythingâ€¦" autocomplete="off" rows="1"></textarea>
-      <button id="thinkingBarSubmit" type="submit" class="btn btn-primary capture-save-btn" aria-label="Send">âž¤</button>
+      <textarea id="thinkingBarInput" class="capture-input" placeholder="Think or ask anything…" autocomplete="off" rows="1"></textarea>
+      <button id="thinkingBarSubmit" type="submit" class="btn btn-primary capture-save-btn" aria-label="Send">➤</button>
     </form>
     <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>
   </section>
@@ -5681,13 +5699,612 @@ body, main, section, div, p, span, li {
         data-tab="notebooks"
         aria-label="Go to Notebooks"
       >Notebooks</button>
+
+      <button
+        type="button"
+        class="floating-card nav-item btn-inbox"
+        id="mobile-footer-inbox"
+        data-nav-target="inbox"
+        data-tab="inbox"
+        aria-label="Go to Inbox"
+      >Inbox</button>
     </div>
     </div>
   </nav>
   </div>
   <!-- Navigation behavior is centralized in js/services/navigation-service-v2.js -->
+  <script>
+    (function () {
+      const categories = ['Inbox', 'Teaching', 'Coaching', 'Ideas', 'Tasks'];
+      const openButton = document.getElementById('openCategoriesView');
+      const backButton = document.getElementById('categoriesBackButton');
+      const cardGrid = document.getElementById('categoryCardGrid');
+      const entriesPanel = document.getElementById('categoryEntriesPanel');
+      const entriesTitle = document.getElementById('categoryEntriesTitle');
+      const categoryEntriesListEl = document.getElementById('categoryEntriesList');
+      const inboxEntriesList = document.getElementById('inboxEntriesList');
+      const processInboxButton = document.getElementById('processInboxButton');
+
+      if (!(cardGrid instanceof HTMLElement) || !(categoryEntriesListEl instanceof HTMLElement) || !(inboxEntriesList instanceof HTMLElement)) {
+        return;
+      }
+
+      const readEntries = () => {
+        try {
+          const raw = window.localStorage?.getItem('memoryCueInbox');
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed?.entries)) return parsed.entries;
+          return [];
+        } catch (error) {
+          console.warn('Unable to read memoryCueInbox from localStorage', error);
+          return [];
+        }
+      };
+
+      const writeEntries = (entries) => {
+        try {
+          window.localStorage?.setItem('memoryCueInbox', JSON.stringify(entries));
+          document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+        } catch (error) {
+          console.warn('Unable to update memoryCueInbox in localStorage', error);
+        }
+      };
+
+      const appendProcessedEntriesToNotebook = (entries) => {
+        if (!Array.isArray(entries) || !entries.length) return;
+
+        try {
+          const raw = window.localStorage?.getItem('memoryCueNotes');
+          const existing = raw ? JSON.parse(raw) : [];
+          const next = Array.isArray(existing) ? existing.slice() : [];
+
+          entries.forEach((entry) => {
+            if (!entry || typeof entry !== 'object') return;
+            const text = getEntryText(entry);
+            const timestamp = new Date().toISOString();
+            const normalizedType = typeof entry.type === 'string' && entry.type.trim()
+              ? entry.type.trim().toLowerCase()
+              : 'note';
+
+            next.unshift({
+              id: entry.id ? String(entry.id) : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              title: text.split(/\s+/).slice(0, 8).join(' ') || 'Untitled note',
+              body: text,
+              bodyHtml: text,
+              bodyText: text,
+              type: normalizedType,
+              metadata: { type: normalizedType },
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              pinned: false
+            });
+          });
+
+          window.localStorage?.setItem('memoryCueNotes', JSON.stringify(next));
+          document.dispatchEvent(new CustomEvent('memoryCue:notesUpdated'));
+        } catch (error) {
+          console.warn('Unable to move processed inbox entries into notebook notes', error);
+        }
+      };
+
+      const getEntryText = (entry) => {
+        if (!entry || typeof entry !== 'object') return 'Untitled entry';
+        const title = typeof entry.title === 'string' && entry.title.trim() ? entry.title.trim() : '';
+        const text = typeof entry.text === 'string' && entry.text.trim() ? entry.text.trim() : '';
+        const content = typeof entry.content === 'string' && entry.content.trim() ? entry.content.trim() : '';
+        const body = typeof entry.body === 'string' && entry.body.trim() ? entry.body.trim() : '';
+        return title || text || content || body || 'Untitled entry';
+      };
+
+      const getEntryCategory = (entry) => {
+        const category = typeof entry?.category === 'string' ? entry.category.trim() : '';
+        return category || 'inbox';
+      };
+
+      const getEntryCreatedDate = (entry) => {
+        const value = entry?.createdAt || entry?.created || entry?.date;
+        if (!value) return 'Unknown date';
+        const dt = new Date(value);
+        return Number.isNaN(dt.getTime()) ? String(value) : dt.toLocaleString();
+      };
+
+      const updateInboxEntry = (entry, updater) => {
+        const allEntries = readEntries();
+        const entryIndex = findEntryIndex(allEntries, entry);
+        if (entryIndex === -1) return false;
+        const currentEntry = allEntries[entryIndex];
+        const nextEntry = typeof updater === 'function' ? updater(currentEntry) : currentEntry;
+        if (!nextEntry) return false;
+        allEntries[entryIndex] = {
+          ...nextEntry,
+          updatedAt: new Date().toISOString()
+        };
+        writeEntries(allEntries);
+        return true;
+      };
+
+      const archiveInboxEntry = (entry) => updateInboxEntry(entry, (currentEntry) => ({
+        ...currentEntry,
+        processed: true,
+        status: 'archived',
+        archivedAt: new Date().toISOString(),
+      }));
+
+      const deleteInboxEntry = (entry) => {
+        const allEntries = readEntries();
+        const entryIndex = findEntryIndex(allEntries, entry);
+        if (entryIndex === -1) return false;
+        allEntries.splice(entryIndex, 1);
+        writeEntries(allEntries);
+        return true;
+      };
+
+      const addTagToInboxEntry = (entry) => {
+        const nextTagRaw = window.prompt('Add tag', '');
+        if (nextTagRaw === null) return false;
+        const nextTag = nextTagRaw.trim();
+        if (!nextTag) return false;
+        return updateInboxEntry(entry, (currentEntry) => {
+          const existingTags = Array.isArray(currentEntry?.tags) ? currentEntry.tags : [];
+          const alreadyPresent = existingTags.some((tag) => String(tag).toLowerCase() === nextTag.toLowerCase());
+          const tags = alreadyPresent ? existingTags : [...existingTags, nextTag];
+          return {
+            ...currentEntry,
+            tags,
+          };
+        });
+      };
+
+      const convertInboxEntryToNote = (entry) => {
+        const entryId = String(entry?.id || '');
+        if (window.MemoryCueCaptureService && typeof window.MemoryCueCaptureService.convertInboxToNote === 'function') {
+          window.MemoryCueCaptureService.convertInboxToNote(entryId);
+          return true;
+        }
+
+        appendProcessedEntriesToNotebook([entry]);
+        return updateInboxEntry(entry, (currentEntry) => ({
+          ...currentEntry,
+          processed: true,
+          status: 'processed',
+          processedType: 'note',
+        }));
+      };
+
+      const convertInboxEntryToReminder = async (entry) => {
+        const text = getEntryText(entry);
+        if (typeof window.memoryCueQuickAddNow === 'function') {
+          await window.memoryCueQuickAddNow({ forceText: text, source: 'inbox-swipe' });
+        } else {
+          const detail = { mode: 'create', prefillText: text, source: 'inbox-swipe' };
+          document.dispatchEvent(new CustomEvent('open-reminder-sheet', { detail }));
+        }
+
+        return updateInboxEntry(entry, (currentEntry) => ({
+          ...currentEntry,
+          processed: true,
+          status: 'processed',
+          processedType: 'reminder',
+        }));
+      };
+
+      const renderCategoryEntries = (categoryName) => {
+        const targetCategory = String(categoryName || '').trim().toLowerCase();
+        const entries = readEntries().filter((entry) => getEntryCategory(entry).toLowerCase() === targetCategory);
+
+        entriesTitle.textContent = `${categoryName} entries`;
+        categoryEntriesListEl.innerHTML = '';
+
+        if (!entries.length) {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm opacity-70';
+          empty.textContent = 'No entries found in this category.';
+          categoryEntriesListEl.appendChild(empty);
+        } else {
+          entries.forEach((entry) => {
+            const item = document.createElement('div');
+            item.className = 'category-entry-item';
+            item.textContent = getEntryText(entry);
+            categoryEntriesListEl.appendChild(item);
+          });
+        }
+
+        entriesPanel?.classList.remove('hidden');
+      };
+
+      const isUnprocessedEntry = (entry) => {
+        if (!entry || typeof entry !== 'object') return false;
+        return entry.processed === false || entry.processed === 'false';
+      };
+
+      const getEntryTimestamp = (entry) => {
+        const rawDate = entry?.createdAt || entry?.created || entry?.date || entry?.updatedAt;
+        const parsedDate = new Date(rawDate || 0).getTime();
+        return Number.isFinite(parsedDate) ? parsedDate : 0;
+      };
+
+      const findEntryIndex = (allEntries, entry) => allEntries.findIndex((item) => {
+        if (entry?.id && item?.id) return item.id === entry.id;
+        return getEntryText(item) === getEntryText(entry) && getEntryTimestamp(item) === getEntryTimestamp(entry);
+      });
+
+      const renderInboxEntries = () => {
+        const entries = readEntries()
+          .filter((entry) => isUnprocessedEntry(entry))
+          .sort((a, b) => getEntryTimestamp(a) - getEntryTimestamp(b));
+        inboxEntriesList.innerHTML = '';
+
+        if (!entries.length) {
+          const empty = document.createElement('p');
+          empty.className = 'text-sm opacity-70';
+          empty.textContent = 'No entries in Inbox.';
+          inboxEntriesList.appendChild(empty);
+          return;
+        }
+
+        entries.forEach((entry) => {
+          const card = document.createElement('li');
+          card.className = 'category-entry-item space-y-2 swipe-container';
+
+          const swipeBackground = document.createElement('div');
+          swipeBackground.className = 'swipe-background';
+
+          const swipeLeft = document.createElement('span');
+          swipeLeft.className = 'swipe-left';
+          swipeLeft.textContent = 'Note';
+
+          const swipeRight = document.createElement('span');
+          swipeRight.className = 'swipe-right';
+          swipeRight.textContent = 'Reminder';
+
+          const swipeUp = document.createElement('span');
+          swipeUp.className = 'swipe-up';
+          swipeUp.textContent = 'Archive';
+
+          swipeBackground.append(swipeLeft, swipeUp, swipeRight);
+
+          const swipeForeground = document.createElement('div');
+          swipeForeground.className = 'swipe-foreground space-y-2';
+
+          const text = document.createElement('button');
+          text.type = 'button';
+          text.className = 'text-sm text-left w-full btn btn-ghost btn-sm justify-start px-1';
+          text.textContent = getEntryText(entry);
+          text.setAttribute('aria-label', 'Edit inbox item');
+
+          const meta = document.createElement('div');
+          meta.className = 'text-xs opacity-70 flex items-center gap-2 flex-wrap';
+
+          const categoryTag = document.createElement('span');
+          categoryTag.className = 'badge badge-outline badge-sm';
+          categoryTag.textContent = entry?.pinned ? 'Pinned' : 'Inbox';
+
+          const createdAt = document.createElement('span');
+          createdAt.textContent = getEntryCreatedDate(entry);
+
+          meta.append(categoryTag, createdAt);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex flex-wrap gap-2';
+
+          const convertButton = document.createElement('button');
+          convertButton.type = 'button';
+          convertButton.className = 'btn btn-xs btn-outline';
+          convertButton.textContent = 'Convert to note';
+          convertButton.addEventListener('click', () => {
+            convertInboxEntryToNote(entry);
+            renderInboxEntries();
+          });
+
+          const reminderButton = document.createElement('button');
+          reminderButton.type = 'button';
+          reminderButton.className = 'btn btn-xs btn-outline';
+          reminderButton.textContent = 'Create reminder';
+          reminderButton.addEventListener('click', async () => {
+            await convertInboxEntryToReminder(entry);
+            renderInboxEntries();
+          });
+
+          const tagButton = document.createElement('button');
+          tagButton.type = 'button';
+          tagButton.className = 'btn btn-xs btn-outline';
+          tagButton.textContent = 'Add tag';
+          tagButton.addEventListener('click', () => {
+            addTagToInboxEntry(entry);
+            renderInboxEntries();
+          });
+
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'btn btn-xs btn-outline';
+          deleteButton.textContent = 'Delete';
+          deleteButton.addEventListener('click', () => {
+            deleteInboxEntry(entry);
+            renderInboxEntries();
+          });
+
+          actions.append(convertButton, reminderButton, tagButton, deleteButton);
+
+          text.addEventListener('click', () => {
+            const updatedText = window.prompt('Edit entry text', getEntryText(entry));
+            if (updatedText === null) return;
+            const nextText = updatedText.trim();
+            if (!nextText) return;
+            const allEntries = readEntries();
+            const entryIndex = findEntryIndex(allEntries, entry);
+            if (entryIndex === -1) return;
+            const target = allEntries[entryIndex];
+            const key = typeof target.text === 'string' ? 'text' : typeof target.content === 'string' ? 'content' : 'title';
+            allEntries[entryIndex] = {
+              ...target,
+              [key]: nextText,
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          });
+          let touchStartX = 0;
+          let touchStartY = 0;
+          let swipeDeltaX = 0;
+          let swipeDeltaY = 0;
+
+          const resetSwipeState = () => {
+            swipeForeground.style.transform = '';
+            swipeForeground.style.transition = '';
+            card.classList.remove('swipe-active');
+            card.dataset.swipeDirection = '';
+            swipeDeltaX = 0;
+            swipeDeltaY = 0;
+          };
+
+          card.addEventListener('touchstart', (event) => {
+            touchStartX = event.touches[0]?.clientX || 0;
+            touchStartY = event.touches[0]?.clientY || 0;
+            swipeForeground.style.transition = 'none';
+          }, { passive: true });
+
+          card.addEventListener('touchmove', (event) => {
+            const currentX = event.touches[0]?.clientX || touchStartX;
+            const currentY = event.touches[0]?.clientY || touchStartY;
+            swipeDeltaX = currentX - touchStartX;
+            swipeDeltaY = currentY - touchStartY;
+
+            const clampedX = Math.max(-120, Math.min(120, swipeDeltaX));
+            const clampedY = Math.max(-90, Math.min(0, swipeDeltaY));
+
+            if (Math.abs(clampedX) < 6 && Math.abs(clampedY) < 6) {
+              card.classList.remove('swipe-active');
+              card.dataset.swipeDirection = '';
+              swipeForeground.style.transform = '';
+              return;
+            }
+
+            card.classList.add('swipe-active');
+
+            if (Math.abs(clampedY) > Math.abs(clampedX) && clampedY < 0) {
+              card.dataset.swipeDirection = 'up';
+            } else if (clampedX < 0) {
+              card.dataset.swipeDirection = 'left';
+            } else {
+              card.dataset.swipeDirection = 'right';
+            }
+
+            swipeForeground.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+          }, { passive: true });
+
+          card.addEventListener('touchend', async () => {
+            swipeForeground.style.transition = 'transform 0.2s ease';
+
+            try {
+              if (swipeDeltaY < -70 && Math.abs(swipeDeltaX) < 80) {
+                archiveInboxEntry(entry);
+                renderInboxEntries();
+                return;
+              }
+
+              if (swipeDeltaX > 80) {
+                await convertInboxEntryToReminder(entry);
+                renderInboxEntries();
+                return;
+              }
+
+              if (swipeDeltaX < -80) {
+                convertInboxEntryToNote(entry);
+                renderInboxEntries();
+                return;
+              }
+            } finally {
+              resetSwipeState();
+            }
+          });
+
+          card.addEventListener('touchcancel', resetSwipeState);
+
+          let longPressTimer = null;
+          const clearLongPress = () => {
+            if (longPressTimer) {
+              window.clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          };
+
+          const onLongPress = () => {
+            const allEntries = readEntries();
+            const entryIndex = findEntryIndex(allEntries, entry);
+            if (entryIndex === -1) return;
+            allEntries[entryIndex] = {
+              ...allEntries[entryIndex],
+              pinned: !Boolean(allEntries[entryIndex]?.pinned),
+              updatedAt: new Date().toISOString()
+            };
+            writeEntries(allEntries);
+            renderInboxEntries();
+          };
+
+          card.addEventListener('touchstart', () => {
+            clearLongPress();
+            longPressTimer = window.setTimeout(onLongPress, 600);
+          }, { passive: true });
+          card.addEventListener('touchend', clearLongPress);
+          card.addEventListener('touchcancel', clearLongPress);
+          card.addEventListener('touchmove', clearLongPress, { passive: true });
+          card.addEventListener('mousedown', () => {
+            clearLongPress();
+            longPressTimer = window.setTimeout(onLongPress, 600);
+          });
+          card.addEventListener('mouseup', clearLongPress);
+          card.addEventListener('mouseleave', clearLongPress);
+
+          swipeForeground.append(text, meta, actions);
+          card.append(swipeBackground, swipeForeground);
+          inboxEntriesList.appendChild(card);
+        });
+      };
+
+      const processInboxEntries = async () => {
+        const allEntries = readEntries();
+        const inboxEntries = allEntries.filter((entry) => isUnprocessedEntry(entry));
+        if (!inboxEntries.length) {
+          return;
+        }
+
+        if (processInboxButton) {
+          processInboxButton.disabled = true;
+          processInboxButton.textContent = 'Processing...';
+        }
+
+        const prompt = [
+          'Read these inbox items.',
+          '',
+          'Classify each item into:',
+          '',
+          'task',
+          'idea',
+          'note',
+          'memory',
+          '',
+          'Also extract:',
+          '',
+          'context (teaching / training / personal)',
+          'person if mentioned',
+          '',
+          'Return JSON.'
+        ].join('\n');
+
+        try {
+          const response = await fetch('/api/assistant-chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              prompt,
+              entries: inboxEntries
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Assistant request failed (${response.status})`);
+          }
+
+          const data = await response.json();
+          const updates = Array.isArray(data) ? data : [];
+          if (!updates.length) {
+            return;
+          }
+
+          const updatesById = new Map(
+            updates
+              .filter((item) => item && typeof item === 'object' && item.id)
+              .map((item) => [String(item.id), item])
+          );
+
+          const processedNotebookEntries = [];
+          const nextEntries = allEntries.map((entry) => {
+            const entryId = entry?.id ? String(entry.id) : '';
+            if (!entryId || !updatesById.has(entryId)) {
+              return entry;
+            }
+
+            const update = updatesById.get(entryId);
+            const processedEntry = {
+              ...entry,
+              type: typeof update.type === 'string' ? update.type : entry.type,
+              context: typeof update.context === 'string' ? update.context : entry.context,
+              person: typeof update.person === 'string' || update.person === null ? update.person : entry.person,
+              text: typeof update.rewrite === 'string' ? update.rewrite : entry.text,
+              category: typeof update.category === 'string' ? update.category : entry.category,
+              processed: true,
+              status: 'processed',
+              updatedAt: new Date().toISOString()
+            };
+            processedNotebookEntries.push(processedEntry);
+            return processedEntry;
+          });
+
+          writeEntries(nextEntries);
+          appendProcessedEntriesToNotebook(processedNotebookEntries);
+          renderInboxEntries();
+        } catch (error) {
+          console.error('Unable to process inbox entries.', error);
+        } finally {
+          if (processInboxButton) {
+            processInboxButton.disabled = false;
+            processInboxButton.textContent = 'Process Notes';
+          }
+        }
+      };
+
+      const renderCategoryCards = () => {
+        cardGrid.innerHTML = '';
+        categories.forEach((categoryName) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'category-card-button';
+          button.textContent = categoryName;
+          button.addEventListener('click', () => {
+            renderCategoryEntries(categoryName);
+          });
+          cardGrid.appendChild(button);
+        });
+      };
+
+      openButton?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
+      });
+
+      backButton?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
+      });
+
+      processInboxButton?.addEventListener('click', processInboxEntries);
+
+      document.addEventListener('memoryCue:entriesUpdated', renderInboxEntries);
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'memoryCueInbox') {
+          renderInboxEntries();
+        }
+      });
+
+      if (typeof window.localStorage?.setItem === 'function' && !window.__memoryCueInboxSetItemPatched) {
+        const originalSetItem = window.localStorage.setItem.bind(window.localStorage);
+        window.localStorage.setItem = function patchedSetItem(key, value) {
+          originalSetItem(key, value);
+          if (key === 'memoryCueInbox') {
+            document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated'));
+          }
+        };
+        window.__memoryCueInboxSetItemPatched = true;
+      }
+
+      renderCategoryCards();
+      renderInboxEntries();
+    })();
+  </script>
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
-  <!-- When deployed, this should appear in View Source with todayâ€™s date. -->
+  <!-- When deployed, this should appear in View Source with today’s date. -->
 
   <!-- Load the canonical mobile runtime bundle and supporting scripts -->
   <script src="./js/register-service-worker-v2.js" defer></script>
@@ -6142,7 +6759,7 @@ body, main, section, div, p, span, li {
       <div class="reminder-sheet-inner">
         <div id="new-reminder-shell" class="reminder-editor-shell mobile-new-reminder-card" data-reminder-editor>
           <header class="reminder-editor-header reminder-sheet-header">
-            <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">â†</button>
+            <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
             <div class="reminder-header-title-group">
               <span class="reminder-header-eyebrow">Create</span>
               <h2 class="reminder-header-title" id="createSheetTitle">Add reminder</h2>
@@ -6204,14 +6821,14 @@ body, main, section, div, p, span, li {
                     <label class="reminder-field-label" for="reminderDate">Date (optional)</label>
                     <div class="reminder-field-with-icon">
                       <input id="reminderDate" type="date" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
-                      <button type="button" id="reminderDatePickerBtn" class="reminder-picker-trigger" aria-label="Open date picker">ðŸ“…</button>
+                      <button type="button" id="reminderDatePickerBtn" class="reminder-picker-trigger" aria-label="Open date picker">📅</button>
                     </div>
                   </div>
                   <div class="reminder-field">
                     <label class="reminder-field-label" for="reminderTime">Time (optional)</label>
                     <div class="reminder-field-with-icon">
                       <input id="reminderTime" type="time" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
-                      <button type="button" id="reminderTimePickerBtn" class="reminder-picker-trigger" aria-label="Open time picker">ðŸ•’</button>
+                      <button type="button" id="reminderTimePickerBtn" class="reminder-picker-trigger" aria-label="Open time picker">🕒</button>
                     </div>
                   </div>
                 </div>
@@ -6256,12 +6873,12 @@ body, main, section, div, p, span, li {
                       <option value="General"></option>
                       <option value="General Appointments"></option>
                       <option value="Home &amp; Personal"></option>
-                      <option value="School â€“ Appointments/Meetings"></option>
-                      <option value="School â€“ Communication &amp; Families"></option>
-                      <option value="School â€“ Excursions &amp; Events"></option>
-                      <option value="School â€“ Grading &amp; Assessment"></option>
-                      <option value="School â€“ Prep &amp; Resources"></option>
-                      <option value="School â€“ To-Do"></option>
+                      <option value="School – Appointments/Meetings"></option>
+                      <option value="School – Communication &amp; Families"></option>
+                      <option value="School – Excursions &amp; Events"></option>
+                      <option value="School – Grading &amp; Assessment"></option>
+                      <option value="School – Prep &amp; Resources"></option>
+                      <option value="School – To-Do"></option>
                       <option value="Wellbeing &amp; Support"></option>
                     </datalist>
                   </div>
@@ -6305,7 +6922,7 @@ body, main, section, div, p, span, li {
     <div class="modal-panel">
       <header class="modal-header">
         <h2 id="settingsTitle">Settings</h2>
-        <button type="button" id="settingsCloseBtn" aria-label="Close settings">âœ•</button>
+        <button type="button" id="settingsCloseBtn" aria-label="Close settings">✕</button>
       </header>
       <div class="card bg-base-100 border-0">
         <div class="card-body gap-4 compact">
@@ -6323,7 +6940,7 @@ body, main, section, div, p, span, li {
             <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
             <button id="clearChatHistoryBtn" class="btn btn-outline w-full" type="button">Clear Chat History</button>
           </div>
-          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy â†’ Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
+          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
       <div class="card bg-base-100 border-0">
