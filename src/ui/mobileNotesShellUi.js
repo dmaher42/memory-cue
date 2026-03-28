@@ -17,6 +17,19 @@ const escapeHtml = (value = '') => String(value)
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
+const clampPreviewText = (value = '', maxLength = 88) => {
+  const normalized = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+  if (!normalized) {
+    return '';
+  }
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+  const sliced = normalized.slice(0, maxLength + 1);
+  const trimmed = sliced.replace(/\s+\S*$/, '').trim() || normalized.slice(0, maxLength).trim();
+  return `${trimmed}...`;
+};
+
 const NOTEBOOK_POLISH_STYLE_ID = 'memory-cue-notebook-polish';
 const NOTEBOOK_POLISH_CSS = `
   #view-notebook #notesOverviewPanel {
@@ -622,15 +635,27 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     const cueFields = getLessonCueFields(activeLessonNote);
     const currentStepId = getTeacherLessonStep(activeLessonNote, getAllNotes());
-    const previewText =
-      (typeof cueFields.Next === 'string' && cueFields.Next.trim())
+    const stepPreviewFieldMap = {
+      opener: 'Goal',
+      teach: 'Teach',
+      model: 'Say',
+      guided: 'Ask',
+      independent: 'Next',
+      close: 'Reminder',
+    };
+    const preferredFieldLabel = stepPreviewFieldMap[currentStepId] || 'Next';
+    const previewText = clampPreviewText(
+      (typeof cueFields[preferredFieldLabel] === 'string' && cueFields[preferredFieldLabel].trim())
+      || (typeof cueFields.Next === 'string' && cueFields.Next.trim())
       || (typeof cueFields.Goal === 'string' && cueFields.Goal.trim())
       || (typeof cueFields.Say === 'string' && cueFields.Say.trim())
       || (typeof activeLessonNote?.bodyText === 'string' && activeLessonNote.bodyText.trim())
-      || '';
+      || '',
+    );
     const noteType = activeLessonNote?.metadata?.noteType === 'lesson-cue' ? 'Lesson Cue' : 'Lesson Note';
     const safeTitle = escapeHtml(activeLessonNote?.title || 'Active lesson');
     const safeType = escapeHtml(noteType);
+    const safePreviewLabel = escapeHtml(preferredFieldLabel);
     const stepMarkup = `
       <div class="mt-3">
         <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60 mb-2">Current step</p>
@@ -649,7 +674,12 @@ export const initMobileNotesShellUi = (options = {}) => {
       </div>
     `;
     const previewMarkup = previewText
-      ? `<p class="text-sm leading-5 opacity-85 line-clamp-3">${escapeHtml(previewText)}</p>`
+      ? `
+        <div class="mt-3">
+          <p class="text-[0.62rem] font-semibold uppercase tracking-[0.16em] opacity-55 mb-1">${safePreviewLabel}</p>
+          <p class="text-[0.92rem] leading-5 opacity-85 line-clamp-2">${escapeHtml(previewText)}</p>
+        </div>
+      `
       : '';
 
     card.classList.remove('hidden');
