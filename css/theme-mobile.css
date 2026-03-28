@@ -3143,9 +3143,11 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   margin: 3px 0;    /* less space above/below */
   background: transparent;
   border-radius: 0;
-  overflow-x: auto;
+  overflow-x: visible;
+  flex-wrap: wrap;
+  row-gap: 6px;
   box-sizing: border-box;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .note-editor-toolbar .rte-btn {
@@ -3174,9 +3176,9 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 }
 
 .note-editor-toolbar .rte-select {
-  min-width: 72px;
+  min-width: 68px;
   height: 28px;
-  padding: 0 10px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #ffffff;
@@ -3190,12 +3192,13 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 .note-editor-toolbar .rte-color-input {
   width: 28px;
   height: 28px;
-  padding: 3px;
+  padding: 2px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #ffffff;
   flex: 0 0 auto;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .note-editor-toolbar .rte-color-input::-webkit-color-swatch-wrapper {
