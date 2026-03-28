@@ -48,9 +48,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem;
+  gap: 0.5rem;
   margin-bottom: 0;
-  padding: 0.7rem 0.9rem;
+  padding: 0.68rem 0.88rem;
   height: auto;
   min-height: 0;
   max-height: none;
@@ -70,7 +70,7 @@
 #view-reminders .reminders-screen-header-actions {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
   flex: 0 0 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -78,9 +78,9 @@
 
 #view-reminders .reminders-screen-title {
   margin: 0;
-  font-size: 1.03rem;
-  line-height: 1.15;
-  font-weight: 650;
+  font-size: 0.98rem;
+  line-height: 1;
+  font-weight: 680;
   color: var(--text-main);
   letter-spacing: -0.01em;
 }
@@ -90,30 +90,42 @@
 }
 
 .reminders-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
   align-self: center;
   border: 0;
   border-radius: 999px;
-  padding: 0.52rem 0.82rem;
+  min-height: 2.1rem;
+  padding: 0.48rem 0.78rem;
   background: #5080BF;
   color: #ffffff;
-  font-size: 0.8rem;
+  font-family: inherit;
+  font-size: 0.76rem;
   line-height: 1;
-  font-weight: 700;
-  box-shadow: 0 8px 18px rgba(80, 128, 191, 0.22);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 14px rgba(80, 128, 191, 0.18);
 }
 
 .reminders-voice-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
   align-self: center;
   border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
   border-radius: 999px;
-  padding: 0.5rem 0.74rem;
+  min-height: 2.1rem;
+  padding: 0.48rem 0.72rem;
   background: color-mix(in srgb, #ffffff 74%, transparent);
   color: var(--text-main);
-  font-size: 0.78rem;
+  font-family: inherit;
+  font-size: 0.76rem;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   box-shadow: none;
 }
 
@@ -138,14 +150,20 @@
 
 .reminders-sort-trigger,
 #reminderSortToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
   background: color-mix(in srgb, #ffffff 72%, transparent);
   color: var(--text-main);
   border-radius: 999px;
-  padding: 0.5rem 0.74rem;
-  font-size: 0.78rem;
+  min-height: 2.1rem;
+  padding: 0.48rem 0.72rem;
+  font-family: inherit;
+  font-size: 0.76rem;
   line-height: 1;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   box-shadow: none;
 }
 
