@@ -283,7 +283,7 @@
 }
 
 #view-reminders #remindersListMobile > .mb-2.flex.items-center.justify-end {
-  margin: 0 0 0.35rem;
+  margin: -0.08rem 0 0.18rem;
 }
 
 #view-reminders #reminderListSection,
@@ -295,11 +295,11 @@
 }
 
 #view-reminders #reminderListSection {
-  margin-top: -0.1rem;
+  margin-top: -0.16rem;
 }
 
 #view-reminders #reminderList {
-  gap: 0 !important;
+  gap: 0.38rem !important;
   padding-top: 0;
 }
 
@@ -328,26 +328,26 @@
   display: flex;
   align-items: center;
   min-height: 56px;
-  border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0.7rem 0.2rem;
+  border: 1px solid color-mix(in srgb, var(--card-border) 62%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--card-border) 62%, transparent);
+  border-radius: 1.08rem;
+  background: color-mix(in srgb, var(--surface-elevated) 92%, #ffffff 8%);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  padding: 0.78rem 0.85rem;
   gap: 0.5rem;
   transform: none;
-  transition: background-color 0.16s ease;
+  transition: background-color 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
 #view-reminders .reminder-row:hover,
 #view-reminders .reminder-row:focus-within {
   transform: none;
-  box-shadow: none;
-  background: color-mix(in srgb, var(--text-main) 4%, transparent);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  background: color-mix(in srgb, var(--surface-elevated) 86%, #ffffff 14%);
 }
 
 #view-reminders .reminder-row:last-child {
-  border-bottom-color: transparent;
+  border-bottom-color: color-mix(in srgb, var(--card-border) 62%, transparent);
 }
 
 #view-reminders .reminder-row-complete {
