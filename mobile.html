@@ -5194,6 +5194,14 @@ body, main, section, div, p, span, li {
             <div class="reminders-screen-header-copy">
               <h2 class="reminders-screen-title">Reminders</h2>
               <p id="mobileRemindersHeaderSubtitle" class="reminders-screen-subtitle">Your active cues for today.</p>
+              <div class="reminders-screen-sort-row">
+                <label for="reminderSort" class="sr-only">Sort reminders</label>
+                <select id="reminderSort" class="sr-only" aria-hidden="true" tabindex="-1">
+                  <option value="created" selected>Created</option>
+                  <option value="time-relevance">Time relevance</option>
+                </select>
+                <button id="reminderSortToggle" type="button" class="btn btn-ghost btn-xs" aria-label="Sort reminders (Created)">Created ▼</button>
+              </div>
             </div>
             <div class="reminders-screen-header-actions">
               <button
@@ -5214,14 +5222,6 @@ body, main, section, div, p, span, li {
               </button>
             </div>
           </header>
-          <div class="mb-2 flex items-center justify-end">
-            <label for="reminderSort" class="sr-only">Sort reminders</label>
-            <select id="reminderSort" class="sr-only" aria-hidden="true" tabindex="-1">
-              <option value="created" selected>Created</option>
-              <option value="time-relevance">Time relevance</option>
-            </select>
-            <button id="reminderSortToggle" type="button" class="btn btn-ghost btn-xs" aria-label="Sort reminders (Created)">Created ▼</button>
-          </div>
           <section
             id="reminderListSection"
             class="w-full relative"
