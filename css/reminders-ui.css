@@ -67,6 +67,13 @@
   gap: 0.12rem;
 }
 
+#view-reminders .reminders-screen-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 0 0 auto;
+}
+
 #view-reminders .reminders-screen-title {
   margin: 0;
   font-size: 1.03rem;
@@ -96,6 +103,32 @@
   line-height: 1;
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(80, 128, 191, 0.22);
+}
+
+.reminders-voice-button {
+  flex: 0 0 auto;
+  align-self: center;
+  border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
+  border-radius: 999px;
+  padding: 0.54rem 0.82rem;
+  background: color-mix(in srgb, #ffffff 74%, transparent);
+  color: var(--text-main);
+  font-size: 0.8rem;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.reminders-voice-button:hover,
+.reminders-voice-button:focus-visible {
+  background: color-mix(in srgb, var(--text-main) 7%, #ffffff);
+  outline: 3px solid color-mix(in srgb, var(--accent-color) 16%, transparent);
+  outline-offset: 2px;
+}
+
+.reminders-voice-button.is-listening {
+  background: color-mix(in srgb, var(--accent-color) 16%, #ffffff 84%);
+  border-color: color-mix(in srgb, var(--accent-color) 30%, transparent);
 }
 
 .reminders-add-button:hover,
@@ -162,6 +195,38 @@
 #view-reminders .reminder-row-meta {
   font-size: 0.78rem;
   color: var(--text-secondary);
+}
+
+.reminder-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.32rem;
+}
+
+.reminder-title-voice-button {
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated) 88%, #ffffff 12%);
+  color: var(--text-main);
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 700;
+  padding: 0.34rem 0.62rem;
+  flex: 0 0 auto;
+}
+
+.reminder-title-voice-button:hover,
+.reminder-title-voice-button:focus-visible {
+  background: color-mix(in srgb, var(--text-main) 8%, #ffffff);
+  outline: 2px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
+  outline-offset: 2px;
+}
+
+.reminder-title-voice-button.is-listening {
+  background: color-mix(in srgb, var(--accent-color) 16%, #ffffff 84%);
+  border-color: color-mix(in srgb, var(--accent-color) 32%, transparent);
 }
 
 #view-reminders .reminder-overdue {
