@@ -683,7 +683,17 @@ export const initMobileNotesShellUi = (options = {}) => {
       return null;
     }
 
-    const existingBar = headerBlock.querySelector('[data-note-sections-bar]');
+    const noteEditorCard = noteEditorSheet?.querySelector('.note-editor-card');
+    const existingBars = noteEditorCard instanceof HTMLElement
+      ? Array.from(noteEditorCard.querySelectorAll('[data-note-sections-bar]'))
+      : Array.from(noteEditorSheet?.querySelectorAll('[data-note-sections-bar]') || []);
+    const [existingBar, ...duplicateBars] = existingBars;
+    duplicateBars.forEach((bar) => {
+      if (bar instanceof HTMLElement) {
+        bar.remove();
+      }
+    });
+
     if (existingBar instanceof HTMLElement) {
       return existingBar;
     }
@@ -691,7 +701,6 @@ export const initMobileNotesShellUi = (options = {}) => {
     const bar = document.createElement('div');
     bar.dataset.noteSectionsBar = 'true';
     bar.className = 'note-sections-bar';
-    const noteEditorCard = noteEditorSheet?.querySelector('.note-editor-card');
     if (noteEditorCard instanceof HTMLElement) {
       noteEditorCard.insertBefore(bar, headerBlock.nextSibling);
     } else {
