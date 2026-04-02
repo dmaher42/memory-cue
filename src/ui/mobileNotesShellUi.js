@@ -531,6 +531,23 @@ export const initMobileNotesShellUi = (options = {}) => {
   let activeNoteSectionLabel = '';
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
+  const NOTE_SECTION_MAX_VISIBLE = 6;
+  const NOTE_SECTION_PRIORITY = [
+    'goal',
+    'say',
+    'teach',
+    'model',
+    'ask',
+    'next',
+    'guided practice',
+    'independent practice',
+    'materials',
+    'reflection',
+    'reminder',
+    'follow up',
+    'key points',
+    'questions',
+  ];
 
   const ensureNotebookPolishStyles = () => {
     if (!(document.head instanceof HTMLElement)) {
@@ -661,6 +678,48 @@ export const initMobileNotesShellUi = (options = {}) => {
     .trim()
     .toLowerCase();
 
+  const getVisibleNoteSections = (sections = []) => {
+    if (!Array.isArray(sections) || sections.length < 2) {
+      return [];
+    }
+
+    const normalizedSeen = new Set();
+    const sectionEntries = sections
+      .map((section, index) => {
+        const label = String(section?.label || '').trim();
+        const normalized = normalizeSectionLabel(label);
+        if (!label || !normalized || normalizedSeen.has(normalized)) {
+          return null;
+        }
+        normalizedSeen.add(normalized);
+        const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+        const priority = NOTE_SECTION_PRIORITY.indexOf(normalized);
+        return {
+          index,
+          label,
+          normalized,
+          priority,
+          isPriority: priority >= 0,
+          isCompact: label.length <= 24 && wordCount <= 3,
+        };
+      })
+      .filter(Boolean);
+
+    const prioritizedSections = sectionEntries.filter((entry) => entry.isPriority);
+    const compactSections = sectionEntries.filter((entry) => entry.isPriority || entry.isCompact);
+    const candidateSections = prioritizedSections.length >= 2 ? prioritizedSections : compactSections;
+    if (candidateSections.length < 2) {
+      return [];
+    }
+
+    const visibleSections = candidateSections
+      .slice()
+      .sort((left, right) => left.index - right.index)
+      .slice(0, NOTE_SECTION_MAX_VISIBLE);
+
+    return visibleSections.map(({ label, normalized }) => ({ label, normalized }));
+  };
+
   const findSectionTargetElement = (label = '') => {
     const editorBody = document.getElementById('notebook-editor-body');
     if (!(editorBody instanceof HTMLElement)) {
@@ -699,15 +758,16 @@ export const initMobileNotesShellUi = (options = {}) => {
     const sections = typeof window !== 'undefined' && typeof window.getCurrentNoteSections === 'function'
       ? window.getCurrentNoteSections()
       : [];
-    if (!Array.isArray(sections) || sections.length < 2) {
+    const visibleSections = getVisibleNoteSections(sections);
+    if (visibleSections.length < 2) {
       activeNoteSectionLabel = '';
       bar.hidden = true;
       bar.innerHTML = '';
       return;
     }
 
-    const normalizedSectionLabels = sections
-      .map((section) => normalizeSectionLabel(section.label || ''))
+    const normalizedSectionLabels = visibleSections
+      .map((section) => section.normalized || normalizeSectionLabel(section.label || ''))
       .filter(Boolean);
     if (!normalizedSectionLabels.includes(activeNoteSectionLabel)) {
       activeNoteSectionLabel = normalizedSectionLabels[0] || '';
@@ -716,12 +776,12 @@ export const initMobileNotesShellUi = (options = {}) => {
     bar.hidden = false;
     bar.innerHTML = `
       <div class="note-sections-row">
-        ${sections.map((section) => `
+        ${visibleSections.map((section) => `
           <button
             type="button"
             class="note-section-chip"
             data-note-section-jump="${escapeHtml(section.label || '')}"
-            data-selected="${normalizeSectionLabel(section.label || '') === activeNoteSectionLabel ? 'true' : 'false'}"
+            data-selected="${(section.normalized || normalizeSectionLabel(section.label || '')) === activeNoteSectionLabel ? 'true' : 'false'}"
           >${escapeHtml(section.label || '')}</button>
         `).join('')}
       </div>
