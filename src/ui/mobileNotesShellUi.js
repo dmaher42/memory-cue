@@ -19,6 +19,11 @@ const escapeHtml = (value = '') => String(value)
 
 const NOTEBOOK_POLISH_STYLE_ID = 'memory-cue-notebook-polish';
 const NOTEBOOK_POLISH_CSS = `
+  #openSavedNotesGlobal,
+  #view-notebook .note-actions-top {
+    display: none !important;
+  }
+
   #view-notebook #notesOverviewPanel {
     padding: 0.8rem;
     margin: 0.6rem 0.75rem 0.75rem;
