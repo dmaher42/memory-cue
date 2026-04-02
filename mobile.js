@@ -1175,6 +1175,14 @@ const initMobileNotes = () => {
     return;
   }
 
+  try {
+    scratchNotesEditorElement.addEventListener('input', () => {
+      updateCurrentNoteSections(getEditorBodyHtml());
+    });
+  } catch {
+    /* ignore section index errors */
+  }
+
   const TOGGLE_COMMANDS = new Set([
     'bold',
     'italic',
@@ -1326,9 +1334,80 @@ const initMobileNotes = () => {
       .trim();
   };
 
+  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice)\b[:\-–—]?\s*/i;
+
+  const normalizeSectionLabel = (value = '') => value
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[:\-–—]+$/, '')
+    .trim();
+
+  const formatSectionLabel = (value = '') => {
+    const normalized = normalizeSectionLabel(value);
+    if (!normalized) {
+      return '';
+    }
+    return normalized
+      .split(/\s+/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Build a lightweight section index from headings or cue-style labels inside the note.
+  const buildNoteSectionsFromHtml = (html = '') => {
+    const temp = document.createElement('div');
+    temp.innerHTML = typeof html === 'string' ? html : '';
+    const blocks = temp.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li');
+    const sections = [];
+    const seenLabels = new Set();
+
+    blocks.forEach((block) => {
+      if (!(block instanceof HTMLElement)) {
+        return;
+      }
+
+      const rawText = normalizeSectionLabel(block.textContent || '');
+      if (!rawText) {
+        return;
+      }
+
+      let label = '';
+      if (/^H[1-6]$/i.test(block.tagName)) {
+        label = formatSectionLabel(rawText);
+      } else {
+        const prefixMatch = rawText.match(NOTE_SECTION_PREFIX_PATTERN);
+        if (prefixMatch?.[1]) {
+          label = formatSectionLabel(prefixMatch[1]);
+        } else if (/[：:]$/.test((block.textContent || '').trim())) {
+          const wordCount = rawText.split(/\s+/).filter(Boolean).length;
+          if (wordCount <= 5 && rawText.length <= 42) {
+            label = formatSectionLabel(rawText);
+          }
+        }
+      }
+
+      if (!label) {
+        return;
+      }
+
+      const normalizedKey = label.toLowerCase();
+      if (seenLabels.has(normalizedKey)) {
+        return;
+      }
+      seenLabels.add(normalizedKey);
+      sections.push({
+        id: `section-${normalizedKey.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || sections.length + 1}`,
+        label,
+      });
+    });
+
+    return sections;
+  };
+
   const setEditorContent = (value = '') => {
     const normalizedValue = typeof value === 'string' ? value : '';
     setEditorBodyHtml(normalizedValue);
+    updateCurrentNoteSections(normalizedValue);
     updateToolbarState();
   };
 
@@ -1443,6 +1522,19 @@ const initMobileNotes = () => {
   let notesOverviewStateValue = 'all';
   let notesMode = 'notebooks';
   let skipAutoSelectOnce = false;
+  let currentNoteSections = [];
+
+  const updateCurrentNoteSections = (html = getEditorBodyHtml()) => {
+    currentNoteSections = buildNoteSectionsFromHtml(html);
+    if (scratchNotesEditorElement instanceof HTMLElement) {
+      scratchNotesEditorElement.dataset.sectionCount = String(currentNoteSections.length);
+      scratchNotesEditorElement.dataset.sectionLabels = currentNoteSections
+        .map((section) => section.label)
+        .join('|');
+    }
+  };
+
+  const getCurrentNoteSections = () => currentNoteSections.slice();
 
   const clearSearchFilter = () => {
     filterQuery = '';
@@ -1450,6 +1542,8 @@ const initMobileNotes = () => {
       filterInput.value = '';
     }
   };
+
+  updateCurrentNoteSections('');
 
   let applyNotesMode = () => {};
   let isSavedNotesSheetOpen = () => false;
@@ -2716,6 +2810,10 @@ const initMobileNotes = () => {
       event.preventDefault();
       showSavedNotesSheet();
     });
+  }
+
+  if (typeof window !== 'undefined') {
+    window.getCurrentNoteSections = getCurrentNoteSections;
   }
 
   initMobileNotesBrowserUi({
