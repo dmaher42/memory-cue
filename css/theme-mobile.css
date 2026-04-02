@@ -4179,3 +4179,119 @@ body.mobile-theme :focus-visible {
   opacity: 1;
   pointer-events: auto;
 }
+
+.today-list-panel {
+  margin-bottom: 0.9rem;
+}
+
+.today-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.today-list-header .btn {
+  min-height: 2rem;
+  height: 2rem;
+  padding-inline: 0.8rem;
+  border-radius: 999px;
+}
+
+.today-list-quick-add {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.today-list-quick-add-input {
+  min-height: 2.5rem;
+}
+
+.today-list-container {
+  overflow: hidden;
+  border-radius: 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--fallback-b3, #d9d6df) 72%, #ffffff 28%);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(57, 35, 87, 0.05);
+}
+
+.today-list-container [data-task-id]:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 480px) {
+  .today-list-quick-add {
+    gap: 0.45rem;
+  }
+
+  .today-list-header .btn,
+  .today-list-quick-add .btn {
+    padding-inline: 0.7rem;
+  }
+}
+
+#settingsModal {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 0.75rem)
+    0.9rem
+    calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#settingsModal.hidden {
+  display: none !important;
+}
+
+#settingsModal .modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0.35rem 0 0;
+}
+
+#settingsModal .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+#settingsModal .card {
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 42px rgba(31, 22, 51, 0.08);
+}
+
+#settingsModal .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: rgba(38, 27, 60, 0.24);
+}
+
+body.settings-modal-open #thinkingBarForm,
+body.settings-modal-open .chat-composer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.settings-modal-open #mobile-nav-shell {
+  opacity: 0;
+  pointer-events: none;
+}

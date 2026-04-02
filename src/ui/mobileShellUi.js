@@ -800,11 +800,13 @@ export const initSettingsModal = () => {
   function open() {
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
+    document.body?.classList.add('settings-modal-open');
   }
 
   function close() {
     modal.classList.add('hidden');
     modal.setAttribute('aria-hidden', 'true');
+    document.body?.classList.remove('settings-modal-open');
   }
 
   openButtons.forEach((btn) => {
