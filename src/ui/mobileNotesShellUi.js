@@ -767,6 +767,57 @@ export const initMobileNotesShellUi = (options = {}) => {
     return visibleSections.map(({ label, normalized }) => ({ label, normalized }));
   };
 
+  const getEditorLineSections = () => {
+    const editorBody = document.getElementById('notebook-editor-body');
+    if (!(editorBody instanceof HTMLElement)) {
+      return [];
+    }
+
+    const recognizedSections = [];
+    const seenLabels = new Set();
+    const lines = String(editorBody.innerText || editorBody.textContent || '')
+      .split(/\r?\n+/)
+      .map((line) => String(line || '').trim())
+      .filter(Boolean);
+
+    lines.forEach((line) => {
+      const normalizedLine = normalizeSectionLabel(line);
+      if (!normalizedLine) {
+        return;
+      }
+
+      let label = '';
+      const prefixMatch = normalizedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-–—]?$/i);
+      if (prefixMatch?.[1]) {
+        const candidate = String(prefixMatch[1] || '').trim();
+        const wordCount = candidate.split(/\s+/).filter(Boolean).length;
+        if (candidate && wordCount <= 3 && candidate.length <= 24) {
+          label = candidate
+            .split(/\s+/)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ');
+        }
+      } else {
+        const inlineMatch = line.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-–—]\s+\S/i);
+        if (inlineMatch?.[1]) {
+          label = String(inlineMatch[1] || '').trim()
+            .split(/\s+/)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ');
+        }
+      }
+
+      const normalizedLabel = normalizeSectionLabel(label);
+      if (!normalizedLabel || seenLabels.has(normalizedLabel)) {
+        return;
+      }
+      seenLabels.add(normalizedLabel);
+      recognizedSections.push({ label, normalized: normalizedLabel });
+    });
+
+    return recognizedSections;
+  };
+
   const findSectionTargetElement = (label = '') => {
     const editorBody = document.getElementById('notebook-editor-body');
     if (!(editorBody instanceof HTMLElement)) {
@@ -868,10 +919,14 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
-    const sections = typeof window !== 'undefined' && typeof window.getCurrentNoteSections === 'function'
+    const parsedSections = typeof window !== 'undefined' && typeof window.getCurrentNoteSections === 'function'
       ? window.getCurrentNoteSections()
       : [];
-    const visibleSections = getVisibleNoteSections(sections);
+    const mergedSections = [
+      ...(Array.isArray(parsedSections) ? parsedSections : []),
+      ...getEditorLineSections(),
+    ];
+    const visibleSections = getVisibleNoteSections(mergedSections);
     if (visibleSections.length < 2) {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
