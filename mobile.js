@@ -1334,7 +1334,7 @@ const initMobileNotes = () => {
       .trim();
   };
 
-  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice)\b[:\-–—]?\s*/i;
+  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice|drill|drills)\b[:\-–—]?\s*/i;
 
   const normalizeSectionLabel = (value = '') => value
     .replace(/\u00a0/g, ' ')

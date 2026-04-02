@@ -223,6 +223,10 @@ const NOTEBOOK_POLISH_CSS = `
     font-weight: 700;
   }
 
+  .mobile-panel--notes #notebook-editor-body [data-note-section-hidden="true"] {
+    display: none !important;
+  }
+
   #view-notebook .note-inline-action {
     min-height: 32px;
     padding: 0.42rem 0.78rem;
@@ -556,6 +560,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let notesOverviewCollapsed = true;
   let teacherEditorToolsExpanded = false;
   let activeNoteSectionLabel = '';
+  let collapsedNoteSectionLabel = '';
   let noteSectionsExpanded = false;
   let noteSectionsKey = '';
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
@@ -565,6 +570,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     'goal',
     'say',
     'teach',
+    'drill',
+    'drills',
     'model',
     'ask',
     'next',
@@ -787,6 +794,72 @@ export const initMobileNotesShellUi = (options = {}) => {
     return null;
   };
 
+  const getEditorSectionMatches = (sections = []) => {
+    const editorBody = document.getElementById('notebook-editor-body');
+    if (!(editorBody instanceof HTMLElement) || !Array.isArray(sections) || sections.length === 0) {
+      return [];
+    }
+
+    const blocks = Array.from(editorBody.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'))
+      .filter((block) => block instanceof HTMLElement);
+    const matches = [];
+    let searchStartIndex = 0;
+
+    sections.forEach((section) => {
+      const normalizedLabel = normalizeSectionLabel(section?.label || '');
+      if (!normalizedLabel) {
+        return;
+      }
+      for (let index = searchStartIndex; index < blocks.length; index += 1) {
+        const block = blocks[index];
+        const rawText = String(block.textContent || '').trim();
+        if (!rawText) {
+          continue;
+        }
+        const normalizedText = normalizeSectionLabel(rawText);
+        if (normalizedText === normalizedLabel || normalizedText.startsWith(`${normalizedLabel} `)) {
+          matches.push({ label: section.label, normalized: normalizedLabel, index, element: block });
+          searchStartIndex = index + 1;
+          break;
+        }
+      }
+    });
+
+    return matches;
+  };
+
+  const applyCollapsedNoteSection = (sections = []) => {
+    const editorBody = document.getElementById('notebook-editor-body');
+    if (!(editorBody instanceof HTMLElement)) {
+      return;
+    }
+
+    const blocks = Array.from(editorBody.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'))
+      .filter((block) => block instanceof HTMLElement);
+    blocks.forEach((block) => {
+      block.dataset.noteSectionHidden = 'false';
+    });
+
+    if (!collapsedNoteSectionLabel) {
+      return;
+    }
+
+    const matches = getEditorSectionMatches(sections);
+    const activeMatchIndex = matches.findIndex((match) => match.normalized === collapsedNoteSectionLabel);
+    if (activeMatchIndex === -1) {
+      collapsedNoteSectionLabel = '';
+      return;
+    }
+
+    const startIndex = matches[activeMatchIndex].index;
+    const endIndex = matches[activeMatchIndex + 1]?.index ?? blocks.length;
+    blocks.forEach((block, index) => {
+      if (index < startIndex || index >= endIndex) {
+        block.dataset.noteSectionHidden = 'true';
+      }
+    });
+  };
+
   const renderNoteSectionsBar = () => {
     const bar = ensureNoteSectionsBar();
     if (!(bar instanceof HTMLElement)) {
@@ -801,6 +874,8 @@ export const initMobileNotesShellUi = (options = {}) => {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
       noteSectionsKey = '';
+      collapsedNoteSectionLabel = '';
+      applyCollapsedNoteSection([]);
       bar.hidden = true;
       bar.innerHTML = '';
       return;
@@ -820,6 +895,11 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (!normalizedSectionLabels.includes(activeNoteSectionLabel)) {
       activeNoteSectionLabel = normalizedSectionLabels[0] || '';
     }
+    if (collapsedNoteSectionLabel && !normalizedSectionLabels.includes(collapsedNoteSectionLabel)) {
+      collapsedNoteSectionLabel = '';
+    }
+
+    applyCollapsedNoteSection(visibleSections);
 
     bar.hidden = false;
     bar.innerHTML = `
@@ -831,6 +911,13 @@ export const initMobileNotesShellUi = (options = {}) => {
       >Sections</button>
       ${noteSectionsExpanded ? `
         <div class="note-sections-row">
+          ${collapsedNoteSectionLabel ? `
+            <button
+              type="button"
+              class="note-section-chip"
+              data-note-section-clear="true"
+            >All</button>
+          ` : ''}
           ${visibleSections.map((section) => `
             <button
               type="button"
@@ -884,6 +971,16 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
+    const clearButton = event.target instanceof HTMLElement
+      ? event.target.closest('[data-note-section-clear]')
+      : null;
+    if (clearButton instanceof HTMLButtonElement) {
+      event.preventDefault();
+      collapsedNoteSectionLabel = '';
+      renderNoteSectionsBar();
+      return;
+    }
+
     const jumpButton = event.target instanceof HTMLElement
       ? event.target.closest('[data-note-section-jump]')
       : null;
@@ -898,18 +995,21 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
-    activeNoteSectionLabel = normalizeSectionLabel(targetLabel);
+    const normalizedTargetLabel = normalizeSectionLabel(targetLabel);
+    activeNoteSectionLabel = normalizedTargetLabel;
+    collapsedNoteSectionLabel = collapsedNoteSectionLabel === normalizedTargetLabel ? '' : normalizedTargetLabel;
     renderNoteSectionsBar();
 
     const offset = getNoteSectionScrollOffset();
-    const scrollContainer = findScrollContainer(targetElement);
+    const refreshedTargetElement = findSectionTargetElement(targetLabel) || targetElement;
+    const scrollContainer = findScrollContainer(refreshedTargetElement);
     if (scrollContainer instanceof HTMLElement) {
-      const targetTop = Math.max(0, getOffsetWithinContainer(targetElement, scrollContainer) - offset);
+      const targetTop = Math.max(0, getOffsetWithinContainer(refreshedTargetElement, scrollContainer) - offset);
       scrollContainer.scrollTo({ top: targetTop, behavior: 'smooth' });
       return;
     }
 
-    const viewportTop = targetElement.getBoundingClientRect().top + window.scrollY - offset;
+    const viewportTop = refreshedTargetElement.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top: Math.max(0, viewportTop), behavior: 'smooth' });
   };
 
