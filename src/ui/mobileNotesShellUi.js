@@ -37,6 +37,71 @@ const NOTEBOOK_POLISH_CSS = `
     gap: 0.5rem;
   }
 
+  #view-notebook #notesOverviewList .note-item-mobile {
+    margin: 0;
+  }
+
+  #view-notebook #notesOverviewList .note-list-item {
+    gap: 0.22rem;
+    padding: 0.82rem 0.95rem;
+    margin: 0;
+    border-radius: 0.95rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #f6f2fc 3%);
+    box-shadow: none;
+  }
+
+  #view-notebook #notesOverviewList .note-list-item:hover,
+  #view-notebook #notesOverviewList .note-list-item:focus-within {
+    background: color-mix(in srgb, #ffffff 91%, #efe8fb 9%);
+    border-color: color-mix(in srgb, var(--accent-color, #512663) 18%, transparent);
+    box-shadow: none;
+    transform: none;
+  }
+
+  #view-notebook #notesOverviewList .note-card-main {
+    gap: 0.18rem;
+  }
+
+  #view-notebook #notesOverviewList .note-card-header {
+    gap: 0.45rem;
+  }
+
+  #view-notebook #notesOverviewList .note-card-title {
+    font-size: 0.92rem;
+    line-height: 1.28;
+    font-weight: 650;
+  }
+
+  #view-notebook #notesOverviewList .note-card-meta {
+    gap: 0.32rem;
+    margin-top: 0;
+    font-size: 0.78rem;
+    color: color-mix(in srgb, var(--text-main, #231B2E) 72%, #7c8798 28%);
+  }
+
+  #view-notebook #notesOverviewList .note-card-folder {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    font-size: 0.78rem;
+    color: inherit;
+  }
+
+  #view-notebook #notesOverviewList .note-card-folder::before {
+    display: none;
+  }
+
+  #view-notebook #notesOverviewList .note-card-action {
+    width: 28px;
+    height: 28px;
+    padding: 0.18rem;
+    margin-left: 0.15rem;
+    border-radius: 999px;
+    box-shadow: none;
+  }
+
   #view-notebook [data-active-lesson-card] {
     margin-top: 0.55rem;
     margin-bottom: 0.4rem;
