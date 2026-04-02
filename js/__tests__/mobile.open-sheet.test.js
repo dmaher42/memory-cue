@@ -3,66 +3,7 @@
  */
 
 const { beforeEach, afterEach, describe, expect, test } = require('@jest/globals');
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-
-function loadMobileModule() {
-  const filePath = path.resolve(__dirname, '../../mobile.js');
-  let source = fs.readFileSync(filePath, 'utf8');
-  source = source.replace(
-    "import { initViewportHeight } from './js/modules/viewport-height.js';",
-    'const { initViewportHeight } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initReminders } from './js/reminders.js';",
-    'const { initReminders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initFirebaseAuth } from './js/firebase-auth.js';",
-    'const { initFirebaseAuth } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
-    'const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__mobileMocks;',
-  );
-  source = source.replace(
-    "import { initNotesSync } from './js/modules/notes-sync.js';",
-    'const { initNotesSync } = window.__mobileMocks;',
-  );
-  source = source.replace(
-    "import { getFolders } from './js/modules/notes-storage.js';",
-    'const { getFolders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';",
-    'const { getFolderNameById, assignNoteToFolder } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { ModalController } from './js/modules/modal-controller.js';",
-    'const { ModalController } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { saveFolders } from './js/modules/notes-storage.js';",
-    'const { saveFolders } = window.__mobileMocks;'
-  );
-  const context = vm.createContext({
-    window,
-    document,
-    console,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-    CustomEvent: window.CustomEvent,
-    HTMLElement: window.HTMLElement,
-    HTMLFormElement: window.HTMLFormElement,
-    navigator,
-    location: window.location,
-  });
-  const script = new vm.Script(source, { filename: filePath });
-  script.runInContext(context);
-}
+const { loadMobileModule } = require('./helpers/load-mobile-module');
 
 describe('mobile sheet opener events', () => {
   beforeEach(() => {
@@ -98,7 +39,7 @@ describe('mobile sheet opener events', () => {
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
-      initFirebaseAuth: jest.fn(),
+      initAuth: jest.fn().mockResolvedValue({ auth: null, unsubscribe: () => {} }),
       loadAllNotes: () => [],
       saveAllNotes: () => {},
       createNote: () => ({}),

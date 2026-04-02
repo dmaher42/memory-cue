@@ -21,7 +21,7 @@ function loadIntentParser() {
 function loadActionRouter({ captureInput, fetch }) {
   const filePath = path.resolve(__dirname, 'src/chat/actionRouter.js');
   let source = fs.readFileSync(filePath, 'utf8');
-  source = source.replace(/import\s+\{\s*captureInput\s*\}\s+from\s+'\.\.\/\.\.\/js\/services\/capture-service\.js';\n/, '');
+  source = source.replace(/^import[\s\S]*?;\s*$/mg, '');
   source = source.replace(/export const routeAction\s*=\s*/g, 'const routeAction = ');
   source += '\nmodule.exports = { routeAction };\n';
 
@@ -29,7 +29,33 @@ function loadActionRouter({ captureInput, fetch }) {
     module: { exports: {} },
     exports: {},
     console,
-    captureInput,
+    processInbox: jest.fn(async () => ({ summary: 'Processed 0 notes.' })),
+    executeCommand: async (command, payload = {}) => {
+      if (command === 'capture') {
+        return { message: 'Saved to Inbox.', data: captureInput(payload.text, payload.source) };
+      }
+      if (command === 'reminder') {
+        const created = await payload.handler?.({ title: payload.text });
+        return { message: 'Reminder created.', data: created };
+      }
+      if (command === 'assistantQuery') {
+        const response = await fetch('/api/assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: payload.question }),
+        });
+        const data = await response.json();
+        return { message: data.reply, data };
+      }
+      if (command === 'search') {
+        return { message: 'No matching memories found.', data: [] };
+      }
+      return { message: '', data: null };
+    },
+    getInboxEntries: () => [],
+    removeInboxEntry: jest.fn(),
+    searchNotesMemory: jest.fn(async () => []),
+    formatMemorySearchResponse: jest.fn(() => 'No matching memories found.'),
     fetch,
     window: {},
   });
@@ -64,7 +90,8 @@ describe('Prompt 12 chat system behavior', () => {
     expect(captureInput).toHaveBeenCalledWith(input, 'capture');
     expect(result).toEqual({
       message: 'Saved to Inbox.',
-      quickActions: [{ label: 'Open Inbox', targetView: 'capture' }],
+      quickActions: [{ label: 'View Capture', targetView: 'capture' }],
+      status: { message: 'Saved to Inbox.', data: undefined },
     });
   });
 
@@ -80,6 +107,7 @@ describe('Prompt 12 chat system behavior', () => {
     expect(result).toEqual({
       message: 'Reminder created.',
       quickActions: [{ label: 'Edit Reminder', targetView: 'reminders' }],
+      status: { message: 'Reminder created.', data: { id: 'r-1' } },
     });
   });
 
@@ -102,7 +130,11 @@ describe('Prompt 12 chat system behavior', () => {
     });
     expect(result).toEqual({
       message: 'assistant response.',
-      quickActions: [{ label: 'View Notes', targetView: 'notes' }],
+      quickActions: [{ label: 'View Notes', targetView: 'notebooks' }],
+      status: {
+        message: 'assistant response.',
+        data: { reply: 'assistant response.' },
+      },
     });
   });
 });

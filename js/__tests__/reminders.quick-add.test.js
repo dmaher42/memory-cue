@@ -1,48 +1,10 @@
 /** @jest-environment jsdom */
 
 const { beforeEach, afterEach, expect, test } = require('@jest/globals');
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+const { loadReminderController } = require('./helpers/load-reminder-controller');
 
 function loadRemindersModule() {
-  const filePath = path.resolve(__dirname, '../reminders.js');
-  let source = fs.readFileSync(filePath, 'utf8');
-  source = source.replace(
-    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './auth.js';\n",
-    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
-  );
-  source = source.replace(
-    "import { captureInput, getInboxEntries } from './services/capture-service.js';\n",
-    "const getInboxEntries = () => { try { const raw = localStorage.getItem('memoryCueInbox'); return raw ? JSON.parse(raw) : []; } catch { return []; } };\nconst captureInput = async (text, source='quick-add') => { const entry = { id: `test-${Date.now()}`, text: String(text || '').trim(), createdAt: Date.now(), source, parsedType: 'unknown', metadata: {} }; const entries = getInboxEntries(); entries.unshift(entry); localStorage.setItem('memoryCueInbox', JSON.stringify(entries)); document.dispatchEvent(new CustomEvent('memoryCue:entriesUpdated')); return entry; };\n",
-  );
-  source = source.replace(
-    "import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../src/services/reminderService.js';\n",
-    "const buildReminderPayload = (payload = {}) => payload; const setReminderCreationHandler = () => {}; const createReminderViaService = (payload = {}) => payload;\n",
-  );
-  source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
-  source += '\nmodule.exports = { initReminders };\n';
-  const module = { exports: {} };
-  const sandbox = {
-    module,
-    exports: module.exports,
-    require,
-    console,
-    setTimeout,
-    clearTimeout,
-    window,
-    document,
-    localStorage,
-    navigator,
-    HTMLElement: window.HTMLElement,
-    Date,
-    fetch: global.fetch,
-    Blob: global.Blob,
-    Response: global.Response,
-    URL: global.URL,
-  };
-  vm.runInNewContext(source, sandbox, { filename: filePath });
-  return module.exports;
+  return loadReminderController();
 }
 
 function createFirebaseStubs() {
@@ -82,7 +44,13 @@ beforeEach(async () => {
       <div id="emptyState"></div>
       <ul id="reminderList"></ul>
     </div>
-    <input id="quickAddInput" />
+    <form id="quickAddForm">
+      <input id="reminderQuickAdd" />
+      <button id="quickAddSubmit" type="button">Add</button>
+      <button id="quickAddVoice" type="button">Voice</button>
+      <div id="quickAddParsingIndicator" hidden></div>
+      <div id="quickAddSuccessIndicator" hidden></div>
+    </form>
   `;
 
   const { initReminders } = loadRemindersModule();
@@ -103,7 +71,7 @@ afterEach(() => {
 });
 
 test('quick add routes footy drill prefix to Footy – Drills category', async () => {
-  const quickInput = document.getElementById('quickAddInput');
+  const quickInput = document.getElementById('reminderQuickAdd');
   quickInput.value = 'footy drill: cone sprint ladders';
 
   await window.memoryCueQuickAddNow();
@@ -119,12 +87,12 @@ test('quick add routes footy drill prefix to Footy – Drills category', async (
   expect(memoryEntries).toHaveLength(1);
   expect(memoryEntries[0].text).toBe('footy drill: cone sprint ladders');
   expect(memoryEntries[0].source).toBe('quick-add');
-  expect(memoryEntries[0].parsedType).toBe('unknown');
+  expect(memoryEntries[0].parsedType).toBe('reminder');
   expect(Number.isFinite(memoryEntries[0].createdAt)).toBe(true);
 });
 
 test('quick add routes task prefix to Tasks category', async () => {
-  const quickInput = document.getElementById('quickAddInput');
+  const quickInput = document.getElementById('reminderQuickAdd');
   quickInput.value = 'TASK: mark lesson plans';
 
   await window.memoryCueQuickAddNow();
@@ -138,7 +106,7 @@ test('quick add routes task prefix to Tasks category', async () => {
 });
 
 test('quick add routes reflection prefix to Lesson – Reflections notes folder', async () => {
-  const quickInput = document.getElementById('quickAddInput');
+  const quickInput = document.getElementById('reminderQuickAdd');
   quickInput.value = 'Reflection: Year 8 class responded better to shorter instructions';
 
   const note = await window.memoryCueQuickAddNow();
@@ -189,7 +157,7 @@ test('inbox search parser falls back to keyword-only when no time pattern exists
 
 
 test('quick add stores reminder suggestion when text contains time reference', async () => {
-  const quickInput = document.getElementById('quickAddInput');
+  const quickInput = document.getElementById('reminderQuickAdd');
   quickInput.value = 'Call parents tomorrow 1pm';
 
   await window.memoryCueQuickAddNow();
@@ -200,7 +168,7 @@ test('quick add stores reminder suggestion when text contains time reference', a
 });
 
 test('quick add parses natural language time into due date', async () => {
-  const quickInput = document.getElementById('quickAddInput');
+  const quickInput = document.getElementById('reminderQuickAdd');
   quickInput.value = 'Call parents tomorrow 1pm';
 
   await window.memoryCueQuickAddNow();

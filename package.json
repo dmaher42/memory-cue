@@ -19,6 +19,12 @@
     "testEnvironment": "jsdom",
     "setupFiles": [
       "<rootDir>/jest.setup.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/dist/",
+      "<rootDir>/js/__tests__/helpers/",
+      "<rootDir>/output/",
+      "<rootDir>/tmp/"
     ]
   },
   "devDependencies": {

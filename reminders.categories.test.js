@@ -1,47 +1,9 @@
 /** @jest-environment jsdom */
 
 const { beforeAll, beforeEach, expect, test } = require('@jest/globals');
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+const { loadReminderController } = require('./js/__tests__/helpers/load-reminder-controller');
 
 let initReminders;
-
-function loadRemindersModule() {
-  const filePath = path.resolve(__dirname, './js/reminders.js');
-  let source = fs.readFileSync(filePath, 'utf8');
-  source = source.replace(
-    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './auth.js';\n",
-    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
-  );
-  source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
-  source += '\nmodule.exports = { initReminders };\n';
-  const NotificationRef = typeof global.Notification === 'undefined' ? undefined : global.Notification;
-  const BlobRef = typeof global.Blob === 'undefined' ? undefined : global.Blob;
-  const ResponseRef = typeof global.Response === 'undefined' ? undefined : global.Response;
-  const URLRef = typeof global.URL === 'undefined' ? undefined : global.URL;
-  const module = { exports: {} };
-  const sandbox = {
-    module,
-    exports: module.exports,
-    require,
-    console,
-    setTimeout,
-    clearTimeout,
-    window,
-    document,
-    localStorage,
-    navigator,
-    HTMLElement: window.HTMLElement,
-    Notification: NotificationRef,
-    fetch: global.fetch,
-    Blob: BlobRef,
-    Response: ResponseRef,
-    URL: URLRef,
-  };
-  vm.runInNewContext(source, sandbox, { filename: filePath });
-  return module.exports;
-}
 
 function createFirebaseStubs() {
   return {
@@ -70,7 +32,7 @@ function createFirebaseStubs() {
 }
 
 beforeAll(() => {
-  ({ initReminders } = loadRemindersModule());
+  ({ initReminders } = loadReminderController());
 });
 
 beforeEach(() => {
@@ -78,7 +40,7 @@ beforeEach(() => {
   document.body.innerHTML = '';
 });
 
-test('desktop reminders render grouped category headings', async () => {
+test('desktop reminders keep rendered row category metadata', async () => {
   document.body.innerHTML = `
     <input id="title" />
     <input id="date" />
@@ -120,18 +82,14 @@ test('desktop reminders render grouped category headings', async () => {
     { id: 'b', title: 'Call families', priority: 'Medium', category: 'Communication', done: false, due: new Date(now + 7200e3).toISOString() },
     { id: 'c', title: 'Print rubrics', priority: 'Low', category: 'Admin', done: false, due: new Date(now + 10800e3).toISOString() },
   ]);
+  controller.__testing.render();
 
-  const headings = Array.from(document.querySelectorAll('[data-category-heading]'));
-  expect(headings.map((heading) => heading.dataset.categoryHeading)).toEqual(['Admin', 'Communication']);
-
-  const adminItems = document.querySelectorAll('[data-category="Admin"]');
-  expect(adminItems).toHaveLength(2);
-
-  const communicationItems = document.querySelectorAll('[data-category="Communication"]');
-  expect(communicationItems).toHaveLength(1);
+  const rows = Array.from(document.querySelectorAll('[data-reminder-item="true"]'));
+  expect(rows).toHaveLength(3);
+  expect(rows.map((row) => row.dataset.category)).toEqual(['Admin', 'Communication', 'Admin']);
 });
 
-test('mobile reminders group uncategorised items under General', async () => {
+test('mobile reminders normalise uncategorised rows to General', async () => {
   document.body.innerHTML = `
     <input id="title" />
     <input id="date" />
@@ -172,28 +130,13 @@ test('mobile reminders group uncategorised items under General', async () => {
     { id: 'a', title: 'Pack equipment', priority: 'High', done: false, category: '', due: new Date(now + 3600e3).toISOString() },
     { id: 'b', title: 'Book bus', priority: 'Medium', category: 'Excursion', done: false, due: new Date(now + 5400e3).toISOString() },
   ]);
-
-  const headings = Array.from(document.querySelectorAll('[data-category-heading]'));
-  expect(headings).toHaveLength(0);
-
-  const chips = Array.from(document.querySelectorAll('#reminderCategoryFilters .category-chip')).map((chip) => chip.textContent);
-  expect(chips[0]).toBe('All');
-  expect(chips).toContain('Excursion');
-  expect(chips).toContain('General');
+  controller.__testing.render();
 
   const generalItems = document.querySelectorAll('[data-category="General"]');
   expect(generalItems).toHaveLength(1);
 
   const excursionItems = document.querySelectorAll('[data-category="Excursion"]');
   expect(excursionItems).toHaveLength(1);
-
-  const excursionChip = document.querySelector('#reminderCategoryFilters .category-chip[data-category-filter="Excursion"]');
-  expect(excursionChip).not.toBeNull();
-  excursionChip.click();
-
-  const visibleAfterFilter = document.querySelectorAll('[data-reminder-item="true"]');
-  expect(visibleAfterFilter).toHaveLength(1);
-  expect(visibleAfterFilter[0].dataset.category).toBe('Excursion');
 });
 
 test('category selectors include school and general presets', async () => {

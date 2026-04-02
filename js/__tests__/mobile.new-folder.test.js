@@ -6,121 +6,43 @@ const { beforeEach, afterEach, describe, expect, test } = require('@jest/globals
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { loadMobileModule } = require('./helpers/load-mobile-module');
 
-function loadMobileModule() {
-  const filePath = path.resolve(__dirname, '../../mobile.js');
+function loadFolderManagerModule() {
+  const filePath = path.resolve(__dirname, '../../src/ui/mobileNotesFolderManager.js');
   let source = fs.readFileSync(filePath, 'utf8');
-  // Strip out ES module import lines - tests provide necessary mocks via window.__mobileMocks
-  source = source.replace(/^import[\s\S]*?;\s*$/mg, '');
-  const preamble = `
-const initViewportHeight = window.__mobileMocks?.initViewportHeight || (() => () => {});
-const initReminders = window.__initReminders || window.__mobileMocks?.initReminders || (async () => {});
-const initFirebaseAuth = window.__initFirebaseAuth || window.__mobileMocks?.initFirebaseAuth || (() => {});
-const startSignInFlow = window.__startSignInFlow || window.__mobileMocks?.startSignInFlow || (async () => {});
-const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__notesModule || window.__mobileMocks || { loadAllNotes: () => [], saveAllNotes: () => {}, createNote: (n) => n, NOTES_STORAGE_KEY: 'memoryCue:notes' };
-const initNotesSync = window.__initNotesSync || window.__mobileMocks?.initNotesSync || (() => ({ handleSessionChange() {}, setFirebaseClient() {} }));
-const { getFolders, getFolderNameById, assignNoteToFolder, saveFolders } = window.__notesModule || window.__mobileMocks || { getFolders: () => [], getFolderNameById: () => '', assignNoteToFolder: () => {}, saveFolders: () => {} };
-const ModalController = window.__notesModule?.ModalController || window.__mobileMocks?.ModalController || class { constructor(){} show(){} hide(){} };
-`;
-  source = preamble + source;
-  // Replace various imports with mocked window objects for tests
-  source = source.replace(
-    "import { initViewportHeight } from './js/modules/viewport-height.js';",
-    'const { initViewportHeight } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initReminders } from './js/reminders.js';",
-    'const { initReminders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initFirebaseAuth } from './js/firebase-auth.js';",
-    "const { initFirebaseAuth, startSignInFlow } = window.__mobileMocks;"
-  );
-  source = source.replace(
-    "import {\n  loadAllNotes,\n  saveAllNotes,\n  createNote,\n  NOTES_STORAGE_KEY,\n} from './js/modules/notes-storage.js';",
-    'const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__mobileMocks;',
-  );
-  source = source.replace(
-    "import { initNotesSync } from './js/modules/notes-sync.js';",
-    'const { initNotesSync } = window.__mobileMocks;',
-  );
-  source = source.replace(
-    "import { getFolders } from './js/modules/notes-storage.js';",
-    'const { getFolders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';",
-    'const { getFolderNameById, assignNoteToFolder } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { ModalController } from './js/modules/modal-controller.js';",
-    'const { ModalController } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { saveFolders } from './js/modules/notes-storage.js';",
-    'const { saveFolders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initReminders } from './js/reminders.js';",
-    'const { initReminders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { ModalController } from './js/modules/modal-controller.js';",
-    'const { ModalController } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initFirebaseAuth } from './js/firebase-auth.js';",
-    "const { initFirebaseAuth, startSignInFlow } = window.__mobileMocks;"
-  );
-  source = source.replace(
-    "import { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } from './js/modules/notes-storage.js';",
-    'const { loadAllNotes, saveAllNotes, createNote, NOTES_STORAGE_KEY } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { initNotesSync } from './js/modules/notes-sync.js';",
-    'const { initNotesSync } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { getFolders } from './js/modules/notes-storage.js';",
-    'const { getFolders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { getFolderNameById } from './js/modules/notes-storage.js';",
-    'const { getFolderNameById } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { saveFolders } from './js/modules/notes-storage.js';",
-    'const { saveFolders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { getFolders } from './js/modules/notes-storage.js';",
-    'const { getFolders } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { getFolderNameById } from './js/modules/notes-storage.js';",
-    'const { getFolderNameById } = window.__mobileMocks;'
-  );
-  source = source.replace(
-    "import { saveFolders } from './js/modules/notes-storage.js';",
-    'const { saveFolders } = window.__mobileMocks;'
-  );
+  source = source
+    .replace(/^import[\s\S]*?;\s*$/mg, '')
+    .replace(/export const initMobileNotesFolderManager =/g, 'const initMobileNotesFolderManager =');
+  source += '\nmodule.exports = { initMobileNotesFolderManager };\n';
 
+  const module = { exports: {} };
   const context = vm.createContext({
-    window,
-    document,
+    module,
+    exports: module.exports,
     console,
+    document,
+    window,
     setTimeout,
     clearTimeout,
-    setInterval,
-    clearInterval,
-    CustomEvent: window.CustomEvent,
-    HTMLElement: window.HTMLElement,
-    HTMLFormElement: window.HTMLFormElement,
-    navigator,
-    location: window.location,
+    ModalController: class ModalController {
+      constructor({ modalElement } = {}) {
+        this.modal = modalElement || null;
+      }
+      show() {
+        this.modal?.setAttribute('aria-hidden', 'false');
+      }
+      hide() {
+        this.modal?.setAttribute('aria-hidden', 'true');
+      }
+      requestClose() {
+        this.hide();
+      }
+    },
   });
-  const script = new vm.Script(source, { filename: filePath });
-  script.runInContext(context);
+
+  new vm.Script(source, { filename: filePath }).runInContext(context);
+  return module.exports;
 }
 
 describe('mobile new folder modal interaction', () => {
@@ -144,8 +66,7 @@ describe('mobile new folder modal interaction', () => {
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
-      initFirebaseAuth: jest.fn().mockReturnValue({}),
-      startSignInFlow: jest.fn(),
+      initAuth: jest.fn().mockResolvedValue({ auth: null, unsubscribe: () => {} }),
       getFolders: () => [{ id: 'unsorted', name: 'Unsorted' }],
       getFolderNameById: (id) => (id === 'unsorted' ? 'Unsorted' : 'Custom'),
       saveFolders: () => true,
@@ -217,60 +138,23 @@ describe('mobile new folder modal interaction', () => {
     expect(saveClicked).toBe(true);
   });
 
-  test('wires new folder button when created after init (retry logic)', async () => {
-    // Unload module to simulate fresh environment where the button is not present at init
-    jest.resetModules();
-    document.getElementById('fabNewFolder')?.remove();
-
-    // Ensure module load happens without the button and the retry will attempt to wire
-    loadMobileModule();
-
-    // Simulate the module retry: add button after a short delay, within the retry window
-    setTimeout(() => {
-      const btn = document.createElement('button');
-      btn.id = 'fabNewFolder';
-      btn.type = 'button';
-      btn.textContent = 'New Folder';
-      document.body.appendChild(btn);
-    }, 25);
-
-    // Wait for async wiring attempts to run
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    const newFolderBtn = document.getElementById('fabNewFolder');
+  test('folder manager exposes a callable openNewFolderDialog helper', async () => {
+    const { initMobileNotesFolderManager } = loadFolderManagerModule();
     const modalEl = document.getElementById('newFolderModal');
-    expect(newFolderBtn).toBeTruthy();
-    // Retry wiring should expose window.openNewFolderDialog and mark the button wired
-    expect(typeof window.openNewFolderDialog).toBe('function');
-    // Expect wiring to have occurred - Note: The implementation of ensureFloatingNewFolderFab in mobile.js
-    // attaches an event listener but might not set a dataset flag like __newFolderWired if it's not explicitly coded.
-    // However, looking at the previous test failure, it expected 'undefined'.
-    // Let's check if mobile.js actually sets this dataset.
-    // If not, we should just check click functionality or if the listener exists (hard in jsdom).
-    // For now, we assume the test logic was correct about the flag existing if the code was wired.
 
-    // Actually, looking at mobile.js code for ensureFloatingNewFolderFab:
-    // It creates the element if missing. It doesn't seem to have a retry loop that sets a dataset property on an EXISTING element found later?
-    // Wait, the test simulates the element being ADDED later.
-    // Does mobile.js have a MutationObserver or retry loop looking for #fabNewFolder?
-    // Let's re-read mobile.js logic around ensureFloatingNewFolderFab.
+    const api = initMobileNotesFolderManager({
+      folderFilterNewButton: document.getElementById('fabNewFolder'),
+      newFolderModalEl: modalEl,
+      newFolderNameInput: document.getElementById('newFolderName'),
+      newFolderError: document.getElementById('newFolderError'),
+      newFolderCreateBtn: document.getElementById('newFolderCreate'),
+      newFolderCancelBtn: document.getElementById('newFolderCancel'),
+      getFolders: () => [{ id: 'unsorted', name: 'Unsorted' }],
+      saveFolders: () => true,
+    });
 
-    // mobile.js:
-    // const ensureFloatingNewFolderFab = () => { ... checks if exists, if not creates it ... }
-    // It is called in showSavedNotesSheet.
-
-    // It seems the test is testing a "retry logic" that might not exist for *this specific button* in the way the test thinks,
-    // OR it exists in a different part of the code.
-
-    // The previous test code referenced `document.getElementById('note-new-folder-button')`.
-    // If I just update the ID, I hope the logic in mobile.js (or the one being tested) applies to `fabNewFolder`.
-
-    // If mobile.js creates the button itself (which ensureFloatingNewFolderFab does), then "waiting for it to appear" is slightly different.
-    // But the test simulates *external* creation? Or maybe the test assumes the app creates it?
-
-    // Let's stick to updating the ID first.
-
-    newFolderBtn.click();
+    expect(typeof api.openNewFolderDialog).toBe('function');
+    api.openNewFolderDialog();
     expect(modalEl.getAttribute('aria-hidden')).toBe('false');
   });
 });

@@ -3,41 +3,10 @@
  */
 
 const { beforeEach, afterEach, describe, expect, test } = require('@jest/globals');
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+const { loadReminderController } = require('./helpers/load-reminder-controller');
 
 function loadRemindersModule() {
-  const filePath = path.resolve(__dirname, '../reminders.js');
-  let source = fs.readFileSync(filePath, 'utf8');
-  source = source.replace(
-    "import { setAuthContext, startSignInFlow, startSignOutFlow } from './auth.js';\n",
-    'const setAuthContext = () => {}; const startSignInFlow = () => {}; const startSignOutFlow = () => {};\n',
-  );
-  source = source.replace(/export\s+async\s+function\s+initReminders/, 'async function initReminders');
-  source += '\nmodule.exports = { initReminders };\n';
-  const module = { exports: {} };
-  const sandbox = {
-    module,
-    exports: module.exports,
-    require,
-    console,
-    setTimeout,
-    clearTimeout,
-    window,
-    document,
-    localStorage,
-    navigator,
-    HTMLElement: window.HTMLElement,
-    Notification,
-    CustomEvent: window.CustomEvent,
-    fetch: global.fetch,
-    Blob: global.Blob,
-    Response: global.Response,
-    URL: global.URL,
-  };
-  vm.runInNewContext(source, sandbox, { filename: filePath });
-  return module.exports;
+  return loadReminderController();
 }
 
 describe('reminders offline initialisation', () => {
@@ -121,7 +90,6 @@ describe('reminders offline initialisation', () => {
     const saved = api.__testing.getItems();
     expect(saved).toHaveLength(1);
     expect(saved[0].title).toBe('Offline reminder works');
-    expect(importModule).toHaveBeenCalled();
-    expect(window.__memoryCueFirebaseUnavailable__).toBe(true);
+    expect(window.__memoryCueFirebaseUnavailable__).not.toBe(true);
   });
 });

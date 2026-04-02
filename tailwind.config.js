@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./*.html","./**/*.html","./**/*.js"],
+  content: ["./*.html", "./js/**/*.js", "./src/**/*.js"],
   // If you want manual dark-mode toggling via class, uncomment:
   // darkMode: "class",
   theme: {
