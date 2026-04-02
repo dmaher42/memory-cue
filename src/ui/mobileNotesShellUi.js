@@ -70,7 +70,7 @@ const NOTEBOOK_POLISH_CSS = `
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
-  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-toggle {
+  .mobile-panel--notes .teacher-toolbar-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.38rem;
@@ -85,13 +85,13 @@ const NOTEBOOK_POLISH_CSS = `
     color: var(--text-main, #231B2E);
   }
 
-  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-toggle::after {
+  .mobile-panel--notes .teacher-toolbar-toggle::after {
     content: '▾';
     font-size: 0.72rem;
     opacity: 0.7;
   }
 
-  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-toggle[data-expanded="true"]::after {
+  .mobile-panel--notes .teacher-toolbar-toggle[data-expanded="true"]::after {
     transform: rotate(180deg);
   }
 
@@ -450,6 +450,11 @@ export const initMobileNotesShellUi = (options = {}) => {
       return null;
     }
 
+    const actionsRow = headerBlock.querySelector('.note-editor-actions-row');
+    if (!(actionsRow instanceof HTMLElement)) {
+      return null;
+    }
+
     const existingBar = headerBlock.querySelector('[data-teacher-mode-editor-bar]');
     if (existingBar instanceof HTMLElement) {
       return existingBar;
@@ -457,14 +462,37 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     const bar = document.createElement('div');
     bar.dataset.teacherModeEditorBar = 'true';
-    bar.className = 'note-editor-actions-row';
-    headerBlock.appendChild(bar);
+    bar.className = 'teacher-toolbar-host';
+    actionsRow.insertAdjacentElement('afterend', bar);
     return bar;
+  };
+
+  const ensureTeacherModeToggleButton = () => {
+    const headerBlock = noteEditorSheet?.querySelector('.scratch-notes-header-block');
+    if (!(headerBlock instanceof HTMLElement)) {
+      return null;
+    }
+    const actionsRow = headerBlock.querySelector('.note-editor-actions-row');
+    if (!(actionsRow instanceof HTMLElement)) {
+      return null;
+    }
+    const existingButton = actionsRow.querySelector('[data-teacher-mode-toggle]');
+    if (existingButton instanceof HTMLButtonElement) {
+      return existingButton;
+    }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'note-inline-action teacher-toolbar-toggle';
+    button.dataset.teacherModeToggle = 'true';
+    button.textContent = 'Lesson';
+    actionsRow.appendChild(button);
+    return button;
   };
 
   const renderTeacherModeEditorBar = () => {
     const bar = ensureTeacherModeEditorBar();
-    if (!(bar instanceof HTMLElement)) {
+    const toggleButton = ensureTeacherModeToggleButton();
+    if (!(bar instanceof HTMLElement) || !(toggleButton instanceof HTMLButtonElement)) {
       return;
     }
 
@@ -485,10 +513,13 @@ export const initMobileNotesShellUi = (options = {}) => {
       )
     );
     if (!shouldShowTeacherTools) {
+      toggleButton.hidden = true;
       bar.hidden = true;
       bar.innerHTML = '';
       return;
     }
+    toggleButton.hidden = false;
+    toggleButton.dataset.expanded = teacherEditorToolsExpanded ? 'true' : 'false';
     bar.hidden = false;
     const sourceNoteId = lessonContext?.sourceNoteId || null;
     const cueNoteId = lessonContext?.cueNoteId || null;
@@ -522,12 +553,6 @@ export const initMobileNotesShellUi = (options = {}) => {
       : '';
 
     bar.innerHTML = `
-      <button
-        type="button"
-        class="teacher-toolbar-toggle"
-        data-teacher-mode-toggle="true"
-        data-expanded="${teacherEditorToolsExpanded ? 'true' : 'false'}"
-      >Lesson</button>
       <div class="teacher-toolbar-panel"${teacherEditorToolsExpanded ? '' : ' hidden'}>
         <div class="teacher-toolbar-shell w-full rounded-xl border border-base-300 bg-base-100/80">
           <div class="teacher-toolbar-section">
@@ -632,6 +657,9 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   ensureTeacherModeEditorBar()?.addEventListener('click', (event) => {
+    void handleTeacherModeEditorAction(event);
+  });
+  ensureTeacherModeToggleButton()?.addEventListener('click', (event) => {
     void handleTeacherModeEditorAction(event);
   });
 
