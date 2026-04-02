@@ -33,8 +33,34 @@ const NOTEBOOK_POLISH_CSS = `
     letter-spacing: 0.01em;
   }
 
+  #view-notebook .notes-overview-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  #view-notebook .notes-overview-heading h2 {
+    margin: 0;
+  }
+
+  #view-notebook .notes-overview-toggle {
+    min-height: 28px;
+    padding: 0.26rem 0.72rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-main, #231B2E);
+  }
+
   #view-notebook #notesOverviewList {
     gap: 0.5rem;
+  }
+
+  #view-notebook #notesOverviewList[hidden] {
+    display: none !important;
   }
 
   #view-notebook #notesOverviewList .note-item-mobile {
@@ -451,6 +477,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
   let currentNoteOptionsFocusRestoreEl = null;
+  let notesOverviewCollapsed = true;
   let teacherEditorToolsExpanded = false;
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
@@ -726,6 +753,62 @@ export const initMobileNotesShellUi = (options = {}) => {
   });
   ensureTeacherModeToggleButton()?.addEventListener('click', (event) => {
     void handleTeacherModeEditorAction(event);
+  });
+
+  const ensureNotesOverviewHeader = () => {
+    if (!(notesOverviewPanel instanceof HTMLElement)) {
+      return { headingEl: null, toggleEl: null, titleEl: null };
+    }
+
+    let titleEl = notesOverviewPanel.querySelector(':scope > h2');
+    if (!(titleEl instanceof HTMLElement)) {
+      return { headingEl: null, toggleEl: null, titleEl: null };
+    }
+
+    let headingEl = notesOverviewPanel.querySelector(':scope > .notes-overview-heading');
+    if (!(headingEl instanceof HTMLElement)) {
+      headingEl = document.createElement('div');
+      headingEl.className = 'notes-overview-heading';
+      notesOverviewPanel.insertBefore(headingEl, titleEl);
+      headingEl.appendChild(titleEl);
+    }
+
+    let toggleEl = headingEl.querySelector('.notes-overview-toggle');
+    if (!(toggleEl instanceof HTMLButtonElement)) {
+      toggleEl = document.createElement('button');
+      toggleEl.type = 'button';
+      toggleEl.className = 'notes-overview-toggle';
+      toggleEl.dataset.notesOverviewToggle = 'true';
+      headingEl.appendChild(toggleEl);
+    }
+
+    return { headingEl, toggleEl, titleEl };
+  };
+
+  const renderNotesOverviewToggle = () => {
+    const { toggleEl } = ensureNotesOverviewHeader();
+    const listEl = notesOverviewPanel?.querySelector('#notesOverviewList');
+    if (!(toggleEl instanceof HTMLButtonElement) || !(listEl instanceof HTMLElement)) {
+      return;
+    }
+    listEl.hidden = notesOverviewCollapsed;
+    toggleEl.textContent = notesOverviewCollapsed ? 'Open' : 'Close';
+    toggleEl.setAttribute('aria-expanded', notesOverviewCollapsed ? 'false' : 'true');
+    toggleEl.setAttribute('aria-controls', 'notesOverviewList');
+  };
+
+  ensureNotesOverviewHeader();
+  renderNotesOverviewToggle();
+  notesOverviewPanel?.addEventListener('click', (event) => {
+    const toggle = event.target instanceof HTMLElement
+      ? event.target.closest('[data-notes-overview-toggle]')
+      : null;
+    if (!(toggle instanceof HTMLButtonElement)) {
+      return;
+    }
+    event.preventDefault();
+    notesOverviewCollapsed = !notesOverviewCollapsed;
+    renderNotesOverviewToggle();
   });
 
   const ensureActiveLessonCard = () => {
