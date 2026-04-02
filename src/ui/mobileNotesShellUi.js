@@ -70,8 +70,41 @@ const NOTEBOOK_POLISH_CSS = `
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    min-height: 2rem;
+    padding: 0.38rem 0.74rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
+    color: var(--text-main, #231B2E);
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-toggle::after {
+    content: '▾';
+    font-size: 0.72rem;
+    opacity: 0.7;
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-toggle[data-expanded="true"]::after {
+    transform: rotate(180deg);
+  }
+
+  .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-panel {
+    padding: 0.4rem 0 0;
+  }
+
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-shell {
     padding: 0.58rem 0.62rem;
+    border-radius: 0.95rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-copy {
@@ -353,6 +386,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
   let currentNoteOptionsFocusRestoreEl = null;
+  let teacherEditorToolsExpanded = false;
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
 
@@ -440,6 +474,22 @@ export const initMobileNotesShellUi = (options = {}) => {
       : null;
     const lessonContext = currentNote ? getTeacherLessonContext(currentNote, getAllNotes()) : null;
     const hasCurrentNote = Boolean(currentNote);
+    const shouldShowTeacherTools = Boolean(
+      hasCurrentNote
+      && (
+        lessonContext?.isTeachingNote
+        || lessonContext?.isCueNote
+        || lessonContext?.hasLessonPair
+        || lessonContext?.cueNoteId
+        || lessonContext?.sourceNoteId
+      )
+    );
+    if (!shouldShowTeacherTools) {
+      bar.hidden = true;
+      bar.innerHTML = '';
+      return;
+    }
+    bar.hidden = false;
     const sourceNoteId = lessonContext?.sourceNoteId || null;
     const cueNoteId = lessonContext?.cueNoteId || null;
     const currentTeacherView = getCurrentTeacherView() === 'cue' ? 'cue' : 'plan';
@@ -472,45 +522,63 @@ export const initMobileNotesShellUi = (options = {}) => {
       : '';
 
     bar.innerHTML = `
-      <div class="teacher-toolbar-shell w-full rounded-xl border border-base-300 bg-base-100/80">
-        <div class="teacher-toolbar-section">
-          <div class="teacher-toolbar-row">
-            <button
-              type="button"
-              class="note-inline-action"
-              data-teacher-mode-action="cue"
-              ${hasCurrentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
-            >${escapeHtml(cueLabel)}</button>
-            <button
-              type="button"
-              class="note-inline-action"
-              data-teacher-mode-action="active"
-              ${activeLessonTargetId ? `data-note-id="${escapeHtml(activeLessonTargetId)}"` : 'disabled'}
-              ${activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId) ? 'data-selected="true"' : 'data-selected="false"'}
-            >${escapeHtml(activeLessonLabel)}</button>
-            <button
-              type="button"
-              class="note-inline-action"
-              data-teacher-mode-action="lesson-plan"
-              ${canShowPlanToggle ? `data-note-id="${escapeHtml(sourceNoteId || '')}"` : 'disabled'}
-              ${currentTeacherView === 'plan' ? 'data-selected="true"' : 'data-selected="false"'}
-            >Lesson Plan</button>
-            <button
-              type="button"
-              class="note-inline-action"
-              data-teacher-mode-action="lesson-cue"
-              ${canShowCueToggle ? `data-note-id="${escapeHtml(cueNoteId || sourceNoteId || '')}"` : 'disabled'}
-              ${cueNoteId ? '' : 'data-generate-cue="true"'}
-              ${currentTeacherView === 'cue' && canShowCueToggle ? 'data-selected="true"' : 'data-selected="false"'}
-            >Lesson Cue</button>
+      <button
+        type="button"
+        class="teacher-toolbar-toggle"
+        data-teacher-mode-toggle="true"
+        data-expanded="${teacherEditorToolsExpanded ? 'true' : 'false'}"
+      >Lesson</button>
+      <div class="teacher-toolbar-panel"${teacherEditorToolsExpanded ? '' : ' hidden'}>
+        <div class="teacher-toolbar-shell w-full rounded-xl border border-base-300 bg-base-100/80">
+          <div class="teacher-toolbar-section">
+            <div class="teacher-toolbar-row">
+              <button
+                type="button"
+                class="note-inline-action"
+                data-teacher-mode-action="cue"
+                ${hasCurrentNote ? `data-note-id="${escapeHtml(currentNote.id || '')}"` : 'disabled'}
+              >${escapeHtml(cueLabel)}</button>
+              <button
+                type="button"
+                class="note-inline-action"
+                data-teacher-mode-action="active"
+                ${activeLessonTargetId ? `data-note-id="${escapeHtml(activeLessonTargetId)}"` : 'disabled'}
+                ${activeLessonTargetId && isActiveLessonNoteId(activeLessonTargetId) ? 'data-selected="true"' : 'data-selected="false"'}
+              >${escapeHtml(activeLessonLabel)}</button>
+              <button
+                type="button"
+                class="note-inline-action"
+                data-teacher-mode-action="lesson-plan"
+                ${canShowPlanToggle ? `data-note-id="${escapeHtml(sourceNoteId || '')}"` : 'disabled'}
+                ${currentTeacherView === 'plan' ? 'data-selected="true"' : 'data-selected="false"'}
+              >Lesson Plan</button>
+              <button
+                type="button"
+                class="note-inline-action"
+                data-teacher-mode-action="lesson-cue"
+                ${canShowCueToggle ? `data-note-id="${escapeHtml(cueNoteId || sourceNoteId || '')}"` : 'disabled'}
+                ${cueNoteId ? '' : 'data-generate-cue="true"'}
+                ${currentTeacherView === 'cue' && canShowCueToggle ? 'data-selected="true"' : 'data-selected="false"'}
+              >Lesson Cue</button>
+            </div>
           </div>
+          ${lessonStepMarkup}
         </div>
-        ${lessonStepMarkup}
       </div>
     `;
   };
 
   const handleTeacherModeEditorAction = async (event) => {
+    const toggleButton = event.target instanceof HTMLElement
+      ? event.target.closest('[data-teacher-mode-toggle]')
+      : null;
+    if (toggleButton instanceof HTMLButtonElement) {
+      event.preventDefault();
+      teacherEditorToolsExpanded = !teacherEditorToolsExpanded;
+      renderTeacherModeEditorBar();
+      return;
+    }
+
     const actionButton = event.target instanceof HTMLElement
       ? event.target.closest('[data-teacher-mode-action]')
       : null;
