@@ -164,6 +164,33 @@ const NOTEBOOK_POLISH_CSS = `
     gap: 0.34rem;
   }
 
+  .mobile-panel--notes .note-sections-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.34rem;
+    width: fit-content;
+    min-height: 28px;
+    padding: 0.28rem 0.68rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: var(--text-main, #231B2E);
+    white-space: nowrap;
+  }
+
+  .mobile-panel--notes .note-sections-toggle::after {
+    content: '▾';
+    font-size: 0.7rem;
+    opacity: 0.65;
+    transition: transform 0.16s ease;
+  }
+
+  .mobile-panel--notes .note-sections-toggle[data-expanded="true"]::after {
+    transform: rotate(180deg);
+  }
+
   .mobile-panel--notes .note-sections-row {
     display: flex;
     gap: 0.34rem;
@@ -529,6 +556,8 @@ export const initMobileNotesShellUi = (options = {}) => {
   let notesOverviewCollapsed = true;
   let teacherEditorToolsExpanded = false;
   let activeNoteSectionLabel = '';
+  let noteSectionsExpanded = false;
+  let noteSectionsKey = '';
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
   const NOTE_SECTION_MAX_VISIBLE = 6;
@@ -761,9 +790,19 @@ export const initMobileNotesShellUi = (options = {}) => {
     const visibleSections = getVisibleNoteSections(sections);
     if (visibleSections.length < 2) {
       activeNoteSectionLabel = '';
+      noteSectionsExpanded = false;
+      noteSectionsKey = '';
       bar.hidden = true;
       bar.innerHTML = '';
       return;
+    }
+
+    const nextSectionsKey = visibleSections
+      .map((section) => section.normalized || normalizeSectionLabel(section.label || ''))
+      .join('|');
+    if (noteSectionsKey !== nextSectionsKey) {
+      noteSectionsKey = nextSectionsKey;
+      noteSectionsExpanded = false;
     }
 
     const normalizedSectionLabels = visibleSections
@@ -775,16 +814,24 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     bar.hidden = false;
     bar.innerHTML = `
-      <div class="note-sections-row">
-        ${visibleSections.map((section) => `
-          <button
-            type="button"
-            class="note-section-chip"
-            data-note-section-jump="${escapeHtml(section.label || '')}"
-            data-selected="${(section.normalized || normalizeSectionLabel(section.label || '')) === activeNoteSectionLabel ? 'true' : 'false'}"
-          >${escapeHtml(section.label || '')}</button>
-        `).join('')}
-      </div>
+      <button
+        type="button"
+        class="note-sections-toggle"
+        data-note-sections-toggle="true"
+        data-expanded="${noteSectionsExpanded ? 'true' : 'false'}"
+      >Sections</button>
+      ${noteSectionsExpanded ? `
+        <div class="note-sections-row">
+          ${visibleSections.map((section) => `
+            <button
+              type="button"
+              class="note-section-chip"
+              data-note-section-jump="${escapeHtml(section.label || '')}"
+              data-selected="${(section.normalized || normalizeSectionLabel(section.label || '')) === activeNoteSectionLabel ? 'true' : 'false'}"
+            >${escapeHtml(section.label || '')}</button>
+          `).join('')}
+        </div>
+      ` : ''}
     `;
   };
 
@@ -818,6 +865,16 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   const handleNoteSectionJump = (event) => {
+    const toggleButton = event.target instanceof HTMLElement
+      ? event.target.closest('[data-note-sections-toggle]')
+      : null;
+    if (toggleButton instanceof HTMLButtonElement) {
+      event.preventDefault();
+      noteSectionsExpanded = !noteSectionsExpanded;
+      renderNoteSectionsBar();
+      return;
+    }
+
     const jumpButton = event.target instanceof HTMLElement
       ? event.target.closest('[data-note-section-jump]')
       : null;
