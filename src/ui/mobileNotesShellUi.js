@@ -190,6 +190,12 @@ const NOTEBOOK_POLISH_CSS = `
     white-space: nowrap;
   }
 
+  .mobile-panel--notes .note-section-chip[data-selected="true"] {
+    background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
+    border-color: color-mix(in srgb, var(--accent-color, #512663) 30%, transparent);
+    font-weight: 700;
+  }
+
   #view-notebook .note-inline-action {
     min-height: 32px;
     padding: 0.42rem 0.78rem;
@@ -522,6 +528,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let currentNoteOptionsFocusRestoreEl = null;
   let notesOverviewCollapsed = true;
   let teacherEditorToolsExpanded = false;
+  let activeNoteSectionLabel = '';
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
 
@@ -693,9 +700,17 @@ export const initMobileNotesShellUi = (options = {}) => {
       ? window.getCurrentNoteSections()
       : [];
     if (!Array.isArray(sections) || sections.length < 2) {
+      activeNoteSectionLabel = '';
       bar.hidden = true;
       bar.innerHTML = '';
       return;
+    }
+
+    const normalizedSectionLabels = sections
+      .map((section) => normalizeSectionLabel(section.label || ''))
+      .filter(Boolean);
+    if (!normalizedSectionLabels.includes(activeNoteSectionLabel)) {
+      activeNoteSectionLabel = normalizedSectionLabels[0] || '';
     }
 
     bar.hidden = false;
@@ -706,10 +721,40 @@ export const initMobileNotesShellUi = (options = {}) => {
             type="button"
             class="note-section-chip"
             data-note-section-jump="${escapeHtml(section.label || '')}"
+            data-selected="${normalizeSectionLabel(section.label || '') === activeNoteSectionLabel ? 'true' : 'false'}"
           >${escapeHtml(section.label || '')}</button>
         `).join('')}
       </div>
     `;
+  };
+
+  const findScrollContainer = (startEl) => {
+    let current = startEl?.parentElement || null;
+    while (current) {
+      const styles = window.getComputedStyle(current);
+      const overflowY = styles?.overflowY || '';
+      if ((overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight) {
+        return current;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  };
+
+  const getOffsetWithinContainer = (target, container) => {
+    let offset = 0;
+    let current = target;
+    while (current && current !== container) {
+      offset += current.offsetTop || 0;
+      current = current.offsetParent;
+    }
+    return offset;
+  };
+
+  const getNoteSectionScrollOffset = () => {
+    const toolbar = noteEditorSheet?.querySelector('.note-editor-toolbar');
+    const toolbarHeight = toolbar instanceof HTMLElement ? toolbar.getBoundingClientRect().height : 0;
+    return toolbarHeight + 12;
   };
 
   const handleNoteSectionJump = (event) => {
@@ -727,11 +772,19 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
-    try {
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch {
-      targetElement.scrollIntoView(true);
+    activeNoteSectionLabel = normalizeSectionLabel(targetLabel);
+    renderNoteSectionsBar();
+
+    const offset = getNoteSectionScrollOffset();
+    const scrollContainer = findScrollContainer(targetElement);
+    if (scrollContainer instanceof HTMLElement) {
+      const targetTop = Math.max(0, getOffsetWithinContainer(targetElement, scrollContainer) - offset);
+      scrollContainer.scrollTo({ top: targetTop, behavior: 'smooth' });
+      return;
     }
+
+    const viewportTop = targetElement.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, viewportTop), behavior: 'smooth' });
   };
 
   const renderTeacherModeEditorBar = () => {
