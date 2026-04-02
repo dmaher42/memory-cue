@@ -568,6 +568,8 @@ export const initMobileNotesShellUi = (options = {}) => {
   const NOTE_SECTION_MAX_VISIBLE = 6;
   const NOTE_SECTION_PRIORITY = [
     'goal',
+    'warm up',
+    'warm-up',
     'say',
     'teach',
     'drill',

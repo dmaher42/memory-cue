@@ -1334,7 +1334,8 @@ const initMobileNotes = () => {
       .trim();
   };
 
-  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice|drill|drills)\b[:\-–—]?\s*/i;
+  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice|drill|drills|warm up|warm-up)\b[:\-–—]?\s*/i;
+  const NOTE_SECTION_INLINE_LABEL_PATTERN = /^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-–—]\s+\S/i;
 
   const normalizeSectionLabel = (value = '') => value
     .replace(/\u00a0/g, ' ')
@@ -1351,6 +1352,26 @@ const initMobileNotes = () => {
       .split(/\s+/)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
       .join(' ');
+  };
+
+  const extractInlineSectionLabel = (rawText = '') => {
+    const normalizedText = normalizeSectionLabel(rawText).toLowerCase();
+    if (!normalizedText) {
+      return '';
+    }
+
+    const inlineMatch = normalizedText.match(NOTE_SECTION_INLINE_LABEL_PATTERN);
+    if (!inlineMatch?.[1]) {
+      return '';
+    }
+
+    const candidate = formatSectionLabel(inlineMatch[1]);
+    const wordCount = candidate.split(/\s+/).filter(Boolean).length;
+    if (!candidate || wordCount > 3 || candidate.length > 24) {
+      return '';
+    }
+
+    return candidate;
   };
 
   // Build a lightweight section index from headings or cue-style labels inside the note.
@@ -1378,7 +1399,10 @@ const initMobileNotes = () => {
         const prefixMatch = rawText.match(NOTE_SECTION_PREFIX_PATTERN);
         if (prefixMatch?.[1]) {
           label = formatSectionLabel(prefixMatch[1]);
-        } else if (/[：:]$/.test((block.textContent || '').trim())) {
+        } else {
+          label = extractInlineSectionLabel(rawText);
+        }
+        if (!label && /[：:]$/.test((block.textContent || '').trim())) {
           const wordCount = rawText.split(/\s+/).filter(Boolean).length;
           if (wordCount <= 5 && rawText.length <= 42) {
             label = formatSectionLabel(rawText);
