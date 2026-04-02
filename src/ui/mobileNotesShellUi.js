@@ -161,29 +161,29 @@ const NOTEBOOK_POLISH_CSS = `
 
   .mobile-panel--notes .note-sections-bar {
     display: grid;
-    gap: 0.34rem;
+    gap: 0.22rem;
   }
 
   .mobile-panel--notes .note-sections-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.34rem;
+    gap: 0.24rem;
     width: fit-content;
-    min-height: 28px;
-    padding: 0.28rem 0.68rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
-    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
-    font-size: 0.73rem;
+    min-height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 0.68rem;
     font-weight: 600;
-    color: var(--text-main, #231B2E);
+    letter-spacing: 0.02em;
+    color: color-mix(in srgb, var(--text-main, #231B2E) 60%, #7c8798 40%);
     white-space: nowrap;
   }
 
   .mobile-panel--notes .note-sections-toggle::after {
     content: '▾';
-    font-size: 0.7rem;
-    opacity: 0.65;
+    font-size: 0.62rem;
+    opacity: 0.55;
     transition: transform 0.16s ease;
   }
 
@@ -206,14 +206,14 @@ const NOTEBOOK_POLISH_CSS = `
 
   .mobile-panel--notes .note-section-chip {
     flex: 0 0 auto;
-    min-height: 28px;
-    padding: 0.28rem 0.68rem;
+    min-height: 26px;
+    padding: 0.24rem 0.58rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
-    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
-    font-size: 0.73rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 58%, transparent);
+    background: color-mix(in srgb, #ffffff 98%, #efe8fb 2%);
+    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-main, #231B2E);
+    color: color-mix(in srgb, var(--text-main, #231B2E) 90%, #7c8798 10%);
     white-space: nowrap;
   }
 
