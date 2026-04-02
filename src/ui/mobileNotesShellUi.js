@@ -45,14 +45,21 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook .notes-overview-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 3.7rem;
     min-height: 28px;
     padding: 0.26rem 0.72rem;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
     font-size: 0.74rem;
+    line-height: 1;
     font-weight: 600;
     color: var(--text-main, #231B2E);
+    white-space: nowrap;
   }
 
   #view-notebook #notesOverviewList {
@@ -760,12 +767,14 @@ export const initMobileNotesShellUi = (options = {}) => {
       return { headingEl: null, toggleEl: null, titleEl: null };
     }
 
-    let titleEl = notesOverviewPanel.querySelector(':scope > h2');
+    let headingEl = notesOverviewPanel.querySelector(':scope > .notes-overview-heading');
+    let titleEl = headingEl instanceof HTMLElement
+      ? headingEl.querySelector('h2')
+      : notesOverviewPanel.querySelector(':scope > h2');
     if (!(titleEl instanceof HTMLElement)) {
       return { headingEl: null, toggleEl: null, titleEl: null };
     }
 
-    let headingEl = notesOverviewPanel.querySelector(':scope > .notes-overview-heading');
     if (!(headingEl instanceof HTMLElement)) {
       headingEl = document.createElement('div');
       headingEl.className = 'notes-overview-heading';
