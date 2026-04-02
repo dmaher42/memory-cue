@@ -4241,9 +4241,9 @@ body.mobile-theme :focus-visible {
   justify-content: center;
   align-items: flex-start;
   padding:
-    calc(env(safe-area-inset-top, 0px) + 0.75rem)
-    0.9rem
-    calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    calc(env(safe-area-inset-top, 0px) + 0.65rem)
+    0.85rem
+    calc(env(safe-area-inset-bottom, 0px) + 5.75rem);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -4255,27 +4255,66 @@ body.mobile-theme :focus-visible {
 #settingsModal .modal-panel {
   position: relative;
   z-index: 1;
-  width: min(720px, 100%);
+  width: min(560px, 100%);
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  padding: 0.35rem 0 0;
+  gap: 0.7rem;
+  padding: 0.2rem 0 0;
 }
 
 #settingsModal .modal-header {
   position: sticky;
   top: 0;
   z-index: 2;
-  border-radius: 1.5rem 1.5rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 1.35rem;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 24px rgba(31, 22, 51, 0.06);
+}
+
+#settingsModal .modal-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+#settingsCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid color-mix(in srgb, var(--fallback-b3, #d9d6df) 74%, #ffffff 26%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2b203f;
+  font-size: 1rem;
+  line-height: 1;
+  flex: 0 0 auto;
 }
 
 #settingsModal .card {
-  border-radius: 1.5rem;
+  border-radius: 1.35rem;
   background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 18px 42px rgba(31, 22, 51, 0.08);
+  box-shadow: 0 14px 30px rgba(31, 22, 51, 0.06);
+}
+
+#settingsModal .card-body {
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+#settingsModal .card-title {
+  margin: 0;
+}
+
+#settingsModal .card-actions {
+  margin-top: 0.2rem;
 }
 
 #settingsModal .modal-backdrop {
@@ -4294,4 +4333,18 @@ body.settings-modal-open .chat-composer {
 body.settings-modal-open #mobile-nav-shell {
   opacity: 0;
   pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  #settingsModal {
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 0.45rem)
+      0.65rem
+      calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+  }
+
+  #settingsModal .modal-header,
+  #settingsModal .card-body {
+    padding-inline: 0.9rem;
+  }
 }
