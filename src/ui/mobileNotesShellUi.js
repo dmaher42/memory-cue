@@ -159,6 +159,37 @@ const NOTEBOOK_POLISH_CSS = `
     gap: 0.45rem;
   }
 
+  .mobile-panel--notes .note-sections-bar {
+    display: grid;
+    gap: 0.34rem;
+  }
+
+  .mobile-panel--notes .note-sections-row {
+    display: flex;
+    gap: 0.34rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.08rem;
+  }
+
+  .mobile-panel--notes .note-sections-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-panel--notes .note-section-chip {
+    flex: 0 0 auto;
+    min-height: 28px;
+    padding: 0.28rem 0.68rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: var(--text-main, #231B2E);
+    white-space: nowrap;
+  }
+
   #view-notebook .note-inline-action {
     min-height: 32px;
     padding: 0.42rem 0.78rem;
@@ -593,6 +624,116 @@ export const initMobileNotesShellUi = (options = {}) => {
     return button;
   };
 
+  const ensureNoteSectionsBar = () => {
+    const headerBlock = noteEditorSheet?.querySelector('.scratch-notes-header-block');
+    if (!(headerBlock instanceof HTMLElement)) {
+      return null;
+    }
+
+    const existingBar = headerBlock.querySelector('[data-note-sections-bar]');
+    if (existingBar instanceof HTMLElement) {
+      return existingBar;
+    }
+
+    const bar = document.createElement('div');
+    bar.dataset.noteSectionsBar = 'true';
+    bar.className = 'note-sections-bar';
+    const noteEditorCard = noteEditorSheet?.querySelector('.note-editor-card');
+    if (noteEditorCard instanceof HTMLElement) {
+      noteEditorCard.insertBefore(bar, headerBlock.nextSibling);
+    } else {
+      headerBlock.insertAdjacentElement('afterend', bar);
+    }
+    return bar;
+  };
+
+  const normalizeSectionLabel = (value = '') => String(value)
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[:\-–—]+$/, '')
+    .trim()
+    .toLowerCase();
+
+  const findSectionTargetElement = (label = '') => {
+    const editorBody = document.getElementById('notebook-editor-body');
+    if (!(editorBody instanceof HTMLElement)) {
+      return null;
+    }
+
+    const normalizedLabel = normalizeSectionLabel(label);
+    if (!normalizedLabel) {
+      return null;
+    }
+
+    const blocks = editorBody.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li');
+    for (const block of blocks) {
+      if (!(block instanceof HTMLElement)) {
+        continue;
+      }
+      const rawText = String(block.textContent || '').trim();
+      if (!rawText) {
+        continue;
+      }
+      const normalizedText = normalizeSectionLabel(rawText);
+      if (normalizedText === normalizedLabel || normalizedText.startsWith(`${normalizedLabel} `)) {
+        return block;
+      }
+    }
+
+    return null;
+  };
+
+  const renderNoteSectionsBar = () => {
+    const bar = ensureNoteSectionsBar();
+    if (!(bar instanceof HTMLElement)) {
+      return;
+    }
+
+    const sections = typeof window !== 'undefined' && typeof window.getCurrentNoteSections === 'function'
+      ? window.getCurrentNoteSections()
+      : [];
+    if (!Array.isArray(sections) || sections.length < 2) {
+      bar.hidden = true;
+      bar.innerHTML = '';
+      return;
+    }
+
+    bar.hidden = false;
+    bar.innerHTML = `
+      <div class="note-sections-row">
+        ${sections.map((section) => `
+          <button
+            type="button"
+            class="note-section-chip"
+            data-note-section-jump="${escapeHtml(section.label || '')}"
+          >${escapeHtml(section.label || '')}</button>
+        `).join('')}
+      </div>
+    `;
+  };
+
+  const handleNoteSectionJump = (event) => {
+    const jumpButton = event.target instanceof HTMLElement
+      ? event.target.closest('[data-note-section-jump]')
+      : null;
+    if (!(jumpButton instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    event.preventDefault();
+    const targetLabel = jumpButton.dataset.noteSectionJump || '';
+    const targetElement = findSectionTargetElement(targetLabel);
+    if (!(targetElement instanceof HTMLElement)) {
+      return;
+    }
+
+    try {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {
+      targetElement.scrollIntoView(true);
+    }
+  };
+
   const renderTeacherModeEditorBar = () => {
     const bar = ensureTeacherModeEditorBar();
     const toggleButton = ensureTeacherModeToggleButton();
@@ -766,6 +907,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   ensureTeacherModeToggleButton()?.addEventListener('click', (event) => {
     void handleTeacherModeEditorAction(event);
   });
+  ensureNoteSectionsBar()?.addEventListener('click', handleNoteSectionJump);
 
   const ensureNotesOverviewHeader = () => {
     if (!(notesOverviewPanel instanceof HTMLElement)) {
@@ -932,6 +1074,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
+    renderNoteSectionsBar();
   };
 
   const isSavedNotesSheetOpen = () => savedNotesSheet?.dataset.open === 'true';
@@ -1503,21 +1646,31 @@ export const initMobileNotesShellUi = (options = {}) => {
   document.addEventListener('memoryCue:activeLessonUpdated', () => {
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
+    renderNoteSectionsBar();
   });
 
   document.addEventListener('memoryCue:activeLessonStepUpdated', () => {
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
+    renderNoteSectionsBar();
   });
 
   document.addEventListener('memoryCue:notesUpdated', () => {
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
+    renderNoteSectionsBar();
+  });
+
+  noteEditorSheet?.addEventListener('input', () => {
+    window.setTimeout(() => {
+      renderNoteSectionsBar();
+    }, 0);
   });
 
   noteEditorSheet?.addEventListener('click', () => {
     window.setTimeout(() => {
       renderTeacherModeEditorBar();
+      renderNoteSectionsBar();
     }, 0);
   });
 
@@ -1525,6 +1678,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     window.setTimeout(() => {
       renderTeacherModeEditorBar();
       renderActiveLessonCard();
+      renderNoteSectionsBar();
     }, 0);
   });
 
@@ -1538,6 +1692,7 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   renderActiveLessonCard();
   renderTeacherModeEditorBar();
+  renderNoteSectionsBar();
 
   return {
     applyNotesMode,
