@@ -564,6 +564,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let noteSectionsExpanded = false;
   let noteSectionsKey = '';
   let noteSectionsNoteId = '';
+  let noteSectionsEventsBound = false;
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
   const NOTE_SECTION_MAX_VISIBLE = 6;
@@ -726,6 +727,41 @@ export const initMobileNotesShellUi = (options = {}) => {
     .trim()
     .toLowerCase();
 
+  const extractEditorSectionLabel = (line = '') => {
+    const trimmedLine = String(line || '').trim();
+    if (!trimmedLine) {
+      return '';
+    }
+
+    const normalizedLine = normalizeSectionLabel(trimmedLine);
+    if (!normalizedLine) {
+      return '';
+    }
+
+    let label = '';
+    const prefixMatch = normalizedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-â€“â€”]?$/i);
+    if (prefixMatch?.[1]) {
+      const candidate = String(prefixMatch[1] || '').trim();
+      const wordCount = candidate.split(/\s+/).filter(Boolean).length;
+      if (candidate && wordCount <= 3 && candidate.length <= 24) {
+        label = candidate
+          .split(/\s+/)
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(' ');
+      }
+    } else {
+      const inlineMatch = trimmedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-â€“â€”]\s+\S/i);
+      if (inlineMatch?.[1]) {
+        label = String(inlineMatch[1] || '').trim()
+          .split(/\s+/)
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(' ');
+      }
+    }
+
+    return label;
+  };
+
   const getVisibleNoteSections = (sections = []) => {
     if (!Array.isArray(sections) || sections.length < 2) {
       return [];
@@ -766,6 +802,70 @@ export const initMobileNotesShellUi = (options = {}) => {
       .slice(0, NOTE_SECTION_MAX_VISIBLE);
 
     return visibleSections.map(({ label, normalized }) => ({ label, normalized }));
+  };
+
+  const getOrderedEditorSectionMatches = (sections = []) => {
+    const editorBody = document.getElementById('notebook-editor-body');
+    if (!(editorBody instanceof HTMLElement)) {
+      return [];
+    }
+
+    const allowedLabels = Array.isArray(sections) && sections.length > 0
+      ? new Set(
+        sections
+          .map((section) => normalizeSectionLabel(section?.label || section?.normalized || ''))
+          .filter(Boolean),
+      )
+      : null;
+
+    const blocks = Array.from(editorBody.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'))
+      .filter((block) => block instanceof HTMLElement);
+    const matches = [];
+    const seenLabels = new Set();
+
+    blocks.forEach((block, index) => {
+      const rawText = String(block.innerText || block.textContent || '').trim();
+      if (!rawText) {
+        return;
+      }
+
+      rawText
+        .split(/\r?\n+/)
+        .map((line) => String(line || '').trim())
+        .filter(Boolean)
+        .forEach((line, lineIndex) => {
+          const label = extractEditorSectionLabel(line);
+          const normalizedLabel = normalizeSectionLabel(label);
+          if (!normalizedLabel || seenLabels.has(normalizedLabel)) {
+            return;
+          }
+          if (allowedLabels && !allowedLabels.has(normalizedLabel)) {
+            return;
+          }
+
+          seenLabels.add(normalizedLabel);
+          matches.push({
+            label,
+            normalized: normalizedLabel,
+            index,
+            lineIndex,
+            order: matches.length,
+            element: block,
+          });
+        });
+    });
+
+    return matches;
+  };
+
+  const getOrderedRenderableNoteSections = (sections = []) => {
+    const visibleSections = getVisibleNoteSections(sections);
+    if (visibleSections.length < 2) {
+      return [];
+    }
+
+    return getOrderedEditorSectionMatches(visibleSections)
+      .map(({ label, normalized }) => ({ label, normalized }));
   };
 
   const getEditorLineSections = () => {
@@ -820,7 +920,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   const findSectionTargetElement = (label = '') => {
-    const match = getEditorSectionMatches([{ label }])[0];
+    const match = getOrderedEditorSectionMatches([{ label }])[0];
     return match?.element instanceof HTMLElement ? match.element : null;
   };
 
@@ -895,7 +995,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
-    const matches = getEditorSectionMatches(sections);
+    const matches = getOrderedEditorSectionMatches(sections);
     const activeMatchIndex = matches.findIndex((match) => match.normalized === collapsedNoteSectionLabel);
     if (activeMatchIndex === -1) {
       collapsedNoteSectionLabel = '';
@@ -903,7 +1003,8 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
 
     const startIndex = matches[activeMatchIndex].index;
-    const endIndex = matches[activeMatchIndex + 1]?.index ?? blocks.length;
+    const nextBlockMatch = matches.slice(activeMatchIndex + 1).find((match) => match.index !== startIndex);
+    const endIndex = nextBlockMatch?.index ?? blocks.length;
     blocks.forEach((block, index) => {
       if (index < startIndex || index >= endIndex) {
         block.dataset.noteSectionHidden = 'true';
@@ -929,11 +1030,12 @@ export const initMobileNotesShellUi = (options = {}) => {
     const parsedSections = typeof window !== 'undefined' && typeof window.getCurrentNoteSections === 'function'
       ? window.getCurrentNoteSections()
       : [];
-    const mergedSections = [
-      ...(Array.isArray(parsedSections) ? parsedSections : []),
-      ...getEditorLineSections(),
-    ];
-    const visibleSections = getRenderableNoteSections(mergedSections);
+    const editorSections = getOrderedEditorSectionMatches()
+      .map(({ label, normalized }) => ({ label, normalized }));
+    const sourceSections = editorSections.length >= 2
+      ? editorSections
+      : (Array.isArray(parsedSections) ? parsedSections : []);
+    const visibleSections = getOrderedRenderableNoteSections(sourceSections);
     if (visibleSections.length < 2) {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
@@ -1025,6 +1127,13 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   const handleNoteSectionJump = (event) => {
+    const sectionRoot = event.target instanceof HTMLElement
+      ? event.target.closest('[data-note-sections-bar]')
+      : null;
+    if (!(sectionRoot instanceof HTMLElement)) {
+      return;
+    }
+
     const toggleButton = event.target instanceof HTMLElement
       ? event.target.closest('[data-note-sections-toggle]')
       : null;
@@ -1075,6 +1184,14 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     const viewportTop = refreshedTargetElement.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top: Math.max(0, viewportTop), behavior: 'smooth' });
+  };
+
+  const bindNoteSectionsEvents = () => {
+    if (!(noteEditorSheet instanceof HTMLElement) || noteSectionsEventsBound) {
+      return;
+    }
+    noteEditorSheet.addEventListener('click', handleNoteSectionJump);
+    noteSectionsEventsBound = true;
   };
 
   const renderTeacherModeEditorBar = () => {
@@ -1250,7 +1367,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   ensureTeacherModeToggleButton()?.addEventListener('click', (event) => {
     void handleTeacherModeEditorAction(event);
   });
-  ensureNoteSectionsBar()?.addEventListener('click', handleNoteSectionJump);
+  bindNoteSectionsEvents();
 
   const ensureNotesOverviewHeader = () => {
     if (!(notesOverviewPanel instanceof HTMLElement)) {
