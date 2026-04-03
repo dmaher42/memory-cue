@@ -5172,23 +5172,6 @@ body, main, section, div, p, span, li {
           <h2 class="text-base font-semibold">Memory Cue</h2>
           <p class="capture-intro">Capture a thought, ask a question, or drop in something to organize.</p>
         </div>
-        <section id="todayListPanel" class="capture-recent today-list-panel" aria-labelledby="todayListHeader">
-          <div class="today-list-header">
-            <h3 id="todayListHeader" class="text-sm font-semibold">Today's List</h3>
-            <button id="todayListClearCompleted" type="button" class="btn btn-ghost btn-sm">Clear done</button>
-          </div>
-          <form id="todayListQuickAddForm" class="today-list-quick-add">
-            <input
-              id="todayListQuickAddInput"
-              type="text"
-              class="today-list-quick-add-input input input-sm w-full bg-base-100 border border-base-300 rounded-xl"
-              placeholder="Add to today's list"
-              autocomplete="off"
-            />
-            <button id="todayListQuickAddButton" type="submit" class="btn btn-sm btn-primary">Add</button>
-          </form>
-          <div id="todayListContainer" class="today-list-container" aria-live="polite"></div>
-        </section>
         <section id="chatConversationContainer" aria-label="Capture conversation" aria-live="polite"></section>
       </div>
     </section>
@@ -5198,6 +5181,34 @@ body, main, section, div, p, span, li {
         <div id="inboxSearchResults"></div>
 
         <section id="remindersListMobile">
+          <section id="todayListPanel" class="today-list-panel reminders-today-panel" aria-labelledby="todayListHeader">
+            <div class="today-list-header">
+              <button
+                id="todayListToggle"
+                type="button"
+                class="today-list-toggle"
+                aria-expanded="false"
+                aria-controls="todayListBody"
+              >
+                <span id="todayListHeader" class="today-list-title">Today</span>
+                <span class="today-list-toggle-icon" aria-hidden="true"></span>
+              </button>
+              <button id="todayListClearCompleted" type="button" class="btn btn-ghost btn-sm">Clear done</button>
+            </div>
+            <div id="todayListBody" class="today-list-body" hidden>
+              <form id="todayListQuickAddForm" class="today-list-quick-add">
+                <input
+                  id="todayListQuickAddInput"
+                  type="text"
+                  class="today-list-quick-add-input input input-sm w-full bg-base-100 border border-base-300 rounded-xl"
+                  placeholder="Add to today's list"
+                  autocomplete="off"
+                />
+                <button id="todayListQuickAddButton" type="submit" class="btn btn-sm btn-primary">Add</button>
+              </form>
+              <div id="todayListContainer" class="today-list-container" aria-live="polite"></div>
+            </div>
+          </section>
           <header class="reminders-screen-header" aria-label="Reminders overview">
             <div class="reminders-screen-header-copy">
               <h2 class="reminders-screen-title">Reminders</h2>

@@ -4229,6 +4229,15 @@ body.mobile-theme :focus-visible {
 
 .today-list-panel {
   margin-bottom: 0.9rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--surface-border, #E7E1F0);
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--surface-card, #FFFFFF) 94%, #f6f1ff 6%);
+  box-shadow: var(--surface-elevated, 0 10px 24px rgba(57, 35, 87, 0.05));
+}
+
+.reminders-today-panel {
+  margin-bottom: 0.85rem;
 }
 
 .today-list-header {
@@ -4236,15 +4245,41 @@ body.mobile-theme :focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+.today-list-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  box-shadow: none;
 }
 
-.today-list-header h3 {
+.today-list-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
   color: var(--text-primary, #1A1A2E);
+}
+
+.today-list-toggle-icon {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  transform-origin: center;
+  opacity: 0.65;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.today-list-panel.is-expanded .today-list-toggle-icon {
+  transform: rotate(225deg) translateY(-1px);
+  opacity: 0.9;
 }
 
 .today-list-header .btn {
@@ -4256,11 +4291,15 @@ body.mobile-theme :focus-visible {
   font-weight: 650;
 }
 
+.today-list-body {
+  margin-top: 0.75rem;
+}
+
 .today-list-quick-add {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  margin-top: 0.7rem;
+  margin-top: 0;
   margin-bottom: 0.7rem;
 }
 
@@ -4328,6 +4367,10 @@ body.mobile-theme :focus-visible {
 }
 
 @media (max-width: 480px) {
+  .today-list-panel {
+    padding: 0.9rem;
+  }
+
   .today-list-quick-add {
     gap: 0.45rem;
   }
@@ -4454,6 +4497,8 @@ body.settings-modal-open #mobile-nav-shell {
   }
 }
 
+html[data-theme="dark"] .today-list-panel,
+html[data-theme="professional-dark"] .today-list-panel,
 html[data-theme="dark"] .note-editor-card,
 html[data-theme="professional-dark"] .note-editor-card,
 html[data-theme="dark"] .today-list-container,
@@ -4467,8 +4512,10 @@ html[data-theme="professional-dark"] #settingsModal .card {
   box-shadow: var(--shadow-card);
 }
 
-html[data-theme="dark"] .today-list-header h3,
-html[data-theme="professional-dark"] .today-list-header h3,
+html[data-theme="dark"] .today-list-title,
+html[data-theme="professional-dark"] .today-list-title,
+html[data-theme="dark"] .today-list-toggle,
+html[data-theme="professional-dark"] .today-list-toggle,
 html[data-theme="dark"] .today-list-container [data-task-id] span,
 html[data-theme="professional-dark"] .today-list-container [data-task-id] span,
 html[data-theme="dark"] .today-list-quick-add-input,

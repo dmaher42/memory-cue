@@ -1073,6 +1073,9 @@ const initMobileNotes = () => {
   const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
   const notesOverviewPanel = document.getElementById('notesOverviewPanel');
   const todayListHeader = document.getElementById('todayListHeader');
+  const todayListPanel = document.getElementById('todayListPanel');
+  const todayListToggle = document.getElementById('todayListToggle');
+  const todayListBody = document.getElementById('todayListBody');
   const todayListQuickAddForm = document.getElementById('todayListQuickAddForm');
   const todayListQuickAddInput = document.getElementById('todayListQuickAddInput');
   const todayListContainer = document.getElementById('todayListContainer');
@@ -1159,6 +1162,23 @@ const initMobileNotes = () => {
       dailyTasksContainer: todayListContainer,
       clearCompletedButton: todayListClearCompleted,
       forceLocalMode: true,
+    });
+  }
+
+  if (
+    todayListPanel instanceof HTMLElement &&
+    todayListToggle instanceof HTMLButtonElement &&
+    todayListBody instanceof HTMLElement
+  ) {
+    const setTodayListExpanded = (expanded) => {
+      todayListPanel.classList.toggle('is-expanded', expanded);
+      todayListToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      todayListBody.hidden = !expanded;
+    };
+
+    setTodayListExpanded(false);
+    todayListToggle.addEventListener('click', () => {
+      setTodayListExpanded(todayListBody.hidden);
     });
   }
 
