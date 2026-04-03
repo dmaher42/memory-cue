@@ -37,6 +37,25 @@ body.mobile-theme {
   padding: 0;
 }
 
+html[data-theme="dark"] body.mobile-theme,
+html[data-theme="professional-dark"] body.mobile-theme {
+  --surface-bg: linear-gradient(180deg, #11101F 0%, #15142A 52%, #1B1A35 100%);
+  --surface-card: #1C1936;
+  --surface-elevated: #211D40;
+  --surface-soft: rgba(28, 25, 54, 0.92);
+  --surface-1: #1C1936;
+  --card-bg: #1C1936;
+  --card-border: #34305F;
+  --border-subtle: #34305F;
+  --text-main: #ECE8F6;
+  --text-primary: #ECE8F6;
+  --text-secondary: #B4ADC9;
+  --text-muted: #958EAE;
+  --hover-bg: rgba(232, 229, 240, 0.08);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.24);
+  --shadow-card: 0 14px 30px rgba(0, 0, 0, 0.26);
+}
+
 body.mobile-shell {
   overflow-x: hidden;
 }
@@ -4375,4 +4394,47 @@ body.settings-modal-open #mobile-nav-shell {
   #settingsModal .card-body {
     padding-inline: 0.9rem;
   }
+}
+
+html[data-theme="dark"] .note-editor-card,
+html[data-theme="professional-dark"] .note-editor-card,
+html[data-theme="dark"] .today-list-container,
+html[data-theme="professional-dark"] .today-list-container,
+html[data-theme="dark"] #settingsModal .modal-header,
+html[data-theme="professional-dark"] #settingsModal .modal-header,
+html[data-theme="dark"] #settingsModal .card,
+html[data-theme="professional-dark"] #settingsModal .card {
+  background: color-mix(in srgb, var(--surface-card) 94%, #ffffff 6%);
+  border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-theme="dark"] .note-title-input,
+html[data-theme="professional-dark"] .note-title-input,
+html[data-theme="dark"] .note-editor-content,
+html[data-theme="professional-dark"] .note-editor-content,
+html[data-theme="dark"] .note-editor-card .note-editor-area,
+html[data-theme="professional-dark"] .note-editor-card .note-editor-area,
+html[data-theme="dark"] #settingsCloseBtn,
+html[data-theme="professional-dark"] #settingsCloseBtn {
+  background: color-mix(in srgb, var(--surface-elevated) 96%, #ffffff 4%);
+  color: var(--text-main);
+  border-color: color-mix(in srgb, var(--card-border) 82%, transparent);
+}
+
+html[data-theme="dark"] .formatting-toolbar button,
+html[data-theme="professional-dark"] .formatting-toolbar button {
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+html[data-theme="dark"] .formatting-toolbar button:hover,
+html[data-theme="professional-dark"] .formatting-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .formatting-toolbar button.active,
+html[data-theme="professional-dark"] .formatting-toolbar button.active {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.12);
 }
