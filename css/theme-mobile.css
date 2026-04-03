@@ -1,4 +1,21 @@
 /* Base Styles */
+:root {
+  --color-primary: #6B4EFF;
+  --color-primary-hover: #5A3FD7;
+  --color-secondary: #E6E0FA;
+  --surface-bg: linear-gradient(180deg, #F8F6FC 0%, #F0EBF8 50%, #E8E0F5 100%);
+  --surface-card: #FFFFFF;
+  --surface-elevated: #FCFBFF;
+  --surface-soft: rgba(255, 255, 255, 0.82);
+  --card-bg: #FFFFFF;
+  --card-border: #E7E1F0;
+  --text-main: #1A1A2E;
+  --text-primary: #1A1A2E;
+  --text-secondary: #6B6B7B;
+  --text-muted: #6B6B7B;
+  --accent-color: #6B4EFF;
+}
+
 body {
   min-height: 100dvh;
   display: flex;
@@ -7,8 +24,9 @@ body {
 }
 
 body.mobile-theme {
-  background-color: #F3F4F6;
-  color: #111827;
+  background-color: #F8F6FC;
+  background-image: var(--surface-bg);
+  color: var(--text-main);
   font-family: var(--font-primary, 'Poppins', 'Segoe UI', system-ui, sans-serif);
   margin: 0;
   padding: 0;
@@ -203,7 +221,7 @@ body.mobile-shell #mobile-shell #reminderList,
 body.mobile-theme .app-header,
 body.mobile-theme header,
 body.mobile-theme .top-bar {
-  background-color: #5080BF;
+  background-color: var(--color-primary);
   color: #FFFFFF;
   height: 56px;
   min-height: 56px;
@@ -248,7 +266,7 @@ body.mobile-theme .app-header .icon-button,
 body.mobile-theme .top-bar .icon-button {
   background: transparent;
   border: none;
-  color: #141010;
+  color: rgba(255, 255, 255, 0.94);
   cursor: pointer;
   padding: 0.2rem;
   border-radius: 999px;
@@ -287,31 +305,31 @@ body.mobile-theme .top-bar .icon-button {
 body.mobile-theme .app-header button:focus-visible,
 body.mobile-theme .top-bar button:focus-visible,
 body.mobile-theme header button:focus-visible {
-  outline: 2px solid #5080BF;
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 72%, #ffffff 28%);
   outline-offset: 2px;
 }
 
 body.mobile-theme .app-header button:hover,
 body.mobile-theme .top-bar button:hover,
 body.mobile-theme header button:hover {
-  color: #3f6aa0;
-  background-color: rgba(80, 128, 191, 0.12);
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.14);
 }
 
 body.mobile-theme .app-header button.is-active,
 body.mobile-theme .top-bar button.is-active {
-  color: #3f6aa0;
+  color: #ffffff;
 }
 
 /* Card Styles */
 body.mobile-theme .card,
 body.mobile-theme .note-card {
-  background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background-color: var(--surface-card);
+  border: 1px solid var(--card-border);
   border-radius: 0.75rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 20px rgba(40, 30, 63, 0.06);
   padding: 1rem 1.25rem;
-  color: #111827;
+  color: var(--text-main);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -328,7 +346,7 @@ body.mobile-theme .reminder-card {
   border-radius: 14px;
   box-sizing: border-box;
   background: var(--surface-soft, rgba(255, 255, 255, 0.7));
-  border-left: 3px solid color-mix(in srgb, var(--accent-color, #5080BF) 55%, transparent);
+  border-left: 3px solid color-mix(in srgb, var(--accent-color, #6B4EFF) 55%, transparent);
   margin: 0 0 8px;
   text-align: left !important;
 }

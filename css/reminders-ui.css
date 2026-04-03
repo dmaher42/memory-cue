@@ -99,14 +99,14 @@
   border-radius: 999px;
   min-height: 2.1rem;
   padding: 0.48rem 0.78rem;
-  background: #5080BF;
+  background: var(--color-primary, #6B4EFF);
   color: #ffffff;
   font-family: inherit;
   font-size: 0.76rem;
   line-height: 1;
   font-weight: 650;
   letter-spacing: -0.01em;
-  box-shadow: 0 6px 14px rgba(80, 128, 191, 0.18);
+  box-shadow: 0 6px 14px rgba(107, 78, 255, 0.18);
 }
 
 .reminders-voice-button {
@@ -143,8 +143,8 @@
 
 .reminders-add-button:hover,
 .reminders-add-button:focus-visible {
-  background: #3f6aa0;
-  outline: 3px solid rgba(80, 128, 191, 0.22);
+  background: var(--color-primary-hover, #5A3FD7);
+  outline: 3px solid rgba(107, 78, 255, 0.22);
   outline-offset: 2px;
 }
 
