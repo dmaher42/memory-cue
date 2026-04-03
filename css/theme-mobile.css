@@ -9,6 +9,8 @@
   --surface-soft: rgba(255, 255, 255, 0.82);
   --card-bg: #FFFFFF;
   --card-border: #E7E1F0;
+  --shadow-soft: 0 6px 16px rgba(62, 47, 94, 0.04);
+  --shadow-card: 0 10px 24px rgba(62, 47, 94, 0.06);
   --text-main: #1A1A2E;
   --text-primary: #1A1A2E;
   --text-secondary: #6B6B7B;
@@ -327,7 +329,7 @@ body.mobile-theme .note-card {
   background-color: var(--surface-card);
   border: 1px solid var(--card-border);
   border-radius: 0.75rem;
-  box-shadow: 0 8px 20px rgba(40, 30, 63, 0.06);
+  box-shadow: var(--shadow-card);
   padding: 1rem 1.25rem;
   color: var(--text-main);
   display: flex;
@@ -345,8 +347,10 @@ body.mobile-theme .reminder-card {
   padding: 10px 14px;
   border-radius: 14px;
   box-sizing: border-box;
-  background: var(--surface-soft, rgba(255, 255, 255, 0.7));
+  background: color-mix(in srgb, var(--surface-card) 92%, var(--color-secondary) 8%);
+  border: 1px solid color-mix(in srgb, var(--card-border) 74%, transparent);
   border-left: 3px solid color-mix(in srgb, var(--accent-color, #6B4EFF) 55%, transparent);
+  box-shadow: var(--shadow-soft);
   margin: 0 0 8px;
   text-align: left !important;
 }

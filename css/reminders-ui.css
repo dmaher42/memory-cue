@@ -54,10 +54,10 @@
   height: auto;
   min-height: 0;
   max-height: none;
-  border: 1px solid color-mix(in srgb, var(--card-border) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-border) 74%, transparent);
   border-radius: 0.88rem;
-  background: color-mix(in srgb, var(--surface-elevated) 88%, #ffffff 12%);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 88%, var(--color-secondary, #E6E0FA) 12%);
+  box-shadow: var(--shadow-soft, 0 6px 16px rgba(62, 47, 94, 0.04));
 }
 
 #view-reminders .reminders-screen-header-copy {
@@ -115,11 +115,11 @@
   justify-content: center;
   flex: 0 0 auto;
   align-self: center;
-  border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
   border-radius: 999px;
   min-height: 2.1rem;
   padding: 0.48rem 0.72rem;
-  background: color-mix(in srgb, #ffffff 74%, transparent);
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #E6E0FA) 18%);
   color: var(--text-main);
   font-family: inherit;
   font-size: 0.76rem;
@@ -131,7 +131,7 @@
 
 .reminders-voice-button:hover,
 .reminders-voice-button:focus-visible {
-  background: color-mix(in srgb, var(--text-main) 7%, #ffffff);
+  background: color-mix(in srgb, var(--color-secondary, #E6E0FA) 56%, #ffffff 44%);
   outline: 3px solid color-mix(in srgb, var(--accent-color) 16%, transparent);
   outline-offset: 2px;
 }
@@ -153,8 +153,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
-  background: color-mix(in srgb, #ffffff 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #E6E0FA) 18%);
   color: var(--text-main);
   border-radius: 999px;
   min-height: 2.1rem;
@@ -171,7 +171,7 @@
 .reminders-sort-trigger:focus-visible,
 #reminderSortToggle:hover,
 #reminderSortToggle:focus-visible {
-  background: color-mix(in srgb, var(--text-main) 7%, #ffffff);
+  background: color-mix(in srgb, var(--color-secondary, #E6E0FA) 56%, #ffffff 44%);
 }
 
 #reminderList {
@@ -194,8 +194,9 @@
 
 #view-reminders .reminder-row {
   border-radius: 0.9rem;
-  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
-  background: var(--surface-elevated);
+  border: 1px solid color-mix(in srgb, var(--card-border) 74%, transparent);
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 92%, var(--color-secondary, #E6E0FA) 8%);
+  box-shadow: var(--shadow-soft, 0 6px 16px rgba(62, 47, 94, 0.04));
   padding: 0.75rem;
 }
 
@@ -224,7 +225,7 @@
 .reminder-title-voice-button {
   border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-elevated) 88%, #ffffff 12%);
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 84%, var(--color-secondary, #E6E0FA) 16%);
   color: var(--text-main);
   font-size: 0.72rem;
   line-height: 1;
@@ -235,7 +236,7 @@
 
 .reminder-title-voice-button:hover,
 .reminder-title-voice-button:focus-visible {
-  background: color-mix(in srgb, var(--text-main) 8%, #ffffff);
+  background: color-mix(in srgb, var(--color-secondary, #E6E0FA) 58%, #ffffff 42%);
   outline: 2px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
   outline-offset: 2px;
 }
