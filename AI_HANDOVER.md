@@ -128,7 +128,10 @@ Some older-looking `js/*` files are now wrappers or compatibility layers around 
 Key examples:
 - `js/services/capture-service.js` → wrapper over `src/core/capturePipeline.js` and `src/services/inboxService.js`
 - `js/reminders.js` → wrapper over `src/reminders/reminderController.js`
-- `js/entries.js` → wrapper over `src/ui/quickCapture.js`, `src/ui/reminderUI.js`, `src/ui/inboxUI.js`, and `src/ui/chatUI.js`
+- `js/entries.js` → wrapper over `src/ui/quickCapture.js`, `src/ui/reminderUI.js`, and `src/ui/chatUI.js`
+
+The old inbox screen/UI layer has been retired from the main mobile experience.
+Inbox still exists as a processing/storage concept through `src/services/inboxService.js`, but the visible workflow is now notes + reminders first.
 
 Do not treat those wrappers as the real implementation owner when the underlying `src/*` module is the true live owner.
 

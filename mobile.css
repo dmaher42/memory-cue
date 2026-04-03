@@ -166,7 +166,6 @@ body.app-shell .content .content-container {
 
 body.app-shell .content #reminderList,
 body.app-shell .content .reminder-card,
-body.app-shell .content #inboxEntriesList,
 body.app-shell .content .category-entry-item,
 body.app-shell .content .note-card {
   width: 100%;
@@ -243,3 +242,4 @@ body.app-shell .content .card,
   color: var(--accent-color, #512663) !important;
   font-weight: 600;
 }
+

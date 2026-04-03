@@ -1,13 +1,11 @@
 import { initQuickCapture } from '../src/ui/quickCapture.js';
 import { initReminderUI, renderReminders as renderRemindersView } from '../src/ui/reminderUI.js';
-import { initInboxUI, renderInbox } from '../src/ui/inboxUI.js';
 import { initChatUI } from '../src/ui/chatUI.js';
 import { onDomReady } from '../src/ui/uiEvents.js';
 
 export function initEntriesApp() {
   initQuickCapture();
   initReminderUI();
-  initInboxUI();
   initChatUI();
 }
 
@@ -17,7 +15,7 @@ export function renderReminders(...args) {
 }
 
 export function renderInboxEntries(...args) {
-  return renderInbox(...args);
+  return args[0];
 }
 
 onDomReady(initEntriesApp);

@@ -323,7 +323,7 @@ const processParsedEntry = async (parsed, text, dependencies = {}) => {
     tags: Array.isArray(parsed?.tags) ? parsed.tags : [],
     metadata: parsed?.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : {},
   });
-  return { message: 'Added to inbox for later review.' };
+  return { message: 'Saved for later review.' };
 };
 
 export const handleChatMessage = async (text, dependencies = {}) => {

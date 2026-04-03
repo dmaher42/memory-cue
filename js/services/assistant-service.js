@@ -167,7 +167,7 @@ const askAssistant = async ({ message, assistantMessages, assistantLoading }) =>
     }
 
     if (!reply) {
-      reply = 'Added to inbox for later review.';
+      reply = 'Saved for later review.';
     }
 
     if (assistantMessages instanceof HTMLElement) {

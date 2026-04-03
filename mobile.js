@@ -26,6 +26,7 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
+import { createDailyTasksManager } from './js/modules/daily-tasks.js';
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -1103,6 +1104,11 @@ const initMobileNotes = () => {
   const folderFilterSelect = document.getElementById('folderFilterSelect');
   const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
   const notesOverviewPanel = document.getElementById('notesOverviewPanel');
+  const todayListHeader = document.getElementById('todayListHeader');
+  const todayListQuickAddForm = document.getElementById('todayListQuickAddForm');
+  const todayListQuickAddInput = document.getElementById('todayListQuickAddInput');
+  const todayListContainer = document.getElementById('todayListContainer');
+  const todayListClearCompleted = document.getElementById('todayListClearCompleted');
   const notebookBrowserList = document.getElementById('notebookBrowserList');
   const notesOverviewList = document.getElementById('notesOverviewList');
   const notesOverviewSearch = document.getElementById('notesOverviewSearch');
@@ -1170,6 +1176,23 @@ const initMobileNotes = () => {
   };
 
   const scratchNotesEditor = createScratchNotesEditor();
+
+  if (
+    todayListHeader instanceof HTMLElement &&
+    todayListQuickAddForm instanceof HTMLFormElement &&
+    todayListQuickAddInput instanceof HTMLInputElement &&
+    todayListContainer instanceof HTMLElement &&
+    todayListClearCompleted instanceof HTMLElement
+  ) {
+    createDailyTasksManager({
+      dailyListHeader: todayListHeader,
+      quickAddForm: todayListQuickAddForm,
+      quickAddInput: todayListQuickAddInput,
+      dailyTasksContainer: todayListContainer,
+      clearCompletedButton: todayListClearCompleted,
+      forceLocalMode: true,
+    });
+  }
 
   if (!titleInput || !scratchNotesEditor || !scratchNotesEditorElement || !saveButton) {
     return;
@@ -1378,38 +1401,10 @@ const initMobileNotes = () => {
   const buildNoteSectionsFromHtml = (html = '') => {
     const temp = document.createElement('div');
     temp.innerHTML = typeof html === 'string' ? html : '';
-    const blocks = temp.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li');
     const sections = [];
     const seenLabels = new Set();
-
-    blocks.forEach((block) => {
-      if (!(block instanceof HTMLElement)) {
-        return;
-      }
-
-      const rawText = normalizeSectionLabel(block.textContent || '');
-      if (!rawText) {
-        return;
-      }
-
-      let label = '';
-      if (/^H[1-6]$/i.test(block.tagName)) {
-        label = formatSectionLabel(rawText);
-      } else {
-        const prefixMatch = rawText.match(NOTE_SECTION_PREFIX_PATTERN);
-        if (prefixMatch?.[1]) {
-          label = formatSectionLabel(prefixMatch[1]);
-        } else {
-          label = extractInlineSectionLabel(rawText);
-        }
-        if (!label && /[：:]$/.test((block.textContent || '').trim())) {
-          const wordCount = rawText.split(/\s+/).filter(Boolean).length;
-          if (wordCount <= 5 && rawText.length <= 42) {
-            label = formatSectionLabel(rawText);
-          }
-        }
-      }
-
+    const appendSectionLabel = (value = '') => {
+      const label = formatSectionLabel(value);
       if (!label) {
         return;
       }
@@ -1423,6 +1418,50 @@ const initMobileNotes = () => {
         id: `section-${normalizedKey.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || sections.length + 1}`,
         label,
       });
+    };
+
+    const headingBlocks = temp.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    headingBlocks.forEach((block) => {
+      if (!(block instanceof HTMLElement)) {
+        return;
+      }
+      const rawText = normalizeSectionLabel(block.textContent || '');
+      if (!rawText) {
+        return;
+      }
+      appendSectionLabel(rawText);
+    });
+
+    const lineSource = String(temp.innerText || temp.textContent || '');
+    const lines = lineSource
+      .split(/\r?\n+/)
+      .map((line) => String(line || '').trim())
+      .filter(Boolean);
+
+    lines.forEach((line) => {
+      const rawText = normalizeSectionLabel(line);
+      if (!rawText) {
+        return;
+      }
+
+      let label = '';
+      const prefixMatch = rawText.match(NOTE_SECTION_PREFIX_PATTERN);
+      if (prefixMatch?.[1]) {
+        label = formatSectionLabel(prefixMatch[1]);
+      } else {
+        label = extractInlineSectionLabel(line);
+      }
+      if (!label && /[：:]$/.test(line)) {
+        const wordCount = rawText.split(/\s+/).filter(Boolean).length;
+        if (wordCount <= 5 && rawText.length <= 42) {
+          label = formatSectionLabel(rawText);
+        }
+      }
+
+      if (!label) {
+        return;
+      }
+      appendSectionLabel(label);
     });
 
     return sections;

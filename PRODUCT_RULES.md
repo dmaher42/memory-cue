@@ -12,27 +12,37 @@ Examples of capture entry points:
 * Assistant capture
 * Voice capture (future)
 
-All of these must create **Inbox items** through the same capture logic (typically implemented in `capture.js`).
+All of these must run through the same canonical capture logic.
 
-No feature may directly create Notes or Reminders from raw input without first creating an Inbox item.
+If intent is clear and explicit, the pipeline may create a Note or Reminder directly.
+
+If intent is ambiguous, incomplete, or needs later review, the pipeline should create an Inbox item.
 
 ## Inbox → Conversion Rule
 
-Inbox acts as the processing layer of the system.
+Inbox acts as the background processing layer of the system.
 
 Typical flow:
 
 User Capture
 ↓
-Inbox Item
+Capture Pipeline
 ↓
-User or Assistant processes item
+Note, Reminder, or Inbox Item
 ↓
-Convert to Note or Reminder
+User review / assistant suggestion when needed
 
-Notes and Reminders should normally originate from Inbox items unless the user intentionally creates them directly.
+Inbox is no longer required as a visible screen for every capture.
 
-This keeps capture simple and prevents fragmented storage paths.
+Inbox should be used for:
+
+* uncategorised captures
+* partial reminders that still need clarification
+* deferred review items
+
+Notes and Reminders may originate directly from the capture pipeline when the user's intent is already clear.
+
+This keeps capture simple without forcing duplicate storage.
 
 ## Assistant Mutation Safety Rule
 
@@ -43,7 +53,8 @@ Assistant behavior must follow these rules:
 * Assistant may analyse Inbox, Notes, and Reminders.
 * Assistant may suggest conversions or edits.
 * Assistant must not directly create Notes or Reminders without user confirmation.
-* Assistant should normally operate on Inbox items before converting them into structured items.
+* Assistant may help extract reminders from Notes, but creation still requires user confirmation.
+* Assistant should prefer Inbox for ambiguous captures, not as a mandatory step for all captures.
 
 This prevents hidden AI-driven data mutations.
 
@@ -73,15 +84,14 @@ All information in Memory Cue should follow this lifecycle:
 
 Capture
 ↓
-Inbox
-↓
-Process
+Capture Pipeline
 ↓
 Notes or Reminders
+or Inbox for later review
 ↓
 Assistant search / summarise / classify
 
-Inbox is the entry point for new information.
+Inbox is the fallback processing layer for new information that is not yet clear enough to file directly.
 
 Notes store written content.
 

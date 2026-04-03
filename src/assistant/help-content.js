@@ -4,12 +4,13 @@ export const helpContent = {
 You capture thoughts in the message bar at the bottom.
 The assistant automatically decides where to store them.
 
-There are four main sections:
+There are three main sections:
 
 Capture – where you type messages to the assistant
 Reminders – tasks and scheduled items
 Notebooks – organised notes
-Inbox – temporary storage for uncategorised items`,
+
+Inbox still exists in the background for uncategorised items that need later review.`,
 
   examples: `Examples you can type:
 
@@ -22,6 +23,6 @@ need to think about football drill for next week`,
     capture: 'Capture is the main input area where you type messages.',
     reminders: 'Reminders are tasks with dates or times.',
     notebooks: 'Notebooks store organised notes and ideas.',
-    inbox: 'Inbox holds items the assistant cannot categorise yet.',
+    inbox: 'Inbox is the background holding area for captures that still need review.',
   },
 };

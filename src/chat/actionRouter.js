@@ -4,7 +4,7 @@ import { getInboxEntries, removeInboxEntry } from '../services/inboxService.js';
 import { formatMemorySearchResponse, searchNotesMemory } from '../services/memorySearch.js';
 
 const QUICK_ACTIONS_BY_INTENT = {
-  capture: [{ label: 'Open Inbox', targetView: 'inbox' }],
+  capture: [{ label: 'View Capture', targetView: 'capture' }],
   reminder: [{ label: 'Edit Reminder', targetView: 'reminders' }],
   assistant: [{ label: 'View Notes', targetView: 'notebooks' }],
   processInbox: [{ label: 'View Notes', targetView: 'notebooks' }],

@@ -315,20 +315,39 @@ export const createAndSaveNote = (payload = {}, options = {}) => {
       ? normalizedPayload.parsedType.trim()
       : 'note';
 
-  const note = createNote(title, text, {
+  const metadata = sanitizeMetadata({
+    ...(normalizedPayload.metadata && typeof normalizedPayload.metadata === 'object'
+      ? normalizedPayload.metadata
+      : {}),
+    type: parsedType,
+    tags: sanitizeCanonicalTags(normalizedPayload.tags),
+    source:
+      typeof normalizedPayload.source === 'string' && normalizedPayload.source.trim()
+        ? normalizedPayload.source.trim()
+        : undefined,
+  });
+
+  const bodyHtml =
+    typeof normalizedPayload.bodyHtml === 'string' && normalizedPayload.bodyHtml.trim()
+      ? normalizedPayload.bodyHtml
+      : text;
+
+  const note = createNote(title, bodyHtml, {
+    bodyHtml,
     bodyText: text,
     folderId:
       typeof normalizedPayload.folderId === 'string' && normalizedPayload.folderId.trim()
         ? normalizedPayload.folderId.trim()
         : null,
-    metadata: {
-      type: parsedType,
-      tags: sanitizeCanonicalTags(normalizedPayload.tags),
-      source:
-        typeof normalizedPayload.source === 'string' && normalizedPayload.source.trim()
-          ? normalizedPayload.source.trim()
-          : undefined,
-    },
+    metadata,
+    createdAt:
+      typeof normalizedPayload.createdAt === 'string' && isValidDateString(normalizedPayload.createdAt)
+        ? normalizedPayload.createdAt
+        : undefined,
+    updatedAt:
+      typeof normalizedPayload.updatedAt === 'string' && isValidDateString(normalizedPayload.updatedAt)
+        ? normalizedPayload.updatedAt
+        : undefined,
   });
 
   const notes = loadAllNotes();

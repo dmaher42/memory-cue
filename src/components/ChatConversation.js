@@ -151,7 +151,7 @@ export const createChatConversation = () => {
     try {
       const assistantReply = await handleMessage(userInput, { createReminder });
       typingIndicator.remove();
-      appendMessage('assistant', assistantReply?.message || 'Saved to Inbox.');
+      appendMessage('assistant', assistantReply?.message || 'Saved for later review.');
     } catch (error) {
       typingIndicator.remove();
       console.error('Failed to handle chat message', error);
