@@ -585,7 +585,7 @@ export class DailyTasksManager {
         if (completed) {
           textClasses.push('line-through', 'text-opacity-50');
         }
-        return `<div class="flex items-center gap-3 p-3 border-b border-base-200" data-task-id="${task.id}"><input type="checkbox" class="checkbox checkbox-sm" data-task-id="${task.id}" ${completed ? 'checked' : ''} /><span class="${textClasses.join(' ')}">${safeText}</span><button type="button" class="btn btn-ghost btn-xs ml-auto" data-action="delete-task">Delete</button></div>`;
+        return `<div class="today-list-item" data-task-id="${task.id}"><input type="checkbox" class="checkbox checkbox-sm today-list-checkbox" data-task-id="${task.id}" ${completed ? 'checked' : ''} /><span class="today-list-text ${textClasses.join(' ')}">${safeText}</span><button type="button" class="btn btn-ghost btn-xs today-list-delete" data-action="delete-task">Delete</button></div>`;
       })
       .join('');
     this.dailyTasksContainer.innerHTML = markup;
@@ -599,7 +599,7 @@ export class DailyTasksManager {
     }
     const todayId = getTodayDateId();
     this.todayId = todayId;
-    this.dailyListHeader.textContent = "Today's List";
+    this.dailyListHeader.textContent = 'Today';
 
     if (this.shouldUseLocalDailyList) {
       this.showPermissionNotice();
