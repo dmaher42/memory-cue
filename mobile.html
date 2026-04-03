@@ -5064,7 +5064,6 @@ body, main, section, div, p, span, li {
         >
           <path d="M6 6l12 12M6 18 18 6" />
         </svg>
-      </button>
     </div>
 
     <section
@@ -5106,9 +5105,6 @@ body, main, section, div, p, span, li {
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
       <h1 class="header-title title">Memory Cue</h1>
       <button id="assistantHelpBtn" type="button" class="icon-button control-icon-button" aria-label="How do I use this?">?</button>
-      <button id="openSavedNotesGlobal" type="button" class="search icon-button control-icon-button" aria-label="Saved notebooks" title="Saved notebooks">
-        📚
-      </button>
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <div class="overflow-menu-section">
@@ -5256,14 +5252,6 @@ body, main, section, div, p, span, li {
       <div id="categoryEntriesPanel" class="space-y-2 hidden" aria-live="polite">
         <h3 id="categoryEntriesTitle" class="text-base font-semibold"></h3>
         <div id="categoryEntriesList" class="category-entry-list"></div>
-      </div>
-    </div>
-    <div data-view="inbox" id="view-inbox" class="view-panel hidden" aria-hidden="true">
-      <div class="space-y-3">
-        <h2 class="text-lg font-semibold">Inbox</h2>
-        <button id="processInboxButton" type="button" class="btn btn-sm btn-primary">Process Notes</button>
-        <p class="text-xs text-base-content/70">Each entry can be converted to a note, turned into a reminder, tagged, or deleted.</p>
-        <ul id="inboxEntriesList" class="category-entry-list list-disc pl-4" aria-live="polite"></ul>
       </div>
     </div>
     <!-- END GPT CHANGE -->
@@ -5737,20 +5725,12 @@ body, main, section, div, p, span, li {
         aria-label="Go to Notebooks"
       >Notebooks</button>
 
-      <button
-        type="button"
-        class="floating-card nav-item btn-inbox"
-        id="mobile-footer-inbox"
-        data-nav-target="inbox"
-        data-tab="inbox"
-        aria-label="Go to Inbox"
-      >Inbox</button>
     </div>
     </div>
   </nav>
   </div>
   <!-- Navigation behavior is centralized in js/services/navigation-service-v2.js -->
-  <script>
+  <script type="application/json" data-retired-inline="legacy-inbox" hidden>
     (function () {
       const categories = ['Inbox', 'Teaching', 'Coaching', 'Ideas', 'Tasks'];
       const openButton = document.getElementById('openCategoriesView');

@@ -1,5 +1,5 @@
 (function () {
-  const VIEW_ORDER = ['capture', 'reminders', 'notebooks', 'inbox'];
+  const VIEW_ORDER = ['capture', 'reminders', 'notebooks'];
 
   const normalizeViewName = (name) => {
     if (!name) return 'capture';
