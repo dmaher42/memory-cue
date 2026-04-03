@@ -4592,6 +4592,9 @@ export async function initReminders(sel = {}) {
     render();
     persistItems();
     if(it.done){
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(10);
+      }
       cancelReminder(id);
       emitActivity({
         action: 'completed',
@@ -6069,7 +6072,7 @@ export async function initReminders(sel = {}) {
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'btn btn-ghost btn-circle btn-xs task-toolbar-btn reminder-icon-btn reminder-complete-toggle';
+      toggleBtn.className = 'btn btn-ghost btn-xs task-toolbar-btn reminder-icon-btn reminder-complete-toggle';
       toggleBtn.classList.toggle('reminder-complete-toggle--active', summary.done);
 
       const iconStateClass = summary.done
@@ -6086,9 +6089,9 @@ export async function initReminders(sel = {}) {
           focusable="false"
           class="reminder-complete-toggle-icon"
         >
-          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" opacity="0.32" />
+          <rect x="4" y="4" width="16" height="16" rx="4.5" class="reminder-complete-toggle-box" />
           <path
-            d="M5.5 12.25l4.25 4.25L18.75 7.5"
+            d="M8.25 12.4l2.7 2.8 4.8-5.2"
             stroke="currentColor"
             stroke-width="1.9"
             stroke-linecap="round"

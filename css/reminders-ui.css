@@ -418,7 +418,12 @@
   padding: 0.78rem 0.85rem;
   gap: 0.5rem;
   transform: none;
-  transition: background-color 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.24s ease;
 }
 
 #view-reminders .reminder-row:hover,
@@ -433,14 +438,69 @@
 }
 
 #view-reminders .reminder-row-complete {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
   margin-top: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  flex: 0 0 1.1rem;
+  flex: 0 0 1.5rem;
+  padding: 0;
+  border: 2px solid color-mix(in srgb, var(--color-primary, #6B4EFF) 34%, #ffffff 66%);
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--color-primary, #6B4EFF);
+  box-shadow: none;
+  transition:
+    background-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    color 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#view-reminders .reminder-complete-toggle:hover,
+#view-reminders .reminder-complete-toggle:focus-visible {
+  background: color-mix(in srgb, var(--color-secondary, #E6E0FA) 52%, #ffffff 48%);
+  border-color: color-mix(in srgb, var(--color-primary, #6B4EFF) 56%, #ffffff 44%);
+}
+
+#view-reminders .reminder-complete-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary, #6B4EFF) 20%, transparent);
+  outline-offset: 2px;
+}
+
+#view-reminders .reminder-complete-toggle--active {
+  background: var(--color-primary, #6B4EFF);
+  border-color: var(--color-primary, #6B4EFF);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+#view-reminders .reminder-complete-toggle-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+#view-reminders .reminder-complete-toggle-box {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: 0.38;
+}
+
+#view-reminders .reminder-complete-toggle--active .reminder-complete-toggle-box {
+  fill: currentColor;
+  opacity: 1;
+}
+
+#view-reminders .reminder-complete-toggle-icon--checked {
+  opacity: 1;
+}
+
+#view-reminders .reminder-complete-toggle-icon--unchecked {
+  opacity: 0;
 }
 
 #view-reminders .reminder-row-main {
@@ -470,6 +530,33 @@
   color: var(--text-secondary);
 }
 
+#view-reminders .reminder-row-completed {
+  opacity: 0.74;
+  transform: translateX(6px);
+}
+
+#view-reminders .reminder-row-completed .reminder-row-title {
+  position: relative;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+#view-reminders .reminder-row-completed .reminder-row-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 52%;
+  width: 100%;
+  height: 1px;
+  background: color-mix(in srgb, var(--text-secondary) 82%, transparent);
+  transform-origin: left center;
+  animation: reminder-strike 0.2s ease forwards;
+}
+
+#view-reminders .reminder-row-completed .reminder-row-meta {
+  color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
+}
+
 #view-reminders .reminder-row-overflow {
   border-radius: 999px;
   padding: 0.2rem;
@@ -478,4 +565,14 @@
 #view-reminders .reminder-row-overflow:hover,
 #view-reminders .reminder-row-overflow:focus-visible {
   background: color-mix(in srgb, var(--text-main) 10%, transparent);
+}
+
+@keyframes reminder-strike {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
