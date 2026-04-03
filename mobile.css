@@ -6,6 +6,11 @@
   --mobile-input-bar-height: 56px;
 }
 
+#openSavedNotesGlobal,
+#mobile-footer-inbox {
+  display: none !important;
+}
+
 body.app,
 body.app-shell {
   display: flex;

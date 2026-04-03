@@ -1935,6 +1935,7 @@ const initMobileNotes = () => {
       teacherView: options?.teacherView || 'plan',
       force: options?.force === true,
     });
+    applyNotesMode('notebooks');
     updateListSelection();
     if (isSavedNotesSheetOpen()) {
       hideSavedNotesSheet();
@@ -2832,14 +2833,6 @@ const initMobileNotes = () => {
         initialFolderId: currentEditingNoteFolderId,
         triggerEl: noteFolderBtn,
       });
-    });
-  }
-
-  const savedNotesGlobalButton = document.getElementById('openSavedNotesGlobal');
-  if (savedNotesGlobalButton) {
-    savedNotesGlobalButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      showSavedNotesSheet();
     });
   }
 

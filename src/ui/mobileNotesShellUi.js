@@ -49,6 +49,15 @@ const NOTEBOOK_POLISH_CSS = `
     margin: 0;
   }
 
+  #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
+    padding: 0.62rem 0.72rem;
+    margin-bottom: 0.55rem;
+  }
+
+  #view-notebook[data-notes-mode="notebooks"] #notesOverviewList {
+    display: none !important;
+  }
+
   #view-notebook .notes-overview-toggle {
     display: inline-flex;
     align-items: center;
@@ -559,6 +568,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let currentNoteOptionsFocusRestoreEl = null;
   let notesOverviewCollapsed = true;
   let teacherEditorToolsExpanded = false;
+  let teacherEditorToolsNoteId = '';
   let activeNoteSectionLabel = '';
   let collapsedNoteSectionLabel = '';
   let noteSectionsExpanded = false;
@@ -1205,6 +1215,11 @@ export const initMobileNotesShellUi = (options = {}) => {
     const currentNote = currentNoteId
       ? getAllNotes().find((note) => note?.id === currentNoteId) || null
       : null;
+    const currentTeacherNoteId = String(currentNote?.id || '');
+    if (teacherEditorToolsNoteId !== currentTeacherNoteId) {
+      teacherEditorToolsNoteId = currentTeacherNoteId;
+      teacherEditorToolsExpanded = false;
+    }
     const lessonContext = currentNote ? getTeacherLessonContext(currentNote, getAllNotes()) : null;
     const hasCurrentNote = Boolean(currentNote);
     const shouldShowTeacherTools = Boolean(
@@ -1218,6 +1233,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       )
     );
     if (!shouldShowTeacherTools) {
+      teacherEditorToolsExpanded = false;
       toggleButton.hidden = true;
       bar.hidden = true;
       bar.innerHTML = '';
@@ -1407,9 +1423,10 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (!(toggleEl instanceof HTMLButtonElement) || !(listEl instanceof HTMLElement)) {
       return;
     }
+    notesOverviewCollapsed = notesMode !== 'overview';
     listEl.hidden = notesOverviewCollapsed;
-    toggleEl.textContent = notesOverviewCollapsed ? 'Open' : 'Close';
-    toggleEl.setAttribute('aria-expanded', notesOverviewCollapsed ? 'false' : 'true');
+    toggleEl.textContent = notesMode === 'overview' ? 'Back' : 'Open';
+    toggleEl.setAttribute('aria-expanded', notesMode === 'overview' ? 'true' : 'false');
     toggleEl.setAttribute('aria-controls', 'notesOverviewList');
   };
 
@@ -1423,8 +1440,11 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
     event.preventDefault();
-    notesOverviewCollapsed = !notesOverviewCollapsed;
-    renderNotesOverviewToggle();
+    if (!Array.isArray(getAllNotes()) || getAllNotes().length === 0) {
+      applyNotesMode('notebooks');
+      return;
+    }
+    applyNotesMode(notesMode === 'overview' ? 'notebooks' : 'overview');
   });
 
   const ensureActiveLessonCard = () => {
@@ -1526,12 +1546,17 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   const applyNotesMode = (mode = 'notebooks') => {
     notesMode = mode === 'overview' ? 'overview' : 'notebooks';
+    const notebookView = notesOverviewPanel?.closest('#view-notebook');
+    if (notebookView instanceof HTMLElement) {
+      notebookView.dataset.notesMode = notesMode;
+    }
     if (notesOverviewPanel instanceof HTMLElement) {
-      notesOverviewPanel.classList.toggle('hidden', notesMode !== 'overview');
+      notesOverviewPanel.classList.remove('hidden');
     }
     if (noteEditorSheet instanceof HTMLElement) {
       noteEditorSheet.classList.toggle('hidden', notesMode === 'overview');
     }
+    renderNotesOverviewToggle();
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
     renderNoteSectionsBar();
