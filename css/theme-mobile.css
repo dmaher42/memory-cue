@@ -4280,15 +4280,24 @@ body.mobile-theme :focus-visible {
 }
 
 .today-list-container [data-task-id] {
+  display: flex;
   min-height: 3.35rem;
   align-items: center;
+  gap: 0.75rem;
 }
 
 .today-list-container [data-task-id] .checkbox {
   flex: 0 0 auto;
+  width: 1.35rem;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  min-height: 1.35rem;
+  margin: 0;
 }
 
 .today-list-container [data-task-id] span {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.35;
@@ -4296,7 +4305,9 @@ body.mobile-theme :focus-visible {
 }
 
 .today-list-container [data-action="delete-task"] {
+  flex: 0 0 auto;
   min-height: auto;
+  margin-left: auto;
   padding: 0;
   border: none;
   background: transparent;
