@@ -4438,3 +4438,111 @@ html[data-theme="professional-dark"] .formatting-toolbar button.active {
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.12);
 }
+
+html[data-theme="dark"] body.mobile-theme .app-header h1,
+html[data-theme="professional-dark"] body.mobile-theme .app-header h1,
+html[data-theme="dark"] body.mobile-theme .app-header h2,
+html[data-theme="professional-dark"] body.mobile-theme .app-header h2,
+html[data-theme="dark"] body.mobile-theme .top-bar h1,
+html[data-theme="professional-dark"] body.mobile-theme .top-bar h1,
+html[data-theme="dark"] body.mobile-theme .top-bar h2,
+html[data-theme="professional-dark"] body.mobile-theme .top-bar h2,
+html[data-theme="dark"] body.mobile-theme header h1,
+html[data-theme="professional-dark"] body.mobile-theme header h1,
+html[data-theme="dark"] body.mobile-theme header h2,
+html[data-theme="professional-dark"] body.mobile-theme header h2 {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+html[data-theme="dark"] #mobile-nav-shell,
+html[data-theme="professional-dark"] #mobile-nav-shell,
+html[data-theme="dark"] #mobile-nav-shell .floating-footer,
+html[data-theme="professional-dark"] #mobile-nav-shell .floating-footer,
+html[data-theme="dark"] .chat-composer,
+html[data-theme="professional-dark"] .chat-composer,
+html[data-theme="dark"] #thinkingBarForm,
+html[data-theme="professional-dark"] #thinkingBarForm {
+  background: color-mix(in srgb, var(--surface-card) 96%, #ffffff 4%);
+  border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] .notebook-top-bar,
+html[data-theme="professional-dark"] .notebook-top-bar,
+html[data-theme="dark"] .scratch-notes-card,
+html[data-theme="professional-dark"] .scratch-notes-card,
+html[data-theme="dark"] #scratch-notes-card,
+html[data-theme="professional-dark"] #scratch-notes-card,
+html[data-theme="dark"] .notebook-actions-row,
+html[data-theme="professional-dark"] .notebook-actions-row {
+  background: color-mix(in srgb, var(--surface-card) 94%, #ffffff 6%);
+  color: var(--text-main);
+  border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-theme="dark"] .scratch-notes-body-wrapper,
+html[data-theme="professional-dark"] .scratch-notes-body-wrapper,
+html[data-theme="dark"] .note-editor-content-wrapper,
+html[data-theme="professional-dark"] .note-editor-content-wrapper {
+  background: color-mix(in srgb, var(--surface-card) 96%, #ffffff 4%);
+}
+
+html[data-theme="dark"] .note-editor-toolbar,
+html[data-theme="professional-dark"] .note-editor-toolbar {
+  background: color-mix(in srgb, var(--surface-card) 92%, #ffffff 8%);
+  border-bottom-color: color-mix(in srgb, var(--card-border) 76%, transparent);
+}
+
+html[data-theme="dark"] .note-editor-toolbar .rte-btn,
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-btn,
+html[data-theme="dark"] .note-editor-toolbar .rte-select,
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-select {
+  background: color-mix(in srgb, var(--surface-elevated) 96%, #ffffff 4%);
+  color: var(--text-main);
+  border-color: color-mix(in srgb, var(--card-border) 82%, transparent);
+}
+
+html[data-theme="dark"] .notebook-notes-search input[type="search"],
+html[data-theme="professional-dark"] .notebook-notes-search input[type="search"],
+html[data-theme="dark"] .notebook-notes-search input[type="text"],
+html[data-theme="professional-dark"] .notebook-notes-search input[type="text"],
+html[data-theme="dark"] input.notebook-notes-search[type="search"],
+html[data-theme="professional-dark"] input.notebook-notes-search[type="search"],
+html[data-theme="dark"] input.notebook-notes-search[type="text"],
+html[data-theme="professional-dark"] input.notebook-notes-search[type="text"] {
+  background: color-mix(in srgb, var(--surface-elevated) 96%, #ffffff 4%);
+  color: var(--text-main);
+  border-color: color-mix(in srgb, var(--card-border) 82%, transparent);
+}
+
+html[data-theme="dark"] .premium-note-card,
+html[data-theme="professional-dark"] .premium-note-card,
+html[data-theme="dark"] #view-reminders .reminder-row,
+html[data-theme="professional-dark"] #view-reminders .reminder-row {
+  background: color-mix(in srgb, var(--surface-card) 94%, #ffffff 6%);
+  color: var(--text-main);
+  border-color: color-mix(in srgb, var(--card-border) 80%, transparent);
+}
+
+html[data-theme="dark"] .premium-note-card .note-card-title,
+html[data-theme="professional-dark"] .premium-note-card .note-card-title,
+html[data-theme="dark"] .premium-note-card .note-card-meta,
+html[data-theme="professional-dark"] .premium-note-card .note-card-meta,
+html[data-theme="dark"] .premium-note-card .notebook-note-timestamp,
+html[data-theme="professional-dark"] .premium-note-card .notebook-note-timestamp,
+html[data-theme="dark"] #view-reminders .reminder-row-title,
+html[data-theme="professional-dark"] #view-reminders .reminder-row-title,
+html[data-theme="dark"] #view-reminders .reminder-row-meta,
+html[data-theme="professional-dark"] #view-reminders .reminder-row-meta {
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] .premium-note-card .note-card-meta,
+html[data-theme="professional-dark"] .premium-note-card .note-card-meta,
+html[data-theme="dark"] .premium-note-card .notebook-note-timestamp,
+html[data-theme="professional-dark"] .premium-note-card .notebook-note-timestamp,
+html[data-theme="dark"] #view-reminders .reminder-row-meta,
+html[data-theme="professional-dark"] #view-reminders .reminder-row-meta {
+  color: var(--text-secondary);
+}
