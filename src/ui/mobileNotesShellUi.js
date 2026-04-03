@@ -563,6 +563,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let collapsedNoteSectionLabel = '';
   let noteSectionsExpanded = false;
   let noteSectionsKey = '';
+  let noteSectionsNoteId = '';
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
   const NOTE_SECTION_MAX_VISIBLE = 6;
@@ -819,32 +820,8 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   const findSectionTargetElement = (label = '') => {
-    const editorBody = document.getElementById('notebook-editor-body');
-    if (!(editorBody instanceof HTMLElement)) {
-      return null;
-    }
-
-    const normalizedLabel = normalizeSectionLabel(label);
-    if (!normalizedLabel) {
-      return null;
-    }
-
-    const blocks = editorBody.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li');
-    for (const block of blocks) {
-      if (!(block instanceof HTMLElement)) {
-        continue;
-      }
-      const rawText = String(block.textContent || '').trim();
-      if (!rawText) {
-        continue;
-      }
-      const normalizedText = normalizeSectionLabel(rawText);
-      if (normalizedText === normalizedLabel || normalizedText.startsWith(`${normalizedLabel} `)) {
-        return block;
-      }
-    }
-
-    return null;
+    const match = getEditorSectionMatches([{ label }])[0];
+    return match?.element instanceof HTMLElement ? match.element : null;
   };
 
   const getEditorSectionMatches = (sections = []) => {
@@ -865,12 +842,16 @@ export const initMobileNotesShellUi = (options = {}) => {
       }
       for (let index = searchStartIndex; index < blocks.length; index += 1) {
         const block = blocks[index];
-        const rawText = String(block.textContent || '').trim();
+        const rawText = String(block.innerText || block.textContent || '').trim();
         if (!rawText) {
           continue;
         }
-        const normalizedText = normalizeSectionLabel(rawText);
-        if (normalizedText === normalizedLabel || normalizedText.startsWith(`${normalizedLabel} `)) {
+        const blockLines = rawText
+          .split(/\r?\n+/)
+          .map((line) => normalizeSectionLabel(line))
+          .filter(Boolean);
+        const isMatch = blockLines.some((line) => line === normalizedLabel || line.startsWith(`${normalizedLabel} `));
+        if (isMatch) {
           matches.push({ label: section.label, normalized: normalizedLabel, index, element: block });
           searchStartIndex = index + 1;
           break;
@@ -879,6 +860,23 @@ export const initMobileNotesShellUi = (options = {}) => {
     });
 
     return matches;
+  };
+
+  const getRenderableNoteSections = (sections = []) => {
+    const visibleSections = getVisibleNoteSections(sections);
+    if (visibleSections.length < 2) {
+      return [];
+    }
+
+    const matchedSections = getEditorSectionMatches(visibleSections);
+    const seenBlockIndexes = new Set();
+    return matchedSections.filter((match) => {
+      if (seenBlockIndexes.has(match.index)) {
+        return false;
+      }
+      seenBlockIndexes.add(match.index);
+      return true;
+    });
   };
 
   const applyCollapsedNoteSection = (sections = []) => {
@@ -919,6 +917,15 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
+    const currentNoteId = String(getCurrentNoteId() || '');
+    if (noteSectionsNoteId !== currentNoteId) {
+      noteSectionsNoteId = currentNoteId;
+      activeNoteSectionLabel = '';
+      collapsedNoteSectionLabel = '';
+      noteSectionsExpanded = false;
+      noteSectionsKey = '';
+    }
+
     const parsedSections = typeof window !== 'undefined' && typeof window.getCurrentNoteSections === 'function'
       ? window.getCurrentNoteSections()
       : [];
@@ -926,7 +933,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       ...(Array.isArray(parsedSections) ? parsedSections : []),
       ...getEditorLineSections(),
     ];
-    const visibleSections = getVisibleNoteSections(mergedSections);
+    const visibleSections = getRenderableNoteSections(mergedSections);
     if (visibleSections.length < 2) {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
