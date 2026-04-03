@@ -4238,11 +4238,22 @@ body.mobile-theme :focus-visible {
   gap: 0.75rem;
 }
 
+.today-list-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-primary, #1A1A2E);
+}
+
 .today-list-header .btn {
   min-height: 2rem;
   height: 2rem;
   padding-inline: 0.8rem;
   border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 650;
 }
 
 .today-list-quick-add {
@@ -4255,6 +4266,9 @@ body.mobile-theme :focus-visible {
 
 .today-list-quick-add-input {
   min-height: 2.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary, #1A1A2E);
 }
 
 .today-list-container {
@@ -4263,6 +4277,39 @@ body.mobile-theme :focus-visible {
   border: 1px solid color-mix(in srgb, var(--fallback-b3, #d9d6df) 72%, #ffffff 28%);
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 10px 24px rgba(57, 35, 87, 0.05);
+}
+
+.today-list-container [data-task-id] {
+  min-height: 3.35rem;
+  align-items: center;
+}
+
+.today-list-container [data-task-id] .checkbox {
+  flex: 0 0 auto;
+}
+
+.today-list-container [data-task-id] span {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary, #1A1A2E);
+}
+
+.today-list-container [data-action="delete-task"] {
+  min-height: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #6B6B7B);
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.today-list-container [data-action="delete-task"]:hover,
+.today-list-container [data-action="delete-task"]:focus-visible {
+  background: transparent;
+  color: var(--color-primary, #6B4EFF);
 }
 
 .today-list-container [data-task-id]:last-child {
@@ -4407,6 +4454,20 @@ html[data-theme="professional-dark"] #settingsModal .card {
   background: color-mix(in srgb, var(--surface-card) 94%, #ffffff 6%);
   border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
   box-shadow: var(--shadow-card);
+}
+
+html[data-theme="dark"] .today-list-header h3,
+html[data-theme="professional-dark"] .today-list-header h3,
+html[data-theme="dark"] .today-list-container [data-task-id] span,
+html[data-theme="professional-dark"] .today-list-container [data-task-id] span,
+html[data-theme="dark"] .today-list-quick-add-input,
+html[data-theme="professional-dark"] .today-list-quick-add-input {
+  color: var(--text-primary, #E8E5F0);
+}
+
+html[data-theme="dark"] .today-list-container [data-action="delete-task"],
+html[data-theme="professional-dark"] .today-list-container [data-action="delete-task"] {
+  color: var(--text-secondary, #9B95B0);
 }
 
 html[data-theme="dark"] .note-title-input,
