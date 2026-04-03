@@ -318,18 +318,7 @@ export class DailyTasksManager {
   }
 
   setupStatsElement() {
-    if (!this.dailyTasksContainer || !this.document) {
-      return;
-    }
-    if (this.statsElement) {
-      return;
-    }
-    const stats = this.document.createElement('div');
-    stats.className = 'text-sm text-base-content/70 mb-2 flex items-center gap-3';
-    stats.dataset.role = 'daily-task-stats';
-    stats.textContent = 'No tasks yet';
-    this.dailyTasksContainer.insertAdjacentElement('beforebegin', stats);
-    this.statsElement = stats;
+    this.statsElement = null;
   }
 
   setupUndoButton() {
@@ -552,9 +541,12 @@ export class DailyTasksManager {
     }
     const hasCompletedTasks = this.tasks.some((task) => Boolean(task?.completed));
     this.clearCompletedButton.disabled = !hasCompletedTasks;
+    this.clearCompletedButton.classList.toggle('hidden', !hasCompletedTasks);
   }
 
   updateStats() {
+    // Keep Capture's Today List visually quiet and checklist-first.
+    return;
     if (!this.statsElement) {
       return;
     }
@@ -573,7 +565,7 @@ export class DailyTasksManager {
       return;
     }
     if (!Array.isArray(this.tasks) || this.tasks.length === 0) {
-      this.dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60">No tasks for today yet.</p>';
+      this.dailyTasksContainer.innerHTML = '<p class="text-sm text-base-content/60 p-3">Nothing here yet.</p>';
       this.updateClearCompletedButtonState();
       this.updateStats();
       return;
@@ -593,27 +585,7 @@ export class DailyTasksManager {
         if (completed) {
           textClasses.push('line-through', 'text-opacity-50');
         }
-        const priorityLabel = PRIORITY_LABELS[task.priority] ?? 'Medium';
-        const metaParts = [`Priority: ${priorityLabel}`, `Category: ${escapeCueText(task.category)}`];
-        if (task.completedAt) {
-          const duration = Math.max(0, task.completedAt - task.createdAt);
-          metaParts.push(`Time: ${formatDuration(duration)}`);
-        } else if (task.estimateMs) {
-          metaParts.push(`Estimate: ${formatDuration(task.estimateMs)}`);
-        }
-        return `
-        <div class="flex flex-col gap-1 p-3 border-b border-base-200" data-task-id="${task.id}">
-          <div class="flex items-center gap-3">
-            <input type="checkbox" class="checkbox checkbox-sm" data-task-id="${task.id}" ${completed ? 'checked' : ''} />
-            <span class="${textClasses.join(' ')}">${safeText}</span>
-          </div>
-          <div class="flex items-center gap-3 text-xs text-base-content/70">
-            <span>${metaParts.join(' • ')}</span>
-            <button type="button" class="btn btn-ghost btn-xs" data-action="cycle-priority">Priority: ${priorityLabel}</button>
-            <button type="button" class="btn btn-ghost btn-xs" data-action="delete-task">Delete</button>
-          </div>
-        </div>
-      `;
+        return `<div class="flex items-center gap-3 p-3 border-b border-base-200" data-task-id="${task.id}"><input type="checkbox" class="checkbox checkbox-sm" data-task-id="${task.id}" ${completed ? 'checked' : ''} /><span class="${textClasses.join(' ')}">${safeText}</span><button type="button" class="btn btn-ghost btn-xs ml-auto" data-action="delete-task">Delete</button></div>`;
       })
       .join('');
     this.dailyTasksContainer.innerHTML = markup;
@@ -627,8 +599,7 @@ export class DailyTasksManager {
     }
     const todayId = getTodayDateId();
     this.todayId = todayId;
-    const formatted = formatDateForHeader(todayId);
-    this.dailyListHeader.textContent = formatted ? `Today's List - ${formatted}` : "Today's List";
+    this.dailyListHeader.textContent = "Today's List";
 
     if (this.shouldUseLocalDailyList) {
       this.showPermissionNotice();
