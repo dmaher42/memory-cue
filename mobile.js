@@ -76,7 +76,6 @@ function initAssistant() {
     const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarForm = document.getElementById('thinkingBarForm');
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
-    const recentCapturesList = document.getElementById('recentCapturesList');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const chatConversationContainer = document.getElementById('chatConversationContainer');
     const assistantHelpBtn = document.getElementById('assistantHelpBtn');
@@ -547,37 +546,6 @@ function initAssistant() {
         isAssistantSending = false;
       }
     });
-
-    const renderRecentCaptures = () => {
-      if (!(recentCapturesList instanceof HTMLElement)) {
-        return;
-      }
-
-      const entries = getInboxEntries()
-        .slice(0, 5)
-        .map((entry) => (typeof entry?.text === 'string' ? entry.text.trim() : ''))
-        .filter(Boolean);
-
-      recentCapturesList.innerHTML = '';
-
-      if (!entries.length) {
-        const emptyItem = document.createElement('li');
-        emptyItem.className = 'capture-recent-empty';
-        emptyItem.textContent = 'No captures yet.';
-        recentCapturesList.appendChild(emptyItem);
-        return;
-      }
-
-      entries.forEach((text) => {
-        const item = document.createElement('li');
-        item.textContent = text;
-        recentCapturesList.appendChild(item);
-      });
-    };
-
-    document.addEventListener('memoryCue:entriesUpdated', renderRecentCaptures);
-    renderRecentCaptures();
-
 
     if (weeklyReflectionButton instanceof HTMLElement) {
       weeklyReflectionButton.addEventListener('click', async () => {
