@@ -6,9 +6,9 @@ import { handleQuery } from '../brain/queryEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 
-// Lightweight in-memory conversation state for one-step clarifications.
-let pendingIntent = null;
-let pendingCaptureKind = null;
+// Keep one-step clarifications scoped to the capture surface that started them.
+const pendingIntentsByChannel = new Map();
+const pendingCaptureKindsByChannel = new Map();
 
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
@@ -23,6 +23,12 @@ const normalizeSource = (value) => {
   }
   const normalized = value.trim();
   return normalized || 'unknown';
+};
+
+const getPendingChannelKey = (context = {}) => {
+  const source = normalizeSource(context?.source);
+  const entryPoint = normalizeSource(context?.entryPoint || context?.source);
+  return `${entryPoint}::${source}`;
 };
 
 const QUICK_CAPTURE_PREFIXES = Object.freeze({
@@ -449,7 +455,9 @@ const enrichReminderDecision = (decision, text) => {
   };
 };
 
-const maybeResolvePendingIntent = async (text) => {
+const maybeResolvePendingIntent = async (text, hints = {}) => {
+  const channelKey = getPendingChannelKey(hints);
+  const pendingCaptureKind = pendingCaptureKindsByChannel.get(channelKey) || null;
   if (pendingCaptureKind) {
     const selectedKind = normalizeCaptureKind(text);
     if (selectedKind === 'reminder' || selectedKind === 'note') {
@@ -458,13 +466,14 @@ const maybeResolvePendingIntent = async (text) => {
         pendingCaptureKind.originalText,
         pendingCaptureKind.hints,
       );
-      pendingCaptureKind = null;
+      pendingCaptureKindsByChannel.delete(channelKey);
       return { decision };
     }
 
-    pendingCaptureKind = null;
+    pendingCaptureKindsByChannel.delete(channelKey);
   }
 
+  const pendingIntent = pendingIntentsByChannel.get(channelKey) || null;
   if (!pendingIntent) {
     return null;
   }
@@ -473,21 +482,21 @@ const maybeResolvePendingIntent = async (text) => {
   const decision = buildPendingReminderDecision(pendingIntent, dueAt);
 
   if (!dueAt && !looksLikeReminderTimingReply(text)) {
-    pendingIntent = null;
+    pendingIntentsByChannel.delete(channelKey);
     return null;
   }
 
   if (decision.missing.length) {
-    pendingIntent = {
+    pendingIntentsByChannel.set(channelKey, {
       ...pendingIntent,
       lastFollowUpText: text,
-    };
+    });
     return {
       clarification: buildAssistantResponse('When should I remind you?'),
     };
   }
 
-  pendingIntent = null;
+  pendingIntentsByChannel.delete(channelKey);
   return { decision };
 };
 
@@ -619,7 +628,8 @@ export async function captureInput({
     ...metadata,
   };
 
-  const pendingResolution = await maybeResolvePendingIntent(normalizedText);
+  const channelKey = getPendingChannelKey(context);
+  const pendingResolution = await maybeResolvePendingIntent(normalizedText, context);
   if (pendingResolution?.clarification) {
     return pendingResolution.clarification;
   }
@@ -657,10 +667,10 @@ export async function captureInput({
 
   switch (decision?.decisionType) {
     case 'choose_capture_kind': {
-      pendingCaptureKind = {
+      pendingCaptureKindsByChannel.set(channelKey, {
         originalText: normalizedText,
         hints,
-      };
+      });
       return buildAssistantResponse('Should I save that as a reminder or a note?');
     }
     case 'persist_note': {
@@ -673,13 +683,13 @@ export async function captureInput({
     }
     case 'persist_reminder': {
       if (Array.isArray(decision?.missing) && decision.missing.includes('dueAt')) {
-        pendingIntent = {
+        pendingIntentsByChannel.set(channelKey, {
           ...decision,
           payload: {
             text: decision?.parsedEntry?.title || normalizedText,
             dueAt: decision?.parsedEntry?.reminderDate || null,
           },
-        };
+        });
         return buildAssistantResponse('When should I remind you?', {
           decision,
         });

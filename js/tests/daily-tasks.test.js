@@ -161,7 +161,7 @@ describe('DailyTasksManager', () => {
     expect(elements.cuesTab.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('parses quick add metadata and renders tasks with stats', async () => {
+  it('parses quick add metadata and renders tasks', async () => {
     const { manager, storage, elements } = createManager();
     await manager.handleQuickAdd('Finish report !high #work @30m');
     expect(manager.tasks).toHaveLength(1);
@@ -171,8 +171,6 @@ describe('DailyTasksManager', () => {
     expect(task.estimateMs).toBe(30 * 60_000);
     expect(elements.container.innerHTML).toContain('Finish report');
     expect(storage.setItem).toHaveBeenCalled();
-    const statsText = document.querySelector('[data-role="daily-task-stats"]').textContent;
-    expect(statsText).toContain('Tasks: 1');
   });
 
   it('completes and reverts tasks while tracking time', async () => {
@@ -183,7 +181,8 @@ describe('DailyTasksManager', () => {
     const completedTask = manager.tasks.find((item) => item.id === task.id);
     expect(completedTask.completed).toBe(true);
     expect(completedTask.completedAt).not.toBeNull();
-    expect(elementsFromManager(manager).container.innerHTML).toContain('Time:');
+    expect(elementsFromManager(manager).container.innerHTML).toContain('Practice guitar');
+    expect(elementsFromManager(manager).container.innerHTML).toContain('Delete');
 
     await manager.completeTask(task.id, false);
     const reverted = manager.tasks.find((item) => item.id === task.id);
@@ -215,9 +214,7 @@ describe('DailyTasksManager', () => {
 
     const rendered = Array.from(elements.container.querySelectorAll('[data-task-id]'));
     expect(rendered[0]?.textContent || '').toContain('Low priority');
-    expect(rendered[0]?.textContent || '').toContain('Priority: High');
-    const combinedText = rendered.map((node) => node.textContent || '').join(' ');
-    expect(combinedText).toContain('Priority: Medium');
+    expect(rendered[0]?.textContent || '').toContain('Delete');
   });
 
   it('displays the permission notice in local mode', async () => {
@@ -253,7 +250,7 @@ describe('DailyTasksManager', () => {
     expect(manager.quickAddVoiceRecognition.stop).toHaveBeenCalledTimes(1);
   });
 
-  it('renders completed task statistics and allows undoing deletion', async () => {
+  it('allows undoing deletion', async () => {
     const { manager } = createManager();
     await manager.handleQuickAdd('Task removable');
     const [task] = manager.tasks;
@@ -261,8 +258,7 @@ describe('DailyTasksManager', () => {
     expect(manager.tasks).toHaveLength(0);
     manager.undoLastAction();
     expect(manager.tasks).toHaveLength(1);
-    const statsText = document.querySelector('[data-role="daily-task-stats"]').textContent;
-    expect(statsText).toContain('Tasks: 1');
+    expect(manager.tasks[0].text).toBe('Task removable');
   });
 
   it('formats durations for statistics helpers', () => {

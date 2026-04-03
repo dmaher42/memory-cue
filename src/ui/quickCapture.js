@@ -36,7 +36,10 @@ export const dispatchReminderSheetOpen = (trigger, prefillText = '') => {
 export function initQuickCapture() {
   const quickForm = document.getElementById('quickAddForm');
   const quickInput = document.getElementById('reminderQuickAdd');
-  const voiceButton = document.getElementById('startVoiceCaptureGlobal');
+  const voiceButton =
+    quickInput instanceof HTMLInputElement
+      ? document.getElementById('startVoiceCaptureGlobal')
+      : null;
 
   const startVoiceCapture = () => {
     if (!(quickInput instanceof HTMLInputElement)) return;
@@ -84,9 +87,21 @@ export function initQuickCapture() {
 
     console.log('[ui]', 'quick capture triggered');
     try {
-      await captureInput({ text, source: 'quick_capture' });
-      quickInput.value = '';
-      quickInput.dispatchEvent(new Event('input', { bubbles: true }));
+      const result = await captureInput({ text, source: 'quick_capture' });
+      const reply = typeof result?.message === 'string' ? result.message.trim() : '';
+      const needsFollowUp = reply.endsWith('?');
+      const output = document.getElementById('assistantOutput');
+
+      if (output instanceof HTMLElement && reply) {
+        output.textContent = reply;
+      } else if (needsFollowUp && reply) {
+        window.alert(reply);
+      }
+
+      if (!needsFollowUp) {
+        quickInput.value = '';
+        quickInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     } catch (error) {
       console.error('Quick capture failed', error);
     }
