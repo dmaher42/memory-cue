@@ -3,6 +3,7 @@
   --color-primary: #6B4EFF;
   --color-primary-hover: #5A3FD7;
   --color-secondary: #E6E0FA;
+  --color-secondary-strong: #D9CEF6;
   --surface-bg: linear-gradient(180deg, #F8F6FC 0%, #F0EBF8 50%, #E8E0F5 100%);
   --surface-card: #FFFFFF;
   --surface-elevated: #FCFBFF;
@@ -16,6 +17,8 @@
   --text-secondary: #6B6B7B;
   --text-muted: #6B6B7B;
   --accent-color: #6B4EFF;
+  --button-radius: 0.8rem;
+  --button-font-weight: 650;
 }
 
 body {
@@ -1594,34 +1597,35 @@ input.notebook-notes-search::placeholder {
   justify-content: center;
   width: 96px; /* fixed width to keep uniform */
   height: 40px; /* fixed height to keep uniform */
-  border-radius: 8px; /* slightly rounded corners */
-  font-weight: 600;
+  border-radius: var(--button-radius); /* slightly rounded corners */
+  font-weight: var(--button-font-weight);
   font-size: 0.9rem;
   line-height: 1;
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: var(--shadow-soft);
   padding: 0 0.6rem;
 }
 
 .notebook-action-btn:focus {
-  outline: 3px solid color-mix(in srgb, #2E6171 18%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
   outline-offset: 2px;
 }
 
 .notebook-action-btn.save {
-  background: #2E6171; /* Save button color */
+  background: var(--color-primary); /* Save button color */
   color: #ffffff;
+  border-color: transparent;
 }
 
 .notebook-action-btn.new {
-  background: #D4AFCD; /* New button color */
-  color: #102027; /* darker text for contrast on light background */
+  background: color-mix(in srgb, var(--surface-card) 70%, var(--color-secondary) 30%); /* New button color */
+  color: var(--text-main); /* darker text for contrast on light background */
 }
 
 .notebook-action-btn.saved {
-  background: #798086; /* Saved Notes button color */
-  color: #ffffff;
+  background: color-mix(in srgb, var(--surface-card) 88%, var(--color-secondary) 12%); /* Saved Notes button color */
+  color: var(--text-main);
 }
 
 /* Ensure any framework btn classes don't override our sizing */
@@ -2830,34 +2834,35 @@ input.notebook-notes-search::placeholder {
   justify-content: center;
   width: 96px; /* fixed width to keep uniform */
   height: 40px; /* fixed height to keep uniform */
-  border-radius: 8px; /* slightly rounded corners */
-  font-weight: 600;
+  border-radius: var(--button-radius); /* slightly rounded corners */
+  font-weight: var(--button-font-weight);
   font-size: 0.9rem;
   line-height: 1;
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: var(--shadow-soft);
   padding: 0 0.6rem;
 }
 
 .notebook-action-btn:focus {
-  outline: 3px solid color-mix(in srgb, #2E6171 18%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
   outline-offset: 2px;
 }
 
 .notebook-action-btn.save {
-  background: #2E6171; /* Save button color */
+  background: var(--color-primary); /* Save button color */
   color: #ffffff;
+  border-color: transparent;
 }
 
 .notebook-action-btn.new {
-  background: #D4AFCD; /* New button color */
-  color: #102027; /* darker text for contrast on light background */
+  background: color-mix(in srgb, var(--surface-card) 70%, var(--color-secondary) 30%); /* New button color */
+  color: var(--text-main); /* darker text for contrast on light background */
 }
 
 .notebook-action-btn.saved {
-  background: #798086; /* Saved Notes button color */
-  color: #ffffff;
+  background: color-mix(in srgb, var(--surface-card) 88%, var(--color-secondary) 12%); /* Saved Notes button color */
+  color: var(--text-main);
 }
 
 /* Ensure any framework btn classes don't override our sizing */
@@ -3255,7 +3260,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 /* Active formatting state (e.g., B/I/U on) */
 .note-editor-toolbar .rte-btn.active {
   background: rgba(15, 23, 42, 0.07);
-  border-color: rgba(80, 128, 191, 0.7); /* use app accent for active */
+  border-color: color-mix(in srgb, var(--accent-color) 64%, transparent); /* use app accent for active */
   color: rgba(17, 24, 39, 1);
 }
 
@@ -3690,31 +3695,32 @@ body {
 body.mobile-theme .btn-primary,
 body.mobile-theme button.btn-primary,
 body.mobile-theme .button-primary {
-  background-color: #5080BF;
+  background-color: var(--color-primary);
   color: #FFFFFF;
   border: none;
-  border-radius: 0.65rem;
+  border-radius: var(--button-radius);
   padding: 0.75rem 1.25rem;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: var(--button-font-weight);
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: 0 6px 14px rgba(107, 78, 255, 0.16);
 }
 
 body.mobile-theme .btn-primary:hover,
 body.mobile-theme button.btn-primary:hover,
 body.mobile-theme .button-primary:hover {
-  background-color: #3f6aa0;
+  background-color: var(--color-primary-hover);
 }
 
 body.mobile-theme .btn-primary:focus-visible,
 body.mobile-theme button.btn-primary:focus-visible,
 body.mobile-theme .button-primary:focus-visible {
-  outline: 3px solid rgba(80, 128, 191, 0.4);
+  outline: 3px solid rgba(107, 78, 255, 0.22);
   outline-offset: 2px;
 }
 
@@ -3776,8 +3782,8 @@ body.mobile-theme input:focus,
 body.mobile-theme select:focus,
 body.mobile-theme textarea:focus,
 body.mobile-theme .form-control:focus {
-  border-color: #5080BF;
-  box-shadow: 0 0 0 3px rgba(80, 128, 191, 0.18);
+  border-color: color-mix(in srgb, var(--accent-color) 68%, #ffffff 32%);
+  box-shadow: 0 0 0 3px rgba(107, 78, 255, 0.16);
   outline: none;
 }
 
@@ -3804,14 +3810,14 @@ body.mobile-theme a,
 body.mobile-theme .link,
 body.mobile-theme .icon,
 body.mobile-theme .text-accent {
-  color: #5080BF;
+  color: var(--color-primary);
   text-decoration: none;
 }
 
 body.mobile-theme a:hover,
 body.mobile-theme .link:hover,
 body.mobile-theme .hover\:text-accent-dark:hover {
-  color: #3f6aa0;
+  color: var(--color-primary-hover);
 }
 
 /* Utilities */

@@ -60,6 +60,8 @@
   align-self: flex-end;
   min-width: 5.5rem;
   height: 2.75rem;
+  border-radius: var(--button-radius, 0.8rem);
+  font-weight: var(--button-font-weight, 650);
 }
 
 .thinking-conversation {

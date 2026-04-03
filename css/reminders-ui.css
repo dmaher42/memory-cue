@@ -96,7 +96,7 @@
   flex: 0 0 auto;
   align-self: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--button-radius, 0.8rem);
   min-height: 2.1rem;
   padding: 0.48rem 0.78rem;
   background: var(--color-primary, #6B4EFF);
@@ -104,7 +104,7 @@
   font-family: inherit;
   font-size: 0.76rem;
   line-height: 1;
-  font-weight: 650;
+  font-weight: var(--button-font-weight, 650);
   letter-spacing: -0.01em;
   box-shadow: 0 6px 14px rgba(107, 78, 255, 0.18);
 }
@@ -116,7 +116,7 @@
   flex: 0 0 auto;
   align-self: center;
   border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
-  border-radius: 999px;
+  border-radius: var(--button-radius, 0.8rem);
   min-height: 2.1rem;
   padding: 0.48rem 0.72rem;
   background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #E6E0FA) 18%);
@@ -124,7 +124,7 @@
   font-family: inherit;
   font-size: 0.76rem;
   line-height: 1;
-  font-weight: 650;
+  font-weight: var(--button-font-weight, 650);
   letter-spacing: -0.01em;
   box-shadow: none;
 }
@@ -156,13 +156,13 @@
   border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
   background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #E6E0FA) 18%);
   color: var(--text-main);
-  border-radius: 999px;
+  border-radius: var(--button-radius, 0.8rem);
   min-height: 2.1rem;
   padding: 0.48rem 0.72rem;
   font-family: inherit;
   font-size: 0.76rem;
   line-height: 1;
-  font-weight: 650;
+  font-weight: var(--button-font-weight, 650);
   letter-spacing: -0.01em;
   box-shadow: none;
 }
