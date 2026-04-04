@@ -38,13 +38,41 @@ import {
 // This module wires up Firebase-backed reminder UI handlers.
 
 function compareRemindersForDisplay(a, b) {
+  const isCompleted = (reminder) => {
+    if (!reminder || typeof reminder !== 'object') {
+      return false;
+    }
+    if (typeof reminder.done === 'boolean') {
+      return reminder.done;
+    }
+    return Boolean(reminder.completed || reminder.isDone || reminder.status === 'done');
+  };
+
+  const readDueTime = (reminder) => {
+    if (!reminder || typeof reminder !== 'object') {
+      return Infinity;
+    }
+    if (Number.isFinite(reminder.dueAt)) {
+      return Number(reminder.dueAt);
+    }
+    if (typeof reminder.due === 'string' && reminder.due.trim()) {
+      const parsed = Date.parse(reminder.due);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return Infinity;
+  };
+
   // Completed reminders go last.
-  if (a?.completed && !b?.completed) return 1;
-  if (!a?.completed && b?.completed) return -1;
+  const aCompleted = isCompleted(a);
+  const bCompleted = isCompleted(b);
+  if (aCompleted && !bCompleted) return 1;
+  if (!aCompleted && bCompleted) return -1;
 
   // Sort by due date with no-date reminders after dated reminders.
-  const aTime = a?.dueAt ?? Infinity;
-  const bTime = b?.dueAt ?? Infinity;
+  const aTime = readDueTime(a);
+  const bTime = readDueTime(b);
 
   return aTime - bTime;
 }
@@ -960,6 +988,7 @@ export async function initReminders(sel = {}) {
     timeRelevance: 'time-relevance',
   });
   let reminderSortMode = REMINDER_SORT_OPTIONS.created;
+  let completedReminderSectionExpanded = false;
 
   function sortReminderRows(rows = []) {
     const sorted = Array.isArray(rows) ? rows.slice() : [];
@@ -5337,6 +5366,49 @@ export async function initReminders(sel = {}) {
     parent.appendChild(headingEl);
   }
 
+  function appendCompletedReminderSectionHeading(parent, {
+    listIsSemantic,
+    count = 0,
+    expanded = false,
+    onToggle = null,
+  } = {}) {
+    if (!(parent instanceof HTMLElement)) {
+      return;
+    }
+
+    const headingEl = document.createElement(listIsSemantic ? 'li' : 'div');
+    headingEl.className = 'reminder-completed-section';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'reminder-completed-section-toggle';
+    toggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    toggleBtn.setAttribute('aria-label', expanded ? 'Hide completed reminders' : 'Show completed reminders');
+
+    const headingLabel = document.createElement('span');
+    headingLabel.className = 'reminder-completed-section-label';
+    headingLabel.textContent = 'Done';
+
+    const countLabel = document.createElement('span');
+    countLabel.className = 'reminder-completed-section-count';
+    countLabel.textContent = String(count);
+
+    const chevron = document.createElement('span');
+    chevron.className = 'reminder-completed-section-icon';
+    chevron.setAttribute('aria-hidden', 'true');
+
+    toggleBtn.append(headingLabel, countLabel, chevron);
+    if (typeof onToggle === 'function') {
+      toggleBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggle();
+      });
+    }
+    headingEl.appendChild(toggleBtn);
+    parent.appendChild(headingEl);
+  }
+
   function formatMobileReminderMeta(reminder, categoryName, todayRange) {
     if (!reminder || typeof reminder !== 'object') {
       return '';
@@ -5853,6 +5925,7 @@ export async function initReminders(sel = {}) {
 
     let rows = sortReminderRows(items);
     const activeRows = rows.filter((row) => !row?.done);
+    const completedRows = rows.filter((row) => row?.done);
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
@@ -5863,7 +5936,7 @@ export async function initReminders(sel = {}) {
     const highlightToday = true;
 
     const hasAny = items.length > 0;
-    const hasRows = activeRows.length > 0;
+    const hasRows = activeRows.length > 0 || completedRows.length > 0;
     const upcomingToday = getUpcomingTodayReminders(activeRows);
     const agendaGroups = groupRemindersByDay(activeRows);
     if (variant === 'mobile') {
@@ -6279,6 +6352,30 @@ export async function initReminders(sel = {}) {
         frag.appendChild(itemEl);
       });
     }
+
+    if (completedRows.length) {
+      appendCompletedReminderSectionHeading(frag, {
+        listIsSemantic,
+        count: completedRows.length,
+        expanded: completedReminderSectionExpanded,
+        onToggle: () => {
+          completedReminderSectionExpanded = !completedReminderSectionExpanded;
+          render();
+        },
+      });
+
+      if (completedReminderSectionExpanded) {
+        completedRows.forEach((reminder) => {
+          const catName = reminder.category || DEFAULT_CATEGORY;
+          const itemEl = buildReminderCard(reminder, catName, {
+            elementTag: listIsSemantic ? 'li' : 'div',
+            isMobile: variant === 'mobile',
+          });
+          frag.appendChild(itemEl);
+        });
+      }
+    }
+
     list.appendChild(frag);
     syncDetailSelection();
     schedulePinToggleSync();
