@@ -325,7 +325,7 @@ function initAssistant() {
         const title = toAssistantEntryText(entry?.title, 120) || 'Untitled note';
         const tags = Array.isArray(entry?.tags) && entry.tags.length ? ` (${entry.tags.join(', ')})` : '';
         const summarySource = toAssistantEntryText(entry?.summary, 160) || toAssistantEntryText(entry?.body, 160);
-        return `${index + 1}. ${title}${tags}${summarySource ? ` – ${summarySource}` : ''}`;
+        return `${index + 1}. ${title}${tags}${summarySource ? ` â€“ ${summarySource}` : ''}`;
       });
 
       return [
@@ -1114,14 +1114,12 @@ const initMobileNotes = () => {
     if (NotesEditorClass) {
         return new NotesEditorClass('#notebook-editor-body', {
           toolbar: true,
-          placeholder: 'Start typing your note…',
         });
     }
 
     scratchNotesEditorElement.setAttribute('contenteditable', 'true');
     scratchNotesEditorElement.setAttribute('role', 'textbox');
     scratchNotesEditorElement.setAttribute('aria-multiline', 'true');
-    scratchNotesEditorElement.dataset.placeholder = 'Start typing your note…';
 
     return {
       element: scratchNotesEditorElement,
@@ -1345,13 +1343,13 @@ const initMobileNotes = () => {
       .trim();
   };
 
-  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice|drill|drills|warm up|warm-up)\b[:\-–—]?\s*/i;
-  const NOTE_SECTION_INLINE_LABEL_PATTERN = /^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-–—]\s+\S/i;
+  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice|drill|drills|warm up|warm-up)\b[:\-â€“â€”]?\s*/i;
+  const NOTE_SECTION_INLINE_LABEL_PATTERN = /^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-â€“â€”]\s+\S/i;
 
   const normalizeSectionLabel = (value = '') => value
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/[:\-–—]+$/, '')
+    .replace(/[:\-â€“â€”]+$/, '')
     .trim();
 
   const formatSectionLabel = (value = '') => {
@@ -1363,6 +1361,22 @@ const initMobileNotes = () => {
       .split(/\s+/)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
       .join(' ');
+  };
+
+  const extractMarkdownSectionLabel = (rawText = '') => {
+    const markdownMatch = String(rawText || '').trim().match(/^\s{0,3}(#{1,6})\s*(.+?)\s*#*\s*$/);
+    if (!markdownMatch?.[2]) {
+      return '';
+    }
+
+    const headingText = markdownMatch[2]
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!headingText || headingText.length > 80) {
+      return '';
+    }
+
+    return formatSectionLabel(headingText);
   };
 
   const extractInlineSectionLabel = (rawText = '') => {
@@ -1385,13 +1399,13 @@ const initMobileNotes = () => {
     return candidate;
   };
 
-  // Build a lightweight section index from headings or cue-style labels inside the note.
+  // Build a lightweight section index from markdown headings or cue-style labels inside the note.
   const buildNoteSectionsFromHtml = (html = '') => {
     const temp = document.createElement('div');
     temp.innerHTML = typeof html === 'string' ? html : '';
     const sections = [];
     const seenLabels = new Set();
-    const appendSectionLabel = (value = '') => {
+    const appendSectionLabel = (value = '', kind = 'label') => {
       const label = formatSectionLabel(value);
       if (!label) {
         return;
@@ -1405,51 +1419,27 @@ const initMobileNotes = () => {
       sections.push({
         id: `section-${normalizedKey.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || sections.length + 1}`,
         label,
+        kind,
       });
     };
 
-    const headingBlocks = temp.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    headingBlocks.forEach((block) => {
-      if (!(block instanceof HTMLElement)) {
+    const nodes = Array.from(temp.childNodes || []);
+    nodes.forEach((node) => {
+      const nodeText = String(node?.textContent || '').trim();
+      if (!nodeText) {
         return;
       }
-      const rawText = normalizeSectionLabel(block.textContent || '');
-      if (!rawText) {
-        return;
-      }
-      appendSectionLabel(rawText);
-    });
-
-    const lineSource = String(temp.innerText || temp.textContent || '');
-    const lines = lineSource
-      .split(/\r?\n+/)
-      .map((line) => String(line || '').trim())
-      .filter(Boolean);
-
-    lines.forEach((line) => {
-      const rawText = normalizeSectionLabel(line);
-      if (!rawText) {
-        return;
-      }
-
-      let label = '';
-      const prefixMatch = rawText.match(NOTE_SECTION_PREFIX_PATTERN);
-      if (prefixMatch?.[1]) {
-        label = formatSectionLabel(prefixMatch[1]);
-      } else {
-        label = extractInlineSectionLabel(line);
-      }
-      if (!label && /[：:]$/.test(line)) {
-        const wordCount = rawText.split(/\s+/).filter(Boolean).length;
-        if (wordCount <= 5 && rawText.length <= 42) {
-          label = formatSectionLabel(rawText);
-        }
-      }
-
-      if (!label) {
-        return;
-      }
-      appendSectionLabel(label);
+      nodeText
+        .split(/\r?\n+/)
+        .map((line) => String(line || '').trim())
+        .filter(Boolean)
+        .forEach((line) => {
+          const label = extractMarkdownSectionLabel(line);
+          if (!label) {
+            return;
+          }
+          appendSectionLabel(label, 'markdown');
+        });
     });
 
     return sections;
@@ -1740,7 +1730,7 @@ const initMobileNotes = () => {
         <div class="notes-overview-item-title">${safeTitle}</div>
         <div class="notes-overview-item-meta">
           <span>${folder}</span>
-          <span class="notes-overview-item-meta-dot" aria-hidden="true">•</span>
+          <span class="notes-overview-item-meta-dot" aria-hidden="true">â€¢</span>
           <span>${timestamp}</span>
         </div>
         ${tagsMarkup}
@@ -1997,7 +1987,7 @@ const initMobileNotes = () => {
           button.type = 'button';
           button.className = 'text-left w-full text-sm';
           button.dataset.noteId = note.id;
-          button.textContent = `• ${getDashboardItemLabel(note)}`;
+          button.textContent = `â€¢ ${getDashboardItemLabel(note)}`;
           button.addEventListener('click', () => {
             openNoteFromDashboard(note.id);
           });
@@ -2056,10 +2046,10 @@ const initMobileNotes = () => {
       date.getDate() === now.getDate();
     const timeString = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     if (sameDay) {
-      return `Today · ${timeString}`;
+      return `Today Â· ${timeString}`;
     }
     const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return `${dateString} · ${timeString}`;
+    return `${dateString} Â· ${timeString}`;
   };
 
   const hasUnsavedChanges = () => {
@@ -2407,7 +2397,7 @@ const initMobileNotes = () => {
       if (isPinned) {
         const pinIcon = document.createElement('span');
         pinIcon.className = 'note-list-pin-icon';
-        pinIcon.textContent = '📌';
+        pinIcon.textContent = 'ðŸ“Œ';
         pinIcon.setAttribute('aria-hidden', 'true');
         titleRow.appendChild(pinIcon);
       }
@@ -2445,7 +2435,7 @@ const initMobileNotes = () => {
       actionBtn.setAttribute('aria-expanded', 'false');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
-      actionBtn.textContent = '⋮';
+      actionBtn.textContent = 'â‹®';
 
       const actionMenu = document.createElement('div');
       actionMenu.className = 'note-card-menu';
@@ -2607,7 +2597,7 @@ const initMobileNotes = () => {
         overflowBtn.type = 'button';
         overflowBtn.className = 'notebook-folder-chip-overflow';
         overflowBtn.setAttribute('aria-label', 'Folder options');
-        overflowBtn.innerHTML = '⋯';
+        overflowBtn.innerHTML = 'â‹¯';
         overflowBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           openFolderOverflowMenu(folder.id, chip);
@@ -3203,3 +3193,4 @@ document.addEventListener('click', (ev) => {
   io.observe(sentinel);
 })();
 /* END GPT CHANGE */
+

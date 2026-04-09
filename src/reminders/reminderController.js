@@ -6145,7 +6145,7 @@ export async function initReminders(sel = {}) {
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'btn btn-ghost btn-xs task-toolbar-btn reminder-icon-btn reminder-complete-toggle';
+      toggleBtn.className = 'task-toolbar-btn reminder-icon-btn reminder-complete-toggle';
       toggleBtn.classList.toggle('reminder-complete-toggle--active', summary.done);
 
       const iconStateClass = summary.done
@@ -6189,7 +6189,7 @@ export async function initReminders(sel = {}) {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-ghost btn-circle btn-xs text-base-content/60 task-toolbar-btn reminder-icon-btn';
+      deleteBtn.className = 'text-base-content/60 task-toolbar-btn reminder-icon-btn reminder-delete-btn';
       deleteBtn.innerHTML = `
         <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" focusable="false">
           <path d="M3 6h18" />

@@ -1,7 +1,7 @@
 (function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
-  const SERVICE_WORKER_URL = './service-worker-v3.js';
+  const SERVICE_WORKER_URL = './service-worker-v3.js?v=20260410a';
   const PERIODIC_PERMISSION_NAME = 'periodic-background-sync';
   const PERIODIC_PROBE_TAG = 'mc-periodic-sync-permission-probe';
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;

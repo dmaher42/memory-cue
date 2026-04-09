@@ -1768,88 +1768,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     color: rgba(226, 232, 240, 0.65);
   }
 
-    /* Minimal reminder row styling */
-    .reminder-row {
-      display: flex;
-      align-items: center;
-      padding: 0.7rem 0.25rem;
-      border-radius: 0;
-      border-bottom: 1px solid color-mix(in srgb, var(--text-main) 10%, transparent);
-      background: transparent;
-      box-shadow: none;
-      gap: 0.6rem;
-      transition: background-color 0.16s ease;
-    }
-
-    .reminder-row:hover {
-      background: color-mix(in srgb, var(--accent-color) 4%, transparent);
-    }
-
-    .reminder-row-complete {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.1rem;
-    }
-
-    .reminder-row-main {
-      flex: 1 1 auto;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .reminder-row-title {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .reminder-row-meta {
-      margin-top: 0.1rem;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .reminder-row-overflow {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.25rem;
-      border-radius: 999px;
-    }
-
-    .reminder-row-overflow:hover,
-    .reminder-row-overflow:focus-visible {
-      background: var(--surface-hover, rgba(0, 0, 0, 0.04));
-    }
-
-    .reminder-row.reminder-row-completed {
-      opacity: 0.6;
-    }
-
-    .reminder-row.reminder-row-completed .reminder-row-title {
-      text-decoration: line-through;
-    }
-
-    .reminder-row.reminder-row-overdue .reminder-row-meta {
-      color: var(--text-danger, #c62828);
-    }
-
-    .reminder-row:last-child {
-      border-bottom-color: transparent;
-    }
+    /* Reminder row visuals are owned by css/reminders-ui.css. */
 
       .priority-pill.priority-high {
         background: color-mix(in srgb, var(--priority-high-border) 18%, #FFFFFF);
@@ -5170,7 +5089,6 @@ body, main, section, div, p, span, li {
       <div class="capture-container capture-chat-layout">
         <div>
           <h2 class="text-base font-semibold">Memory Cue</h2>
-          <p class="capture-intro">Capture a thought, ask a question, or drop in something to organize.</p>
         </div>
         <section id="chatConversationContainer" aria-label="Capture conversation" aria-live="polite"></section>
       </div>
@@ -5408,7 +5326,6 @@ body, main, section, div, p, span, li {
                   class="note-editor-content note-editor-area notebook-editor-body minimal-editor px-3 py-3 text-base leading-relaxed focus:outline-none rounded-lg scratch-notes-body"
                   contenteditable="true"
                   spellcheck="true"
-                  data-placeholder="Start typing your note…"
                   role="textbox"
                   aria-label="Note body"
                   aria-multiline="true"
@@ -6335,8 +6252,8 @@ body, main, section, div, p, span, li {
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
   <!-- Load the canonical mobile runtime bundle and supporting scripts -->
-  <script src="./js/register-service-worker-v2.js" defer></script>
-  <script type="module" src="./mobile.js?v=20260323a"></script>
+  <script src="./js/register-service-worker-v2.js?v=20260410a" defer></script>
+  <script type="module" src="./mobile.js?v=20260410a"></script>
   <script type="module" src="./js/mobile-theme-toggle.js"></script>
   <style id="reminder-editor-premium">
     #create-sheet {

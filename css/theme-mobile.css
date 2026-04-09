@@ -243,7 +243,6 @@ body.mobile-shell #mobile-shell #reminderList,
 
 /* Header / Top Bar */
 body.mobile-theme .app-header,
-body.mobile-theme header,
 body.mobile-theme .top-bar {
   background-color: var(--color-primary);
   color: #FFFFFF;
@@ -258,10 +257,8 @@ body.mobile-theme .top-bar {
 }
 
 body.mobile-theme .app-header h1,
-body.mobile-theme header h1,
 body.mobile-theme .top-bar h1,
 body.mobile-theme .app-header h2,
-body.mobile-theme header h2,
 body.mobile-theme .top-bar h2 {
   margin: 0;
   font-size: 18px;
@@ -285,7 +282,6 @@ body.mobile-theme .top-bar h2 {
 
 body.mobile-theme .app-header button,
 body.mobile-theme .top-bar button,
-body.mobile-theme header button,
 body.mobile-theme .app-header .icon-button,
 body.mobile-theme .top-bar .icon-button {
   background: transparent;
@@ -327,15 +323,13 @@ body.mobile-theme .top-bar .icon-button {
 }
 
 body.mobile-theme .app-header button:focus-visible,
-body.mobile-theme .top-bar button:focus-visible,
-body.mobile-theme header button:focus-visible {
+body.mobile-theme .top-bar button:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-primary) 72%, #ffffff 28%);
   outline-offset: 2px;
 }
 
 body.mobile-theme .app-header button:hover,
-body.mobile-theme .top-bar button:hover,
-body.mobile-theme header button:hover {
+body.mobile-theme .top-bar button:hover {
   color: #ffffff;
   background-color: rgba(255, 255, 255, 0.14);
 }
