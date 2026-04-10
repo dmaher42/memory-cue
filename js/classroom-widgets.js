@@ -2,20 +2,6 @@ import { RichTextWidget } from './widgets/rich-text-widget.js';
 
 const WIDGETS = [
   {
-    id: 'quiz',
-    name: 'Quiz',
-    description: 'Quick retrieval practice for checking understanding.',
-    shortcut: 'Ctrl+Q',
-    categories: ['Assessment', 'Engagement'],
-  },
-  {
-    id: 'reveal',
-    name: 'Reveal',
-    description: 'Progressively reveal answers, prompts, or steps during teaching.',
-    shortcut: 'Ctrl+R',
-    categories: ['Presentation', 'Visual'],
-  },
-  {
     id: 'timer',
     name: 'Timer',
     description: 'Count down or up to keep activities on schedule.',
@@ -57,16 +43,9 @@ const WIDGETS = [
     type: 'RichTextWidget',
     icon: 'fa-pen',
     description: 'Professional rich text editor for classroom notes.',
-    shortcut: 'Ctrl+T',
     categories: ['Collaboration', 'Visual'],
   },
 ];
-
-const WIDGET_SHORTCUTS = {
-  q: 'quiz',
-  r: 'reveal',
-  t: 'rich-text-board',
-};
 
 const PRESET_STORAGE_KEY = 'widgetPresets';
 
@@ -183,13 +162,6 @@ function createWidgetManager() {
         badge.textContent = cat;
         badgeRow.appendChild(badge);
       });
-      if (widget.shortcut) {
-        const shortcutBadge = document.createElement('span');
-        shortcutBadge.className = 'badge';
-        shortcutBadge.textContent = widget.shortcut;
-        shortcutBadge.title = 'Keyboard shortcut';
-        badgeRow.appendChild(shortcutBadge);
-      }
       card.appendChild(badgeRow);
 
       const description = document.createElement('p');
@@ -201,7 +173,8 @@ function createWidgetManager() {
       action.className = 'btn btn-sm btn-primary';
       action.textContent = 'Add to layout';
       action.addEventListener('click', () => {
-        addWidgetToLayout(widget.id);
+        selectedWidgets.push(widget.id);
+        renderLayout();
       });
       card.appendChild(action);
 
@@ -279,17 +252,6 @@ function createWidgetManager() {
     });
   }
 
-  function addWidgetToLayout(widgetId) {
-    const widget = WIDGETS.find((item) => item.id === widgetId);
-    if (!widget) {
-      return false;
-    }
-
-    selectedWidgets.push(widget.id);
-    renderLayout();
-    return true;
-  }
-
   function renderPresets() {
     presetList.innerHTML = '';
     if (!presets.length) {
@@ -363,25 +325,6 @@ function createWidgetManager() {
       renderPresets();
       presetForm.reset();
       presetNameInput.focus();
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (!event.ctrlKey && !event.metaKey) {
-        return;
-      }
-      if (event.altKey || event.repeat) {
-        return;
-      }
-
-      const widgetId = WIDGET_SHORTCUTS[(event.key || '').toLowerCase()];
-      if (!widgetId) {
-        return;
-      }
-
-      if (addWidgetToLayout(widgetId)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
     });
   }
 
