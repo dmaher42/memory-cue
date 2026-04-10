@@ -266,7 +266,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes .teacher-toolbar-toggle::after {
-    content: 'â–¾';
+    content: '\\25BE';
     font-size: 0.72rem;
     opacity: 0.7;
   }
@@ -577,27 +577,6 @@ export const initMobileNotesShellUi = (options = {}) => {
   let noteSectionsEventsBound = false;
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
-  const NOTE_SECTION_MAX_VISIBLE = 6;
-  const NOTE_SECTION_PRIORITY = [
-    'goal',
-    'warm up',
-    'warm-up',
-    'say',
-    'teach',
-    'drill',
-    'drills',
-    'model',
-    'ask',
-    'next',
-    'guided practice',
-    'independent practice',
-    'materials',
-    'reflection',
-    'reminder',
-    'follow up',
-    'key points',
-    'questions',
-  ];
 
   const ensureNotebookPolishStyles = () => {
     if (!(document.head instanceof HTMLElement)) {
@@ -733,7 +712,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   const normalizeSectionLabel = (value = '') => String(value)
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/[:\-â€“â€”]+$/, '')
+    .replace(/[:\-\u2013\u2014]+$/, '')
     .trim()
     .toLowerCase();
 
@@ -750,81 +729,19 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
 
     const markdownMatch = trimmedLine.match(/^\s{0,3}(#{1,6})\s*(.+?)\s*#*\s*$/);
-    if (markdownMatch?.[2]) {
-      const label = formatSectionLabel(markdownMatch[2]);
-      if (label && label.length <= 80) {
-        return { label, kind: 'markdown' };
-      }
-    }
-
-    return null;
-
-    const normalizedLine = normalizeSectionLabel(trimmedLine);
-    if (!normalizedLine) {
+    if (!markdownMatch?.[2]) {
       return null;
     }
 
-    const prefixMatch = normalizedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â]?$/i);
-    if (prefixMatch?.[1]) {
-      const candidate = String(prefixMatch[1] || '').trim();
-      const wordCount = candidate.split(/\s+/).filter(Boolean).length;
-      if (candidate && wordCount <= 3 && candidate.length <= 24) {
-        return {
-          label: formatSectionLabel(candidate),
-          kind: 'label',
-        };
-      }
+    const label = formatSectionLabel(markdownMatch[2]);
+    if (!label || label.length > 80) {
+      return null;
     }
 
-    const inlineMatch = trimmedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â]\s+\S/i);
-    if (inlineMatch?.[1]) {
-      return {
-        label: formatSectionLabel(inlineMatch[1]),
-        kind: 'label',
-      };
-    }
-
-    return null;
+    return { label, kind: 'markdown' };
   };
 
-  const extractEditorSectionLabel = (line = '') => {
-    return extractEditorSectionInfo(line)?.label || '';
-
-    /*
-    const trimmedLine = String(line || '').trim();
-    if (!trimmedLine) {
-      return '';
-    }
-
-    const normalizedLine = normalizeSectionLabel(trimmedLine);
-    if (!normalizedLine) {
-      return '';
-    }
-
-    let label = '';
-    const prefixMatch = normalizedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-Ã¢â‚¬â€œÃ¢â‚¬â€]?$/i);
-    if (prefixMatch?.[1]) {
-      const candidate = String(prefixMatch[1] || '').trim();
-      const wordCount = candidate.split(/\s+/).filter(Boolean).length;
-      if (candidate && wordCount <= 3 && candidate.length <= 24) {
-        label = candidate
-          .split(/\s+/)
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-          .join(' ');
-      }
-    } else {
-      const inlineMatch = trimmedLine.match(/^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-Ã¢â‚¬â€œÃ¢â‚¬â€]\s+\S/i);
-      if (inlineMatch?.[1]) {
-        label = String(inlineMatch[1] || '').trim()
-          .split(/\s+/)
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-          .join(' ');
-      }
-    }
-
-    return label;
-    */
-  };
+  const extractEditorSectionLabel = (line = '') => extractEditorSectionInfo(line)?.label || '';
 
   const getEditorLineEntries = () => {
     const editorBody = document.getElementById('notebook-editor-body');
@@ -863,33 +780,6 @@ export const initMobileNotesShellUi = (options = {}) => {
       .filter(Boolean);
   };
 
-  const getVisibleNoteSections = (sections = []) => {
-    if (!Array.isArray(sections) || sections.length === 0) {
-      return [];
-    }
-
-    const normalizedSeen = new Set();
-    const visibleSections = sections
-      .map((section, index) => {
-        const label = String(section?.label || '').trim();
-        const normalized = normalizeSectionLabel(label);
-        if (!label || !normalized || normalizedSeen.has(normalized)) {
-          return null;
-        }
-        normalizedSeen.add(normalized);
-        return {
-          index,
-          label,
-          normalized,
-          kind: String(section?.kind || '').toLowerCase(),
-        };
-      })
-      .filter(Boolean)
-      .slice(0, NOTE_SECTION_MAX_VISIBLE);
-
-    return visibleSections;
-  };
-
   const getOrderedEditorSectionMatches = (sections = []) => {
     const allowedLabels = Array.isArray(sections) && sections.length > 0
       ? new Set(
@@ -908,6 +798,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       if (!rawText) {
         return;
       }
+
       rawText
         .split(/\r?\n+/)
         .map((line) => String(line || '').trim())
@@ -926,7 +817,7 @@ export const initMobileNotesShellUi = (options = {}) => {
           seenLabels.add(normalizedLabel);
           matches.push({
             label,
-            kind: sectionInfo?.kind || '',
+            kind: sectionInfo?.kind || 'markdown',
             normalized: normalizedLabel,
             index: entry.index,
             lineIndex,
@@ -939,102 +830,9 @@ export const initMobileNotesShellUi = (options = {}) => {
     return matches;
   };
 
-  const getOrderedRenderableNoteSections = (sections = []) => {
-    const visibleSections = getVisibleNoteSections(sections);
-    if (visibleSections.length < 1) {
-      return [];
-    }
-
-    return getOrderedEditorSectionMatches(visibleSections)
-      .map(({ label, normalized, kind }) => ({ label, normalized, kind }));
-  };
-
-  const getEditorLineSections = () => {
-    const recognizedSections = [];
-    const seenLabels = new Set();
-    getEditorLineEntries().forEach(({ text }) => {
-      const lines = String(text || '')
-        .split(/\r?\n+/)
-        .map((line) => String(line || '').trim())
-        .filter(Boolean);
-
-      lines.forEach((line) => {
-      const sectionInfo = extractEditorSectionInfo(line);
-      const normalizedLabel = normalizeSectionLabel(sectionInfo?.label || '');
-      if (!normalizedLabel || seenLabels.has(normalizedLabel)) {
-        return;
-      }
-      seenLabels.add(normalizedLabel);
-      recognizedSections.push({
-        label: sectionInfo?.label || '',
-        normalized: normalizedLabel,
-        kind: sectionInfo?.kind || '',
-      });
-      });
-    });
-
-    return recognizedSections;
-  };
-
   const findSectionTargetElement = (label = '') => {
     const match = getOrderedEditorSectionMatches([{ label }])[0];
     return match?.element instanceof HTMLElement ? match.element : null;
-  };
-
-  const getEditorSectionMatches = (sections = []) => {
-    if (!Array.isArray(sections) || sections.length === 0) {
-      return [];
-    }
-
-    const entries = getEditorLineEntries();
-    const matches = [];
-    let searchStartIndex = 0;
-
-    sections.forEach((section) => {
-      const normalizedLabel = normalizeSectionLabel(section?.label || '');
-      if (!normalizedLabel) {
-        return;
-      }
-      for (let index = searchStartIndex; index < entries.length; index += 1) {
-        const entry = entries[index];
-        const rawText = String(entry?.text || '').trim();
-        if (!rawText) {
-          continue;
-        }
-        const blockLines = rawText
-          .split(/\r?\n+/)
-          .map((line) => {
-            const sectionInfo = extractEditorSectionInfo(line);
-            return normalizeSectionLabel(sectionInfo?.label || '');
-          })
-          .filter(Boolean);
-        const isMatch = blockLines.some((line) => line === normalizedLabel || line.startsWith(`${normalizedLabel} `));
-        if (isMatch) {
-          matches.push({ label: section.label, normalized: normalizedLabel, index: entry.index, element: entry.element });
-          searchStartIndex = index + 1;
-          break;
-        }
-      }
-    });
-
-    return matches;
-  };
-
-  const getRenderableNoteSections = (sections = []) => {
-    const visibleSections = getVisibleNoteSections(sections);
-    if (visibleSections.length < 2) {
-      return [];
-    }
-
-    const matchedSections = getEditorSectionMatches(visibleSections);
-    const seenBlockIndexes = new Set();
-    return matchedSections.filter((match) => {
-      if (seenBlockIndexes.has(match.index)) {
-        return false;
-      }
-      seenBlockIndexes.add(match.index);
-      return true;
-    });
   };
 
   const applyCollapsedNoteSection = (sections = []) => {
@@ -1085,13 +883,11 @@ export const initMobileNotesShellUi = (options = {}) => {
       noteSectionsKey = '';
     }
 
-    const editorSections = getOrderedEditorSectionMatches()
-      .map(({ label, normalized, kind }) => ({ label, normalized, kind }));
-    const sourceSections = editorSections;
-    const visibleSections = getOrderedRenderableNoteSections(sourceSections);
-    const renderableSections = visibleSections.length >= 1
-      ? visibleSections
-      : getVisibleNoteSections(sourceSections);
+    const renderableSections = getOrderedEditorSectionMatches().map(({ label, normalized, kind }) => ({
+      label,
+      normalized,
+      kind,
+    }));
     if (renderableSections.length < 1) {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
@@ -1152,7 +948,6 @@ export const initMobileNotesShellUi = (options = {}) => {
       ` : ''}
     `;
   };
-
   const findScrollContainer = (startEl) => {
     let current = startEl?.parentElement || null;
     while (current) {

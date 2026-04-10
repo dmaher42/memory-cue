@@ -125,12 +125,158 @@ function initAssistant() {
       appendConversationMessage('assistant', text);
     };
 
+    const formatCaptureTimestamp = (value) => {
+      const parsed =
+        typeof value === 'number'
+          ? new Date(value)
+          : typeof value === 'string'
+            ? new Date(value)
+            : null;
+
+      if (!parsed || Number.isNaN(parsed.getTime())) {
+        return '';
+      }
+
+      const now = new Date();
+      if (
+        parsed.getFullYear() === now.getFullYear() &&
+        parsed.getMonth() === now.getMonth() &&
+        parsed.getDate() === now.getDate()
+      ) {
+        return `Today - ${parsed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+      }
+
+      return parsed.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const renderCaptureHomeState = () => {
+      if (!(chatConversationContainer instanceof HTMLElement)) {
+        return;
+      }
+
+      const dashboard = buildDashboard();
+      const recentItems = Array.isArray(dashboard.recent) ? dashboard.recent.slice(0, 3) : [];
+      const todayCount = Array.isArray(dashboard.today) ? dashboard.today.length : 0;
+      const inboxCount = Array.isArray(dashboard.inbox) ? dashboard.inbox.length : 0;
+      const reminderCount = readRemindersForRecall().length;
+
+      chatConversationContainer.innerHTML = '';
+
+      const shell = document.createElement('div');
+      shell.className = 'capture-home-shell w-full rounded-2xl border border-base-300 bg-base-100/95 p-4 shadow-sm';
+      shell.style.alignSelf = 'stretch';
+
+      const heading = document.createElement('div');
+      heading.className = 'grid gap-1';
+
+      const title = document.createElement('p');
+      title.className = 'text-base font-semibold text-base-content';
+      title.textContent = 'Capture';
+
+      heading.append(title);
+
+      const statsRow = document.createElement('div');
+      statsRow.className = 'flex flex-wrap gap-2';
+      [
+        { label: 'Today', value: todayCount },
+        { label: 'Reminders', value: reminderCount },
+        { label: 'Inbox', value: inboxCount },
+      ].forEach(({ label, value }) => {
+        const chip = document.createElement('span');
+        chip.className = 'badge badge-outline badge-sm';
+        chip.textContent = `${label} ${value}`;
+        statsRow.appendChild(chip);
+      });
+
+      const actionsRow = document.createElement('div');
+      actionsRow.className = 'flex flex-wrap gap-2';
+
+      const notebooksButton = document.createElement('button');
+      notebooksButton.type = 'button';
+      notebooksButton.className = 'btn btn-sm btn-primary';
+      notebooksButton.textContent = 'Open notebooks';
+      notebooksButton.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      });
+
+      const remindersButton = document.createElement('button');
+      remindersButton.type = 'button';
+      remindersButton.className = 'btn btn-sm btn-ghost';
+      remindersButton.textContent = 'Open reminders';
+      remindersButton.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
+      });
+
+      actionsRow.append(notebooksButton, remindersButton);
+
+      const recentSection = document.createElement('section');
+      recentSection.className = 'capture-recent';
+
+      const recentHeading = document.createElement('h3');
+      recentHeading.textContent = 'Recent notes';
+      recentSection.appendChild(recentHeading);
+
+      const recentList = document.createElement('div');
+      recentList.className = 'mt-2 grid gap-2';
+
+      if (!recentItems.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-sm text-base-content/60';
+        empty.textContent = 'No recent notes yet.';
+        recentList.appendChild(empty);
+      } else {
+        recentItems.forEach((item) => {
+          const recentButton = document.createElement('button');
+          recentButton.type = 'button';
+          recentButton.className = 'group w-full rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-left transition hover:border-primary/30 hover:bg-primary/5';
+
+          const recentTitle = document.createElement('div');
+          recentTitle.className = 'text-sm font-medium text-base-content';
+          recentTitle.textContent = typeof item?.title === 'string' && item.title.trim() ? item.title.trim() : 'Untitled note';
+
+          const recentMeta = document.createElement('div');
+          recentMeta.className = 'mt-1 text-xs text-base-content/60';
+          const metaParts = [];
+          if (typeof item?.folder === 'string' && item.folder.trim()) {
+            metaParts.push(item.folder.trim());
+          }
+          const timestamp = formatCaptureTimestamp(item?.updatedAt || item?.createdAt);
+          if (timestamp) {
+            metaParts.push(timestamp);
+          }
+          recentMeta.textContent = metaParts.join(' | ');
+
+          recentButton.append(recentTitle, recentMeta);
+          recentButton.addEventListener('click', () => {
+            if (typeof openNoteFromDashboard === 'function' && item?.id) {
+              openNoteFromDashboard(item.id);
+              return;
+            }
+
+            document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+          });
+
+          recentList.appendChild(recentButton);
+        });
+      }
+
+      recentSection.appendChild(recentList);
+      shell.append(heading, statsRow, actionsRow, recentSection);
+      chatConversationContainer.appendChild(shell);
+    };
+
     const renderConversationHistory = () => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
       }
       chatConversationContainer.innerHTML = '';
       const messages = getMessages();
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        renderCaptureHomeState();
+        return;
+      }
+
       messages.forEach((message) => {
         const content = typeof message?.content === 'string' ? message.content.trim() : '';
         if (!content) {
@@ -519,6 +665,9 @@ function initAssistant() {
 
     renderConversationHistory();
     document.addEventListener('memoryCue:chatUpdated', renderConversationHistory);
+    document.addEventListener('memoryCue:notesUpdated', renderConversationHistory);
+    document.addEventListener('memoryCue:entriesUpdated', renderConversationHistory);
+    document.addEventListener('memoryCue:remindersUpdated', renderConversationHistory);
 
     clearChatHistoryBtn?.addEventListener('click', () => {
       clearMessages();
@@ -1343,9 +1492,6 @@ const initMobileNotes = () => {
       .trim();
   };
 
-  const NOTE_SECTION_PREFIX_PATTERN = /^(goal|goals|say|teach|ask|next|materials|reminder|reflection|key points|questions|follow up|do next|learning intention|success criteria|model|guided practice|independent practice|drill|drills|warm up|warm-up)\b[:\-â€“â€”]?\s*/i;
-  const NOTE_SECTION_INLINE_LABEL_PATTERN = /^([a-z0-9][a-z0-9&/'()\-]*(?:\s+[a-z0-9&/'()\-]+){0,2})\s*[:\-â€“â€”]\s+\S/i;
-
   const normalizeSectionLabel = (value = '') => value
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -1379,27 +1525,7 @@ const initMobileNotes = () => {
     return formatSectionLabel(headingText);
   };
 
-  const extractInlineSectionLabel = (rawText = '') => {
-    const normalizedText = normalizeSectionLabel(rawText).toLowerCase();
-    if (!normalizedText) {
-      return '';
-    }
-
-    const inlineMatch = normalizedText.match(NOTE_SECTION_INLINE_LABEL_PATTERN);
-    if (!inlineMatch?.[1]) {
-      return '';
-    }
-
-    const candidate = formatSectionLabel(inlineMatch[1]);
-    const wordCount = candidate.split(/\s+/).filter(Boolean).length;
-    if (!candidate || wordCount > 3 || candidate.length > 24) {
-      return '';
-    }
-
-    return candidate;
-  };
-
-  // Build a lightweight section index from markdown headings or cue-style labels inside the note.
+  // Build a lightweight section index from markdown headings inside the note.
   const buildNoteSectionsFromHtml = (html = '') => {
     const temp = document.createElement('div');
     temp.innerHTML = typeof html === 'string' ? html : '';
