@@ -190,7 +190,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes .note-sections-toggle::after {
-    content: 'â–¾';
+    content: '\\25BE';
     font-size: 0.62rem;
     opacity: 0.55;
     transition: transform 0.16s ease;
