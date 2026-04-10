@@ -941,7 +941,7 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   const getOrderedRenderableNoteSections = (sections = []) => {
     const visibleSections = getVisibleNoteSections(sections);
-    if (visibleSections.length < 2) {
+    if (visibleSections.length < 1) {
       return [];
     }
 
@@ -1089,10 +1089,10 @@ export const initMobileNotesShellUi = (options = {}) => {
       .map(({ label, normalized, kind }) => ({ label, normalized, kind }));
     const sourceSections = editorSections;
     const visibleSections = getOrderedRenderableNoteSections(sourceSections);
-    const renderableSections = visibleSections.length >= 2
+    const renderableSections = visibleSections.length >= 1
       ? visibleSections
       : getVisibleNoteSections(sourceSections);
-    if (renderableSections.length < 2) {
+    if (renderableSections.length < 1) {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
       noteSectionsKey = '';
@@ -1108,7 +1108,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       .join('|');
     if (noteSectionsKey !== nextSectionsKey) {
       noteSectionsKey = nextSectionsKey;
-      noteSectionsExpanded = false;
+      noteSectionsExpanded = renderableSections.length === 1;
     }
 
     const normalizedSectionLabels = renderableSections
