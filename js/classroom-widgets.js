@@ -6,42 +6,42 @@ const WIDGETS = [
     name: 'Timer',
     description: 'Count down or up to keep activities on schedule.',
     categories: ['Focus', 'Time Management'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
   {
     id: 'noise-meter',
     name: 'Noise Meter',
     description: 'Visualizes classroom noise levels to encourage quieter work.',
     categories: ['Awareness', 'Classroom Climate'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
   {
     id: 'name-picker',
     name: 'Name Picker',
     description: 'Randomly selects students to boost participation.',
     categories: ['Engagement'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
   {
     id: 'qr-code',
     name: 'QR Code',
     description: 'Displays QR codes for quick resource sharing.',
     categories: ['Resources'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
   {
     id: 'drawing-tool',
     name: 'Drawing Tool',
     description: 'Lightweight whiteboard for quick sketches.',
     categories: ['Collaboration', 'Visual'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
   {
     id: 'instructions',
     name: 'Class Instructions',
     description: 'Pin reminders and expectations for the current activity.',
     categories: ['Awareness', 'Classroom Climate'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
   {
     id: 'rich-text-board',
@@ -50,7 +50,7 @@ const WIDGETS = [
     icon: 'fa-pen',
     description: 'Professional rich text editor for classroom notes.',
     categories: ['Collaboration', 'Visual'],
-    projectorVisible: false,
+    visibleOnProjector: false,
   },
 ];
 
@@ -90,18 +90,18 @@ function safeWritePresets(presets) {
   }
 }
 
-function setWidgetProjectorVisibility(widgetId, projectorVisible) {
+function setWidgetProjectorVisibility(widgetId, visibleOnProjector) {
   const widget = WIDGETS.find((item) => item.id === widgetId);
   if (!widget) {
     return false;
   }
 
-  widget.projectorVisible = projectorVisible !== false;
+  widget.visibleOnProjector = visibleOnProjector !== false;
   if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     window.dispatchEvent(new CustomEvent(WIDGET_VISIBILITY_CHANGED_EVENT, {
       detail: {
         widgetId,
-        projectorVisible: widget.projectorVisible,
+        visibleOnProjector: widget.visibleOnProjector,
       },
     }));
   }
@@ -109,7 +109,7 @@ function setWidgetProjectorVisibility(widgetId, projectorVisible) {
 }
 
 function getVisibilityMeta(widget) {
-  return widget?.projectorVisible === false
+  return widget?.visibleOnProjector === false
     ? {
         label: 'Teacher only',
         className: 'widget-visibility--teacher',
@@ -137,7 +137,7 @@ function createWidgetHeader(widget) {
   status.setAttribute('aria-label', `Toggle projector visibility for ${widget?.name || 'widget'}`);
   status.addEventListener('click', () => {
     if (!widget?.id) return;
-    setWidgetProjectorVisibility(widget.id, widget.projectorVisible === false);
+    setWidgetProjectorVisibility(widget.id, widget.visibleOnProjector === false);
   });
   header.appendChild(status);
 
