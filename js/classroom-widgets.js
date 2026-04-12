@@ -6,36 +6,42 @@ const WIDGETS = [
     name: 'Timer',
     description: 'Count down or up to keep activities on schedule.',
     categories: ['Focus', 'Time Management'],
+    projectorVisible: false,
   },
   {
     id: 'noise-meter',
     name: 'Noise Meter',
     description: 'Visualizes classroom noise levels to encourage quieter work.',
     categories: ['Awareness', 'Classroom Climate'],
+    projectorVisible: false,
   },
   {
     id: 'name-picker',
     name: 'Name Picker',
     description: 'Randomly selects students to boost participation.',
     categories: ['Engagement'],
+    projectorVisible: false,
   },
   {
     id: 'qr-code',
     name: 'QR Code',
     description: 'Displays QR codes for quick resource sharing.',
     categories: ['Resources'],
+    projectorVisible: false,
   },
   {
     id: 'drawing-tool',
     name: 'Drawing Tool',
     description: 'Lightweight whiteboard for quick sketches.',
     categories: ['Collaboration', 'Visual'],
+    projectorVisible: false,
   },
   {
     id: 'instructions',
     name: 'Class Instructions',
     description: 'Pin reminders and expectations for the current activity.',
     categories: ['Awareness', 'Classroom Climate'],
+    projectorVisible: false,
   },
   {
     id: 'rich-text-board',
@@ -44,10 +50,12 @@ const WIDGETS = [
     icon: 'fa-pen',
     description: 'Professional rich text editor for classroom notes.',
     categories: ['Collaboration', 'Visual'],
+    projectorVisible: false,
   },
 ];
 
 const PRESET_STORAGE_KEY = 'widgetPresets';
+const WIDGET_VISIBILITY_CHANGED_EVENT = 'memoryCue:widgetProjectorVisibilityChanged';
 
 const WIDGET_SIZE_RULES = {
   RichTextWidget: { minW: 4, minH: 3 },
@@ -82,6 +90,60 @@ function safeWritePresets(presets) {
   }
 }
 
+function setWidgetProjectorVisibility(widgetId, projectorVisible) {
+  const widget = WIDGETS.find((item) => item.id === widgetId);
+  if (!widget) {
+    return false;
+  }
+
+  widget.projectorVisible = projectorVisible !== false;
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent(WIDGET_VISIBILITY_CHANGED_EVENT, {
+      detail: {
+        widgetId,
+        projectorVisible: widget.projectorVisible,
+      },
+    }));
+  }
+  return true;
+}
+
+function getVisibilityMeta(widget) {
+  return widget?.projectorVisible === false
+    ? {
+        label: 'Teacher only',
+        className: 'widget-visibility--teacher',
+      }
+    : {
+        label: 'Visible to students',
+        className: 'widget-visibility--students',
+      };
+}
+
+function createWidgetHeader(widget) {
+  const header = document.createElement('div');
+  header.className = 'widget-header';
+
+  const title = document.createElement('h3');
+  title.textContent = widget?.name || 'Untitled widget';
+  header.appendChild(title);
+
+  const visibility = getVisibilityMeta(widget);
+  const status = document.createElement('button');
+  status.type = 'button';
+  status.className = `widget-visibility ${visibility.className}`;
+  status.textContent = visibility.label;
+  status.title = 'Toggle projector visibility';
+  status.setAttribute('aria-label', `Toggle projector visibility for ${widget?.name || 'widget'}`);
+  status.addEventListener('click', () => {
+    if (!widget?.id) return;
+    setWidgetProjectorVisibility(widget.id, widget.projectorVisible === false);
+  });
+  header.appendChild(status);
+
+  return header;
+}
+
 function createWidgetManager() {
   const catalogContainer = document.getElementById('widgetCatalog');
   const searchInput = document.getElementById('widgetSearch');
@@ -97,6 +159,10 @@ function createWidgetManager() {
   let selectedWidgets = [];
   let activeCategory = 'All';
   let presets = safeReadPresets();
+  const renderWidgetViews = () => {
+    renderCatalog();
+    renderLayout();
+  };
 
   const allCategories = Array.from(
     new Set(WIDGETS.flatMap((widget) => widget.categories || []))
@@ -150,9 +216,7 @@ function createWidgetManager() {
       const card = document.createElement('article');
       card.className = 'widget-card';
 
-      const title = document.createElement('h3');
-      title.textContent = widget.name;
-      card.appendChild(title);
+      card.appendChild(createWidgetHeader(widget));
 
       const badgeRow = document.createElement('div');
       badgeRow.className = 'widget-badges';
@@ -197,10 +261,8 @@ function createWidgetManager() {
 
       const details = document.createElement('div');
       details.className = 'flex-1';
-      const title = document.createElement('h3');
-      title.className = 'font-semibold';
-      title.textContent = widget ? widget.name : widgetId;
-      details.appendChild(title);
+      const header = createWidgetHeader(widget || { name: widgetId });
+      details.appendChild(header);
 
       if (widget?.description) {
         const description = document.createElement('p');
@@ -329,10 +391,17 @@ function createWidgetManager() {
   }
 
   renderCategories();
-  renderCatalog();
-  renderLayout();
+  renderWidgetViews();
   renderPresets();
   initEvents();
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener(WIDGET_VISIBILITY_CHANGED_EVENT, renderWidgetViews);
+    window.MemoryCueClassroomWidgets = {
+      setWidgetProjectorVisibility,
+      refresh: renderWidgetViews,
+    };
+  }
 }
 
 function init() {
