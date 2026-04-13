@@ -1021,7 +1021,7 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     const normalizedTargetLabel = normalizeSectionLabel(targetLabel);
     activeNoteSectionLabel = normalizedTargetLabel;
-    collapsedNoteSectionLabel = collapsedNoteSectionLabel === normalizedTargetLabel ? '' : normalizedTargetLabel;
+    collapsedNoteSectionLabel = normalizedTargetLabel;
     renderNoteSectionsBar();
 
     const offset = getNoteSectionScrollOffset();
