@@ -88,14 +88,27 @@
 
   const initRefreshButton = (registration) => {
     const btn = document.getElementById('update-refresh-btn');
+    const toast = document.getElementById('update-toast');
     if (!btn) return;
 
     btn.onclick = () => {
+      // Immediate UI feedback
+      btn.disabled = true;
+      btn.innerText = 'Refreshing...';
+      btn.style.opacity = '0.7';
+      btn.style.cursor = 'wait';
+
       const waiting = registration.waiting;
       if (waiting) {
         waiting.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Safety timeout: if controllerchange doesn't fire in 2s, force reload
+        setTimeout(() => {
+          if (toast) toast.classList.add('hidden');
+          window.location.reload();
+        }, 2000);
       } else {
-        // Fallback: if there was no waiting worker, just reload
+        if (toast) toast.classList.add('hidden');
         window.location.reload();
       }
     };
