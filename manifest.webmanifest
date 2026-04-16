@@ -1,7 +1,7 @@
 {
   "name": "Memory Cue — Reminders",
   "short_name": "Memory Cue",
-  "start_url": "./mobile.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "theme_color": "#0f172a",
