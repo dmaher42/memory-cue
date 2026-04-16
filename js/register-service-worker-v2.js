@@ -80,9 +80,25 @@
   };
 
   const showUpdateToast = () => {
+    // Session-based suppression: If we just reloaded, wait 30s before showing any toast
+    const lastReload = sessionStorage.getItem('mc-pwa-refresh-timestamp');
+    if (lastReload && Date.now() - parseInt(lastReload) < 30000) {
+      console.log('SW: Update toast suppressed (just reloaded)');
+      return;
+    }
+
+    // Cooldown: Don't show toast more than once every 5 minutes in a single session
+    const lastPrompt = sessionStorage.getItem('mc-pwa-update-prompted');
+    if (lastPrompt && Date.now() - parseInt(lastPrompt) < 300000) {
+      console.log('SW: Update toast suppressed (cooldown)');
+      return;
+    }
+
     const toast = document.getElementById('update-toast');
     if (toast) {
+      console.log('SW: Showing update available notification');
       toast.classList.remove('hidden');
+      sessionStorage.setItem('mc-pwa-update-prompted', Date.now().toString());
     }
   };
 
@@ -92,21 +108,23 @@
     if (!btn) return;
 
     btn.onclick = () => {
+      console.log('SW: Refresh requested');
       // Immediate UI feedback
       btn.disabled = true;
       btn.innerText = 'Refreshing...';
-      btn.style.opacity = '0.7';
-      btn.style.cursor = 'wait';
+      
+      // Track this refresh to suppress the toast on reload
+      sessionStorage.setItem('mc-pwa-refresh-timestamp', Date.now().toString());
 
       const waiting = registration.waiting;
       if (waiting) {
         waiting.postMessage({ type: 'SKIP_WAITING' });
         
-        // Safety timeout: if controllerchange doesn't fire in 2s, force reload
+        // Safety timeout
         setTimeout(() => {
           if (toast) toast.classList.add('hidden');
           window.location.reload();
-        }, 2000);
+        }, 3000);
       } else {
         if (toast) toast.classList.add('hidden');
         window.location.reload();
@@ -120,9 +138,16 @@
       let registration = await navigator.serviceWorker.getRegistration();
 
       if (!registrationMatches(registration, swUrl)) {
+        console.log('SW: Registering new worker', swUrl);
         registration = await navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' });
-      } else if (typeof registration?.update === 'function') {
-        await registration.update();
+      } else {
+        // Small delay before checking for updates to avoid initial load races
+        setTimeout(() => {
+          if (registration && typeof registration.update === 'function') {
+            console.log('SW: Checking for updates');
+            registration.update().catch(() => {});
+          }
+        }, 2000);
       }
 
       if (registration) {
@@ -135,8 +160,10 @@
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
+            console.log('SW: New worker installing');
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('SW: New worker installed and waiting');
                 showUpdateToast();
               }
             });
