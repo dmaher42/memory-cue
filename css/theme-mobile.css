@@ -92,7 +92,7 @@ body.mobile-theme footer {
   justify-content: flex-start;
   align-items: stretch;
   box-sizing: border-box;
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + 6rem + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
@@ -3386,7 +3386,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
   /* Reserve space for bottom nav to avoid content behind footer */
   #mobile-shell #main {
-    padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 8px);
+    padding-bottom: calc(var(--mobile-bottom-nav-height, 80px) + 6rem + env(safe-area-inset-bottom, 0px));
   }
 
 }

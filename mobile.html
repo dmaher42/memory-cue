@@ -6251,6 +6251,15 @@ body, main, section, div, p, span, li {
   <!-- build-marker: mobile.html / runs mobile.js / EXPECTED LIVE -->
   <!-- When deployed, this should appear in View Source with today’s date. -->
 
+  <!-- BEGIN Update Available Notification -->
+  <div id="update-toast" class="update-toast hidden" role="alert" aria-live="assertive">
+    <div class="update-toast-content">
+      <span class="update-toast-message">New version available!</span>
+      <button id="update-refresh-btn" class="update-toast-btn">Refresh</button>
+    </div>
+  </div>
+  <!-- END Update Available Notification -->
+
   <!-- Load the canonical mobile runtime bundle and supporting scripts -->
   <script src="./js/register-service-worker-v2.js?v=20260410a" defer></script>
   <script type="module" src="./mobile.js?v=20260410a"></script>

@@ -15,6 +15,12 @@ const CACHE_NAME = 'memory-cue-v3';
 const RUNTIME_CACHE = CACHE_NAME;
 const NAVIGATION_TIMEOUT_MS = 4000;
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 const REMINDER_DB_NAME = 'memory-cue-reminders';
 const REMINDER_DB_VERSION = 1;
 const REMINDER_STORE_NAME = 'scheduled';
@@ -41,7 +47,8 @@ const BYPASS_HOSTS = new Set([
 ]);
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  // We no longer call skipWaiting() immediately here.
+  // This allows the UI to prompt the user to refresh, prevent data loss.
 
   event.waitUntil((async () => {
     const cache = await caches.open(RUNTIME_CACHE);

@@ -248,3 +248,88 @@ body.app-shell .content .card,
   font-weight: 600;
 }
 
+/* Update Available Notification */
+.update-toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: calc(100% - 32px);
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: slideInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.update-toast.hidden {
+  display: none;
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+
+.update-toast-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.update-toast-message {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.update-toast-btn {
+  background: #512663;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(81, 38, 99, 0.2);
+  transition: background 0.2s ease, transform 0.1s active;
+}
+
+.update-toast-btn:active {
+  transform: scale(0.96);
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+[data-theme="professional-dark"] .update-toast {
+  background: rgba(31, 41, 55, 0.85);
+  border-color: rgba(75, 85, 99, 0.4);
+}
+
+[data-theme="professional-dark"] .update-toast-message {
+  color: #f3f4f6;
+}
+
+[data-theme="professional-dark"] .update-toast-btn {
+  background: #a5b4fc;
+  color: #1e1b4b;
+}
+

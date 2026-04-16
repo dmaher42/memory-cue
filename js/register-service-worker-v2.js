@@ -79,15 +79,61 @@
       .some((worker) => worker.scriptURL === expectedUrl);
   };
 
+  const showUpdateToast = () => {
+    const toast = document.getElementById('update-toast');
+    if (toast) {
+      toast.classList.remove('hidden');
+    }
+  };
+
+  const initRefreshButton = (registration) => {
+    const btn = document.getElementById('update-refresh-btn');
+    if (!btn) return;
+
+    btn.onclick = () => {
+      const waiting = registration.waiting;
+      if (waiting) {
+        waiting.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        // Fallback: if there was no waiting worker, just reload
+        window.location.reload();
+      }
+    };
+  };
+
   const register = async () => {
     try {
       const swUrl = resolveServiceWorkerUrl();
-      const existing = await navigator.serviceWorker.getRegistration();
+      let registration = await navigator.serviceWorker.getRegistration();
 
-      if (!registrationMatches(existing, swUrl)) {
-        await navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' });
-      } else if (typeof existing?.update === 'function') {
-        await existing.update();
+      if (!registrationMatches(registration, swUrl)) {
+        registration = await navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' });
+      } else if (typeof registration?.update === 'function') {
+        await registration.update();
+      }
+
+      if (registration) {
+        initRefreshButton(registration);
+
+        if (registration.waiting) {
+          showUpdateToast();
+        }
+
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                showUpdateToast();
+              }
+            });
+          }
+        });
+
+        // Check for updates periodically (every 1 hour)
+        setInterval(() => {
+          registration.update().catch(() => {});
+        }, 60 * 60 * 1000);
       }
 
       await waitForReady();
@@ -111,9 +157,11 @@
   }
 
   if (typeof navigator.serviceWorker.addEventListener === 'function') {
+    let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      readyPromise = null;
-      waitForReady();
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
     });
   }
 })();
