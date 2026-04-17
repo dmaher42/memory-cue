@@ -359,8 +359,8 @@ export const handleChatMessage = async (text, dependencies = {}) => {
   try {
     const related = findRelatedMemories(message);
     if (Array.isArray(related) && related.length > 0) {
-      const relatedList = related.map((note) => `- ${note.title}`).join('\n');
-      response.message += `\n\nRelated:\n${relatedList}`;
+      const relatedList = related.map((item) => `• ${item.title} (${item.noteTitle})`).join('\n');
+      response.message += `\n\nRelated from your memory:\n${relatedList}`;
     }
   } catch (error) {
     console.warn('[chat-manager] Failed to fetch related memories', error);
