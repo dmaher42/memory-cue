@@ -80,26 +80,8 @@
   };
 
   const showUpdateToast = () => {
-    // Session-based suppression: If we just reloaded, wait 30s before showing any toast
-    const lastReload = sessionStorage.getItem('mc-pwa-refresh-timestamp');
-    if (lastReload && Date.now() - parseInt(lastReload) < 30000) {
-      console.log('SW: Update toast suppressed (just reloaded)');
-      return;
-    }
-
-    // Cooldown: Don't show toast more than once every 5 minutes in a single session
-    const lastPrompt = sessionStorage.getItem('mc-pwa-update-prompted');
-    if (lastPrompt && Date.now() - parseInt(lastPrompt) < 300000) {
-      console.log('SW: Update toast suppressed (cooldown)');
-      return;
-    }
-
-    const toast = document.getElementById('update-toast');
-    if (toast) {
-      console.log('SW: Showing update available notification');
-      toast.classList.remove('hidden');
-      sessionStorage.setItem('mc-pwa-update-prompted', Date.now().toString());
-    }
+    // Disabled at user request to stop refresh notification loops
+    return;
   };
 
   const initRefreshButton = (registration) => {
@@ -141,13 +123,14 @@
         console.log('SW: Registering new worker', swUrl);
         registration = await navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' });
       } else {
-        // Small delay before checking for updates to avoid initial load races
+        /* 
         setTimeout(() => {
           if (registration && typeof registration.update === 'function') {
             console.log('SW: Checking for updates');
             registration.update().catch(() => {});
           }
         }, 2000);
+        */
       }
 
       if (registration) {
@@ -170,10 +153,12 @@
           }
         });
 
+        /*
         // Check for updates periodically (every 1 hour)
         setInterval(() => {
           registration.update().catch(() => {});
         }, 60 * 60 * 1000);
+        */
       }
 
       await waitForReady();
@@ -199,9 +184,12 @@
   if (typeof navigator.serviceWorker.addEventListener === 'function') {
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // Refresh logic disabled to resolve infinite loop on some mobile browsers
+      /*
       if (refreshing) return;
       refreshing = true;
       window.location.reload();
+      */
     });
   }
 })();
