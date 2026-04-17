@@ -10,6 +10,7 @@ import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { generateDailyPlan, renderDailyPlan } from '../services/planningService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 import { answerFromActiveLesson, looksLikeActiveLessonPrompt } from '../services/teacherModeService.js';
+import { findRelatedMemories } from '../../js/modules/memory-search.js';
 
 export const ENABLE_CHAT_INTERFACE = true;
 
@@ -353,6 +354,18 @@ export const handleChatMessage = async (text, dependencies = {}) => {
   });
 
   const response = normalizeRouteResult(routeResult);
+  
+  // Add related memories context
+  try {
+    const related = findRelatedMemories(message);
+    if (Array.isArray(related) && related.length > 0) {
+      const relatedList = related.map((note) => `- ${note.title}`).join('\n');
+      response.message += `\n\nRelated:\n${relatedList}`;
+    }
+  } catch (error) {
+    console.warn('[chat-manager] Failed to fetch related memories', error);
+  }
+
   addMessage(createMessage('assistant', response.message, response.quickActions));
   return response;
 };
