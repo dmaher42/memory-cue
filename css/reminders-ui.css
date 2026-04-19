@@ -342,8 +342,9 @@
   #view-reminders .reminders-screen-header {
     align-items: flex-start;
     flex-wrap: wrap;
-    padding: 0.8rem 0.9rem;
-    border-radius: 1.15rem;
+    padding: 0.68rem 0.78rem;
+    border-radius: 1rem;
+    gap: 0.65rem;
   }
 
   #view-reminders .reminders-screen-header-copy {
@@ -353,8 +354,8 @@
   #view-reminders .reminders-screen-header-actions {
     width: 100%;
     justify-content: flex-start;
-    gap: 0.35rem;
-    margin-top: 0.08rem;
+    gap: 0.28rem;
+    margin-top: 0;
   }
 
   #view-reminders .reminders-screen-subtitle {
@@ -362,15 +363,15 @@
   }
 
   #view-reminders .reminders-screen-title {
-    font-size: 1.28rem;
+    font-size: 1.1rem;
   }
 
   #view-reminders .reminders-add-button,
   #view-reminders .reminders-voice-button,
   #view-reminders .reminders-sort-btn {
-    min-height: 2.15rem;
-    padding: 0.44rem 0.82rem;
-    font-size: 0.78rem;
+    min-height: 1.95rem;
+    padding: 0.38rem 0.72rem;
+    font-size: 0.72rem;
   }
 
   #view-reminders #reminderListSection {
@@ -378,11 +379,49 @@
   }
 
   #view-reminders #reminderList {
-    gap: 0.48rem !important;
+    gap: 0.36rem !important;
   }
 
   #view-reminders #remindersWrapper {
-    padding-bottom: 0.65rem;
+    padding-bottom: 0.45rem;
+  }
+
+  #view-reminders .reminder-row {
+    min-height: 3.2rem;
+    padding: 0.55rem 0.72rem;
+    gap: 0.55rem;
+    border-radius: 1rem;
+    grid-template-columns: 1.55rem minmax(0, 1fr) auto;
+  }
+
+  #view-reminders .reminder-row.reminder-card {
+    min-height: 3.2rem !important;
+    padding: 0.55rem 0.72rem !important;
+    gap: 0.55rem !important;
+    grid-template-columns: 1.55rem minmax(0, 1fr) auto !important;
+  }
+
+  #view-reminders .reminder-row-title {
+    font-size: 0.9rem;
+  }
+
+  #view-reminders .reminder-row-meta {
+    font-size: 0.74rem;
+  }
+
+  #view-reminders .reminder-row .reminder-icon-btn,
+  #view-reminders .reminder-row .task-toolbar-btn,
+  #view-reminders .reminder-row-complete {
+    width: 1.7rem;
+    height: 1.7rem;
+    min-width: 1.7rem;
+    min-height: 1.7rem;
+    flex-basis: 1.7rem;
+  }
+
+  #view-reminders .reminder-row .reminder-icon-btn svg {
+    width: 0.95rem;
+    height: 0.95rem;
   }
 }
 
