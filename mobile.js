@@ -99,6 +99,13 @@ function initAssistant() {
 
       const row = document.createElement('div');
       row.className = `chat-message ${role === 'user' ? 'chat-message--user' : 'chat-message--assistant'}`;
+      const normalizedContent = typeof content === 'string' ? content.trim().toLowerCase() : '';
+      if (
+        role !== 'user' &&
+        (normalizedContent === 'reminder created.' || normalizedContent === 'reminder created')
+      ) {
+        row.classList.add('chat-message--status');
+      }
       row.textContent = content;
 
       if (role !== 'user' && Array.isArray(quickActions) && quickActions.length) {

@@ -342,6 +342,8 @@
   #view-reminders .reminders-screen-header {
     align-items: flex-start;
     flex-wrap: wrap;
+    padding: 0.8rem 0.9rem;
+    border-radius: 1.15rem;
   }
 
   #view-reminders .reminders-screen-header-copy {
@@ -351,11 +353,36 @@
   #view-reminders .reminders-screen-header-actions {
     width: 100%;
     justify-content: flex-start;
-    margin-top: 0.1rem;
+    gap: 0.35rem;
+    margin-top: 0.08rem;
   }
 
   #view-reminders .reminders-screen-subtitle {
     display: none;
+  }
+
+  #view-reminders .reminders-screen-title {
+    font-size: 1.28rem;
+  }
+
+  #view-reminders .reminders-add-button,
+  #view-reminders .reminders-voice-button,
+  #view-reminders .reminders-sort-btn {
+    min-height: 2.15rem;
+    padding: 0.44rem 0.82rem;
+    font-size: 0.78rem;
+  }
+
+  #view-reminders #reminderListSection {
+    margin-top: 0;
+  }
+
+  #view-reminders #reminderList {
+    gap: 0.48rem !important;
+  }
+
+  #view-reminders #remindersWrapper {
+    padding-bottom: 0.65rem;
   }
 }
 
