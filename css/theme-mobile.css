@@ -4382,68 +4382,72 @@ body.mobile-theme :focus-visible {
 
 @media (max-width: 480px) {
   .today-list-panel {
-    padding: 0.55rem 0.6rem;
-    border-radius: 0.95rem;
-    margin-bottom: 0.55rem;
+    padding: 0.45rem 0.52rem;
+    border-radius: 0.9rem;
+    margin-bottom: 0.42rem;
   }
 
   .today-list-header {
-    gap: 0.4rem;
+    gap: 0.28rem;
+    align-items: center;
     justify-content: flex-start;
   }
 
   .today-list-toggle {
-    gap: 0.3rem;
+    flex: 1 1 auto;
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.25rem;
   }
 
   .today-list-title {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
   }
 
   .today-list-body {
-    margin-top: 0.42rem;
+    margin-top: 0.32rem;
   }
 
   .today-list-quick-add {
-    gap: 0.32rem;
+    gap: 0.28rem;
   }
 
   .today-list-header .btn,
   .today-list-quick-add .btn {
-    padding-inline: 0.62rem;
-    font-size: 0.76rem;
-    min-height: 1.8rem;
-    height: 1.8rem;
+    padding-inline: 0.55rem;
+    font-size: 0.72rem;
+    min-height: 1.7rem;
+    height: 1.7rem;
   }
 
   .today-list-quick-add-input {
-    min-height: 2rem;
-    font-size: 0.88rem;
-  }
-
-  .today-list-container {
-    border-radius: 0.88rem;
-  }
-
-  .today-list-item {
-    min-height: 2.55rem;
-    padding: 0.42rem 0.58rem;
-    gap: 0.42rem;
-  }
-
-  .today-list-checkbox {
-    width: 1.05rem;
-    min-width: 1.05rem;
-    height: 1.05rem;
-    min-height: 1.05rem;
-  }
-
-  .today-list-text {
+    min-height: 1.9rem;
     font-size: 0.84rem;
   }
 
+  .today-list-container {
+    border-radius: 0.82rem;
+  }
+
+  .today-list-item {
+    min-height: 2.35rem;
+    padding: 0.34rem 0.5rem;
+    gap: 0.34rem;
+  }
+
+  .today-list-checkbox {
+    width: 0.98rem;
+    min-width: 0.98rem;
+    height: 0.98rem;
+    min-height: 0.98rem;
+  }
+
+  .today-list-text {
+    font-size: 0.8rem;
+  }
+
   .today-list-delete {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
   }
 }
 
