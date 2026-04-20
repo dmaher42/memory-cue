@@ -4382,68 +4382,68 @@ body.mobile-theme :focus-visible {
 
 @media (max-width: 480px) {
   .today-list-panel {
-    padding: 0.7rem 0.75rem;
-    border-radius: 1rem;
-    margin-bottom: 0.7rem;
+    padding: 0.55rem 0.6rem;
+    border-radius: 0.95rem;
+    margin-bottom: 0.55rem;
   }
 
   .today-list-header {
-    gap: 0.5rem;
+    gap: 0.4rem;
     justify-content: flex-start;
   }
 
   .today-list-toggle {
-    gap: 0.35rem;
+    gap: 0.3rem;
   }
 
   .today-list-title {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
   }
 
   .today-list-body {
-    margin-top: 0.55rem;
+    margin-top: 0.42rem;
   }
 
   .today-list-quick-add {
-    gap: 0.4rem;
+    gap: 0.32rem;
   }
 
   .today-list-header .btn,
   .today-list-quick-add .btn {
-    padding-inline: 0.7rem;
-    font-size: 0.8rem;
-    min-height: 1.95rem;
-    height: 1.95rem;
+    padding-inline: 0.62rem;
+    font-size: 0.76rem;
+    min-height: 1.8rem;
+    height: 1.8rem;
   }
 
   .today-list-quick-add-input {
-    min-height: 2.2rem;
-    font-size: 0.92rem;
+    min-height: 2rem;
+    font-size: 0.88rem;
   }
 
   .today-list-container {
-    border-radius: 0.95rem;
+    border-radius: 0.88rem;
   }
 
   .today-list-item {
-    min-height: 2.8rem;
-    padding: 0.55rem 0.7rem;
-    gap: 0.5rem;
+    min-height: 2.55rem;
+    padding: 0.42rem 0.58rem;
+    gap: 0.42rem;
   }
 
   .today-list-checkbox {
-    width: 1.2rem;
-    min-width: 1.2rem;
-    height: 1.2rem;
-    min-height: 1.2rem;
+    width: 1.05rem;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    min-height: 1.05rem;
   }
 
   .today-list-text {
-    font-size: 0.9rem;
+    font-size: 0.84rem;
   }
 
   .today-list-delete {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 }
 
