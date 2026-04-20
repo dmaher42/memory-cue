@@ -379,11 +379,11 @@
   }
 
   #view-reminders #reminderList {
-    gap: 0.22rem !important;
+    gap: 0.06rem !important;
   }
 
   #view-reminders #remindersWrapper {
-    padding-bottom: 0.2rem;
+    padding-bottom: 0.1rem;
   }
 
   #view-reminders .reminder-row {
@@ -818,6 +818,16 @@
 
 #view-reminders #remindersWrapper {
   padding-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+  #view-reminders #reminderList {
+    gap: 0.06rem !important;
+  }
+
+  #view-reminders #remindersWrapper {
+    padding-bottom: 0.1rem;
+  }
 }
 
 @keyframes reminder-strike {
