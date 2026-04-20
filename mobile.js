@@ -1462,6 +1462,12 @@ const initMobileNotes = () => {
   }
 
   const getEditorBodyHtml = () => {
+    if (scratchNotesEditorElement instanceof HTMLElement) {
+      const focusedBody = scratchNotesEditorElement.dataset.noteSectionFocusBody;
+      if (typeof focusedBody === 'string' && focusedBody.length > 0) {
+        return focusedBody;
+      }
+    }
     if (
       scratchNotesEditor &&
       typeof scratchNotesEditor.getHtml === 'function'
@@ -1476,6 +1482,11 @@ const initMobileNotes = () => {
 
   const setEditorBodyHtml = (html = '') => {
     const normalizedHtml = typeof html === 'string' ? html : '';
+    if (scratchNotesEditorElement instanceof HTMLElement) {
+      delete scratchNotesEditorElement.dataset.noteSectionFocusBody;
+      delete scratchNotesEditorElement.dataset.noteSectionFocusLabel;
+      delete scratchNotesEditorElement.dataset.noteSectionFocused;
+    }
     if (
       scratchNotesEditor &&
       typeof scratchNotesEditor.setHtml === 'function'

@@ -835,37 +835,118 @@ export const initMobileNotesShellUi = (options = {}) => {
     return match?.element instanceof HTMLElement ? match.element : null;
   };
 
-  const applyCollapsedNoteSection = (sections = []) => {
+  const getNotebookEditorBody = () => {
     const editorBody = document.getElementById('notebook-editor-body');
+    return editorBody instanceof HTMLElement ? editorBody : null;
+  };
+
+  const getNotebookEditorSourceText = () => {
+    const editorBody = getNotebookEditorBody();
+    if (!(editorBody instanceof HTMLElement)) {
+      return '';
+    }
+    return editorBody.dataset.noteSectionFocusText
+      || editorBody.innerText
+      || editorBody.textContent
+      || '';
+  };
+
+  const getNotebookSectionText = (bodyText = '', label = '') => {
+    const normalizedTargetLabel = normalizeSectionLabel(label);
+    if (!normalizedTargetLabel) {
+      return '';
+    }
+
+    const lines = String(bodyText || '')
+      .replace(/\r\n/g, '\n')
+      .split('\n');
+    const startIndex = lines.findIndex((line) => {
+      const sectionInfo = extractEditorSectionInfo(line);
+      return normalizeSectionLabel(sectionInfo?.label || '') === normalizedTargetLabel;
+    });
+    if (startIndex === -1) {
+      return '';
+    }
+
+    let endIndex = lines.length;
+    for (let index = startIndex + 1; index < lines.length; index += 1) {
+      if (extractEditorSectionInfo(lines[index])) {
+        endIndex = index;
+        break;
+      }
+    }
+
+    return lines
+      .slice(startIndex, endIndex)
+      .join('\n')
+      .trimEnd();
+  };
+
+  const restoreNotebookEditorFromFocus = (editorBody) => {
     if (!(editorBody instanceof HTMLElement)) {
       return;
     }
 
-    const blocks = Array.from(editorBody.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'))
-      .filter((block) => block instanceof HTMLElement);
-    blocks.forEach((block) => {
-      block.dataset.noteSectionHidden = 'false';
-    });
+    const focusedBody = editorBody.dataset.noteSectionFocusBody || '';
+    if (focusedBody) {
+      editorBody.innerHTML = focusedBody;
+    }
+
+    const previousContentEditable = editorBody.dataset.noteSectionPreviousContentEditable;
+    if (typeof previousContentEditable === 'string' && previousContentEditable) {
+      editorBody.contentEditable = previousContentEditable;
+    } else {
+      editorBody.contentEditable = 'true';
+    }
+    editorBody.setAttribute('aria-readonly', 'false');
+    delete editorBody.dataset.noteSectionFocusBody;
+    delete editorBody.dataset.noteSectionFocusLabel;
+    delete editorBody.dataset.noteSectionFocusText;
+    delete editorBody.dataset.noteSectionPreviousContentEditable;
+    delete editorBody.dataset.noteSectionFocused;
+  };
+
+  const applyCollapsedNoteSection = (sections = []) => {
+    const editorBody = getNotebookEditorBody();
+    if (!(editorBody instanceof HTMLElement)) {
+      return;
+    }
 
     if (!collapsedNoteSectionLabel) {
+      restoreNotebookEditorFromFocus(editorBody);
       return;
     }
 
-    const matches = getOrderedEditorSectionMatches(sections);
-    const activeMatchIndex = matches.findIndex((match) => match.normalized === collapsedNoteSectionLabel);
-    if (activeMatchIndex === -1) {
-      collapsedNoteSectionLabel = '';
-      return;
-    }
-
-    const startIndex = matches[activeMatchIndex].index;
-    const nextBlockMatch = matches.slice(activeMatchIndex + 1).find((match) => match.index !== startIndex);
-    const endIndex = nextBlockMatch?.index ?? blocks.length;
-    blocks.forEach((block, index) => {
-      if (index < startIndex || index >= endIndex) {
-        block.dataset.noteSectionHidden = 'true';
-      }
+    const normalizedTargetLabel = normalizeSectionLabel(collapsedNoteSectionLabel);
+    const activeSection = (Array.isArray(sections) ? sections : []).find((section) => {
+      const normalizedLabel = normalizeSectionLabel(section?.label || section?.normalized || '');
+      return normalizedLabel === normalizedTargetLabel;
     });
+    if (!activeSection) {
+      collapsedNoteSectionLabel = '';
+      restoreNotebookEditorFromFocus(editorBody);
+      return;
+    }
+
+    const fullBody = editorBody.dataset.noteSectionFocusBody || editorBody.innerHTML || '';
+    const fullText = editorBody.dataset.noteSectionFocusText || editorBody.innerText || editorBody.textContent || '';
+    const focusedText = getNotebookSectionText(fullText, activeSection.label || activeSection.normalized || '');
+    if (!focusedText) {
+      collapsedNoteSectionLabel = '';
+      restoreNotebookEditorFromFocus(editorBody);
+      return;
+    }
+
+    if (!editorBody.dataset.noteSectionFocusBody) {
+      editorBody.dataset.noteSectionFocusBody = fullBody;
+      editorBody.dataset.noteSectionFocusText = fullText;
+      editorBody.dataset.noteSectionPreviousContentEditable = editorBody.contentEditable || 'true';
+    }
+    editorBody.dataset.noteSectionFocusLabel = normalizedTargetLabel;
+    editorBody.dataset.noteSectionFocused = 'true';
+    editorBody.contentEditable = 'false';
+    editorBody.setAttribute('aria-readonly', 'true');
+    editorBody.textContent = focusedText;
   };
 
   const renderNoteSectionsBar = () => {
@@ -883,11 +964,19 @@ export const initMobileNotesShellUi = (options = {}) => {
       noteSectionsKey = '';
     }
 
-    const renderableSections = getOrderedEditorSectionMatches().map(({ label, normalized, kind }) => ({
-      label,
-      normalized,
-      kind,
-    }));
+    const renderableSections = getNotebookEditorSourceText()
+      .split(/\r?\n+/)
+      .map((line) => extractEditorSectionInfo(line))
+      .filter(Boolean)
+      .map(({ label, kind }) => ({
+        label,
+        normalized: normalizeSectionLabel(label || ''),
+        kind,
+      }))
+      .filter((section) => Boolean(section.normalized));
+    const renderableSectionsKey = renderableSections
+      .map((section) => section.normalized || normalizeSectionLabel(section.label || ''))
+      .join('|');
     if (renderableSections.length < 1) {
       activeNoteSectionLabel = '';
       noteSectionsExpanded = false;
@@ -899,9 +988,7 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
 
-    const nextSectionsKey = renderableSections
-      .map((section) => section.normalized || normalizeSectionLabel(section.label || ''))
-      .join('|');
+    const nextSectionsKey = renderableSectionsKey;
     if (noteSectionsKey !== nextSectionsKey) {
       noteSectionsKey = nextSectionsKey;
       noteSectionsExpanded = renderableSections.length === 1;
@@ -1014,8 +1101,7 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     event.preventDefault();
     const targetLabel = jumpButton.dataset.noteSectionJump || '';
-    const targetElement = findSectionTargetElement(targetLabel);
-    if (!(targetElement instanceof HTMLElement)) {
+    if (!targetLabel) {
       return;
     }
 
@@ -1023,18 +1109,6 @@ export const initMobileNotesShellUi = (options = {}) => {
     activeNoteSectionLabel = normalizedTargetLabel;
     collapsedNoteSectionLabel = normalizedTargetLabel;
     renderNoteSectionsBar();
-
-    const offset = getNoteSectionScrollOffset();
-    const refreshedTargetElement = findSectionTargetElement(targetLabel) || targetElement;
-    const scrollContainer = findScrollContainer(refreshedTargetElement);
-    if (scrollContainer instanceof HTMLElement) {
-      const targetTop = Math.max(0, getOffsetWithinContainer(refreshedTargetElement, scrollContainer) - offset);
-      scrollContainer.scrollTo({ top: targetTop, behavior: 'smooth' });
-      return;
-    }
-
-    const viewportTop = refreshedTargetElement.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top: Math.max(0, viewportTop), behavior: 'smooth' });
   };
 
   const bindNoteSectionsEvents = () => {
