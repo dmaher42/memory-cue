@@ -493,7 +493,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   body[data-active-view="notebooks"] .note-editor-card {
-    padding-bottom: 108px !important;
+    padding-bottom: 84px !important;
   }
 `;
 
