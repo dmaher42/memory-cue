@@ -824,12 +824,12 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     flex: 0 1 auto;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem; /* ~12px breathing space between header + title */
+    gap: 0.35rem;
     padding-bottom: clamp(0.35rem, 1.5vh, 1rem);
   }
 
   .mobile-panel--notes #noteEditorSheet {
-    padding-top: 0.2rem;
+    padding-top: 0;
     border-top: 1px solid color-mix(in srgb, var(--mobile-header-border, rgba(99, 102, 241, 0.22)) 55%, transparent);
   }
 
@@ -2470,6 +2470,52 @@ body, main, section, div, p, span, li {
       font-weight: 600;
       margin: 0;
       line-height: 1.2;
+    }
+
+    .reminders-screen-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.35rem;
+      padding: 0.15rem 0.1rem 0.2rem;
+    }
+
+    .reminders-screen-header-copy {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .reminders-screen-title {
+      margin: 0;
+      font-size: 0.96rem;
+      line-height: 1.05;
+    }
+
+    .reminders-screen-subtitle {
+      margin: 0.08rem 0 0;
+      font-size: 0.72rem;
+      line-height: 1.2;
+      color: var(--text-muted);
+    }
+
+    .reminders-screen-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .reminders-screen-header-actions > .btn,
+    #view-reminders .reminders-screen-header-actions > button,
+    #view-reminders #reminderSortToggle,
+    #view-reminders #voiceAddBtn,
+    #view-reminders .reminders-add-button {
+      min-height: 1.75rem !important;
+      height: 1.75rem !important;
+      padding: 0.2rem 0.5rem !important;
+      font-size: 0.72rem !important;
+      line-height: 1 !important;
     }
 
     .app-header button {
