@@ -25,8 +25,8 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook #notesOverviewPanel {
-    padding: 0.8rem;
-    margin: 0.6rem 0.75rem 0.75rem;
+    padding: 0.62rem;
+    margin: 0.35rem 0.6rem 0.35rem;
     border-radius: 1.1rem;
     background: color-mix(in srgb, #ffffff 95%, #f3eefc 5%);
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
@@ -50,8 +50,8 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
-    padding: 0.62rem 0.72rem;
-    margin-bottom: 0.55rem;
+    padding: 0.54rem 0.62rem;
+    margin-bottom: 0.18rem;
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewList {

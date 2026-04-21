@@ -3308,7 +3308,8 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   border-radius: 1rem;
   background: color-mix(in srgb, var(--surface-elevated) 92%, #ffffff 8%);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  padding: 0.64rem;
+  padding: 0.58rem;
+  margin-bottom: 0.35rem;
 }
 
 #view-notebook #notesOverviewPanel h2 {
