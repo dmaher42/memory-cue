@@ -4688,12 +4688,39 @@ export async function initReminders(sel = {}) {
       || typeof payload?.due === 'string' && payload.due.trim()
       || payload?.dueAt instanceof Date
       || payload?.due instanceof Date;
+    const parsedDueAt = parsedSchedule.dueDate instanceof Date && Number.isFinite(parsedSchedule.dueDate.getTime())
+      ? parsedSchedule.dueDate.toISOString()
+      : null;
+    const parsedNotifyAt = parsedSchedule.dueDate instanceof Date && Number.isFinite(parsedSchedule.dueDate.getTime())
+      ? new Date(parsedSchedule.dueDate.getTime() - 10 * 60 * 1000).toISOString()
+      : null;
+    const resolvedDueAt = hasExplicitDue
+      ? (typeof payload?.dueAt === 'string' && payload.dueAt.trim()
+        ? payload.dueAt.trim()
+        : typeof payload?.due === 'string' && payload.due.trim()
+          ? payload.due.trim()
+          : payload?.dueAt instanceof Date
+            ? payload.dueAt.toISOString()
+            : payload?.due instanceof Date
+              ? payload.due.toISOString()
+              : null)
+      : parsedDueAt;
+    const resolvedNotifyAt = hasExplicitDue
+      ? (typeof payload?.notifyAt === 'string' && payload.notifyAt.trim()
+        ? payload.notifyAt.trim()
+        : payload?.notifyAt instanceof Date
+          ? payload.notifyAt.toISOString()
+          : null)
+      : parsedNotifyAt;
     const cleanedTitle = parsedSchedule.cleanedText || stripReminderPromptPrefix(sourceText);
-    const normalizedPayload = cleanedTitle && (hasExplicitDue || parsedSchedule.dueDate instanceof Date)
+    const normalizedPayload = cleanedTitle && (resolvedDueAt || parsedDueAt)
       ? {
         ...payload,
         text: cleanedTitle,
         title: cleanedTitle,
+        dueAt: resolvedDueAt,
+        due: resolvedDueAt,
+        notifyAt: resolvedNotifyAt,
       }
       : payload;
 
