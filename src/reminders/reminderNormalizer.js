@@ -1,7 +1,12 @@
 const DEFAULT_SOURCE = 'manual';
-const DEFAULT_PRIORITY = 'medium';
+const DEFAULT_PRIORITY = 'Medium';
 const DEFAULT_CATEGORY = null;
 const VALID_PRIORITIES = new Set(['low', 'medium', 'high']);
+const PRIORITY_LABELS = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
 const VALID_SOURCES = new Set(['capture', 'manual', 'inbox', 'system']);
 
 function createReminderId() {
@@ -52,7 +57,12 @@ function normalizePriority(value) {
   if (!normalized) {
     return null;
   }
-  return VALID_PRIORITIES.has(normalized) ? normalized : null;
+  return VALID_PRIORITIES.has(normalized) ? PRIORITY_LABELS[normalized] : null;
+}
+
+function normalizeIsoString(value) {
+  const timestamp = normalizeEpochMs(value);
+  return timestamp ? new Date(timestamp).toISOString() : null;
 }
 
 function normalizeSource(value) {
@@ -75,9 +85,9 @@ function attachLegacyAccessors(reminder) {
   }
   const accessors = {
     title: { get: () => reminder.text },
-    notes: { get: () => reminder.text },
-    due: { get: () => reminder.dueAt },
-    dueDate: { get: () => reminder.dueAt },
+    notes: { get: () => '' },
+    due: { get: () => normalizeIsoString(reminder.dueAt) },
+    dueDate: { get: () => normalizeIsoString(reminder.dueAt) },
     done: { get: () => reminder.completed },
     status: { get: () => (reminder.completed ? 'done' : 'open') },
     timestamp: { get: () => reminder.createdAt },
@@ -107,6 +117,8 @@ export function normalizeReminder(input = {}) {
     ?? source.notes
     ?? source.name
   );
+  const title = normalizeText(source.title ?? source.text ?? source.name ?? source.note) || text;
+  const notes = normalizeText(source.notes ?? source.bodyText ?? source.body);
   const createdAt = normalizeEpochMs(source.createdAt ?? source.timestamp) ?? now;
   const updatedAt = normalizeEpochMs(source.updatedAt) ?? createdAt;
   const completed = source.completed === true
@@ -114,17 +126,36 @@ export function normalizeReminder(input = {}) {
     || source.isDone === true
     || source.status === 'done';
   const dueAt = normalizeEpochMs(source.dueAt ?? source.dueDate ?? source.date ?? source.time ?? source.due);
+  const due = normalizeIsoString(source.due ?? source.dueAt ?? source.dueDate ?? source.date ?? source.time);
 
   const reminder = {
     id: normalizeText(source.id) || createReminderId(),
-    text,
+    text: text || title,
+    title,
+    notes,
     dueAt,
+    due,
+    dueDate: due,
     createdAt,
     updatedAt,
     completed,
+    done: completed,
+    status: completed ? 'done' : 'open',
     category: normalizeNullableString(source.category) ?? DEFAULT_CATEGORY,
     priority: normalizePriority(source.priority) ?? DEFAULT_PRIORITY,
     source: normalizeSource(source.source ?? source.metadata?.source),
+    recurrence: normalizeNullableString(source.recurrence),
+    snoozedUntil: normalizeIsoString(source.snoozedUntil),
+    notifyAt: normalizeIsoString(source.notifyAt) || due,
+    notifyMinutesBefore: Number.isFinite(Number(source.notifyMinutesBefore)) ? Number(source.notifyMinutesBefore) : 0,
+    userId: normalizeNullableString(source.userId),
+    pendingSync: !!source.pendingSync,
+    orderIndex: Number.isFinite(Number(source.orderIndex)) ? Number(source.orderIndex) : null,
+    plannerLessonId: normalizeNullableString(source.plannerLessonId),
+    pinToToday: source.pinToToday === true,
+    metadata: source.metadata && typeof source.metadata === 'object' ? source.metadata : null,
+    keywords: Array.isArray(source.keywords) ? source.keywords : [],
+    semanticEmbedding: Array.isArray(source.semanticEmbedding) ? source.semanticEmbedding : null,
   };
 
   return attachLegacyAccessors(reminder);

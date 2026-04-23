@@ -57,6 +57,7 @@ export const createReminderFormHandlers = (options = {}) => {
       syncEditingIdFromMode();
     }
     if (saveBtn) saveBtn.textContent = 'Add reminder';
+    if (cancelEditBtn) cancelEditBtn.textContent = 'Cancel';
     cancelEditBtn?.classList.add('hidden');
     clearPlannerReminderContext();
     if (!preserveDetail) {
@@ -87,6 +88,7 @@ export const createReminderFormHandlers = (options = {}) => {
     clearPlannerReminderContext();
     applyDetailSelection(item);
     if (saveBtn) saveBtn.textContent = 'Save changes';
+    if (cancelEditBtn) cancelEditBtn.textContent = 'Discard changes';
     cancelEditBtn?.classList.remove('hidden');
     scrollToTop();
     focusTitleField();

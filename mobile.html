@@ -6471,6 +6471,11 @@ body, main, section, div, p, span, li {
       color: rgba(47, 27, 63, 0.6);
     }
 
+    #create-sheet[data-mode="edit"] .reminder-header-eyebrow {
+      color: color-mix(in srgb, var(--accent-color, #512663) 76%, #111827);
+      font-weight: 800;
+    }
+
     .reminder-header-title {
       margin: 0;
       font-size: 1rem;
@@ -6479,6 +6484,10 @@ body, main, section, div, p, span, li {
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
+    }
+
+    #create-sheet[data-mode="edit"] .reminder-header-title {
+      letter-spacing: -0.01em;
     }
 
     .reminder-header-save {
@@ -6517,6 +6526,12 @@ body, main, section, div, p, span, li {
       box-shadow:
         0 12px 26px rgba(15, 23, 42, 0.06),
         0 2px 10px rgba(81, 38, 99, 0.07);
+    }
+
+    #create-sheet[data-mode="edit"] .reminder-sheet-card {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(246, 250, 255, 0.96) 100%);
+      border-color: color-mix(in srgb, var(--accent-color, #512663) 18%, rgba(81, 38, 99, 0.08));
     }
 
     .reminder-sheet-card > .reminder-section + .reminder-section {
@@ -6597,6 +6612,12 @@ body, main, section, div, p, span, li {
       background: #ffffff;
     }
 
+    .reminder-details-textarea {
+      line-height: 1.45;
+      white-space: pre-wrap;
+      resize: vertical;
+    }
+
     .reminder-field--row {
       display: grid;
       grid-template-columns: 1.1fr 0.9fr;
@@ -6624,6 +6645,9 @@ body, main, section, div, p, span, li {
       font-size: 0.8rem;
       line-height: 1.4;
       color: rgba(47, 27, 63, 0.7);
+      border-radius: 14px;
+      padding: 8px 10px;
+      background: color-mix(in srgb, var(--accent-color, #512663) 7%, #ffffff);
     }
 
     .reminder-sheet-actions {
@@ -6643,6 +6667,16 @@ body, main, section, div, p, span, li {
       font-weight: 700;
       letter-spacing: 0.01em;
       box-shadow: 0 10px 20px rgba(81, 38, 99, 0.18);
+    }
+
+    #create-sheet[data-mode="edit"] .reminder-save-cta {
+      box-shadow: 0 12px 24px color-mix(in srgb, var(--accent-color, #512663) 26%, transparent);
+    }
+
+    #create-sheet[data-mode="edit"] .reminder-cancel-edit {
+      border-radius: 999px;
+      color: rgba(47, 27, 63, 0.72);
+      font-weight: 700;
     }
 
     .reminder-status-message {
@@ -6834,20 +6868,20 @@ body, main, section, div, p, span, li {
           <header class="reminder-editor-header reminder-sheet-header">
             <button type="button" id="closeCreateSheet" aria-label="Close" class="reminder-header-back">←</button>
             <div class="reminder-header-title-group">
-              <span class="reminder-header-eyebrow">Create</span>
+              <span class="reminder-header-eyebrow" id="reminderSheetEyebrow">Create</span>
               <h2 class="reminder-header-title" id="createSheetTitle">Add reminder</h2>
             </div>
           </header>
           <!-- Stack the reminder editor into grouped sections for a mobile-first flow -->
           <form id="createReminderForm" class="reminder-editor-form">
-            <p class="reminder-sheet-helper">Leave date and time blank if you just want it saved in your reminder list.</p>
+            <p class="reminder-sheet-helper" id="reminderSheetHelper">Leave date and time blank if you just want it saved in your reminder list.</p>
             <div class="reminder-sheet-content">
               <div class="reminder-sheet-card card bg-base-100 border border-base-200 shadow-xl">
               <!-- Group reminder basics together for quick scanning -->
               <section class="reminder-section" aria-labelledby="reminderDetailsHeading">
                 <div class="reminder-section-heading">
                   <p id="reminderDetailsHeading" class="reminder-section-title">What to remember</p>
-                  <p class="reminder-section-hint">Add the reminder title first. Notes are optional.</p>
+                  <p class="reminder-section-hint">Keep the title short, then use details for extra dates, locations, or steps.</p>
                 </div>
                 <div class="reminder-field-group">
                   <div class="reminder-field">
@@ -6872,12 +6906,12 @@ body, main, section, div, p, span, li {
                   </div>
 
                   <div class="reminder-field">
-                    <label for="reminderDetails" class="reminder-field-label">Notes (optional)</label>
+                    <label for="reminderDetails" class="reminder-field-label">Details, dates and locations</label>
                     <textarea
                       id="reminderDetails"
-                      class="reminder-field-textarea textarea textarea-bordered w-full min-h-[6rem] text-sm text-base-content"
-                      rows="3"
-                      placeholder="Add any helpful context or steps"
+                      class="reminder-field-textarea reminder-details-textarea textarea textarea-bordered w-full min-h-[7rem] text-sm text-base-content"
+                      rows="5"
+                      placeholder="Example: Trial 1 - Mon 6 May, 4:00pm, School gym&#10;Trial 2 - Wed 8 May, 5:30pm, Rec centre&#10;Bring: water bottle and registration form"
                     ></textarea>
                   </div>
                 </div>
@@ -6979,7 +7013,7 @@ body, main, section, div, p, span, li {
               >
                 Add reminder
               </button>
-              <button id="cancelEditBtn" class="btn btn-ghost btn-sm w-full hidden" type="button">Cancel</button>
+              <button id="cancelEditBtn" class="btn btn-ghost btn-sm w-full reminder-cancel-edit hidden" type="button">Discard changes</button>
             </div>
 
             <p id="statusMessage" class="reminder-status-message" role="status" aria-live="polite"></p>
