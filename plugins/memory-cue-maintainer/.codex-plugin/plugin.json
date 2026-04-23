@@ -1,0 +1,45 @@
+{
+  "name": "memory-cue-maintainer",
+  "version": "0.1.0",
+  "description": "Repo-local Codex plugin for improving Memory Cue without adding parallel architecture.",
+  "author": {
+    "name": "Daniel Maher",
+    "email": "noreply@local.invalid",
+    "url": "https://github.com/dmaher42"
+  },
+  "homepage": "https://github.com/dmaher42/memory-cue",
+  "repository": "https://github.com/dmaher42/memory-cue",
+  "license": "ISC",
+  "keywords": [
+    "memory-cue",
+    "pwa",
+    "codex",
+    "maintenance",
+    "architecture"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Memory Cue Maintainer",
+    "shortDescription": "Keeps Memory Cue changes on the canonical path and runs the right checks.",
+    "longDescription": "Use this repo-local plugin when improving Memory Cue. It anchors work to the real repo root, reads the handover and canonical map first, edits the true implementation owner for each domain, avoids duplicate storage and routing, and runs Windows-safe verification commands.",
+    "developerName": "Daniel Maher",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/dmaher42/memory-cue",
+    "privacyPolicyURL": "https://github.com/dmaher42/memory-cue",
+    "termsOfServiceURL": "https://github.com/dmaher42/memory-cue",
+    "defaultPrompt": [
+      "Inspect Memory Cue and fix the canonical implementation, not the wrapper.",
+      "Audit a change against AI_HANDOVER.md, PRODUCT_RULES.md, and CANONICAL_MAP.md.",
+      "Run the Memory Cue verification flow after making the smallest safe fix."
+    ],
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg",
+    "screenshots": []
+  }
+}
