@@ -1306,6 +1306,12 @@ export async function initReminders(sel = {}) {
 
   function parseQuickAddPrefixRoute(rawText) {
     const text = typeof rawText === 'string' ? rawText : '';
+    if (/^\s*!\s*/.test(text)) {
+      return {
+        kind: 'default',
+        text: text.replace(/^\s*!\s*/, '').trim(),
+      };
+    }
     const routes = [
       { kind: 'footy-drill', pattern: /^\s*footy\s+drill\s*:\s*/i },
       { kind: 'reflection', pattern: /^\s*reflection\s*:\s*/i },
@@ -2892,6 +2898,47 @@ export async function initReminders(sel = {}) {
     const timeRange = parseReminderTimeRangeFromText(sourceText);
     const timeParts = parseTimePartsFromReminderText(sourceText);
     const displayParts = extractReminderInlineSchedule(sourceText);
+    const weekdayMatch = text.match(/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i);
+    const weekdayOrder = {
+      sun: 0,
+      sunday: 0,
+      mon: 1,
+      monday: 1,
+      tue: 2,
+      tues: 2,
+      tuesday: 2,
+      wed: 3,
+      wednesday: 3,
+      thu: 4,
+      thur: 4,
+      thurs: 4,
+      thursday: 4,
+      fri: 5,
+      friday: 5,
+      sat: 6,
+      saturday: 6,
+    };
+    const resolveRelativeDayOffset = () => {
+      if (text.includes('tomorrow')) {
+        return 1;
+      }
+      if (text.includes('today') || text.includes('tonight')) {
+        return 0;
+      }
+      if (!weekdayMatch) {
+        return null;
+      }
+      const targetDay = weekdayOrder[(weekdayMatch[2] || '').toLowerCase()];
+      if (!Number.isFinite(targetDay)) {
+        return null;
+      }
+      let dayOffset = (targetDay - target.getDay() + 7) % 7;
+      if (dayOffset === 0 && weekdayMatch[1]) {
+        dayOffset = 7;
+      }
+      return dayOffset;
+    };
+    const relativeDayOffset = resolveRelativeDayOffset();
 
     result.cleanedText = displayParts.textWithoutSchedule || stripReminderPromptPrefix(sourceText) || sourceText;
 
@@ -2904,9 +2951,12 @@ export async function initReminders(sel = {}) {
 
     if (timeRange) {
       const candidate = new Date(target);
+      if (Number.isFinite(relativeDayOffset)) {
+        candidate.setDate(candidate.getDate() + relativeDayOffset);
+      }
       candidate.setHours(timeRange.start.hours, timeRange.start.minutes, 0, 0);
       if (candidate.getTime() <= now.getTime()) {
-        candidate.setDate(candidate.getDate() + 1);
+        candidate.setDate(candidate.getDate() + (weekdayMatch ? 7 : 1));
       }
       result.dueDate = candidate;
       result.notifyAt = new Date(candidate.getTime() - 10 * 60 * 1000);
@@ -2917,43 +2967,11 @@ export async function initReminders(sel = {}) {
       return result;
     }
 
-    const weekdayMatch = text.match(/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i);
-    if (text.includes('tomorrow')) {
-      target.setDate(target.getDate() + 1);
-    } else if (text.includes('today') || text.includes('tonight')) {
-      // same day
-    } else if (weekdayMatch) {
-      const weekdayOrder = {
-        sun: 0,
-        sunday: 0,
-        mon: 1,
-        monday: 1,
-        tue: 2,
-        tues: 2,
-        tuesday: 2,
-        wed: 3,
-        wednesday: 3,
-        thu: 4,
-        thur: 4,
-        thurs: 4,
-        thursday: 4,
-        fri: 5,
-        friday: 5,
-        sat: 6,
-        saturday: 6,
-      };
-      const targetDay = weekdayOrder[(weekdayMatch[2] || '').toLowerCase()];
-      if (!Number.isFinite(targetDay)) {
+      if (Number.isFinite(relativeDayOffset)) {
+        target.setDate(target.getDate() + relativeDayOffset);
+      } else {
         return result;
       }
-      let dayOffset = (targetDay - target.getDay() + 7) % 7;
-      if (dayOffset === 0 && weekdayMatch[1]) {
-        dayOffset = 7;
-      }
-      target.setDate(target.getDate() + dayOffset);
-    } else {
-      return result;
-    }
 
     let hours = timeParts.hours;
     const minutes = timeParts.minutes;

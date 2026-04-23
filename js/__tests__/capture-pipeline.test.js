@@ -51,7 +51,7 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-test('capture pipeline parses compact time ranges and cleans reminder titles', async () => {
+test('capture pipeline parses weekday time ranges and cleans reminder titles', async () => {
   const createdReminders = [];
   const { captureInput } = loadCapturePipeline({
     createReminder: async (payload = {}) => {
@@ -61,7 +61,7 @@ test('capture pipeline parses compact time ranges and cleans reminder titles', a
   });
 
   const result = await captureInput({
-    text: '!Archer Basketball 330-530',
+    text: '! Archer Basketball Sunday 330-530',
     source: 'capture',
   });
 
@@ -69,7 +69,7 @@ test('capture pipeline parses compact time ranges and cleans reminder titles', a
   expect(createdReminders).toHaveLength(1);
 
   const expected = new Date();
-  expected.setDate(expected.getDate() + 1);
+  expected.setDate(expected.getDate() + 4);
   expected.setHours(15, 30, 0, 0);
 
   expect(createdReminders[0].text).toBe('Archer Basketball');

@@ -439,6 +439,40 @@ const buildReminderDate = (normalizedText, now) => {
     return new Date(now.getTime());
   }
 
+  const weekdayMatch = normalizedText.match(/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i);
+  if (weekdayMatch) {
+    const weekdayOrder = {
+      sun: 0,
+      sunday: 0,
+      mon: 1,
+      monday: 1,
+      tue: 2,
+      tues: 2,
+      tuesday: 2,
+      wed: 3,
+      wednesday: 3,
+      thu: 4,
+      thur: 4,
+      thurs: 4,
+      thursday: 4,
+      fri: 5,
+      friday: 5,
+      sat: 6,
+      saturday: 6,
+    };
+    const targetDay = weekdayOrder[(weekdayMatch[2] || '').toLowerCase()];
+    if (!Number.isFinite(targetDay)) {
+      return null;
+    }
+    const dueDate = new Date(now.getTime());
+    let dayOffset = (targetDay - dueDate.getDay() + 7) % 7;
+    if (dayOffset === 0 && weekdayMatch[1]) {
+      dayOffset = 7;
+    }
+    dueDate.setDate(dueDate.getDate() + dayOffset);
+    return dueDate;
+  }
+
   return null;
 };
 
@@ -462,9 +496,10 @@ const parseReminderDueAt = (text, now = new Date(), options = {}) => {
 
   const timeRange = parseReminderTimeRangeFromText(normalized);
   if (timeRange) {
-    const candidate = setTimeOnDate(now, timeRange.start.hours, timeRange.start.minutes);
+    const dueDate = buildReminderDate(normalized, now) || new Date(now.getTime());
+    const candidate = setTimeOnDate(dueDate, timeRange.start.hours, timeRange.start.minutes);
     if (candidate.getTime() <= now.getTime()) {
-      candidate.setDate(candidate.getDate() + 1);
+      candidate.setDate(candidate.getDate() + (/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i.test(normalized) ? 7 : 1));
     }
     return toIsoString(candidate);
   }

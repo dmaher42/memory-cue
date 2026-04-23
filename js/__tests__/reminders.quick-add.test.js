@@ -44,6 +44,9 @@ beforeEach(async () => {
       <div id="emptyState"></div>
       <ul id="reminderList"></ul>
     </div>
+    <input id="reminderText" />
+    <input id="reminderDate" type="date" />
+    <input id="reminderTime" type="time" />
     <form id="quickAddForm">
       <input id="reminderQuickAdd" />
       <button id="quickAddSubmit" type="button">Add</button>
@@ -56,6 +59,9 @@ beforeEach(async () => {
   const { initReminders } = loadRemindersModule();
   controller = await initReminders({
     statusSel: '#status',
+    titleSel: '#reminderText',
+    dateSel: '#reminderDate',
+    timeSel: '#reminderTime',
     listWrapperSel: '#remindersWrapper',
     emptyStateSel: '#emptyState',
     listSel: '#reminderList',
@@ -221,4 +227,23 @@ test('quick add parses compact time ranges into due date and cleans title', asyn
 
   expect(item.title).toBe('Archer Basketball');
   expect(item.due).toBe(expectedIso);
+});
+
+test('quick add with weekday range fills edit reminder date and time fields', async () => {
+  const quickInput = document.getElementById('reminderQuickAdd');
+  quickInput.value = '! Archer Basketball Sunday 330-530';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  const item = items[0];
+  expect(item.due).toBeTruthy();
+  expect(Number.isNaN(new Date(item.due).getTime())).toBe(false);
+
+  window.openEditReminderSheet(item);
+
+  expect(document.getElementById('reminderDate').value).toBe('2024-05-19');
+  expect(document.getElementById('reminderTime').value).toBe('15:30');
+  expect(item.title).toBe('Archer Basketball');
 });
