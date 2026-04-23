@@ -36,6 +36,52 @@ const QUICK_CAPTURE_PREFIXES = Object.freeze({
   note: '+',
 });
 
+const MONTH_NAME_TO_INDEX = Object.freeze({
+  jan: 0,
+  january: 0,
+  feb: 1,
+  february: 1,
+  mar: 2,
+  march: 2,
+  apr: 3,
+  april: 3,
+  may: 4,
+  jun: 5,
+  june: 5,
+  jul: 6,
+  july: 6,
+  aug: 7,
+  august: 7,
+  sep: 8,
+  sept: 8,
+  september: 8,
+  oct: 9,
+  october: 9,
+  nov: 10,
+  november: 10,
+  dec: 11,
+  december: 11,
+});
+
+const WEEKDAY_NAME_PATTERN = '(?:monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)';
+const MONTH_NAME_PATTERN = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const DAY_MONTH_DATE_PATTERN = new RegExp(
+  `\\b(?:on\\s+)?(?:${WEEKDAY_NAME_PATTERN}\\s*,?\\s*)?(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAME_PATTERN})(?:\\s+(\\d{4}))?\\b`,
+  'i',
+);
+const MONTH_DAY_DATE_PATTERN = new RegExp(
+  `\\b(?:on\\s+)?(?:${WEEKDAY_NAME_PATTERN}\\s*,?\\s*)?(${MONTH_NAME_PATTERN})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+(\\d{4}))?\\b`,
+  'i',
+);
+const DAY_MONTH_DATE_TITLE_PATTERN = new RegExp(
+  `\\b(?:on\\s+)?(?:${WEEKDAY_NAME_PATTERN}\\s*,?\\s*)?(?:\\d{1,2})(?:st|nd|rd|th)?\\s+${MONTH_NAME_PATTERN}(?:\\s+\\d{4})?\\b`,
+  'gi',
+);
+const MONTH_DAY_DATE_TITLE_PATTERN = new RegExp(
+  `\\b(?:on\\s+)?(?:${WEEKDAY_NAME_PATTERN}\\s*,?\\s*)?${MONTH_NAME_PATTERN}\\s+(?:\\d{1,2})(?:st|nd|rd|th)?(?:\\s+\\d{4})?\\b`,
+  'gi',
+);
+
 const CAPTURE_KIND_REPLY_MAP = Object.freeze({
   '!': 'reminder',
   '+': 'note',
@@ -179,8 +225,6 @@ const setTimeOnDate = (date, hours, minutes = 0) => {
   return nextDate;
 };
 
-const REMINDER_TIMING_REPLY_PATTERN = /\b(today|tomorrow|tonight|next week|morning|afternoon|evening|night|am|pm|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|(?:^|\s)\d{1,2}:\d{2}(?:\s*[ap]m)?\b|\b\d{3,4}\s*(?:am|pm)?\b|\b\d{1,2}\s*(?:am|pm)\b/i;
-
 const stripReminderPromptPrefix = (text) => {
   let cleaned = normalizeText(text);
   if (!cleaned) {
@@ -217,6 +261,8 @@ const cleanReminderTitle = (text) => {
   cleaned = cleaned
     .replace(/\b(?:today|tomorrow|tonight|next week|morning|afternoon|evening|night)\b/gi, ' ')
     .replace(/\b(?:(?:next)\s+)?(?:monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/gi, ' ')
+    .replace(DAY_MONTH_DATE_TITLE_PATTERN, ' ')
+    .replace(MONTH_DAY_DATE_TITLE_PATTERN, ' ')
     .replace(/\b(?:at\s*)?(?:\d{1,2}(?::\d{2})?|\d{3,4})\s*(?:am|pm)\b/gi, ' ')
     .replace(/\b(?:at\s*)?\d{1,2}:\d{2}\b/gi, ' ')
     .replace(/^[,.\-:;\s]+|[,.\-:;\s]+$/g, '')
@@ -226,6 +272,59 @@ const cleanReminderTitle = (text) => {
     .trim();
 
   return cleaned;
+};
+
+const parseExplicitReminderDate = (normalizedText, now) => {
+  if (typeof normalizedText !== 'string' || !normalizedText.trim()) {
+    return null;
+  }
+
+  const buildCandidate = (year, monthIndex, day, timeParts) => {
+    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) {
+      return null;
+    }
+
+    const candidate = new Date(now.getTime());
+    candidate.setFullYear(year, monthIndex, day);
+    candidate.setHours(0, 0, 0, 0);
+
+    if (
+      candidate.getFullYear() !== year
+      || candidate.getMonth() !== monthIndex
+      || candidate.getDate() !== day
+    ) {
+      return null;
+    }
+
+    const resolvedTime = timeParts || { hours: 9, minutes: 0 };
+    return setTimeOnDate(candidate, resolvedTime.hours, resolvedTime.minutes);
+  };
+
+  const dayMonthMatch = normalizedText.match(DAY_MONTH_DATE_PATTERN);
+  if (dayMonthMatch) {
+    const day = Number.parseInt(dayMonthMatch[1], 10);
+    const monthIndex = MONTH_NAME_TO_INDEX[dayMonthMatch[2]];
+    const year = dayMonthMatch[3] ? Number.parseInt(dayMonthMatch[3], 10) : now.getFullYear();
+    const timeParts = extractTimeParts(normalizedText);
+    const candidate = buildCandidate(year, monthIndex, day, timeParts);
+    if (candidate) {
+      return toIsoString(candidate);
+    }
+  }
+
+  const monthDayMatch = normalizedText.match(MONTH_DAY_DATE_PATTERN);
+  if (monthDayMatch) {
+    const monthIndex = MONTH_NAME_TO_INDEX[monthDayMatch[1]];
+    const day = Number.parseInt(monthDayMatch[2], 10);
+    const year = monthDayMatch[3] ? Number.parseInt(monthDayMatch[3], 10) : now.getFullYear();
+    const timeParts = extractTimeParts(normalizedText);
+    const candidate = buildCandidate(year, monthIndex, day, timeParts);
+    if (candidate) {
+      return toIsoString(candidate);
+    }
+  }
+
+  return null;
 };
 
 const extractTimeParts = (normalizedText) => {
@@ -289,7 +388,7 @@ const buildReminderDate = (normalizedText, now) => {
   return null;
 };
 
-const looksLikeReminderTimingReply = (text) => REMINDER_TIMING_REPLY_PATTERN.test(normalizeText(text));
+const looksLikeReminderTimingReply = (text) => Boolean(parseReminderDueAt(text, new Date(), { allowTimeOnly: true }));
 
 const parseReminderDueAt = (text, now = new Date(), options = {}) => {
   const normalized = normalizeText(text).toLowerCase();
@@ -300,6 +399,11 @@ const parseReminderDueAt = (text, now = new Date(), options = {}) => {
   if (/\btonight\b/.test(normalized)) {
     const tonightTime = extractTimeParts(normalized) || { hours: 19, minutes: 0 };
     return toIsoString(setTimeOnDate(now, tonightTime.hours, tonightTime.minutes));
+  }
+
+  const explicitDate = parseExplicitReminderDate(normalized, now);
+  if (explicitDate) {
+    return explicitDate;
   }
 
   const dueDate = buildReminderDate(normalized, now);

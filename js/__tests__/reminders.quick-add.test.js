@@ -184,3 +184,22 @@ test('quick add parses natural language time into due date', async () => {
 
   expect(item.due).toBe(expectedIso);
 });
+
+test('quick add parses explicit date and time into due date', async () => {
+  const quickInput = document.getElementById('reminderQuickAdd');
+  quickInput.value = 'Call parents Mon 20 May 4pm';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  const item = items[0];
+
+  const expected = new Date();
+  expected.setFullYear(2024, 4, 20);
+  expected.setHours(16, 0, 0, 0);
+  const expectedIso = expected.toISOString();
+
+  expect(item.title).toBe('Call parents');
+  expect(item.due).toBe(expectedIso);
+});
