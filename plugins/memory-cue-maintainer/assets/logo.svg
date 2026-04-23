@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 64" role="img" aria-label="Memory Cue Maintainer logo">
+  <rect width="64" height="64" rx="16" fill="#2563EB"/>
+  <path d="M18 20h28v24H18z" fill="#EFF6FF"/>
+  <path d="M24 28h16M24 34h16M24 40h10" stroke="#2563EB" stroke-linecap="round" stroke-width="4"/>
+  <circle cx="46" cy="18" r="8" fill="#93C5FD"/>
+  <text x="82" y="28" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">Memory Cue</text>
+  <text x="82" y="48" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">Maintainer</text>
+</svg>

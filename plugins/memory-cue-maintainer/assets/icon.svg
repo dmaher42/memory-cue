@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Memory Cue Maintainer icon">
+  <rect width="64" height="64" rx="16" fill="#2563EB"/>
+  <path d="M18 20h28v24H18z" fill="#EFF6FF"/>
+  <path d="M24 28h16M24 34h16M24 40h10" stroke="#2563EB" stroke-linecap="round" stroke-width="4"/>
+  <circle cx="46" cy="18" r="8" fill="#93C5FD"/>
+</svg>
