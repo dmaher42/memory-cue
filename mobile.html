@@ -6559,13 +6559,6 @@ body, main, section, div, p, span, li {
       letter-spacing: 0;
     }
 
-    .reminder-section-hint {
-      margin: 0;
-      font-size: 0.78rem;
-      line-height: 1.35;
-      color: rgba(47, 27, 63, 0.62);
-    }
-
     .reminder-field-group {
       display: flex;
       flex-direction: column;
@@ -6638,16 +6631,6 @@ body, main, section, div, p, span, li {
       display: flex;
       flex-wrap: nowrap;
       gap: 6px;
-    }
-
-    .reminder-sheet-helper {
-      margin: -2px 0 2px;
-      font-size: 0.8rem;
-      line-height: 1.4;
-      color: rgba(47, 27, 63, 0.7);
-      border-radius: 14px;
-      padding: 8px 10px;
-      background: color-mix(in srgb, var(--accent-color, #512663) 7%, #ffffff);
     }
 
     .reminder-sheet-actions {
@@ -6874,14 +6857,12 @@ body, main, section, div, p, span, li {
           </header>
           <!-- Stack the reminder editor into grouped sections for a mobile-first flow -->
           <form id="createReminderForm" class="reminder-editor-form">
-            <p class="reminder-sheet-helper" id="reminderSheetHelper">Leave date and time blank if you just want it saved in your reminder list.</p>
             <div class="reminder-sheet-content">
               <div class="reminder-sheet-card card bg-base-100 border border-base-200 shadow-xl">
               <!-- Group reminder basics together for quick scanning -->
               <section class="reminder-section" aria-labelledby="reminderDetailsHeading">
                 <div class="reminder-section-heading">
                   <p id="reminderDetailsHeading" class="reminder-section-title">What to remember</p>
-                  <p class="reminder-section-hint">Keep the title short, then use details for extra dates, locations, or steps.</p>
                 </div>
                 <div class="reminder-field-group">
                   <div class="reminder-field">
@@ -6911,7 +6892,6 @@ body, main, section, div, p, span, li {
                       id="reminderDetails"
                       class="reminder-field-textarea reminder-details-textarea textarea textarea-bordered w-full min-h-[7rem] text-sm text-base-content"
                       rows="5"
-                      placeholder="Example: Trial 1 - Mon 6 May, 4:00pm, School gym&#10;Trial 2 - Wed 8 May, 5:30pm, Rec centre&#10;Bring: water bottle and registration form"
                     ></textarea>
                   </div>
                 </div>
@@ -6921,7 +6901,6 @@ body, main, section, div, p, span, li {
               <section class="reminder-section" aria-labelledby="reminderWhenHeading">
                 <div class="reminder-section-heading">
                   <p id="reminderWhenHeading" class="reminder-section-title">When</p>
-                  <p class="reminder-section-hint">Optional. Add a date, a time, or both.</p>
                 </div>
                 <div class="reminder-field-group reminder-datetime-grid">
                   <div class="reminder-field">
@@ -6946,7 +6925,6 @@ body, main, section, div, p, span, li {
               <section class="reminder-section" aria-labelledby="reminderOptionsHeading">
                 <div class="reminder-section-heading">
                   <p id="reminderOptionsHeading" class="reminder-section-title">More options</p>
-                  <p class="reminder-section-hint">Priority, category, and notifications.</p>
                 </div>
                 <div class="reminder-field-group">
                   <div class="reminder-field">

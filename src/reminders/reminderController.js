@@ -3143,10 +3143,6 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined'
       ? document.getElementById('reminderSheetEyebrow')
       : null;
-  const reminderSheetHelper =
-    typeof document !== 'undefined'
-      ? document.getElementById('reminderSheetHelper')
-      : null;
 
   const focusTitleField = () => {
     if (!(title instanceof HTMLElement)) {
@@ -3172,11 +3168,6 @@ export async function initReminders(sel = {}) {
     }
     if (reminderSheetEyebrow instanceof HTMLElement) {
       reminderSheetEyebrow.textContent = isEditMode ? 'Review' : 'Create';
-    }
-    if (reminderSheetHelper instanceof HTMLElement) {
-      reminderSheetHelper.textContent = isEditMode
-        ? 'Update the reminder once. Use details for extra dates, locations, or steps without filling the main list.'
-        : 'Leave date and time blank if you just want it saved in your reminder list.';
     }
     if (reminderSheet instanceof HTMLElement) {
       reminderSheet.dataset.mode = isEditMode ? 'edit' : 'create';
