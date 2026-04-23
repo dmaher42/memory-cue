@@ -2704,11 +2704,67 @@ export async function initReminders(sel = {}) {
     `\\b(?:on\\s+)?(?:${REMINDER_WEEKDAY_NAME_PATTERN}\\s*,?\\s*)?${REMINDER_MONTH_NAME_PATTERN}\\s+(?:\\d{1,2})(?:st|nd|rd|th)?(?:\\s+\\d{4})?\\b`,
     'gi',
   );
+  const REMINDER_TIME_RANGE_PATTERN = /\b(?:at\s*)?(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\s*(?:-|–|to)\s*(?:at\s*)?(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\b/i;
+  const REMINDER_TIME_RANGE_STRIP_PATTERN = /\b(?:at\s*)?\d{1,2}(?::?\d{2})?\s*(?:am|pm)?\s*(?:-|–|to)\s*(?:at\s*)?\d{1,2}(?::?\d{2})?\s*(?:am|pm)?\b/gi;
 
   function stripExplicitReminderDateText(text) {
     return String(text || '')
       .replace(REMINDER_DAY_MONTH_DATE_STRIP_PATTERN, ' ')
       .replace(REMINDER_MONTH_DAY_DATE_STRIP_PATTERN, ' ');
+  }
+
+  function parseReminderTimeRangeFromText(rawText) {
+    const text = typeof rawText === 'string' ? rawText.trim() : '';
+    if (!text) {
+      return null;
+    }
+
+    const match = text.match(REMINDER_TIME_RANGE_PATTERN);
+    if (!match) {
+      return null;
+    }
+
+    let startHours = Number.parseInt(match[1], 10);
+    const startMinutes = match[2] ? Number.parseInt(match[2], 10) : 0;
+    const startMeridiem = typeof match[3] === 'string' ? match[3].toLowerCase() : '';
+    let endHours = Number.parseInt(match[4], 10);
+    const endMinutes = match[5] ? Number.parseInt(match[5], 10) : 0;
+    const endMeridiem = typeof match[6] === 'string' ? match[6].toLowerCase() : '';
+
+    if (!Number.isFinite(startHours) || !Number.isFinite(startMinutes) || !Number.isFinite(endHours) || !Number.isFinite(endMinutes)) {
+      return null;
+    }
+
+    let inferredMeridiem = startMeridiem || endMeridiem || '';
+    if (!inferredMeridiem && startHours <= 6 && endHours <= 6) {
+      inferredMeridiem = 'pm';
+    }
+
+    if (inferredMeridiem === 'pm') {
+      if (!startMeridiem && startHours < 12) {
+        startHours += 12;
+      }
+      if (!endMeridiem && endHours < 12) {
+        endHours += 12;
+      }
+    } else if (inferredMeridiem === 'am') {
+      if (!startMeridiem && startHours === 12) {
+        startHours = 0;
+      }
+      if (!endMeridiem && endHours === 12) {
+        endHours = 0;
+      }
+    }
+
+    const startLabel = formatDisplayTimeLabel(startHours, startMinutes, inferredMeridiem);
+    const endLabel = formatDisplayTimeLabel(endHours, endMinutes, inferredMeridiem);
+
+    return {
+      start: { hours: startHours, minutes: startMinutes },
+      end: { hours: endHours, minutes: endMinutes },
+      label: startLabel && endLabel ? `${startLabel} – ${endLabel}` : startLabel || endLabel || '',
+      text: match[0],
+    };
   }
 
   function parseExplicitReminderDate(rawText, now) {
@@ -2833,6 +2889,7 @@ export async function initReminders(sel = {}) {
       ? new Date(nowOverride)
       : new Date();
     const target = new Date(now);
+    const timeRange = parseReminderTimeRangeFromText(sourceText);
     const timeParts = parseTimePartsFromReminderText(sourceText);
     const displayParts = extractReminderInlineSchedule(sourceText);
 
@@ -2842,6 +2899,17 @@ export async function initReminders(sel = {}) {
     if (explicitDate) {
       result.dueDate = explicitDate;
       result.notifyAt = new Date(explicitDate.getTime() - 10 * 60 * 1000);
+      return result;
+    }
+
+    if (timeRange) {
+      const candidate = new Date(target);
+      candidate.setHours(timeRange.start.hours, timeRange.start.minutes, 0, 0);
+      if (candidate.getTime() <= now.getTime()) {
+        candidate.setDate(candidate.getDate() + 1);
+      }
+      result.dueDate = candidate;
+      result.notifyAt = new Date(candidate.getTime() - 10 * 60 * 1000);
       return result;
     }
 
@@ -5725,6 +5793,7 @@ export async function initReminders(sel = {}) {
 
     let cleaned = stripReminderPromptPrefix(sourceText);
     cleaned = stripExplicitReminderDateText(cleaned);
+    const timeRange = parseReminderTimeRangeFromText(cleaned);
     let dayLabel = '';
     let dayPattern = null;
     const lower = cleaned.toLowerCase();
@@ -5763,12 +5832,12 @@ export async function initReminders(sel = {}) {
       dayPattern = weekdayMatch[0] ? new RegExp(weekdayMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
     }
 
-    let timeLabel = '';
-    let timePattern = null;
+    let timeLabel = timeRange?.label || '';
+    let timePattern = timeRange?.text ? new RegExp(timeRange.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
     const meridiemMatch = cleaned.match(/\b(?:at\s*)?(\d{1,2})(?::?(\d{2}))\s*(am|pm)\b/i)
       || cleaned.match(/\b(?:at\s*)?(\d{1,2})\s*(am|pm)\b/i);
 
-    if (meridiemMatch) {
+    if (!timeLabel && meridiemMatch) {
       const hour = Number.parseInt(meridiemMatch[1], 10);
       const minute = meridiemMatch.length >= 4 && meridiemMatch[3]
         ? Number.parseInt(meridiemMatch[2], 10)
@@ -5814,6 +5883,7 @@ export async function initReminders(sel = {}) {
     if (timePattern) {
       cleaned = cleaned.replace(timePattern, ' ').trim();
     }
+    cleaned = cleaned.replace(REMINDER_TIME_RANGE_STRIP_PATTERN, ' ').trim();
 
     cleaned = cleaned
       .replace(/\b(?:remind(?:er)?\s+me|reminder\s+me)\b/gi, ' ')

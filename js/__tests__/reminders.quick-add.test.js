@@ -203,3 +203,22 @@ test('quick add parses explicit date and time into due date', async () => {
   expect(item.title).toBe('Call parents');
   expect(item.due).toBe(expectedIso);
 });
+
+test('quick add parses compact time ranges into due date and cleans title', async () => {
+  const quickInput = document.getElementById('reminderQuickAdd');
+  quickInput.value = 'Archer Basketball 330-530';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  const item = items[0];
+
+  const expected = new Date();
+  expected.setDate(expected.getDate() + 1);
+  expected.setHours(15, 30, 0, 0);
+  const expectedIso = expected.toISOString();
+
+  expect(item.title).toBe('Archer Basketball');
+  expect(item.due).toBe(expectedIso);
+});

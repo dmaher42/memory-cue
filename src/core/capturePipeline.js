@@ -81,6 +81,8 @@ const MONTH_DAY_DATE_TITLE_PATTERN = new RegExp(
   `\\b(?:on\\s+)?(?:${WEEKDAY_NAME_PATTERN}\\s*,?\\s*)?${MONTH_NAME_PATTERN}\\s+(?:\\d{1,2})(?:st|nd|rd|th)?(?:\\s+\\d{4})?\\b`,
   'gi',
 );
+const REMINDER_TIME_RANGE_PATTERN = /\b(?:at\s*)?(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\s*(?:-|–|to)\s*(?:at\s*)?(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\b/i;
+const REMINDER_TIME_RANGE_STRIP_PATTERN = /\b(?:at\s*)?\d{1,2}(?::?\d{2})?\s*(?:am|pm)?\s*(?:-|–|to)\s*(?:at\s*)?\d{1,2}(?::?\d{2})?\s*(?:am|pm)?\b/gi;
 
 const CAPTURE_KIND_REPLY_MAP = Object.freeze({
   '!': 'reminder',
@@ -259,14 +261,15 @@ const cleanReminderTitle = (text) => {
   }
 
   cleaned = cleaned
-    .replace(/\b(?:today|tomorrow|tonight|next week|morning|afternoon|evening|night)\b/gi, ' ')
-    .replace(/\b(?:(?:next)\s+)?(?:monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/gi, ' ')
-    .replace(DAY_MONTH_DATE_TITLE_PATTERN, ' ')
-    .replace(MONTH_DAY_DATE_TITLE_PATTERN, ' ')
-    .replace(/\b(?:at\s*)?(?:\d{1,2}(?::\d{2})?|\d{3,4})\s*(?:am|pm)\b/gi, ' ')
-    .replace(/\b(?:at\s*)?\d{1,2}:\d{2}\b/gi, ' ')
-    .replace(/^[,.\-:;\s]+|[,.\-:;\s]+$/g, '')
-    .replace(/\s{2,}/g, ' ')
+      .replace(/\b(?:today|tomorrow|tonight|next week|morning|afternoon|evening|night)\b/gi, ' ')
+      .replace(/\b(?:(?:next)\s+)?(?:monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/gi, ' ')
+      .replace(DAY_MONTH_DATE_TITLE_PATTERN, ' ')
+      .replace(MONTH_DAY_DATE_TITLE_PATTERN, ' ')
+      .replace(REMINDER_TIME_RANGE_STRIP_PATTERN, ' ')
+      .replace(/\b(?:at\s*)?(?:\d{1,2}(?::\d{2})?|\d{3,4})\s*(?:am|pm)\b/gi, ' ')
+      .replace(/\b(?:at\s*)?\d{1,2}:\d{2}\b/gi, ' ')
+      .replace(/^[,.\-:;\s]+|[,.\-:;\s]+$/g, '')
+      .replace(/\s{2,}/g, ' ')
     .replace(/^(?:and|to)\b\s*/i, '')
     .replace(/\b(?:at|on|by|for)\b\s*$/i, '')
     .trim();
@@ -305,7 +308,8 @@ const parseExplicitReminderDate = (normalizedText, now) => {
     const day = Number.parseInt(dayMonthMatch[1], 10);
     const monthIndex = MONTH_NAME_TO_INDEX[dayMonthMatch[2]];
     const year = dayMonthMatch[3] ? Number.parseInt(dayMonthMatch[3], 10) : now.getFullYear();
-    const timeParts = extractTimeParts(normalizedText);
+    const timeRange = parseReminderTimeRangeFromText(normalizedText);
+    const timeParts = timeRange?.start || extractTimeParts(normalizedText);
     const candidate = buildCandidate(year, monthIndex, day, timeParts);
     if (candidate) {
       return toIsoString(candidate);
@@ -317,7 +321,8 @@ const parseExplicitReminderDate = (normalizedText, now) => {
     const monthIndex = MONTH_NAME_TO_INDEX[monthDayMatch[1]];
     const day = Number.parseInt(monthDayMatch[2], 10);
     const year = monthDayMatch[3] ? Number.parseInt(monthDayMatch[3], 10) : now.getFullYear();
-    const timeParts = extractTimeParts(normalizedText);
+    const timeRange = parseReminderTimeRangeFromText(normalizedText);
+    const timeParts = timeRange?.start || extractTimeParts(normalizedText);
     const candidate = buildCandidate(year, monthIndex, day, timeParts);
     if (candidate) {
       return toIsoString(candidate);
@@ -368,6 +373,55 @@ const extractTimeParts = (normalizedText) => {
   return null;
 };
 
+const parseReminderTimeRangeFromText = (normalizedText) => {
+  if (typeof normalizedText !== 'string' || !normalizedText.trim()) {
+    return null;
+  }
+
+  const match = normalizedText.match(REMINDER_TIME_RANGE_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  let startHours = Number.parseInt(match[1], 10);
+  const startMinutes = match[2] ? Number.parseInt(match[2], 10) : 0;
+  const startMeridiem = typeof match[3] === 'string' ? match[3].toLowerCase() : '';
+  let endHours = Number.parseInt(match[4], 10);
+  const endMinutes = match[5] ? Number.parseInt(match[5], 10) : 0;
+  const endMeridiem = typeof match[6] === 'string' ? match[6].toLowerCase() : '';
+
+  if (!Number.isFinite(startHours) || !Number.isFinite(startMinutes) || !Number.isFinite(endHours) || !Number.isFinite(endMinutes)) {
+    return null;
+  }
+
+  let inferredMeridiem = startMeridiem || endMeridiem || '';
+  if (!inferredMeridiem && startHours <= 6 && endHours <= 6) {
+    inferredMeridiem = 'pm';
+  }
+
+  if (inferredMeridiem === 'pm') {
+    if (!startMeridiem && startHours < 12) {
+      startHours += 12;
+    }
+    if (!endMeridiem && endHours < 12) {
+      endHours += 12;
+    }
+  } else if (inferredMeridiem === 'am') {
+    if (!startMeridiem && startHours === 12) {
+      startHours = 0;
+    }
+    if (!endMeridiem && endHours === 12) {
+      endHours = 0;
+    }
+  }
+
+  return {
+    start: { hours: startHours, minutes: startMinutes },
+    end: { hours: endHours, minutes: endMinutes },
+    text: match[0],
+  };
+};
+
 const buildReminderDate = (normalizedText, now) => {
   if (/\bnext week\b/.test(normalizedText)) {
     const dueDate = new Date(now.getTime());
@@ -404,6 +458,15 @@ const parseReminderDueAt = (text, now = new Date(), options = {}) => {
   const explicitDate = parseExplicitReminderDate(normalized, now);
   if (explicitDate) {
     return explicitDate;
+  }
+
+  const timeRange = parseReminderTimeRangeFromText(normalized);
+  if (timeRange) {
+    const candidate = setTimeOnDate(now, timeRange.start.hours, timeRange.start.minutes);
+    if (candidate.getTime() <= now.getTime()) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+    return toIsoString(candidate);
   }
 
   const dueDate = buildReminderDate(normalized, now);
