@@ -29,6 +29,37 @@ const dispatchNotesUpdated = (notes = []) => {
   }));
 };
 
+const bindCrossTabNotesSync = () => {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return;
+  }
+
+  if (window.__memoryCueNotesStorageBridgeBound) {
+    return;
+  }
+  window.__memoryCueNotesStorageBridgeBound = true;
+
+  window.addEventListener('storage', (event) => {
+    if (!event || (event.key !== NOTES_STORAGE_KEY && event.key !== FOLDERS_STORAGE_KEY)) {
+      return;
+    }
+
+    let items = [];
+    if (typeof event.newValue === 'string' && event.newValue.trim()) {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        items = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        items = [];
+      }
+    }
+
+    dispatchNotesUpdated(items);
+  });
+};
+
+bindCrossTabNotesSync();
+
 export const setRemoteSyncHandler = (handler) => {
   remoteSyncHandler = typeof handler === 'function' ? handler : null;
 };

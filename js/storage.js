@@ -198,6 +198,13 @@
         refreshSyncState();
       }
     });
+    window.addEventListener('storage', (event) => {
+      if (!event || event.key !== 'memory-cue-notes') {
+        return;
+      }
+
+      applyRemoteNotebookContent(event.newValue || '');
+    });
   };
 
   // Auto-save functionality
@@ -264,6 +271,27 @@
       console.error('Failed to load notes:', error);
       lastStoredLocalContent = notesEditor.innerHTML || '';
       lastRemoteContent = lastStoredLocalContent;
+    }
+  };
+
+  const applyRemoteNotebookContent = (content) => {
+    const nextContent = typeof content === 'string' ? content : '';
+    const currentContent = notesEditor.innerHTML || '';
+    if (nextContent === currentContent) {
+      return;
+    }
+
+    isApplyingRemoteUpdate = true;
+    try {
+      notesEditor.innerHTML = nextContent;
+      savedSelectionRange = null;
+      updateWordCount();
+      lastStoredLocalContent = nextContent;
+      lastRemoteContent = nextContent;
+      setStatus('saved', 'Synced');
+      setTimeout(() => setStatus('ready', 'Ready'), 1200);
+    } finally {
+      isApplyingRemoteUpdate = false;
     }
   };
 

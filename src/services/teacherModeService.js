@@ -62,6 +62,29 @@ const dispatchActiveLessonStepUpdated = (lessonId = null, stepId = null) => {
   }));
 };
 
+const bindCrossTabTeacherModeSync = () => {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return;
+  }
+
+  if (window.__memoryCueTeacherModeBridgeBound) {
+    return;
+  }
+  window.__memoryCueTeacherModeBridgeBound = true;
+
+  window.addEventListener('storage', (event) => {
+    if (!event || (event.key !== ACTIVE_LESSON_NOTE_ID_KEY && event.key !== LESSON_STEP_MAP_KEY)) {
+      return;
+    }
+
+    const activeLessonId = getActiveLessonNoteId();
+    dispatchActiveLessonUpdated(activeLessonId);
+    dispatchActiveLessonStepUpdated(activeLessonId, activeLessonId ? getTeacherLessonStep(activeLessonId) : null);
+  });
+};
+
+bindCrossTabTeacherModeSync();
+
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
     return '';
