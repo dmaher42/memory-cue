@@ -55,6 +55,7 @@ const WIDGETS = [
 ];
 
 const PRESET_STORAGE_KEY = 'widgetPresets';
+const DRAFT_STORAGE_KEY = 'widgetLayoutDraft';
 const WIDGET_VISIBILITY_CHANGED_EVENT = 'memoryCue:widgetProjectorVisibilityChanged';
 
 const WIDGET_SIZE_RULES = {
@@ -87,6 +88,26 @@ function safeWritePresets(presets) {
     window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
   } catch (error) {
     console.warn('Widget presets: unable to write storage', error);
+  }
+}
+
+function safeReadDraft() {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch (error) {
+    console.warn('Widget draft: unable to read storage', error);
+    return [];
+  }
+}
+
+function safeWriteDraft(selectedWidgets) {
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(selectedWidgets));
+  } catch (error) {
+    console.warn('Widget draft: unable to write storage', error);
   }
 }
 
@@ -151,12 +172,13 @@ function createWidgetManager() {
   const layoutSlots = document.getElementById('layoutSlots');
   const layoutEmpty = document.getElementById('layoutEmpty');
   const clearLayoutButton = document.getElementById('clearLayout');
+  const saveCurrentLayoutButton = document.getElementById('saveCurrentLayout');
   const presetForm = document.getElementById('presetForm');
   const presetNameInput = document.getElementById('presetName');
   const presetList = document.getElementById('presetList');
   const presetsEmpty = document.getElementById('presetsEmpty');
 
-  let selectedWidgets = [];
+  let selectedWidgets = safeReadDraft();
   let activeCategory = 'All';
   let presets = safeReadPresets();
   const renderWidgetViews = () => {
@@ -247,6 +269,7 @@ function createWidgetManager() {
   }
 
   function renderLayout() {
+    safeWriteDraft(selectedWidgets);
     layoutSlots.innerHTML = '';
     if (!selectedWidgets.length) {
       layoutEmpty.hidden = false;
@@ -368,11 +391,37 @@ function createWidgetManager() {
     });
   }
 
+  function savePresetFromCurrentLayout(name) {
+    const trimmedName = (name || '').trim();
+    if (!trimmedName || !selectedWidgets.length) {
+      return false;
+    }
+    presets = presets.filter((preset) => preset.name !== trimmedName);
+    presets.push({ name: trimmedName, widgets: [...selectedWidgets] });
+    safeWritePresets(presets);
+    renderPresets();
+    return true;
+  }
+
   function initEvents() {
     searchInput?.addEventListener('input', renderCatalog);
     clearLayoutButton?.addEventListener('click', () => {
       selectedWidgets = [];
       renderLayout();
+    });
+
+    saveCurrentLayoutButton?.addEventListener('click', () => {
+      if (!selectedWidgets.length) {
+        return;
+      }
+      const defaultName = `Classroom Screen ${new Date().toLocaleDateString()}`;
+      const name = window.prompt('Name this layout', defaultName);
+      if (!name) {
+        return;
+      }
+      if (savePresetFromCurrentLayout(name)) {
+        presetNameInput.value = name.trim();
+      }
     });
 
     presetForm?.addEventListener('submit', (event) => {
@@ -381,10 +430,7 @@ function createWidgetManager() {
       if (!name || !selectedWidgets.length) {
         return;
       }
-      presets = presets.filter((preset) => preset.name !== name);
-      presets.push({ name, widgets: [...selectedWidgets] });
-      safeWritePresets(presets);
-      renderPresets();
+      savePresetFromCurrentLayout(name);
       presetForm.reset();
       presetNameInput.focus();
     });

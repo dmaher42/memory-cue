@@ -62,7 +62,10 @@
             <p class="text-sm text-slate-500">Preset-ready arrangement</p>
             <h2 class="text-xl font-semibold">Current Layout</h2>
           </div>
-          <button id="clearLayout" class="btn btn-ghost">Clear layout</button>
+          <div class="flex items-center gap-2">
+            <button id="saveCurrentLayout" class="btn btn-primary">Save current layout</button>
+            <button id="clearLayout" class="btn btn-ghost">Clear layout</button>
+          </div>
         </div>
         <div id="layoutSlots" class="space-y-2" aria-live="polite"></div>
         <p class="muted" id="layoutEmpty">Add widgets from the catalog to build your layout.</p>
