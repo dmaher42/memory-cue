@@ -619,16 +619,16 @@
 
 #view-reminders .reminder-row {
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.65rem minmax(0, 1fr) auto;
   align-items: center;
-  min-height: 4.5rem;
+  min-height: 3.6rem;
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 1.4rem;
+  border-radius: 1.08rem;
   background: color-mix(in srgb, var(--surface-card, #ffffff) 96%, var(--color-secondary, #E6E0FA) 4%);
   box-shadow: 0 14px 28px rgba(62, 47, 94, 0.08);
-  padding: 0.8rem 1rem;
-  gap: 0.85rem;
+  padding: 0.55rem 0.8rem;
+  gap: 0.55rem;
   transform: none;
   overflow: visible;
   transition:
@@ -641,11 +641,11 @@
 
 #view-reminders .reminder-row.reminder-card {
   display: grid !important;
-  grid-template-columns: 2rem minmax(0, 1fr) auto !important;
+  grid-template-columns: 1.65rem minmax(0, 1fr) auto !important;
   align-items: center !important;
   justify-content: initial !important;
-  gap: 0.85rem !important;
-  padding: 0.8rem 1rem !important;
+  gap: 0.55rem !important;
+  padding: 0.55rem 0.8rem !important;
   margin: 0 !important;
   border-left: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent) !important;
   text-align: left !important;
@@ -664,15 +664,15 @@
 }
 
 #view-reminders .reminder-row-complete {
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
   margin-top: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 2rem;
+  flex: 0 0 1.65rem;
   padding: 0;
   border: 1.75px solid color-mix(in srgb, var(--color-primary, #6B4EFF) 34%, #ffffff 66%);
   border-radius: 0.7rem;
@@ -739,7 +739,7 @@
 }
 
 #view-reminders .reminder-row-title {
-  font-size: 1.02rem;
+  font-size: 0.92rem;
   line-height: 1.35;
   font-weight: 620;
   color: var(--text-main);
@@ -752,7 +752,7 @@
 
 #view-reminders .reminder-row-meta {
   margin-top: 0;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   color: color-mix(in srgb, var(--text-secondary) 92%, #8e86a6 8%);
 }
 
@@ -771,17 +771,17 @@
 
 #view-reminders .reminder-row .reminder-icon-btn,
 #view-reminders .reminder-row .task-toolbar-btn {
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
   padding: 0.22rem;
   border-radius: 999px;
 }
 
 #view-reminders .reminder-row .reminder-icon-btn svg {
-  width: 1.08rem;
-  height: 1.08rem;
+  width: 0.92rem;
+  height: 0.92rem;
 }
 
 #view-reminders .reminder-row-completed .reminder-row-title {
