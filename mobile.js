@@ -1418,6 +1418,91 @@ const initMobileNotes = () => {
     }
   };
 
+  let isHandlingClipboardPaste = false;
+
+  const getPlainTextFromClipboard = (clipboardData) => {
+    if (!clipboardData || typeof clipboardData.getData !== 'function') {
+      return null;
+    }
+
+    const plainText = clipboardData.getData('text/plain');
+    if (typeof plainText === 'string' && plainText.length > 0) {
+      return plainText;
+    }
+
+    const htmlText = clipboardData.getData('text/html');
+    if (typeof htmlText !== 'string' || !htmlText.trim()) {
+      return null;
+    }
+
+    const temp = document.createElement('div');
+    temp.innerHTML = htmlText;
+    const extractedText = (temp.textContent || temp.innerText || '').replace(/\r\n?/g, '\n');
+    return extractedText.length > 0 ? extractedText : null;
+  };
+
+  const insertPlainTextAtSelection = (text = '') => {
+    if (!scratchNotesEditorElement || typeof text !== 'string' || !text.length) {
+      return;
+    }
+
+    try {
+      scratchNotesEditorElement.focus({ preventScroll: true });
+    } catch {
+      try {
+        scratchNotesEditorElement.focus();
+      } catch {
+        /* ignore focus errors */
+      }
+    }
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      const fallbackRange = document.createRange();
+      fallbackRange.selectNodeContents(scratchNotesEditorElement);
+      fallbackRange.collapse(false);
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(fallbackRange);
+      }
+    }
+
+    const activeSelection = window.getSelection();
+    if (!activeSelection || activeSelection.rangeCount === 0) {
+      return;
+    }
+
+    const range = activeSelection.getRangeAt(0);
+    const normalizedText = text.replace(/\r\n?/g, '\n');
+    const fragment = document.createDocumentFragment();
+    const lines = normalizedText.split('\n');
+
+    lines.forEach((line, index) => {
+      if (index > 0) {
+        fragment.appendChild(document.createElement('br'));
+      }
+      if (line.length > 0) {
+        fragment.appendChild(document.createTextNode(line));
+      }
+    });
+
+    range.deleteContents();
+    range.insertNode(fragment);
+    range.collapse(false);
+    activeSelection.removeAllRanges();
+    activeSelection.addRange(range);
+    updateCurrentNoteSections(getEditorBodyHtml());
+    try {
+      scratchNotesEditorElement.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch {
+      /* ignore synthetic input errors */
+    }
+    updateToolbarState();
+    if (typeof autoSave === 'function') {
+      autoSave();
+    }
+  };
+
   // Wire up formatting toolbar (bold, italic, underline, lists, indent/outdent, undo/redo)
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
@@ -1458,6 +1543,38 @@ const initMobileNotes = () => {
           ? 'hiliteColor'
           : 'backColor';
       applyFormatCommand(highlightCommand, value);
+    });
+  }
+
+  if (scratchNotesEditorElement instanceof HTMLElement) {
+    const handleClipboardPaste = (event, clipboardData) => {
+      if (isHandlingClipboardPaste) {
+        return;
+      }
+
+      const plainText = getPlainTextFromClipboard(clipboardData);
+      if (plainText === null) {
+        return;
+      }
+
+      isHandlingClipboardPaste = true;
+      event.preventDefault();
+      insertPlainTextAtSelection(plainText);
+      window.setTimeout(() => {
+        isHandlingClipboardPaste = false;
+      }, 0);
+    };
+
+    scratchNotesEditorElement.addEventListener('paste', (event) => {
+      handleClipboardPaste(event, event.clipboardData || window.clipboardData);
+    });
+
+    scratchNotesEditorElement.addEventListener('beforeinput', (event) => {
+      if (!event || event.inputType !== 'insertFromPaste') {
+        return;
+      }
+
+      handleClipboardPaste(event, event.dataTransfer || event.clipboardData || window.clipboardData);
     });
   }
 
