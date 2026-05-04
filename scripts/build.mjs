@@ -1,4 +1,4 @@
-import { build } from 'esbuild';
+import { build, transform } from 'esbuild';
 import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -8,6 +8,25 @@ const rootDir = process.cwd();
 const distDir = path.join(rootDir, 'dist');
 const assetsDir = path.join(distDir, 'assets');
 const runtimeEnvPath = path.join(distDir, 'js', 'runtime-env.js');
+const localStylesheetSources = [
+  'styles/index.css',
+  'mobile.css',
+  'css/layout.css',
+  'css/components.css',
+  'css/capture.css',
+  'css/reminders.css',
+  'css/reminders-ui.css',
+  'css/assistant.css',
+  'css/navigation.css',
+  'styles/tokens.css',
+  'styles/a11y.css',
+  'styles/daisy-themes.css',
+  'css/theme-mobile.css',
+];
+const localStylesheetHrefSet = new Set(localStylesheetSources);
+const productionStylesheetBlocklist = [
+  'https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css',
+];
 
 const CLIENT_RUNTIME_ENV_KEYS = [
   'FIREBASE_API_KEY',
@@ -129,15 +148,41 @@ window.textureUrl =
 }
 
 async function buildCss() {
-  const cssOutput = path.join(distDir, 'styles.css');
-  await run('npx', ['tailwindcss', '-i', 'src/input.css', '-o', cssOutput, '--minify']);
+  const tailwindOutput = path.join(distDir, 'tailwind.css');
+  await run('npx', ['tailwindcss', '-i', 'src/input.css', '-o', tailwindOutput, '--minify']);
 
-  const cssContent = await fs.readFile(cssOutput);
+  const tailwindCss = await fs.readFile(tailwindOutput);
+  const tailwindHash = crypto.createHash('sha256').update(tailwindCss).digest('hex').slice(0, 8);
+  const tailwindName = `tailwind-${tailwindHash}.css`;
+  await fs.writeFile(path.join(assetsDir, tailwindName), tailwindCss);
+
+  const cssParts = [tailwindCss.toString('utf8')];
+  for (const source of localStylesheetSources) {
+    const sourcePath = path.join(rootDir, source);
+    try {
+      cssParts.push(await fs.readFile(sourcePath, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  }
+
+  await fs.rm(tailwindOutput, { force: true });
+  const bundledCss = cssParts.join('\n');
+  const minifiedCss = await transform(bundledCss, {
+    loader: 'css',
+    minify: true,
+  });
+  const cssContent = minifiedCss.code;
   const hash = crypto.createHash('sha256').update(cssContent).digest('hex').slice(0, 8);
   const hashedName = `styles-${hash}.css`;
   const hashedPath = path.join(assetsDir, hashedName);
-  await fs.rename(cssOutput, hashedPath);
-  return `./assets/${hashedName}`;
+  await fs.writeFile(hashedPath, cssContent);
+  return {
+    appCssPath: `./assets/${hashedName}`,
+    tailwindCssPath: `./assets/${tailwindName}`,
+  };
 }
 
 function buildEntryMap(metafile) {
@@ -249,13 +294,36 @@ async function ensureRootHtml() {
   }
 }
 
-async function rewriteHtml(assetMap, cssPath) {
+async function rewriteHtml(assetMap, cssPaths) {
   const htmlFiles = ['index.html', '404.html', 'mobile.html'];
   for (const file of htmlFiles) {
     const targetPath = path.join(distDir, file);
     try {
       let html = await fs.readFile(targetPath, 'utf8');
-      html = html.replace(/\.\/styles\/tailwind\.css/g, cssPath);
+      let insertedBundledCss = false;
+      html = html.replace(/\.\/styles\/tailwind\.css/g, cssPaths.tailwindCssPath);
+      html = html.replace(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi, (tag) => {
+        const hrefMatch = tag.match(/\bhref=["']([^"']+)["']/i);
+        if (!hrefMatch) {
+          return tag;
+        }
+
+        const stylesheetPath = hrefMatch[1].replace(/^\.\//, '').split('?')[0];
+        if (productionStylesheetBlocklist.some((blockedHref) => hrefMatch[1].startsWith(blockedHref))) {
+          return '';
+        }
+
+        if (!localStylesheetHrefSet.has(stylesheetPath)) {
+          return tag;
+        }
+
+        if (insertedBundledCss) {
+          return '';
+        }
+
+        insertedBundledCss = true;
+        return `<link rel="stylesheet" href="${cssPaths.appCssPath}" />`;
+      });
       for (const [original, hashed] of assetMap) {
         const pattern = new RegExp(original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
         html = html.replace(pattern, hashed);
@@ -282,12 +350,12 @@ async function validateBuildOutput() {
 
 async function main() {
   await cleanDist();
-  const cssPath = await buildCss();
+  const cssPaths = await buildCss();
   const assetMap = await buildScripts();
   await copyStatic();
   await writeRuntimeEnvScript();
   await ensureRootHtml();
-  await rewriteHtml(assetMap, cssPath);
+  await rewriteHtml(assetMap, cssPaths);
   await validateBuildOutput();
 }
 
