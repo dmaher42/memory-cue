@@ -575,6 +575,8 @@ Legacy shells remain for reference only.
       align-items: center;
       gap: 0.15rem;
       border-radius: 0.35rem;
+      line-height: 1.2;
+      min-width: 0;
       transition: var(--transition);
     }
 
@@ -589,7 +591,7 @@ Legacy shells remain for reference only.
     }
 
     .reminder-title-unpinned {
-      font-weight: 500;
+      font-weight: 700;
       color: var(--text-secondary);
     }
 
@@ -2247,13 +2249,13 @@ body {
 }
 
 /* Reminders text (titles + list items) */
-.reminder-title,
-.reminder-list-item,
-.reminder-notes-preview {
-  color: #000 !important;
-  font-weight: 600 !important;       /* semibold for punch */
-  letter-spacing: -0.011em;
-}
+    .reminder-title,
+    .reminder-list-item,
+    .reminder-notes-preview {
+      color: #000 !important;
+      font-weight: 700 !important;       /* bold for reminders */
+      letter-spacing: -0.011em;
+    }
 
 /* Note title */
 #noteTitleMobile {
@@ -2321,13 +2323,13 @@ body, main, section, div, p, span, li {
 }
 
 /* 3) Reminders list – make items pop */
-.reminder-title,
-.reminder-list-item,
-.reminder-notes-preview {
-  color: #000000 !important;
-  font-weight: 600 !important;   /* semi-bold for titles */
-  letter-spacing: -0.011em;
-}
+    .reminder-title,
+    .reminder-list-item,
+    .reminder-notes-preview {
+      color: #000000 !important;
+      font-weight: 700 !important;   /* bold for titles */
+      letter-spacing: -0.011em;
+    }
 
 /* Reminders meta text (times, small labels) */
 .reminder-meta,

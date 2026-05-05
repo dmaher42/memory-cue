@@ -1382,7 +1382,7 @@ html[data-theme="professional"] {
 
 .reminder-row-title {
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.25;
   white-space: normal;

@@ -282,13 +282,21 @@
 }
 
 #view-reminders .reminder-row-main {
+  display: flex;
+  flex-direction: column;
   gap: 0.18rem;
+  justify-content: center;
+  min-width: 0;
 }
 
 #view-reminders .reminder-row-title {
+  display: flex;
+  align-items: center;
   font-size: 1.02rem;
-  font-weight: 620;
+  font-weight: 700;
   color: var(--text-main);
+  min-width: 0;
+  line-height: 1.2;
 }
 
 #view-reminders .reminder-row-meta {
@@ -741,7 +749,7 @@
 #view-reminders .reminder-row-title {
   font-size: 0.92rem;
   line-height: 1.35;
-  font-weight: 620;
+  font-weight: 700;
   color: var(--text-main);
   display: -webkit-box;
   overflow: hidden;
