@@ -158,14 +158,14 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes .scratch-notes-header-block {
-    gap: 0.22rem;
-    padding: 0.56rem 0.72rem 0.5rem;
+    gap: 0.1rem;
+    padding: 0.46rem 0.72rem 0.22rem;
     background: color-mix(in srgb, #ffffff 95%, #f2ecff 5%);
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
   }
 
   .mobile-panel--notes .note-editor-actions-row {
-    gap: 0.22rem;
+    gap: 0.14rem;
   }
 
   .mobile-panel--notes .note-sections-bar {
@@ -207,6 +207,12 @@ const NOTEBOOK_POLISH_CSS = `
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding-bottom: 0.08rem;
+  }
+
+  .mobile-panel--notes .note-editor-toolbar {
+    margin-top: 0.04rem;
+    padding-top: 0.22rem;
+    padding-bottom: 0.18rem;
   }
 
   .mobile-panel--notes .note-sections-row::-webkit-scrollbar {
