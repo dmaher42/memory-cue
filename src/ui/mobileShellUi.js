@@ -153,20 +153,15 @@ export const initHeaderOverflowMenu = () => {
       return;
     }
 
-    const parentRect = menu.parentElement?.getBoundingClientRect?.() || menuBtn.parentElement?.getBoundingClientRect?.();
     const buttonRect = menuBtn.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
 
-    if (!parentRect) {
-      return;
-    }
-
-    const top = Math.max(0, buttonRect.bottom - parentRect.top + 6);
+    const top = Math.max(8, Math.min(buttonRect.bottom + 6, window.innerHeight - menuRect.height - 8));
     const left = Math.max(
       8,
       Math.min(
-        buttonRect.right - parentRect.left - menuRect.width,
-        parentRect.width - menuRect.width - 8,
+        buttonRect.right - menuRect.width,
+        window.innerWidth - menuRect.width - 8,
       ),
     );
 
