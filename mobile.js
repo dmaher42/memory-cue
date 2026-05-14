@@ -129,11 +129,15 @@ function initAssistant() {
         };
       }
 
-      if (normalized.startsWith('saved note') || normalized.startsWith('saved to notebook')) {
+      if (
+        normalized.startsWith('saved note')
+        || normalized.startsWith('saved to notebook')
+        || normalized.startsWith('saved to notes')
+      ) {
         return {
           tone: 'note',
           eyebrow: 'Note',
-          title: 'Saved to notebook',
+          title: 'Saved to notes',
           detail: mainText,
           relatedItems,
         };
@@ -169,7 +173,7 @@ function initAssistant() {
       }
 
       if (model.tone === 'reminder') return 'Saved as reminder.';
-      if (model.tone === 'note') return 'Saved to notebook.';
+      if (model.tone === 'note') return 'Saved to notes.';
       if (model.tone === 'review') return 'Saved for later review.';
       if (model.tone === 'clarify') return 'Needs a time.';
       return model.title;
@@ -329,7 +333,7 @@ function initAssistant() {
       const notebooksButton = document.createElement('button');
       notebooksButton.type = 'button';
       notebooksButton.className = 'btn btn-sm btn-primary';
-      notebooksButton.textContent = 'Open notebooks';
+      notebooksButton.textContent = 'Open notes';
       notebooksButton.addEventListener('click', () => {
         document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
       });
