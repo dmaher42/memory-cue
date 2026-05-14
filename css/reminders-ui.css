@@ -1039,6 +1039,213 @@
   }
 }
 
+/* Reminder editor sheet polish: spacing, alignment, and control sizing only. */
+body #create-sheet .sheet-panel {
+  padding: calc(16px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));
+}
+
+body #create-sheet .reminder-editor-shell {
+  width: min(560px, 100%);
+  max-height: min(88vh, 700px);
+  padding: 14px 14px calc(16px + env(safe-area-inset-bottom, 0));
+  border-radius: 22px 22px 0 0;
+}
+
+body #create-sheet .reminder-editor-header {
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.72rem;
+}
+
+body #create-sheet .reminder-header-back {
+  width: 2.15rem;
+  height: 2.15rem;
+  min-width: 2.15rem;
+  min-height: 2.15rem;
+}
+
+body #create-sheet .reminder-header-eyebrow {
+  font-size: 0.66rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+body #create-sheet .reminder-header-title {
+  font-size: 1.08rem;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+body #create-sheet .reminder-editor-form,
+body #create-sheet .reminder-sheet-content {
+  gap: 0.72rem;
+}
+
+body #create-sheet .reminder-sheet-card {
+  gap: 0.88rem;
+  padding: 0.95rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.055);
+}
+
+body #create-sheet .reminder-sheet-card > .reminder-section + .reminder-section {
+  padding-top: 0.82rem;
+}
+
+body #create-sheet .reminder-section {
+  gap: 0.5rem;
+}
+
+body #create-sheet .reminder-section-title {
+  font-size: 0.86rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+body #create-sheet .reminder-field-group {
+  gap: 0.74rem;
+}
+
+body #create-sheet .reminder-field {
+  gap: 0.32rem;
+}
+
+body #create-sheet .reminder-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+body #create-sheet .reminder-field-label {
+  font-size: 0.68rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+body #create-sheet .reminder-title-voice-button {
+  min-height: 1.65rem;
+  padding: 0.22rem 0.58rem;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #512663) 18%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-color, #512663) 7%, #ffffff 93%);
+  color: var(--primary-dark, #2f1b3f);
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1;
+}
+
+body #create-sheet .reminder-field-input,
+body #create-sheet .reminder-field-select,
+body #create-sheet .reminder-field-textarea {
+  min-height: 2.42rem;
+  padding: 0.58rem 0.68rem;
+  border-radius: 0.82rem;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+body #create-sheet .reminder-details-textarea {
+  min-height: 6.2rem;
+  line-height: 1.4;
+}
+
+body #create-sheet .reminder-datetime-grid {
+  gap: 0.65rem;
+}
+
+body #create-sheet .reminder-field-with-icon {
+  gap: 0.38rem;
+}
+
+body #create-sheet .reminder-picker-trigger {
+  width: 2.42rem;
+  min-width: 2.42rem;
+  min-height: 2.42rem;
+  border-radius: 0.82rem;
+}
+
+body #create-sheet #dateFeedback {
+  min-height: 1rem;
+  margin-top: -0.18rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+body #create-sheet .reminder-chip-row {
+  gap: 0.42rem;
+}
+
+body #create-sheet .reminder-chip,
+body #create-sheet .priority-pill-row .priority-pill {
+  min-height: 2rem;
+  padding: 0.36rem 0.72rem;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+body #create-sheet .notif-switch-row {
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+body #create-sheet .reminder-sheet-actions {
+  margin: 0;
+  padding: 0.76rem 0 0;
+}
+
+body #create-sheet .reminder-save-cta {
+  min-height: 2.7rem;
+  border-radius: 0.9rem;
+  letter-spacing: 0;
+}
+
+body #create-sheet .reminder-cancel-edit {
+  min-height: 2.2rem;
+}
+
+body #create-sheet .reminder-status-message {
+  min-height: 1rem;
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 640px) {
+  body #create-sheet .sheet-panel {
+    padding: calc(10px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  body #create-sheet .reminder-editor-shell {
+    max-height: min(90vh, 680px);
+    padding: 12px 12px calc(14px + env(safe-area-inset-bottom, 0));
+  }
+
+  body #create-sheet .reminder-sheet-card {
+    padding: 0.82rem;
+  }
+
+  body #create-sheet .reminder-datetime-grid {
+    gap: 0.56rem;
+  }
+
+  body #create-sheet .reminder-field-input,
+  body #create-sheet .reminder-field-select,
+  body #create-sheet .reminder-field-textarea {
+    font-size: 0.86rem;
+  }
+}
+
+@media (max-width: 380px) {
+  body #create-sheet .reminder-datetime-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body #create-sheet .reminder-chip-row {
+    flex-wrap: wrap;
+  }
+}
+
 @keyframes reminder-strike {
   from {
     transform: scaleX(0);
