@@ -88,6 +88,7 @@ function initAssistant() {
     const recallList = document.getElementById('memoryRecallList');
     let lastRecallNotificationKey = '';
     let isAssistantSending = false;
+    const MAX_VISIBLE_CAPTURE_MESSAGES = 12;
     if (!isTextEntryElement(thinkingBarInput)) {
       return;
     }
@@ -411,7 +412,18 @@ function initAssistant() {
         return;
       }
 
-      messages.forEach((message) => {
+      const hiddenMessageCount = Math.max(0, messages.length - MAX_VISIBLE_CAPTURE_MESSAGES);
+      if (hiddenMessageCount > 0) {
+        const trimmedNotice = document.createElement('div');
+        trimmedNotice.className = 'chat-history-trimmed';
+        trimmedNotice.textContent =
+          hiddenMessageCount === 1
+            ? 'Showing the latest capture. 1 older item is hidden here.'
+            : `Showing the latest captures. ${hiddenMessageCount} older items are hidden here.`;
+        chatConversationContainer.appendChild(trimmedNotice);
+      }
+
+      messages.slice(-MAX_VISIBLE_CAPTURE_MESSAGES).forEach((message) => {
         const content = typeof message?.content === 'string' ? message.content.trim() : '';
         if (!content) {
           return;

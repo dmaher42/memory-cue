@@ -206,6 +206,20 @@
   padding: 0;
 }
 
+#chatConversationContainer .chat-history-trimmed {
+  align-self: center;
+  max-width: min(26rem, 92%);
+  padding: 0.42rem 0.68rem;
+  border: 1px solid color-mix(in srgb, var(--card-border, #E7E1F0) 62%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated, #FCFBFF) 84%, #ffffff 16%);
+  color: var(--text-muted, #6b7280);
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+}
+
 #chatConversationContainer .chat-message--capture-result {
   display: grid !important;
   gap: 0.28rem !important;
