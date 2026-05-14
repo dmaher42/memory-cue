@@ -290,6 +290,11 @@ Legacy shells remain for reference only.
       font-weight: 600;
       color: var(--text-muted);
       margin-top: 0.35rem;
+      max-width: min(100%, 72rem);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.25;
     }
 
     body[data-active-view="notebooks"] #thinkingBarContainer,
@@ -5178,8 +5183,8 @@ body, main, section, div, p, span, li {
         <!-- Account -->
         <div class="overflow-menu-section" data-menu-section="account">
           <div class="overflow-menu-section-label">Account</div>
-          <button type="button" class="overflow-menu-item" data-menu-action="sign-in">Sign in</button>
-          <button type="button" class="overflow-menu-item" data-menu-action="sign-out">Sign out</button>
+          <button type="button" id="googleSignInBtnMenu" class="overflow-menu-item" data-menu-action="sign-in">Sign in</button>
+          <button type="button" id="googleSignOutBtnMenu" class="overflow-menu-item hidden" data-menu-action="sign-out" hidden aria-hidden="true">Sign out</button>
         </div>
 
         <div class="overflow-menu-section" aria-label="Theme">
@@ -7031,18 +7036,20 @@ body, main, section, div, p, span, li {
       </header>
       <div class="card bg-base-100 border-0">
         <div class="card-body gap-4 compact">
-          <h2 class="card-title text-base">Sync Settings</h2>
-          <p class="text-sm text-base-content/70">Configure your Google Apps Script endpoint to sync reminders to Calendar.</p>
+          <h2 class="card-title text-base">Account Sync</h2>
+          <p class="text-sm text-base-content/70">Memory Cue syncs notes and reminders automatically while you are signed in.</p>
+          <h3 class="settings-subtitle">Optional calendar bridge</h3>
+          <p class="text-sm text-base-content/70">Connect a Google Apps Script URL only if you want reminders copied to Google Calendar.</p>
           <label class="form-control">
-            <div class="label"><span class="label-text">Apps Script URL</span></div>
+            <div class="label"><span class="label-text">Calendar bridge URL</span></div>
             <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
           </label>
           <div class="card-actions flex-col gap-2">
             <div class="flex gap-2 w-full">
-              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Settings</button>
-              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Connection</button>
+              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Bridge</button>
+              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Bridge</button>
             </div>
-            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync All</button>
+            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync Reminders to Calendar</button>
             <button id="clearChatHistoryBtn" class="btn btn-outline w-full" type="button">Clear Chat History</button>
           </div>
           <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>

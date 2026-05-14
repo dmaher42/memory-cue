@@ -205,3 +205,76 @@
   border-radius: 0;
   padding: 0;
 }
+
+#chatConversationContainer .chat-message--capture-result {
+  display: grid !important;
+  gap: 0.28rem !important;
+  max-width: min(22rem, 88%) !important;
+  padding: 0.72rem 0.82rem !important;
+  border-left: 4px solid color-mix(in srgb, var(--accent-color, #512663) 58%, transparent) !important;
+}
+
+#chatConversationContainer .chat-message--capture-reminder {
+  border-left-color: #6b4eff !important;
+}
+
+#chatConversationContainer .chat-message--capture-note {
+  border-left-color: #23836f !important;
+}
+
+#chatConversationContainer .chat-message--capture-review,
+#chatConversationContainer .chat-message--capture-clarify {
+  border-left-color: #a46a16 !important;
+}
+
+#chatConversationContainer .capture-result-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-muted, #6b7280) 82%, var(--accent-color, #512663) 18%);
+}
+
+#chatConversationContainer .capture-result-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text-main, #1f2937);
+}
+
+#chatConversationContainer .capture-result-detail {
+  font-size: 0.82rem;
+  font-weight: 550;
+  line-height: 1.35;
+  color: var(--text-muted, #6b7280);
+}
+
+#chatConversationContainer .capture-result-related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.18rem;
+}
+
+#chatConversationContainer .capture-result-related-label,
+#chatConversationContainer .capture-result-related-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0.16rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+#chatConversationContainer .capture-result-related-label {
+  font-weight: 800;
+  color: color-mix(in srgb, var(--text-main, #1f2937) 74%, #ffffff 26%);
+  background: color-mix(in srgb, var(--accent-color, #512663) 12%, #ffffff 88%);
+}
+
+#chatConversationContainer .capture-result-related-item {
+  max-width: 100%;
+  color: var(--text-muted, #6b7280);
+  background: color-mix(in srgb, var(--surface-elevated, #FCFBFF) 80%, var(--color-secondary, #E6E0FA) 20%);
+}

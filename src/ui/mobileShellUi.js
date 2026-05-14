@@ -106,6 +106,7 @@ export const initHeaderOverflowMenu = () => {
     }
 
     item.hidden = Boolean(hidden);
+    item.classList.toggle('hidden', Boolean(hidden));
     if (hidden) {
       item.setAttribute('aria-hidden', 'true');
       item.tabIndex = -1;
@@ -116,9 +117,16 @@ export const initHeaderOverflowMenu = () => {
   };
 
   const syncMenuState = () => {
-    const signOutSource = document.getElementById('googleSignOutBtn');
+    const signOutSource =
+      document.getElementById('googleSignOutBtn') ||
+      document.getElementById('googleSignOutBtnMenu');
+    const scopedUserId =
+      typeof window !== 'undefined' && typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string'
+        ? window.__MEMORY_CUE_AUTH_USER_ID.trim()
+        : '';
     const signedIn =
-      signOutSource instanceof HTMLElement && !signOutSource.classList.contains('hidden');
+      Boolean(scopedUserId) ||
+      (signOutSource instanceof HTMLElement && !signOutSource.classList.contains('hidden') && !signOutSource.hidden);
 
     setMenuItemHidden(signInMenuItem, signedIn);
     setMenuItemHidden(signOutMenuItem, !signedIn);

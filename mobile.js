@@ -92,6 +92,128 @@ function initAssistant() {
       return;
     }
 
+    const splitRelatedMemoryText = (content) => {
+      const text = typeof content === 'string' ? content.trim() : '';
+      if (!text) {
+        return { mainText: '', relatedItems: [] };
+      }
+
+      const [mainText, relatedBlock = ''] = text.split(/\n\s*\nRelated from your memory:\s*/i);
+      const relatedItems = relatedBlock
+        .split(/\r?\n/)
+        .map((line) => line.replace(/^\s*(?:[-*]|\u2022|â€¢)\s*/, '').trim())
+        .filter(Boolean)
+        .slice(0, 3);
+
+      return {
+        mainText: mainText.trim(),
+        relatedItems,
+      };
+    };
+
+    const getCaptureResultModel = (content) => {
+      const { mainText, relatedItems } = splitRelatedMemoryText(content);
+      const normalized = mainText.toLowerCase();
+      if (!normalized) {
+        return null;
+      }
+
+      if (normalized.startsWith('reminder created')) {
+        return {
+          tone: 'reminder',
+          eyebrow: 'Reminder',
+          title: 'Saved as reminder',
+          detail: mainText.replace(/^reminder created(?:\s+for\s+[^:]+)?:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          relatedItems,
+        };
+      }
+
+      if (normalized.startsWith('saved note') || normalized.startsWith('saved to notebook')) {
+        return {
+          tone: 'note',
+          eyebrow: 'Note',
+          title: 'Saved to notebook',
+          detail: mainText,
+          relatedItems,
+        };
+      }
+
+      if (normalized.startsWith('saved for later review') || normalized.startsWith('added to inbox for later review')) {
+        return {
+          tone: 'review',
+          eyebrow: 'Review',
+          title: 'Saved for later review',
+          detail: 'I kept this in the inbox so it can be sorted later.',
+          relatedItems,
+        };
+      }
+
+      if (normalized === 'when should i remind you?') {
+        return {
+          tone: 'clarify',
+          eyebrow: 'Reminder',
+          title: 'Needs a time',
+          detail: mainText,
+          relatedItems,
+        };
+      }
+
+      return null;
+    };
+
+    const getCompactCaptureStatus = (content) => {
+      const model = getCaptureResultModel(content);
+      if (!model) {
+        return content;
+      }
+
+      if (model.tone === 'reminder') return 'Saved as reminder.';
+      if (model.tone === 'note') return 'Saved to notebook.';
+      if (model.tone === 'review') return 'Saved for later review.';
+      if (model.tone === 'clarify') return 'Needs a time.';
+      return model.title;
+    };
+
+    const renderCaptureResultMessage = (row, model) => {
+      row.classList.add('chat-message--capture-result', `chat-message--capture-${model.tone}`);
+
+      const eyebrow = document.createElement('span');
+      eyebrow.className = 'capture-result-eyebrow';
+      eyebrow.textContent = model.eyebrow;
+
+      const title = document.createElement('strong');
+      title.className = 'capture-result-title';
+      title.textContent = model.title;
+
+      row.append(eyebrow, title);
+
+      if (typeof model.detail === 'string' && model.detail.trim() && model.detail.trim() !== model.title) {
+        const detail = document.createElement('span');
+        detail.className = 'capture-result-detail';
+        detail.textContent = model.detail.trim();
+        row.appendChild(detail);
+      }
+
+      if (Array.isArray(model.relatedItems) && model.relatedItems.length) {
+        const related = document.createElement('div');
+        related.className = 'capture-result-related';
+
+        const relatedLabel = document.createElement('span');
+        relatedLabel.className = 'capture-result-related-label';
+        relatedLabel.textContent = 'Related memory';
+        related.appendChild(relatedLabel);
+
+        model.relatedItems.forEach((itemText) => {
+          const item = document.createElement('span');
+          item.className = 'capture-result-related-item';
+          item.textContent = itemText;
+          related.appendChild(item);
+        });
+
+        row.appendChild(related);
+      }
+    };
+
     const appendConversationMessage = (role, content, quickActions = []) => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
@@ -100,13 +222,18 @@ function initAssistant() {
       const row = document.createElement('div');
       row.className = `chat-message ${role === 'user' ? 'chat-message--user' : 'chat-message--assistant'}`;
       const normalizedContent = typeof content === 'string' ? content.trim().toLowerCase() : '';
+      const captureResultModel = role !== 'user' ? getCaptureResultModel(content) : null;
       if (
         role !== 'user' &&
         (normalizedContent === 'reminder created.' || normalizedContent === 'reminder created')
       ) {
         row.classList.add('chat-message--status');
       }
-      row.textContent = content;
+      if (captureResultModel) {
+        renderCaptureResultMessage(row, captureResultModel);
+      } else {
+        row.textContent = content;
+      }
 
       if (role !== 'user' && Array.isArray(quickActions) && quickActions.length) {
         const actions = document.createElement('div');
@@ -650,7 +777,7 @@ function initAssistant() {
           ? reply.message.trim()
           : 'Saved to Inbox';
         renderConversationHistory();
-        setThinkingBarStatus(replyMessage);
+        setThinkingBarStatus(getCompactCaptureStatus(replyMessage));
 
         thinkingBarInput.value = '';
         thinkingBarInput.focus();
