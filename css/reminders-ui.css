@@ -854,6 +854,191 @@
   }
 }
 
+/* Final Reminders pass: tighter alignment without changing reminder behavior. */
+#view-reminders .reminders-screen-header {
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.82rem 0.95rem;
+  border-radius: 1.15rem;
+  box-shadow: 0 10px 26px rgba(62, 47, 94, 0.1);
+}
+
+#view-reminders .reminders-screen-title {
+  font-size: 1.22rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+#view-reminders .reminders-screen-subtitle {
+  line-height: 1.25;
+}
+
+#view-reminders .reminders-screen-header-actions {
+  gap: 0.42rem;
+  flex-wrap: nowrap;
+}
+
+#view-reminders .reminders-add-button,
+#view-reminders .reminders-voice-button,
+#view-reminders .reminders-sort-trigger,
+#view-reminders #reminderSortToggle {
+  min-height: 2.15rem;
+  padding: 0.42rem 0.72rem;
+  border-radius: 0.85rem;
+  font-size: 0.76rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+#view-reminders .reminders-screen-header .reminders-add-button,
+#view-reminders .reminders-screen-header .reminders-voice-button,
+#view-reminders .reminders-screen-header #voiceAddBtn,
+#view-reminders .reminders-screen-header .reminders-sort-trigger,
+#view-reminders .reminders-screen-header #reminderSortToggle {
+  height: 2.15rem !important;
+  min-height: 2.15rem !important;
+  padding: 0.42rem 0.72rem !important;
+  font-size: 0.76rem !important;
+}
+
+#view-reminders #reminderList {
+  gap: 0.48rem !important;
+}
+
+#view-reminders .reminder-mobile-section-heading {
+  padding: 0.85rem 0 0.38rem;
+}
+
+#view-reminders .reminder-mobile-section-heading-label {
+  letter-spacing: 0;
+}
+
+#view-reminders .reminder-row,
+#view-reminders .reminder-row.reminder-card {
+  grid-template-columns: 1.55rem minmax(0, 1fr) 1.55rem !important;
+  min-height: 3.75rem;
+  gap: 0.62rem !important;
+  padding: 0.66rem 0.78rem !important;
+  border-radius: 1rem;
+  box-shadow: 0 9px 18px rgba(62, 47, 94, 0.075);
+}
+
+#view-reminders .reminder-row-main {
+  gap: 0.14rem;
+}
+
+#view-reminders .reminder-row-title {
+  font-size: 0.95rem;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+#view-reminders .reminder-row-meta {
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+#view-reminders .reminder-row-complete,
+#view-reminders .reminder-row .reminder-icon-btn,
+#view-reminders .reminder-row .task-toolbar-btn {
+  width: 1.55rem;
+  height: 1.55rem;
+  min-width: 1.55rem;
+  min-height: 1.55rem;
+}
+
+#view-reminders .reminder-row .task-toolbar {
+  align-self: center;
+  justify-self: end;
+}
+
+#view-reminders .reminder-row .reminder-delete-btn {
+  color: color-mix(in srgb, var(--text-secondary) 82%, transparent);
+  opacity: 0.78;
+}
+
+#view-reminders .reminder-row .reminder-delete-btn:hover,
+#view-reminders .reminder-row .reminder-delete-btn:focus-visible {
+  opacity: 1;
+}
+
+#view-reminders #remindersWrapper {
+  padding-bottom: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  #view-reminders .reminders-screen-header {
+    gap: 0.58rem;
+    padding: 0.72rem 0.82rem;
+    border-radius: 1rem;
+  }
+
+  #view-reminders .reminders-screen-title {
+    font-size: 1.05rem;
+    line-height: 1.12;
+  }
+
+  #view-reminders .reminders-screen-header-actions {
+    gap: 0.32rem;
+  }
+
+  #view-reminders .reminders-add-button,
+  #view-reminders .reminders-voice-button,
+  #view-reminders .reminders-sort-trigger,
+  #view-reminders #reminderSortToggle {
+    min-height: 1.95rem;
+    padding: 0.36rem 0.56rem;
+    border-radius: 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  #view-reminders .reminders-screen-header .reminders-add-button,
+  #view-reminders .reminders-screen-header .reminders-voice-button,
+  #view-reminders .reminders-screen-header #voiceAddBtn,
+  #view-reminders .reminders-screen-header .reminders-sort-trigger,
+  #view-reminders .reminders-screen-header #reminderSortToggle {
+    height: 1.95rem !important;
+    min-height: 1.95rem !important;
+    padding: 0.36rem 0.56rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  #view-reminders #reminderList {
+    gap: 0.42rem !important;
+  }
+
+  #view-reminders .reminder-mobile-section-heading {
+    padding: 0.72rem 0 0.32rem;
+  }
+
+  #view-reminders .reminder-row,
+  #view-reminders .reminder-row.reminder-card {
+    grid-template-columns: 1.45rem minmax(0, 1fr) 1.45rem !important;
+    min-height: 3.42rem;
+    gap: 0.5rem !important;
+    padding: 0.58rem 0.68rem !important;
+    border-radius: 0.92rem;
+  }
+
+  #view-reminders .reminder-row-title {
+    font-size: 0.9rem;
+    line-height: 1.28;
+  }
+
+  #view-reminders .reminder-row-meta {
+    font-size: 0.7rem;
+  }
+
+  #view-reminders .reminder-row-complete,
+  #view-reminders .reminder-row .reminder-icon-btn,
+  #view-reminders .reminder-row .task-toolbar-btn {
+    width: 1.45rem;
+    height: 1.45rem;
+    min-width: 1.45rem;
+    min-height: 1.45rem;
+  }
+}
+
 @keyframes reminder-strike {
   from {
     transform: scaleX(0);
