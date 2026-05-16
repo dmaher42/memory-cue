@@ -1653,6 +1653,10 @@ const initMobileNotes = () => {
       const command = button.getAttribute('data-cmd');
       if (command) {
         applyFormatCommand(command);
+        const moreMenu = button.closest('.rte-more');
+        if (moreMenu && 'open' in moreMenu) {
+          moreMenu.open = false;
+        }
       }
     });
   }

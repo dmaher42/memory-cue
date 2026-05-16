@@ -211,8 +211,10 @@ const NOTEBOOK_POLISH_CSS = `
 
   .mobile-panel--notes .note-editor-toolbar {
     margin-top: 0.04rem;
+    gap: 0.32rem;
     padding-top: 0.22rem;
     padding-bottom: 0.18rem;
+    overflow: visible;
   }
 
   .mobile-panel--notes .note-sections-row::-webkit-scrollbar {
