@@ -29,6 +29,7 @@ Legacy shells remain for reference only.
   <style>
     :root {
       --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
+      --mobile-bottom-nav-height: 48px;
       --cauliflower-blue: #F7F7FA;
       --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
       --text-primary: #231B2E; /* Deep violet text */
@@ -229,13 +230,13 @@ Legacy shells remain for reference only.
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 64px;
+      bottom: var(--mobile-bottom-nav-height, 48px);
       z-index: 58;
       background: color-mix(in srgb, #ffffff 96%, #f4f7fb 4%);
       border-top: 1px solid color-mix(in srgb, var(--border-subtle, #dbe2ef) 74%, #ffffff 26%);
-      padding: 12px 14px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-      box-shadow: 0 -10px 28px rgba(16, 12, 24, 0.1);
+      padding: 8px 12px;
+      padding-bottom: 8px;
+      box-shadow: 0 -6px 18px rgba(16, 12, 24, 0.08);
       transition: padding 0.2s ease;
     }
 
@@ -251,11 +252,11 @@ Legacy shells remain for reference only.
     .chat-composer textarea {
       flex: 1;
       width: 100%;
-      border-radius: 22px;
-      min-height: 3.15rem;
+      border-radius: 18px;
+      min-height: 2.45rem;
       max-height: 9rem;
       resize: none;
-      padding: 13px 16px;
+      padding: 9px 14px;
       border: 1px solid color-mix(in srgb, var(--border-subtle, #d8dfea) 78%, #ffffff 22%);
       background: #ffffff;
       box-shadow: inset 0 1px 2px rgba(20, 27, 41, 0.04);
@@ -270,12 +271,13 @@ Legacy shells remain for reference only.
 
     #thinkingBarSubmit,
     .chat-composer button {
-      width: 2.6rem;
-      height: 2.6rem;
-      min-height: 2.6rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      min-width: 2.25rem;
+      min-height: 2.25rem;
       padding: 0;
       border-radius: 999px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       line-height: 1;
       display: inline-flex;
       align-items: center;
@@ -301,8 +303,8 @@ Legacy shells remain for reference only.
     body[data-active-view="reminders"] #thinkingBarContainer,
     body[data-active-view="notebooks"] .chat-composer,
     body[data-active-view="reminders"] .chat-composer {
-      padding: 8px 10px;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      padding: 7px 10px;
+      padding-bottom: 7px;
       box-shadow: 0 -6px 18px rgba(16, 12, 24, 0.08);
     }
 
@@ -312,7 +314,7 @@ Legacy shells remain for reference only.
     body[data-active-view="reminders"] .chat-composer textarea {
       min-height: 2.45rem;
       max-height: 6rem;
-      padding: 10px 14px;
+      padding: 9px 14px;
       border-radius: 18px;
     }
 
@@ -320,9 +322,10 @@ Legacy shells remain for reference only.
     body[data-active-view="reminders"] #thinkingBarSubmit,
     body[data-active-view="notebooks"] .chat-composer button,
     body[data-active-view="reminders"] .chat-composer button {
-      width: 2.2rem;
-      height: 2.2rem;
-      min-height: 2.2rem;
+      width: 2.15rem;
+      height: 2.15rem;
+      min-width: 2.15rem;
+      min-height: 2.15rem;
       box-shadow: 0 6px 14px rgba(44, 30, 64, 0.16);
     }
 
@@ -3511,17 +3514,19 @@ body, main, section, div, p, span, li {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 64px;
+    height: var(--mobile-bottom-nav-height, 48px);
     background: white;
     border-top: 1px solid #e5e5e5;
     z-index: 50;
+    box-sizing: border-box;
+    padding: 0 !important;
   }
 
   #mobile-nav-shell .floating-footer {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    height: 64px;
+    height: var(--mobile-bottom-nav-height, 48px);
     background: white;
     border-top: 1px solid #e5e5e5;
     padding: 0;
@@ -3599,13 +3604,14 @@ body, main, section, div, p, span, li {
     justify-content: center;
     background: transparent;
     border: none;
-    padding: 8px;
+    padding: 4px 8px;
     border-radius: 0;
     cursor: pointer;
     flex: 1;
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
+    line-height: 1.1;
   }
 
   #mobile-nav-shell .floating-footer .floating-card.active {
@@ -5177,7 +5183,6 @@ body, main, section, div, p, span, li {
           >
             Settings
           </button>
-          <button type="button" class="overflow-menu-item" data-menu-action="sync-all">Sync now</button>
         </div>
 
         <!-- Account -->
@@ -6581,21 +6586,9 @@ body, main, section, div, p, span, li {
         <div class="card-body gap-4 compact">
           <h2 class="card-title text-base">Account Sync</h2>
           <p class="text-sm text-base-content/70">Memory Cue syncs notes and reminders automatically while you are signed in.</p>
-          <h3 class="settings-subtitle">Optional calendar bridge</h3>
-          <p class="text-sm text-base-content/70">Connect a Google Apps Script URL only if you want reminders copied to Google Calendar.</p>
-          <label class="form-control">
-            <div class="label"><span class="label-text">Calendar bridge URL</span></div>
-            <input id="syncUrl" type="url" class="input input-bordered" placeholder="https://script.google.com/macros/s/.../exec" />
-          </label>
           <div class="card-actions flex-col gap-2">
-            <div class="flex gap-2 w-full">
-              <button id="saveSyncSettings" class="btn btn-outline flex-1" type="button">Save Bridge</button>
-              <button id="testSync" class="btn btn-outline flex-1" type="button">Test Bridge</button>
-            </div>
-            <button id="syncAll" class="btn btn-primary w-full" type="button">Sync Reminders to Calendar</button>
             <button id="clearChatHistoryBtn" class="btn btn-outline w-full" type="button">Clear Chat History</button>
           </div>
-          <p class="text-xs text-base-content/60">Tip: In Google Apps Script choose <strong>Deploy → Web app</strong>, execute as yourself and allow access to anyone with the link.</p>
         </div>
       </div>
       <div class="card bg-base-100 border-0">

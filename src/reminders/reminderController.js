@@ -965,10 +965,6 @@ export async function initReminders(sel = {}) {
   const importFile = $(sel.importFileSel);
   const exportBtn = $(sel.exportBtnSel);
   const importBtn = $(sel.importBtnSel);
-  const syncAllBtn = $(sel.syncAllBtnSel);
-  const syncUrlInput = $(sel.syncUrlInputSel);
-  const saveSettings = $(sel.saveSettingsSel);
-  const testSync = $(sel.testSyncSel);
   const openSettingsBtns = $$(sel.openSettingsSel);
   const settingsSection = $(sel.settingsSectionSel);
   const emptyStateEl = $(sel.emptyStateSel);
@@ -4664,8 +4660,6 @@ export async function initReminders(sel = {}) {
     }
   }
 
-  async function tryCalendarSync(task){ const url=(localStorage.getItem('syncUrl')||'').trim(); if(!url) return; const payload={ id: task.id, title: task.title, dueIso: task.due || null, priority: task.priority || 'Medium', category: task.category || DEFAULT_CATEGORY, done: !!task.done, source: 'memory-cue-mobile' }; try{ await fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }catch{} }
-
   let resetForm = () => {};
   let loadForEdit = () => {};
   let openEditReminderSheet = () => {};
@@ -4771,7 +4765,6 @@ export async function initReminders(sel = {}) {
         });
         ensureNotificationPermission();
         syncCurrentDevicePushRegistration();
-        tryCalendarSync(createdEntry);
         scheduleReminder(createdEntry);
         rescheduleAllReminders();
         emitReminderUpdates();
@@ -4854,7 +4847,6 @@ export async function initReminders(sel = {}) {
       return;
     }
     saveToFirebase(it);
-    tryCalendarSync(it);
     render();
     persistItems();
     if(it.done){
@@ -4938,7 +4930,6 @@ export async function initReminders(sel = {}) {
     });
     ensureNotificationPermission();
     syncCurrentDevicePushRegistration();
-    tryCalendarSync(item);
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
     emitActivity({
@@ -6711,7 +6702,6 @@ export async function initReminders(sel = {}) {
       it.plannerLessonId = plannerLinkId || null;
       it.updatedAt=Date.now();
       saveToFirebase(it);
-      tryCalendarSync(it);
       suppressRenderMemoryEvent = true;
       render();
       scheduleReminder(it);
@@ -6832,7 +6822,6 @@ export async function initReminders(sel = {}) {
     parseQuickWhen,
     createReminderFromPayload,
     saveToFirebase,
-    tryCalendarSync,
     render,
     scheduleReminder,
     persistItems,
@@ -6959,25 +6948,6 @@ export async function initReminders(sel = {}) {
     };
     reader.readAsText(file);
   });
-  syncAllBtn?.addEventListener('click', async () => {
-    const url=(localStorage.getItem('syncUrl')||'').trim();
-    if(!url){ toast('Add your Apps Script URL in Settings first'); closeMenu(); return; }
-    if(!items.length){ toast('No tasks to sync'); closeMenu(); return; }
-    toast('Syncing all tasks…');
-    const chunkSize=20; let fail=0;
-    for(let i=0;i<items.length;i+=chunkSize){
-      const chunk=items.slice(i,i+chunkSize);
-      const results=await Promise.allSettled(chunk.map(task=>{ const payload={ id:task.id, title:task.title, dueIso:task.due||null, priority:task.priority||'Medium', category:task.category||DEFAULT_CATEGORY, done:!!task.done, source:'memory-cue-mobile' }; return fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}); }));
-      fail += results.filter(r=>r.status==='rejected').length;
-      await new Promise(res=>setTimeout(res,400));
-    }
-    toast(`Sync complete: ${items.length - fail} ok${fail ? `, ${fail} failed` : ''}`);
-    closeMenu();
-  });
-
-  if(syncUrlInput){ syncUrlInput.value = localStorage.getItem('syncUrl') || ''; }
-  saveSettings?.addEventListener('click', () => { if(!syncUrlInput) return; localStorage.setItem('syncUrl', syncUrlInput.value.trim()); toast('Settings saved'); });
-  testSync?.addEventListener('click', async () => { if(!syncUrlInput) return; const url = syncUrlInput.value.trim(); if(!url){ toast('Enter URL first'); return; } try{ const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ test:true }) }); toast(res.ok ? 'Test ok' : 'Test failed'); } catch { toast('Test failed'); } });
 
   notifBtn?.addEventListener('click', async () => {
     if(!('Notification' in window)){ toast('Notifications not supported'); return; }

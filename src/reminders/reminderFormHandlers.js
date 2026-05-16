@@ -32,7 +32,6 @@ export const createReminderFormHandlers = (options = {}) => {
     parseQuickWhen = () => ({ date: '', time: '' }),
     createReminderFromPayload = () => null,
     saveToFirebase = async () => false,
-    tryCalendarSync = () => {},
     render = () => {},
     scheduleReminder = () => {},
     persistItems = () => {},
@@ -156,7 +155,6 @@ export const createReminderFormHandlers = (options = {}) => {
       item.plannerLessonId = plannerLinkId || null;
       item.updatedAt = Date.now();
       saveToFirebase(item);
-      tryCalendarSync(item);
       setSuppressRenderMemoryEvent(true);
       render();
       scheduleReminder(item);

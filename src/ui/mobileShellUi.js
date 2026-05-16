@@ -447,22 +447,6 @@ export const initHeaderOverflowMenu = () => {
         break;
       }
 
-      case 'sync-all':
-      case 'sync-now': {
-        const syncBtn = document.getElementById('syncAll');
-        runMenuAction(() => {
-          if (syncBtn instanceof HTMLElement) {
-            syncBtn.click();
-            focusElement(syncBtn);
-          } else if (window.remindersController && typeof window.remindersController.syncAll === 'function') {
-            window.remindersController.syncAll().catch(() => {});
-          } else if (typeof window.syncAllReminders === 'function') {
-            window.syncAllReminders();
-          }
-        });
-        break;
-      }
-
       case 'theme-light':
         runMenuAction(() => {
           applyTheme('light');
