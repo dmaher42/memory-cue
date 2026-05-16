@@ -233,6 +233,10 @@ body.app-shell .content .card,
   box-shadow: 0 5px 12px rgba(44, 30, 64, 0.18) !important;
 }
 
+body[data-active-view="notebooks"] #thinkingBarContainer {
+  display: none !important;
+}
+
 #bottom-nav {
   background: color-mix(in srgb, #ffffff 96%, #f4f7fb 4%) !important;
   border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 74%, #ffffff 26%) !important;

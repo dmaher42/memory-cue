@@ -1699,8 +1699,9 @@ input.notebook-notes-search::placeholder {
 /* Placeholder styling */
 #notebook-editor-body:empty::before {
   content: attr(data-placeholder);
-  color: rgba(0, 0, 0, 0.35);
+  color: color-mix(in srgb, var(--text-muted, #6b7280) 78%, #ffffff 22%);
   pointer-events: none;
+  font-style: italic;
 }
 
 /* Soft focus ring for editor container */
@@ -1713,8 +1714,8 @@ input.notebook-notes-search::placeholder {
 /* Smooth scrolling inside the editor */
 #notebook-editor-body {
   scroll-behavior: smooth;
-  background-color: #f9f9f9;
-  border-radius: 12px;
+  background-color: color-mix(in srgb, #ffffff 96%, #f7f2ff 4%);
+  border-radius: 14px;
   min-height: 200px;
   white-space: pre-wrap;
   word-break: break-word;
@@ -3422,14 +3423,14 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   min-height: 140px;
   box-sizing: border-box;
   border: none;
-  background: transparent;
+  background: color-mix(in srgb, #ffffff 96%, #f7f2ff 4%);
   outline: none;
   overflow-x: hidden;
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.62;
   font-weight: 400;
   color: #1f1633;
-  padding: 0.75rem 1rem;
+  padding: 0.95rem 1rem;
   white-space: pre-wrap;
   word-wrap: break-word;
   flex: 1 1 auto;
@@ -3521,7 +3522,7 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 }
 
 #view-notebook .note-editor-content {
-  padding: 0.55rem 0.75rem;
+  padding: 0.85rem 0.95rem;
 }
 
 /* Allow the scratch-notes card to use the full vertical space */

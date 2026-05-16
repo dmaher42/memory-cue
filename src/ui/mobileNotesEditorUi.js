@@ -184,7 +184,7 @@ export const initMobileNotesEditorUi = (options = {}) => {
   }
 
   try {
-    scratchNotesEditorElement?.addEventListener('input', debouncedAutoSave);
+    scratchNotesEditorElement?.addEventListener('input', handleNoteEditorInput);
     scratchNotesEditorElement?.addEventListener('input', updateToolbarState);
     scratchNotesEditorElement?.addEventListener('keyup', updateToolbarState);
     scratchNotesEditorElement?.addEventListener('mouseup', updateToolbarState);

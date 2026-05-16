@@ -25,16 +25,16 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook #notesOverviewPanel {
-    padding: 0.62rem;
-    margin: 0.35rem 0.6rem 0.35rem;
-    border-radius: 1.1rem;
-    background: color-mix(in srgb, #ffffff 95%, #f3eefc 5%);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    padding: 0.42rem 0.58rem;
+    margin: 0.24rem 0.7rem 0.22rem;
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, #ffffff 97%, #f3eefc 3%);
+    box-shadow: none;
   }
 
   #view-notebook #notesOverviewPanel > h2 {
     margin: 0;
-    font-size: 0.98rem;
+    font-size: 0.92rem;
     letter-spacing: 0.01em;
   }
 
@@ -50,8 +50,8 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
-    padding: 0.54rem 0.62rem;
-    margin-bottom: 0.18rem;
+    padding: 0.38rem 0.58rem;
+    margin-bottom: 0.12rem;
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewList {
@@ -63,13 +63,13 @@ const NOTEBOOK_POLISH_CSS = `
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    min-width: 3.7rem;
-    min-height: 28px;
-    padding: 0.26rem 0.72rem;
+    min-width: 5.4rem;
+    min-height: 26px;
+    padding: 0.22rem 0.66rem;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     line-height: 1;
     font-weight: 600;
     color: var(--text-main, #231B2E);
@@ -499,7 +499,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   body[data-active-view="notebooks"] .note-editor-card {
-    padding-bottom: 84px !important;
+    padding-bottom: 56px !important;
   }
 `;
 
@@ -1346,7 +1346,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
     notesOverviewCollapsed = notesMode !== 'overview';
     listEl.hidden = notesOverviewCollapsed;
-    toggleEl.textContent = notesMode === 'overview' ? 'Back' : 'Open';
+    toggleEl.textContent = notesMode === 'overview' ? 'Back' : 'Saved notes';
     toggleEl.setAttribute('aria-expanded', notesMode === 'overview' ? 'true' : 'false');
     toggleEl.setAttribute('aria-controls', 'notesOverviewList');
   };
@@ -1361,10 +1361,6 @@ export const initMobileNotesShellUi = (options = {}) => {
       return;
     }
     event.preventDefault();
-    if (!Array.isArray(getAllNotes()) || getAllNotes().length === 0) {
-      applyNotesMode('notebooks');
-      return;
-    }
     applyNotesMode(notesMode === 'overview' ? 'notebooks' : 'overview');
   });
 
