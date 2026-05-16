@@ -20,6 +20,12 @@ const SYNC_EVENTS = Object.freeze({
 });
 
 const normalizeUid = (value) => (typeof value === 'string' ? value.trim() : '');
+const INBOX_SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
+
+const normalizeInboxSource = (value) => {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return INBOX_SOURCE_VALUES.has(normalized) ? normalized : 'capture';
+};
 
 const resolveUid = (uidOverride = null) => {
   const explicitUid = normalizeUid(uidOverride);
@@ -133,7 +139,7 @@ const normalizeInboxEntry = (entry = {}) => {
     tags: Array.isArray(normalized.tags) ? normalized.tags : [],
     createdAt: normalized.createdAt,
     updatedAt: normalized.updatedAt,
-    source: normalized.source,
+    source: normalizeInboxSource(entry?.source || normalized.source),
     parsedType: typeof entry?.parsedType === 'string' && entry.parsedType.trim()
       ? entry.parsedType.trim()
       : 'unknown',

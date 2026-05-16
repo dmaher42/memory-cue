@@ -214,7 +214,7 @@ async function main() {
       return text === 'add remider tomorrow at 8:30 am get naplan';
     });
 
-    if (!mirroredInboxEntry || mirroredInboxEntry.entryPoint !== 'reminders.quickAddNow') {
+    if (!mirroredInboxEntry || mirroredInboxEntry.entryPoint !== 'reminders.quickAddNow' || mirroredInboxEntry.source !== 'quick-add') {
       throw new Error(`Expected quick-add reminder to mirror into inbox, received: ${JSON.stringify(inboxEntries)}`);
     }
 

@@ -61,7 +61,7 @@ const normalizeInboxEntry = (entryInput = {}) => {
     tags: canonical.tags,
     createdAt: canonical.createdAt,
     updatedAt: canonical.updatedAt,
-    source: canonical.source,
+    source: normalizeSource(entryInput?.source || canonical.source),
     parsedType: normalizeParsedType(entryInput?.parsedType || 'unknown'),
     metadata: entryInput?.metadata && typeof entryInput.metadata === 'object' ? entryInput.metadata : {},
     pendingSync: canonical.pendingSync,
