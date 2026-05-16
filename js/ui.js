@@ -1,8 +1,2 @@
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch((error) => {
-      console.warn('Service worker registration failed', error);
-    });
-  }, { once: true });
-}
-
+// Legacy UI bootstrap placeholder.
+// Active mobile service worker registration is owned by js/register-service-worker-v2.js.

@@ -1,4 +1,6 @@
 const { test, expect, beforeEach } = require('@jest/globals');
+const fs = require('fs');
+const path = require('path');
 
 function createMockCaches() {
   const store = new Map();
@@ -77,5 +79,11 @@ test('does not cache Google Fonts requests', async () => {
   await respondWith.mock.calls[0][0];
   expect(mockCaches.open).not.toHaveBeenCalled();
   expect(mockCaches._store.size).toBe(0);
+});
+
+test('legacy ui script does not register a competing service worker', () => {
+  const uiScript = fs.readFileSync(path.join(__dirname, 'js/ui.js'), 'utf8');
+
+  expect(uiScript).not.toMatch(/serviceWorker\.register\(['"]\.\/service-worker\.js['"]\)/);
 });
 
