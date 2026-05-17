@@ -1497,6 +1497,111 @@ const initMobileNotes = () => {
     'outdent',
   ]);
 
+  const FONT_SIZE_OPTIONS = [
+    { px: 13, legacySize: '2' },
+    { px: 15, legacySize: '3' },
+    { px: 17, legacySize: '4' },
+    { px: 20, legacySize: '5' },
+    { px: 24, legacySize: '6' },
+    { px: 30, legacySize: '7' },
+  ];
+  const DEFAULT_FONT_SIZE_OPTION = FONT_SIZE_OPTIONS.find((option) => option.px === 17) || FONT_SIZE_OPTIONS[2];
+
+  const getFontSizeOption = (value) => {
+    const numericValue = Number.parseInt(String(value || ''), 10);
+    return FONT_SIZE_OPTIONS.find((option) => option.px === numericValue)
+      || FONT_SIZE_OPTIONS.find((option) => option.legacySize === String(value || ''))
+      || DEFAULT_FONT_SIZE_OPTION;
+  };
+  let pendingFontSizePx = null;
+
+  const normalizeEditorFontSizes = (preferredPixelSize = null) => {
+    if (!(scratchNotesEditorElement instanceof HTMLElement)) {
+      return false;
+    }
+
+    const fontElements = Array.from(scratchNotesEditorElement.querySelectorAll('font[size]'));
+    if (!fontElements.length) {
+      return false;
+    }
+
+    fontElements.forEach((fontElement) => {
+      const sizeAttribute = fontElement.getAttribute('size');
+      const option = FONT_SIZE_OPTIONS.find((candidate) => candidate.legacySize === String(sizeAttribute || ''))
+        || getFontSizeOption(preferredPixelSize);
+      const spanElement = document.createElement('span');
+      spanElement.style.fontSize = `${option.px}px`;
+
+      const colorAttribute = fontElement.getAttribute('color');
+      if (colorAttribute) {
+        spanElement.style.color = colorAttribute;
+      }
+
+      while (fontElement.firstChild) {
+        spanElement.appendChild(fontElement.firstChild);
+      }
+      fontElement.replaceWith(spanElement);
+    });
+
+    return true;
+  };
+
+  const selectionBelongsToEditor = (selection) => {
+    if (!selection || selection.rangeCount === 0 || !(scratchNotesEditorElement instanceof HTMLElement)) {
+      return false;
+    }
+    const range = selection.getRangeAt(0);
+    const anchorNode = range.commonAncestorContainer;
+    return anchorNode === scratchNotesEditorElement || scratchNotesEditorElement.contains(anchorNode);
+  };
+
+  const applyPixelFontSize = (value) => {
+    const option = getFontSizeOption(value);
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+    if (!selectionBelongsToEditor(selection)) {
+      pendingFontSizePx = option.px;
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) {
+      pendingFontSizePx = option.px;
+      return;
+    }
+
+    pendingFontSizePx = null;
+    document.execCommand('fontSize', false, option.legacySize);
+    normalizeEditorFontSizes(option.px);
+  };
+
+  const insertPendingFontSizeText = (text = '') => {
+    if (!pendingFontSizePx || !(scratchNotesEditorElement instanceof HTMLElement) || !text) {
+      return false;
+    }
+
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+    if (!selectionBelongsToEditor(selection)) {
+      return false;
+    }
+
+    const range = selection.getRangeAt(0);
+    const spanElement = document.createElement('span');
+    spanElement.style.fontSize = `${pendingFontSizePx}px`;
+    const textNode = document.createTextNode(text);
+    spanElement.appendChild(textNode);
+
+    range.deleteContents();
+    range.insertNode(spanElement);
+
+    const nextRange = document.createRange();
+    nextRange.setStart(textNode, textNode.length);
+    nextRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(nextRange);
+    pendingFontSizePx = null;
+    return true;
+  };
+
   function updateToolbarState() {
     const buttons = document.querySelectorAll('.rte-btn[data-cmd]');
     buttons.forEach((button) => {
@@ -1528,7 +1633,9 @@ const initMobileNotes = () => {
       }
     }
     try {
-      if (command === 'foreColor' || command === 'hiliteColor' || command === 'backColor') {
+      if (command === 'fontSizePx') {
+        applyPixelFontSize(value);
+      } else if (command === 'foreColor' || command === 'hiliteColor' || command === 'backColor') {
         try {
           document.execCommand('styleWithCSS', false, true);
         } catch {
@@ -1664,8 +1771,9 @@ const initMobileNotes = () => {
   const fontSizeSelectEl = document.getElementById('rteFontSizeSelect');
   if (fontSizeSelectEl instanceof HTMLSelectElement) {
     fontSizeSelectEl.addEventListener('change', () => {
-      const value = fontSizeSelectEl.value || '3';
-      applyFormatCommand('fontSize', value);
+      const option = getFontSizeOption(fontSizeSelectEl.value);
+      fontSizeSelectEl.value = String(option.px);
+      applyFormatCommand('fontSizePx', option.px);
     });
   }
 
@@ -1690,6 +1798,20 @@ const initMobileNotes = () => {
   }
 
   if (scratchNotesEditorElement instanceof HTMLElement) {
+    scratchNotesEditorElement.addEventListener('beforeinput', (event) => {
+      if (!event || event.inputType !== 'insertText' || typeof event.data !== 'string') {
+        return;
+      }
+      if (insertPendingFontSizeText(event.data)) {
+        event.preventDefault();
+        try {
+          scratchNotesEditorElement.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch {
+          /* ignore synthetic input errors */
+        }
+      }
+    });
+
     const handleClipboardPaste = (event, clipboardData) => {
       if (isHandlingClipboardPaste) {
         return;
@@ -1723,6 +1845,7 @@ const initMobileNotes = () => {
 
   const getEditorBodyHtml = () => {
     if (scratchNotesEditorElement instanceof HTMLElement) {
+      normalizeEditorFontSizes();
       const focusedBody = scratchNotesEditorElement.dataset.noteSectionFocusBody;
       if (typeof focusedBody === 'string' && focusedBody.length > 0) {
         return focusedBody;
