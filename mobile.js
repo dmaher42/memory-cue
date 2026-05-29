@@ -1479,14 +1479,6 @@ const initMobileNotes = () => {
     return;
   }
 
-  try {
-    scratchNotesEditorElement.addEventListener('input', () => {
-      updateCurrentNoteSections(getEditorBodyHtml());
-    });
-  } catch {
-    /* ignore section index errors */
-  }
-
   const TOGGLE_COMMANDS = new Set([
     'bold',
     'italic',
@@ -2091,6 +2083,7 @@ const initMobileNotes = () => {
   let notesMode = 'notebooks';
   let skipAutoSelectOnce = false;
   let currentNoteSections = [];
+  let noteSectionsInputTimeoutId = null;
 
   const updateCurrentNoteSections = (html = getEditorBodyHtml()) => {
     currentNoteSections = buildNoteSectionsFromHtml(html);
@@ -2101,6 +2094,22 @@ const initMobileNotes = () => {
         .join('|');
     }
   };
+
+  const scheduleCurrentNoteSectionsUpdate = () => {
+    if (noteSectionsInputTimeoutId) {
+      clearTimeout(noteSectionsInputTimeoutId);
+    }
+    noteSectionsInputTimeoutId = setTimeout(() => {
+      noteSectionsInputTimeoutId = null;
+      updateCurrentNoteSections();
+    }, 250);
+  };
+
+  try {
+    scratchNotesEditorElement.addEventListener('input', scheduleCurrentNoteSectionsUpdate);
+  } catch {
+    /* ignore section index errors */
+  }
 
   const getCurrentNoteSections = () => currentNoteSections.slice();
 
@@ -2595,7 +2604,12 @@ const initMobileNotes = () => {
 
   const hasMeaningfulContent = () => {
     const currentTitle = typeof titleInput.value === 'string' ? titleInput.value.trim() : '';
-    const bodyText = getEditorText();
+    const bodyText =
+      scratchNotesEditorElement instanceof HTMLElement
+        ? (scratchNotesEditorElement.textContent || scratchNotesEditorElement.innerText || '')
+          .replace(/\s+/g, ' ')
+          .trim()
+        : getEditorText();
     return Boolean(currentTitle) || Boolean(bodyText);
   };
 
