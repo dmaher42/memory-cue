@@ -583,6 +583,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let noteSectionsKey = '';
   let noteSectionsNoteId = '';
   let noteSectionsEventsBound = false;
+  let noteSectionsInputRenderTimeoutId = null;
   let noteActionCreateLessonCueBtn = initialNoteActionCreateLessonBtn;
   let noteActionSetActiveLessonBtn = initialNoteActionSetActiveLessonBtn;
 
@@ -1043,6 +1044,17 @@ export const initMobileNotesShellUi = (options = {}) => {
       ` : ''}
     `;
   };
+
+  const scheduleNoteSectionsBarRender = () => {
+    if (noteSectionsInputRenderTimeoutId) {
+      window.clearTimeout(noteSectionsInputRenderTimeoutId);
+    }
+    noteSectionsInputRenderTimeoutId = window.setTimeout(() => {
+      noteSectionsInputRenderTimeoutId = null;
+      renderNoteSectionsBar();
+    }, 250);
+  };
+
   const findScrollContainer = (startEl) => {
     let current = startEl?.parentElement || null;
     while (current) {
@@ -2066,9 +2078,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   });
 
   noteEditorSheet?.addEventListener('input', () => {
-    window.setTimeout(() => {
-      renderNoteSectionsBar();
-    }, 0);
+    scheduleNoteSectionsBarRender();
   });
 
   noteEditorSheet?.addEventListener('click', () => {

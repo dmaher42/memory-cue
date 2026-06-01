@@ -70,9 +70,9 @@ export const initMobileNotesEditorUi = (options = {}) => {
     openNoteEditorForNewNote(newNote);
   };
 
-  saveButton?.addEventListener('click', () => {
+  const persistCurrentNote = ({ refreshAfterSave = true, saveOptions = {} } = {}) => {
     if (getCurrentNoteIsNew() && !getCurrentNoteHasChanged() && !hasMeaningfulContent()) {
-      return;
+      return false;
     }
 
     const existingNotes = loadAllNotes();
@@ -118,11 +118,27 @@ export const initMobileNotesEditorUi = (options = {}) => {
       notesArray.unshift(newNote);
     }
 
-    saveAllNotes(notesArray);
+    const saved = saveAllNotes(notesArray, saveOptions);
+    if (!saved) {
+      return false;
+    }
     updateStoredSnapshot();
     setCurrentNoteIsNew(false);
     setCurrentNoteHasChanged(false);
-    refreshFromStorage({ preserveDraft: false });
+    if (titleInput instanceof HTMLElement) {
+      titleInput.dataset.noteOriginalTitle = rawTitle;
+    }
+    if (scratchNotesEditorElement instanceof HTMLElement) {
+      scratchNotesEditorElement.dataset.noteOriginalBody = noteBodyHtml;
+    }
+    if (refreshAfterSave) {
+      refreshFromStorage({ preserveDraft: false });
+    }
+    return true;
+  };
+
+  saveButton?.addEventListener('click', () => {
+    persistCurrentNote({ refreshAfterSave: true });
   });
 
   footerNewNoteBtn?.addEventListener('click', (event) => {
@@ -157,7 +173,10 @@ export const initMobileNotesEditorUi = (options = {}) => {
       }
       if (!hasUnsavedChanges()) return;
       if (saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
-        saveButton.click();
+        persistCurrentNote({
+          refreshAfterSave: false,
+          saveOptions: { skipNotesUpdatedEvent: true },
+        });
       }
     } catch {
       /* ignore autosave errors */

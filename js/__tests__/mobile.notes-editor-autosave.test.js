@@ -124,3 +124,93 @@ test('body typing in a new note marks it changed so autosave can save it', () =>
   expect(notes).toHaveLength(1);
   expect(notes[0].bodyText).toBe('Body-only journal thought');
 });
+
+test('autosave persists without running the full manual save refresh path', () => {
+  const { initMobileNotesEditorUi } = loadMobileNotesEditorUi();
+  const titleInput = document.getElementById('noteTitleMobile');
+  const editor = document.getElementById('notebook-editor-body');
+  const saveButton = document.getElementById('noteSaveMobile');
+
+  let currentNoteId = 'note-1';
+  let currentNoteIsNew = false;
+  let currentNoteHasChanged = false;
+  let saveButtonClicks = 0;
+  let saveOptions = null;
+  const refreshFromStorage = jest.fn();
+  let notes = [
+    {
+      id: 'note-1',
+      title: 'Existing note',
+      body: 'Old body',
+      bodyHtml: 'Old body',
+      bodyText: 'Old body',
+      updatedAt: 'earlier',
+      folderId: 'everyday',
+    },
+  ];
+
+  saveButton.addEventListener('click', () => {
+    saveButtonClicks += 1;
+  });
+
+  initMobileNotesEditorUi({
+    saveButton,
+    titleInput,
+    scratchNotesEditorElement: editor,
+    debounce: (fn, delay = 0) => {
+      let timeoutId;
+      return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+      };
+    },
+    createNote: (title, bodyHtml, overrides = {}) => ({
+      id: overrides.id || 'note-1',
+      title: title || 'Untitled note',
+      body: bodyHtml || '',
+      bodyHtml: bodyHtml || '',
+      bodyText: overrides.bodyText || bodyHtml || '',
+      updatedAt: overrides.updatedAt || 'now',
+      folderId: overrides.folderId || 'everyday',
+    }),
+    loadAllNotes: () => notes,
+    saveAllNotes: (nextNotes, options = {}) => {
+      notes = nextNotes;
+      saveOptions = options;
+      return true;
+    },
+    getEditorBodyHtml: () => editor.innerHTML,
+    getEditorBodyText: () => editor.textContent || '',
+    getCurrentNoteId: () => currentNoteId,
+    setCurrentNoteId: (value) => { currentNoteId = value; },
+    getCurrentFolderId: () => 'all',
+    getCurrentEditingNoteFolderId: () => 'everyday',
+    setCurrentEditingNoteFolderId: () => {},
+    getCurrentNoteIsNew: () => currentNoteIsNew,
+    setCurrentNoteIsNew: (value) => { currentNoteIsNew = value; },
+    getCurrentNoteHasChanged: () => currentNoteHasChanged,
+    setCurrentNoteHasChanged: (value) => { currentNoteHasChanged = value; },
+    hasMeaningfulContent: () => Boolean(titleInput.value.trim() || editor.textContent.trim()),
+    hasUnsavedChanges: () => true,
+    resetEditorScroll: () => {},
+    setEditorValues: () => {},
+    updateListSelection: () => {},
+    updateStoredSnapshot: () => {},
+    refreshFromStorage,
+    syncNoteFolderButtonLabel: () => {},
+    updateToolbarState: () => {},
+    handleListShortcuts: () => {},
+    handleFormattingShortcuts: () => {},
+  });
+
+  titleInput.value = 'Existing note';
+  editor.textContent = 'Updated body while typing';
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+  jest.advanceTimersByTime(1500);
+
+  expect(saveButtonClicks).toBe(0);
+  expect(refreshFromStorage).not.toHaveBeenCalled();
+  expect(saveOptions).toEqual(expect.objectContaining({ skipNotesUpdatedEvent: true }));
+  expect(notes[0].bodyText).toBe('Updated body while typing');
+});

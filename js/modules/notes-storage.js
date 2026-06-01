@@ -558,7 +558,9 @@ export const saveAllNotes = (notes, options = {}) => {
 
   try {
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(serializable));
-    dispatchNotesUpdated(serializable);
+    if (!options.skipNotesUpdatedEvent) {
+      dispatchNotesUpdated(serializable);
+    }
     if (!options.skipRemoteSync && typeof remoteSyncHandler === 'function') {
       try {
         const maybePromise = remoteSyncHandler(serializable);
