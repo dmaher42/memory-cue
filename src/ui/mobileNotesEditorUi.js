@@ -175,7 +175,7 @@ export const initMobileNotesEditorUi = (options = {}) => {
       if (saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
         persistCurrentNote({
           refreshAfterSave: false,
-          saveOptions: { skipNotesUpdatedEvent: true },
+          saveOptions: { skipNotesUpdatedEvent: true, skipRemoteSync: true },
         });
       }
     } catch {

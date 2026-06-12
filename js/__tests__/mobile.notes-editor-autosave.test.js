@@ -211,6 +211,9 @@ test('autosave persists without running the full manual save refresh path', () =
 
   expect(saveButtonClicks).toBe(0);
   expect(refreshFromStorage).not.toHaveBeenCalled();
-  expect(saveOptions).toEqual(expect.objectContaining({ skipNotesUpdatedEvent: true }));
+  expect(saveOptions).toEqual(expect.objectContaining({
+    skipNotesUpdatedEvent: true,
+    skipRemoteSync: true,
+  }));
   expect(notes[0].bodyText).toBe('Updated body while typing');
 });
