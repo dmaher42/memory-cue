@@ -1,4 +1,10 @@
 const PATTERN_STORAGE_KEY = 'memoryCuePatterns';
+const SHORTHAND_PATTERN_TYPE = 'shorthand';
+
+const DEFAULT_SHORTHANDS = Object.freeze({
+  CC: 'Classroom conversation with',
+  NR8: 'Year 8 Noria',
+});
 
 const getPatternStorage = () => (typeof localStorage !== 'undefined' ? localStorage : null);
 
@@ -64,6 +70,103 @@ const createPattern = (id, description, relatedMemoryId) => ({
   lastDetected: new Date().toISOString(),
   relatedMemories: relatedMemoryId ? [relatedMemoryId] : [],
 });
+
+const normalizeShorthandKey = (value) => (typeof value === 'string'
+  ? value.trim().replace(/\s+/g, '').toUpperCase()
+  : '');
+
+const normalizeShorthandExpansion = (value) => (typeof value === 'string'
+  ? value.trim().replace(/\s+/g, ' ')
+  : '');
+
+const escapeRegExp = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const getStoredShorthandPatterns = () => readPatterns()
+  .filter((pattern) => pattern?.type === SHORTHAND_PATTERN_TYPE)
+  .map((pattern) => ({
+    phrase: normalizeShorthandKey(pattern.phrase || pattern.id?.replace(/^shorthand:/, '')),
+    expansion: normalizeShorthandExpansion(pattern.expansion),
+  }))
+  .filter((pattern) => pattern.phrase && pattern.expansion);
+
+export const getShorthandMap = () => {
+  const map = { ...DEFAULT_SHORTHANDS };
+  getStoredShorthandPatterns().forEach((pattern) => {
+    map[pattern.phrase] = pattern.expansion;
+  });
+  return map;
+};
+
+export const resolveShorthandText = (value) => {
+  let text = typeof value === 'string' ? value : '';
+  if (!text.trim()) {
+    return text;
+  }
+
+  const shorthandMap = getShorthandMap();
+  Object.keys(shorthandMap)
+    .sort((left, right) => right.length - left.length)
+    .forEach((phrase) => {
+      const expansion = shorthandMap[phrase];
+      if (!expansion) {
+        return;
+      }
+      const pattern = new RegExp(`(^|[^A-Za-z0-9])${escapeRegExp(phrase)}(?=$|[^A-Za-z0-9])`, 'gi');
+      text = text.replace(pattern, (_match, prefix = '') => `${prefix}${expansion}`);
+    });
+
+  return text.replace(/\s{2,}/g, ' ').trim();
+};
+
+export const getUnknownShorthandToken = (value) => {
+  const text = typeof value === 'string' ? value : '';
+  if (!text.trim()) {
+    return null;
+  }
+
+  const known = getShorthandMap();
+  const ignored = new Set(['AM', 'PM']);
+  const matches = text.match(/\b[A-Z][A-Z0-9]{1,}\b/g) || [];
+  return matches.find((token) => !known[token] && !ignored.has(token)) || null;
+};
+
+export const rememberShorthand = (phrase, expansion) => {
+  const normalizedPhrase = normalizeShorthandKey(phrase);
+  const normalizedExpansion = normalizeShorthandExpansion(expansion);
+  if (!normalizedPhrase || !normalizedExpansion) {
+    return null;
+  }
+
+  const patterns = readPatterns();
+  const id = `shorthand:${normalizedPhrase}`;
+  const now = new Date().toISOString();
+  const nextPattern = {
+    id,
+    type: SHORTHAND_PATTERN_TYPE,
+    phrase: normalizedPhrase,
+    expansion: normalizedExpansion,
+    description: `${normalizedPhrase} means ${normalizedExpansion}`,
+    frequency: 1,
+    lastDetected: now,
+    relatedMemories: [],
+  };
+
+  const found = patterns.some((pattern) => pattern?.id === id);
+  const updatedPatterns = found
+    ? patterns.map((pattern) => (
+      pattern?.id === id
+        ? {
+          ...pattern,
+          ...nextPattern,
+          frequency: Number(pattern.frequency || 0) + 1,
+        }
+        : pattern
+    ))
+    : [nextPattern, ...patterns];
+
+  writePatterns(updatedPatterns);
+  return updatedPatterns.find((pattern) => pattern?.id === id) || nextPattern;
+};
 
 const updatePattern = (pattern, relatedMemoryId) => {
   const nextRelated = Array.isArray(pattern.relatedMemories)

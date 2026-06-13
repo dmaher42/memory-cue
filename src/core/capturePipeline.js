@@ -5,10 +5,16 @@ import { semanticSearch } from '../services/semanticSearchService.js';
 import { handleQuery } from '../brain/queryEngine.js';
 import { saveInboxEntry } from '../services/inboxService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
+import {
+  getUnknownShorthandToken,
+  rememberShorthand,
+  resolveShorthandText,
+} from '../services/patternLearningService.js';
 
 // Keep one-step clarifications scoped to the capture surface that started them.
 const pendingIntentsByChannel = new Map();
 const pendingCaptureKindsByChannel = new Map();
+const pendingShorthandMeaningsByChannel = new Map();
 
 const normalizeText = (value) => {
   if (typeof value !== 'string') {
@@ -523,6 +529,16 @@ const parseReminderDueAt = (text, now = new Date(), options = {}) => {
   return null;
 };
 
+const getReminderLikeExpandedText = (text) => {
+  const expandedText = resolveShorthandText(text);
+  const changed = expandedText !== text;
+  if (!changed) {
+    return null;
+  }
+  const dueAt = parseReminderDueAt(expandedText);
+  return dueAt ? { expandedText, dueAt } : null;
+};
+
 const parseEntry = async (text) => {
   const response = await fetch('/api/parse-entry', {
     method: 'POST',
@@ -729,7 +745,7 @@ export async function analyzeCaptureInput({
   source = 'unknown',
   metadata = {},
 }) {
-  const normalizedText = normalizeText(text);
+  const normalizedText = normalizeText(resolveShorthandText(text));
   if (!normalizedText) {
     return null;
   }
@@ -794,6 +810,26 @@ export async function analyzeCaptureInput({
     };
   }
 
+  const expandedReminder = getReminderLikeExpandedText(normalizeText(text));
+  if (expandedReminder) {
+    const parsedEntry = createForcedParsedEntry('reminder', expandedReminder.expandedText, hints);
+    const decision = enrichReminderDecision({
+      decisionType: 'persist_reminder',
+      parsedType: 'reminder',
+      text: expandedReminder.expandedText,
+      parsedEntry,
+      missing: [],
+      hints,
+    }, expandedReminder.expandedText);
+
+    return {
+      text: expandedReminder.expandedText,
+      context,
+      hints,
+      decision,
+    };
+  }
+
   const resolvedDecision = await resolveDecision(normalizedText, hints);
   const decision = enrichReminderDecision(resolvedDecision, normalizedText);
 
@@ -831,6 +867,36 @@ export async function captureInput({
   };
 
   const channelKey = getPendingChannelKey(context);
+  const pendingShorthand = pendingShorthandMeaningsByChannel.get(channelKey) || null;
+  if (pendingShorthand) {
+    const learnedMeaning = normalizedText;
+    rememberShorthand(pendingShorthand.token, learnedMeaning);
+    pendingShorthandMeaningsByChannel.delete(channelKey);
+    const replayed = await captureInput({
+      text: pendingShorthand.originalText,
+      source: context.source,
+      metadata: hints,
+    });
+    if (replayed && typeof replayed.message === 'string') {
+      return {
+        ...replayed,
+        message: `Got it - I will remember ${pendingShorthand.token} means "${learnedMeaning}". ${replayed.message}`,
+      };
+    }
+    return buildAssistantResponse(`Got it - I will remember ${pendingShorthand.token} means "${learnedMeaning}".`);
+  }
+
+  const expandedText = resolveShorthandText(normalizedText);
+  const unknownShorthand = getUnknownShorthandToken(expandedText);
+  if (unknownShorthand && parseReminderDueAt(expandedText)) {
+    pendingShorthandMeaningsByChannel.set(channelKey, {
+      token: unknownShorthand,
+      originalText: normalizedText,
+      hints,
+    });
+    return buildAssistantResponse(`What does ${unknownShorthand} mean?`);
+  }
+
   const pendingResolution = await maybeResolvePendingIntent(normalizedText, context);
   if (pendingResolution?.clarification) {
     return pendingResolution.clarification;

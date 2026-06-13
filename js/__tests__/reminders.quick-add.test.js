@@ -247,3 +247,21 @@ test('quick add with weekday range fills edit reminder date and time fields', as
   expect(document.getElementById('reminderTime').value).toBe('15:30');
   expect(item.title).toBe('Archer Basketball');
 });
+
+test('quick add expands known teacher shorthand before saving reminder', async () => {
+  const quickInput = document.getElementById('reminderQuickAdd');
+  quickInput.value = 'next wednesday CC NR8 8:30';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  const item = items[0];
+
+  const expected = new Date();
+  expected.setDate(expected.getDate() + 7);
+  expected.setHours(8, 30, 0, 0);
+
+  expect(item.title).toBe('Classroom conversation with Year 8 Noria');
+  expect(item.due).toBe(expected.toISOString());
+});

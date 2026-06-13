@@ -13,6 +13,7 @@ import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
 import { generateEmbedding } from '../brain/embeddingService.js';
 import { buildRagAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 import { replaceInboxEntries } from '../services/inboxService.js';
+import { resolveShorthandText } from '../services/patternLearningService.js';
 import { getMessages, replaceMessages } from '../chat/messageStore.js';
 import { createReminderFirestoreSync } from './reminderFirestoreSync.js';
 import { createReminderFormHandlers } from './reminderFormHandlers.js';
@@ -2331,7 +2332,7 @@ export async function initReminders(sel = {}) {
 
     try {
       const routed = parseQuickAddPrefixRoute(t);
-      const routedText = routed.text || t;
+      const routedText = resolveShorthandText(routed.text || t);
       const inferredSchedule = hasStructuredReminderPayload
         ? { dueDate: null, notifyAt: null, cleanedText: routedText }
         : parseReminderScheduleFromText(routedText);

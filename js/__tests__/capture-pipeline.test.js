@@ -37,6 +37,16 @@ function loadCapturePipeline(overrides = {}) {
     saveInboxEntry: overrides.saveInboxEntry || (async (payload) => payload),
     buildMemoryAssistantRequest: overrides.buildMemoryAssistantRequest || (() => ({})),
     requestAssistantChat: overrides.requestAssistantChat || (async () => ({ reply: '' })),
+    resolveShorthandText: overrides.resolveShorthandText || ((value) => value),
+    getUnknownShorthandToken: overrides.getUnknownShorthandToken || (() => null),
+    rememberShorthand: overrides.rememberShorthand || (() => null),
+    intentRouter: overrides.intentRouter || (() => ({
+      payload: {
+        decisionType: 'persist_inbox',
+        parsedType: 'unknown',
+        parsedEntry: { type: 'unknown', title: '' },
+      },
+    })),
   });
 
   new vm.Script(source, { filename: filePath }).runInContext(context);
@@ -73,5 +83,74 @@ test('capture pipeline parses weekday time ranges and cleans reminder titles', a
   expected.setHours(15, 30, 0, 0);
 
   expect(createdReminders[0].text).toBe('Archer Basketball');
+  expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+});
+
+test('capture pipeline expands known shorthand into a dated reminder', async () => {
+  const createdReminders = [];
+  const { captureInput } = loadCapturePipeline({
+    createReminder: async (payload = {}) => {
+      createdReminders.push(payload);
+      return { id: 'reminder-1', ...payload };
+    },
+    resolveShorthandText: (value) => String(value || '')
+      .replace(/\bCC\b/g, 'Classroom conversation with')
+      .replace(/\bNR8\b/g, 'Year 8 Noria'),
+  });
+
+  const result = await captureInput({
+    text: 'next wednesday CC NR8 8:30',
+    source: 'capture',
+  });
+
+  const expected = new Date();
+  expected.setDate(expected.getDate() + 7);
+  expected.setHours(8, 30, 0, 0);
+
+  expect(result.message).toBe('Reminder created.');
+  expect(createdReminders).toHaveLength(1);
+  expect(createdReminders[0].text).toBe('Classroom conversation with Year 8 Noria');
+  expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+});
+
+test('capture pipeline asks about unknown shorthand then remembers the answer', async () => {
+  const learned = {};
+  const createdReminders = [];
+  const { captureInput } = loadCapturePipeline({
+    createReminder: async (payload = {}) => {
+      createdReminders.push(payload);
+      return { id: 'reminder-1', ...payload };
+    },
+    resolveShorthandText: (value) => String(value || '')
+      .replace(/\bCC\b/g, 'Classroom conversation with')
+      .replace(/\bY8N\b/g, learned.Y8N || 'Y8N'),
+    getUnknownShorthandToken: (value) => (/\bY8N\b/.test(String(value || '')) ? 'Y8N' : null),
+    rememberShorthand: (phrase, expansion) => {
+      learned[phrase] = expansion;
+      return { phrase, expansion };
+    },
+  });
+
+  const clarification = await captureInput({
+    text: 'next wednesday CC Y8N 8:30',
+    source: 'capture',
+  });
+
+  expect(clarification.message).toBe('What does Y8N mean?');
+  expect(createdReminders).toHaveLength(0);
+
+  const result = await captureInput({
+    text: 'Year 8 Noria',
+    source: 'capture',
+  });
+
+  const expected = new Date();
+  expected.setDate(expected.getDate() + 7);
+  expected.setHours(8, 30, 0, 0);
+
+  expect(learned.Y8N).toBe('Year 8 Noria');
+  expect(result.message).toBe('Got it - I will remember Y8N means "Year 8 Noria". Reminder created.');
+  expect(createdReminders).toHaveLength(1);
+  expect(createdReminders[0].text).toBe('Classroom conversation with Year 8 Noria');
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
 });

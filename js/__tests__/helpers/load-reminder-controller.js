@@ -218,6 +218,9 @@ function createReminderMocks(overrides = {}) {
     generateEmbedding: overrides.generateEmbedding || (async () => null),
     buildRagAssistantRequest: overrides.buildRagAssistantRequest || (() => ({})),
     requestAssistantChat: overrides.requestAssistantChat || (async () => ({ reply: '' })),
+    resolveShorthandText: overrides.resolveShorthandText || ((value) => String(value || '')
+      .replace(/\bCC\b/g, 'Classroom conversation with')
+      .replace(/\bNR8\b/g, 'Year 8 Noria')),
     replaceInboxEntries: overrides.replaceInboxEntries || (() => {}),
     getMessages: overrides.getMessages || (() => []),
     replaceMessages: overrides.replaceMessages || (() => {}),
