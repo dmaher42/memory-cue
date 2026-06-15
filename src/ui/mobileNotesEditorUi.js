@@ -87,6 +87,9 @@ export const initMobileNotesEditorUi = (options = {}) => {
         ? getCurrentEditingNoteFolderId()
         : 'everyday';
     const currentNoteId = getCurrentNoteId();
+    // A local-only save (autosave) hasn't reached Firestore yet, so flag it so a remote
+    // snapshot won't revert it. A save that also pushes to remote clears the flag.
+    const pendingSync = Boolean(saveOptions.skipRemoteSync);
 
     if (currentNoteId) {
       const noteIndex = notesArray.findIndex((note) => note.id === currentNoteId);
@@ -99,12 +102,14 @@ export const initMobileNotesEditorUi = (options = {}) => {
           bodyText: noteBodyText,
           updatedAt: timestamp,
           folderId: normalizedFolderId,
+          pendingSync,
         };
       } else {
         const newNote = createNote(sanitizedTitle, noteBodyHtml, {
           updatedAt: timestamp,
           folderId: normalizedFolderId,
           bodyText: noteBodyText,
+          pendingSync,
         });
         setCurrentNoteId(newNote.id);
         notesArray.unshift(newNote);
@@ -113,6 +118,7 @@ export const initMobileNotesEditorUi = (options = {}) => {
       const newNote = createNote(sanitizedTitle, noteBodyHtml, {
         folderId: normalizedFolderId,
         bodyText: noteBodyText,
+        pendingSync,
       });
       setCurrentNoteId(newNote.id);
       notesArray.unshift(newNote);
@@ -183,6 +189,30 @@ export const initMobileNotesEditorUi = (options = {}) => {
     }
   }, AUTOSAVE_DELAY);
 
+  // Persist any pending autosave immediately (used before switching/closing notes so the
+  // debounced save can't fire later against a different note and lose the current edits).
+  // The save stays local-only (marked pendingSync); the sync layer propagates it to
+  // Firestore on the next pull so a remote snapshot can't revert it in the meantime.
+  const flushAutoSave = () => {
+    try {
+      if (typeof debouncedAutoSave.cancel === 'function') {
+        debouncedAutoSave.cancel();
+      }
+      if (getCurrentNoteIsNew() && !getCurrentNoteHasChanged()) {
+        return;
+      }
+      if (!hasUnsavedChanges()) return;
+      if (saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
+        persistCurrentNote({
+          refreshAfterSave: false,
+          saveOptions: { skipNotesUpdatedEvent: true, skipRemoteSync: true },
+        });
+      }
+    } catch {
+      /* ignore autosave errors */
+    }
+  };
+
   const handleNoteEditorInput = () => {
     if (getCurrentNoteIsNew()) {
       if (!hasMeaningfulContent()) {
@@ -210,9 +240,9 @@ export const initMobileNotesEditorUi = (options = {}) => {
     scratchNotesEditorElement?.addEventListener('keydown', handleListShortcuts);
     scratchNotesEditorElement?.addEventListener('keydown', handleFormattingShortcuts);
     scratchNotesEditorElement?.addEventListener('blur', () => {
-      debouncedAutoSave();
+      flushAutoSave();
     });
-    titleInput?.addEventListener('blur', () => debouncedAutoSave());
+    titleInput?.addEventListener('blur', () => flushAutoSave());
   } catch {
     /* ignore */
   }
@@ -232,5 +262,6 @@ export const initMobileNotesEditorUi = (options = {}) => {
   return {
     openNoteEditorForNewNote,
     startNewNoteFromUI,
+    flushAutoSave,
   };
 };

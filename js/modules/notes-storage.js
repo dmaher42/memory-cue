@@ -377,6 +377,9 @@ export const createNote = (title, bodyHtml, overrides = {}) => {
     bodyHtml: normalizedBodyHtml,
     bodyText: normalizedBodyText,
     pinned: typeof overrides.pinned === 'boolean' ? overrides.pinned : false,
+    // True when this note has local edits that have not yet been pushed to Firestore.
+    // Used by the sync layer to avoid a remote snapshot reverting unsynced local edits.
+    pendingSync: typeof overrides.pendingSync === 'boolean' ? overrides.pendingSync : false,
     createdAt:
       overrides.createdAt && isValidDateString(overrides.createdAt)
         ? overrides.createdAt
@@ -426,6 +429,7 @@ const normalizeNotes = (value) => {
           bodyHtml: body,
           bodyText,
           pinned,
+          pendingSync: typeof note.pendingSync === 'boolean' ? note.pendingSync : false,
           semanticEmbedding: normalizeSemanticEmbedding(note.semanticEmbedding),
           keywords: deriveKeywords(title, bodyText, note.keywords),
           metadata: sanitizeMetadata(note.metadata),
@@ -460,6 +464,7 @@ const normalizeNotes = (value) => {
         bodyHtml: body,
         bodyText,
         pinned,
+        pendingSync: typeof value.pendingSync === 'boolean' ? value.pendingSync : false,
         semanticEmbedding: normalizeSemanticEmbedding(value.semanticEmbedding),
         keywords: deriveKeywords(title, bodyText, value.keywords),
         metadata: sanitizeMetadata(value.metadata),
@@ -547,6 +552,7 @@ export const saveAllNotes = (notes, options = {}) => {
     if (out) {
       out.folderId = typeof note.folderId === 'string' && note.folderId ? note.folderId : out.folderId || null;
       out.pinned = typeof note.pinned === 'boolean' ? note.pinned : Boolean(out.pinned);
+      out.pendingSync = typeof note.pendingSync === 'boolean' ? note.pendingSync : Boolean(out.pendingSync);
       out.createdAt = isValidDateString(note.createdAt) ? note.createdAt : out.createdAt;
       out.semanticEmbedding = normalizeSemanticEmbedding(note.semanticEmbedding);
       out.keywords = deriveKeywords(out.title, out.bodyText, note.keywords || out.keywords);

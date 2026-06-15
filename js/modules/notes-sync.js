@@ -63,6 +63,51 @@ const toTimestamp = (value) => {
   return 0;
 };
 
+// Merge a remote notes snapshot into the local cache without losing unsynced local edits.
+//   - present in both: the newer updatedAt wins, but a local note flagged pendingSync is
+//     kept when it is at least as new (its edits have not reached Firestore yet).
+//   - remote only: added (created/edited on another device).
+//   - local only: kept ONLY if pendingSync (a local create/edit not yet pushed). Otherwise it
+//     was deleted on another device and must not be resurrected.
+export const mergeRemoteIntoLocal = (localNotes = [], remoteNotes = []) => {
+  const localById = new Map();
+  (Array.isArray(localNotes) ? localNotes : []).forEach((note) => {
+    if (note && note.id != null) {
+      localById.set(String(note.id), note);
+    }
+  });
+
+  const remoteById = new Map();
+  (Array.isArray(remoteNotes) ? remoteNotes : []).forEach((note) => {
+    if (note && note.id != null) {
+      remoteById.set(String(note.id), note);
+    }
+  });
+
+  const merged = [];
+
+  remoteById.forEach((remoteNote, id) => {
+    const localNote = localById.get(id);
+    if (
+      localNote
+      && localNote.pendingSync
+      && toTimestamp(localNote.updatedAt) >= toTimestamp(remoteNote.updatedAt)
+    ) {
+      merged.push(localNote);
+    } else {
+      merged.push(remoteNote);
+    }
+  });
+
+  localById.forEach((localNote, id) => {
+    if (!remoteById.has(id) && localNote.pendingSync) {
+      merged.push(localNote);
+    }
+  });
+
+  return merged;
+};
+
 export const initNotesSync = (options = {}) => {
   const {
     onRemotePull = null,
@@ -100,21 +145,24 @@ export const initNotesSync = (options = {}) => {
       ? remoteNotes.map((note) => mapRemoteNote(note)).filter(Boolean)
       : [];
 
+    const localNotes = loadAllNotes();
+    const merged = mergeRemoteIntoLocal(localNotes, normalized);
+
     isApplyingRemote = true;
-    const saved = saveAllNotes(normalized, { skipRemoteSync: true });
+    const saved = saveAllNotes(merged, { skipRemoteSync: true });
     if (saved && normalized.length) {
       await syncFirestoreMemoriesToLocalCache(normalized);
     }
     isApplyingRemote = false;
 
     if (!saved) {
-      console.warn('[notes-sync] Unable to replace local notes cache from Firebase.');
+      console.warn('[notes-sync] Unable to merge local notes cache from Firebase.');
     }
 
     if (typeof onRemotePull === 'function') {
       try {
         onRemotePull({
-          mergedCount: normalized.length,
+          mergedCount: merged.length,
           remoteCount: normalized.length,
           ...meta,
         });
@@ -165,6 +213,14 @@ export const initNotesSync = (options = {}) => {
         return;
       }
       await applyRemoteNotes(normalized, { source: 'pull' });
+
+      // Propagate any local-only edits (autosaves) that survived the merge but have not yet
+      // reached Firestore. Pushing clears their pendingSync flag.
+      const mergedNotes = loadAllNotes();
+      if (Array.isArray(mergedNotes) && mergedNotes.some((note) => note?.pendingSync)) {
+        logDebug('[notes-sync] Pushing notes with unsynced local edits');
+        await syncNotes(mergedNotes);
+      }
     } catch (error) {
       console.error('[notes-sync] Failed to sync notes with Firebase.', error);
     } finally {

@@ -315,7 +315,9 @@ const parseExplicitReminderDate = (normalizedText, now) => {
     const monthIndex = MONTH_NAME_TO_INDEX[dayMonthMatch[2]];
     const year = dayMonthMatch[3] ? Number.parseInt(dayMonthMatch[3], 10) : now.getFullYear();
     const timeRange = parseReminderTimeRangeFromText(normalizedText);
-    const timeParts = timeRange?.start || extractTimeParts(normalizedText);
+    // Strip the matched date (e.g. "5 March 2026") before reading a compact time so the
+    // four-digit year is not mistaken for an HHMM time (e.g. "2026" -> 20:26).
+    const timeParts = timeRange?.start || extractTimeParts(normalizedText.replace(dayMonthMatch[0], ' '));
     const candidate = buildCandidate(year, monthIndex, day, timeParts);
     if (candidate) {
       return toIsoString(candidate);
@@ -328,7 +330,8 @@ const parseExplicitReminderDate = (normalizedText, now) => {
     const day = Number.parseInt(monthDayMatch[2], 10);
     const year = monthDayMatch[3] ? Number.parseInt(monthDayMatch[3], 10) : now.getFullYear();
     const timeRange = parseReminderTimeRangeFromText(normalizedText);
-    const timeParts = timeRange?.start || extractTimeParts(normalizedText);
+    // Strip the matched date before reading a compact time (see note above).
+    const timeParts = timeRange?.start || extractTimeParts(normalizedText.replace(monthDayMatch[0], ' '));
     const candidate = buildCandidate(year, monthIndex, day, timeParts);
     if (candidate) {
       return toIsoString(candidate);

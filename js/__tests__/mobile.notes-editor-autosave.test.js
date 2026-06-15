@@ -217,3 +217,91 @@ test('autosave persists without running the full manual save refresh path', () =
   }));
   expect(notes[0].bodyText).toBe('Updated body while typing');
 });
+
+test('flushAutoSave persists pending edits immediately so switching notes does not lose them', () => {
+  const { initMobileNotesEditorUi } = loadMobileNotesEditorUi();
+  const titleInput = document.getElementById('noteTitleMobile');
+  const editor = document.getElementById('notebook-editor-body');
+  const saveButton = document.getElementById('noteSaveMobile');
+
+  let currentNoteId = 'note-1';
+  let currentNoteIsNew = false;
+  let currentNoteHasChanged = false;
+  let saveCount = 0;
+  let notes = [
+    {
+      id: 'note-1',
+      title: 'Existing note',
+      body: 'Old body',
+      bodyHtml: 'Old body',
+      bodyText: 'Old body',
+      updatedAt: 'earlier',
+      folderId: 'everyday',
+    },
+  ];
+
+  const { flushAutoSave } = initMobileNotesEditorUi({
+    saveButton,
+    titleInput,
+    scratchNotesEditorElement: editor,
+    debounce: (fn, delay = 0) => {
+      let timeoutId;
+      const debounced = (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => { timeoutId = null; fn(...args); }, delay);
+      };
+      debounced.cancel = () => {
+        if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+      };
+      return debounced;
+    },
+    createNote: (title, bodyHtml, overrides = {}) => ({
+      id: overrides.id || 'note-1',
+      title: title || 'Untitled note',
+      body: bodyHtml || '',
+      bodyHtml: bodyHtml || '',
+      bodyText: overrides.bodyText || bodyHtml || '',
+      updatedAt: overrides.updatedAt || 'now',
+      folderId: overrides.folderId || 'everyday',
+    }),
+    loadAllNotes: () => notes,
+    saveAllNotes: (nextNotes) => { notes = nextNotes; saveCount += 1; return true; },
+    getEditorBodyHtml: () => editor.innerHTML,
+    getEditorBodyText: () => editor.textContent || '',
+    getCurrentNoteId: () => currentNoteId,
+    setCurrentNoteId: (value) => { currentNoteId = value; },
+    getCurrentFolderId: () => 'all',
+    getCurrentEditingNoteFolderId: () => 'everyday',
+    setCurrentEditingNoteFolderId: () => {},
+    getCurrentNoteIsNew: () => currentNoteIsNew,
+    setCurrentNoteIsNew: (value) => { currentNoteIsNew = value; },
+    getCurrentNoteHasChanged: () => currentNoteHasChanged,
+    setCurrentNoteHasChanged: (value) => { currentNoteHasChanged = value; },
+    hasMeaningfulContent: () => Boolean(titleInput.value.trim() || editor.textContent.trim()),
+    hasUnsavedChanges: () => editor.innerHTML !== (editor.dataset.noteOriginalBody ?? 'Old body'),
+    resetEditorScroll: () => {},
+    setEditorValues: () => {},
+    updateListSelection: () => {},
+    updateStoredSnapshot: () => {},
+    refreshFromStorage: () => {},
+    syncNoteFolderButtonLabel: () => {},
+    updateToolbarState: () => {},
+    handleListShortcuts: () => {},
+    handleFormattingShortcuts: () => {},
+  });
+
+  editor.dataset.noteOriginalBody = 'Old body';
+  editor.innerHTML = 'Edited right before switching';
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+  // Simulate switching to another note within the 1.5s autosave window.
+  flushAutoSave();
+
+  // The outgoing note's edits were persisted synchronously, not dropped.
+  expect(saveCount).toBe(1);
+  expect(notes[0].bodyText).toBe('Edited right before switching');
+
+  // The queued debounced autosave was cancelled, so no stale duplicate fires.
+  jest.advanceTimersByTime(1500);
+  expect(saveCount).toBe(1);
+});

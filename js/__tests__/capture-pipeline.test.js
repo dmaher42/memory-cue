@@ -154,3 +154,49 @@ test('capture pipeline asks about unknown shorthand then remembers the answer', 
   expect(createdReminders[0].text).toBe('Classroom conversation with Year 8 Noria');
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
 });
+
+test('capture pipeline does not read a four-digit year as a time', async () => {
+  const createdReminders = [];
+  const { captureInput } = loadCapturePipeline({
+    createReminder: async (payload = {}) => {
+      createdReminders.push(payload);
+      return { id: 'reminder-1', ...payload };
+    },
+  });
+
+  const result = await captureInput({
+    text: '! Dentist on 5 March 2026',
+    source: 'capture',
+  });
+
+  // No explicit time given, so it should default to 09:00 rather than 20:26 (from "2026").
+  const expected = new Date();
+  expected.setFullYear(2026, 2, 5);
+  expected.setHours(9, 0, 0, 0);
+
+  expect(result.message).toBe('Reminder created.');
+  expect(createdReminders).toHaveLength(1);
+  expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+});
+
+test('capture pipeline keeps an explicit time alongside a four-digit year', async () => {
+  const createdReminders = [];
+  const { captureInput } = loadCapturePipeline({
+    createReminder: async (payload = {}) => {
+      createdReminders.push(payload);
+      return { id: 'reminder-1', ...payload };
+    },
+  });
+
+  await captureInput({
+    text: '! Dentist on 5 March 2026 at 1430',
+    source: 'capture',
+  });
+
+  const expected = new Date();
+  expected.setFullYear(2026, 2, 5);
+  expected.setHours(14, 30, 0, 0);
+
+  expect(createdReminders).toHaveLength(1);
+  expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+});

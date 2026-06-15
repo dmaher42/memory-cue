@@ -2055,18 +2055,28 @@ const initMobileNotes = () => {
 
   const debounce = (fn, delay = 200) => {
     let timeoutId;
-    return (...args) => {
+    const debounced = (...args) => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
       timeoutId = setTimeout(() => {
+        timeoutId = null;
         fn(...args);
       }, delay);
     };
+    debounced.cancel = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+    return debounced;
   };
 
   let currentNoteId = null;
   let currentTeacherView = 'plan';
+  // Assigned from initMobileNotesEditorUi() below; flushes a pending autosave before a note switch.
+  let flushNoteAutoSave = () => {};
   let currentNoteIsNew = false;
   let currentNoteHasChanged = false;
   let allNotes = [];
@@ -2316,6 +2326,12 @@ const initMobileNotes = () => {
     if (note && currentNoteId === note.id && !isNew && nextTeacherView === currentTeacherView && !force) {
       renderRelatedNotes(note);
       return;
+    }
+    // Switching to a different note (or clearing the editor): persist the outgoing note's
+    // pending edits now, before its content is replaced, so a debounced autosave can't fire
+    // later against the new note and silently drop the previous note's changes.
+    if (currentNoteId && (!note || note.id !== currentNoteId)) {
+      flushNoteAutoSave();
     }
     if (!note) {
       currentTeacherView = 'plan';
@@ -3436,6 +3452,7 @@ const initMobileNotes = () => {
   const {
     openNoteEditorForNewNote,
     startNewNoteFromUI,
+    flushAutoSave: editorFlushAutoSave,
   } = initMobileNotesEditorUi({
     saveButton,
     titleInput,
@@ -3478,6 +3495,10 @@ const initMobileNotes = () => {
     handleListShortcuts,
     handleFormattingShortcuts,
   });
+
+  if (typeof editorFlushAutoSave === 'function') {
+    flushNoteAutoSave = editorFlushAutoSave;
+  }
 
   updateToolbarState();
   applyInitialSelection();

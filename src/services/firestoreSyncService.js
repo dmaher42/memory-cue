@@ -20,6 +20,19 @@ const SYNC_EVENTS = Object.freeze({
 });
 
 const normalizeUid = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const toTimestamp = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return 0;
+};
 const INBOX_SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
 
 const normalizeInboxSource = (value) => {
@@ -220,7 +233,19 @@ const reconcileCollection = async ({
   }
 
   const remoteItems = await readRemoteCollection(collectionName, { uid: resolvedUid, orderField });
-  await Promise.all(localItems.map((item) => (
+  const remoteNormalized = Array.isArray(remoteItems)
+    ? remoteItems.map((item) => normalizeItem(item)).filter(Boolean)
+    : [];
+  const remoteById = new Map(remoteNormalized.map((item) => [String(item.id), item]));
+
+  // Only push local items that are new or at least as recent as the remote copy, so a stale
+  // local item can't overwrite a newer edit made on another device.
+  const itemsToPush = localItems.filter((item) => {
+    const remote = remoteById.get(String(item.id));
+    return !remote || toTimestamp(item[orderField]) >= toTimestamp(remote[orderField]);
+  });
+
+  await Promise.all(itemsToPush.map((item) => (
     firebase.setDoc(
       firebase.doc(firebase.db, 'users', resolvedUid, collectionName, requireUid(item.id)),
       item,
@@ -228,8 +253,19 @@ const reconcileCollection = async ({
     )
   )));
 
-  writeLocal(localKey, localItems);
-  return localItems;
+  // Merge remote into local (newest wins) so a push never drops items that exist only on
+  // another device, instead of overwriting the local cache with local-only data.
+  const mergedById = new Map(remoteById);
+  localItems.forEach((item) => {
+    const remote = remoteById.get(String(item.id));
+    if (!remote || toTimestamp(item[orderField]) >= toTimestamp(remote[orderField])) {
+      mergedById.set(String(item.id), item);
+    }
+  });
+
+  const merged = Array.from(mergedById.values());
+  writeLocal(localKey, merged);
+  return merged;
 };
 
 const deleteCollectionItem = async ({

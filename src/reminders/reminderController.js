@@ -3329,6 +3329,20 @@ export async function initReminders(sel = {}) {
   let currentReminderId = null;
   const reminderTimers = {};
   const reminderNotifyTimers = {};
+  // setTimeout uses a signed 32-bit delay; anything larger overflows and fires almost
+  // immediately. Cap at the max and re-arm in chunks for far-future reminders.
+  const MAX_TIMEOUT_DELAY = 2147483647; // ~24.8 days
+  function setLongTimeout(timerMap, key, delay, callback){
+    const remaining = Math.max(0, delay);
+    if(remaining <= MAX_TIMEOUT_DELAY){
+      timerMap[key] = setTimeout(callback, remaining);
+      return;
+    }
+    // Store the live handle each chunk so clearTimeout(timerMap[key]) still cancels it.
+    timerMap[key] = setTimeout(() => {
+      setLongTimeout(timerMap, key, remaining - MAX_TIMEOUT_DELAY, callback);
+    }, MAX_TIMEOUT_DELAY);
+  }
   let scheduledReminders = {};
   const reminderSheetTitle =
     typeof document !== 'undefined'
@@ -5363,9 +5377,9 @@ export async function initReminders(sel = {}) {
     const useTriggers = supportsNotificationTriggers();
     if(Number.isFinite(notifyTime) && notifyTime > Date.now() && notifyTime < dueTime){
       const notifyDelay = notifyTime - Date.now();
-      reminderNotifyTimers[item.id] = setTimeout(() => {
+      setLongTimeout(reminderNotifyTimers, item.id, notifyDelay, () => {
         showReminder({ ...item, due: scheduleIso });
-      }, notifyDelay);
+      });
     }
     if(useTriggers){
       stored.viaTrigger = false;
@@ -5376,12 +5390,12 @@ export async function initReminders(sel = {}) {
         }
       });
     }
-    reminderTimers[item.id]=setTimeout(()=>{
+    setLongTimeout(reminderTimers, item.id, delay, () => {
       if(useTriggers){
         cancelTriggerNotification(item.id);
       }
       handleReminderTriggered({ ...item, due: scheduleIso });
-    }, delay);
+    });
   }
   function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
 

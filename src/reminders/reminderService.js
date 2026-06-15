@@ -296,7 +296,9 @@ const parseReminderSchedule = (payload = {}) => {
     const monthIndex = REMINDER_MONTH_NAME_TO_INDEX[dayMonthMatch[2]];
     const day = Number.parseInt(dayMonthMatch[1], 10);
     const year = dayMonthMatch[3] ? Number.parseInt(dayMonthMatch[3], 10) : now.getFullYear();
-    const candidate = buildCandidate(year, monthIndex, day, timeRange?.start || parseReminderTimeParts(normalized));
+    // Strip the matched date (e.g. "5 March 2026") before reading a compact time so the
+    // four-digit year is not mistaken for an HHMM time (e.g. "2026" -> 20:26).
+    const candidate = buildCandidate(year, monthIndex, day, timeRange?.start || parseReminderTimeParts(normalized.replace(dayMonthMatch[0], ' ')));
     if (candidate) {
       dueDate = candidate;
     }
@@ -308,7 +310,8 @@ const parseReminderSchedule = (payload = {}) => {
       const monthIndex = REMINDER_MONTH_NAME_TO_INDEX[monthDayMatch[1]];
       const day = Number.parseInt(monthDayMatch[2], 10);
       const year = monthDayMatch[3] ? Number.parseInt(monthDayMatch[3], 10) : now.getFullYear();
-      const candidate = buildCandidate(year, monthIndex, day, timeRange?.start || parseReminderTimeParts(normalized));
+      // Strip the matched date before reading a compact time (see note above).
+      const candidate = buildCandidate(year, monthIndex, day, timeRange?.start || parseReminderTimeParts(normalized.replace(monthDayMatch[0], ' ')));
       if (candidate) {
         dueDate = candidate;
       }
