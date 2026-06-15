@@ -81,7 +81,6 @@ function compareRemindersForDisplay(a, b) {
 const ACTIVITY_EVENT_NAME = 'memoryCue:activity';
 const activeNotifications = new Map();
 let notificationCleanupBound = false;
-const SERVICE_WORKER_SCRIPT = 'service-worker.js';
 const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
 const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
   updateScheduledReminders: 'memoryCue:updateScheduledReminders',
@@ -318,17 +317,6 @@ function supportsNotificationTriggers() {
   if (typeof ServiceWorkerRegistration === 'undefined') return false;
   if (typeof ServiceWorkerRegistration.prototype?.showNotification !== 'function') return false;
   return !!getTimestampTriggerCtor();
-}
-
-function resolveServiceWorkerUrl() {
-  if (typeof window === 'undefined' || !window.location) {
-    return SERVICE_WORKER_SCRIPT;
-  }
-  try {
-    return new URL(SERVICE_WORKER_SCRIPT, window.location.href).href;
-  } catch {
-    return SERVICE_WORKER_SCRIPT;
-  }
 }
 
 async function ensureServiceWorkerRegistration() {

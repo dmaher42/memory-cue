@@ -243,7 +243,6 @@ async function buildScripts() {
 async function copyStatic() {
   const filesToCopy = [
     { source: 'manifest.webmanifest' },
-    { source: 'service-worker.js' },
     { source: 'service-worker-v3.js' },
     { source: '404.html' },
     { source: 'index.html' },
@@ -262,7 +261,7 @@ async function copyStatic() {
     }
   }
 
-  const directories = ['icons', 'styles', 'css', 'js', 'memory'];
+  const directories = ['icons', 'styles', 'css', 'js'];
   for (const dir of directories) {
     const source = path.join(rootDir, dir);
     try {
