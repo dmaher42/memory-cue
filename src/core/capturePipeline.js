@@ -1,5 +1,5 @@
 import { intentRouter } from '../services/intentRouter.js';
-import { saveMemory } from '../services/memoryService.js';
+import { createAndSaveNote } from '../../js/modules/notes-storage.js';
 import { createReminder } from '../services/reminderService.js';
 import { semanticSearch } from '../services/semanticSearchService.js';
 import { handleQuery } from '../brain/queryEngine.js';
@@ -725,10 +725,13 @@ const saveNoteMemory = async (text, decision, context) => {
     ? decision.parsedEntry.title.trim()
     : text.split(/\s+/).slice(0, 8).join(' ') || 'Captured note';
 
-  return saveMemory({
+  // Create a real notebook note so the capture is visible in the Notes screen.
+  // createAndSaveNote writes the notes store AND mirrors to the memory layer for search,
+  // unlike saveMemory which only wrote the (invisible) semantic-memory cache.
+  return createAndSaveNote({
     text,
     title,
-    type: 'note',
+    parsedType: 'note',
     source: context.source,
     entryPoint: context.entryPoint,
     tags: Array.isArray(decision?.parsedEntry?.tags) ? decision.parsedEntry.tags : [],

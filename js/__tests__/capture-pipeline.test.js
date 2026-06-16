@@ -31,6 +31,7 @@ function loadCapturePipeline(overrides = {}) {
     JSON,
     Boolean,
     saveMemory: overrides.saveMemory || (async (payload) => payload),
+    createAndSaveNote: overrides.createAndSaveNote || (async (payload) => ({ id: 'note-1', ...payload })),
     createReminder: overrides.createReminder || (async (payload) => payload),
     semanticSearch: overrides.semanticSearch || (async () => []),
     handleQuery: overrides.handleQuery || (async () => ({})),
@@ -156,10 +157,10 @@ test('capture pipeline asks about unknown shorthand then remembers the answer', 
 });
 
 test('capture pipeline saves an unclassified capture as a visible note, not the invisible inbox', async () => {
-  const savedMemories = [];
+  const savedNotes = [];
   const savedInbox = [];
   const { captureInput } = loadCapturePipeline({
-    saveMemory: async (payload = {}) => { savedMemories.push(payload); return { id: 'note-1', ...payload }; },
+    createAndSaveNote: async (payload = {}) => { savedNotes.push(payload); return { id: 'note-1', ...payload }; },
     saveInboxEntry: async (payload = {}) => { savedInbox.push(payload); return payload; },
     // default intentRouter (above) routes ambiguous text to persist_inbox
   });
@@ -169,10 +170,11 @@ test('capture pipeline saves an unclassified capture as a visible note, not the 
     source: 'chat',
   });
 
+  // It must become a real note (visible in the Notes screen), not an inbox/memory entry.
   expect(result.message).toBe('Saved note.');
   expect(savedInbox).toHaveLength(0);
-  expect(savedMemories).toHaveLength(1);
-  expect(savedMemories[0].type).toBe('note');
+  expect(savedNotes).toHaveLength(1);
+  expect(savedNotes[0].parsedType).toBe('note');
 });
 
 test('capture pipeline does not read a four-digit year as a time', async () => {
