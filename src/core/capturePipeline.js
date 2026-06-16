@@ -659,9 +659,14 @@ const enrichReminderDecision = (decision, text) => {
   const parsedEntry = decision?.parsedEntry && typeof decision.parsedEntry === 'object'
     ? decision.parsedEntry
     : {};
-  const dueAt = typeof parsedEntry?.reminderDate === 'string' && parsedEntry.reminderDate.trim()
+  // Prefer the deterministic local date parser; only fall back to the AI's date when the
+  // local parser finds nothing. LLM date math is unreliable (e.g. resolving "tomorrow" to
+  // today), and the user's reminders must land at the right time.
+  const localDueAt = parseReminderDueAt(text);
+  const aiDueAt = typeof parsedEntry?.reminderDate === 'string' && parsedEntry.reminderDate.trim()
     ? parsedEntry.reminderDate.trim()
-    : parseReminderDueAt(text);
+    : null;
+  const dueAt = localDueAt || aiDueAt;
   const resolvedTitle = cleanReminderTitle(parsedEntry?.title || text);
   const missing = Array.isArray(decision?.missing)
     ? decision.missing.filter((value) => value !== 'dueAt')
