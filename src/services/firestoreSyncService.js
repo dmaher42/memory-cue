@@ -594,9 +594,20 @@ export const appendChatMessage = async (message, conversationId = 'default', opt
     return;
   }
 
-  const cached = mergeById([
-    ...readLocal(CHAT_KEY).map((item) => normalizeChatEntry(item, item?.conversationId || 'default')).filter(Boolean),
+  // Push ONLY this message to Firestore; do not rewrite the local cache here.
+  // The message is already cached locally (with pendingSync:true). Clearing that flag
+  // before the live snapshot has confirmed the message lets a stale snapshot treat it as
+  // deleted and erase it (a message vanishing right after it appears). Leaving the local
+  // copy untouched keeps it pending until the snapshot merge confirms it from the server.
+  const firebase = await getFirebaseContext();
+  const resolvedUid = resolveUid(options.uid);
+  if (!firebase || !resolvedUid) {
+    return;
+  }
+
+  await firebase.setDoc(
+    firebase.doc(firebase.db, 'users', resolvedUid, COLLECTIONS.chat, requireUid(entry.id)),
     entry,
-  ]);
-  await syncChatHistory(cached, options);
+    { merge: true },
+  );
 };

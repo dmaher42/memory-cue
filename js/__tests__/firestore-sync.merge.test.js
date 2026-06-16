@@ -73,3 +73,64 @@ test('a synced local item absent from remote is treated as deleted, not resurrec
   const merged = mergeRemoteWithLocal(local, [], 'createdAt');
   expect(merged).toHaveLength(0);
 });
+
+function loadServiceForAppend(overrides = {}) {
+  const filePath = path.resolve(__dirname, '../../src/services/firestoreSyncService.js');
+  let source = fs.readFileSync(filePath, 'utf8');
+  source = source
+    .replace(/^import[\s\S]*?;\s*$/mg, '')
+    .replace(/export\s+const\s+/g, 'const ')
+    .replace(/export\s+async\s+function\s+/g, 'async function ')
+    .replace(/export\s+function\s+/g, 'function ');
+  source += '\nmodule.exports = { appendChatMessage };\n';
+
+  const module = { exports: {} };
+  const context = vm.createContext({
+    module,
+    exports: module.exports,
+    console,
+    Date,
+    Number,
+    String,
+    Array,
+    Object,
+    Map,
+    Set,
+    Boolean,
+    JSON,
+    crypto: { randomUUID: () => 'generated-id' },
+    getFirebaseContext: overrides.getFirebaseContext,
+    requireUid: (value) => value,
+    localStorage: overrides.localStorage,
+    document: undefined,
+    window: undefined,
+    globalThis: {},
+  });
+
+  new vm.Script(source, { filename: filePath }).runInContext(context);
+  return module.exports.appendChatMessage;
+}
+
+test('appendChatMessage pushes one message and does NOT rewrite the local chat cache', async () => {
+  const setDocCalls = [];
+  const setItemKeys = [];
+  const appendChatMessage = loadServiceForAppend({
+    getFirebaseContext: async () => ({
+      db: {},
+      doc: (...args) => ({ args }),
+      setDoc: async (ref, data) => { setDocCalls.push(data); },
+    }),
+    localStorage: {
+      getItem: () => null,
+      setItem: (key) => { setItemKeys.push(key); },
+      removeItem: () => {},
+    },
+  });
+
+  await appendChatMessage({ id: 'm1', role: 'assistant', content: 'Saved note.' }, 'default', { uid: 'u1' });
+
+  expect(setDocCalls).toHaveLength(1);
+  expect(setDocCalls[0].id).toBe('m1');
+  // The local cache must be left untouched so the message keeps its pendingSync flag.
+  expect(setItemKeys).not.toContain('memoryCueChatHistory');
+});
