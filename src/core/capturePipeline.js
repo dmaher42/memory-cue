@@ -542,10 +542,25 @@ const getReminderLikeExpandedText = (text) => {
 };
 
 const parseEntry = async (text) => {
+  const requestBody = { text };
+  // Give the model the current time + timezone so it can resolve relative dates
+  // ("tomorrow", "next Friday"). The local parser remains the fallback for dates.
+  try {
+    requestBody.now = new Date().toISOString();
+    if (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function') {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        requestBody.timeZone = tz;
+      }
+    }
+  } catch {
+    /* ignore — the server defaults to UTC */
+  }
+
   const response = await fetch('/api/parse-entry', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
