@@ -3,7 +3,6 @@ import { saveMemory } from '../services/memoryService.js';
 import { createReminder } from '../services/reminderService.js';
 import { semanticSearch } from '../services/semanticSearchService.js';
 import { handleQuery } from '../brain/queryEngine.js';
-import { saveInboxEntry } from '../services/inboxService.js';
 import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
 import {
   getUnknownShorthandToken,
@@ -574,7 +573,7 @@ const resolveDecision = async (text, hints) => {
   try {
     parsedEntry = await parseEntry(text);
   } catch (error) {
-    console.warn('[capture] parse fallback failed, defaulting to inbox', error);
+    console.warn('[capture] parse fallback failed, saving as a note', error);
     parsedEntry = normalizeParsedEntry({ type: 'unknown', title: text }, text);
   }
 
@@ -994,20 +993,13 @@ export async function captureInput({
     }
     case 'persist_inbox':
     default: {
-      const inboxEntry = saveInboxEntry({
-        text: normalizedText,
-        source: context.source,
-        parsedType: decision?.parsedType || 'unknown',
-        tags: Array.isArray(decision?.parsedEntry?.tags) ? decision.parsedEntry.tags : [],
-        metadata: decision?.parsedEntry?.metadata && typeof decision.parsedEntry.metadata === 'object'
-          ? decision.parsedEntry.metadata
-          : {},
-        entryPoint: context.entryPoint,
-      });
+      // The inbox has no visible screen, so anything filed there silently disappears.
+      // Save ambiguous captures as a visible note instead so nothing is lost.
+      const memory = await saveNoteMemory(normalizedText, decision, context);
       return {
         decision,
-        data: inboxEntry,
-        message: 'Saved for later review.',
+        data: memory,
+        message: 'Saved note.',
       };
     }
   }

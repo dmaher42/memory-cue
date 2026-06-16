@@ -155,6 +155,26 @@ test('capture pipeline asks about unknown shorthand then remembers the answer', 
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
 });
 
+test('capture pipeline saves an unclassified capture as a visible note, not the invisible inbox', async () => {
+  const savedMemories = [];
+  const savedInbox = [];
+  const { captureInput } = loadCapturePipeline({
+    saveMemory: async (payload = {}) => { savedMemories.push(payload); return { id: 'note-1', ...payload }; },
+    saveInboxEntry: async (payload = {}) => { savedInbox.push(payload); return payload; },
+    // default intentRouter (above) routes ambiguous text to persist_inbox
+  });
+
+  const result = await captureInput({
+    text: 'some vague thought with no clear intent at all here',
+    source: 'chat',
+  });
+
+  expect(result.message).toBe('Saved note.');
+  expect(savedInbox).toHaveLength(0);
+  expect(savedMemories).toHaveLength(1);
+  expect(savedMemories[0].type).toBe('note');
+});
+
 test('capture pipeline does not read a four-digit year as a time', async () => {
   const createdReminders = [];
   const { captureInput } = loadCapturePipeline({
