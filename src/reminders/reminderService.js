@@ -379,28 +379,20 @@ export function createReminder(payload = {}, options = {}) {
     return null;
   }
 
-  const hasExplicitDue = typeof payload.dueAt === 'string' && payload.dueAt.trim()
-    || typeof payload.due === 'string' && payload.due.trim()
-    || payload.dueAt instanceof Date
-    || payload.due instanceof Date;
-  const resolvedDueAt = hasExplicitDue
-    ? (typeof payload.dueAt === 'string' && payload.dueAt.trim()
-      ? payload.dueAt.trim()
-      : typeof payload.due === 'string' && payload.due.trim()
-        ? payload.due.trim()
-        : payload.dueAt instanceof Date
-          ? payload.dueAt.toISOString()
-          : payload.due instanceof Date
-            ? payload.due.toISOString()
-            : null)
-    : schedule.dueAt;
-  const resolvedNotifyAt = hasExplicitDue
-    ? (typeof payload.notifyAt === 'string' && payload.notifyAt.trim()
-      ? payload.notifyAt.trim()
-      : payload.notifyAt instanceof Date
-        ? payload.notifyAt.toISOString()
-        : null)
-    : schedule.notifyAt;
+  // Accept an explicit due as an ISO string, a Date, OR epoch milliseconds. Callers such as
+  // buildReminderPayload normalize dueAt to a number; treating that as "no explicit due"
+  // previously dropped the parsed time and re-derived it from the date-stripped title.
+  const toDueIso = (value) => {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (value instanceof Date) return Number.isFinite(value.getTime()) ? value.toISOString() : null;
+    if (typeof value === 'number' && Number.isFinite(value)) return new Date(value).toISOString();
+    return null;
+  };
+  const explicitDueAt = toDueIso(payload.dueAt) || toDueIso(payload.due);
+  const explicitNotifyAt = toDueIso(payload.notifyAt);
+  const hasExplicitDue = Boolean(explicitDueAt);
+  const resolvedDueAt = hasExplicitDue ? explicitDueAt : schedule.dueAt;
+  const resolvedNotifyAt = hasExplicitDue ? explicitNotifyAt : schedule.notifyAt;
 
   const normalizeReminderRecord = typeof options.normalizeReminder === 'function' ? options.normalizeReminder : normalizeReminder;
   const createId = options.createId;
@@ -409,9 +401,9 @@ export function createReminder(payload = {}, options = {}) {
     ...payload,
     text: reminderText,
     title: reminderText,
-    dueAt: resolvedDueAt || payload.dueAt || payload.due || null,
-    due: resolvedDueAt || payload.dueAt || payload.due || null,
-    notifyAt: resolvedNotifyAt || payload.notifyAt || null,
+    dueAt: resolvedDueAt || null,
+    due: resolvedDueAt || null,
+    notifyAt: resolvedNotifyAt || null,
     id: typeof createId === 'function' ? createId() : payload.id,
     completed: false,
     pendingSync: !!options.pendingSync,

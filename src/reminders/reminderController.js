@@ -4681,34 +4681,27 @@ export async function initReminders(sel = {}) {
         ? payload.title.trim()
         : '';
     const parsedSchedule = sourceText ? parseReminderScheduleFromText(sourceText) : { dueDate: null, cleanedText: '' };
-    const hasExplicitDue = typeof payload?.dueAt === 'string' && payload.dueAt.trim()
-      || typeof payload?.due === 'string' && payload.due.trim()
-      || payload?.dueAt instanceof Date
-      || payload?.due instanceof Date;
+    // Accept an explicit due as an ISO string, a Date, OR epoch milliseconds.
+    // buildReminderPayload normalizes dueAt to a number before this runs, so the old
+    // string/Date-only check treated a correctly-parsed time as "no explicit due" and
+    // re-derived it from the date-stripped title, producing the wrong time.
+    const toDueIso = (value) => {
+      if (typeof value === 'string' && value.trim()) return value.trim();
+      if (value instanceof Date) return Number.isFinite(value.getTime()) ? value.toISOString() : null;
+      if (typeof value === 'number' && Number.isFinite(value)) return new Date(value).toISOString();
+      return null;
+    };
+    const explicitDueAt = toDueIso(payload?.dueAt) || toDueIso(payload?.due);
+    const explicitNotifyAt = toDueIso(payload?.notifyAt);
+    const hasExplicitDue = Boolean(explicitDueAt);
     const parsedDueAt = parsedSchedule.dueDate instanceof Date && Number.isFinite(parsedSchedule.dueDate.getTime())
       ? parsedSchedule.dueDate.toISOString()
       : null;
     const parsedNotifyAt = parsedSchedule.dueDate instanceof Date && Number.isFinite(parsedSchedule.dueDate.getTime())
       ? new Date(parsedSchedule.dueDate.getTime() - 10 * 60 * 1000).toISOString()
       : null;
-    const resolvedDueAt = hasExplicitDue
-      ? (typeof payload?.dueAt === 'string' && payload.dueAt.trim()
-        ? payload.dueAt.trim()
-        : typeof payload?.due === 'string' && payload.due.trim()
-          ? payload.due.trim()
-          : payload?.dueAt instanceof Date
-            ? payload.dueAt.toISOString()
-            : payload?.due instanceof Date
-              ? payload.due.toISOString()
-              : null)
-      : parsedDueAt;
-    const resolvedNotifyAt = hasExplicitDue
-      ? (typeof payload?.notifyAt === 'string' && payload.notifyAt.trim()
-        ? payload.notifyAt.trim()
-        : payload?.notifyAt instanceof Date
-          ? payload.notifyAt.toISOString()
-          : null)
-      : parsedNotifyAt;
+    const resolvedDueAt = hasExplicitDue ? explicitDueAt : parsedDueAt;
+    const resolvedNotifyAt = hasExplicitDue ? explicitNotifyAt : parsedNotifyAt;
     const cleanedTitle = parsedSchedule.cleanedText || stripReminderPromptPrefix(sourceText);
     const normalizedPayload = cleanedTitle && (resolvedDueAt || parsedDueAt)
       ? {
