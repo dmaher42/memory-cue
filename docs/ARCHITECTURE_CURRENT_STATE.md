@@ -5,7 +5,7 @@
 - **Mobile runtime (primary):** `mobile.html` loads `js/reminders.js` (module), `mobile.js` (module), and `js/assistant.js` for assistant form behavior.
 - **Legacy shell runtime:** `index.html` loads `state.js` and root `assistant.js`.
 - **Shared routing/navigation utilities:** `js/router.js` (hash-route toggling for legacy shell) and `js/navigation.js` (drawer/quick-add/global `app:navigate` handling in mobile contexts).
-- **Server endpoints:** `api/assistant.ts`, `api/chat.ts`, `api/search.ts`, and `api/capture.js`.
+- **Server endpoints (Cloudflare Pages Functions):** `functions/api/assistant-chat.ts`, `functions/api/parse-entry.js`, `functions/api/embed.ts`, and `functions/api/push-reminder-sync.js`. (The Vercel-era `api/assistant.ts`, `api/chat.ts`, `api/search.ts`, and `api/capture.js` endpoints have been removed.)
 
 ## 1) All capture entry points
 
@@ -15,6 +15,7 @@
 - FAB "new reminder" action dispatching `cue:prepare`/`cue:open`.
 - Inbox quick-actions "Create Reminder" and "Convert to Note" in `js/entries.js`.
 - Smart capture path in `mobile.js` (`sendAssistantMessage` flow) that classifies text and routes to assistant/reminder/inbox.
+- (The Vercel-era server capture endpoint `api/capture.js` has been removed.)
 
 ### Legacy capture entry points
 - `#captureInput` + `#captureButton` in `index.html` handled by root `assistant.js` (`initCaptureSave`).
@@ -42,17 +43,18 @@ Observed keys across runtime files:
 
 - **Primary offline reminder store:** `memoryCue:offlineReminders` in `js/reminders.js`.
 - **Scheduled notification mirror:** `scheduledReminders` in localStorage + service-worker syncing.
-- **Background reminder persistence:** IndexedDB in `service-worker.js` (`memory cue` reminder object store), used for scheduled notifications.
+- **Background reminder persistence:** IndexedDB in `service-worker-v3.js` (`memory cue` reminder object store), used for scheduled notifications.
 - **Inline mobile legacy/helper path:** `reminderEntries` in `mobile.html` inline script for category/inbox rendering.
 
 ## 4) All assistant endpoints
 
-- `POST /api/assistant` (intent detect + save/retrieve/search from memory-store).
-- `POST /api/chat` (LLM answer path using memory context + `/api/search` fallback).
-- `POST /api/search` (local ranked note retrieval).
+Live Cloudflare Pages Functions:
+- `POST /api/assistant-chat` (`functions/api/assistant-chat.ts`) — single assistant backend (intent + retrieval + LLM answer).
+- `POST /api/parse-entry` (`functions/api/parse-entry.js`) — capture/entry classification.
+- `POST /api/embed` (`functions/api/embed.ts`) — embeddings.
+- `POST /api/push-reminder-sync` (`functions/api/push-reminder-sync.js`) — reminder push sync.
 
-Related but capture-focused endpoint:
-- `POST /api/capture` (schemaVersion 2 capture classification and record creation).
+The Vercel-era `POST /api/assistant`, `POST /api/chat`, `POST /api/search`, and `POST /api/capture` endpoints have been removed.
 
 ## 5) All navigation mechanisms
 
@@ -64,8 +66,8 @@ Related but capture-focused endpoint:
 
 ## 6) Which files control each system
 
-- **Capture logic:** `mobile.js`, `js/reminders.js`, `js/entries.js`, root `assistant.js`, `api/capture.js`.
+- **Capture logic:** `mobile.js`, `js/reminders.js`, `js/entries.js`, root `assistant.js` (server endpoint `functions/api/parse-entry.js`).
 - **Note storage:** `js/modules/notes-storage.js`, plus conversion helpers in `mobile.js`, `js/reminders.js`, `js/entries.js`.
-- **Reminder storage:** `js/reminders.js` + `service-worker.js`.
-- **Assistant calls/UI:** `js/assistant.js`, `mobile.js`, `js/reminders.js`, root `assistant.js`; server side `api/assistant.ts`, `api/chat.ts`, `api/search.ts`.
+- **Reminder storage:** `js/reminders.js` + `service-worker-v3.js`.
+- **Assistant calls/UI:** `js/assistant.js`, `mobile.js`, `js/reminders.js`, root `assistant.js`; server side `functions/api/assistant-chat.ts`.
 - **Navigation switching:** `mobile.html` inline nav script, `mobile.js`, `js/navigation.js`, `js/router.js`, and sections in `js/entries.js`.

@@ -135,7 +135,7 @@ User taps Process Inbox in category panel (legacy script)
 ↓  
 Reads `reminderEntries` unprocessed entries  
 ↓  
-Posts to `/api/assistant` for classification/rewrite  
+Posts to the assistant endpoint (`functions/api/assistant-chat`) for classification/rewrite — note the old `/api/assistant` route this legacy script targeted has been removed  
 ↓  
 Writes processed state back to `reminderEntries`  
 ↓  

@@ -15,7 +15,7 @@ UI Layer
 - **Notes Service (`js/modules/notes-storage.js`)**: note CRUD and folder metadata.
 - **Reminders Service (`js/reminders.js`)**: reminder CRUD, scheduling, and service worker sync messaging.
 - **Assistant Service (`js/services/assistant-service.js`)**: single assistant UI controller and request orchestrator.
-- **Assistant API (`api/assistant-chat.ts`)**: single assistant backend endpoint.
+- **Assistant API (`functions/api/assistant-chat.ts`)**: single assistant backend endpoint (Cloudflare Pages Function).
 
 ## Data flow
 1. User captures text.
@@ -30,7 +30,7 @@ UI Layer
   - `reply`
   - `references`
   - `contextUsed`
-- Legacy `/api/assistant` and `/api/chat` remain as deprecated wrappers to `/api/assistant-chat`.
+- The legacy `/api/assistant` and `/api/chat` endpoints have been removed; `/api/assistant-chat` is the single backend endpoint.
 
 ## Storage layers
 - `localStorage.memoryCueInbox`: canonical inbox.
@@ -39,13 +39,13 @@ UI Layer
 - `sessionStorage.memoryCueAssistantConversation`: transient assistant conversation history.
 
 ## Service worker architecture
-- Single registration path via `js/register-service-worker.js`.
-- `service-worker.js` responsibilities:
+- Single registration path via `js/register-service-worker-v2.js`.
+- `service-worker-v3.js` responsibilities:
   - cache mobile app shell assets
   - store scheduled reminders in IndexedDB (`memory-cue-reminders`)
   - process reminder checks via `message`, `sync`, and `periodicsync`
   - display reminder notifications and route notification clicks back to `mobile.html`
 
 ## Legacy runtime
-- Legacy shell files are archived in `legacy/runtime/`.
+- The `legacy/` runtime dir has been removed from the repo.
 - `mobile.html` is the only active runtime entry point.

@@ -35,7 +35,7 @@ Use this skill whenever the target repo is Memory Cue or when the current folder
 - Mobile shell UI: `src/ui/mobileShellUi.js`
 - Mobile notebook shell UI: `src/ui/mobileNotesShellUi.js`
 - Notes storage: `js/modules/notes-storage.js`
-- Service worker and notifications: `service-worker.js`
+- Service worker and notifications: `service-worker-v3.js` (registered by `js/register-service-worker-v2.js`)
 
 Treat these as starting points. If a task touches one of these domains, open the canonical file first and only touch wrapper files when the live flow still passes through them.
 

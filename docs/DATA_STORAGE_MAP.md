@@ -21,7 +21,7 @@
 
 ## IndexedDB usage
 
-- `service-worker.js` opens IndexedDB for reminder scheduling persistence.
+- `service-worker-v3.js` opens IndexedDB for reminder scheduling persistence.
 - Database/store purpose: persist scheduled reminders for background notification trigger handling.
 - This IndexedDB layer is service-worker-owned and separate from localStorage `memoryCue:offlineReminders`.
 

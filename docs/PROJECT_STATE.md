@@ -87,10 +87,8 @@ GeolocationPositionError: Timeout expired
 
 ### Supabase
 
-[supabase] env not set — running local only
-
 - Supabase is no longer in active use
-- Safe to remove in future cleanup
+- Supabase residue has now been removed from the repo (the `supabase/` dir and `oauth/` consent page are gone)
 
 ---
 
@@ -154,7 +152,7 @@ Examples to support:
 ---
 
 ### 3. Clean Architecture
-- Remove Supabase completely
+- Remove Supabase completely — DONE (`supabase/` and `oauth/` removed)
 - Centralise config
 - Standardise data schema
 

@@ -104,10 +104,9 @@ If a proposed change violates `PRODUCT_RULES.md`, do not implement it.
 - Vercel config has been removed from the repo
 
 ### Supabase
-- Supabase has historical residue in the repo
+- Supabase residue has now been removed from the repo (the `supabase/` dir and the `oauth/` consent page are gone)
 - it is not the target direction
-- do not expand Supabase usage
-- any remaining Supabase code should be treated as transitional or cleanup candidate unless proven essential
+- do not reintroduce or expand Supabase usage
 
 ---
 
@@ -144,9 +143,9 @@ Recent cleanup has created dedicated homes for parts of the mobile shell UI:
 When extending shell-level mobile UI, prefer these extracted `src/ui/*` modules over putting more code back into `mobile.js`.
 
 ### Legacy runtime
-Treat these as legacy or transitional unless explicitly doing cleanup work:
-- `legacy/*`
-- `memory/*`
+The `legacy/*` and `memory/*` legacy runtime dirs have been removed from the repo. Do not recreate them.
+
+The remaining item to treat as legacy unless explicitly doing cleanup work:
 - root desktop-style `assistant.js` tied to old shell behavior
 
 Do not build new features into legacy runtime files.
@@ -228,7 +227,7 @@ Before adding any file, check whether the same domain already exists in:
 - `src/core/*`
 - `src/reminders/*`
 - `src/ui/*`
-- `api/*`
+- `functions/api/*`
 - existing hosting/deployment config files
 
 If it exists, prefer extending or migrating into the canonical file rather than creating another parallel file.
@@ -334,7 +333,7 @@ Do not:
 - add another capture service
 - create new localStorage structures for existing concepts
 - move files around without clarifying canonical ownership
-- build features into `legacy/*` unless explicitly doing cleanup
+- recreate the removed `legacy/*` runtime dir or build new features into legacy-style files
 - assume docs and implementation are already aligned
 - keep multiple active hosting stories in the repo
 
@@ -367,11 +366,11 @@ Broad cleanup direction:
 2. reduce responsibility inside `mobile.js`
 3. keep capture on one canonical path
 4. align storage schema where needed
-5. remove Supabase residue
+5. remove Supabase residue — DONE (`supabase/` and `oauth/` removed)
 6. simplify assistant paths
 7. simplify navigation overlap
-8. remove stale hosting/deployment paths
-9. archive or delete legacy layers and stale docs
+8. remove stale hosting/deployment paths — Vercel `api/` dir removed; serverless code now lives in `functions/api/*`
+9. archive or delete legacy layers and stale docs — `legacy/*` and `memory/*` removed
 
 ---
 

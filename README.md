@@ -4,7 +4,7 @@ Memory Cue is a progressive web app for capturing reminders, notes, and study ai
 
 ## Background reminders
 
-Memory Cue ships with a service worker that now schedules reminders using the Notification Triggers API where supported (currently Chromium-based browsers). When you enable notifications from the Reminders screen the app registers `service-worker.js`, stores each due reminder, and asks the browser to display it even if the page or installed PWA is closed. If Notification Triggers are unavailable the app falls back to in-page timers so you still see alerts while the tab is open.
+Memory Cue ships with a service worker that now schedules reminders using the Notification Triggers API where supported (currently Chromium-based browsers). When you enable notifications from the Reminders screen the app registers `service-worker-v3.js` (via `js/register-service-worker-v2.js`), stores each due reminder, and asks the browser to display it even if the page or installed PWA is closed. If Notification Triggers are unavailable the app falls back to in-page timers so you still see alerts while the tab is open.
 
 To test background reminders locally:
 
@@ -46,7 +46,7 @@ The repo contains `wrangler.jsonc` to document the Cloudflare Pages build output
 
 ### Legacy hosting residue
 
-The repo may still contain historical hosting residue from GitHub Pages or Vercel. Those paths should be treated as transitional or cleanup candidates unless they are explicitly confirmed active.
+The Vercel-era `api/` directory has been removed (serverless code now lives in `functions/api/`). Any remaining GitHub Pages references should be treated as transitional or cleanup candidates unless they are explicitly confirmed active.
 
 ## Configuration
 
@@ -68,10 +68,10 @@ For local development, place the same values in an untracked `.env.local` file b
 
 ## AI setup
 
-The serverless AI endpoints require an OpenAI API key at runtime:
+The serverless AI endpoints (Cloudflare Pages Functions under `functions/api/`) require an OpenAI API key at runtime:
 
-- `OPENAI_API_KEY` for `api/assistant.ts`
-- `OPENAI_API_KEY` for `api/parse-entry.js`
+- `OPENAI_API_KEY` for `functions/api/assistant-chat.ts`
+- `OPENAI_API_KEY` for `functions/api/parse-entry.js`
 
 If this variable is missing, these endpoints return a `500` JSON error indicating server misconfiguration.
 

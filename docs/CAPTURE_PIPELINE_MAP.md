@@ -20,7 +20,7 @@
    - Write targets by intent:
      - Inbox path: localStorage `memoryEntries`.
      - Reminder path: `window.memoryCueQuickAddNow(...)` from reminders module.
-     - Assistant path: submits to `#assistantForm` (handled by `js/assistant.js` to `/api/assistant`).
+     - Assistant path: submits to `#assistantForm` (handled by `js/assistant.js` to `/api/assistant-chat`).
 
 3. **Reminders quick-add**
    - Entry: `#quickAddInput` / `#quickAddForm` in reminders surface.
@@ -42,9 +42,8 @@
      - "Convert to Note" appends to notes storage (`memoryCueNotes`).
 
 6. **Server capture API**
-   - Entry: `POST /api/capture` with `{ schemaVersion: 2, input }`.
-   - Handler: `api/capture.js` classifies + structures memory.
-   - Write target: server-side `memory-store` via `addRecord(...)`.
+   - Removed: the Vercel-era `POST /api/capture` endpoint (`api/capture.js`) no longer exists.
+   - Live serverless entry/classification is now `POST /api/parse-entry` (`functions/api/parse-entry.js`).
 
 ## Search result note
 - `saveUniversalInputBtn` was not found in the current repository scan.
