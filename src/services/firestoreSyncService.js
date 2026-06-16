@@ -33,6 +33,47 @@ const toTimestamp = (value) => {
   }
   return 0;
 };
+
+// Merge a remote snapshot into the locally-cached items WITHOUT dropping unsynced local
+// edits. A live snapshot or pull that hasn't caught up to a just-written local item would
+// otherwise erase it (e.g. a chat message vanishing right after you type it).
+//   - present in both: remote wins, unless the local copy is pendingSync and at least as new
+//   - remote only: added
+//   - local only: kept ONLY if pendingSync (otherwise it was deleted remotely)
+export const mergeRemoteWithLocal = (localItems, remoteItems, orderField = 'updatedAt') => {
+  const localById = new Map();
+  (Array.isArray(localItems) ? localItems : []).forEach((item) => {
+    if (item && item.id != null) {
+      localById.set(String(item.id), item);
+    }
+  });
+  const remoteById = new Map();
+  (Array.isArray(remoteItems) ? remoteItems : []).forEach((item) => {
+    if (item && item.id != null) {
+      remoteById.set(String(item.id), item);
+    }
+  });
+
+  const merged = [];
+  remoteById.forEach((remoteItem, id) => {
+    const localItem = localById.get(id);
+    if (
+      localItem
+      && localItem.pendingSync
+      && toTimestamp(localItem[orderField]) >= toTimestamp(remoteItem[orderField])
+    ) {
+      merged.push(localItem);
+    } else {
+      merged.push(remoteItem);
+    }
+  });
+  localById.forEach((localItem, id) => {
+    if (!remoteById.has(id) && localItem.pendingSync) {
+      merged.push(localItem);
+    }
+  });
+  return merged;
+};
 const INBOX_SOURCE_VALUES = new Set(['capture', 'reminder', 'assistant', 'quick-add']);
 
 const normalizeInboxSource = (value) => {
@@ -342,10 +383,12 @@ const pullCollection = async ({
     return mergeById(readLocal(localKey).map((item) => normalizeItem(item)).filter(Boolean));
   }
 
-  const normalized = mergeById(remoteItems.map((item) => normalizeItem(item)).filter(Boolean));
-  writeLocal(localKey, normalized);
-  dispatchSyncEvent(localKey, normalized);
-  return normalized;
+  const remoteNormalized = mergeById(remoteItems.map((item) => normalizeItem(item)).filter(Boolean));
+  // Keep unsynced local items the remote pull hasn't caught up to yet.
+  const merged = mergeRemoteWithLocal(readLocal(localKey), remoteNormalized, orderField);
+  writeLocal(localKey, merged);
+  dispatchSyncEvent(localKey, merged);
+  return merged;
 };
 
 const subscribeToCollection = async ({
@@ -369,16 +412,20 @@ const subscribeToCollection = async ({
     : collectionRef;
 
   return firebase.onSnapshot(queryRef, (snapshot) => {
-    const normalized = mergeById(
+    const remoteNormalized = mergeById(
       snapshot.docs
         .map((entry) => ({ id: entry.id, ...entry.data() }))
         .map((item) => normalizeItem(item))
         .filter(Boolean)
     );
 
-    writeLocal(localKey, normalized);
-    dispatchSyncEvent(localKey, normalized);
+    // Merge rather than overwrite, so a snapshot that predates a just-written local item
+    // (e.g. a chat message you just typed) doesn't erase it before it has synced.
+    const merged = mergeRemoteWithLocal(readLocal(localKey), remoteNormalized, orderField);
+    writeLocal(localKey, merged);
+    dispatchSyncEvent(localKey, merged);
 
+    const normalized = merged;
     if (typeof onItems === 'function') {
       try {
         onItems(normalized);
