@@ -102,7 +102,7 @@ function initAssistant() {
       const [mainText, relatedBlock = ''] = text.split(/\n\s*\nRelated from your memory:\s*/i);
       const relatedItems = relatedBlock
         .split(/\r?\n/)
-        .map((line) => line.replace(/^\s*(?:[-*]|\u2022|â€¢)\s*/, '').trim())
+        .map((line) => line.replace(/^\s*(?:[-*]|\u2022|\u2022)\s*/, '').trim())
         .filter(Boolean)
         .slice(0, 3);
 
@@ -621,7 +621,7 @@ function initAssistant() {
         const title = toAssistantEntryText(entry?.title, 120) || 'Untitled note';
         const tags = Array.isArray(entry?.tags) && entry.tags.length ? ` (${entry.tags.join(', ')})` : '';
         const summarySource = toAssistantEntryText(entry?.summary, 160) || toAssistantEntryText(entry?.body, 160);
-        return `${index + 1}. ${title}${tags}${summarySource ? ` â€“ ${summarySource}` : ''}`;
+        return `${index + 1}. ${title}${tags}${summarySource ? ` \u2013 ${summarySource}` : ''}`;
       });
 
       return [
@@ -1888,7 +1888,7 @@ const initMobileNotes = () => {
   const normalizeSectionLabel = (value = '') => value
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/[:\-â€“â€”]+$/, '')
+    .replace(/[:\-\u2013\u2014]+$/, '')
     .trim();
 
   const formatSectionLabel = (value = '') => {
@@ -2276,7 +2276,7 @@ const initMobileNotes = () => {
         <div class="notes-overview-item-title">${safeTitle}</div>
         <div class="notes-overview-item-meta">
           <span>${folder}</span>
-          <span class="notes-overview-item-meta-dot" aria-hidden="true">â€¢</span>
+          <span class="notes-overview-item-meta-dot" aria-hidden="true">\u2022</span>
           <span>${timestamp}</span>
         </div>
         ${tagsMarkup}
@@ -2539,7 +2539,7 @@ const initMobileNotes = () => {
           button.type = 'button';
           button.className = 'text-left w-full text-sm';
           button.dataset.noteId = note.id;
-          button.textContent = `â€¢ ${getDashboardItemLabel(note)}`;
+          button.textContent = `\u2022 ${getDashboardItemLabel(note)}`;
           button.addEventListener('click', () => {
             openNoteFromDashboard(note.id);
           });
@@ -2598,10 +2598,10 @@ const initMobileNotes = () => {
       date.getDate() === now.getDate();
     const timeString = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     if (sameDay) {
-      return `Today Â· ${timeString}`;
+      return `Today \u00b7 ${timeString}`;
     }
     const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return `${dateString} Â· ${timeString}`;
+    return `${dateString} \u00b7 ${timeString}`;
   };
 
   const hasUnsavedChanges = () => {
@@ -2954,7 +2954,7 @@ const initMobileNotes = () => {
       if (isPinned) {
         const pinIcon = document.createElement('span');
         pinIcon.className = 'note-list-pin-icon';
-        pinIcon.textContent = 'ðŸ“Œ';
+        pinIcon.textContent = '\ud83d\udccc';
         pinIcon.setAttribute('aria-hidden', 'true');
         titleRow.appendChild(pinIcon);
       }
@@ -2992,7 +2992,7 @@ const initMobileNotes = () => {
       actionBtn.setAttribute('aria-expanded', 'false');
       actionBtn.tabIndex = 0;
       actionBtn.setAttribute('aria-haspopup', 'true');
-      actionBtn.textContent = 'â‹®';
+      actionBtn.textContent = '\u22ee';
 
       const actionMenu = document.createElement('div');
       actionMenu.className = 'note-card-menu';
@@ -3154,7 +3154,7 @@ const initMobileNotes = () => {
         overflowBtn.type = 'button';
         overflowBtn.className = 'notebook-folder-chip-overflow';
         overflowBtn.setAttribute('aria-label', 'Folder options');
-        overflowBtn.innerHTML = 'â‹¯';
+        overflowBtn.innerHTML = '\u22ef';
         overflowBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           openFolderOverflowMenu(folder.id, chip);
