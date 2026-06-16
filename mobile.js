@@ -2053,6 +2053,13 @@ const initMobileNotes = () => {
     applyFormatCommand(command);
   };
 
+  const escapeHtml = (value) => String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   const debounce = (fn, delay = 200) => {
     let timeoutId;
     const debounced = (...args) => {
@@ -2270,12 +2277,12 @@ const initMobileNotes = () => {
       const timestamp = formatNoteTimestamp(note?.createdAt || note?.updatedAt);
       const safeTitle = note?.title || 'Untitled note';
       const tagsMarkup = tags
-        ? `<div class="notes-overview-item-tags">Tags: ${tags}</div>`
+        ? `<div class="notes-overview-item-tags">Tags: ${escapeHtml(tags)}</div>`
         : '';
       button.innerHTML = `
-        <div class="notes-overview-item-title">${safeTitle}</div>
+        <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
         <div class="notes-overview-item-meta">
-          <span>${folder}</span>
+          <span>${escapeHtml(folder)}</span>
           <span class="notes-overview-item-meta-dot" aria-hidden="true">\u2022</span>
           <span>${timestamp}</span>
         </div>
