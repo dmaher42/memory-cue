@@ -1506,14 +1506,15 @@ body #view-reminders .reminders-quick-actions .icon-btn {
    Two IDs (#view-reminders #reminderList) to beat the older
    #view-reminders .reminder-row.reminder-card !important rules. */
 #view-reminders #reminderList {
-  display: block !important;
-  column-count: 2 !important;
-  column-gap: 8px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  align-items: start !important;
 }
 
 #view-reminders #reminderList .reminder-mobile-section-heading,
 #view-reminders #reminderList .reminder-completed-section {
-  column-span: all !important;
+  grid-column: 1 / -1 !important;
 }
 
 #view-reminders #reminderList .reminder-card-grid {
@@ -1525,8 +1526,8 @@ body #view-reminders .reminders-quick-actions .icon-btn {
   gap: 6px !important;
   min-width: 0 !important;
   min-height: 0 !important;
-  break-inside: avoid !important;
-  margin: 0 0 8px 0 !important;
+  height: 100% !important;
+  margin: 0 !important;
   padding: 10px 12px !important;
   border: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 78%, transparent) !important;
   border-left-width: 4px !important;
@@ -1603,10 +1604,7 @@ body #view-reminders .reminders-quick-actions .icon-btn {
 
 /* Named group cards (two-column masonry), each holding compact reminder rows. */
 #view-reminders #reminderList .reminder-group-card {
-  break-inside: avoid;
-  display: inline-block;
-  width: 100%;
-  margin: 0 0 8px 0;
+  margin: 0;
   background: var(--surface-card, var(--color-background-primary, #fff));
   border: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 78%, transparent);
   border-radius: 14px;
