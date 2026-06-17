@@ -40,7 +40,7 @@ export default {
         professional: {
           primary: "#0f766e",
           secondary: "#fcd34d",
-          accent: "#f472b6",
+          accent: "#22d3ee",
           neutral: "#3d4451",
           "base-100": "#ffffff",
           info: "#3abff8",
@@ -55,7 +55,7 @@ export default {
         "professional-dark": {
           primary: "#0f766e",
           secondary: "#fcd34d",
-          accent: "#f472b6",
+          accent: "#22d3ee",
           neutral: "#1f2937",
           "base-100": "#111827",
           info: "#3abff8",

@@ -1,6 +1,6 @@
 :root {
-  --mc-grad-from: #4f46e5;  /* indigo */
-  --mc-grad-mid:  #a855f7;  /* purple */
+  --mc-grad-from: #0f766e;  /* indigo */
+  --mc-grad-mid:  #14b8a6;  /* purple */
   --mc-grad-to:   #ec4899;  /* pink */
 
   /* Helper tokens used by input styles */
@@ -23,7 +23,7 @@
 
 /* Full-page gradient background, applied to main shells / body */
 .memory-page-gradient {
-  background: radial-gradient(circle at top, #60a5fa 0, #4f46e5 30%, #111827 100%);
+  background: radial-gradient(circle at top, #60a5fa 0, #0f766e 30%, #111827 100%);
   color: var(--mc-text-main);
 }
 
@@ -42,7 +42,7 @@
   background: linear-gradient(
     140deg,
     rgba(96, 165, 250, 0.96),
-    rgba(168, 85, 247, 0.95),
+    rgba(20, 184, 166, 0.95),
     rgba(236, 72, 153, 0.9)
   );
   box-shadow:
@@ -58,8 +58,8 @@
 .memory-glass-card-soft {
   background: linear-gradient(
     135deg,
-    rgba(79, 70, 229, 0.92),
-    rgba(168, 85, 247, 0.9)
+    rgba(13, 148, 136, 0.92),
+    rgba(20, 184, 166, 0.9)
   );
   box-shadow:
     0 14px 30px rgba(15, 23, 42, 0.6),
@@ -95,7 +95,7 @@
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #14b8a6, #14b8a6);
   border-color: transparent;
   color: #f9fafb;
 }
@@ -172,19 +172,19 @@
   filter: saturate(55%);
   transform: none;
   text-decoration: none;
-  color: var(--text-muted, #9a8bb0);
+  color: var(--text-muted, #94a3b8);
 }
 
 .reminder-card[data-done='true'] .line-through,
 .reminder-card[data-done='true'] .desktop-reminder-title,
 .reminder-card[data-done='true'] [data-reminder-title] {
   text-decoration: none;
-  color: var(--text-muted, #9a8bb0);
+  color: var(--text-muted, #94a3b8);
 }
 
 .reminder-card[data-done='true'] .reminder-meta,
 .reminder-card[data-done='true'] time {
-  color: var(--text-muted, #9a8bb0);
+  color: var(--text-muted, #94a3b8);
 }
 
 .reminder-card[data-done='true']:hover {
@@ -211,7 +211,7 @@
 /* Ensure the inner svg/icon contrasts when active */
 #mobile-footer-new-reminder[aria-expanded="true"] svg,
 .floating-footer #mobile-footer-new-reminder[aria-expanded="true"] svg {
-  stroke: var(--icon-color, #512663) !important;
+  stroke: var(--icon-color, #1e293b) !important;
   fill: none !important;
   opacity: 1 !important;
   filter: none !important;
@@ -222,7 +222,7 @@
 .footer-nav svg,
 .mobile-footer-nav svg,
 .footer-button svg {
-  stroke: var(--icon-color, #512663) !important;
+  stroke: var(--icon-color, #1e293b) !important;
   fill: none !important;
   opacity: 1 !important;
 }
@@ -230,7 +230,7 @@
 .mobile-footer .mobile-footer-item--active svg,
 .floating-footer .floating-card.active svg,
 .floating-footer .floating-card.is-active svg {
-  stroke: var(--icon-color, #512663) !important;
+  stroke: var(--icon-color, #1e293b) !important;
   fill: none !important;
   opacity: 1 !important;
 }
