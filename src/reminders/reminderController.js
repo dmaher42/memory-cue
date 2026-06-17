@@ -6,7 +6,6 @@ import { createReminder as createReminderViaService, setReminderCreationHandler,
 import { getFolders, loadAllNotes, saveAllNotes, saveFolders, setRemoteSyncHandler } from '../../js/modules/notes-storage.js';
 import { createReminder as createStoredReminder, updateReminder as updateStoredReminder, deleteReminder as deleteStoredReminder, getReminders as getStoredReminders, setReminders as setStoredReminders, loadReminders } from './reminderStore.js';
 import * as reminderDataService from './reminderService.js';
-import { renderReminderList, renderReminderItem, renderTodayReminders } from './reminderRenderer.js';
 import { setupSyncHandlers, loadRemindersFromFirestore, saveReminderToFirestore, listenForReminderUpdates } from './reminderSync.js';
 import { setupNotificationHandlers, startReminderScheduler, sendReminderNotification, requestNotificationPermission } from './reminderNotifications.js';
 import { saveNote } from '../services/adapters/notePersistenceAdapter.js';
@@ -5505,23 +5504,6 @@ export async function initReminders(sel = {}) {
     }
   }
 
-  function isReminderForTodayMobile(reminder, todayRange) {
-    if (!reminder || typeof reminder !== 'object') {
-      return false;
-    }
-    if (reminder.pinToToday === true) {
-      return true;
-    }
-    if (!reminder.due || !todayRange || !todayRange.start || !todayRange.end) {
-      return false;
-    }
-    const dueDate = new Date(reminder.due);
-    if (Number.isNaN(dueDate.getTime())) {
-      return false;
-    }
-    return dueDate >= todayRange.start && dueDate <= todayRange.end;
-  }
-
   function getReminderStartOfDay(date) {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
       return null;
@@ -5529,67 +5511,6 @@ export async function initReminders(sel = {}) {
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
     return start;
-  }
-
-  function getMobileReminderSectionKey(reminder, todayRange) {
-    if (!reminder || typeof reminder !== 'object') {
-      return 'later';
-    }
-    if (isReminderForTodayMobile(reminder, todayRange)) {
-      return 'today';
-    }
-    if (!reminder.due) {
-      return 'unscheduled';
-    }
-
-    const dueDate = new Date(reminder.due);
-    const todayStart = getReminderStartOfDay(todayRange?.start);
-    const dueStart = getReminderStartOfDay(dueDate);
-    if (!todayStart || !dueStart) {
-      return 'unscheduled';
-    }
-
-    const diffDays = Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000);
-    if (diffDays < 0) {
-      return 'overdue';
-    }
-    if (diffDays <= 7) {
-      return 'upcoming';
-    }
-    return 'later';
-  }
-
-  function buildMobileReminderSections(reminders = [], todayRange) {
-    const sectionOrder = [
-      { key: 'overdue', label: 'Overdue', items: [] },
-      { key: 'today', label: 'Today', items: [] },
-      { key: 'upcoming', label: 'Upcoming', items: [] },
-      { key: 'later', label: 'Later', items: [] },
-      { key: 'unscheduled', label: 'No date', items: [] },
-    ];
-    const sectionsByKey = new Map(sectionOrder.map((section) => [section.key, section]));
-
-    (Array.isArray(reminders) ? reminders : []).forEach((reminder) => {
-      const sectionKey = getMobileReminderSectionKey(reminder, todayRange);
-      const section = sectionsByKey.get(sectionKey) || sectionsByKey.get('later');
-      section.items.push(reminder);
-    });
-
-    return sectionOrder.filter((section) => section.items.length);
-  }
-
-  function appendMobileReminderSectionHeading(parent, label, listIsSemantic) {
-    if (!(parent instanceof HTMLElement) || !label) {
-      return;
-    }
-    const headingEl = document.createElement(listIsSemantic ? 'li' : 'div');
-    headingEl.className = 'reminder-mobile-section-heading';
-
-    const headingLabel = document.createElement('span');
-    headingLabel.className = 'reminder-mobile-section-heading-label';
-    headingLabel.textContent = label;
-    headingEl.appendChild(headingLabel);
-    parent.appendChild(headingEl);
   }
 
   function appendCompletedReminderSectionHeading(parent, {
@@ -5633,47 +5554,6 @@ export async function initReminders(sel = {}) {
     }
     headingEl.appendChild(toggleBtn);
     parent.appendChild(headingEl);
-  }
-
-  function formatMobileReminderMeta(reminder, categoryName, todayRange) {
-    if (!reminder || typeof reminder !== 'object') {
-      return '';
-    }
-
-    const metaParts = [];
-    const inlineSchedule = extractReminderInlineSchedule(getReminderDisplaySourceText(reminder), todayRange);
-    const dueDate = reminder.due ? new Date(reminder.due) : null;
-    const hasValidDueDate = dueDate instanceof Date && !Number.isNaN(dueDate.getTime());
-
-    if (hasValidDueDate) {
-      const dueStart = getReminderStartOfDay(dueDate);
-      const todayStart = getReminderStartOfDay(todayRange?.start);
-      const diffDays = dueStart && todayStart
-        ? Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000)
-        : null;
-      const timeLabel = fmtTime(dueDate);
-
-      if (diffDays === 0) {
-        metaParts.push(timeLabel ? `Today, ${timeLabel}` : 'Today');
-      } else if (diffDays === 1) {
-        metaParts.push(timeLabel ? `Tomorrow, ${timeLabel}` : 'Tomorrow');
-      } else if (typeof diffDays === 'number' && diffDays < 0) {
-        metaParts.push(timeLabel ? `Overdue, ${timeLabel}` : 'Overdue');
-      } else {
-        metaParts.push(formatDesktopDue(reminder));
-      }
-    } else if (inlineSchedule.label) {
-      metaParts.push(inlineSchedule.label);
-    } else if (reminder.pinToToday === true) {
-      metaParts.push('Pinned for today');
-    }
-
-    const hasCustomCategory = Boolean(categoryName && categoryName !== DEFAULT_CATEGORY);
-    if (hasCustomCategory) {
-      metaParts.push(categoryName);
-    }
-
-    return metaParts.join('  ·  ');
   }
 
   // Collapse the detailed categories into the four visual groups used by the card grid.
@@ -6744,11 +6624,6 @@ export async function initReminders(sel = {}) {
 
       return itemEl;
     };
-
-    const createMobileItem = (r, catName) => buildReminderCard(r, catName, {
-      elementTag: listIsSemantic ? 'li' : 'div',
-      isMobile: true,
-    });
 
     // Compact reminder row rendered inside a group card. Keeps the full data/handler
     // contract (task-item, data-reminder-item, datasets, toggle, delete, row-click).
