@@ -5674,6 +5674,45 @@ export async function initReminders(sel = {}) {
     return metaParts.join('  ·  ');
   }
 
+  // Collapse the detailed categories into the four visual groups used by the card grid.
+  function getReminderCategoryGroup(categoryName) {
+    const raw = typeof categoryName === 'string' ? categoryName.toLowerCase() : '';
+    if (raw.includes('school')) return { key: 'school', label: 'School' };
+    if (raw.includes('home')) return { key: 'home', label: 'Home' };
+    if (raw.includes('wellbeing') || raw.includes('support')) return { key: 'wellbeing', label: 'Wellbeing' };
+    return { key: 'other', label: 'Other' };
+  }
+
+  // Compact due label for a card (day/time only, no category) e.g. "Today, 3:00 PM", "Overdue", "Thu".
+  function formatReminderDueChip(reminder, todayRange) {
+    if (!reminder || typeof reminder !== 'object') {
+      return '';
+    }
+    const dueDate = reminder.due ? new Date(reminder.due) : null;
+    const hasValidDueDate = dueDate instanceof Date && !Number.isNaN(dueDate.getTime());
+    if (hasValidDueDate) {
+      const dueStart = getReminderStartOfDay(dueDate);
+      const todayStart = getReminderStartOfDay(todayRange?.start);
+      const diffDays = dueStart && todayStart
+        ? Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000)
+        : null;
+      const timeLabel = fmtTime(dueDate);
+      if (diffDays === 0) return timeLabel ? `Today, ${timeLabel}` : 'Today';
+      if (diffDays === 1) return timeLabel ? `Tomorrow, ${timeLabel}` : 'Tomorrow';
+      if (typeof diffDays === 'number' && diffDays < 0) return timeLabel ? `Overdue, ${timeLabel}` : 'Overdue';
+      let dayName = '';
+      try { dayName = dueDate.toLocaleDateString(undefined, { weekday: 'short' }); } catch { dayName = ''; }
+      if (typeof diffDays === 'number' && diffDays <= 7 && dayName) {
+        return timeLabel ? `${dayName}, ${timeLabel}` : dayName;
+      }
+      try { return dueDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return dayName; }
+    }
+    const inlineSchedule = extractReminderInlineSchedule(getReminderDisplaySourceText(reminder), todayRange);
+    if (inlineSchedule.label) return inlineSchedule.label;
+    if (reminder.pinToToday === true) return 'Pinned for today';
+    return '';
+  }
+
   function setupReminderSortControl() {
     if (typeof HTMLSelectElement === 'undefined' || !(sortSelect instanceof HTMLSelectElement)) {
       return;
@@ -6440,7 +6479,36 @@ export async function initReminders(sel = {}) {
       const openReminder = () => openEditReminderSheet(reminder);
 
       if (isMobile) {
+        itemEl.classList.add('reminder-card-grid');
+        const categoryGroup = getReminderCategoryGroup(catName);
+        itemEl.classList.add(`reminder-cat-${categoryGroup.key}`);
+        // Set the category stripe colour inline (with !important) so it wins over the
+        // older #view-reminders reminder-card border rules without a CSS specificity fight.
+        const categoryStripeColors = { school: '#2563eb', home: '#15803d', wellbeing: '#7c3aed', other: '#b45309' };
+        itemEl.style.setProperty('border-left-color', categoryStripeColors[categoryGroup.key] || '#888888', 'important');
         toggleBtn.classList.add('reminder-row-complete', 'reminder-card-checkbox');
+
+        const topRow = document.createElement('div');
+        topRow.className = 'reminder-card-top';
+        const dueChip = document.createElement('span');
+        dueChip.className = 'reminder-card-due';
+        const dueChipText = formatReminderDueChip(reminder, todayRange);
+        dueChip.textContent = dueChipText || 'No date';
+        if (!dueChipText) {
+          dueChip.classList.add('reminder-card-due--none');
+        }
+        const chipDueDate = summary.dueIso ? new Date(summary.dueIso) : null;
+        const chipDueStart = getReminderStartOfDay(chipDueDate);
+        const chipTodayStart = getReminderStartOfDay(todayRange?.start);
+        const chipDiffDays = chipDueStart && chipTodayStart
+          ? Math.round((chipDueStart.getTime() - chipTodayStart.getTime()) / 86400000)
+          : null;
+        if (typeof chipDiffDays === 'number' && chipDiffDays < 0) {
+          dueChip.classList.add('reminder-card-due--overdue');
+        } else if (chipDiffDays === 0 || summary.pinToToday) {
+          dueChip.classList.add('reminder-card-due--today');
+        }
+        topRow.append(dueChip, toggleBtn);
 
         const rowMain = document.createElement('div');
         rowMain.className = 'reminder-content reminder-card-main reminder-row-main';
@@ -6458,12 +6526,17 @@ export async function initReminders(sel = {}) {
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
 
-        const metaText = formatMobileReminderMeta(reminder, catName, todayRange);
-        if (metaText) {
-          const meta = document.createElement('div');
-          meta.className = 'reminder-row-meta';
-          meta.textContent = metaText;
-          rowMain.appendChild(meta);
+        const footRow = document.createElement('div');
+        footRow.className = 'reminder-card-foot';
+        const catLabel = document.createElement('span');
+        catLabel.className = 'reminder-card-cat';
+        catLabel.textContent = categoryGroup.label;
+        footRow.appendChild(catLabel);
+        if (String(summary.priority || '').trim().toLowerCase().charAt(0) === 'h') {
+          const priorityFlag = document.createElement('span');
+          priorityFlag.className = 'reminder-card-priority';
+          priorityFlag.textContent = 'High';
+          footRow.appendChild(priorityFlag);
         }
 
         if (summary.done) {
@@ -6471,7 +6544,8 @@ export async function initReminders(sel = {}) {
         }
 
         controls.append(deleteBtn);
-        itemEl.append(toggleBtn, rowMain, controls);
+        footRow.appendChild(controls);
+        itemEl.append(topRow, rowMain, footRow);
 
         itemEl.addEventListener('click', (event) => {
           if (event.defaultPrevented) return;

@@ -1501,3 +1501,103 @@ body #view-reminders .reminders-quick-actions .icon-btn {
     transform: scaleX(1);
   }
 }
+
+/* Compact two-column reminder card grid (mobile).
+   Two IDs (#view-reminders #reminderList) to beat the older
+   #view-reminders .reminder-row.reminder-card !important rules. */
+#view-reminders #reminderList {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  align-items: start !important;
+}
+
+#view-reminders #reminderList .reminder-mobile-section-heading,
+#view-reminders #reminderList .reminder-completed-section {
+  grid-column: 1 / -1 !important;
+}
+
+#view-reminders #reminderList .reminder-card-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 78%, transparent) !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+  border-left-color: var(--rcat-color, #888) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 16px rgba(62, 47, 94, 0.06) !important;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-due {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #5f5e5a);
+  white-space: nowrap;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-due--overdue,
+#view-reminders #reminderList .reminder-card-grid .reminder-card-due--today {
+  color: #b3261e;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-main .reminder-row-title {
+  margin: 0;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-cat {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--rcat-color, #666);
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-priority {
+  font-size: 11px;
+  font-weight: 600;
+  color: #b3261e;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-foot .task-toolbar {
+  margin-left: auto;
+}
+
+#view-reminders #reminderList .reminder-card-grid .reminder-card-checkbox {
+  flex: 0 0 auto;
+}
+
+/* Category colours: blue = school, green = home, purple = wellbeing, amber = other.
+   --rcat-color drives the category label; border-left-color longhand colours the stripe. */
+#view-reminders #reminderList .reminder-cat-school { --rcat-color: #2563eb; border-left-color: #2563eb !important; }
+#view-reminders #reminderList .reminder-cat-home { --rcat-color: #15803d; border-left-color: #15803d !important; }
+#view-reminders #reminderList .reminder-cat-wellbeing { --rcat-color: #7c3aed; border-left-color: #7c3aed !important; }
+#view-reminders #reminderList .reminder-cat-other { --rcat-color: #b45309; border-left-color: #b45309 !important; }
