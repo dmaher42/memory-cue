@@ -1506,15 +1506,14 @@ body #view-reminders .reminders-quick-actions .icon-btn {
    Two IDs (#view-reminders #reminderList) to beat the older
    #view-reminders .reminder-row.reminder-card !important rules. */
 #view-reminders #reminderList {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  align-items: start !important;
+  display: block !important;
+  column-count: 2 !important;
+  column-gap: 8px !important;
 }
 
 #view-reminders #reminderList .reminder-mobile-section-heading,
 #view-reminders #reminderList .reminder-completed-section {
-  grid-column: 1 / -1 !important;
+  column-span: all !important;
 }
 
 #view-reminders #reminderList .reminder-card-grid {
@@ -1526,8 +1525,8 @@ body #view-reminders .reminders-quick-actions .icon-btn {
   gap: 6px !important;
   min-width: 0 !important;
   min-height: 0 !important;
-  height: 100% !important;
-  margin: 0 !important;
+  break-inside: avoid !important;
+  margin: 0 0 8px 0 !important;
   padding: 10px 12px !important;
   border: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 78%, transparent) !important;
   border-left-width: 4px !important;
@@ -1601,3 +1600,110 @@ body #view-reminders .reminders-quick-actions .icon-btn {
 #view-reminders #reminderList .reminder-cat-home { --rcat-color: #15803d; border-left-color: #15803d !important; }
 #view-reminders #reminderList .reminder-cat-wellbeing { --rcat-color: #7c3aed; border-left-color: #7c3aed !important; }
 #view-reminders #reminderList .reminder-cat-other { --rcat-color: #b45309; border-left-color: #b45309 !important; }
+
+/* Named group cards (two-column masonry), each holding compact reminder rows. */
+#view-reminders #reminderList .reminder-group-card {
+  break-inside: avoid;
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 8px 0;
+  background: var(--surface-card, var(--color-background-primary, #fff));
+  border: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 78%, transparent);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+#view-reminders #reminderList .reminder-group-card-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 11px;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 55%, transparent);
+}
+
+#view-reminders #reminderList .reminder-group-card-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+  background: var(--rgroup-color, #6b7280);
+}
+
+#view-reminders #reminderList .reminder-group-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#view-reminders #reminderList .reminder-group-card-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-secondary, #6b7280);
+}
+
+#view-reminders #reminderList .reminder-group-card-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#view-reminders #reminderList .reminder-group-row {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 8px 11px !important;
+  border: 0 !important;
+  border-top: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 45%, transparent) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#view-reminders #reminderList .reminder-group-card-items > .reminder-group-row:first-child {
+  border-top: 0 !important;
+}
+
+#view-reminders #reminderList .reminder-group-row-check {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  padding: 0;
+}
+
+#view-reminders #reminderList .reminder-group-row-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#view-reminders #reminderList .reminder-group-row-due {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary, #6b7280);
+  margin-top: 2px;
+}
+
+#view-reminders #reminderList .reminder-group-row-due--overdue,
+#view-reminders #reminderList .reminder-group-row-due--today {
+  color: #b3261e;
+}
+
+#view-reminders #reminderList .reminder-group-row-delete {
+  flex: 0 0 auto;
+  padding: 2px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--text-secondary, #9ca3af);
+}
+
+#view-reminders #reminderList .reminder-group-row.reminder-row-completed .reminder-group-row-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}

@@ -5713,6 +5713,22 @@ export async function initReminders(sel = {}) {
     return '';
   }
 
+  // Stable colour for a user-named group. Known names keep a fixed colour; any other name
+  // is hashed to a fixed palette so each group keeps a consistent, recognisable colour.
+  function getReminderGroupColor(name) {
+    const raw = typeof name === 'string' ? name.trim().toLowerCase() : '';
+    if (!raw) return '#6b7280';
+    if (raw.includes('school')) return '#2563eb';
+    if (raw.includes('home')) return '#15803d';
+    if (raw.includes('wellbeing') || raw.includes('support')) return '#7c3aed';
+    const palette = ['#b45309', '#0d9488', '#be185d', '#4f46e5', '#0891b2', '#a16207', '#dc2626', '#0284c7'];
+    let hash = 0;
+    for (let i = 0; i < raw.length; i += 1) {
+      hash = (hash * 31 + raw.charCodeAt(i)) >>> 0;
+    }
+    return palette[hash % palette.length];
+  }
+
   function setupReminderSortControl() {
     if (typeof HTMLSelectElement === 'undefined' || !(sortSelect instanceof HTMLSelectElement)) {
       return;
@@ -6634,14 +6650,168 @@ export async function initReminders(sel = {}) {
       isMobile: true,
     });
 
-    if (variant === 'mobile') {
-      const mobileSections = buildMobileReminderSections(activeRows, todayRange);
-      mobileSections.forEach((section) => {
-        appendMobileReminderSectionHeading(frag, section.label, listIsSemantic);
-        section.items.forEach((reminder) => {
-          const catName = reminder.category || DEFAULT_CATEGORY;
-          frag.appendChild(createMobileItem(reminder, catName));
+    // Compact reminder row rendered inside a group card. Keeps the full data/handler
+    // contract (task-item, data-reminder-item, datasets, toggle, delete, row-click).
+    const buildReminderGroupRow = (reminder, catName) => {
+      const reminderTitle = resolveReminderDisplayTitle(reminder);
+      const summary = {
+        id: reminder.id,
+        title: reminderTitle,
+        dueIso: reminder.due || null,
+        priority: reminder.priority || 'Medium',
+        category: catName,
+        done: Boolean(reminder.done),
+        pinToToday: reminder.pinToToday === true,
+      };
+
+      const li = document.createElement(listIsSemantic ? 'li' : 'div');
+      li.className = 'task-item reminder-row reminder-group-row w-full text-base-content';
+      li.dataset.id = summary.id;
+      li.dataset.category = summary.category;
+      li.dataset.title = summary.title;
+      if (summary.priority) li.dataset.priority = summary.priority;
+      li.dataset.done = String(summary.done);
+      if (summary.dueIso) li.dataset.due = summary.dueIso;
+      if (summary.pinToToday) li.dataset.pinToToday = 'true';
+      li.dataset.reminder = JSON.stringify(summary);
+      li.dataset.orderIndex = Number.isFinite(reminder.orderIndex) ? String(reminder.orderIndex) : '';
+      li.dataset.reminderItem = 'true';
+      li.setAttribute('role', 'button');
+      li.tabIndex = 0;
+      li.setAttribute('aria-label', `Edit reminder: ${reminderTitle}`);
+      applyPriorityTokensToCard(li, summary.priority);
+      if (summary.done) li.classList.add('reminder-row-completed');
+
+      const stop = (event) => event.stopPropagation();
+      const bindControl = (el, handler) => {
+        if (!(el instanceof HTMLElement)) return;
+        el.setAttribute('draggable', 'false');
+        el.addEventListener('pointerdown', stop);
+        el.addEventListener('touchstart', stop, { passive: true });
+        el.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          handler();
         });
+      };
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = `reminder-group-row-check reminder-complete-toggle${summary.done ? ' reminder-complete-toggle--active' : ''}`;
+      toggleBtn.setAttribute('data-reminder-control', 'toggle');
+      toggleBtn.setAttribute('data-no-swipe', 'true');
+      toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
+      toggleBtn.setAttribute('aria-label', summary.done ? `Mark reminder as active: ${reminderTitle}` : `Mark reminder as done: ${reminderTitle}`);
+      toggleBtn.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" focusable="false" class="reminder-complete-toggle-icon"><rect x="4" y="4" width="16" height="16" rx="4.5" class="reminder-complete-toggle-box" /><path d="M8.25 12.4l2.7 2.8 4.8-5.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="${summary.done ? 'reminder-complete-toggle-icon--checked' : 'reminder-complete-toggle-icon--unchecked'}" /></svg>`;
+      bindControl(toggleBtn, () => toggleDone(summary.id));
+
+      const body = document.createElement('div');
+      body.className = 'reminder-group-row-body';
+      const titleEl = document.createElement('div');
+      titleEl.className = 'reminder-group-row-title reminder-title';
+      titleEl.dataset.reminderTitle = 'true';
+      const titleToggle = document.createElement('span');
+      titleToggle.dataset.role = 'reminder-today-toggle';
+      titleToggle.className = 'reminder-title-toggle cursor-pointer';
+      titleToggle.setAttribute('role', 'button');
+      titleToggle.tabIndex = 0;
+      titleToggle.textContent = reminderTitle;
+      updatePinToggleVisualState(titleToggle, summary.pinToToday);
+      titleEl.appendChild(titleToggle);
+      body.appendChild(titleEl);
+
+      const dueText = formatReminderDueChip(reminder, todayRange);
+      if (dueText) {
+        const dueEl = document.createElement('div');
+        dueEl.className = 'reminder-group-row-due';
+        const cdd = summary.dueIso ? getReminderStartOfDay(new Date(summary.dueIso)) : null;
+        const tds = getReminderStartOfDay(todayRange?.start);
+        const diff = cdd && tds ? Math.round((cdd.getTime() - tds.getTime()) / 86400000) : null;
+        if (typeof diff === 'number' && diff < 0) dueEl.classList.add('reminder-group-row-due--overdue');
+        else if (diff === 0 || summary.pinToToday) dueEl.classList.add('reminder-group-row-due--today');
+        dueEl.textContent = dueText;
+        body.appendChild(dueEl);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'reminder-group-row-delete reminder-icon-btn text-base-content/60';
+      deleteBtn.setAttribute('data-action', 'delete');
+      deleteBtn.setAttribute('data-reminder-control', 'delete');
+      deleteBtn.setAttribute('data-no-swipe', 'true');
+      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminderTitle}`);
+      deleteBtn.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>`;
+      bindControl(deleteBtn, () => {
+        try {
+          removeItem(summary.id);
+        } catch (err) {
+          console.warn('Delete handler failed', err);
+        }
+      });
+
+      li.append(toggleBtn, body, deleteBtn);
+      li.addEventListener('click', (event) => {
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        if (target && typeof target.closest === 'function' && target.closest('[data-reminder-control]')) return;
+        openEditReminderSheet(reminder);
+      });
+      li.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        if (event.target !== li) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openEditReminderSheet(reminder);
+        }
+      });
+      enableSwipeToDelete(li, () => removeItem(summary.id));
+      return li;
+    };
+
+    if (variant === 'mobile') {
+      // Group active reminders by their (user-named) category into per-group cards.
+      const groupsMap = new Map();
+      activeRows.forEach((reminder) => {
+        const cat = (reminder.category && String(reminder.category).trim()) || DEFAULT_CATEGORY;
+        if (!groupsMap.has(cat)) groupsMap.set(cat, []);
+        groupsMap.get(cat).push(reminder);
+      });
+      const dueTs = (reminder) => {
+        const t = reminder.due ? new Date(reminder.due).getTime() : NaN;
+        return Number.isFinite(t) ? t : Infinity;
+      };
+      const groups = Array.from(groupsMap.entries()).map(([cat, items]) => {
+        const sorted = items.slice().sort((a, b) => dueTs(a) - dueTs(b));
+        return { cat, items: sorted, urgency: sorted.length ? dueTs(sorted[0]) : Infinity };
+      });
+      groups.sort((a, b) => (a.urgency - b.urgency) || a.cat.localeCompare(b.cat));
+      groups.forEach((group) => {
+        const card = document.createElement(listIsSemantic ? 'li' : 'div');
+        card.className = 'reminder-group-card';
+        card.dataset.group = group.cat;
+        card.style.setProperty('--rgroup-color', getReminderGroupColor(group.cat));
+
+        const header = document.createElement('div');
+        header.className = 'reminder-group-card-header';
+        const dot = document.createElement('span');
+        dot.className = 'reminder-group-card-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        const name = document.createElement('span');
+        name.className = 'reminder-group-card-name';
+        name.textContent = group.cat;
+        const count = document.createElement('span');
+        count.className = 'reminder-group-card-count';
+        count.textContent = String(group.items.length);
+        header.append(dot, name, count);
+        card.appendChild(header);
+
+        const itemsWrap = document.createElement(listIsSemantic ? 'ul' : 'div');
+        itemsWrap.className = 'reminder-group-card-items';
+        group.items.forEach((reminder) => {
+          itemsWrap.appendChild(buildReminderGroupRow(reminder, group.cat));
+        });
+        card.appendChild(itemsWrap);
+        frag.appendChild(card);
       });
     } else {
       activeRows.forEach((r) => {
