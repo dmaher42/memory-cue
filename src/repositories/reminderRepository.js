@@ -43,6 +43,36 @@ export const removeReminder = async (uid, reminderId) => {
   await firebase.deleteDoc(firebase.doc(firebase.db, 'users', normalizedUid, 'reminders', requireUid(reminderId)));
 };
 
+const groupColorsDoc = (firebase, uid) => firebase.doc(firebase.db, 'users', requireUid(uid), 'preferences', 'reminderGroupColors');
+
+export const saveReminderGroupColorRemote = async (uid, name, color) => {
+  const key = typeof name === 'string' ? name.trim() : '';
+  if (!key || typeof color !== 'string' || !color) {
+    return;
+  }
+  const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'save-group-colour');
+  // merge:true deep-merges the nested colours map, so one colour update never clobbers others.
+  await firebase.setDoc(groupColorsDoc(firebase, normalizedUid), { colors: { [key]: color } }, { merge: true });
+};
+
+export const subscribeReminderGroupColors = async (uid, onColors, onError = null) => {
+  const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'subscribe-group-colours');
+  if (typeof firebase.onSnapshot !== 'function') {
+    return () => {};
+  }
+  return firebase.onSnapshot(groupColorsDoc(firebase, normalizedUid), (snapshot) => {
+    const data = snapshot && typeof snapshot.data === 'function' ? snapshot.data() : null;
+    const colors = data && data.colors && typeof data.colors === 'object' ? data.colors : {};
+    if (typeof onColors === 'function') {
+      onColors(colors);
+    }
+  }, (error) => {
+    if (typeof onError === 'function') {
+      onError(error);
+    }
+  });
+};
+
 export const subscribeReminders = async (uid, onItems, onError = null) => {
   const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'subscribe');
   if (typeof firebase.onSnapshot !== 'function') {

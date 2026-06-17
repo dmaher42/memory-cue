@@ -1,5 +1,5 @@
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
-import { saveReminder, removeReminder } from '../repositories/reminderRepository.js';
+import { saveReminder, removeReminder, saveReminderGroupColorRemote, subscribeReminderGroupColors } from '../repositories/reminderRepository.js';
 import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
@@ -4466,12 +4466,14 @@ export async function initReminders(sel = {}) {
         await migrateOfflineRemindersIfNeeded();
         await ensureNotificationPermission();
         await syncCurrentDevicePushRegistration();
+        startGroupColorSync();
         return;
       }
 
       notesMigrationComplete = false;
       notesMigrationUserId = null;
       lastSyncedNoteIds = new Set();
+      stopGroupColorSync();
       applySignedOutState();
     },
   });
@@ -5739,6 +5741,72 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  let groupColorUnsub = null;
+  let groupColorInitialSyncDone = false;
+
+  // Merge a remote group-colour map (from Firestore) into the local cache, re-rendering if
+  // anything changed, and push any colours set locally that the server doesn't have yet.
+  function applyRemoteReminderGroupColors(remoteColors) {
+    if (!remoteColors || typeof remoteColors !== 'object') return;
+    const local = loadReminderGroupColors();
+    let changed = false;
+    Object.keys(remoteColors).forEach((key) => {
+      const color = remoteColors[key];
+      if (isHexColor(color) && local[key] !== color.toLowerCase()) {
+        local[key] = color.toLowerCase();
+        changed = true;
+      }
+    });
+    if (changed && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(REMINDER_GROUP_COLORS_KEY, JSON.stringify(local));
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!groupColorInitialSyncDone && userId) {
+      groupColorInitialSyncDone = true;
+      Object.keys(local).forEach((key) => {
+        if (!(key in remoteColors)) {
+          saveReminderGroupColorRemote(userId, key, local[key]).catch(() => {});
+        }
+      });
+    }
+    if (changed) {
+      try {
+        render();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  async function startGroupColorSync() {
+    if (!userId) return;
+    stopGroupColorSync();
+    try {
+      groupColorUnsub = await subscribeReminderGroupColors(
+        userId,
+        (remoteColors) => applyRemoteReminderGroupColors(remoteColors),
+        (error) => console.warn('[reminder] group colour sync error', error),
+      );
+    } catch (error) {
+      console.warn('[reminder] group colour subscribe failed', error);
+    }
+  }
+
+  function stopGroupColorSync() {
+    if (typeof groupColorUnsub === 'function') {
+      try {
+        groupColorUnsub();
+      } catch {
+        /* ignore */
+      }
+    }
+    groupColorUnsub = null;
+    groupColorInitialSyncDone = false;
+  }
+
   // Colour for a user-named group: a colour the user chose (saved) wins; otherwise known
   // names keep a fixed colour and any other name is hashed to a fixed palette so each group
   // keeps a consistent, recognisable colour.
@@ -6844,6 +6912,11 @@ export async function initReminders(sel = {}) {
         });
         colorInput.addEventListener('change', (event) => {
           saveReminderGroupColor(group.cat, event.target.value);
+          if (userId) {
+            saveReminderGroupColorRemote(userId, group.cat, event.target.value).catch((error) => {
+              console.warn('[reminder] failed to sync group colour', error);
+            });
+          }
         });
         const name = document.createElement('span');
         name.className = 'reminder-group-card-name';
