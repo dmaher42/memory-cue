@@ -28,7 +28,7 @@ const NOTEBOOK_POLISH_CSS = `
     padding: 0.42rem 0.58rem;
     margin: 0.24rem 0.7rem 0.22rem;
     border-radius: 0.9rem;
-    background: color-mix(in srgb, #ffffff 97%, #f3eefc 3%);
+    background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
     box-shadow: none;
   }
 
@@ -67,12 +67,12 @@ const NOTEBOOK_POLISH_CSS = `
     min-height: 26px;
     padding: 0.22rem 0.66rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
     font-size: 0.72rem;
     line-height: 1;
     font-weight: 600;
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
     white-space: nowrap;
   }
 
@@ -93,7 +93,7 @@ const NOTEBOOK_POLISH_CSS = `
     padding: 0.82rem 0.95rem;
     margin: 0;
     border-radius: 0.95rem;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #f6f2fc 3%);
     box-shadow: none;
   }
@@ -101,7 +101,7 @@ const NOTEBOOK_POLISH_CSS = `
   #view-notebook #notesOverviewList .note-list-item:hover,
   #view-notebook #notesOverviewList .note-list-item:focus-within {
     background: color-mix(in srgb, #ffffff 91%, #efe8fb 9%);
-    border-color: color-mix(in srgb, var(--accent-color, #512663) 18%, transparent);
+    border-color: color-mix(in srgb, var(--accent-color, #1e293b) 18%, transparent);
     box-shadow: none;
     transform: none;
   }
@@ -124,7 +124,7 @@ const NOTEBOOK_POLISH_CSS = `
     gap: 0.32rem;
     margin-top: 0;
     font-size: 0.78rem;
-    color: color-mix(in srgb, var(--text-main, #231B2E) 72%, #7c8798 28%);
+    color: color-mix(in srgb, var(--text-main, #1e293b) 72%, #7c8798 28%);
   }
 
   #view-notebook #notesOverviewList .note-card-folder {
@@ -185,7 +185,7 @@ const NOTEBOOK_POLISH_CSS = `
     font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    color: color-mix(in srgb, var(--text-main, #231B2E) 60%, #7c8798 40%);
+    color: color-mix(in srgb, var(--text-main, #1e293b) 60%, #7c8798 40%);
     white-space: nowrap;
   }
 
@@ -226,17 +226,17 @@ const NOTEBOOK_POLISH_CSS = `
     min-height: 26px;
     padding: 0.24rem 0.58rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 58%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 58%, transparent);
     background: color-mix(in srgb, #ffffff 98%, #efe8fb 2%);
     font-size: 0.7rem;
     font-weight: 600;
-    color: color-mix(in srgb, var(--text-main, #231B2E) 90%, #7c8798 10%);
+    color: color-mix(in srgb, var(--text-main, #1e293b) 90%, #7c8798 10%);
     white-space: nowrap;
   }
 
   .mobile-panel--notes .note-section-chip[data-selected="true"] {
-    background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
-    border-color: color-mix(in srgb, var(--accent-color, #512663) 30%, transparent);
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 14%, #ffffff 86%);
+    border-color: color-mix(in srgb, var(--accent-color, #1e293b) 30%, transparent);
     font-weight: 700;
   }
 
@@ -253,7 +253,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] > div {
-    border-color: color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    border-color: color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
@@ -268,9 +268,9 @@ const NOTEBOOK_POLISH_CSS = `
     font-size: 0.78rem;
     font-weight: 600;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
   }
 
   .mobile-panel--notes .teacher-toolbar-toggle::after {
@@ -290,7 +290,7 @@ const NOTEBOOK_POLISH_CSS = `
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-toolbar-shell {
     padding: 0.58rem 0.62rem;
     border-radius: 0.95rem;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #efe8fb 3%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
@@ -318,8 +318,8 @@ const NOTEBOOK_POLISH_CSS = `
     gap: 0.3rem;
     padding: 0.42rem 0.48rem;
     border-radius: 0.88rem;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 72%, transparent);
-    background: color-mix(in srgb, #ffffff 90%, #f3eefc 10%);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 72%, transparent);
+    background: color-mix(in srgb, #ffffff 90%, #f8fafc 10%);
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
     backdrop-filter: blur(12px);
   }
@@ -341,9 +341,9 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .note-inline-action[data-selected="true"] {
-    background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #512663) 30%, transparent);
-    color: var(--text-main, #231B2E);
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 14%, #ffffff 86%);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #1e293b) 30%, transparent);
+    color: var(--text-main, #1e293b);
     font-weight: 600;
   }
 
@@ -368,17 +368,17 @@ const NOTEBOOK_POLISH_CSS = `
     min-height: 27px;
     padding: 0.26rem 0.54rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 68%, transparent);
-    background: color-mix(in srgb, #ffffff 96%, #f3eefc 4%);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 68%, transparent);
+    background: color-mix(in srgb, #ffffff 96%, #f8fafc 4%);
     font-size: 0.72rem;
     line-height: 1;
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] .teacher-step-chip[data-selected="true"],
   #view-notebook [data-active-lesson-card] .teacher-step-chip[data-selected="true"] {
-    background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff 86%);
-    border-color: color-mix(in srgb, var(--accent-color, #512663) 34%, transparent);
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 14%, #ffffff 86%);
+    border-color: color-mix(in srgb, var(--accent-color, #1e293b) 34%, transparent);
     font-weight: 600;
   }
 
@@ -395,8 +395,8 @@ const NOTEBOOK_POLISH_CSS = `
   .mobile-panel--notes .lesson-cue-block {
     padding: 0.78rem 0.9rem;
     border-radius: 0.95rem;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.14)) 68%, transparent);
-    background: color-mix(in srgb, #ffffff 97%, #f3eefc 3%);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 68%, transparent);
+    background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
     box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
   }
 
@@ -406,20 +406,20 @@ const NOTEBOOK_POLISH_CSS = `
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--text-main, #231B2E) 62%, #7c8798 38%);
+    color: color-mix(in srgb, var(--text-main, #1e293b) 62%, #7c8798 38%);
   }
 
   .mobile-panel--notes .lesson-cue-value {
     margin: 0;
     font-size: 1rem;
     line-height: 1.45;
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions.fixed-bottom {
     gap: 0.6rem;
     padding: 0.52rem 0.6rem;
-    background: color-mix(in srgb, #ffffff 94%, #f3eefc 6%);
+    background: color-mix(in srgb, #ffffff 94%, #f8fafc 6%);
     box-shadow: 0 10px 24px rgba(17, 17, 26, 0.1);
   }
 
@@ -432,7 +432,7 @@ const NOTEBOOK_POLISH_CSS = `
   #view-notebook #relatedNotesPanel h3 {
     font-size: 0.82rem;
     letter-spacing: 0.02em;
-    color: color-mix(in srgb, var(--text-main, #231B2E) 82%, #7c8798 18%);
+    color: color-mix(in srgb, var(--text-main, #1e293b) 82%, #7c8798 18%);
   }
 
   #view-notebook #relatedNotesList {
@@ -491,13 +491,13 @@ const NOTEBOOK_POLISH_CSS = `
     width: 30px;
     height: 30px;
     border-radius: 999px;
-    color: color-mix(in srgb, var(--text-main, #231B2E) 62%, #7c8798 38%);
+    color: color-mix(in srgb, var(--text-main, #1e293b) 62%, #7c8798 38%);
   }
 
   #savedNotesSheet .note-card-action:hover,
   #savedNotesSheet .note-card-action:focus-visible {
-    background: color-mix(in srgb, var(--accent-color, #512663) 10%, #ffffff 90%);
-    color: var(--text-main, #231B2E);
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 10%, #ffffff 90%);
+    color: var(--text-main, #1e293b);
   }
 
   body[data-active-view="notebooks"] .note-editor-card {

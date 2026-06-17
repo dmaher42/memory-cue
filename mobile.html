@@ -32,22 +32,22 @@ Legacy shells remain for reference only.
       --card-bg: color-mix(in srgb, #ffffff 92%, #f8f4ec 8%); /* off-white card surface */
       --mobile-bottom-nav-height: 48px;
       --cauliflower-blue: #F7F7FA;
-      --card-border: color-mix(in srgb, #e6dff0 70%, #d6d0c4 30%);
-      --text-primary: #231B2E; /* Deep violet text */
-      --text-strong: #34163f;
+      --card-border: color-mix(in srgb, #e2e8f0 70%, #d6d0c4 30%);
+      --text-primary: #1e293b; /* Deep violet text */
+      --text-strong: #1e293b;
       --text-body:  #4a3c57;
-      --text-muted: #9a8bb0;
+      --text-muted: #94a3b8;
       --text-main: #1F1A24;               /* deep neutral */
-      --text-secondary: #4A4153;          /* softer label text */
+      --text-secondary: #475569;          /* softer label text */
       --text-placeholder: var(--text-muted);        /* subtle, elegant placeholder */
       --font-primary: 'Poppins', 'Segoe UI', system-ui, sans-serif;
       --font-size-title: 1.1rem;
       --font-size-body: 0.95rem;
-      --accent-color: #512663; /* Deep violet accent */
+      --accent-color: #1e293b; /* Deep violet accent */
       --surface-main: #F7F7FA;      /* page / shell */
       --surface-elevated: #F9F9FB;  /* cards, pills, editor containers */
-      --border-subtle: #E3D9F4;
-      --text-main: #231B2E;
+      --border-subtle: #e2e8f0;
+      --text-main: #1e293b;
       --success-color: #8ed6c1;
       --background-color: var(--surface-main); /* soft pale backdrop */
       --background-gradient: linear-gradient(
@@ -56,8 +56,8 @@ Legacy shells remain for reference only.
         #ECE7F3 50%,
         #D9CDEB 100%
       );
-      --hover-bg: rgba(81, 38, 99, 0.06);
-      --shadow-color: rgba(81, 38, 99, 0.12);
+      --hover-bg: rgba(30, 41, 59, 0.06);
+      --shadow-color: rgba(30, 41, 59, 0.12);
       --icon-inactive: #4c5c7a;
       --icon-active: #111111;
       --true-blue: #0073cf;
@@ -85,7 +85,7 @@ Legacy shells remain for reference only.
       --hover-bg: rgba(209, 213, 219, 0.1);
       --shadow-color: rgba(0, 0, 0, 0.2);
       --icon-inactive: #9ca3af;
-      --icon-active: #a5b4fc;
+      --icon-active: #5eead4;
     }
 
     body {
@@ -120,9 +120,9 @@ Legacy shells remain for reference only.
       padding: 0.45rem 0.7rem;
       margin-bottom: 0;
       background: color-mix(in srgb, #f4f1fb 88%, #ffffff);
-      border: 1px solid color-mix(in srgb, #dcd3ec 65%, transparent);
+      border: 1px solid color-mix(in srgb, #e2e8f0 65%, transparent);
       border-radius: 999px;
-      box-shadow: 0 5px 14px rgba(81, 38, 99, 0.06);
+      box-shadow: 0 5px 14px rgba(30, 41, 59, 0.06);
     }
 
     .reminders-quick-bar input#captureInput,
@@ -233,11 +233,11 @@ Legacy shells remain for reference only.
       right: 0;
       bottom: var(--mobile-bottom-nav-height, 48px);
       z-index: 58;
-      background: color-mix(in srgb, #ffffff 96%, #f4f7fb 4%);
+      background: color-mix(in srgb, #ffffff 96%, #f1f5f9 4%);
       border-top: 1px solid color-mix(in srgb, var(--border-subtle, #dbe2ef) 74%, #ffffff 26%);
       padding: 8px 12px;
       padding-bottom: 8px;
-      box-shadow: 0 -6px 18px rgba(16, 12, 24, 0.08);
+      box-shadow: 0 -6px 18px rgba(2, 6, 23, 0.08);
       transition: padding 0.2s ease;
     }
 
@@ -285,7 +285,7 @@ Legacy shells remain for reference only.
       justify-content: center;
       flex-shrink: 0;
       border: 1px solid color-mix(in srgb, var(--accent-color) 24%, #ffffff 76%);
-      box-shadow: 0 8px 18px rgba(44, 30, 64, 0.2);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
     }
 
     #thinkingBarStatus {
@@ -306,7 +306,7 @@ Legacy shells remain for reference only.
     body[data-active-view="reminders"] .chat-composer {
       padding: 7px 10px;
       padding-bottom: 7px;
-      box-shadow: 0 -6px 18px rgba(16, 12, 24, 0.08);
+      box-shadow: 0 -6px 18px rgba(2, 6, 23, 0.08);
     }
 
     body[data-active-view="notebooks"] #thinkingBarInput,
@@ -327,7 +327,7 @@ Legacy shells remain for reference only.
       height: 2.15rem;
       min-width: 2.15rem;
       min-height: 2.15rem;
-      box-shadow: 0 6px 14px rgba(44, 30, 64, 0.16);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.16);
     }
 
     body[data-active-view="notebooks"] #thinkingBarStatus,
@@ -357,7 +357,7 @@ Legacy shells remain for reference only.
       flex-shrink: 0;
       padding: 0.5rem 0.65rem;
       border-radius: 0.85rem;
-      background: color-mix(in srgb, var(--surface-elevated) 68%, #f4f7fb 32%);
+      background: color-mix(in srgb, var(--surface-elevated) 68%, #f1f5f9 32%);
       border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, #ffffff 28%);
     }
 
@@ -404,7 +404,7 @@ Legacy shells remain for reference only.
       align-self: flex-end;
       background: color-mix(in srgb, var(--accent-color) 15%, #ffffff 85%);
       border: 1px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
-      box-shadow: 0 6px 14px rgba(62, 36, 89, 0.08);
+      box-shadow: 0 6px 14px rgba(30, 41, 59, 0.08);
     }
 
     .chat-message--assistant {
@@ -423,7 +423,7 @@ Legacy shells remain for reference only.
       line-height: 1.3;
       color: color-mix(in srgb, var(--text-main) 86%, #5f6471 14%);
       background: color-mix(in srgb, #ffffff 90%, #f1ebfb 10%);
-      border: 1px solid color-mix(in srgb, var(--card-border, #E7E1F0) 78%, transparent);
+      border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 78%, transparent);
       box-shadow: 0 4px 10px rgba(24, 30, 43, 0.04);
     }
 
@@ -699,9 +699,9 @@ Legacy shells remain for reference only.
     min-height: 28px;
     padding: 0.3rem 0.62rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.16)) 82%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.16)) 82%, transparent);
     background: color-mix(in srgb, #ffffff 94%, #efe8fb 6%);
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
     font-size: 0.82rem;
     line-height: 1;
     font-weight: 600;
@@ -712,14 +712,14 @@ Legacy shells remain for reference only.
 
   #view-notebook .note-inline-action:hover,
   #view-notebook .note-inline-action:focus-visible {
-    background: color-mix(in srgb, var(--accent-color, #512663) 10%, #ffffff 90%);
-    border-color: color-mix(in srgb, var(--accent-color, #512663) 22%, var(--card-border, #d8dce6));
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 10%, #ffffff 90%);
+    border-color: color-mix(in srgb, var(--accent-color, #1e293b) 22%, var(--card-border, #d8dce6));
     outline: none;
   }
 
   #view-notebook #newNoteMobile.note-inline-action {
-    background: color-mix(in srgb, var(--accent-color, #512663) 10%, #ffffff 90%);
-    color: color-mix(in srgb, var(--accent-color, #512663) 80%, #241a2f 20%);
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 10%, #ffffff 90%);
+    color: color-mix(in srgb, var(--accent-color, #1e293b) 80%, #241a2f 20%);
   }
 
   #view-notebook #notesOverviewList {
@@ -737,7 +737,7 @@ Legacy shells remain for reference only.
     padding: 0.8rem 0.9rem;
     border: 1px solid color-mix(in srgb, var(--card-border, #d8dce6) 74%, transparent);
     border-radius: 0.95rem;
-    background: color-mix(in srgb, #ffffff 96%, #f3eefc 4%);
+    background: color-mix(in srgb, #ffffff 96%, #f8fafc 4%);
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
     text-align: left;
   }
@@ -746,7 +746,7 @@ Legacy shells remain for reference only.
     font-size: 0.98rem;
     line-height: 1.3;
     font-weight: 600;
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
     letter-spacing: -0.01em;
   }
 
@@ -845,7 +845,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 
   .mobile-panel--notes #noteEditorSheet {
     padding-top: 0;
-    border-top: 1px solid color-mix(in srgb, var(--mobile-header-border, rgba(99, 102, 241, 0.22)) 55%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--mobile-header-border, rgba(13, 148, 136, 0.22)) 55%, transparent);
   }
 
   .mobile-panel--notes header.mobile-header {
@@ -861,7 +861,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     padding: 0.34rem 0.58rem;
     margin-top: 0;
     border-radius: 1rem;
-    border: 1px solid color-mix(in srgb, var(--card-border, rgba(81, 38, 99, 0.16)) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.16)) 80%, transparent);
     background: color-mix(in srgb, #ffffff 92%, #f2ecff 8%);
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
   }
@@ -888,7 +888,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     justify-content: space-between;
     gap: 0.65rem;
     padding: 0.6rem 0.65rem;
-    background: color-mix(in srgb, #ffffff 90%, #f3eefc 10%);
+    background: color-mix(in srgb, #ffffff 90%, #f8fafc 10%);
     border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
     border-radius: 999px;
     box-shadow: 0 12px 32px rgba(17, 17, 26, 0.12);
@@ -926,8 +926,8 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     border-radius: 999px;
     background: color-mix(in srgb, #ffffff 90%, #ece6f7 10%);
     border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent);
-    color: color-mix(in srgb, var(--accent-color) 82%, #4a4153);
-    box-shadow: 0 6px 18px rgba(81, 38, 99, 0.08);
+    color: color-mix(in srgb, var(--accent-color) 82%, #475569);
+    box-shadow: 0 6px 18px rgba(30, 41, 59, 0.08);
   }
 
   .mobile-panel--notes #scratch-notes-card .note-actions-top .btn:hover,
@@ -1183,8 +1183,8 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   }
 
   .notebook-nav-item.is-active .notebook-nav-icon {
-    background: #4f46e5;
-    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.45);
+    background: #0f766e;
+    box-shadow: 0 10px 25px rgba(13, 148, 136, 0.45);
   }
 
   .notebook-nav-item.is-active .nav-icon-dot {
@@ -1262,8 +1262,8 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 }
 
 .notebook-nav-item.is-active .notebook-nav-icon {
-  background: #6d28d9;
-  border-color: #6d28d9;
+  background: #0d5c56;
+  border-color: #0d5c56;
 }
 
 .notebook-nav-item.is-active .nav-icon-dot {
@@ -1360,7 +1360,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 
   .notebook-folder-chip {
     border-radius: 999px;
-    border: 1px solid rgba(47, 27, 63, 0.12);
+    border: 1px solid rgba(15, 23, 42, 0.12);
     background: rgba(255, 255, 255, 0.96);
     padding: 6px 12px;
     font-size: 0.8rem;
@@ -1376,10 +1376,10 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   }
 
   .notebook-folder-chip--active {
-    background: var(--accent-color, #512663);
-    border-color: var(--accent-color, #512663);
+    background: var(--accent-color, #1e293b);
+    border-color: var(--accent-color, #1e293b);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(81, 38, 99, 0.28);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.28);
   }
 
   /* Sidebar is now the only folder selector; hide the old chip row */
@@ -1434,9 +1434,9 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     padding: 0.45rem 0.8rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--accent-color, #512663);
-    background: rgba(81, 38, 99, 0.06);
-    border: 1px solid rgba(81, 38, 99, 0.12);
+    color: var(--accent-color, #1e293b);
+    background: rgba(30, 41, 59, 0.06);
+    border: 1px solid rgba(30, 41, 59, 0.12);
     border-radius: 999px;
     text-decoration: none;
     white-space: nowrap;
@@ -1444,8 +1444,8 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 
   .folder-filter-new-btn:hover,
   .folder-filter-new-btn:focus-visible {
-    background: rgba(81, 38, 99, 0.1);
-    border-color: rgba(81, 38, 99, 0.18);
+    background: rgba(30, 41, 59, 0.1);
+    border-color: rgba(30, 41, 59, 0.18);
   }
 
   /* Scrollable area inside the sidebar */
@@ -1477,9 +1477,9 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     min-height: 30px;
     padding: 0.25rem 0.7rem;
     border-radius: 999px;
-    border: 1px solid rgba(81, 38, 99, 0.14);
-    background: rgba(81, 38, 99, 0.06);
-    color: var(--accent-color, #512663);
+    border: 1px solid rgba(30, 41, 59, 0.14);
+    background: rgba(30, 41, 59, 0.06);
+    color: var(--accent-color, #1e293b);
     font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
@@ -1493,12 +1493,12 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     max-width: 18rem;
     padding: 0.55rem 0.75rem;
     border-radius: 14px;
-    background: rgba(248, 245, 252, 0.95);
-    border: 1px solid rgba(214, 197, 241, 0.8);
+    background: rgba(248, 250, 252, 0.95);
+    border: 1px solid rgba(203, 213, 225, 0.8);
     color: var(--text-strong, #271933);
     font-size: 0.8rem;
     line-height: 1.45;
-    box-shadow: 0 10px 22px rgba(81, 63, 140, 0.08);
+    box-shadow: 0 10px 22px rgba(30, 41, 59, 0.08);
   }
 
   .saved-notes-help-panel p {
@@ -1594,13 +1594,13 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   /* Selected note card: subtle accent, no heavy band */
   #savedNotesSheet .note-list-item.is-active,
   #savedNotesSheet .note-item-mobile.is-active .note-list-item {
-    background: color-mix(in srgb, var(--accent-color, #6b46c1) 8%, transparent);
-    border-left: 2px solid color-mix(in srgb, var(--accent-color, #6b46c1) 72%, transparent);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 8%, transparent);
+    border-left: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 72%, transparent);
   }
 
   #savedNotesSheet .note-list-item.is-active .note-list-title,
   #savedNotesSheet .note-item-mobile.is-active .note-list-title {
-    color: var(--text-main, #231B2E);
+    color: var(--text-main, #1e293b);
     font-weight: 600;
   }
 
@@ -1807,7 +1807,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     color: var(--mobile-header-button-color);
     font-size: 1.2rem;
     cursor: pointer;
-    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18);
+    box-shadow: 0 10px 22px rgba(13, 148, 136, 0.18);
     transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   }
 
@@ -1896,7 +1896,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       border-bottom: 1px solid var(--border-subtle);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 2px 6px rgba(81, 38, 99, 0.08);
+      box-shadow: 0 2px 6px rgba(30, 41, 59, 0.08);
     }
 
     #slimMobileHeader svg {
@@ -1915,7 +1915,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       background: var(--surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: 20px;
-      box-shadow: 0 2px 6px rgba(81, 38, 99, 0.15);
+      box-shadow: 0 2px 6px rgba(30, 41, 59, 0.15);
       color: var(--text-main);
       font-size: 0.9rem;
     }
@@ -1975,7 +1975,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
 
     .pill-voice-btn:hover,
     .pill-voice-btn:focus {
-      background-color: rgba(81, 38, 99, 0.08);
+      background-color: rgba(30, 41, 59, 0.08);
     }
 
     .pill-voice-btn.is-recording {
@@ -2019,7 +2019,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     .header-center {
       font-size: 1rem;
       font-weight: 600;
-      color: var(--text-strong, #34163f);
+      color: var(--text-strong, #1e293b);
     }
 
     #slimMobileHeader .header-actions {
@@ -2099,8 +2099,8 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       min-width: 0;
       padding: 0.6rem 0.75rem;
       border-radius: 999px;
-      background: #f8f6ff;
-      border: 1px solid rgba(81, 38, 99, 0.08);
+      background: #f8fafc;
+      border: 1px solid rgba(30, 41, 59, 0.08);
       box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.85),
         0 6px 14px rgba(20, 6, 44, 0.05);
@@ -2138,7 +2138,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.01em;
-      color: #5c4b75;
+      color: #475569;
       cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease;
     }
@@ -2189,9 +2189,9 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   gap: 0.5rem;
   padding: 0.6rem 0.75rem;
   border-radius: 999px;
-  background: #f8f6ff;
-  border: 1px solid rgba(81,38,99,0.08);
-  box-shadow: 0 4px 10px rgba(15, 10, 41, 0.08);
+  background: #f8fafc;
+  border: 1px solid rgba(30, 41, 59,0.08);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -2209,7 +2209,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  background: #eee6ff;
+  background: #eef2f6;
   padding: 2px;
   border-radius: 999px;
   border: 1px solid var(--card-border);
@@ -2225,7 +2225,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #5c4b75;
+  color: #475569;
 }
 
 .reminder-tab.reminders-tab-active,
@@ -2838,7 +2838,7 @@ body, main, section, div, p, span, li {
 
     #view-notebook #noteTitleMobile,
     #view-notebook .seamless-title-input {
-      color: var(--text-strong, #34163f);
+      color: var(--text-strong, #1e293b);
     }
 
     #noteTitleMobile {
@@ -2849,7 +2849,7 @@ body, main, section, div, p, span, li {
     }
 
     #view-notebook #noteTitleMobile::placeholder {
-      color: var(--text-muted, #9a8bb0);
+      color: var(--text-muted, #94a3b8);
     }
     .note-title-field {
       border: 1.5px solid var(--border-subtle);
@@ -2878,7 +2878,7 @@ body, main, section, div, p, span, li {
     }
 
     .note-title-field input:focus {
-      outline: 2px solid rgba(81, 38, 99, 0.25);
+      outline: 2px solid rgba(30, 41, 59, 0.25);
     }
 
     .note-title-field input,
@@ -2919,8 +2919,8 @@ body, main, section, div, p, span, li {
 
     .notes-editor:focus-within {
       box-shadow:
-        0 0 0 1px rgba(81, 38, 99, 0.12),
-        0 0 0 4px rgba(81, 38, 99, 0.06);
+        0 0 0 1px rgba(30, 41, 59, 0.12),
+        0 0 0 4px rgba(30, 41, 59, 0.06);
       transition: box-shadow 0.18s ease;
     }
 
@@ -3127,7 +3127,7 @@ body, main, section, div, p, span, li {
       background-color: #f9f9f9;
       border-radius: 10px;
       color: var(--text-strong);
-      border: 1px solid #e6dff0;
+      border: 1px solid #e2e8f0;
       box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.03);
       padding: 0.65rem 0.75rem;
     }
@@ -3141,9 +3141,9 @@ body, main, section, div, p, span, li {
     .seamless-title-input:focus {
       background-color: var(--surface-elevated);
       border-radius: 10px;
-      box-shadow: 0 0 0 3px rgba(81, 38, 99, 0.18);
-      border-color: #512663;
-      outline: 2px solid rgba(81, 38, 99, 0.25);
+      box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.18);
+      border-color: #1e293b;
+      outline: 2px solid rgba(30, 41, 59, 0.25);
     }
 
     .distraction-free-editor-container {
@@ -3164,8 +3164,8 @@ body, main, section, div, p, span, li {
 
     .distraction-free-editor-container:focus-within {
       box-shadow:
-        0 0 0 1px rgba(81, 38, 99, 0.12),
-        0 0 0 4px rgba(81, 38, 99, 0.06);
+        0 0 0 1px rgba(30, 41, 59, 0.12),
+        0 0 0 4px rgba(30, 41, 59, 0.06);
     }
 
     .minimal-editor {
@@ -3180,7 +3180,7 @@ body, main, section, div, p, span, li {
       line-height: 1.5;
       max-height: none;
       overflow-y: auto;
-      color: #1f1633;
+      color: #1e293b;
       border-radius: 12px;
       font-family: var(--font-primary);
       font-size: 15px;
@@ -3203,31 +3203,31 @@ body, main, section, div, p, span, li {
       font-family: var(--font-primary);
       font-size: 15px;
       font-weight: 400;
-      color: #1f1633;
+      color: #1e293b;
       line-height: 1.5;
       flex: 1;
       height: 100%;
     }
 
     .minimal-editor textarea:focus {
-      outline: 2px solid rgba(81, 38, 99, 0.25);
+      outline: 2px solid rgba(30, 41, 59, 0.25);
     }
 
     .minimal-editor textarea,
     .minimal-editor[contenteditable="true"] {
       background-color: transparent;
-      color: #1f1633;
+      color: #1e293b;
     }
 
     .minimal-editor:empty::before {
       content: attr(data-placeholder);
-      color: rgba(31, 22, 51, 0.35);
+      color: rgba(15, 23, 42, 0.35);
       font-style: italic;
     }
 
     #view-notebook .editor-hint,
     #view-notebook .note-subtitle {
-      color: var(--text-muted, #9a8bb0);
+      color: var(--text-muted, #94a3b8);
     }
 
     .note-toolbar,
@@ -3237,7 +3237,7 @@ body, main, section, div, p, span, li {
       gap: 0.4rem;
       padding: 0.35rem 0.5rem;
       border-radius: 999px;
-      background: rgba(76, 29, 149, 0.04);
+      background: rgba(30, 41, 59, 0.04);
       border: none;
       box-shadow: none;
       min-height: auto;
@@ -3347,7 +3347,7 @@ body, main, section, div, p, span, li {
       background: var(--surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: 1rem;
-      box-shadow: 0 8px 20px rgba(81, 38, 99, 0.08);
+      box-shadow: 0 8px 20px rgba(30, 41, 59, 0.08);
       padding: 0.75rem;
       display: flex;
       flex-direction: column;
@@ -3398,7 +3398,7 @@ body, main, section, div, p, span, li {
     .recall-item {
       font-size: 0.82rem;
       color: var(--text-muted);
-      background: rgba(81, 38, 99, 0.06);
+      background: rgba(30, 41, 59, 0.06);
       border-radius: 0.5rem;
       padding: 0.4rem 0.55rem;
     }
@@ -3556,7 +3556,7 @@ body, main, section, div, p, span, li {
     border-radius: 999px;
     background: var(--accent-color);
     color: white;
-    box-shadow: 0 10px 26px rgba(81, 38, 99, 0.3);
+    box-shadow: 0 10px 26px rgba(30, 41, 59, 0.3);
     cursor: pointer;
     transition: transform 0.15s ease;
     border: none;
@@ -3619,7 +3619,7 @@ body, main, section, div, p, span, li {
   }
 
   #mobile-nav-shell .floating-footer .floating-card.active {
-    color: #5e3a8c;
+    color: #0f766e;
     font-weight: 600;
   }
 
@@ -3662,7 +3662,7 @@ body, main, section, div, p, span, li {
     border-radius: 999px;
     background: var(--accent-color);
     color: #FFFFFF;
-    box-shadow: 0 16px 38px rgba(81, 38, 99, 0.32), 0 6px 18px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 16px 38px rgba(30, 41, 59, 0.32), 0 6px 18px rgba(0, 0, 0, 0.14);
     font-size: 1.6rem;
     font-weight: 800;
     border: none;
@@ -3672,8 +3672,8 @@ body, main, section, div, p, span, li {
   #mobile-nav-shell .floating-fab:hover,
   #mobile-nav-shell .floating-fab:focus-visible {
     transform: translateY(-3px);
-    box-shadow: 0 18px 42px rgba(81, 38, 99, 0.38), 0 10px 20px rgba(0, 0, 0, 0.16);
-    outline: 3px solid rgba(81, 38, 99, 0.32);
+    box-shadow: 0 18px 42px rgba(30, 41, 59, 0.38), 0 10px 20px rgba(0, 0, 0, 0.16);
+    outline: 3px solid rgba(30, 41, 59, 0.32);
     outline-offset: 3px;
   }
 
@@ -3701,7 +3701,7 @@ body, main, section, div, p, span, li {
     color: #ffffff;
     font-size: 2rem;
     line-height: 1;
-    box-shadow: 0 12px 30px rgba(81, 38, 99, 0.3);
+    box-shadow: 0 12px 30px rgba(30, 41, 59, 0.3);
     transition: transform 0.15s ease;
     z-index: 95;
   }
@@ -4039,9 +4039,9 @@ body, main, section, div, p, span, li {
 }
 
 .overflow-menu-item--active {
-  color: var(--accent-color, #512663) !important;
-  background: color-mix(in srgb, var(--accent-color, #512663) 14%, #ffffff);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #512663) 24%, transparent);
+  color: var(--accent-color, #1e293b) !important;
+  background: color-mix(in srgb, var(--accent-color, #1e293b) 14%, #ffffff);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #1e293b) 24%, transparent);
 }
   </style>
   <!-- BEGIN GPT CHANGE: bottom sheet styles -->
@@ -4611,7 +4611,7 @@ body, main, section, div, p, span, li {
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       min-height: var(--mobile-header-height);
       padding: 6px 14px;
-      color: var(--text-strong, #34163f);
+      color: var(--text-strong, #1e293b);
       border-radius: 0 0 0.85rem 0.85rem;
     }
 
@@ -4651,7 +4651,7 @@ body, main, section, div, p, span, li {
       justify-content: center;
       padding: 0;
       cursor: pointer;
-      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.18);
+      box-shadow: 0 12px 24px rgba(13, 148, 136, 0.18);
       transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -4659,7 +4659,7 @@ body, main, section, div, p, span, li {
     header.sticky .header-icon-btn:focus-visible {
       background-color: color-mix(in srgb, var(--mobile-header-button-bg) 55%, var(--accent-color) 45%);
       color: color-mix(in srgb, var(--card-bg) 96%, transparent);
-      box-shadow: 0 16px 30px rgba(79, 70, 229, 0.22);
+      box-shadow: 0 16px 30px rgba(13, 148, 136, 0.22);
       transform: translateY(-1px);
       outline: none;
     }
@@ -4683,7 +4683,7 @@ body, main, section, div, p, span, li {
     header.sticky .header-icon-btn:active {
       transform: scale(0.95);
       background-color: color-mix(in srgb, var(--accent-color) 25%, var(--mobile-header-button-bg) 75%);
-      box-shadow: 0 8px 16px rgba(79, 70, 229, 0.18);
+      box-shadow: 0 8px 16px rgba(13, 148, 136, 0.18);
     }
 
     html[data-theme="dark"] header.sticky .header-icon-btn,
@@ -4846,7 +4846,7 @@ body, main, section, div, p, span, li {
       font-weight: 500;
       padding: 0 0.75rem;
       cursor: pointer;
-      box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18);
+      box-shadow: 0 10px 22px rgba(13, 148, 136, 0.18);
       transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
@@ -4855,7 +4855,7 @@ body, main, section, div, p, span, li {
     .mc-quick-voice:hover,
     .mc-quick-voice:focus-visible {
       transform: translateY(-1px);
-      box-shadow: 0 14px 28px rgba(79, 70, 229, 0.22);
+      box-shadow: 0 14px 28px rgba(13, 148, 136, 0.22);
       outline: none;
     }
 
@@ -5026,7 +5026,7 @@ body, main, section, div, p, span, li {
       -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.55);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      color: var(--text-strong, #34163f);
+      color: var(--text-strong, #1e293b);
       box-sizing: border-box;
     }
 
@@ -5034,7 +5034,7 @@ body, main, section, div, p, span, li {
       border: 1px solid var(--mobile-header-button-border);
       background: var(--mobile-header-button-bg);
       color: var(--mobile-header-button-color);
-      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.14);
+      box-shadow: 0 12px 24px rgba(13, 148, 136, 0.14);
     }
 
     #reminders-slim-header .control-icon-button:hover,
@@ -5363,7 +5363,7 @@ body, main, section, div, p, span, li {
                 <input
                   id="noteTitleMobile"
                   type="text"
-                  class="note-title input input-sm w-full bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[color-mix(in_srgb,var(--accent-color,_#512663)_65%,#ffffff_35%)]"
+                  class="note-title input input-sm w-full bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[color-mix(in_srgb,var(--accent-color,_#1e293b)_65%,#ffffff_35%)]"
                   placeholder="Note title"
                   autocomplete="off"
                 />
@@ -5436,7 +5436,7 @@ body, main, section, div, p, span, li {
                         class="rte-color-input"
                         type="color"
                         aria-label="Text colour"
-                        value="#1f1633"
+                        value="#1e293b"
                       />
                     </label>
                     <label class="rte-color-control" title="Highlight colour">

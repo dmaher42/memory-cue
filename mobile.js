@@ -1772,7 +1772,7 @@ const initMobileNotes = () => {
   const textColorInputEl = document.getElementById('rteTextColor');
   if (textColorInputEl instanceof HTMLInputElement) {
     textColorInputEl.addEventListener('input', () => {
-      const value = textColorInputEl.value || '#1f1633';
+      const value = textColorInputEl.value || '#1e293b';
       applyFormatCommand('foreColor', value);
     });
   }

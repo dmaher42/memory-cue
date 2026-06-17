@@ -5700,8 +5700,8 @@ export async function initReminders(sel = {}) {
     if (!raw) return '#6b7280';
     if (raw.includes('school')) return '#2563eb';
     if (raw.includes('home')) return '#15803d';
-    if (raw.includes('wellbeing') || raw.includes('support')) return '#7c3aed';
-    const palette = ['#b45309', '#0d9488', '#be185d', '#4f46e5', '#0891b2', '#a16207', '#dc2626', '#0284c7'];
+    if (raw.includes('wellbeing') || raw.includes('support')) return '#0d9488';
+    const palette = ['#b45309', '#0d9488', '#be185d', '#0f766e', '#0891b2', '#a16207', '#dc2626', '#0284c7'];
     let hash = 0;
     for (let i = 0; i < raw.length; i += 1) {
       hash = (hash * 31 + raw.charCodeAt(i)) >>> 0;
@@ -6480,7 +6480,7 @@ export async function initReminders(sel = {}) {
         itemEl.classList.add(`reminder-cat-${categoryGroup.key}`);
         // Set the category stripe colour inline (with !important) so it wins over the
         // older #view-reminders reminder-card border rules without a CSS specificity fight.
-        const categoryStripeColors = { school: '#2563eb', home: '#15803d', wellbeing: '#7c3aed', other: '#b45309' };
+        const categoryStripeColors = { school: '#2563eb', home: '#15803d', wellbeing: '#0d9488', other: '#b45309' };
         itemEl.style.setProperty('border-left-color', categoryStripeColors[categoryGroup.key] || '#888888', 'important');
         toggleBtn.classList.add('reminder-row-complete', 'reminder-card-checkbox');
 

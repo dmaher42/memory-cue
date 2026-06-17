@@ -70,7 +70,7 @@ body.app-shell #smartInputBar {
   gap: var(--space-1);
   padding: var(--space-1);
   background: #fff;
-  border-top: 1px solid var(--border-subtle, #e3d9f4);
+  border-top: 1px solid var(--border-subtle, #e2e8f0);
   z-index: 58;
 }
 
@@ -84,7 +84,7 @@ body.app-shell .smart-input-form {
 body.app-shell .quick-add-input {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--border-subtle, #e3d9f4);
+  border: 1px solid var(--border-subtle, #e2e8f0);
   border-radius: 12px;
   background: #fff;
   padding: 0 var(--space-2);
@@ -108,7 +108,7 @@ body.app-shell #mobile-nav-shell {
   justify-content: space-around;
   align-items: center;
   background: #fff;
-  border-top: 1px solid var(--border, var(--border-subtle, #e3d9f4));
+  border-top: 1px solid var(--border, var(--border-subtle, #e2e8f0));
   padding: 0;
   pointer-events: auto;
   z-index: 59;
@@ -206,11 +206,11 @@ body.app-shell .content .card,
 
 /* Capture view polish */
 #thinkingBarContainer {
-  background: color-mix(in srgb, #ffffff 94%, #f4f7fb 6%) !important;
-  border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 70%, #ffffff 30%) !important;
+  background: color-mix(in srgb, #ffffff 94%, #f1f5f9 6%) !important;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e2e8f0) 70%, #ffffff 30%) !important;
   padding: 8px 12px !important;
   padding-bottom: 8px !important;
-  box-shadow: 0 -6px 18px rgba(16, 12, 24, 0.08) !important;
+  box-shadow: 0 -6px 18px rgba(2, 6, 23, 0.08) !important;
 }
 
 #thinkingBarInput {
@@ -229,8 +229,8 @@ body.app-shell .content .card,
   min-width: 2.25rem !important;
   min-height: 2.25rem !important;
   border-radius: 999px !important;
-  border: 1px solid color-mix(in srgb, var(--accent-color, #512663) 25%, #ffffff 75%) !important;
-  box-shadow: 0 5px 12px rgba(44, 30, 64, 0.18) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #1e293b) 25%, #ffffff 75%) !important;
+  box-shadow: 0 5px 12px rgba(15, 23, 42, 0.18) !important;
 }
 
 body[data-active-view="notebooks"] #thinkingBarContainer {
@@ -238,8 +238,8 @@ body[data-active-view="notebooks"] #thinkingBarContainer {
 }
 
 #bottom-nav {
-  background: color-mix(in srgb, #ffffff 96%, #f4f7fb 4%) !important;
-  border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e3d9f4) 74%, #ffffff 26%) !important;
+  background: color-mix(in srgb, #ffffff 96%, #f1f5f9 4%) !important;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle, #e2e8f0) 74%, #ffffff 26%) !important;
   box-shadow: 0 -8px 20px rgba(17, 23, 37, 0.08) !important;
 }
 
@@ -249,7 +249,7 @@ body[data-active-view="notebooks"] #thinkingBarContainer {
 }
 
 #bottom-nav button.active {
-  color: var(--accent-color, #512663) !important;
+  color: var(--accent-color, #1e293b) !important;
   font-weight: 600;
 }
 
@@ -297,7 +297,7 @@ body[data-active-view="notebooks"] #thinkingBarContainer {
 }
 
 .update-toast-btn {
-  background: #512663;
+  background: #1e293b;
   color: #fff;
   border: none;
   padding: 6px 14px;
@@ -305,7 +305,7 @@ body[data-active-view="notebooks"] #thinkingBarContainer {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(81, 38, 99, 0.2);
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
   transition: background 0.2s ease, transform 0.1s active;
 }
 
@@ -334,7 +334,7 @@ body[data-active-view="notebooks"] #thinkingBarContainer {
 }
 
 [data-theme="professional-dark"] .update-toast-btn {
-  background: #a5b4fc;
-  color: #1e1b4b;
+  background: #5eead4;
+  color: #0f172a;
 }
 

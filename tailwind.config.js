@@ -38,7 +38,7 @@ export default {
     themes: [
       {
         professional: {
-          primary: "#4f46e5",
+          primary: "#0f766e",
           secondary: "#fcd34d",
           accent: "#f472b6",
           neutral: "#3d4451",
@@ -53,7 +53,7 @@ export default {
       "dark",
       {
         "professional-dark": {
-          primary: "#4f46e5",
+          primary: "#0f766e",
           secondary: "#fcd34d",
           accent: "#f472b6",
           neutral: "#1f2937",

@@ -1,7 +1,7 @@
 /* Phase 3 component primitives */
 .btn-primary {
-  border: 1px solid color-mix(in srgb, var(--accent-color, #512663) 55%, #ffffff);
-  background: var(--accent-color, #512663);
+  border: 1px solid color-mix(in srgb, var(--accent-color, #1e293b) 55%, #ffffff);
+  background: var(--accent-color, #1e293b);
   color: #fff;
   border-radius: 0.75rem;
   padding: 0.5rem 0.85rem;
@@ -11,7 +11,7 @@
 .btn-secondary {
   border: 1px solid var(--card-border, #ddd);
   background: #fff;
-  color: var(--text-main, #231B2E);
+  color: var(--text-main, #1e293b);
   border-radius: 0.75rem;
   padding: 0.5rem 0.85rem;
 }
