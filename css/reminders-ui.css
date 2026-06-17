@@ -1607,6 +1607,8 @@ body #view-reminders .reminders-quick-actions .icon-btn {
   margin: 0;
   background: var(--surface-card, var(--color-background-primary, #fff));
   border: 0.5px solid color-mix(in srgb, var(--card-border, #cdc7e6) 78%, transparent);
+  border-left-width: 4px;
+  border-left-color: var(--rgroup-color, #6b7280);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -1620,11 +1622,25 @@ body #view-reminders .reminders-quick-actions .icon-btn {
 }
 
 #view-reminders #reminderList .reminder-group-card-dot {
-  width: 9px;
-  height: 9px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  flex: 0 0 9px;
+  flex: 0 0 14px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
   background: var(--rgroup-color, #6b7280);
+}
+
+#view-reminders #reminderList .reminder-group-card-color-input {
+  width: 0;
+  height: 0;
+  min-width: 0;
+  flex: 0 0 0;
+  opacity: 0;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
 }
 
 #view-reminders #reminderList .reminder-group-card-name {

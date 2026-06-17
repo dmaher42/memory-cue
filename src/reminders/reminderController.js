@@ -5713,10 +5713,42 @@ export async function initReminders(sel = {}) {
     return '';
   }
 
-  // Stable colour for a user-named group. Known names keep a fixed colour; any other name
-  // is hashed to a fixed palette so each group keeps a consistent, recognisable colour.
+  const REMINDER_GROUP_COLORS_KEY = 'memoryCue:reminderGroupColors';
+  const isHexColor = (value) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+
+  function loadReminderGroupColors() {
+    if (typeof localStorage === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem(REMINDER_GROUP_COLORS_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveReminderGroupColor(name, color) {
+    const key = typeof name === 'string' ? name.trim() : '';
+    if (!key || !isHexColor(color) || typeof localStorage === 'undefined') return;
+    try {
+      const map = loadReminderGroupColors();
+      map[key] = color.toLowerCase();
+      localStorage.setItem(REMINDER_GROUP_COLORS_KEY, JSON.stringify(map));
+    } catch {
+      /* ignore persistence errors */
+    }
+  }
+
+  // Colour for a user-named group: a colour the user chose (saved) wins; otherwise known
+  // names keep a fixed colour and any other name is hashed to a fixed palette so each group
+  // keeps a consistent, recognisable colour.
   function getReminderGroupColor(name) {
-    const raw = typeof name === 'string' ? name.trim().toLowerCase() : '';
+    const key = typeof name === 'string' ? name.trim() : '';
+    if (key) {
+      const custom = loadReminderGroupColors()[key];
+      if (isHexColor(custom)) return custom.toLowerCase();
+    }
+    const raw = key.toLowerCase();
     if (!raw) return '#6b7280';
     if (raw.includes('school')) return '#2563eb';
     if (raw.includes('home')) return '#15803d';
@@ -6793,16 +6825,33 @@ export async function initReminders(sel = {}) {
 
         const header = document.createElement('div');
         header.className = 'reminder-group-card-header';
-        const dot = document.createElement('span');
-        dot.className = 'reminder-group-card-dot';
-        dot.setAttribute('aria-hidden', 'true');
+        const colorBtn = document.createElement('button');
+        colorBtn.type = 'button';
+        colorBtn.className = 'reminder-group-card-dot';
+        colorBtn.setAttribute('aria-label', `Change colour for ${group.cat}`);
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.className = 'reminder-group-card-color-input';
+        colorInput.value = getReminderGroupColor(group.cat);
+        colorInput.tabIndex = -1;
+        colorInput.setAttribute('aria-hidden', 'true');
+        colorBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          colorInput.click();
+        });
+        colorInput.addEventListener('input', (event) => {
+          card.style.setProperty('--rgroup-color', event.target.value);
+        });
+        colorInput.addEventListener('change', (event) => {
+          saveReminderGroupColor(group.cat, event.target.value);
+        });
         const name = document.createElement('span');
         name.className = 'reminder-group-card-name';
         name.textContent = group.cat;
         const count = document.createElement('span');
         count.className = 'reminder-group-card-count';
         count.textContent = String(group.items.length);
-        header.append(dot, name, count);
+        header.append(colorBtn, name, count, colorInput);
         card.appendChild(header);
 
         const itemsWrap = document.createElement(listIsSemantic ? 'ul' : 'div');
