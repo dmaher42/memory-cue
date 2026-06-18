@@ -227,7 +227,16 @@ async function buildScripts() {
     bundle: true,
     splitting: true,
     format: 'esm',
-    minify: true,
+    // NOTE: do not enable the full `minify: true`. esbuild's minifySyntax pass
+    // hoists/reorders top-level declarations, which can move a const/class into
+    // a temporal dead zone for code that runs during module init (observed as
+    // "Cannot access 'X' before initialization" crashing reminder setup in the
+    // Linux deploy build, while the Windows build happened to reorder safely).
+    // Keep whitespace + identifier minification (the bulk of the savings) and
+    // leave statement order untouched.
+    minifyWhitespace: true,
+    minifyIdentifiers: true,
+    minifySyntax: false,
     sourcemap: false,
     target: ['esnext'],
     metafile: true,
