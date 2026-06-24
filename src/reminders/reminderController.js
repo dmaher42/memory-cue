@@ -3311,6 +3311,34 @@ export async function initReminders(sel = {}) {
   let lastSyncedNoteIds = new Set();
   const pendingDeletionItems = new Map();
   let unsubscribe = null;
+  // Group-colour state is declared here, above the `await initAuth(...)` wiring
+  // further down: when a signed-in session is persisted, Firebase fires
+  // onSessionChange synchronously during init (which renders and starts the
+  // group-colour sync). Declaring these any later leaves them in the temporal
+  // dead zone at that moment, throwing "Cannot access ... before
+  // initialization" and leaving the reminders list blank.
+  const REMINDER_GROUP_COLORS_KEY = 'memoryCue:reminderGroupColors';
+  const isHexColor = (value) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+  let groupColorUnsub = null;
+  let groupColorInitialSyncDone = false;
+  const reminderFirestoreSync = createReminderFirestoreSync({
+    normalizeReminderRecord,
+    normalizeReminderList,
+    ensureOrderIndicesInitialized,
+    loadReminders,
+    saveToFirebase: (...args) => saveToFirebase(...args),
+    getItems: () => items,
+    setItems: (nextItems) => {
+      items = nextItems;
+    },
+    getPendingDeletionItems: () => pendingDeletionItems,
+    scheduleReminderNotification,
+    render,
+    updateMobileRemindersHeaderSubtitle,
+    persistItems,
+    rescheduleAllReminders,
+    renderSyncIndicator,
+  });
   let editingId = null;
   let currentReminderMode = null;
   let currentReminderId = null;
@@ -4550,25 +4578,6 @@ export async function initReminders(sel = {}) {
     await syncNotes(serializable);
     lastSyncedNoteIds = new Set(serializable.map((note) => note.id));
   });
-  const reminderFirestoreSync = createReminderFirestoreSync({
-    normalizeReminderRecord,
-    normalizeReminderList,
-    ensureOrderIndicesInitialized,
-    loadReminders,
-    saveToFirebase: (...args) => saveToFirebase(...args),
-    getItems: () => items,
-    setItems: (nextItems) => {
-      items = nextItems;
-    },
-    getPendingDeletionItems: () => pendingDeletionItems,
-    scheduleReminderNotification,
-    render,
-    updateMobileRemindersHeaderSubtitle,
-    persistItems,
-    rescheduleAllReminders,
-    renderSyncIndicator,
-  });
-
   async function setupReminderFirestoreSync(){
     unsubscribe = await reminderFirestoreSync.setupReminderFirestoreSync({
       userId,
@@ -5595,9 +5604,6 @@ export async function initReminders(sel = {}) {
     return '';
   }
 
-  const REMINDER_GROUP_COLORS_KEY = 'memoryCue:reminderGroupColors';
-  const isHexColor = (value) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
-
   function loadReminderGroupColors() {
     if (typeof localStorage === 'undefined') return {};
     try {
@@ -5620,9 +5626,6 @@ export async function initReminders(sel = {}) {
       /* ignore persistence errors */
     }
   }
-
-  let groupColorUnsub = null;
-  let groupColorInitialSyncDone = false;
 
   // Merge a remote group-colour map (from Firestore) into the local cache, re-rendering if
   // anything changed, and push any colours set locally that the server doesn't have yet.

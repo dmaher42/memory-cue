@@ -234,6 +234,8 @@ function createReminderMocks(overrides = {}) {
     registerReminderPushDevice: overrides.registerReminderPushDevice || (async () => null),
     syncReminderToOtherDevices: overrides.syncReminderToOtherDevices || (async () => null),
     unregisterReminderPushDevice: overrides.unregisterReminderPushDevice || (async () => null),
+    subscribeReminderGroupColors: overrides.subscribeReminderGroupColors || (async () => () => {}),
+    saveReminderGroupColorRemote: overrides.saveReminderGroupColorRemote || (async () => true),
     normalizeReminderKeywords: overrides.normalizeReminderKeywords || ((value) => Array.isArray(value) ? value : []),
     extractReminderKeywords: overrides.extractReminderKeywords || ((text = '') => String(text).toLowerCase().split(/\s+/).filter(Boolean).slice(0, 10)),
     normalizeSemanticEmbedding: overrides.normalizeSemanticEmbedding || ((value) => Array.isArray(value) ? value : null),
