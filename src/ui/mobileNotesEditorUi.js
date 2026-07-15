@@ -226,6 +226,23 @@ export const initMobileNotesEditorUi = (options = {}) => {
     debouncedAutoSave();
   };
 
+  let toolbarStateUpdatePending = false;
+  const scheduleToolbarStateUpdate = () => {
+    if (toolbarStateUpdatePending) {
+      return;
+    }
+    toolbarStateUpdatePending = true;
+    const runUpdate = () => {
+      toolbarStateUpdatePending = false;
+      updateToolbarState();
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(runUpdate);
+      return;
+    }
+    setTimeout(runUpdate, 0);
+  };
+
   try {
     titleInput?.addEventListener('input', handleNoteEditorInput);
   } catch {
@@ -234,27 +251,27 @@ export const initMobileNotesEditorUi = (options = {}) => {
 
   try {
     scratchNotesEditorElement?.addEventListener('input', handleNoteEditorInput);
-    scratchNotesEditorElement?.addEventListener('input', updateToolbarState);
-    scratchNotesEditorElement?.addEventListener('keyup', updateToolbarState);
-    scratchNotesEditorElement?.addEventListener('mouseup', updateToolbarState);
+    scratchNotesEditorElement?.addEventListener('input', scheduleToolbarStateUpdate);
+    scratchNotesEditorElement?.addEventListener('keyup', scheduleToolbarStateUpdate);
+    scratchNotesEditorElement?.addEventListener('mouseup', scheduleToolbarStateUpdate);
     scratchNotesEditorElement?.addEventListener('keydown', handleListShortcuts);
     scratchNotesEditorElement?.addEventListener('keydown', handleFormattingShortcuts);
-    scratchNotesEditorElement?.addEventListener('blur', () => {
-      flushAutoSave();
-    });
-    titleInput?.addEventListener('blur', () => flushAutoSave());
+    // Input already schedules autosave. Do not force a whole-notebook save merely because
+    // focus moved between the title, body, or formatting toolbar. Real note switches still
+    // call flushAutoSave explicitly before replacing the editor contents.
   } catch {
     /* ignore */
   }
 
   if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => {
-      try {
-        if (hasUnsavedChanges() && saveButton instanceof HTMLElement && !saveButton.matches(':disabled')) {
-          saveButton.click();
-        }
-      } catch {
-        /* ignore */
+    const persistBeforeSuspension = () => {
+      flushAutoSave();
+    };
+    window.addEventListener('pagehide', persistBeforeSuspension);
+    window.addEventListener('beforeunload', persistBeforeSuspension);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        persistBeforeSuspension();
       }
     });
   }

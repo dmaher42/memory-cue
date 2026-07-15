@@ -8,6 +8,9 @@ const normalizeSemanticEmbedding = (value) => {
   if (!Array.isArray(value)) {
     return null;
   }
+  if (value.length && value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))) {
+    return value;
+  }
   const vector = value
     .map((entry) => Number(entry))
     .filter((entry) => Number.isFinite(entry));
@@ -99,6 +102,49 @@ const deriveBodyText = (html = '', fallbackText = '') => {
     return fallbackText.trim();
   }
   return '';
+};
+
+const normalizeComparableBodyText = (value = '') => (
+  typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
+);
+
+const extractComparableBodyText = (body = '') => normalizeComparableBodyText(
+  typeof body === 'string'
+    ? body
+      .replace(/<(?:br\b[^>]*|\/(?:p|div|li|h[1-6]|blockquote|pre|tr|td|th)\s*)>/gi, ' ')
+      .replace(/<[^>]+>/g, '')
+    : '',
+);
+
+const deriveCanonicalBodyText = (body = '', storedBodyText = '') => {
+  const normalizedStoredText = normalizeComparableBodyText(storedBodyText);
+  if (!normalizedStoredText) {
+    return deriveBodyText(body);
+  }
+
+  // A tag-only strip is much cheaper than creating a detached DOM node for every note.
+  // When it agrees with the stored text, the canonical bodyText is safe to reuse. If an
+  // older writer changed bodyHtml without bodyText (or entities need decoding), fall back
+  // to the accurate DOM path for that note only.
+  const lightweightBodyText = extractComparableBodyText(body);
+  return lightweightBodyText === normalizedStoredText
+    ? normalizedStoredText
+    : deriveBodyText(body);
+};
+
+const selectStoredBody = (note = {}, fallbackText = '') => {
+  const bodyHtml = typeof note.bodyHtml === 'string' ? note.bodyHtml : null;
+  const legacyBody = typeof note.body === 'string' ? note.body : null;
+  if (bodyHtml?.length) {
+    return bodyHtml;
+  }
+  if (legacyBody?.length) {
+    return legacyBody;
+  }
+  if (bodyHtml !== null || legacyBody !== null) {
+    return '';
+  }
+  return fallbackText;
 };
 
 const isValidDateString = (value) => {
@@ -404,17 +450,14 @@ const normalizeNotes = (value) => {
           return null;
         }
         const title = typeof note.title === 'string' ? note.title.trim() : '';
-        const rawBodyHtml =
-          typeof note.bodyHtml === 'string' && note.bodyHtml.length
-            ? note.bodyHtml
-            : typeof note.body === 'string'
-              ? note.body
-              : typeof note.bodyText === 'string'
-                ? note.bodyText
-                : '';
         const fallbackText = typeof note.bodyText === 'string' ? note.bodyText : '';
-        const body = normalizeBodyValue(rawBodyHtml || fallbackText);
-        const bodyText = deriveBodyText(body, fallbackText);
+        const rawBodyHtml = selectStoredBody(note, fallbackText);
+        const body = normalizeBodyValue(rawBodyHtml);
+        // Current note writers persist bodyText alongside bodyHtml. Trust that canonical
+        // plain-text value so loading or autosaving one note does not parse every note's
+        // HTML in a detached DOM. Legacy notes without bodyText still use the fallback.
+        const bodyText = deriveCanonicalBodyText(body, fallbackText);
+        const bodyTextChanged = bodyText !== normalizeComparableBodyText(fallbackText);
         const id = typeof note.id === 'string' && note.id.trim() ? note.id : generateId();
         const updatedAt = isValidDateString(note.updatedAt) ? note.updatedAt : new Date().toISOString();
         const pinned = typeof note.pinned === 'boolean' ? note.pinned : false;
@@ -430,8 +473,8 @@ const normalizeNotes = (value) => {
           bodyText,
           pinned,
           pendingSync: typeof note.pendingSync === 'boolean' ? note.pendingSync : false,
-          semanticEmbedding: normalizeSemanticEmbedding(note.semanticEmbedding),
-          keywords: deriveKeywords(title, bodyText, note.keywords),
+          semanticEmbedding: bodyTextChanged ? null : normalizeSemanticEmbedding(note.semanticEmbedding),
+          keywords: deriveKeywords(title, bodyText, bodyTextChanged ? null : note.keywords),
           metadata: sanitizeMetadata(note.metadata),
           links: sanitizeLinks(note.links),
         });
@@ -441,16 +484,11 @@ const normalizeNotes = (value) => {
 
   if (value && typeof value === 'object') {
     const title = typeof value.title === 'string' ? value.title : '';
-    const rawBodyHtml = typeof value.bodyHtml === 'string' && value.bodyHtml.length
-      ? value.bodyHtml
-      : typeof value.body === 'string'
-        ? value.body
-        : typeof value.bodyText === 'string'
-          ? value.bodyText
-          : '';
     const fallbackText = typeof value.bodyText === 'string' ? value.bodyText : '';
-    const body = normalizeBodyValue(rawBodyHtml || fallbackText);
-    const bodyText = deriveBodyText(body, fallbackText);
+    const rawBodyHtml = selectStoredBody(value, fallbackText);
+    const body = normalizeBodyValue(rawBodyHtml);
+    const bodyText = deriveCanonicalBodyText(body, fallbackText);
+    const bodyTextChanged = bodyText !== normalizeComparableBodyText(fallbackText);
     const pinned = typeof value.pinned === 'boolean' ? value.pinned : false;
     if (!title && !body && !bodyText) {
       return [];
@@ -465,8 +503,8 @@ const normalizeNotes = (value) => {
         bodyText,
         pinned,
         pendingSync: typeof value.pendingSync === 'boolean' ? value.pendingSync : false,
-        semanticEmbedding: normalizeSemanticEmbedding(value.semanticEmbedding),
-        keywords: deriveKeywords(title, bodyText, value.keywords),
+        semanticEmbedding: bodyTextChanged ? null : normalizeSemanticEmbedding(value.semanticEmbedding),
+        keywords: deriveKeywords(title, bodyText, bodyTextChanged ? null : value.keywords),
         metadata: sanitizeMetadata(value.metadata),
         links: sanitizeLinks(value.links),
       }),
@@ -554,8 +592,6 @@ export const saveAllNotes = (notes, options = {}) => {
       out.pinned = typeof note.pinned === 'boolean' ? note.pinned : Boolean(out.pinned);
       out.pendingSync = typeof note.pendingSync === 'boolean' ? note.pendingSync : Boolean(out.pendingSync);
       out.createdAt = isValidDateString(note.createdAt) ? note.createdAt : out.createdAt;
-      out.semanticEmbedding = normalizeSemanticEmbedding(note.semanticEmbedding);
-      out.keywords = deriveKeywords(out.title, out.bodyText, note.keywords || out.keywords);
       out.metadata = sanitizeMetadata(note.metadata);
       out.links = sanitizeLinks(note.links);
     }
@@ -580,7 +616,8 @@ export const saveAllNotes = (notes, options = {}) => {
       }
     }
     return true;
-  } catch {
+  } catch (error) {
+    console.warn('[notes-storage] Unable to save notes locally.', error);
     return false;
   }
 };

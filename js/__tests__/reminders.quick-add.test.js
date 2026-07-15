@@ -49,6 +49,10 @@ beforeEach(async () => {
     <input id="reminderTime" type="time" />
     <form id="quickAddForm">
       <input id="reminderQuickAdd" />
+      <select id="quickAddCategory">
+        <option value="General">General</option>
+        <option value="School">School</option>
+      </select>
       <button id="quickAddSubmit" type="button">Add</button>
       <button id="quickAddVoice" type="button">Voice</button>
       <div id="quickAddParsingIndicator" hidden></div>
@@ -109,6 +113,21 @@ test('quick add routes task prefix to Tasks category', async () => {
   expect(items[0].category).toBe('Tasks');
   expect(Number.isFinite(items[0].createdAt)).toBe(true);
   expect(Number.isFinite(items[0].updatedAt)).toBe(true);
+});
+
+test('quick add saves directly into the visible category choice', async () => {
+  const quickInput = document.getElementById('reminderQuickAdd');
+  const quickCategory = document.getElementById('quickAddCategory');
+  quickCategory.value = 'School';
+  quickCategory.dispatchEvent(new Event('change', { bubbles: true }));
+  quickInput.value = 'Print excursion forms tomorrow 8am';
+
+  await window.memoryCueQuickAddNow();
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  expect(items[0].category).toBe('School');
+  expect(JSON.parse(localStorage.getItem('mc:lastDefaults') || '{}').category).toBe('School');
 });
 
 test('quick add routes reflection prefix to Lesson – Reflections notes folder', async () => {

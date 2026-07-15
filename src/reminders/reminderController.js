@@ -120,6 +120,7 @@ const DISPLAY_TITLE_SMALL_WORDS = new Set([
 ]);
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
+  'School',
   'General Appointments',
   'Home & Personal',
   'School – Appointments/Meetings',
@@ -526,7 +527,10 @@ function normalizeCategory(value) {
   if (typeof value === 'string') {
     const trimmed = value.replace(/\s+/g, ' ').trim();
     if (trimmed) {
-      return trimmed;
+      const seededMatch = SEEDED_CATEGORIES.find(
+        (category) => category.toLowerCase() === trimmed.toLowerCase(),
+      );
+      return seededMatch || trimmed;
     }
   }
   return DEFAULT_CATEGORY;
@@ -958,6 +962,12 @@ export async function initReminders(sel = {}) {
   const emptyStateEl = $(sel.emptyStateSel);
   const listWrapper = $(sel.listWrapperSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
+  const quickCategorySelect =
+    typeof document !== 'undefined' ? document.getElementById('quickAddCategory') : null;
+  const categoryChoiceButtons =
+    typeof document !== 'undefined'
+      ? Array.from(document.querySelectorAll('[data-category-choice]'))
+      : [];
   const plannerContext = $(sel.plannerContextSel);
   const plannerLessonInput = $(sel.plannerLessonInputSel);
   const variant = sel.variant || 'mobile';
@@ -1187,6 +1197,32 @@ export async function initReminders(sel = {}) {
     } catch {}
   }
 
+  function ensureQuickCategoryOption(value) {
+    if (!quickCategorySelect || typeof quickCategorySelect.querySelectorAll !== 'function') {
+      return null;
+    }
+    const normalized = normalizeCategory(value);
+    const existing = Array.from(quickCategorySelect.querySelectorAll('option')).find(
+      (option) => option.value.trim().toLowerCase() === normalized.toLowerCase(),
+    );
+    if (existing) {
+      return existing.value;
+    }
+    const option = document.createElement('option');
+    option.value = normalized;
+    option.textContent = normalized;
+    quickCategorySelect.appendChild(option);
+    return normalized;
+  }
+
+  function syncCategoryChoiceState(value = categoryInput?.value) {
+    const activeCategory = normalizeCategory(value).toLowerCase();
+    categoryChoiceButtons.forEach((button) => {
+      const buttonCategory = normalizeCategory(button.dataset?.categoryChoice).toLowerCase();
+      button.setAttribute('aria-pressed', buttonCategory === activeCategory ? 'true' : 'false');
+    });
+  }
+
   function updateDefaultsFrom(entry) {
     const prev = loadLastDefaults();
     const next = {
@@ -1195,6 +1231,11 @@ export async function initReminders(sel = {}) {
       // repeat: entry?.repeat || prev.repeat || null,
     };
     saveLastDefaults(next);
+    const quickCategoryValue = ensureQuickCategoryOption(next.category);
+    if (quickCategorySelect && quickCategoryValue) {
+      quickCategorySelect.value = quickCategoryValue;
+    }
+    syncCategoryChoiceState(next.category);
   }
 
   const priorityChipSelector = 'fieldset#priorityChips input[name="priority"]';
@@ -1243,9 +1284,41 @@ export async function initReminders(sel = {}) {
 
   function applyStoredDefaultsToInputs() {
     const d = loadLastDefaults();
-    if (d.category && categoryInput) categoryInput.value = d.category;
+    const categoryValue = normalizeCategory(d.category || categoryInput?.value || DEFAULT_CATEGORY);
+    if (categoryInput) categoryInput.value = categoryValue;
+    const quickCategoryValue = ensureQuickCategoryOption(categoryValue);
+    if (quickCategorySelect && quickCategoryValue) {
+      quickCategorySelect.value = quickCategoryValue;
+    }
+    syncCategoryChoiceState(categoryValue);
     if (d.priority) setPriorityInputValue(d.priority);
   }
+
+  categoryChoiceButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!categoryInput) {
+        return;
+      }
+      categoryInput.value = normalizeCategory(button.dataset?.categoryChoice);
+      syncCategoryChoiceState(categoryInput.value);
+      categoryInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+
+  categoryInput?.addEventListener('input', () => syncCategoryChoiceState(categoryInput.value));
+  categoryInput?.addEventListener('change', () => syncCategoryChoiceState(categoryInput.value));
+  quickCategorySelect?.addEventListener('change', () => {
+    const categoryValue = normalizeCategory(quickCategorySelect.value);
+    const previous = loadLastDefaults();
+    saveLastDefaults({
+      ...previous,
+      category: categoryValue,
+    });
+    if (categoryInput) {
+      categoryInput.value = categoryValue;
+    }
+    syncCategoryChoiceState(categoryValue);
+  });
 
   applyStoredDefaultsToInputs();
 
@@ -2327,6 +2400,9 @@ export async function initReminders(sel = {}) {
         entry = saveReflectionQuickNote(routedText);
       } else {
           const basePayload = buildQuickReminder(inferredSchedule.cleanedText || routedText);
+          if (quickCategorySelect && typeof quickCategorySelect.value === 'string') {
+            basePayload.category = normalizeCategory(quickCategorySelect.value);
+          }
           const optionDueIso =
             options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
               ? options.dueDate.toISOString()
@@ -3311,7 +3387,7 @@ export async function initReminders(sel = {}) {
   let lastSyncedNoteIds = new Set();
   const pendingDeletionItems = new Map();
   let unsubscribe = null;
-  // Group-colour state is declared here, above the `await initAuth(...)` wiring
+  // Group-colour state is declared here, above the authentication wiring
   // further down: when a signed-in session is persisted, Firebase fires
   // onSessionChange synchronously during init (which renders and starts the
   // group-colour sync). Declaring these any later leaves them in the temporal
@@ -4227,7 +4303,29 @@ export async function initReminders(sel = {}) {
     }
   }
 
-  ensureAllEmbeddings();
+  function scheduleEmbeddingBackfill() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const run = () => {
+      ensureAllEmbeddings().catch((error) => {
+        console.warn('Deferred reminder embedding backfill failed', error);
+      });
+    };
+    const scheduleWhenIdle = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 5000 });
+      } else {
+        setTimeout(run, 1200);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleWhenIdle();
+    } else {
+      window.addEventListener('load', scheduleWhenIdle, { once: true });
+    }
+  }
 
   async function migrateLocalReminders() {
     if (!userId) {
@@ -4466,44 +4564,55 @@ export async function initReminders(sel = {}) {
    initNotebook();
 
 
-    authController = await initAuth({
-    selectors: {
-      signInButtons: googleSignInBtns,
-      signOutButtons: googleSignOutBtns,
-      userName: googleUserName ? [googleUserName] : [],
-      syncStatus: syncStatus ? [syncStatus] : [],
-    },
-    disableButtonBinding: true,
-    onSessionChange: async (user) => {
-      const nextUserId = typeof user?.uid === 'string' ? user.uid : (typeof user?.id === 'string' ? user.id : null);
-      userId = nextUserId;
+  // Local reminders and the capture controls should not wait for Firebase's
+  // CDN modules. Start auth in the background; the existing session callback
+  // will reconcile Firestore as soon as it is ready.
+  void Promise.resolve()
+    .then(() => initAuth({
+      selectors: {
+        signInButtons: googleSignInBtns,
+        signOutButtons: googleSignOutBtns,
+        userName: googleUserName ? [googleUserName] : [],
+        syncStatus: syncStatus ? [syncStatus] : [],
+      },
+      disableButtonBinding: true,
+      onSessionChange: async (user) => {
+        const nextUserId = typeof user?.uid === 'string' ? user.uid : (typeof user?.id === 'string' ? user.id : null);
+        userId = nextUserId;
 
-      if (nextUserId) {
-        if (notesMigrationUserId !== nextUserId) {
-          notesMigrationUserId = nextUserId;
-          notesMigrationComplete = false;
-          lastSyncedNoteIds = new Set();
+        if (nextUserId) {
+          if (notesMigrationUserId !== nextUserId) {
+            notesMigrationUserId = nextUserId;
+            notesMigrationComplete = false;
+            lastSyncedNoteIds = new Set();
+          }
+          renderSyncIndicator('online');
+          googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
+          googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
+          if (googleUserName) googleUserName.textContent = user.email || '';
+          await setupReminderFirestoreSync();
+          await syncNotesFromFirestoreOnLogin();
+          await migrateOfflineRemindersIfNeeded();
+          await ensureNotificationPermission();
+          await syncCurrentDevicePushRegistration();
+          startGroupColorSync();
+          return;
         }
-        renderSyncIndicator('online');
-        googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
-        googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
-        if (googleUserName) googleUserName.textContent = user.email || '';
-        await setupReminderFirestoreSync();
-        await syncNotesFromFirestoreOnLogin();
-        await migrateOfflineRemindersIfNeeded();
-        await ensureNotificationPermission();
-        await syncCurrentDevicePushRegistration();
-        startGroupColorSync();
-        return;
-      }
 
-      notesMigrationComplete = false;
-      notesMigrationUserId = null;
-      lastSyncedNoteIds = new Set();
-      stopGroupColorSync();
+        notesMigrationComplete = false;
+        notesMigrationUserId = null;
+        lastSyncedNoteIds = new Set();
+        stopGroupColorSync();
+        applySignedOutState();
+      },
+    }))
+    .then((controller) => {
+      authController = controller;
+    })
+    .catch((error) => {
+      console.warn('Reminder auth startup failed; continuing with the local copy.', error);
       applySignedOutState();
-    },
-  });
+    });
 
   const shouldWireAuthButtons = autoWireAuthButtons;
 
@@ -6169,6 +6278,17 @@ export async function initReminders(sel = {}) {
       });
     }
 
+    if (quickCategorySelect) {
+      const selectedCategory = normalizeCategory(
+        quickCategorySelect.value || loadLastDefaults().category || DEFAULT_CATEGORY,
+      );
+      allCategories.forEach((category) => ensureQuickCategoryOption(category));
+      const resolvedCategory = ensureQuickCategoryOption(selectedCategory);
+      if (resolvedCategory) {
+        quickCategorySelect.value = resolvedCategory;
+      }
+    }
+
     if (suppressRenderMemoryEvent) {
       suppressRenderMemoryEvent = false;
     } else if (typeof document !== 'undefined' && typeof document.dispatchEvent === 'function') {
@@ -6942,6 +7062,7 @@ export async function initReminders(sel = {}) {
     normalizeRecurrence,
     normalizeIsoString,
     applyStoredDefaultsToInputs,
+    syncCategoryChoiceState,
     clearPlannerReminderContext,
     clearDetailSelection,
     applyDetailSelection,
@@ -7160,6 +7281,7 @@ export async function initReminders(sel = {}) {
   rescheduleAllReminders();
   render();
   persistItems();
+  scheduleEmbeddingBackfill();
 
   if (variant === 'mobile') {
     // Filtering is now handled by the assistant; keep a no-op for legacy callers.

@@ -175,6 +175,7 @@ test('category selectors include school and general presets', async () => {
     'General',
     'General Appointments',
     'Home & Personal',
+    'School',
     'School – Appointments/Meetings',
     'School – Communication & Families',
     'School – Excursions & Events',
@@ -184,4 +185,45 @@ test('category selectors include school and general presets', async () => {
     'Wellbeing & Support',
   ]);
 
+});
+
+test('visible category choices update the reminder category input', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <button type="button" data-category-choice="General" aria-pressed="true">General</button>
+    <button type="button" data-category-choice="School" aria-pressed="false">School</button>
+    <input id="category" list="categorySuggestions" value="General" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    categoryOptionsSel: '#categorySuggestions',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  const generalChoice = document.querySelector('[data-category-choice="General"]');
+  const schoolChoice = document.querySelector('[data-category-choice="School"]');
+  schoolChoice.click();
+
+  expect(document.getElementById('category').value).toBe('School');
+  expect(schoolChoice.getAttribute('aria-pressed')).toBe('true');
+  expect(generalChoice.getAttribute('aria-pressed')).toBe('false');
 });

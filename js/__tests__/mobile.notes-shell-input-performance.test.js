@@ -75,12 +75,19 @@ test('defers note sections bar rendering while typing in the editor', () => {
   const { initMobileNotesShellUi } = loadMobileNotesShellUi();
   const noteEditorSheet = document.getElementById('noteEditorSheet');
   const editor = document.getElementById('notebook-editor-body');
+  let sharedSections = [];
+  const innerTextRead = jest.fn(() => '# Stale Section');
+  Object.defineProperty(editor, 'innerText', {
+    configurable: true,
+    get: innerTextRead,
+  });
 
   initMobileNotesShellUi({
     noteEditorSheet,
     notesOverviewPanel: document.getElementById('notesOverviewPanel'),
     savedNotesSheet: document.getElementById('savedNotesSheet'),
     getCurrentNoteId: () => 'note-1',
+    getCurrentNoteSections: () => sharedSections,
   });
 
   const sectionsBar = noteEditorSheet.querySelector('[data-note-sections-bar]');
@@ -89,6 +96,7 @@ test('defers note sections bar rendering while typing in the editor', () => {
 
   editor.textContent = '# Lesson Plan';
   editor.dispatchEvent(new Event('input', { bubbles: true }));
+  sharedSections = [{ label: 'Lesson Plan', kind: 'markdown' }];
 
   jest.advanceTimersByTime(200);
 
@@ -100,4 +108,5 @@ test('defers note sections bar rendering while typing in the editor', () => {
   expect(sectionsBar.hidden).toBe(false);
   expect(sectionsBar.textContent).toContain('Sections');
   expect(sectionsBar.textContent).toContain('Lesson Plan');
+  expect(innerTextRead).not.toHaveBeenCalled();
 });

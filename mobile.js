@@ -1885,6 +1885,17 @@ const initMobileNotes = () => {
       .trim();
   };
 
+  const getCurrentEditorBodyText = () => {
+    if (!(scratchNotesEditorElement instanceof HTMLElement)) {
+      return '';
+    }
+    const liveText = scratchNotesEditorElement.dataset.noteSectionFocusText
+      || scratchNotesEditorElement.innerText
+      || scratchNotesEditorElement.textContent
+      || '';
+    return liveText.replace(/\s+/g, ' ').trim();
+  };
+
   const normalizeSectionLabel = (value = '') => value
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -3349,6 +3360,7 @@ const initMobileNotes = () => {
       syncNoteFolderButtonLabel(currentEditingNoteFolderId);
     },
     getCurrentNoteId: () => currentNoteId,
+    getCurrentNoteSections,
     getCurrentFolderMoveNoteId: () => currentFolderMoveNoteId,
     setCurrentFolderMoveNoteId: (value) => { currentFolderMoveNoteId = value; },
     getCurrentMoveFolderSheetNoteId: () => currentMoveFolderSheetNoteId,
@@ -3472,7 +3484,7 @@ const initMobileNotes = () => {
     loadAllNotes,
     saveAllNotes,
     getEditorBodyHtml,
-    getEditorBodyText,
+    getEditorBodyText: getCurrentEditorBodyText,
     getCurrentNoteId: () => currentNoteId,
     setCurrentNoteId: (value) => {
       currentNoteId = value;

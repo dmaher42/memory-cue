@@ -73,3 +73,79 @@ test('initReminders survives onSessionChange firing synchronously during init (p
     }),
   ).resolves.toBeDefined();
 });
+
+test('local reminders render and save before deferred auth is ready', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" type="date" />
+    <input id="time" type="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option value="Medium" selected>Medium</option></select>
+    <input id="category" value="General" />
+    <button id="saveBtn" type="button">Save</button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="status"></div>
+    <div id="remindersWrapper">
+      <div id="emptyState"></div>
+      <ul id="reminderList"></ul>
+    </div>
+  `;
+
+  let releaseAuth;
+  const authGate = new Promise((resolve) => {
+    releaseAuth = resolve;
+  });
+  let markAuthComplete;
+  const authComplete = new Promise((resolve) => {
+    markAuthComplete = resolve;
+  });
+  const setupReminderFirestoreSync = jest.fn(async ({ currentUnsubscribe = null } = {}) => currentUnsubscribe);
+  const initAuth = jest.fn(async ({ onSessionChange } = {}) => {
+    await authGate;
+    await onSessionChange?.({ uid: 'user-123', email: 'user@example.com' });
+    markAuthComplete();
+    return { signOut: async () => {} };
+  });
+  window.requestIdleCallback = jest.fn();
+
+  const { initReminders } = loadReminderController({
+    initAuth,
+    loadReminders: () => [{
+      id: 'local-1',
+      title: 'Already saved locally',
+      category: 'General',
+      priority: 'Medium',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }],
+    createReminderFirestoreSync: () => ({ setupReminderFirestoreSync }),
+  });
+
+  const controller = await initReminders({
+    variant: 'mobile',
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    statusSel: '#status',
+    listWrapperSel: '#remindersWrapper',
+    emptyStateSel: '#emptyState',
+    listSel: '#reminderList',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  expect(document.getElementById('reminderList').textContent).toContain('Already Saved Locally');
+  document.getElementById('title').value = 'Saved before sync';
+  document.getElementById('saveBtn').click();
+  expect(controller.__testing.getItems().map((item) => item.title)).toContain('Saved before sync');
+  expect(setupReminderFirestoreSync).not.toHaveBeenCalled();
+
+  releaseAuth();
+  await authComplete;
+  expect(setupReminderFirestoreSync).toHaveBeenCalledTimes(1);
+  delete window.requestIdleCallback;
+});

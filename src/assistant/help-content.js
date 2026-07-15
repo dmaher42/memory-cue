@@ -21,7 +21,7 @@ need to think about football drill for next week`,
 
   sections: {
     capture: 'Capture is the main input area where you type messages.',
-    reminders: 'Reminders are tasks with dates or times.',
+    reminders: 'Reminders are tasks with dates or times. Categories keep similar reminders together; pick an existing category or type a new name when you add one.',
     notebooks: 'Notebooks store organised notes and ideas.',
     inbox: 'Inbox is the background holding area for captures that still need review.',
   },

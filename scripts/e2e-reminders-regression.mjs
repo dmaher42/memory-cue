@@ -91,11 +91,17 @@ async function main() {
   const cwd = process.cwd();
   const appDir = await resolveBuiltAppDir(cwd);
   const { server, baseUrl } = await startStaticServer(appDir);
+  let browser = null;
 
   try {
     await waitForServer(baseUrl);
 
-    const browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH
+        ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+        : {}),
+    });
     const context = await browser.newContext({
       timezoneId: 'Australia/Adelaide',
       serviceWorkers: 'block',
@@ -163,17 +169,33 @@ async function main() {
       return panel && !panel.classList.contains('hidden');
     });
 
-    const titleTexts = await page.locator('#view-reminders .reminder-row-title').allTextContents();
-    const metaTexts = await page.locator('#view-reminders .reminder-row-meta').allTextContents();
+    await page.selectOption('#quickAddCategory', 'School');
+    await page.fill('#reminderQuickAdd', 'Call Mum tomorrow at 6pm');
+    await page.click('#quickAddSubmit');
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return reminders.some((reminder) => reminder?.title === 'Call Mum' && reminder?.category === 'School');
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
+
+    const titleTexts = await page.locator(
+      '#view-reminders .reminder-row-title, #view-reminders .reminder-group-row-title',
+    ).allTextContents();
+    const metaTexts = await page.locator(
+      '#view-reminders .reminder-row-meta, #view-reminders .reminder-group-row-due',
+    ).allTextContents();
     const titleText = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Get Naplan');
-    const metaText = (metaTexts || []).map((text) => (text || '').trim()).find((text) => /Tomorrow,\s*8:30\s?AM/i.test(text || ''));
+    const metaText = (metaTexts || []).map((text) => (text || '').trim()).find((text) => /Tomorrow,\s*0?8:30(?:\s?AM)?/i.test(text || ''));
     const unscheduledTitle = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Call Tuesday About Roster');
 
     if (titleText !== 'Get Naplan') {
       throw new Error(`Expected rendered reminders to include "Get Naplan", received: ${JSON.stringify(titleTexts)}`);
     }
 
-    if (!/Tomorrow,\s*8:30\s?AM/i.test(metaText || '')) {
+    if (!/Tomorrow,\s*0?8:30(?:\s?AM)?/i.test(metaText || '')) {
       throw new Error(`Unexpected reminder meta values: ${JSON.stringify(metaTexts)}`);
     }
 
@@ -197,9 +219,16 @@ async function main() {
       const title = typeof reminder?.title === 'string' ? reminder.title.trim().toLowerCase() : '';
       return title === 'get naplan';
     });
+    const visibleQuickAddReminder = persistedReminders.find((reminder) => (
+      reminder?.title === 'Call Mum' && reminder?.category === 'School'
+    ));
 
     if (typeof persistedQuickAddReminder?.due !== 'string' || !persistedQuickAddReminder.due) {
       throw new Error(`Expected persisted reminder to include a due value, received: ${JSON.stringify(persistedReminders)}`);
+    }
+
+    if (typeof visibleQuickAddReminder?.due !== 'string' || !visibleQuickAddReminder.due) {
+      throw new Error(`Expected the visible quick-add bar to save a dated School reminder, received: ${JSON.stringify(persistedReminders)}`);
     }
 
     const inboxEntries = await page.evaluate(() => {
@@ -239,13 +268,14 @@ async function main() {
       metaText,
       unscheduledTitle,
       persistedDue: persistedQuickAddReminder.due,
+      visibleQuickAddCategory: visibleQuickAddReminder.category,
       mirroredInboxSource: mirroredInboxEntry.source,
       mirroredInboxEntryPoint: mirroredInboxEntry.entryPoint,
       blockingErrors,
     }, null, 2));
 
-    await browser.close();
   } finally {
+    await browser?.close();
     server.close();
   }
 }

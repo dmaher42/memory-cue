@@ -1,5 +1,5 @@
 import { captureInput } from './capturePipeline.js';
-import { loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
+import { createNote, loadAllNotes, saveAllNotes } from '../../js/modules/notes-storage.js';
 import { searchMemoryIndex } from '../../js/modules/memory-index.js';
 import { createReminder } from '../services/reminderService.js';
 import { handleQuery } from '../brain/queryEngine.js';
@@ -86,9 +86,30 @@ const executeUpdateNote = async (payload = {}) => {
     };
   }
 
+  const hasOwnUpdate = (key) => Object.prototype.hasOwnProperty.call(updates, key);
+  const hasBodyUpdate = hasOwnUpdate('bodyHtml') || hasOwnUpdate('body') || hasOwnUpdate('bodyText');
+  let normalizedUpdates = updates;
+  if (hasBodyUpdate) {
+    const nextBodyValue = hasOwnUpdate('bodyHtml')
+      ? updates.bodyHtml
+      : hasOwnUpdate('body')
+        ? updates.body
+        : updates.bodyText;
+    const normalizedContent = createNote(
+      notes[noteIndex]?.title || 'Untitled note',
+      typeof nextBodyValue === 'string' ? nextBodyValue : '',
+    );
+    normalizedUpdates = {
+      ...updates,
+      body: normalizedContent.body,
+      bodyHtml: normalizedContent.bodyHtml,
+      bodyText: normalizedContent.bodyText,
+    };
+  }
+
   const nextNote = {
     ...notes[noteIndex],
-    ...updates,
+    ...normalizedUpdates,
     updatedAt: new Date().toISOString(),
   };
   const nextNotes = notes.slice();

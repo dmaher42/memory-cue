@@ -1228,10 +1228,50 @@ body #create-sheet .reminder-field-textarea:focus {
 }
 
 body #create-sheet .reminder-details-textarea {
-  min-height: 6.2rem;
+  min-height: 4.5rem;
   line-height: 1.4;
   white-space: pre-wrap;
   resize: vertical;
+}
+
+body #create-sheet .reminder-field-help {
+  margin: -0.1rem 0 0;
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+body #create-sheet .reminder-category-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+body #create-sheet .reminder-category-choice {
+  min-height: 2rem;
+  padding: 0.36rem 0.7rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+body #create-sheet .reminder-category-choice:hover,
+body #create-sheet .reminder-category-choice:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-color, #1e293b) 38%, transparent);
+  outline: none;
+}
+
+body #create-sheet .reminder-category-choice[aria-pressed='true'] {
+  border-color: var(--accent-color, #1e293b);
+  background: var(--accent-color, #1e293b);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
 }
 
 body #create-sheet .reminder-datetime-grid {
@@ -1339,6 +1379,82 @@ body #view-reminders .reminders-top-row {
   margin-bottom: 0 !important;
 }
 
+body #view-reminders .reminders-fast-capture,
+body #view-reminders .reminders-fast-add {
+  width: 100%;
+  min-width: 0;
+}
+
+body #view-reminders .reminders-fast-add {
+  display: grid;
+  gap: 0.42rem;
+}
+
+body #view-reminders .reminders-fast-add-button {
+  flex: 0 0 auto;
+  min-height: 2rem;
+  padding: 0.4rem 0.78rem;
+  border: 0;
+  border-radius: 0.72rem;
+  background: var(--accent-color, #0f766e);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1;
+  cursor: pointer;
+}
+
+body #view-reminders .reminders-fast-add-button:hover,
+body #view-reminders .reminders-fast-add-button:focus-visible {
+  background: color-mix(in srgb, var(--accent-color, #0f766e) 88%, #000000);
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 28%, transparent);
+  outline-offset: 2px;
+}
+
+body #view-reminders .reminders-fast-add-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+body #view-reminders .reminders-fast-add-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.28rem 0.45rem;
+  padding: 0 0.18rem;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+body #view-reminders .reminders-fast-add-options label {
+  font-weight: 750;
+  color: var(--text-main, #1e293b);
+}
+
+body #view-reminders .reminders-fast-add-options select {
+  max-width: min(12rem, 48vw);
+  min-height: 1.75rem;
+  padding: 0.2rem 1.55rem 0.2rem 0.52rem;
+  border: 1px solid color-mix(in srgb, var(--text-main, #1e293b) 12%, transparent);
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--accent-color, #0f766e) 7%, #ffffff);
+  color: var(--text-main, #1e293b);
+  font: inherit;
+  font-weight: 700;
+}
+
+body #view-reminders #quickAddHelp {
+  flex: 1 1 13rem;
+}
+
+body #view-reminders .reminders-fast-add-status {
+  min-width: 2.7rem;
+  color: var(--accent-color, #0f766e);
+  font-weight: 750;
+  text-align: right;
+}
+
 body #view-reminders .reminders-quick-bar {
   display: flex;
   align-items: center;
@@ -1353,6 +1469,10 @@ body #view-reminders .reminders-quick-bar {
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
   white-space: nowrap;
   overflow: hidden;
+}
+
+body.app-shell #view-reminders .reminders-fast-add .reminders-quick-bar {
+  display: flex !important;
 }
 
 body #view-reminders .reminders-quick-bar:focus-within {

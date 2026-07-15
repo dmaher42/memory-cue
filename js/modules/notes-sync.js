@@ -7,8 +7,18 @@ import { syncNotes, subscribeToNotesChanges } from '../../src/services/firestore
 
 let backfillEmbeddingsModulePromise = null;
 
-const syncFirestoreMemoriesToLocalCache = async (notes = []) => {
-  if (!Array.isArray(notes) || !notes.length) {
+const syncFirestoreMemoriesToLocalCache = async (
+  notes = [],
+  userId = '',
+  isSessionCurrent = () => true,
+) => {
+  if (
+    !Array.isArray(notes)
+    || !notes.length
+    || typeof userId !== 'string'
+    || !userId
+    || !isSessionCurrent()
+  ) {
     return;
   }
 
@@ -20,13 +30,16 @@ const syncFirestoreMemoriesToLocalCache = async (notes = []) => {
   }
 
   const backfillModule = await backfillEmbeddingsModulePromise;
+  if (!isSessionCurrent()) {
+    return;
+  }
   const syncMemoriesFromFirestore = backfillModule?.syncMemoriesFromFirestore;
   if (typeof syncMemoriesFromFirestore !== 'function') {
     return;
   }
 
   try {
-    await syncMemoriesFromFirestore(notes);
+    await syncMemoriesFromFirestore(notes.map((note) => ({ ...note, userId })));
   } catch (error) {
     console.warn('[notes-sync] Failed to backfill Firestore memory embeddings.', error);
   }
@@ -112,12 +125,18 @@ export const initNotesSync = (options = {}) => {
   const {
     onRemotePull = null,
     debugLogger = null,
+    memoryCacheSyncHandler = syncFirestoreMemoriesToLocalCache,
   } = options;
 
   let currentUserId = null;
+  let sessionGeneration = 0;
   let isApplyingRemote = false;
   let remoteSyncPromise = null;
   let stopRemoteSubscription = null;
+  let pendingMemoryCacheSync = null;
+  let memoryCacheSyncHandle = null;
+  let memoryCacheSyncHandleType = null;
+  let memoryCacheSyncScheduled = false;
 
   const logDebug = (...args) => {
     if (typeof debugLogger === 'function') {
@@ -127,6 +146,70 @@ export const initNotesSync = (options = {}) => {
         // Debug logging failures should never break sync.
       }
     }
+  };
+
+  const cancelScheduledMemoryCacheSync = () => {
+    pendingMemoryCacheSync = null;
+    memoryCacheSyncScheduled = false;
+    if (memoryCacheSyncHandle !== null) {
+      if (
+        memoryCacheSyncHandleType === 'idle'
+        && typeof window !== 'undefined'
+        && typeof window.cancelIdleCallback === 'function'
+      ) {
+        window.cancelIdleCallback(memoryCacheSyncHandle);
+      } else {
+        clearTimeout(memoryCacheSyncHandle);
+      }
+    }
+    memoryCacheSyncHandle = null;
+    memoryCacheSyncHandleType = null;
+  };
+
+  const scheduleFirestoreMemoriesToLocalCache = (notes = [], userId = currentUserId) => {
+    const normalizedNotes = Array.isArray(notes) ? notes : [];
+    if (!normalizedNotes.length || !userId || userId !== currentUserId) {
+      return;
+    }
+    pendingMemoryCacheSync = {
+      notes: normalizedNotes,
+      userId,
+      generation: sessionGeneration,
+    };
+    if (memoryCacheSyncScheduled) {
+      return;
+    }
+    memoryCacheSyncScheduled = true;
+    const runSync = () => {
+      memoryCacheSyncScheduled = false;
+      memoryCacheSyncHandle = null;
+      memoryCacheSyncHandleType = null;
+      const scheduled = pendingMemoryCacheSync;
+      pendingMemoryCacheSync = null;
+      if (
+        !scheduled
+        || scheduled.generation !== sessionGeneration
+        || scheduled.userId !== currentUserId
+      ) {
+        return;
+      }
+      const isSessionCurrent = () => (
+        scheduled.generation === sessionGeneration
+        && scheduled.userId === currentUserId
+      );
+      void Promise.resolve(
+        memoryCacheSyncHandler(scheduled.notes, scheduled.userId, isSessionCurrent),
+      ).catch((error) => {
+        console.warn('[notes-sync] Deferred memory cache sync failed.', error);
+      });
+    };
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      memoryCacheSyncHandleType = 'idle';
+      memoryCacheSyncHandle = window.requestIdleCallback(runSync, { timeout: 2000 });
+      return;
+    }
+    memoryCacheSyncHandleType = 'timeout';
+    memoryCacheSyncHandle = setTimeout(runSync, 250);
   };
 
   const stopLiveSync = () => {
@@ -141,6 +224,17 @@ export const initNotesSync = (options = {}) => {
   };
 
   const applyRemoteNotes = async (remoteNotes = [], meta = {}) => {
+    const sourceUserId = typeof meta.userId === 'string' ? meta.userId : currentUserId;
+    const sourceGeneration = Number.isFinite(meta.sessionGeneration)
+      ? meta.sessionGeneration
+      : sessionGeneration;
+    if (
+      !sourceUserId
+      || sourceUserId !== currentUserId
+      || sourceGeneration !== sessionGeneration
+    ) {
+      return;
+    }
     const normalized = Array.isArray(remoteNotes)
       ? remoteNotes.map((note) => mapRemoteNote(note)).filter(Boolean)
       : [];
@@ -151,7 +245,7 @@ export const initNotesSync = (options = {}) => {
     isApplyingRemote = true;
     const saved = saveAllNotes(merged, { skipRemoteSync: true });
     if (saved && normalized.length) {
-      await syncFirestoreMemoriesToLocalCache(normalized);
+      scheduleFirestoreMemoriesToLocalCache(normalized, sourceUserId);
     }
     isApplyingRemote = false;
 
@@ -178,18 +272,38 @@ export const initNotesSync = (options = {}) => {
       return;
     }
 
-    stopRemoteSubscription = await subscribeToNotesChanges({
-      uid: currentUserId,
+    const subscriptionUserId = currentUserId;
+    const subscriptionGeneration = sessionGeneration;
+    const nextStopRemoteSubscription = await subscribeToNotesChanges({
+      uid: subscriptionUserId,
       onItems: (remoteNotes) => {
-        if (isApplyingRemote) {
+        if (
+          isApplyingRemote
+          || subscriptionUserId !== currentUserId
+          || subscriptionGeneration !== sessionGeneration
+        ) {
           return;
         }
 
-        applyRemoteNotes(remoteNotes, { source: 'snapshot' }).catch((error) => {
+        applyRemoteNotes(remoteNotes, {
+          source: 'snapshot',
+          userId: subscriptionUserId,
+          sessionGeneration: subscriptionGeneration,
+        }).catch((error) => {
           console.error('[notes-sync] Failed to apply live Firebase note updates.', error);
         });
       },
     });
+    if (
+      subscriptionUserId !== currentUserId
+      || subscriptionGeneration !== sessionGeneration
+    ) {
+      if (typeof nextStopRemoteSubscription === 'function') {
+        nextStopRemoteSubscription();
+      }
+      return;
+    }
+    stopRemoteSubscription = nextStopRemoteSubscription;
   };
 
   const pullFromRemote = async () => {
@@ -197,9 +311,14 @@ export const initNotesSync = (options = {}) => {
       return;
     }
 
+    const pullUserId = currentUserId;
+    const pullGeneration = sessionGeneration;
     try {
       logDebug('[notes-sync] Starting Firebase pull');
       const remoteNotes = await syncNotes();
+      if (pullUserId !== currentUserId || pullGeneration !== sessionGeneration) {
+        return;
+      }
       const normalized = Array.isArray(remoteNotes)
         ? remoteNotes.map((note) => mapRemoteNote(note)).filter(Boolean)
         : [];
@@ -212,12 +331,21 @@ export const initNotesSync = (options = {}) => {
         }
         return;
       }
-      await applyRemoteNotes(normalized, { source: 'pull' });
+      await applyRemoteNotes(normalized, {
+        source: 'pull',
+        userId: pullUserId,
+        sessionGeneration: pullGeneration,
+      });
 
       // Propagate any local-only edits (autosaves) that survived the merge but have not yet
       // reached Firestore. Pushing clears their pendingSync flag.
       const mergedNotes = loadAllNotes();
-      if (Array.isArray(mergedNotes) && mergedNotes.some((note) => note?.pendingSync)) {
+      if (
+        pullUserId === currentUserId
+        && pullGeneration === sessionGeneration
+        && Array.isArray(mergedNotes)
+        && mergedNotes.some((note) => note?.pendingSync)
+      ) {
         logDebug('[notes-sync] Pushing notes with unsynced local edits');
         await syncNotes(mergedNotes);
       }
@@ -254,6 +382,8 @@ export const initNotesSync = (options = {}) => {
   });
 
   const handleSessionChange = async (user) => {
+    sessionGeneration += 1;
+    cancelScheduledMemoryCacheSync();
     currentUserId = normalizeUserId(user);
     logDebug('[notes-sync] Session change', { userId: currentUserId });
     if (!currentUserId) {

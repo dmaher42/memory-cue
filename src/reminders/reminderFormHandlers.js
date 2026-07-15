@@ -20,6 +20,7 @@ export const createReminderFormHandlers = (options = {}) => {
     normalizeRecurrence = (value) => value,
     normalizeIsoString = (value) => value,
     applyStoredDefaultsToInputs = () => {},
+    syncCategoryChoiceState = () => {},
     clearPlannerReminderContext = () => {},
     clearDetailSelection = () => {},
     applyDetailSelection = () => {},
@@ -50,6 +51,7 @@ export const createReminderFormHandlers = (options = {}) => {
     setPriorityInputValue('Medium');
     if (categoryInput) categoryInput.value = DEFAULT_CATEGORY;
     applyStoredDefaultsToInputs();
+    syncCategoryChoiceState(categoryInput?.value || DEFAULT_CATEGORY);
     if (resetMode) {
       setReminderMode(null);
     } else {
@@ -82,6 +84,7 @@ export const createReminderFormHandlers = (options = {}) => {
     }
     setPriorityInputValue(item?.priority || 'Medium');
     if (categoryInput) categoryInput.value = normalizeCategory(item.category);
+    syncCategoryChoiceState(categoryInput?.value || DEFAULT_CATEGORY);
     if (details) details.value = typeof item.notes === 'string' ? item.notes : '';
     if (plannerLessonInput) plannerLessonInput.value = typeof item.plannerLessonId === 'string' ? item.plannerLessonId : '';
     clearPlannerReminderContext();

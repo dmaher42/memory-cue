@@ -5277,6 +5277,35 @@ body, main, section, div, p, span, li {
               <div id="todayListContainer" class="today-list-container" aria-live="polite"></div>
             </div>
           </section>
+          <section class="reminders-fast-capture" aria-labelledby="quickAddLabel">
+            <form id="quickAddForm" class="reminders-fast-add" autocomplete="off">
+              <label id="quickAddLabel" class="sr-only" for="reminderQuickAdd">Quickly add a reminder</label>
+              <div class="reminders-quick-bar">
+                <input
+                  id="reminderQuickAdd"
+                  type="text"
+                  inputmode="text"
+                  placeholder="What and when? e.g. Call Mum tomorrow at 6"
+                  aria-describedby="quickAddHelp quickAddStatus"
+                />
+                <button id="quickAddSubmit" type="button" class="reminders-fast-add-button">Add</button>
+              </div>
+              <div class="reminders-fast-add-options">
+                <label for="quickAddCategory">Category</label>
+                <select id="quickAddCategory" aria-label="Category for quick reminder">
+                  <option value="General">General</option>
+                  <option value="School">School</option>
+                  <option value="Home &amp; Personal">Home &amp; Personal</option>
+                  <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
+                </select>
+                <span id="quickAddHelp">Type the date or time naturally. Need details? Use the Add button beside Reminders.</span>
+                <span id="quickAddStatus" class="reminders-fast-add-status" role="status" aria-live="polite">
+                  <span id="quickAddParsingIndicator" hidden>Saving…</span>
+                  <span id="quickAddSuccessIndicator" hidden>Saved</span>
+                </span>
+              </div>
+            </form>
+          </section>
           <header class="reminders-screen-header" aria-label="Reminders overview">
             <div class="reminders-screen-header-copy">
               <h2 class="reminders-screen-title">Reminders</h2>
@@ -6467,12 +6496,44 @@ body, main, section, div, p, span, li {
                     />
                   </div>
 
+                  <div class="reminder-field reminder-category-field">
+                    <label class="reminder-field-label" for="category">Category</label>
+                    <p id="categoryHelp" class="reminder-field-help">Reminders with the same category stay together. Pick one or type a new name.</p>
+                    <div id="categoryQuickChoices" class="reminder-category-choice-row" aria-label="Suggested categories">
+                      <button type="button" class="reminder-category-choice" data-category-choice="General" aria-pressed="true">General</button>
+                      <button type="button" class="reminder-category-choice" data-category-choice="School" aria-pressed="false">School</button>
+                      <button type="button" class="reminder-category-choice" data-category-choice="Home &amp; Personal" aria-pressed="false">Home</button>
+                      <button type="button" class="reminder-category-choice" data-category-choice="Wellbeing &amp; Support" aria-pressed="false">Wellbeing</button>
+                    </div>
+                    <input
+                      id="category"
+                      class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content"
+                      list="categorySuggestions"
+                      placeholder="Type a new category"
+                      value="General"
+                      aria-describedby="categoryHelp"
+                    />
+                    <datalist id="categorySuggestions">
+                      <option value="General"></option>
+                      <option value="School"></option>
+                      <option value="General Appointments"></option>
+                      <option value="Home &amp; Personal"></option>
+                      <option value="School – Appointments/Meetings"></option>
+                      <option value="School – Communication &amp; Families"></option>
+                      <option value="School – Excursions &amp; Events"></option>
+                      <option value="School – Grading &amp; Assessment"></option>
+                      <option value="School – Prep &amp; Resources"></option>
+                      <option value="School – To-Do"></option>
+                      <option value="Wellbeing &amp; Support"></option>
+                    </datalist>
+                  </div>
+
                   <div class="reminder-field">
-                    <label for="reminderDetails" class="reminder-field-label">Details, dates and locations</label>
+                    <label for="reminderDetails" class="reminder-field-label">Extra details (optional)</label>
                     <textarea
                       id="reminderDetails"
                       class="reminder-field-textarea reminder-details-textarea textarea textarea-bordered w-full min-h-[7rem] text-sm text-base-content"
-                      rows="5"
+                      rows="3"
                     ></textarea>
                   </div>
                 </div>
@@ -6505,7 +6566,7 @@ body, main, section, div, p, span, li {
               <!-- Keep optional controls together in a compact options stack -->
               <section class="reminder-section" aria-labelledby="reminderOptionsHeading">
                 <div class="reminder-section-heading">
-                  <p id="reminderOptionsHeading" class="reminder-section-title">More options</p>
+                  <p id="reminderOptionsHeading" class="reminder-section-title">Priority &amp; alerts</p>
                 </div>
                 <div class="reminder-field-group">
                   <div class="reminder-field">
@@ -6525,28 +6586,6 @@ body, main, section, div, p, span, li {
                       <input class="priority-input" type="radio" id="priority-low" name="priority" value="Low" aria-label="Low priority">
                       <label class="priority-pill reminder-chip" for="priority-low">Low</label>
                     </fieldset>
-                  </div>
-                  <div class="reminder-field">
-                    <label class="reminder-field-label" for="category">Group</label>
-                    <input
-                      id="category"
-                      class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content"
-                      list="categorySuggestions"
-                      placeholder="e.g. School, Shopping"
-                      value="General"
-                    />
-                    <datalist id="categorySuggestions">
-                      <option value="General"></option>
-                      <option value="General Appointments"></option>
-                      <option value="Home &amp; Personal"></option>
-                      <option value="School – Appointments/Meetings"></option>
-                      <option value="School – Communication &amp; Families"></option>
-                      <option value="School – Excursions &amp; Events"></option>
-                      <option value="School – Grading &amp; Assessment"></option>
-                      <option value="School – Prep &amp; Resources"></option>
-                      <option value="School – To-Do"></option>
-                      <option value="Wellbeing &amp; Support"></option>
-                    </datalist>
                   </div>
                   <div class="reminder-field">
                     <span class="reminder-field-label">Notifications</span>

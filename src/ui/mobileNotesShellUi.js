@@ -546,6 +546,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     getCurrentEditingNoteFolderId = () => 'unsorted',
     setCurrentEditingNoteFolderId = () => {},
     getCurrentNoteId = () => null,
+    getCurrentNoteSections = null,
     getCurrentTeacherView = () => 'plan',
     getCurrentFolderMoveNoteId = () => null,
     setCurrentFolderMoveNoteId = () => {},
@@ -973,14 +974,24 @@ export const initMobileNotesShellUi = (options = {}) => {
       noteSectionsKey = '';
     }
 
-    const renderableSections = getNotebookEditorSourceText()
-      .split(/\r?\n+/)
-      .map((line) => extractEditorSectionInfo(line))
-      .filter(Boolean)
+    let sharedSections = null;
+    if (typeof getCurrentNoteSections === 'function') {
+      try {
+        sharedSections = getCurrentNoteSections();
+      } catch {
+        sharedSections = null;
+      }
+    }
+    const renderableSections = (Array.isArray(sharedSections)
+      ? sharedSections
+      : getNotebookEditorSourceText()
+        .split(/\r?\n+/)
+        .map((line) => extractEditorSectionInfo(line))
+        .filter(Boolean))
       .map(({ label, kind }) => ({
         label,
         normalized: normalizeSectionLabel(label || ''),
-        kind,
+        kind: kind || 'markdown',
       }))
       .filter((section) => Boolean(section.normalized));
     const renderableSectionsKey = renderableSections
@@ -2120,4 +2131,3 @@ export const initMobileNotesShellUi = (options = {}) => {
     closeNoteFolderSheet,
   };
 };
-

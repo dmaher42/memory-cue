@@ -62,3 +62,88 @@ test('linkEntries stores links on both source and target notes', () => {
   expect(updatedSource.links).toContain('bench-ball');
   expect(updatedTarget.links).toContain('chaos-ball');
 });
+
+test('canonical bodyText avoids reparsing every stored note body', () => {
+  const { loadAllNotes, saveAllNotes } = loadNotesStorageModule();
+  localStorage.setItem('memoryCueNotes', JSON.stringify([
+    {
+      id: 'large-note',
+      title: 'Planning',
+      body: '<p>Already indexed planning text</p>',
+      bodyHtml: '<p>Already indexed planning text</p>',
+      bodyText: 'Already indexed planning text',
+      createdAt: '2026-07-15T00:00:00.000Z',
+      updatedAt: '2026-07-15T00:00:00.000Z',
+      semanticEmbedding: [0.1, 0.2, 0.3],
+    },
+    {
+      id: 'formatted-note',
+      title: 'Formatted planning',
+      body: '<p><strong>Plan</strong> tomorrow</p><ul><li>Pack bag</li><li>Call school</li></ul>',
+      bodyHtml: '<p><strong>Plan</strong> tomorrow</p><ul><li>Pack bag</li><li>Call school</li></ul>',
+      bodyText: 'Plan tomorrow Pack bag Call school',
+      createdAt: '2026-07-15T00:00:00.000Z',
+      updatedAt: '2026-07-15T00:00:00.000Z',
+    },
+  ]));
+
+  const createElementSpy = jest.spyOn(document, 'createElement');
+  try {
+    const notes = loadAllNotes();
+    expect(notes[0].bodyText).toBe('Already indexed planning text');
+    expect(notes[1].bodyText).toBe('Plan tomorrow Pack bag Call school');
+    expect(saveAllNotes(notes, { skipNotesUpdatedEvent: true, skipRemoteSync: true })).toBe(true);
+    expect(createElementSpy).not.toHaveBeenCalled();
+  } finally {
+    createElementSpy.mockRestore();
+  }
+});
+
+test('stale bodyText is repaired when bodyHtml was changed by an older writer', () => {
+  const { loadAllNotes } = loadNotesStorageModule();
+  localStorage.setItem('memoryCueNotes', JSON.stringify([
+    {
+      id: 'updated-elsewhere',
+      title: 'Planning',
+      body: '<p>New planning details</p>',
+      bodyHtml: '<p>New planning details</p>',
+      bodyText: 'Old planning details',
+      semanticEmbedding: [0.8, 0.2],
+      keywords: ['old', 'planning', 'details'],
+      createdAt: '2026-07-15T00:00:00.000Z',
+      updatedAt: '2026-07-16T00:00:00.000Z',
+    },
+  ]));
+
+  const notes = loadAllNotes();
+
+  expect(notes[0].bodyText).toBe('New planning details');
+  expect(notes[0].keywords).toEqual(expect.arrayContaining(['new', 'planning', 'details']));
+  expect(notes[0].keywords).not.toContain('old');
+  expect(notes[0].semanticEmbedding).toBeNull();
+});
+
+test('an explicitly cleared body does not retain stale searchable text', () => {
+  const { loadAllNotes } = loadNotesStorageModule();
+  localStorage.setItem('memoryCueNotes', JSON.stringify([
+    {
+      id: 'cleared-note',
+      title: 'Cleared planning',
+      body: '',
+      bodyHtml: '',
+      bodyText: 'Old private planning details',
+      semanticEmbedding: [0.6, 0.4],
+      keywords: ['old', 'private', 'planning', 'details'],
+      createdAt: '2026-07-15T00:00:00.000Z',
+      updatedAt: '2026-07-16T00:00:00.000Z',
+    },
+  ]));
+
+  const notes = loadAllNotes();
+
+  expect(notes[0].body).toBe('');
+  expect(notes[0].bodyHtml).toBe('');
+  expect(notes[0].bodyText).toBe('');
+  expect(notes[0].keywords).not.toEqual(expect.arrayContaining(['old', 'private', 'details']));
+  expect(notes[0].semanticEmbedding).toBeNull();
+});

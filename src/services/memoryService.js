@@ -87,6 +87,9 @@ const normalizeEmbedding = (value) => {
   if (!Array.isArray(value)) {
     return undefined;
   }
+  if (value.length && value.every((item) => typeof item === 'number' && Number.isFinite(item))) {
+    return value;
+  }
 
   const numbers = value
     .map((item) => Number(item))
@@ -320,42 +323,48 @@ const cosineSimilarity = (left = [], right = []) => {
   return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
 };
 
-const triggerSync = async () => {
-  writeCacheToStorage(memoryCache);
-};
+const mergeMemoriesIntoCache = (memories = []) => {
+  const cacheById = new Map(memoryCache.map((entry) => [entry.id, entry]));
+  const mergedMemories = [];
 
-const mergeMemoryIntoCache = (memory = {}) => {
-  const normalized = normalizeMemory(memory, {
-    source: normalizeSource(memory.source, 'capture'),
-    entryPoint: normalizeText(memory.entryPoint) || 'capture',
+  (Array.isArray(memories) ? memories : []).forEach((memory) => {
+    if (!memory || typeof memory !== 'object') {
+      return;
+    }
+
+    const requestedId = normalizeText(memory.id);
+    const existing = requestedId ? cacheById.get(requestedId) || null : null;
+    const normalized = normalizeMemory({ ...(existing || {}), ...memory }, {
+      source: normalizeSource(memory.source, 'capture'),
+      entryPoint: normalizeText(memory.entryPoint) || 'capture',
+    });
+
+    if (!normalized.text) {
+      return;
+    }
+
+    const nextMemory = attachLegacyAccessors({
+      ...(existing || {}),
+      ...normalized,
+      embedding: normalizeEmbedding(memory.embedding)
+        || normalizeEmbedding(normalized.embedding)
+        || normalizeEmbedding(existing?.embedding),
+      pendingSync: memory.pendingSync === false ? false : normalized.pendingSync,
+    });
+    cacheById.set(nextMemory.id, nextMemory);
+    mergedMemories.push(nextMemory);
   });
 
-  if (!normalized.text) {
-    return null;
+  if (!mergedMemories.length) {
+    return [];
   }
 
-  const existing = normalized.id
-    ? memoryCache.find((entry) => entry.id === normalized.id) || null
-    : null;
-
-  const nextMemory = {
-    ...(existing || {}),
-    ...normalized,
-    embedding: normalizeEmbedding(memory.embedding)
-      || normalizeEmbedding(normalized.embedding)
-      || normalizeEmbedding(existing?.embedding),
-    pendingSync: memory.pendingSync === false ? false : normalized.pendingSync,
-  };
-
-  memoryCache = mergeByLatest([
-    ...memoryCache,
-    nextMemory,
-  ]);
-
+  memoryCache = Array.from(cacheById.values());
   writeCacheToStorage(memoryCache);
-  void triggerSync();
-  return nextMemory;
+  return mergedMemories;
 };
+
+const mergeMemoryIntoCache = (memory = {}) => mergeMemoriesIntoCache([memory])[0] || null;
 
 const lexicalSearch = (query, limit = DEFAULT_SEARCH_LIMIT) => {
   const normalizedQuery = normalizeText(query).toLowerCase();
@@ -388,7 +397,6 @@ const semanticSearch = (queryEmbedding, limit = DEFAULT_SEARCH_LIMIT) => memoryC
   .map((item) => item.memory);
 
 ensureCacheLoaded();
-void triggerSync();
 
 export const saveMemory = async (memory = {}) => {
   ensureCacheLoaded();
@@ -444,9 +452,17 @@ export const updateMemory = async (id, updates = {}) => {
   });
 };
 
+export const updateMemories = async (entries = []) => {
+  ensureCacheLoaded();
+  const updatedAt = Date.now();
+  const updates = (Array.isArray(entries) ? entries : [])
+    .filter((entry) => entry && typeof entry === 'object' && normalizeText(entry.id))
+    .map((entry) => ({ ...entry, updatedAt }));
+  return mergeMemoriesIntoCache(updates);
+};
+
 export const getMemoryById = (id) => {
   ensureCacheLoaded();
-  void triggerSync();
 
   const targetId = normalizeText(id);
   if (!targetId) {
@@ -458,7 +474,6 @@ export const getMemoryById = (id) => {
 
 export const getRecentMemories = (limit = DEFAULT_RECENT_LIMIT) => {
   ensureCacheLoaded();
-  void triggerSync();
 
   const parsedLimit = Number(limit);
   const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0
@@ -472,7 +487,6 @@ export const getRecentMemories = (limit = DEFAULT_RECENT_LIMIT) => {
 
 export const getMemories = () => {
   ensureCacheLoaded();
-  void triggerSync();
 
   return [...memoryCache]
     .sort((left, right) => right.updatedAt - left.updatedAt);
@@ -480,7 +494,6 @@ export const getMemories = () => {
 
 export const searchMemories = (queryEmbedding, limit = DEFAULT_SEARCH_LIMIT) => {
   ensureCacheLoaded();
-  void triggerSync();
 
   const parsedLimit = Number(limit);
   const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0

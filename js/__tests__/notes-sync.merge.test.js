@@ -6,13 +6,13 @@ const vm = require('vm');
 
 // Load notes-sync.js with its ES imports stripped so we can unit-test the pure merge helper
 // without pulling in the Firebase / storage modules it depends on at runtime.
-function loadNotesSync() {
+function loadNotesSync(overrides = {}) {
   const filePath = path.resolve(__dirname, '../modules/notes-sync.js');
   let source = fs.readFileSync(filePath, 'utf8');
   source = source
     .replace(/^import[\s\S]*?;\s*$/mg, '')
     .replace(/export\s+const\s+/g, 'const ');
-  source += '\nmodule.exports = { mergeRemoteIntoLocal };\n';
+  source += '\nmodule.exports = { initNotesSync, mergeRemoteIntoLocal };\n';
 
   const module = { exports: {} };
   const context = vm.createContext({
@@ -26,6 +26,9 @@ function loadNotesSync() {
     Object,
     Map,
     Boolean,
+    setTimeout,
+    clearTimeout,
+    ...overrides,
   });
 
   new vm.Script(source, { filename: filePath }).runInContext(context);
@@ -85,4 +88,92 @@ test('a synced local note absent from remote is treated as deleted and not resur
 
   const merged = mergeRemoteIntoLocal(local, remote);
   expect(merged).toHaveLength(0);
+});
+
+test('signing out cancels deferred memory work from the previous user', async () => {
+  let idleCallback = null;
+  const stopSubscription = jest.fn();
+  const memoryCacheSyncHandler = jest.fn();
+  const windowStub = {
+    addEventListener: jest.fn(),
+    requestIdleCallback: jest.fn((callback) => {
+      idleCallback = callback;
+      return 17;
+    }),
+    cancelIdleCallback: jest.fn(),
+  };
+  const remoteNotes = [{
+    id: 'remote-note',
+    bodyText: 'Private note from user A',
+    updatedAt: '2026-07-16T00:00:00.000Z',
+  }];
+  const { initNotesSync } = loadNotesSync({
+    window: windowStub,
+    loadAllNotes: jest.fn(() => []),
+    saveAllNotes: jest.fn(() => true),
+    setRemoteSyncHandler: jest.fn(),
+    syncNotes: jest.fn(async () => remoteNotes),
+    subscribeToNotesChanges: jest.fn(async () => stopSubscription),
+  });
+  const sync = initNotesSync({ memoryCacheSyncHandler });
+
+  await sync.handleSessionChange({ id: 'user-a' });
+  expect(windowStub.requestIdleCallback).toHaveBeenCalledTimes(1);
+  expect(typeof idleCallback).toBe('function');
+
+  await sync.handleSessionChange(null);
+  expect(windowStub.cancelIdleCallback).toHaveBeenCalledWith(17);
+  expect(stopSubscription).toHaveBeenCalledTimes(1);
+
+  idleCallback();
+  await Promise.resolve();
+  expect(memoryCacheSyncHandler).not.toHaveBeenCalled();
+});
+
+test('in-flight deferred memory work rechecks the session before writing', async () => {
+  let idleCallback = null;
+  let releaseHandler = null;
+  let finishHandler = null;
+  const handlerGate = new Promise((resolve) => { releaseHandler = resolve; });
+  const handlerFinished = new Promise((resolve) => { finishHandler = resolve; });
+  const cacheWrites = [];
+  const windowStub = {
+    addEventListener: jest.fn(),
+    requestIdleCallback: jest.fn((callback) => {
+      idleCallback = callback;
+      return 23;
+    }),
+    cancelIdleCallback: jest.fn(),
+  };
+  const { initNotesSync } = loadNotesSync({
+    window: windowStub,
+    loadAllNotes: jest.fn(() => []),
+    saveAllNotes: jest.fn(() => true),
+    setRemoteSyncHandler: jest.fn(),
+    syncNotes: jest.fn(async () => [{
+      id: 'remote-note',
+      bodyText: 'Private note from user A',
+      updatedAt: '2026-07-16T00:00:00.000Z',
+    }]),
+    subscribeToNotesChanges: jest.fn(async () => () => {}),
+  });
+  const memoryCacheSyncHandler = jest.fn(async (notes, userId, isSessionCurrent) => {
+    await handlerGate;
+    if (isSessionCurrent()) {
+      cacheWrites.push({ notes, userId });
+    }
+    finishHandler();
+  });
+  const sync = initNotesSync({ memoryCacheSyncHandler });
+
+  await sync.handleSessionChange({ id: 'user-a' });
+  idleCallback();
+  await Promise.resolve();
+
+  await sync.handleSessionChange(null);
+  releaseHandler();
+  await handlerFinished;
+
+  expect(memoryCacheSyncHandler).toHaveBeenCalledTimes(1);
+  expect(cacheWrites).toHaveLength(0);
 });
