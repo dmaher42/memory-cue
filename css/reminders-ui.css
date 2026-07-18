@@ -1807,3 +1807,197 @@ body #view-reminders .reminders-quick-actions .icon-btn {
   text-decoration: line-through;
   opacity: 0.6;
 }
+
+/* Reminders flow phase 1: overview, capture, Today, then the reminder stream. */
+body #view-reminders #remindersListMobile {
+  display: grid;
+  gap: 0.38rem;
+}
+
+body #view-reminders .reminders-screen-header {
+  gap: 0.65rem;
+  padding: 0.64rem 0.78rem;
+  border-radius: 0.95rem;
+  box-shadow: 0 5px 14px rgba(30, 41, 59, 0.07);
+}
+
+body #view-reminders .reminders-screen-title {
+  font-size: 1.08rem;
+  line-height: 1.1;
+}
+
+body #view-reminders .reminders-screen-subtitle {
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
+body #view-reminders .reminders-screen-header #reminderSortToggle {
+  height: 1.9rem !important;
+  min-height: 1.9rem !important;
+  padding: 0.34rem 0.58rem !important;
+  border-radius: 0.72rem;
+  font-size: 0.72rem !important;
+}
+
+body #view-reminders .reminders-fast-add {
+  gap: 0.12rem;
+}
+
+body #view-reminders .reminders-quick-bar {
+  min-height: 2.48rem;
+  gap: 0.38rem;
+  padding: 0.36rem 0.48rem 0.36rem 0.72rem;
+  border-radius: 0.9rem;
+  box-shadow: 0 3px 9px rgba(15, 23, 42, 0.06);
+}
+
+body #view-reminders .reminders-quick-bar #reminderQuickAdd {
+  font-size: 0.86rem;
+}
+
+body #view-reminders .reminders-quick-bar .reminders-voice-button {
+  flex: 0 0 auto;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.54rem;
+  border: 1px solid color-mix(in srgb, var(--text-main, #1e293b) 10%, transparent);
+  border-radius: 0.68rem;
+  background: color-mix(in srgb, var(--text-main, #1e293b) 4%, transparent);
+  color: var(--text-main, #1e293b);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: none;
+}
+
+body #view-reminders .reminders-quick-bar .reminders-fast-add-button {
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.66rem;
+}
+
+body #view-reminders .reminders-fast-add-status {
+  min-width: 0;
+  min-height: 0;
+  padding-right: 0.28rem;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+body #view-reminders .reminders-fast-add-more {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0.18rem;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.7rem;
+}
+
+body #view-reminders .reminders-fast-add-more > summary {
+  width: fit-content;
+  padding: 0.12rem 0.15rem;
+  border-radius: 0.42rem;
+  cursor: pointer;
+  font-weight: 650;
+  list-style-position: inside;
+}
+
+body #view-reminders .reminders-fast-add-more > summary:hover,
+body #view-reminders .reminders-fast-add-more > summary:focus-visible {
+  color: var(--accent-color, #0f766e);
+}
+
+body #view-reminders .reminders-fast-add-more .reminders-fast-add-options {
+  padding: 0.32rem 0.08rem 0.12rem;
+}
+
+body #view-reminders .reminders-details-button {
+  min-height: 1.75rem;
+  padding: 0.25rem 0.58rem;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #0f766e) 22%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-color, #0f766e);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+body #view-reminders .today-list-panel {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.9rem;
+  box-shadow: 0 3px 10px rgba(30, 41, 59, 0.045);
+}
+
+body #view-reminders .today-list-header {
+  gap: 0.38rem;
+}
+
+body #view-reminders .today-list-toggle {
+  flex: 1 1 auto;
+  width: 100%;
+  justify-content: space-between;
+}
+
+body #view-reminders .today-list-title {
+  font-size: 0.88rem;
+}
+
+body #view-reminders .today-list-panel:not(.is-expanded) #todayListClearCompleted {
+  display: none;
+}
+
+body #view-reminders .today-list-header .btn {
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding-inline: 0.58rem;
+  font-size: 0.72rem;
+}
+
+body #view-reminders .today-list-body {
+  margin-top: 0.5rem;
+}
+
+body #view-reminders #reminderListSection {
+  margin-top: 0;
+}
+
+@media (max-width: 480px) {
+  body #view-reminders #remindersListMobile {
+    gap: 0.3rem;
+  }
+
+  body #view-reminders .reminders-screen-header {
+    padding: 0.56rem 0.64rem;
+  }
+
+  body #view-reminders .reminders-screen-title {
+    font-size: 1rem;
+  }
+
+  body #view-reminders .reminders-screen-subtitle {
+    font-size: 0.7rem;
+  }
+
+  body #view-reminders .reminders-quick-bar {
+    gap: 0.28rem;
+    padding-left: 0.58rem;
+    padding-right: 0.34rem;
+  }
+
+  body #view-reminders .reminders-quick-bar #reminderQuickAdd {
+    font-size: 0.8rem;
+  }
+
+  body #view-reminders .reminders-quick-bar .reminders-voice-button {
+    padding-inline: 0.42rem;
+    font-size: 0.68rem;
+  }
+
+  body #view-reminders .today-list-panel {
+    padding: 0.42rem 0.58rem;
+  }
+}
