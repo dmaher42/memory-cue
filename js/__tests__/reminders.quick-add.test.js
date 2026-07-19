@@ -38,6 +38,26 @@ let controller;
 beforeEach(async () => {
   jest.useFakeTimers({ now: Date.UTC(2024, 4, 15, 9, 0, 0) });
   localStorage.clear();
+  window.__quickVoiceStarts = 0;
+  window.SpeechRecognition = class SpeechRecognitionStub {
+    constructor() {
+      this.listeners = {};
+    }
+
+    addEventListener(type, handler) {
+      this.listeners[type] = handler;
+    }
+
+    start() {
+      window.__quickVoiceStarts += 1;
+      this.listeners.result?.({ results: [[{ transcript: 'Voice reminder' }]] });
+      this.listeners.end?.();
+    }
+
+    stop() {
+      this.listeners.end?.();
+    }
+  };
   document.body.innerHTML = `
     <div id="status"></div>
     <div id="remindersWrapper">
@@ -78,6 +98,15 @@ afterEach(() => {
   jest.useRealTimers();
   localStorage.clear();
   document.body.innerHTML = '';
+  delete window.SpeechRecognition;
+  delete window.__quickVoiceStarts;
+});
+
+test('the visible compact Voice button fills the quick-add field', () => {
+  document.getElementById('quickAddVoice').click();
+
+  expect(window.__quickVoiceStarts).toBe(1);
+  expect(document.getElementById('reminderQuickAdd').value).toBe('Voice reminder');
 });
 
 test('quick add routes footy drill prefix to Footy – Drills category', async () => {

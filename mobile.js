@@ -1172,6 +1172,10 @@ function openEditor() {
         'click',
         (event) => {
           event.preventDefault();
+          const disclosure = trigger.closest('details.reminders-fast-add-more');
+          if (disclosure instanceof HTMLElement && disclosure.tagName === 'DETAILS') {
+            disclosure.open = false;
+          }
           triggerCueOpen(trigger);
         },
         listenerOptions,

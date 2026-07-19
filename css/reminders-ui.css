@@ -2160,6 +2160,13 @@ body #view-reminders .reminders-details-button {
   cursor: pointer;
 }
 
+html[data-theme="dark"] body #view-reminders .reminders-voice-button,
+html[data-theme="professional-dark"] body #view-reminders .reminders-voice-button {
+  border-color: color-mix(in srgb, var(--card-border, #334155) 88%, transparent);
+  background: var(--surface-elevated, #1f2937);
+  color: var(--text-main, #f9fafb);
+}
+
 body #view-reminders #reminderListSection {
   margin-top: 0;
 }
