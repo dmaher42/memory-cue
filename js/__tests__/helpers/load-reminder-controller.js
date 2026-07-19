@@ -93,6 +93,7 @@ function createReminderMocks(overrides = {}) {
       recurrence: reminder.recurrence || null,
       semanticEmbedding: Array.isArray(reminder.semanticEmbedding) ? reminder.semanticEmbedding : null,
       order: Number.isFinite(reminder.order) ? Number(reminder.order) : null,
+      pinToToday: reminder.pinToToday === true,
     };
   });
 

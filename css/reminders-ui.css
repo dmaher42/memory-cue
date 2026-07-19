@@ -1808,6 +1808,241 @@ body #view-reminders .reminders-quick-actions .icon-btn {
   opacity: 0.6;
 }
 
+/* Phase 2: one time-first reminder stream instead of category columns. */
+body #view-reminders #reminderList {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0.55rem !important;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body #view-reminders .reminder-stream-section {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  list-style: none;
+}
+
+body #view-reminders .reminder-stream-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.16rem 0.28rem 0.3rem;
+}
+
+body #view-reminders .reminder-stream-section-label {
+  margin: 0;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body #view-reminders .reminder-stream-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.3rem;
+  min-height: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-main, #1e293b) 7%, transparent);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+body #view-reminders .reminder-stream-section--overdue .reminder-stream-section-label,
+body #view-reminders .reminder-stream-section--overdue .reminder-stream-section-count {
+  color: #b3261e;
+}
+
+body #view-reminders .reminder-stream-section--today .reminder-stream-section-label,
+body #view-reminders .reminder-stream-section--today .reminder-stream-section-count {
+  color: var(--accent-color, #0f766e);
+}
+
+body #view-reminders .reminder-stream-section-items {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 78%, transparent);
+  border-radius: 0.9rem;
+  background: var(--surface-card, #ffffff);
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.05);
+  list-style: none;
+}
+
+body #view-reminders .reminder-stream-row,
+body #view-reminders .reminder-row.reminder-card.reminder-stream-row {
+  display: grid !important;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  min-height: 3.35rem !important;
+  margin: 0 !important;
+  padding: 0.52rem 0.62rem !important;
+  border: 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 58%, transparent) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body #view-reminders .reminder-stream-section-items > .reminder-stream-row:last-child {
+  border-bottom: 0 !important;
+}
+
+body #view-reminders .reminder-stream-row:hover,
+body #view-reminders .reminder-stream-row:focus-visible {
+  background: color-mix(in srgb, var(--accent-color, #0f766e) 5%, transparent) !important;
+}
+
+body #view-reminders .reminder-stream-checkbox {
+  align-self: center;
+  justify-self: start;
+}
+
+body #view-reminders .reminder-stream-main {
+  min-width: 0;
+}
+
+body #view-reminders .reminder-stream-row .reminder-row-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+body #view-reminders .reminder-stream-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.26rem 0.42rem;
+  margin-top: 0.16rem;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+body #view-reminders .reminder-stream-due {
+  font-weight: 650;
+}
+
+body #view-reminders .reminder-stream-due--overdue {
+  color: #b3261e;
+}
+
+body #view-reminders .reminder-stream-due--today {
+  color: var(--accent-color, #0f766e);
+}
+
+body #view-reminders .reminder-stream-category {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: min(13rem, 55vw);
+  overflow: hidden;
+  color: var(--text-secondary, #64748b);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body #view-reminders .reminder-stream-category::before {
+  width: 0.38rem;
+  height: 0.38rem;
+  margin-right: 0.3rem;
+  border-radius: 50%;
+  background: var(--reminder-category-color, #6b7280);
+  content: '';
+  flex: 0 0 auto;
+}
+
+body #view-reminders .reminder-stream-priority {
+  color: #b3261e;
+  font-weight: 750;
+}
+
+body #view-reminders .reminder-stream-row .task-toolbar {
+  align-self: center;
+  justify-self: end;
+}
+
+body #view-reminders .reminder-stream-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  min-width: 1.85rem;
+  min-height: 1.85rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--text-secondary, #64748b) 76%, transparent);
+  cursor: pointer;
+}
+
+body #view-reminders .reminder-stream-more:hover,
+body #view-reminders .reminder-stream-more:focus-visible {
+  background: color-mix(in srgb, var(--text-main, #1e293b) 8%, transparent);
+  color: var(--text-main, #1e293b);
+}
+
+body #view-reminders .reminder-stream-row.reminder-row-completed .reminder-row-title {
+  text-decoration: line-through;
+  opacity: 0.62;
+}
+
+body #view-reminders #reminderList > .reminder-stream-row {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 78%, transparent) !important;
+  border-radius: 0.9rem !important;
+  background: var(--surface-card, #ffffff) !important;
+}
+
+body #view-reminders #reminderList .reminder-completed-section {
+  width: 100%;
+  margin-top: 0.05rem;
+}
+
+@media (max-width: 480px) {
+  body #view-reminders #reminderList {
+    gap: 0.46rem !important;
+  }
+
+  body #view-reminders .reminder-stream-section-heading {
+    padding-bottom: 0.24rem;
+  }
+
+  body #view-reminders .reminder-stream-row,
+  body #view-reminders .reminder-row.reminder-card.reminder-stream-row {
+    grid-template-columns: 1.8rem minmax(0, 1fr) 1.8rem !important;
+    gap: 0.42rem !important;
+    min-height: 3.08rem !important;
+    padding: 0.46rem 0.5rem !important;
+  }
+
+  body #view-reminders .reminder-stream-row .reminder-row-title {
+    font-size: 0.84rem;
+  }
+
+  body #view-reminders .reminder-stream-meta {
+    font-size: 0.64rem;
+  }
+}
+
 /* Reminders flow phase 1: overview, capture, Today, then the reminder stream. */
 body #view-reminders #remindersListMobile {
   display: grid;

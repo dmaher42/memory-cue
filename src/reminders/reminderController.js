@@ -5637,7 +5637,7 @@ export async function initReminders(sel = {}) {
     expanded = false,
     onToggle = null,
   } = {}) {
-    if (!(parent instanceof HTMLElement)) {
+    if (!parent || typeof parent.appendChild !== 'function') {
       return;
     }
 
@@ -6598,39 +6598,14 @@ export async function initReminders(sel = {}) {
       const openReminder = () => openEditReminderSheet(reminder);
 
       if (isMobile) {
-        itemEl.classList.add('reminder-card-grid');
+        itemEl.classList.add('reminder-stream-row');
         const categoryGroup = getReminderCategoryGroup(catName);
         itemEl.classList.add(`reminder-cat-${categoryGroup.key}`);
-        // Set the category stripe colour inline (with !important) so it wins over the
-        // older #view-reminders reminder-card border rules without a CSS specificity fight.
-        const categoryStripeColors = { school: '#2563eb', home: '#15803d', wellbeing: '#0d9488', other: '#b45309' };
-        itemEl.style.setProperty('border-left-color', categoryStripeColors[categoryGroup.key] || '#888888', 'important');
-        toggleBtn.classList.add('reminder-row-complete', 'reminder-card-checkbox');
-
-        const topRow = document.createElement('div');
-        topRow.className = 'reminder-card-top';
-        const dueChip = document.createElement('span');
-        dueChip.className = 'reminder-card-due';
-        const dueChipText = formatReminderDueChip(reminder, todayRange);
-        dueChip.textContent = dueChipText || 'No date';
-        if (!dueChipText) {
-          dueChip.classList.add('reminder-card-due--none');
-        }
-        const chipDueDate = summary.dueIso ? new Date(summary.dueIso) : null;
-        const chipDueStart = getReminderStartOfDay(chipDueDate);
-        const chipTodayStart = getReminderStartOfDay(todayRange?.start);
-        const chipDiffDays = chipDueStart && chipTodayStart
-          ? Math.round((chipDueStart.getTime() - chipTodayStart.getTime()) / 86400000)
-          : null;
-        if (typeof chipDiffDays === 'number' && chipDiffDays < 0) {
-          dueChip.classList.add('reminder-card-due--overdue');
-        } else if (chipDiffDays === 0 || summary.pinToToday) {
-          dueChip.classList.add('reminder-card-due--today');
-        }
-        topRow.append(dueChip, toggleBtn);
+        itemEl.style.setProperty('--reminder-category-color', getReminderGroupColor(catName));
+        toggleBtn.classList.add('reminder-row-complete', 'reminder-stream-checkbox');
 
         const rowMain = document.createElement('div');
-        rowMain.className = 'reminder-content reminder-card-main reminder-row-main';
+        rowMain.className = 'reminder-content reminder-stream-main reminder-row-main';
 
         const titleWrapper = document.createElement('div');
         titleWrapper.className = 'reminder-title reminder-row-title';
@@ -6645,26 +6620,61 @@ export async function initReminders(sel = {}) {
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
 
-        const footRow = document.createElement('div');
-        footRow.className = 'reminder-card-foot';
+        const metaRow = document.createElement('div');
+        metaRow.className = 'reminder-stream-meta';
+        const dueChipText = formatReminderDueChip(reminder, todayRange);
+        if (dueChipText) {
+          const dueChip = document.createElement('span');
+          dueChip.className = 'reminder-stream-due';
+          const chipDueDate = summary.dueIso ? new Date(summary.dueIso) : null;
+          const chipDueStart = getReminderStartOfDay(chipDueDate);
+          const chipTodayStart = getReminderStartOfDay(todayRange?.start);
+          const chipDiffDays = chipDueStart && chipTodayStart
+            ? Math.round((chipDueStart.getTime() - chipTodayStart.getTime()) / 86400000)
+            : null;
+          if (typeof chipDiffDays === 'number' && chipDiffDays < 0) {
+            dueChip.classList.add('reminder-stream-due--overdue');
+          } else if (chipDiffDays === 0 || summary.pinToToday) {
+            dueChip.classList.add('reminder-stream-due--today');
+          }
+          dueChip.textContent = dueChipText;
+          metaRow.appendChild(dueChip);
+        }
+
         const catLabel = document.createElement('span');
-        catLabel.className = 'reminder-card-cat';
-        catLabel.textContent = categoryGroup.label;
-        footRow.appendChild(catLabel);
+        catLabel.className = 'reminder-stream-category';
+        catLabel.textContent = catName;
+        catLabel.title = catName;
+        metaRow.appendChild(catLabel);
+
         if (String(summary.priority || '').trim().toLowerCase().charAt(0) === 'h') {
           const priorityFlag = document.createElement('span');
-          priorityFlag.className = 'reminder-card-priority';
+          priorityFlag.className = 'reminder-stream-priority';
           priorityFlag.textContent = 'High';
-          footRow.appendChild(priorityFlag);
+          metaRow.appendChild(priorityFlag);
         }
+        rowMain.appendChild(metaRow);
 
         if (summary.done) {
           itemEl.classList.add('reminder-row-completed');
         }
 
-        controls.append(deleteBtn);
-        footRow.appendChild(controls);
-        itemEl.append(topRow, rowMain, footRow);
+        const actionsBtn = document.createElement('button');
+        actionsBtn.type = 'button';
+        actionsBtn.className = 'reminder-stream-more reminder-icon-btn';
+        actionsBtn.setAttribute('aria-label', `More actions for ${reminderTitle}`);
+        actionsBtn.setAttribute('aria-haspopup', 'menu');
+        actionsBtn.setAttribute('data-reminder-control', 'actions');
+        actionsBtn.setAttribute('data-no-swipe', 'true');
+        actionsBtn.innerHTML = `
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" focusable="false">
+            <circle cx="5" cy="12" r="1.6" />
+            <circle cx="12" cy="12" r="1.6" />
+            <circle cx="19" cy="12" r="1.6" />
+          </svg>`;
+        bindReminderControlAction(actionsBtn, () => openReminderQuickActions(reminder));
+        controls.append(actionsBtn);
+        itemEl.append(toggleBtn, rowMain, controls);
 
         itemEl.addEventListener('click', (event) => {
           if (event.defaultPrevented) return;
@@ -6683,9 +6693,7 @@ export async function initReminders(sel = {}) {
           }
         });
 
-        if (isMobile) {
-          enableSwipeToDelete(itemEl, () => removeItem(summary.id));
-        }
+        enableSwipeToDelete(itemEl, () => removeItem(summary.id));
 
         return itemEl;
       }
@@ -6748,190 +6756,77 @@ export async function initReminders(sel = {}) {
       return itemEl;
     };
 
-    // Compact reminder row rendered inside a group card. Keeps the full data/handler
-    // contract (task-item, data-reminder-item, datasets, toggle, delete, row-click).
-    const buildReminderGroupRow = (reminder, catName) => {
-      const reminderTitle = resolveReminderDisplayTitle(reminder);
-      const summary = {
-        id: reminder.id,
-        title: reminderTitle,
-        dueIso: reminder.due || null,
-        priority: reminder.priority || 'Medium',
-        category: catName,
-        done: Boolean(reminder.done),
-        pinToToday: reminder.pinToToday === true,
-      };
-
-      const li = document.createElement(listIsSemantic ? 'li' : 'div');
-      li.className = 'task-item reminder-row reminder-group-row w-full text-base-content';
-      li.dataset.id = summary.id;
-      li.dataset.category = summary.category;
-      li.dataset.title = summary.title;
-      if (summary.priority) li.dataset.priority = summary.priority;
-      li.dataset.done = String(summary.done);
-      if (summary.dueIso) li.dataset.due = summary.dueIso;
-      if (summary.pinToToday) li.dataset.pinToToday = 'true';
-      li.dataset.reminder = JSON.stringify(summary);
-      li.dataset.orderIndex = Number.isFinite(reminder.orderIndex) ? String(reminder.orderIndex) : '';
-      li.dataset.reminderItem = 'true';
-      li.setAttribute('role', 'button');
-      li.tabIndex = 0;
-      li.setAttribute('aria-label', `Edit reminder: ${reminderTitle}`);
-      applyPriorityTokensToCard(li, summary.priority);
-      if (summary.done) li.classList.add('reminder-row-completed');
-
-      const stop = (event) => event.stopPropagation();
-      const bindControl = (el, handler) => {
-        if (!(el instanceof HTMLElement)) return;
-        el.setAttribute('draggable', 'false');
-        el.addEventListener('pointerdown', stop);
-        el.addEventListener('touchstart', stop, { passive: true });
-        el.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          handler();
-        });
-      };
-
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      toggleBtn.className = `reminder-group-row-check reminder-complete-toggle${summary.done ? ' reminder-complete-toggle--active' : ''}`;
-      toggleBtn.setAttribute('data-reminder-control', 'toggle');
-      toggleBtn.setAttribute('data-no-swipe', 'true');
-      toggleBtn.setAttribute('aria-pressed', summary.done ? 'true' : 'false');
-      toggleBtn.setAttribute('aria-label', summary.done ? `Mark reminder as active: ${reminderTitle}` : `Mark reminder as done: ${reminderTitle}`);
-      toggleBtn.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" focusable="false" class="reminder-complete-toggle-icon"><rect x="4" y="4" width="16" height="16" rx="4.5" class="reminder-complete-toggle-box" /><path d="M8.25 12.4l2.7 2.8 4.8-5.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="${summary.done ? 'reminder-complete-toggle-icon--checked' : 'reminder-complete-toggle-icon--unchecked'}" /></svg>`;
-      bindControl(toggleBtn, () => toggleDone(summary.id));
-
-      const body = document.createElement('div');
-      body.className = 'reminder-group-row-body';
-      const titleEl = document.createElement('div');
-      titleEl.className = 'reminder-group-row-title reminder-title';
-      titleEl.dataset.reminderTitle = 'true';
-      const titleToggle = document.createElement('span');
-      titleToggle.dataset.role = 'reminder-today-toggle';
-      titleToggle.className = 'reminder-title-toggle cursor-pointer';
-      titleToggle.setAttribute('role', 'button');
-      titleToggle.tabIndex = 0;
-      titleToggle.textContent = reminderTitle;
-      updatePinToggleVisualState(titleToggle, summary.pinToToday);
-      titleEl.appendChild(titleToggle);
-      body.appendChild(titleEl);
-
-      const dueText = formatReminderDueChip(reminder, todayRange);
-      if (dueText) {
-        const dueEl = document.createElement('div');
-        dueEl.className = 'reminder-group-row-due';
-        const cdd = summary.dueIso ? getReminderStartOfDay(new Date(summary.dueIso)) : null;
-        const tds = getReminderStartOfDay(todayRange?.start);
-        const diff = cdd && tds ? Math.round((cdd.getTime() - tds.getTime()) / 86400000) : null;
-        if (typeof diff === 'number' && diff < 0) dueEl.classList.add('reminder-group-row-due--overdue');
-        else if (diff === 0 || summary.pinToToday) dueEl.classList.add('reminder-group-row-due--today');
-        dueEl.textContent = dueText;
-        body.appendChild(dueEl);
-      }
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'reminder-group-row-delete reminder-icon-btn text-base-content/60';
-      deleteBtn.setAttribute('data-action', 'delete');
-      deleteBtn.setAttribute('data-reminder-control', 'delete');
-      deleteBtn.setAttribute('data-no-swipe', 'true');
-      deleteBtn.setAttribute('aria-label', `Delete reminder: ${reminderTitle}`);
-      deleteBtn.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>`;
-      bindControl(deleteBtn, () => {
-        try {
-          removeItem(summary.id);
-        } catch (err) {
-          console.warn('Delete handler failed', err);
-        }
-      });
-
-      li.append(toggleBtn, body, deleteBtn);
-      li.addEventListener('click', (event) => {
-        if (event.defaultPrevented) return;
-        const target = event.target;
-        if (target && typeof target.closest === 'function' && target.closest('[data-reminder-control]')) return;
-        openEditReminderSheet(reminder);
-      });
-      li.addEventListener('keydown', (event) => {
-        if (event.defaultPrevented) return;
-        if (event.target !== li) return;
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          openEditReminderSheet(reminder);
-        }
-      });
-      enableSwipeToDelete(li, () => removeItem(summary.id));
-      return li;
-    };
-
     if (variant === 'mobile') {
-      // Group active reminders by their (user-named) category into per-group cards.
-      const groupsMap = new Map();
-      activeRows.forEach((reminder) => {
-        const cat = (reminder.category && String(reminder.category).trim()) || DEFAULT_CATEGORY;
-        if (!groupsMap.has(cat)) groupsMap.set(cat, []);
-        groupsMap.get(cat).push(reminder);
-      });
-      const dueTs = (reminder) => {
-        const t = reminder.due ? new Date(reminder.due).getTime() : NaN;
-        return Number.isFinite(t) ? t : Infinity;
+      const dueTimestamp = (reminder) => {
+        const timestamp = reminder?.due ? new Date(reminder.due).getTime() : NaN;
+        return Number.isFinite(timestamp) ? timestamp : Infinity;
       };
-      const groups = Array.from(groupsMap.entries()).map(([cat, items]) => {
-        const sorted = items.slice().sort((a, b) => dueTs(a) - dueTs(b));
-        return { cat, items: sorted, urgency: sorted.length ? dueTs(sorted[0]) : Infinity };
+      const compareByDueTime = (a, b) => {
+        const dueA = dueTimestamp(a);
+        const dueB = dueTimestamp(b);
+        if (dueA !== dueB) {
+          return dueA < dueB ? -1 : 1;
+        }
+        const orderA = Number.isFinite(a?.orderIndex) ? a.orderIndex : Infinity;
+        const orderB = Number.isFinite(b?.orderIndex) ? b.orderIndex : Infinity;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return resolveReminderDisplayTitle(a).localeCompare(resolveReminderDisplayTitle(b));
+      };
+      const timeGroups = [
+        { key: 'overdue', label: 'Overdue', items: [] },
+        { key: 'today', label: 'Today', items: [] },
+        { key: 'upcoming', label: 'Upcoming', items: [] },
+        { key: 'no-date', label: 'No date', items: [] },
+      ];
+      const timeGroupMap = new Map(timeGroups.map((group) => [group.key, group]));
+
+      activeRows.forEach((reminder) => {
+        const dueTime = dueTimestamp(reminder);
+        let groupKey = 'no-date';
+        if (Number.isFinite(dueTime) && dueTime < t0.getTime()) {
+          groupKey = 'overdue';
+        } else if (reminder?.pinToToday === true || (Number.isFinite(dueTime) && dueTime <= t1.getTime())) {
+          groupKey = 'today';
+        } else if (Number.isFinite(dueTime)) {
+          groupKey = 'upcoming';
+        }
+        timeGroupMap.get(groupKey)?.items.push(reminder);
       });
-      groups.sort((a, b) => (a.urgency - b.urgency) || a.cat.localeCompare(b.cat));
-      groups.forEach((group) => {
-        const card = document.createElement(listIsSemantic ? 'li' : 'div');
-        card.className = 'reminder-group-card';
-        card.dataset.group = group.cat;
-        card.style.setProperty('--rgroup-color', getReminderGroupColor(group.cat));
 
-        const header = document.createElement('div');
-        header.className = 'reminder-group-card-header';
-        const colorBtn = document.createElement('button');
-        colorBtn.type = 'button';
-        colorBtn.className = 'reminder-group-card-dot';
-        colorBtn.setAttribute('aria-label', `Change colour for ${group.cat}`);
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.className = 'reminder-group-card-color-input';
-        colorInput.value = getReminderGroupColor(group.cat);
-        colorInput.tabIndex = -1;
-        colorInput.setAttribute('aria-hidden', 'true');
-        colorBtn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          colorInput.click();
-        });
-        colorInput.addEventListener('input', (event) => {
-          card.style.setProperty('--rgroup-color', event.target.value);
-        });
-        colorInput.addEventListener('change', (event) => {
-          saveReminderGroupColor(group.cat, event.target.value);
-          if (userId) {
-            saveReminderGroupColorRemote(userId, group.cat, event.target.value).catch((error) => {
-              console.warn('[reminder] failed to sync group colour', error);
-            });
-          }
-        });
-        const name = document.createElement('span');
-        name.className = 'reminder-group-card-name';
-        name.textContent = group.cat;
+      timeGroups.forEach((group) => {
+        if (!group.items.length) {
+          return;
+        }
+        group.items.sort(compareByDueTime);
+
+        const section = document.createElement(listIsSemantic ? 'li' : 'section');
+        section.className = `reminder-stream-section reminder-stream-section--${group.key}`;
+        section.dataset.timeGroup = group.key;
+
+        const heading = document.createElement('div');
+        heading.className = 'reminder-stream-section-heading';
+        const label = document.createElement('h3');
+        label.className = 'reminder-stream-section-label';
+        label.textContent = group.label;
         const count = document.createElement('span');
-        count.className = 'reminder-group-card-count';
+        count.className = 'reminder-stream-section-count';
         count.textContent = String(group.items.length);
-        header.append(colorBtn, name, count, colorInput);
-        card.appendChild(header);
+        heading.append(label, count);
 
-        const itemsWrap = document.createElement(listIsSemantic ? 'ul' : 'div');
-        itemsWrap.className = 'reminder-group-card-items';
+        const sectionItems = document.createElement(listIsSemantic ? 'ul' : 'div');
+        sectionItems.className = 'reminder-stream-section-items';
         group.items.forEach((reminder) => {
-          itemsWrap.appendChild(buildReminderGroupRow(reminder, group.cat));
+          const catName = (reminder.category && String(reminder.category).trim()) || DEFAULT_CATEGORY;
+          sectionItems.appendChild(buildReminderCard(reminder, catName, {
+            elementTag: listIsSemantic ? 'li' : 'div',
+            isMobile: true,
+          }));
         });
-        card.appendChild(itemsWrap);
-        frag.appendChild(card);
+
+        section.append(heading, sectionItems);
+        frag.appendChild(section);
       });
     } else {
       activeRows.forEach((r) => {

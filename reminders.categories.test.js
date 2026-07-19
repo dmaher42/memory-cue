@@ -139,6 +139,82 @@ test('mobile reminders normalise uncategorised rows to General', async () => {
   expect(excursionItems).toHaveLength(1);
 });
 
+test('mobile reminders render one due-time stream with completed reminders collapsed', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option>High</option><option selected>Medium</option></select>
+    <input id="category" list="categorySuggestions" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="wrapper"><ul id="list"></ul></div>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  const controller = await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const dueAt = (dayOffset, hour) => {
+    const value = new Date(todayStart);
+    value.setDate(value.getDate() + dayOffset);
+    value.setHours(hour, 0, 0, 0);
+    return value.toISOString();
+  };
+
+  controller.__testing.setItems([
+    { id: 'upcoming-late', title: 'Reports', priority: 'Medium', category: 'School', done: false, due: dueAt(2, 15) },
+    { id: 'no-date', title: 'Bowies Adoption', priority: 'Medium', category: 'Home & Personal', done: false, due: null },
+    { id: 'today-due', title: 'Paneer', priority: 'High', category: 'General', done: false, due: dueAt(0, 18) },
+    { id: 'overdue', title: 'Passports', priority: 'Medium', category: 'School', done: false, due: dueAt(-1, 9) },
+    { id: 'today-pinned', title: 'Netball', priority: 'Medium', category: 'Wellbeing & Support', done: false, due: null, pinToToday: true },
+    { id: 'upcoming-early', title: 'Saag for Tea', priority: 'Medium', category: 'General', done: false, due: dueAt(1, 8) },
+    { id: 'completed', title: 'Finished task', priority: 'Low', category: 'General', done: true, due: dueAt(0, 10) },
+  ]);
+  controller.__testing.render();
+
+  const groupOrder = Array.from(document.querySelectorAll('.reminder-stream-section'))
+    .map((section) => section.dataset.timeGroup);
+  expect(groupOrder).toEqual(['overdue', 'today', 'upcoming', 'no-date']);
+  expect(document.querySelector('.reminder-group-card')).toBeNull();
+
+  const todayIds = Array.from(document.querySelectorAll('[data-time-group="today"] [data-reminder-item="true"]'))
+    .map((row) => row.dataset.id);
+  expect(todayIds).toEqual(['today-due', 'today-pinned']);
+
+  const upcomingIds = Array.from(document.querySelectorAll('[data-time-group="upcoming"] [data-reminder-item="true"]'))
+    .map((row) => row.dataset.id);
+  expect(upcomingIds).toEqual(['upcoming-early', 'upcoming-late']);
+
+  expect(document.querySelector('[data-id="completed"]')).toBeNull();
+  expect(document.querySelectorAll('.reminder-stream-more')).toHaveLength(6);
+  expect(document.querySelector('[aria-label^="Delete reminder"]')).toBeNull();
+  expect(document.querySelector('[data-id="upcoming-late"] .reminder-stream-category').textContent).toBe('School');
+
+  document.querySelector('.reminder-completed-section-toggle').click();
+  expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
+});
+
 test('category selectors include school and general presets', async () => {
   document.body.innerHTML = `
     <input id="title" />
