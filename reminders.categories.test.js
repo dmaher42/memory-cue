@@ -215,6 +215,140 @@ test('mobile reminders render one due-time stream with completed reminders colla
   expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
 });
 
+test('legacy Today list items migrate once into canonical reminders before the old store is removed', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <input id="category" list="categorySuggestions" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="wrapper"><ul id="list"></ul></div>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  const dateId = (offset) => {
+    const value = new Date();
+    value.setDate(value.getDate() + offset);
+    return [
+      value.getFullYear(),
+      String(value.getMonth() + 1).padStart(2, '0'),
+      String(value.getDate()).padStart(2, '0'),
+    ].join('-');
+  };
+  const todayId = dateId(0);
+  const tomorrowId = dateId(1);
+  const legacyPayload = {
+    [todayId]: [
+      { id: 'school-form', text: 'Return school form', category: 'School', priority: 'high', completed: false, createdAt: 1000 },
+      { id: 'finished', text: 'Finished errand', category: 'general', priority: 'low', completed: true, createdAt: 2000, completedAt: 3000 },
+    ],
+    [tomorrowId]: [
+      { id: 'passport', text: 'Check passport', category: 'Travel', priority: 'medium', completed: false, createdAt: 4000 },
+    ],
+  };
+  localStorage.setItem('dailyTasksByDate', JSON.stringify(legacyPayload));
+
+  const controller = await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  const migrated = controller.__testing.getItems()
+    .filter((item) => item?.metadata?.migratedFrom === 'dailyTasksByDate');
+  expect(migrated).toHaveLength(3);
+  expect(migrated.map((item) => item.title).sort()).toEqual(['Check passport', 'Finished errand', 'Return school form']);
+  expect(migrated.find((item) => item.title === 'Finished errand').done).toBe(true);
+  expect(migrated.find((item) => item.title === 'Return school form').priority).toBe('High');
+  expect(migrated.every((item) => item.metadata.isAllDay === true)).toBe(true);
+  expect(migrated.every((item) => item.metadata.suppressNotification === true)).toBe(true);
+  expect(localStorage.getItem('dailyTasksByDate')).toBeNull();
+
+  expect(document.querySelector('[data-time-group="today"] [data-id] .reminder-stream-due').textContent).toBe('Today');
+  expect(document.querySelector('[data-time-group="upcoming"] [data-id] .reminder-stream-due').textContent).toBe('Tomorrow');
+  expect(document.querySelector('.reminder-completed-section-count').textContent).toBe('1');
+
+  localStorage.setItem('dailyTasksByDate', JSON.stringify(legacyPayload));
+  const rerun = controller.__testing.migrateLegacyDailyTasks();
+  expect(rerun).toMatchObject({ migrated: 0, existing: 3, invalid: 0, verified: true, sourceRemoved: true });
+  expect(controller.__testing.getItems()).toHaveLength(3);
+  expect(localStorage.getItem('dailyTasksByDate')).toBeNull();
+  controller.__testing.setItems([]);
+  controller.__testing.persistItems();
+});
+
+test('legacy Today migration keeps the source when any item cannot be safely converted', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <input id="category" list="categorySuggestions" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="wrapper"><ul id="list"></ul></div>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+  const now = new Date();
+  const todayId = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+  localStorage.setItem('dailyTasksByDate', JSON.stringify({
+    [todayId]: [
+      { id: 'valid', text: 'Keep this task', completed: false },
+      { id: 'invalid', text: '', completed: false },
+    ],
+  }));
+
+  const controller = await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  expect(controller.__testing.getItems().map((item) => item.title)).toEqual(['Keep this task']);
+  expect(localStorage.getItem('dailyTasksByDate')).not.toBeNull();
+  const rerun = controller.__testing.migrateLegacyDailyTasks();
+  expect(rerun).toMatchObject({ migrated: 0, existing: 1, invalid: 1, verified: false, sourceRemoved: false });
+  expect(controller.__testing.getItems()).toHaveLength(1);
+  controller.__testing.setItems([]);
+  controller.__testing.persistItems();
+});
+
 test('category selectors include school and general presets', async () => {
   document.body.innerHTML = `
     <input id="title" />

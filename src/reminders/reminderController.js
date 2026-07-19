@@ -132,6 +132,7 @@ const SEEDED_CATEGORIES = Object.freeze([
   'Wellbeing & Support',
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
+const LEGACY_DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
 const ORDER_INDEX_GAP = 1024;
 const BACKUP_VERSION = 1;
 const locale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : undefined;
@@ -262,6 +263,9 @@ async function ensureNotificationPermission() {
 
 function scheduleReminderNotification(reminder) {
   if (!reminder || typeof reminder !== 'object') {
+    return;
+  }
+  if (reminder?.metadata?.suppressNotification === true) {
     return;
   }
 
@@ -4233,6 +4237,185 @@ export async function initReminders(sel = {}) {
     );
   }
 
+  function parseLegacyDailyTaskDate(dateId) {
+    if (typeof dateId !== 'string') return null;
+    const match = dateId.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const value = new Date(year, month - 1, day, 23, 59, 59, 999);
+    if (
+      Number.isNaN(value.getTime())
+      || value.getFullYear() !== year
+      || value.getMonth() !== month - 1
+      || value.getDate() !== day
+    ) {
+      return null;
+    }
+    return value;
+  }
+
+  function normalizeLegacyDailyTaskCategory(value) {
+    const category = typeof value === 'string' ? value.trim() : '';
+    if (!category || category.toLowerCase() === 'general') {
+      return DEFAULT_CATEGORY;
+    }
+    return category;
+  }
+
+  function migrateLegacyDailyTasks() {
+    const report = {
+      found: false,
+      migrated: 0,
+      existing: 0,
+      invalid: 0,
+      verified: false,
+      sourceRemoved: false,
+    };
+    if (typeof localStorage === 'undefined') {
+      return report;
+    }
+
+    let raw = null;
+    try {
+      raw = localStorage.getItem(LEGACY_DAILY_TASKS_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to inspect the legacy Today list', error);
+      return report;
+    }
+    if (!raw) {
+      return report;
+    }
+    report.found = true;
+
+    let dailyTasksByDate = null;
+    try {
+      dailyTasksByDate = JSON.parse(raw);
+    } catch (error) {
+      console.warn('Legacy Today list was not valid JSON; keeping it unchanged', error);
+      report.invalid = 1;
+      return report;
+    }
+    if (!dailyTasksByDate || typeof dailyTasksByDate !== 'object' || Array.isArray(dailyTasksByDate)) {
+      report.invalid = 1;
+      return report;
+    }
+
+    const candidates = [];
+    Object.entries(dailyTasksByDate)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .forEach(([dateId, rawTasks]) => {
+        const dueDate = parseLegacyDailyTaskDate(dateId);
+        if (!Array.isArray(rawTasks) || !dueDate) {
+          report.invalid += Array.isArray(rawTasks) ? Math.max(1, rawTasks.length) : 1;
+          return;
+        }
+        rawTasks.forEach((task, index) => {
+          const title = typeof task?.text === 'string' ? task.text.trim() : '';
+          if (!title) {
+            report.invalid += 1;
+            return;
+          }
+          const legacyId = typeof task?.id === 'string' && task.id.trim()
+            ? task.id.trim()
+            : `item-${index}`;
+          candidates.push({
+            dateId,
+            dueDate,
+            task,
+            title,
+            identity: `${dateId}:${legacyId}:${index}`,
+          });
+        });
+      });
+
+    const existingKeys = new Set(
+      items
+        .map((item) => item?.metadata?.legacyDailyTaskKey)
+        .filter((value) => typeof value === 'string' && value),
+    );
+    const createdEntries = [];
+
+    candidates.forEach(({ dateId, dueDate, task, title, identity }) => {
+      if (existingKeys.has(identity)) {
+        report.existing += 1;
+        return;
+      }
+
+      const createdAt = Number.isFinite(Number(task?.createdAt))
+        ? Number(task.createdAt)
+        : Date.now();
+      const completedAt = Number.isFinite(Number(task?.completedAt))
+        ? Number(task.completedAt)
+        : null;
+      const priority = typeof task?.priority === 'string' && task.priority.trim()
+        ? task.priority.trim()
+        : 'Medium';
+      const migratedReminder = normalizeReminderRecord({
+        id: uid(),
+        title,
+        due: dueDate.toISOString(),
+        notifyAt: null,
+        category: normalizeLegacyDailyTaskCategory(task?.category),
+        priority: priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase(),
+        done: Boolean(task?.completed),
+        createdAt,
+        updatedAt: completedAt || createdAt,
+        pendingSync: !userId,
+        metadata: {
+          migratedFrom: LEGACY_DAILY_TASKS_STORAGE_KEY,
+          legacyDailyTaskKey: identity,
+          legacyDailyTaskDate: dateId,
+          legacyDailyTaskId: typeof task?.id === 'string' ? task.id : null,
+          isAllDay: true,
+          suppressNotification: true,
+          estimateMs: Number.isFinite(Number(task?.estimateMs)) ? Number(task.estimateMs) : null,
+          timeTrackedMs: Number.isFinite(Number(task?.timeTrackedMs)) ? Number(task.timeTrackedMs) : 0,
+        },
+      });
+      assignOrderIndexForNewItem(migratedReminder, { position: 'end' });
+      items.push(migratedReminder);
+      existingKeys.add(identity);
+      createdEntries.push(migratedReminder);
+      report.migrated += 1;
+    });
+
+    if (createdEntries.length) {
+      sortItemsByOrder(items);
+      render();
+      persistItems();
+      updateMobileRemindersHeaderSubtitle();
+      emitReminderUpdates();
+      dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    }
+
+    const persistedKeys = new Set(
+      normalizeReminderList(loadReminders())
+        .map((item) => item?.metadata?.legacyDailyTaskKey)
+        .filter((value) => typeof value === 'string' && value),
+    );
+    const allCandidatesPersisted = candidates.every(({ identity }) => persistedKeys.has(identity));
+    report.verified = report.invalid === 0 && allCandidatesPersisted;
+
+    if (report.verified) {
+      try {
+        localStorage.removeItem(LEGACY_DAILY_TASKS_STORAGE_KEY);
+        report.sourceRemoved = localStorage.getItem(LEGACY_DAILY_TASKS_STORAGE_KEY) == null;
+      } catch (error) {
+        console.warn('Migrated Today items, but could not retire the old local list', error);
+      }
+    }
+
+    if (userId && createdEntries.length) {
+      createdEntries.forEach((entry) => {
+        void saveToFirebase(entry);
+      });
+    }
+
+    return report;
+  }
+
   function buildBackupPayload() {
     return {
       version: BACKUP_VERSION,
@@ -4750,7 +4933,10 @@ export async function initReminders(sel = {}) {
       });
       item.pendingSync = false;
       persistItems();
-      const pushAction = item.done || item.completed || !getReminderScheduleIso(normalizedItem)
+      const pushAction = item.done
+        || item.completed
+        || normalizedItem?.metadata?.suppressNotification === true
+        || !getReminderScheduleIso(normalizedItem)
         ? 'delete'
         : 'upsert';
       await syncReminderAcrossDevices({
@@ -5429,6 +5615,7 @@ export async function initReminders(sel = {}) {
   }
   function scheduleReminder(item){
     if(!item||!item.id) return;
+    if(item?.metadata?.suppressNotification === true){ cancelReminder(item.id); return; }
     item.category = normalizeCategory(item.category);
     if(item.done){ cancelReminder(item.id); return; }
     const previous = scheduledReminders[item.id] || {};
@@ -5696,7 +5883,7 @@ export async function initReminders(sel = {}) {
       const diffDays = dueStart && todayStart
         ? Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000)
         : null;
-      const timeLabel = fmtTime(dueDate);
+      const timeLabel = reminder?.metadata?.isAllDay === true ? '' : fmtTime(dueDate);
       if (diffDays === 0) return timeLabel ? `Today, ${timeLabel}` : 'Today';
       if (diffDays === 1) return timeLabel ? `Tomorrow, ${timeLabel}` : 'Tomorrow';
       if (typeof diffDays === 'number' && diffDays < 0) return timeLabel ? `Overdue, ${timeLabel}` : 'Overdue';
@@ -7173,6 +7360,10 @@ export async function initReminders(sel = {}) {
     }
   }
   setupDragAndDrop();
+  const legacyDailyTasksMigration = migrateLegacyDailyTasks();
+  if (legacyDailyTasksMigration.invalid > 0) {
+    console.warn('Some legacy Today items could not be migrated; the original local list was kept', legacyDailyTasksMigration);
+  }
   rescheduleAllReminders();
   render();
   persistItems();
@@ -7207,6 +7398,8 @@ export async function initReminders(sel = {}) {
       },
       render,
       getItems: () => items.map(item => ({ ...item })),
+      migrateLegacyDailyTasks,
+      persistItems,
       parseInboxTimeQuery,
       buildRagContext,
       askAssistant,

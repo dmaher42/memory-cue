@@ -94,6 +94,7 @@ function createReminderMocks(overrides = {}) {
       semanticEmbedding: Array.isArray(reminder.semanticEmbedding) ? reminder.semanticEmbedding : null,
       order: Number.isFinite(reminder.order) ? Number(reminder.order) : null,
       pinToToday: reminder.pinToToday === true,
+      metadata: reminder.metadata && typeof reminder.metadata === 'object' ? { ...reminder.metadata } : null,
     };
   });
 

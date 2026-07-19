@@ -2160,42 +2160,6 @@ body #view-reminders .reminders-details-button {
   cursor: pointer;
 }
 
-body #view-reminders .today-list-panel {
-  margin: 0;
-  padding: 0.5rem 0.7rem;
-  border-radius: 0.9rem;
-  box-shadow: 0 3px 10px rgba(30, 41, 59, 0.045);
-}
-
-body #view-reminders .today-list-header {
-  gap: 0.38rem;
-}
-
-body #view-reminders .today-list-toggle {
-  flex: 1 1 auto;
-  width: 100%;
-  justify-content: space-between;
-}
-
-body #view-reminders .today-list-title {
-  font-size: 0.88rem;
-}
-
-body #view-reminders .today-list-panel:not(.is-expanded) #todayListClearCompleted {
-  display: none;
-}
-
-body #view-reminders .today-list-header .btn {
-  height: 1.75rem;
-  min-height: 1.75rem;
-  padding-inline: 0.58rem;
-  font-size: 0.72rem;
-}
-
-body #view-reminders .today-list-body {
-  margin-top: 0.5rem;
-}
-
 body #view-reminders #reminderListSection {
   margin-top: 0;
 }
@@ -2230,9 +2194,5 @@ body #view-reminders #reminderListSection {
   body #view-reminders .reminders-quick-bar .reminders-voice-button {
     padding-inline: 0.42rem;
     font-size: 0.68rem;
-  }
-
-  body #view-reminders .today-list-panel {
-    padding: 0.42rem 0.58rem;
   }
 }

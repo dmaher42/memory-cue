@@ -26,7 +26,6 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
-import { createDailyTasksManager } from './js/modules/daily-tasks.js';
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -1367,14 +1366,6 @@ const initMobileNotes = () => {
   const folderFilterSelect = document.getElementById('folderFilterSelect');
   const folderFilterNewButton = document.getElementById('folderFilterNewFolder');
   const notesOverviewPanel = document.getElementById('notesOverviewPanel');
-  const todayListHeader = document.getElementById('todayListHeader');
-  const todayListPanel = document.getElementById('todayListPanel');
-  const todayListToggle = document.getElementById('todayListToggle');
-  const todayListBody = document.getElementById('todayListBody');
-  const todayListQuickAddForm = document.getElementById('todayListQuickAddForm');
-  const todayListQuickAddInput = document.getElementById('todayListQuickAddInput');
-  const todayListContainer = document.getElementById('todayListContainer');
-  const todayListClearCompleted = document.getElementById('todayListClearCompleted');
   const notebookBrowserList = document.getElementById('notebookBrowserList');
   const notesOverviewList = document.getElementById('notesOverviewList');
   const notesOverviewSearch = document.getElementById('notesOverviewSearch');
@@ -1440,40 +1431,6 @@ const initMobileNotes = () => {
   };
 
   const scratchNotesEditor = createScratchNotesEditor();
-
-  if (
-    todayListHeader instanceof HTMLElement &&
-    todayListQuickAddForm instanceof HTMLFormElement &&
-    todayListQuickAddInput instanceof HTMLInputElement &&
-    todayListContainer instanceof HTMLElement &&
-    todayListClearCompleted instanceof HTMLElement
-  ) {
-    createDailyTasksManager({
-      dailyListHeader: todayListHeader,
-      quickAddForm: todayListQuickAddForm,
-      quickAddInput: todayListQuickAddInput,
-      dailyTasksContainer: todayListContainer,
-      clearCompletedButton: todayListClearCompleted,
-      forceLocalMode: true,
-    });
-  }
-
-  if (
-    todayListPanel instanceof HTMLElement &&
-    todayListToggle instanceof HTMLButtonElement &&
-    todayListBody instanceof HTMLElement
-  ) {
-    const setTodayListExpanded = (expanded) => {
-      todayListPanel.classList.toggle('is-expanded', expanded);
-      todayListToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-      todayListBody.hidden = !expanded;
-    };
-
-    setTodayListExpanded(false);
-    todayListToggle.addEventListener('click', () => {
-      setTodayListExpanded(todayListBody.hidden);
-    });
-  }
 
   if (!titleInput || !scratchNotesEditor || !scratchNotesEditorElement || !saveButton) {
     return;
@@ -3774,4 +3731,3 @@ document.addEventListener('click', (ev) => {
   io.observe(sentinel);
 })();
 /* END GPT CHANGE */
-
