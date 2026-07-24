@@ -139,6 +139,65 @@ test('mobile reminders normalise uncategorised rows to General', async () => {
   expect(excursionItems).toHaveLength(1);
 });
 
+test('reminder sheet switches between board columns and a custom category', async () => {
+  document.body.innerHTML = `
+    <div id="create-sheet" data-mode="create"></div>
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <button data-category-choice="School" data-board-label-key="school" aria-pressed="false">School</button>
+    <button data-category-choice="Footy" data-board-label-key="footy" aria-pressed="false">Footy</button>
+    <button id="reminderCategoryOther" aria-pressed="false">Other…</button>
+    <div id="reminderCustomCategoryField"><input id="category" value="General" /></div>
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="wrapper"><ul id="list"></ul></div>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  const category = document.getElementById('category');
+  const customField = document.getElementById('reminderCustomCategoryField');
+  const otherButton = document.getElementById('reminderCategoryOther');
+  const schoolButton = document.querySelector('[data-category-choice="School"]');
+
+  expect(otherButton.getAttribute('aria-pressed')).toBe('true');
+  expect(customField.classList.contains('hidden')).toBe(false);
+
+  schoolButton.click();
+  expect(category.value).toBe('School');
+  expect(schoolButton.getAttribute('aria-pressed')).toBe('true');
+  expect(customField.classList.contains('hidden')).toBe(true);
+  expect(document.getElementById('saveBtn').textContent).toBe('Add to School');
+
+  otherButton.click();
+  expect(category.value).toBe('General');
+  expect(otherButton.getAttribute('aria-pressed')).toBe('true');
+  expect(customField.classList.contains('hidden')).toBe(false);
+  expect(document.activeElement).toBe(category);
+});
+
 test('mobile reminders render School and Footy as two board columns without hiding older categories', async () => {
   document.body.innerHTML = `
     <input id="title" />

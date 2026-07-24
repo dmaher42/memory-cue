@@ -959,7 +959,20 @@ function openEditor() {
     const prioritySelect = document.getElementById('priority');
     const chips = document.getElementById('priorityChips');
     const editorShell = sheet.querySelector('.reminder-editor-shell');
-    const notifSwitchRow = sheet.querySelector('.notif-switch-row');
+    const sheetScrollArea = sheet.querySelector('.reminder-sheet-content');
+    const titleInput = sheet.querySelector('#reminderText');
+    const detailsInput = sheet.querySelector('#reminderDetails');
+    const dateInput = sheet.querySelector('#reminderDate');
+    const detailsDisclosure = sheet.querySelector('#reminderDetailsDisclosure');
+    const optionsDisclosure = sheet.querySelector('#reminderOptionsDisclosure');
+    const detailsSummary = sheet.querySelector('#reminderDetailsSummary');
+    const optionsSummary = sheet.querySelector('#reminderOptionsSummary');
+    const notificationStatus = sheet.querySelector('#reminderNotificationStatus');
+    const statusMessage = sheet.querySelector('#statusMessage');
+    const datePresetButtons = Array.from(
+      sheet.querySelectorAll('[data-reminder-date-preset]')
+    );
+    const notifSwitchRow = sheet.querySelector('.reminder-notification-setting');
     const notifToggle = sheet.querySelector('#notifBtn');
     const priorityRadios = chips
       ? Array.from(chips.querySelectorAll('input[name="priority"]'))
@@ -1037,10 +1050,131 @@ function openEditor() {
     prioritySelect?.addEventListener('change', syncRadiosFromSelect);
     syncRadiosFromSelect();
 
+    const toLocalDateValue = (value) => {
+      const local = new Date(value);
+      const year = local.getFullYear();
+      const month = String(local.getMonth() + 1).padStart(2, '0');
+      const day = String(local.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const getDatePresetValues = () => {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return {
+        today: toLocalDateValue(today),
+        tomorrow: toLocalDateValue(tomorrow),
+      };
+    };
+
+    const syncDatePresets = () => {
+      const values = getDatePresetValues();
+      const currentDate = dateInput instanceof HTMLInputElement ? dateInput.value : '';
+      datePresetButtons.forEach((button) => {
+        const preset = button.dataset.reminderDatePreset;
+        const isActive = preset === 'today'
+          ? currentDate === values.today
+          : preset === 'tomorrow'
+            ? currentDate === values.tomorrow
+            : preset === 'choose' && Boolean(currentDate) &&
+              currentDate !== values.today && currentDate !== values.tomorrow;
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    };
+
+    const openNativeDatePicker = () => {
+      if (!(dateInput instanceof HTMLInputElement)) return;
+      if (typeof dateInput.showPicker === 'function') {
+        try {
+          dateInput.showPicker();
+          return;
+        } catch {
+          /* fall through to focus for browsers without an available picker */
+        }
+      }
+      dateInput.focus();
+      dateInput.click();
+    };
+
+    datePresetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!(dateInput instanceof HTMLInputElement)) return;
+        const preset = button.dataset.reminderDatePreset;
+        if (preset === 'choose') {
+          openNativeDatePicker();
+          return;
+        }
+        const nextValue = getDatePresetValues()[preset];
+        if (!nextValue) return;
+        dateInput.value = nextValue;
+        dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+        dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+        syncDatePresets();
+      });
+    });
+    dateInput?.addEventListener('input', syncDatePresets);
+    dateInput?.addEventListener('change', syncDatePresets);
+
+    const syncDisclosureSummaries = () => {
+      if (detailsSummary instanceof HTMLElement) {
+        detailsSummary.textContent = detailsInput?.value?.trim() ? 'Added' : 'Optional';
+      }
+      if (optionsSummary instanceof HTMLElement) {
+        optionsSummary.textContent = `${prioritySelect?.value || 'Medium'} priority`;
+      }
+    };
+
+    const prepareDisclosureState = () => {
+      syncDisclosureSummaries();
+      if (detailsDisclosure instanceof HTMLElement) {
+        detailsDisclosure.open = Boolean(detailsInput?.value?.trim());
+      }
+      if (optionsDisclosure instanceof HTMLElement) {
+        optionsDisclosure.open = (prioritySelect?.value || 'Medium') !== 'Medium';
+      }
+    };
+
+    detailsInput?.addEventListener('input', syncDisclosureSummaries);
+    prioritySelect?.addEventListener('change', syncDisclosureSummaries);
+
+    const syncNotificationPresentation = () => {
+      if (!(notifToggle instanceof HTMLInputElement)) return;
+      let message = 'Enable alerts on this device';
+      let checked = false;
+      let disabled = false;
+
+      if (typeof window === 'undefined' || !('Notification' in window)) {
+        message = 'Alerts are not supported on this device';
+        disabled = true;
+      } else if (window.Notification.permission === 'granted') {
+        message = 'Alerts enabled on this device';
+        checked = true;
+        disabled = true;
+      } else if (window.Notification.permission === 'denied') {
+        message = 'Blocked in browser settings';
+        disabled = true;
+      }
+
+      notifToggle.checked = checked;
+      notifToggle.disabled = disabled;
+      notifToggle.setAttribute('aria-checked', checked ? 'true' : 'false');
+      if (notificationStatus instanceof HTMLElement) {
+        notificationStatus.textContent = message;
+      }
+    };
+
+    notifToggle?.addEventListener('click', () => {
+      setTimeout(syncNotificationPresentation, 50);
+      setTimeout(syncNotificationPresentation, 500);
+    });
+    document.addEventListener('reminder:notification-permission-changed', syncNotificationPresentation);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) syncNotificationPresentation();
+    });
+
     const focusFirstField = () => {
-      const focusTarget = sheet.querySelector(
-        'input, textarea, select, button, [contenteditable="true"]'
-      );
+      const focusTarget = titleInput;
       if (focusTarget instanceof HTMLElement) {
         setTimeout(() => {
           try {
@@ -1097,6 +1231,15 @@ function openEditor() {
       }
 
       syncRadiosFromSelect();
+      syncDatePresets();
+      prepareDisclosureState();
+      syncNotificationPresentation();
+      if (statusMessage instanceof HTMLElement) {
+        statusMessage.textContent = '';
+      }
+      if (sheetScrollArea instanceof HTMLElement) {
+        sheetScrollArea.scrollTop = 0;
+      }
       focusFirstField();
       playEnterAnimation();
 
@@ -1233,6 +1376,12 @@ function openEditor() {
 
     document.addEventListener('cue:prepare', () => {
       syncRadiosFromSelect();
+      syncDatePresets();
+      prepareDisclosureState();
+      syncNotificationPresentation();
+      if (statusMessage instanceof HTMLElement) {
+        statusMessage.textContent = '';
+      }
     });
 
     document.addEventListener('cue:cancelled', () => {

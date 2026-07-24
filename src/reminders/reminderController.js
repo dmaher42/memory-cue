@@ -1043,6 +1043,12 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined'
       ? Array.from(document.querySelectorAll('[data-category-choice]'))
       : [];
+  const categoryOtherButton =
+    typeof document !== 'undefined' ? document.getElementById('reminderCategoryOther') : null;
+  const categoryCustomField =
+    typeof document !== 'undefined' ? document.getElementById('reminderCustomCategoryField') : null;
+  const reminderTitleError =
+    typeof document !== 'undefined' ? document.getElementById('reminderTitleError') : null;
   const plannerContext = $(sel.plannerContextSel);
   const plannerLessonInput = $(sel.plannerLessonInputSel);
   const variant = sel.variant || 'mobile';
@@ -1292,10 +1298,59 @@ export async function initReminders(sel = {}) {
 
   function syncCategoryChoiceState(value = categoryInput?.value) {
     const activeCategory = normalizeCategory(value).toLowerCase();
+    let matchesBoardColumn = false;
     categoryChoiceButtons.forEach((button) => {
       const buttonCategory = normalizeCategory(button.dataset?.categoryChoice).toLowerCase();
-      button.setAttribute('aria-pressed', buttonCategory === activeCategory ? 'true' : 'false');
+      const isActive = buttonCategory === activeCategory;
+      matchesBoardColumn = matchesBoardColumn || isActive;
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+
+      const boardKey = button.dataset?.boardLabelKey;
+      if (boardKey) {
+        const displayLabel = getReminderBoardLabel(boardKey);
+        if (displayLabel) {
+          button.textContent = displayLabel;
+          button.setAttribute('aria-label', `Save to ${displayLabel}`);
+        }
+      }
     });
+
+    if (categoryOtherButton instanceof HTMLElement) {
+      categoryOtherButton.setAttribute('aria-pressed', matchesBoardColumn ? 'false' : 'true');
+    }
+    if (categoryCustomField instanceof HTMLElement) {
+      categoryCustomField.classList.toggle('hidden', matchesBoardColumn);
+    }
+
+    if (saveBtn instanceof HTMLElement) {
+      const sheetMode = typeof document !== 'undefined'
+        ? document.getElementById('create-sheet')?.dataset?.mode
+        : '';
+      if (sheetMode === 'edit') {
+        saveBtn.textContent = 'Save changes';
+      } else {
+        const activeButton = categoryChoiceButtons.find(
+          (button) => button.getAttribute('aria-pressed') === 'true',
+        );
+        const displayLabel = activeButton?.textContent?.trim();
+        saveBtn.textContent = displayLabel ? `Add to ${displayLabel}` : 'Add reminder';
+      }
+    }
+  }
+
+  function setReminderTitleError(message = '') {
+    const nextMessage = typeof message === 'string' ? message.trim() : '';
+    if (reminderTitleError instanceof HTMLElement) {
+      reminderTitleError.textContent = nextMessage || 'Enter a reminder title.';
+      reminderTitleError.classList.toggle('hidden', !nextMessage);
+    }
+    if (title instanceof HTMLElement) {
+      if (nextMessage) {
+        title.setAttribute('aria-invalid', 'true');
+      } else {
+        title.removeAttribute('aria-invalid');
+      }
+    }
   }
 
   function updateDefaultsFrom(entry) {
@@ -1378,6 +1433,25 @@ export async function initReminders(sel = {}) {
       syncCategoryChoiceState(categoryInput.value);
       categoryInput.dispatchEvent(new Event('input', { bubbles: true }));
     });
+  });
+
+  categoryOtherButton?.addEventListener('click', () => {
+    if (!categoryInput) {
+      return;
+    }
+    const currentCategory = normalizeCategory(categoryInput.value).toLowerCase();
+    const isBoardCategory = categoryChoiceButtons.some(
+      (button) => normalizeCategory(button.dataset?.categoryChoice).toLowerCase() === currentCategory,
+    );
+    if (isBoardCategory) {
+      categoryInput.value = DEFAULT_CATEGORY;
+    }
+    syncCategoryChoiceState(categoryInput.value);
+    categoryInput.dispatchEvent(new Event('input', { bubbles: true }));
+    if (typeof categoryInput.focus === 'function') {
+      categoryInput.focus();
+      categoryInput.select?.();
+    }
   });
 
   categoryInput?.addEventListener('input', () => syncCategoryChoiceState(categoryInput.value));
@@ -6831,6 +6905,9 @@ export async function initReminders(sel = {}) {
 
   function render(){
     setupReminderSortControl();
+    if (variant === 'mobile') {
+      syncCategoryChoiceState(categoryInput?.value || DEFAULT_CATEGORY);
+    }
     const now = new Date();
     const localNow = new Date(now);
     const t0 = new Date(localNow); t0.setHours(0,0,0,0);
@@ -7610,6 +7687,7 @@ export async function initReminders(sel = {}) {
     normalizeIsoString,
     applyStoredDefaultsToInputs,
     syncCategoryChoiceState,
+    setTitleError: setReminderTitleError,
     clearPlannerReminderContext,
     clearDetailSelection,
     applyDetailSelection,
@@ -7657,6 +7735,7 @@ export async function initReminders(sel = {}) {
     });
   }
 
+  title?.addEventListener('input', () => setReminderTitleError(''));
   title?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleSaveAction(); });
 
   const bindNativePickerTrigger = (buttonId, inputEl) => {
@@ -7750,7 +7829,15 @@ export async function initReminders(sel = {}) {
   });
 
   notifBtn?.addEventListener('click', async () => {
-    if(!('Notification' in window)){ toast('Notifications not supported'); return; }
+    const emitPermissionState = () => {
+      const permission = 'Notification' in window ? Notification.permission : 'unsupported';
+      dispatchCueEvent('reminder:notification-permission-changed', { permission });
+    };
+    if(!('Notification' in window)){
+      toast('Notifications not supported');
+      emitPermissionState();
+      return;
+    }
     if(Notification.permission === 'granted'){
       await syncCurrentDevicePushRegistration();
       toast('Notifications enabled');
@@ -7762,6 +7849,7 @@ export async function initReminders(sel = {}) {
       }
       rescheduleAllReminders();
       render();
+      emitPermissionState();
       return;
     }
     try {
@@ -7782,6 +7870,8 @@ export async function initReminders(sel = {}) {
       }
     } catch {
       toast('Notifications blocked');
+    } finally {
+      emitPermissionState();
     }
   });
 

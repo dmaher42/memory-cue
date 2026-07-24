@@ -284,6 +284,141 @@ async function main() {
     if (addCardCategory !== 'Footy') {
       throw new Error(`Expected Footy add-card control to preselect Footy, received: ${addCardCategory}`);
     }
+
+    const sheetCategoryState = await page.evaluate(() => ({
+      footyPressed: document.querySelector('[data-category-choice="Footy"]')?.getAttribute('aria-pressed'),
+      footyLabel: document.querySelector('[data-category-choice="Footy"]')?.textContent?.trim(),
+      schoolLabel: document.querySelector('[data-category-choice="School"]')?.textContent?.trim(),
+      otherPressed: document.getElementById('reminderCategoryOther')?.getAttribute('aria-pressed'),
+      customCategoryHidden: document.getElementById('reminderCustomCategoryField')?.classList.contains('hidden'),
+      saveLabel: document.getElementById('saveReminder')?.textContent?.trim(),
+      focusedId: document.activeElement?.id,
+    }));
+    if (
+      sheetCategoryState.footyPressed !== 'true' ||
+      sheetCategoryState.footyLabel !== 'Footy' ||
+      sheetCategoryState.schoolLabel !== 'Work' ||
+      sheetCategoryState.otherPressed !== 'false' ||
+      sheetCategoryState.customCategoryHidden !== true ||
+      sheetCategoryState.saveLabel !== 'Add to Footy' ||
+      sheetCategoryState.focusedId !== 'reminderText'
+    ) {
+      throw new Error(`Unexpected add-reminder category state: ${JSON.stringify(sheetCategoryState)}`);
+    }
+
+    await page.locator('[data-reminder-date-preset="tomorrow"]').click();
+    const tomorrowValue = await page.inputValue('#reminderDate');
+    if (tomorrowValue !== '2026-03-24') {
+      throw new Error(`Expected Tomorrow to choose 2026-03-24, received: ${tomorrowValue}`);
+    }
+
+    await page.locator('#reminderDetailsDisclosure > summary').click();
+    await page.fill('#reminderDetails', 'Bring the team sheet');
+    if ((await page.locator('#reminderDetailsSummary').textContent())?.trim() !== 'Added') {
+      throw new Error('Expected the details summary to confirm that details were added');
+    }
+
+    await page.locator('#reminderOptionsDisclosure > summary').click();
+    const priorityLabels = page.locator('#priorityChips .priority-pill');
+    if (await priorityLabels.count() !== 3) {
+      throw new Error('Expected three visible priority choices');
+    }
+    for (const label of await priorityLabels.all()) {
+      if (!(await label.isVisible())) {
+        throw new Error(`Priority choice is hidden: ${(await label.textContent())?.trim()}`);
+      }
+    }
+    if (!(await page.locator('.reminder-notification-setting .switch-track').isVisible())) {
+      throw new Error('Expected the reminder alert switch to be visibly styled');
+    }
+
+    const reminderOptionsScreenshotOutput = typeof process.env.PLAYWRIGHT_REMINDER_OPTIONS_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_REMINDER_OPTIONS_SCREENSHOT_PATH.trim()
+      : '';
+    if (reminderOptionsScreenshotOutput) {
+      const reminderOptionsScreenshotPath = path.resolve(cwd, reminderOptionsScreenshotOutput);
+      await fs.mkdir(path.dirname(reminderOptionsScreenshotPath), { recursive: true });
+      await page.locator('#priorityChips').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: reminderOptionsScreenshotPath, fullPage: true });
+      await page.evaluate(() => {
+        const content = document.querySelector('.reminder-sheet-content');
+        if (content instanceof HTMLElement) content.scrollTop = 0;
+      });
+    }
+
+    const overlapState = await page.evaluate(() => {
+      const save = document.getElementById('saveReminder')?.getBoundingClientRect();
+      const date = document.getElementById('reminderDate')?.getBoundingClientRect();
+      const time = document.getElementById('reminderTime')?.getBoundingClientRect();
+      const overlaps = (first, second) => Boolean(first && second && !(
+        first.right <= second.left ||
+        first.left >= second.right ||
+        first.bottom <= second.top ||
+        first.top >= second.bottom
+      ));
+      return {
+        saveOverlapsDate: overlaps(save, date),
+        saveOverlapsTime: overlaps(save, time),
+      };
+    });
+    if (overlapState.saveOverlapsDate || overlapState.saveOverlapsTime) {
+      throw new Error(`Save action overlaps date controls: ${JSON.stringify(overlapState)}`);
+    }
+
+    await page.setViewportSize({ width: 390, height: 520 });
+    const compactLayoutState = await page.evaluate(() => {
+      const panelElement = document.querySelector('#create-sheet .sheet-panel');
+      const shellElement = document.querySelector('.reminder-editor-shell');
+      const panel = panelElement?.getBoundingClientRect();
+      const shell = document.querySelector('.reminder-editor-shell')?.getBoundingClientRect();
+      const header = document.querySelector('.reminder-editor-header')?.getBoundingClientRect();
+      const save = document.getElementById('saveReminder')?.getBoundingClientRect();
+      return {
+        panelTop: panel?.top,
+        panelBottom: panel?.bottom,
+        panelHeight: panel?.height,
+        shellTop: shell?.top,
+        shellBottom: shell?.bottom,
+        shellHeight: shell?.height,
+        headerBottom: header?.bottom,
+        saveTop: save?.top,
+        saveBottom: save?.bottom,
+        viewportHeight: window.innerHeight,
+        panelBoxSizing: panelElement ? getComputedStyle(panelElement).boxSizing : '',
+        panelPadding: panelElement ? getComputedStyle(panelElement).padding : '',
+        panelPosition: panelElement ? getComputedStyle(panelElement).position : '',
+        panelTopStyle: panelElement ? getComputedStyle(panelElement).top : '',
+        panelBottomStyle: panelElement ? getComputedStyle(panelElement).bottom : '',
+        panelHeightStyle: panelElement ? getComputedStyle(panelElement).height : '',
+        panelTransform: panelElement ? getComputedStyle(panelElement).transform : '',
+        shellHeightStyle: shellElement ? getComputedStyle(shellElement).height : '',
+      };
+    });
+    if (
+      compactLayoutState.shellTop < 0 ||
+      compactLayoutState.saveTop <= compactLayoutState.headerBottom ||
+      compactLayoutState.saveBottom > compactLayoutState.viewportHeight
+    ) {
+      throw new Error(`Reminder sheet does not fit compact viewport: ${JSON.stringify(compactLayoutState)}`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.fill('#reminderDetails', '');
+    await page.locator('#reminderOptionsDisclosure > summary').click();
+    await page.locator('#reminderDetailsDisclosure > summary').click();
+    const reminderSheetScreenshotOutput = typeof process.env.PLAYWRIGHT_REMINDER_SHEET_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_REMINDER_SHEET_SCREENSHOT_PATH.trim()
+      : '';
+    if (reminderSheetScreenshotOutput) {
+      const reminderSheetScreenshotPath = path.resolve(cwd, reminderSheetScreenshotOutput);
+      await fs.mkdir(path.dirname(reminderSheetScreenshotPath), { recursive: true });
+      await page.screenshot({ path: reminderSheetScreenshotPath, fullPage: true });
+    }
+
+    await page.locator('#saveReminder').click();
+    if (!(await page.locator('#reminderTitleError').isVisible())) {
+      throw new Error('Expected an inline title message when saving a blank reminder');
+    }
     await page.keyboard.press('Escape');
 
     const titleTexts = await page.locator(
@@ -391,6 +526,10 @@ async function main() {
       movedCardCategory: persistedReminders.find((reminder) => reminder?.title === 'Call Mum')?.category,
       firstFootyCardTitle,
       addCardCategory,
+      sheetCategoryState,
+      tomorrowValue,
+      overlapState,
+      compactLayoutState,
       mirroredInboxSource: mirroredInboxEntry.source,
       mirroredInboxEntryPoint: mirroredInboxEntry.entryPoint,
       blockingErrors,

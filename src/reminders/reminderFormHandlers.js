@@ -21,6 +21,7 @@ export const createReminderFormHandlers = (options = {}) => {
     normalizeIsoString = (value) => value,
     applyStoredDefaultsToInputs = () => {},
     syncCategoryChoiceState = () => {},
+    setTitleError = () => {},
     clearPlannerReminderContext = () => {},
     clearDetailSelection = () => {},
     applyDetailSelection = () => {},
@@ -44,6 +45,7 @@ export const createReminderFormHandlers = (options = {}) => {
   } = options;
 
   const resetForm = ({ preserveDetail = false, resetMode = true } = {}) => {
+    setTitleError('');
     if (title) title.value = '';
     if (date) date.value = '';
     if (time) time.value = '';
@@ -72,6 +74,7 @@ export const createReminderFormHandlers = (options = {}) => {
       return;
     }
     setReminderMode('edit', id);
+    setTitleError('');
     if (title) title.value = item.title || '';
     if (date && time) {
       if (item.due) {
@@ -129,9 +132,12 @@ export const createReminderFormHandlers = (options = {}) => {
         return;
       }
       if (!trimmedTitle) {
+        setTitleError('Enter a reminder title.');
+        focusTitleField();
         toast('Add a reminder title');
         return;
       }
+      setTitleError('');
       let due = parseManualDueInput(dateValue, timeValue);
       if (!due) {
         const parsed = parseQuickWhen(trimmedTitle);
@@ -173,9 +179,12 @@ export const createReminderFormHandlers = (options = {}) => {
     }
 
     if (!trimmedTitle) {
+      setTitleError('Enter a reminder title.');
+      focusTitleField();
       toast('Add a reminder title');
       return;
     }
+    setTitleError('');
     const noteText = details ? details.value.trim() : '';
     const priorityValue = getPriorityInputValue();
     const normalizedCategory = categoryInput ? normalizeCategory(categoryInput.value) : DEFAULT_CATEGORY;

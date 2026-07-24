@@ -1020,31 +1020,39 @@ body #create-sheet .sheet-backdrop {
 body #create-sheet .sheet-panel {
   position: fixed;
   inset: 0;
+  box-sizing: border-box;
+  max-height: none;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   background: transparent;
   border: 0;
   box-shadow: none;
-  padding: calc(16px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));
+  overflow: visible;
+  padding: calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));
   z-index: 80;
   opacity: 1;
   transform: translateY(0);
 }
 
 body #create-sheet .reminder-editor-shell {
+  box-sizing: border-box;
   margin: 0 auto;
   width: min(560px, 100%);
-  max-height: min(88vh, 700px);
-  padding: 14px 14px calc(16px + env(safe-area-inset-bottom, 0));
-  border-radius: 22px 22px 0 0;
-  background: rgba(255, 255, 255, 0.96);
+  height: min(calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 720px);
+  max-height: 720px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 0;
+  border: 1px solid rgba(30, 41, 59, 0.08);
+  border-radius: 22px;
+  background: #ffffff;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow:
     0 -14px 34px rgba(0, 0, 0, 0.1),
     0 -6px 18px rgba(30, 41, 59, 0.12);
-  overflow: auto;
+  overflow: hidden;
   transform: translateY(0);
   transition: transform 0.18s ease-out, opacity 0.18s ease-out;
 }
@@ -1064,18 +1072,21 @@ body #create-sheet .reminder-editor-header {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.65rem;
-  margin-bottom: 0.72rem;
+  gap: 0.72rem;
+  margin: 0;
+  padding: 0.82rem 0.9rem 0.72rem;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.08);
+  background: rgba(255, 255, 255, 0.98);
 }
 
 body #create-sheet .reminder-header-back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.15rem;
-  height: 2.15rem;
-  min-width: 2.15rem;
-  min-height: 2.15rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  min-width: 2.35rem;
+  min-height: 2.35rem;
   border: 0;
   border-radius: 999px;
   background: rgba(30, 41, 59, 0.06);
@@ -1090,7 +1101,7 @@ body #create-sheet .reminder-header-title-group {
 
 body #create-sheet .reminder-header-eyebrow {
   display: block;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   line-height: 1.1;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -1104,8 +1115,8 @@ body #create-sheet[data-mode="edit"] .reminder-header-eyebrow {
 
 body #create-sheet .reminder-header-title {
   margin: 0;
-  font-size: 1.08rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 750;
   line-height: 1.18;
   letter-spacing: 0;
   color: var(--primary-dark);
@@ -1114,40 +1125,56 @@ body #create-sheet .reminder-header-title {
   overflow: hidden;
 }
 
-body #create-sheet .reminder-editor-form,
+body #create-sheet .reminder-editor-form {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
 body #create-sheet .reminder-sheet-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.72rem;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.88rem;
+  scrollbar-gutter: stable;
 }
 
 body #create-sheet .reminder-sheet-card {
   display: flex;
   flex-direction: column;
-  gap: 0.88rem;
-  padding: 0.95rem;
-  border-radius: 1rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
-  border-color: rgba(30, 41, 59, 0.08);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.055);
+  gap: 0.82rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 body #create-sheet[data-mode="edit"] .reminder-sheet-card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(246, 250, 255, 0.96) 100%);
-  border-color: color-mix(in srgb, var(--accent-color, #1e293b) 18%, rgba(30, 41, 59, 0.08));
+  background: transparent;
 }
 
-body #create-sheet .reminder-sheet-card > .reminder-section + .reminder-section {
-  padding-top: 0.82rem;
+body #create-sheet .reminder-sheet-card > .reminder-section + .reminder-section,
+body #create-sheet .reminder-sheet-card > .reminder-section + .reminder-disclosure,
+body #create-sheet .reminder-sheet-card > .reminder-disclosure + .reminder-disclosure {
   border-top: 1px solid rgba(30, 41, 59, 0.08);
 }
 
 body #create-sheet .reminder-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.64rem;
+}
+
+body #create-sheet .reminder-primary-section {
+  gap: 0.82rem;
+}
+
+body #create-sheet .reminder-when-section {
+  padding-top: 0.82rem;
 }
 
 body #create-sheet .reminder-section-heading {
@@ -1156,13 +1183,26 @@ body #create-sheet .reminder-section-heading {
   gap: 0.12rem;
 }
 
+body #create-sheet .reminder-section-heading-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 body #create-sheet .reminder-section-title {
   margin: 0;
   font-size: 0.86rem;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0;
+  text-transform: none;
   color: var(--primary-dark);
+}
+
+body #create-sheet .reminder-section-optional {
+  color: rgba(15, 23, 42, 0.52);
+  font-size: 0.7rem;
+  line-height: 1.2;
 }
 
 body #create-sheet .reminder-field-group {
@@ -1185,30 +1225,45 @@ body #create-sheet .reminder-field-label-row {
 }
 
 body #create-sheet .reminder-field-label {
-  font-size: 0.68rem;
-  line-height: 1.15;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0;
-  text-transform: uppercase;
   color: rgba(15, 23, 42, 0.6);
 }
 
+body #create-sheet .reminder-primary-label {
+  color: var(--primary-dark, #1e293b);
+  font-size: 0.8rem;
+  font-weight: 780;
+}
+
+body #create-sheet .reminder-title-control {
+  position: relative;
+}
+
 body #create-sheet .reminder-title-voice-button {
-  min-height: 1.65rem;
-  padding: 0.22rem 0.58rem;
+  position: absolute;
+  top: 50%;
+  right: 0.38rem;
+  z-index: 1;
+  min-height: 2.18rem;
+  padding: 0.42rem 0.7rem;
   border: 1px solid color-mix(in srgb, var(--accent-color, #1e293b) 18%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent-color, #1e293b) 7%, #ffffff 93%);
   color: var(--primary-dark, #1e293b);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 750;
   line-height: 1;
+  transform: translateY(-50%);
 }
 
 body #create-sheet .reminder-field-input,
 body #create-sheet .reminder-field-select,
 body #create-sheet .reminder-field-textarea {
-  min-height: 2.42rem;
-  padding: 0.58rem 0.68rem;
+  min-height: 2.72rem;
+  padding: 0.66rem 0.72rem;
   border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
   border-radius: 0.82rem;
   background: rgba(255, 255, 255, 0.94);
@@ -1217,6 +1272,25 @@ body #create-sheet .reminder-field-textarea {
   line-height: 1.25;
   outline: none;
   transition: border-color 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
+}
+
+body #create-sheet .reminder-title-input {
+  min-height: 3rem;
+  padding-right: 4.5rem;
+  font-size: 0.94rem;
+}
+
+body #create-sheet .reminder-field-input[aria-invalid='true'] {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.16);
+}
+
+body #create-sheet .reminder-inline-error {
+  margin: 0.12rem 0 0;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.3;
 }
 
 body #create-sheet .reminder-field-input:focus,
@@ -1242,23 +1316,70 @@ body #create-sheet .reminder-field-help {
 }
 
 body #create-sheet .reminder-category-choice-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.38rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.42rem;
 }
 
 body #create-sheet .reminder-category-choice {
-  min-height: 2rem;
-  padding: 0.36rem 0.7rem;
+  min-width: 0;
+  min-height: 2.7rem;
+  padding: 0.5rem 0.62rem;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
   color: var(--primary-dark);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
   line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+body #create-sheet .reminder-custom-category-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  margin-top: 0.08rem;
+}
+
+body #create-sheet .reminder-custom-category-field.hidden {
+  display: none;
+}
+
+body #create-sheet .reminder-date-preset-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+body #create-sheet .reminder-date-preset {
+  min-width: 0;
+  min-height: 2.45rem;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 0.76rem;
+  background: #f8fafc;
+  color: var(--primary-dark, #1e293b);
+  font-size: 0.75rem;
+  font-weight: 720;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+body #create-sheet .reminder-date-preset:hover,
+body #create-sheet .reminder-date-preset:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-color, #1e293b) 38%, transparent);
+  outline: none;
+}
+
+body #create-sheet .reminder-date-preset[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--accent-color, #1e293b) 42%, transparent);
+  background: color-mix(in srgb, var(--accent-color, #1e293b) 9%, #ffffff);
+  color: color-mix(in srgb, var(--accent-color, #1e293b) 88%, #000000);
 }
 
 body #create-sheet .reminder-category-choice:hover,
@@ -1280,22 +1401,73 @@ body #create-sheet .reminder-datetime-grid {
   gap: 0.65rem;
 }
 
-body #create-sheet .reminder-field-with-icon {
-  gap: 0.38rem;
-}
-
-body #create-sheet .reminder-picker-trigger {
-  width: 2.42rem;
-  min-width: 2.42rem;
-  min-height: 2.42rem;
-  border-radius: 0.82rem;
-}
-
 body #create-sheet #dateFeedback {
-  min-height: 1rem;
-  margin-top: -0.18rem;
+  min-height: 0;
+  margin: -0.08rem 0 0;
+  color: color-mix(in srgb, var(--accent-color, #0f766e) 78%, #334155);
   font-size: 0.72rem;
   line-height: 1.25;
+}
+
+body #create-sheet #dateFeedback:empty {
+  display: none;
+}
+
+body #create-sheet .reminder-disclosure {
+  padding-top: 0.08rem;
+}
+
+body #create-sheet .reminder-disclosure > summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 1.8rem 0.7rem 0;
+  color: var(--primary-dark, #1e293b);
+  font-size: 0.82rem;
+  font-weight: 760;
+  line-height: 1.2;
+  list-style: none;
+  cursor: pointer;
+}
+
+body #create-sheet .reminder-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+body #create-sheet .reminder-disclosure > summary::after {
+  position: absolute;
+  right: 0.25rem;
+  content: '›';
+  color: rgba(15, 23, 42, 0.52);
+  font-size: 1.3rem;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 0.14s ease;
+}
+
+body #create-sheet .reminder-disclosure[open] > summary::after {
+  transform: rotate(-90deg);
+}
+
+body #create-sheet .reminder-disclosure-meta {
+  margin-left: auto;
+  color: rgba(15, 23, 42, 0.52);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+body #create-sheet .reminder-disclosure-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0 0.82rem;
+}
+
+body #create-sheet .reminder-options-content {
+  gap: 0.82rem;
 }
 
 body #create-sheet .reminder-chip-row {
@@ -1306,8 +1478,8 @@ body #create-sheet .reminder-chip-row {
 
 body #create-sheet .reminder-chip,
 body #create-sheet .priority-pill-row .priority-pill {
-  min-height: 2rem;
-  padding: 0.36rem 0.72rem;
+  min-height: 2.65rem;
+  padding: 0.5rem 0.72rem;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
@@ -1316,6 +1488,32 @@ body #create-sheet .priority-pill-row .priority-pill {
   line-height: 1;
   cursor: pointer;
   transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+body #create-sheet .priority-pill-row .priority-input {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  white-space: nowrap !important;
+}
+
+body #create-sheet .priority-pill-row .priority-pill {
+  display: inline-flex !important;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+}
+
+body #create-sheet .priority-pill-row .priority-input:focus-visible + .priority-pill {
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #1e293b) 40%, transparent);
+  outline-offset: 2px;
 }
 
 body #create-sheet .reminder-chip--active,
@@ -1327,25 +1525,96 @@ body #create-sheet .priority-pill-row input.priority-input:checked + label.prior
   box-shadow: 0 4px 12px rgba(30, 41, 59, 0.28);
 }
 
-body #create-sheet .notif-switch-row {
-  min-height: 2rem;
+body #create-sheet .reminder-notification-setting {
+  min-height: 3.25rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 0.66rem 0.72rem;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  border-radius: 0.86rem;
+  background: #f8fafc;
+}
+
+body #create-sheet .reminder-notification-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+body #create-sheet .reminder-notification-copy .reminder-field-help {
+  margin: 0;
+}
+
+body #create-sheet .ios-switch {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+body #create-sheet .ios-switch .notif-toggle {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+body #create-sheet .ios-switch .switch-track {
+  position: relative;
+  display: inline-flex;
+  width: 2.9rem;
+  height: 1.75rem;
+  padding: 0.18rem;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background-color 0.16s ease;
+}
+
+body #create-sheet .ios-switch .switch-thumb {
+  display: block;
+  width: 1.39rem;
+  height: 1.39rem;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
+  transition: transform 0.16s ease;
+}
+
+body #create-sheet .ios-switch .notif-toggle:checked + .switch-track {
+  background: var(--accent-color, #0f766e);
+}
+
+body #create-sheet .ios-switch .notif-toggle:checked + .switch-track .switch-thumb {
+  transform: translateX(1.15rem);
+}
+
+body #create-sheet .ios-switch .notif-toggle:focus-visible + .switch-track {
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 38%, transparent);
+  outline-offset: 2px;
+}
+
+body #create-sheet .ios-switch .notif-toggle:disabled + .switch-track {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 body #create-sheet .reminder-sheet-actions {
-  position: sticky;
-  bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.42rem;
   margin: 0;
-  padding: 0.76rem 0 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.96) 42%);
+  padding: 0.72rem 0.88rem calc(0.72rem + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(30, 41, 59, 0.08);
+  background: #ffffff;
 }
 
 body #create-sheet .reminder-save-cta {
-  min-height: 2.7rem;
+  min-height: 3rem;
   border-radius: 0.9rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -1364,11 +1633,15 @@ body #create-sheet .reminder-cancel-edit {
 }
 
 body #create-sheet .reminder-status-message {
-  min-height: 1rem;
+  min-height: 0;
   margin: 0;
   font-size: 0.76rem;
   line-height: 1.25;
   color: rgba(15, 23, 42, 0.72);
+}
+
+body #create-sheet .reminder-status-message:empty {
+  display: none;
 }
 
 body #view-reminders .reminders-top-row {
@@ -1546,16 +1819,23 @@ body #view-reminders .reminders-quick-actions .icon-btn {
 
 @media (max-width: 640px) {
   body #create-sheet .sheet-panel {
-    padding: calc(10px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+    padding: calc(6px + env(safe-area-inset-top)) 6px calc(6px + env(safe-area-inset-bottom));
   }
 
   body #create-sheet .reminder-editor-shell {
-    max-height: min(90vh, 680px);
-    padding: 12px 12px calc(14px + env(safe-area-inset-bottom, 0));
+    width: 100%;
+    height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: 720px;
+    border-radius: 20px;
   }
 
-  body #create-sheet .reminder-sheet-card {
-    padding: 0.82rem;
+  body #create-sheet .reminder-editor-header {
+    padding-inline: 0.78rem;
+  }
+
+  body #create-sheet .reminder-sheet-content,
+  body #create-sheet .reminder-sheet-actions {
+    padding-inline: 0.78rem;
   }
 
   body #create-sheet .reminder-datetime-grid {
@@ -1570,12 +1850,14 @@ body #view-reminders .reminders-quick-actions .icon-btn {
 }
 
 @media (max-width: 380px) {
-  body #create-sheet .reminder-datetime-grid {
-    grid-template-columns: 1fr;
-  }
-
   body #create-sheet .reminder-chip-row {
     flex-wrap: wrap;
+  }
+
+  body #create-sheet .reminder-category-choice,
+  body #create-sheet .reminder-date-preset {
+    font-size: 0.71rem;
+    padding-inline: 0.35rem;
   }
 }
 
