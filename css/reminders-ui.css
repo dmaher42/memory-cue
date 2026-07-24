@@ -2326,7 +2326,9 @@ body #view-reminders .reminder-category-column-empty {
 }
 
 body #view-reminders .reminder-category-column .reminder-stream-row,
-body #view-reminders .reminder-category-column .reminder-row.reminder-card.reminder-stream-row {
+body #view-reminders .reminder-category-column .reminder-row.reminder-card.reminder-stream-row,
+body #view-reminders .reminder-other-cards .reminder-stream-row,
+body #view-reminders .reminder-other-cards .reminder-row.reminder-card.reminder-stream-row {
   grid-template-columns: 1.55rem minmax(0, 1fr) 1.55rem !important;
   min-height: 3.25rem !important;
   gap: 0.32rem !important;
@@ -2337,12 +2339,14 @@ body #view-reminders .reminder-category-column .reminder-row.reminder-card.remin
   box-shadow: 0 3px 9px rgba(30, 41, 59, 0.055) !important;
 }
 
-body #view-reminders .reminder-category-column .reminder-stream-row .reminder-row-title {
+body #view-reminders .reminder-category-column .reminder-stream-row .reminder-row-title,
+body #view-reminders .reminder-other-cards .reminder-stream-row .reminder-row-title {
   font-size: 0.76rem;
   line-height: 1.22;
 }
 
-body #view-reminders .reminder-category-column .reminder-stream-meta {
+body #view-reminders .reminder-category-column .reminder-stream-meta,
+body #view-reminders .reminder-other-cards .reminder-stream-meta {
   gap: 0.2rem;
   font-size: 0.58rem;
   line-height: 1.15;
@@ -2350,7 +2354,10 @@ body #view-reminders .reminder-category-column .reminder-stream-meta {
 
 body #view-reminders .reminder-category-column .reminder-stream-due,
 body #view-reminders .reminder-category-column .reminder-stream-category,
-body #view-reminders .reminder-category-column .reminder-stream-priority {
+body #view-reminders .reminder-category-column .reminder-stream-priority,
+body #view-reminders .reminder-other-cards .reminder-stream-due,
+body #view-reminders .reminder-other-cards .reminder-stream-category,
+body #view-reminders .reminder-other-cards .reminder-stream-priority {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2423,7 +2430,9 @@ body .quick-actions-menu.reminder-card-actions-menu button:disabled {
   }
 
   body #view-reminders .reminder-category-column .reminder-stream-row,
-  body #view-reminders .reminder-category-column .reminder-row.reminder-card.reminder-stream-row {
+  body #view-reminders .reminder-category-column .reminder-row.reminder-card.reminder-stream-row,
+  body #view-reminders .reminder-other-cards .reminder-stream-row,
+  body #view-reminders .reminder-other-cards .reminder-row.reminder-card.reminder-stream-row {
     grid-template-columns: 1.42rem minmax(0, 1fr) 1.42rem !important;
     padding-inline: 0.32rem !important;
   }
