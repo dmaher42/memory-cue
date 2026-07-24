@@ -699,6 +699,26 @@ export async function initReminders(sel = {}) {
       openEditReminderSheet(reminder);
     }, { renderAfter: false });
 
+    const categoryName = normalizeCategory(reminder.category || DEFAULT_CATEGORY);
+    const colorAction = document.createElement('label');
+    colorAction.className = 'reminder-card-color-action';
+    colorAction.dataset.action = 'change-category-colour';
+    colorAction.setAttribute('role', 'none');
+    const colorActionLabel = document.createElement('span');
+    colorActionLabel.textContent = 'Category colour';
+    const colorActionInput = document.createElement('input');
+    colorActionInput.type = 'color';
+    colorActionInput.value = getReminderGroupColor(categoryName);
+    colorActionInput.setAttribute('aria-label', `Change ${categoryName} category colour`);
+    colorActionInput.addEventListener('click', (event) => event.stopPropagation());
+    colorActionInput.addEventListener('change', (event) => {
+      event.stopPropagation();
+      updateReminderGroupColor(categoryName, colorActionInput.value, categoryName);
+      closeReminderQuickActionsMenu();
+    });
+    colorAction.append(colorActionLabel, colorActionInput);
+    menu.appendChild(colorAction);
+
     REMINDER_BOARD_COLUMNS
       .filter((column) => column.key !== currentColumnKey)
       .forEach((column) => {
@@ -6502,6 +6522,28 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  function updateReminderGroupColor(name, color, displayName = name) {
+    const key = typeof name === 'string' ? name.trim() : '';
+    if (!key || !isHexColor(color)) {
+      return false;
+    }
+
+    const normalizedColor = color.toLowerCase();
+    saveReminderGroupColor(key, normalizedColor);
+    render();
+    if (userId) {
+      saveReminderGroupColorRemote(userId, key, normalizedColor).catch((error) => {
+        console.warn('[reminder] group colour save failed', error);
+        toast('Colour saved on this device. Sync will retry later.');
+      });
+    }
+    const label = typeof displayName === 'string' && displayName.trim()
+      ? displayName.trim()
+      : key;
+    toast(`${label} colour updated`);
+    return true;
+  }
+
   // Merge a remote group-colour map (from Firestore) into the local cache, re-rendering if
   // anything changed, and push any colours set locally that the server doesn't have yet.
   function applyRemoteReminderGroupColors(remoteColors) {
@@ -6570,10 +6612,15 @@ export async function initReminders(sel = {}) {
   // keeps a consistent, recognisable colour.
   function getReminderGroupColor(name) {
     const key = typeof name === 'string' ? name.trim() : '';
+    const colors = loadReminderGroupColors();
     if (key) {
-      const custom = loadReminderGroupColors()[key];
+      const custom = colors[key];
       if (isHexColor(custom)) return custom.toLowerCase();
     }
+    const columnKey = getReminderBoardColumnKey(key);
+    const column = getReminderBoardColumnDefinition(columnKey);
+    const columnCustom = column ? colors[column.category] : '';
+    if (isHexColor(columnCustom)) return columnCustom.toLowerCase();
     const raw = key.toLowerCase();
     if (!raw) return '#6b7280';
     if (raw.includes('school')) return '#2563eb';
@@ -7371,7 +7418,9 @@ export async function initReminders(sel = {}) {
         itemEl.classList.add('reminder-stream-row');
         const categoryGroup = getReminderCategoryGroup(catName);
         itemEl.classList.add(`reminder-cat-${categoryGroup.key}`);
-        itemEl.style.setProperty('--reminder-category-color', getReminderGroupColor(catName));
+        const categoryColor = getReminderGroupColor(catName);
+        itemEl.style.setProperty('--reminder-category-color', categoryColor);
+        itemEl.style.setProperty('--rcat-color', categoryColor);
         toggleBtn.classList.add('reminder-row-complete', 'reminder-stream-checkbox');
 
         const rowMain = document.createElement('div');
@@ -7557,6 +7606,7 @@ export async function initReminders(sel = {}) {
         const section = document.createElement('section');
         section.className = `reminder-category-column reminder-category-column--${column.key}`;
         section.dataset.reminderColumn = column.key;
+        section.style.setProperty('--reminder-column-accent', getReminderGroupColor(column.category));
         section.setAttribute('aria-labelledby', `reminder-column-${column.key}-title`);
 
         const heading = document.createElement('header');
@@ -7583,7 +7633,20 @@ export async function initReminders(sel = {}) {
         count.className = 'reminder-category-column-count';
         count.textContent = String(reminders.length);
         count.setAttribute('aria-label', `${reminders.length} cards`);
-        headingCopy.append(label, count);
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.className = 'reminder-category-column-color';
+        colorInput.dataset.action = 'change-column-colour';
+        colorInput.dataset.columnKey = column.key;
+        colorInput.value = getReminderGroupColor(column.category);
+        colorInput.title = `Change ${displayLabel} colour`;
+        colorInput.setAttribute('aria-label', `Change ${displayLabel} column colour`);
+        colorInput.addEventListener('click', (event) => event.stopPropagation());
+        colorInput.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateReminderGroupColor(column.category, colorInput.value, displayLabel);
+        });
+        headingCopy.append(label, count, colorInput);
 
         const addButton = document.createElement('button');
         addButton.type = 'button';

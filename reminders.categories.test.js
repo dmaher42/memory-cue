@@ -268,8 +268,29 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-count').textContent).toBe('2');
   expect(document.querySelector('[data-reminder-column="footy"] .reminder-category-column-count').textContent).toBe('2');
 
+  const schoolColorInput = document.querySelector('[data-reminder-column="school"] [data-action="change-column-colour"]');
+  expect(schoolColorInput.value).toBe('#2563eb');
+  schoolColorInput.value = '#dc2626';
+  schoolColorInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+  expect(JSON.parse(localStorage.getItem('memoryCue:reminderGroupColors'))).toEqual({ School: '#dc2626' });
+  expect(document.querySelector('[data-reminder-column="school"]').style.getPropertyValue('--reminder-column-accent')).toBe('#dc2626');
+  expect(document.querySelector('[data-id="school-first"]').style.getPropertyValue('--reminder-category-color')).toBe('#dc2626');
+  expect(document.querySelector('[data-id="school-second"]').style.getPropertyValue('--reminder-category-color')).toBe('#dc2626');
+
   expect(document.querySelector('[data-reminder-column="other"] [data-id="older-category"]')).not.toBeNull();
   expect(document.querySelector('.reminder-other-cards-help').textContent).toMatch(/Move these to School or Footy/i);
+
+  document.querySelector('[data-id="older-category"] .reminder-stream-more').click();
+  const otherCategoryColorInput = document.querySelector('.reminder-card-actions-menu [data-action="change-category-colour"] input[type="color"]');
+  expect(otherCategoryColorInput.value).toBe('#15803d');
+  otherCategoryColorInput.value = '#be185d';
+  otherCategoryColorInput.dispatchEvent(new Event('change', { bubbles: true }));
+  expect(JSON.parse(localStorage.getItem('memoryCue:reminderGroupColors'))).toEqual({
+    School: '#dc2626',
+    'Home & Personal': '#be185d',
+  });
+  expect(document.querySelector('[data-id="older-category"]').style.getPropertyValue('--reminder-category-color')).toBe('#be185d');
 
   expect(document.querySelector('[data-id="completed"]')).toBeNull();
   expect(document.querySelectorAll('.reminder-stream-more')).toHaveLength(5);
@@ -344,6 +365,7 @@ test('mobile board column headings can be renamed and persist without changing r
 
   expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-title').textContent).toBe('Work');
   expect(document.querySelector('[data-reminder-column="school"] .reminder-category-add-card').getAttribute('aria-label')).toBe('Add a Work reminder card');
+  expect(document.querySelector('[data-reminder-column="school"] [data-action="change-column-colour"]').getAttribute('aria-label')).toBe('Change Work column colour');
   expect(document.querySelector('.reminder-other-cards-help').textContent).toMatch(/Move these to Work or Footy/i);
   expect(JSON.parse(localStorage.getItem('memoryCue:reminderBoardLabels'))).toEqual({ school: 'Work' });
   expect(controller.__testing.getItems().find((item) => item.id === 'school-card').category).toBe('School');

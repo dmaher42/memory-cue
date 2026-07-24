@@ -222,6 +222,58 @@ async function main() {
       throw new Error(`Expected Other reminder help to use the renamed column, received: ${otherReminderHelp}`);
     }
 
+    await page.locator('[data-reminder-column="school"] [data-action="change-column-colour"]').evaluate((input) => {
+      input.value = '#dc2626';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForFunction(() => {
+      try {
+        const colors = JSON.parse(localStorage.getItem('memoryCue:reminderGroupColors') || '{}');
+        return colors.School === '#dc2626'
+          && document.querySelector('[data-reminder-column="school"]')?.style.getPropertyValue('--reminder-column-accent') === '#dc2626'
+          && getComputedStyle(document.querySelector('[data-title="Call Mum"]')).borderLeftColor === 'rgb(220, 38, 38)';
+      } catch {
+        return false;
+      }
+    });
+    const schoolColumnColour = await page.locator('[data-reminder-column="school"] [data-action="change-column-colour"]').inputValue();
+    if (schoolColumnColour !== '#dc2626') {
+      throw new Error(`Expected Work column colour to be #dc2626, received: ${schoolColumnColour}`);
+    }
+
+    await page.locator('[data-reminder-column="other"] [data-title="Call Tuesday About Roster"] .reminder-stream-more').click();
+    const categoryColourControl = page.locator('.reminder-card-actions-menu [data-action="change-category-colour"] input[type="color"]');
+    await categoryColourControl.waitFor({ state: 'visible' });
+    const colourMenuScreenshotOutput = typeof process.env.PLAYWRIGHT_COLOUR_MENU_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_COLOUR_MENU_SCREENSHOT_PATH.trim()
+      : '';
+    if (colourMenuScreenshotOutput) {
+      const colourMenuScreenshotPath = path.resolve(cwd, colourMenuScreenshotOutput);
+      await fs.mkdir(path.dirname(colourMenuScreenshotPath), { recursive: true });
+      await page.screenshot({ path: colourMenuScreenshotPath, fullPage: true });
+    }
+    await categoryColourControl.evaluate((input) => {
+      input.value = '#0d9488';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForFunction(() => {
+      try {
+        const colors = JSON.parse(localStorage.getItem('memoryCue:reminderGroupColors') || '{}');
+        return colors.General === '#0d9488'
+          && document.querySelector('[data-title="Call Tuesday About Roster"]')?.style.getPropertyValue('--reminder-category-color') === '#0d9488'
+          && getComputedStyle(document.querySelector('[data-title="Call Tuesday About Roster"]')).borderLeftColor === 'rgb(13, 148, 136)';
+      } catch {
+        return false;
+      }
+    });
+    const generalCategoryColour = await page.evaluate(() => {
+      try {
+        return JSON.parse(localStorage.getItem('memoryCue:reminderGroupColors') || '{}').General || '';
+      } catch {
+        return '';
+      }
+    });
+
     await page.selectOption('#quickAddCategory', 'Footy');
     await page.fill('#reminderQuickAdd', 'Training tomorrow at 7pm');
     await page.click('#quickAddSubmit');
@@ -527,6 +579,16 @@ async function main() {
     const reloadedSchoolLabel = (
       await page.locator('[data-reminder-column="school"] .reminder-category-column-title').textContent()
     )?.trim();
+    const reloadedSchoolColour = await page.locator('[data-reminder-column="school"] [data-action="change-column-colour"]').inputValue();
+    if (reloadedSchoolColour !== '#dc2626') {
+      throw new Error(`Expected Work column colour to persist after reload, received: ${reloadedSchoolColour}`);
+    }
+    const reloadedGeneralColour = await page.locator('[data-title="Call Tuesday About Roster"]').evaluate((card) => (
+      card.style.getPropertyValue('--reminder-category-color')
+    ));
+    if (reloadedGeneralColour !== '#0d9488') {
+      throw new Error(`Expected General category colour to persist after reload, received: ${reloadedGeneralColour}`);
+    }
 
     const blockingErrors = logs.filter((entry) => {
       const text = entry.text || '';
@@ -553,6 +615,10 @@ async function main() {
       boardColumnLabels,
       renamedSchoolLabel,
       reloadedSchoolLabel,
+      schoolColumnColour,
+      reloadedSchoolColour,
+      generalCategoryColour,
+      reloadedGeneralColour,
       persistedBoardLabels,
       movedCardCategory: persistedReminders.find((reminder) => reminder?.title === 'Call Mum')?.category,
       firstFootyCardTitle,
