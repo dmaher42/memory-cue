@@ -121,6 +121,8 @@ const DISPLAY_TITLE_SMALL_WORDS = new Set([
 const SEEDED_CATEGORIES = Object.freeze([
   DEFAULT_CATEGORY,
   'School',
+  'Footy',
+  'Footy – Drills',
   'General Appointments',
   'Home & Personal',
   'School – Appointments/Meetings',
@@ -130,6 +132,10 @@ const SEEDED_CATEGORIES = Object.freeze([
   'School – Prep & Resources',
   'School – To-Do',
   'Wellbeing & Support',
+]);
+const REMINDER_BOARD_COLUMNS = Object.freeze([
+  Object.freeze({ key: 'school', label: 'School', category: 'School' }),
+  Object.freeze({ key: 'footy', label: 'Footy', category: 'Footy' }),
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const LEGACY_DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
@@ -540,6 +546,17 @@ function normalizeCategory(value) {
   return DEFAULT_CATEGORY;
 }
 
+function getReminderBoardColumnKey(categoryName) {
+  const raw = typeof categoryName === 'string' ? categoryName.trim().toLowerCase() : '';
+  if (raw.includes('school')) return 'school';
+  if (raw.includes('footy') || raw.includes('football')) return 'footy';
+  return 'other';
+}
+
+function getReminderBoardColumnDefinition(columnKey) {
+  return REMINDER_BOARD_COLUMNS.find((column) => column.key === columnKey) || null;
+}
+
 /**
  * Initialise the reminders UI and sync logic.
  * Pass in selectors for the elements the module should control.
@@ -635,24 +652,75 @@ export async function initReminders(sel = {}) {
 
     closeReminderQuickActionsMenu();
     const menu = document.createElement('div');
-    menu.className = 'quick-actions-menu';
+    menu.className = 'quick-actions-menu reminder-card-actions-menu';
     menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', `Card actions for ${resolveReminderDisplayTitle(reminder)}`);
 
-    const addAction = (label, dataAction, handler) => {
+    const addAction = (label, dataAction, handler, options = {}) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.action = dataAction;
       button.textContent = label;
+      if (options.danger) {
+        button.classList.add('reminder-card-action--danger');
+      }
+      if (options.disabled) {
+        button.disabled = true;
+        button.setAttribute('aria-disabled', 'true');
+      }
       button.addEventListener('click', (event) => {
         event.preventDefault();
+        if (button.disabled) {
+          return;
+        }
         handler();
         closeReminderQuickActionsMenu();
-        render();
+        if (options.renderAfter !== false) {
+          render();
+        }
       });
       menu.appendChild(button);
     };
 
-    addAction('Create Reminder', 'reminder', () => {
+    const currentColumnKey = getReminderBoardColumnKey(reminder.category);
+    const currentColumnItems = getReminderBoardColumnItems(currentColumnKey, {
+      completed: Boolean(reminder.done),
+    });
+    const currentIndex = currentColumnItems.findIndex((entry) => entry.id === reminder.id);
+
+    addAction('Edit card', 'edit-card', () => {
+      openEditReminderSheet(reminder);
+    }, { renderAfter: false });
+
+    REMINDER_BOARD_COLUMNS
+      .filter((column) => column.key !== currentColumnKey)
+      .forEach((column) => {
+        addAction(`Move to ${column.label}`, `move-to-${column.key}`, () => {
+          moveReminderToBoardColumn(reminder.id, column.key);
+        }, { renderAfter: false });
+      });
+
+    addAction('Move card up', 'move-card-up', () => {
+      moveReminderWithinBoardColumn(reminder.id, -1);
+    }, { disabled: currentIndex <= 0, renderAfter: false });
+
+    addAction('Move card down', 'move-card-down', () => {
+      moveReminderWithinBoardColumn(reminder.id, 1);
+    }, {
+      disabled: currentIndex < 0 || currentIndex >= currentColumnItems.length - 1,
+      renderAfter: false,
+    });
+
+    addAction('Delete card', 'delete-card', () => {
+      removeItem(reminder.id);
+    }, { danger: true, renderAfter: false });
+
+    const divider = document.createElement('div');
+    divider.className = 'reminder-card-actions-divider';
+    divider.setAttribute('role', 'separator');
+    menu.appendChild(divider);
+
+    addAction('Duplicate card', 'reminder', () => {
       addItem({
         title: reminder.title,
         priority: reminder.priority || 'Medium',
@@ -691,10 +759,6 @@ export async function initReminders(sel = {}) {
 
     addAction('Snooze tomorrow', 'snooze-tomorrow', () => {
       snoozeReminder(reminder, 'tomorrow');
-    });
-
-    addAction('Archive', 'archive', () => {
-      removeItem(reminder.id);
     });
 
     document.body.appendChild(menu);
@@ -3607,10 +3671,102 @@ export async function initReminders(sel = {}) {
     return true;
   }
 
+  function getReminderBoardColumnItems(columnKey, { completed = false, excludeId = null } = {}) {
+    return items
+      .filter((entry) => (
+        entry
+        && entry.id !== excludeId
+        && Boolean(entry.done) === Boolean(completed)
+        && getReminderBoardColumnKey(entry.category) === columnKey
+      ))
+      .slice()
+      .sort((a, b) => {
+        const aOrder = Number.isFinite(a?.orderIndex) ? a.orderIndex : -Infinity;
+        const bOrder = Number.isFinite(b?.orderIndex) ? b.orderIndex : -Infinity;
+        if (aOrder !== bOrder) return bOrder - aOrder;
+        return compareRemindersForDisplay(a, b);
+      });
+  }
+
+  function saveBoardOrderChanges(changedItems = [], activityLabel = 'Reminder board updated') {
+    const uniqueItems = Array.from(new Map(
+      changedItems.filter((entry) => entry?.id).map((entry) => [entry.id, entry]),
+    ).values());
+    if (!uniqueItems.length) {
+      return;
+    }
+
+    uniqueItems.forEach((entry) => {
+      entry.updatedAt = Date.now();
+    });
+    sortItemsByOrder(items);
+    suppressRenderMemoryEvent = true;
+    render();
+    persistItems();
+    uniqueItems.forEach((entry) => saveToFirebase(entry));
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+    emitActivity({ action: 'reordered', label: activityLabel });
+  }
+
+  function moveReminderWithinBoardColumn(id, direction) {
+    const reminder = items.find((entry) => entry?.id === id);
+    if (!reminder || (direction !== -1 && direction !== 1)) {
+      return false;
+    }
+
+    const columnKey = getReminderBoardColumnKey(reminder.category);
+    const columnItems = getReminderBoardColumnItems(columnKey, { completed: Boolean(reminder.done) });
+    const currentIndex = columnItems.findIndex((entry) => entry.id === id);
+    const targetIndex = currentIndex + direction;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= columnItems.length) {
+      return false;
+    }
+
+    const target = columnItems[targetIndex];
+    const currentOrder = Number.isFinite(reminder.orderIndex) ? reminder.orderIndex : 0;
+    const targetOrder = Number.isFinite(target.orderIndex) ? target.orderIndex : 0;
+    reminder.orderIndex = targetOrder;
+    target.orderIndex = currentOrder;
+    saveBoardOrderChanges([reminder, target], `${resolveReminderDisplayTitle(reminder)} reordered`);
+    return true;
+  }
+
+  function moveReminderToBoardColumn(id, targetColumnKey) {
+    const reminder = items.find((entry) => entry?.id === id);
+    const targetColumn = getReminderBoardColumnDefinition(targetColumnKey);
+    if (!reminder || !targetColumn) {
+      return false;
+    }
+
+    const currentColumnKey = getReminderBoardColumnKey(reminder.category);
+    if (currentColumnKey === targetColumn.key) {
+      return false;
+    }
+
+    const destinationItems = getReminderBoardColumnItems(targetColumn.key, {
+      completed: Boolean(reminder.done),
+      excludeId: reminder.id,
+    });
+    const highestOrder = destinationItems.reduce((max, entry) => (
+      Number.isFinite(entry?.orderIndex) ? Math.max(max, entry.orderIndex) : max
+    ), 0);
+
+    reminder.category = targetColumn.category;
+    reminder.orderIndex = highestOrder + ORDER_INDEX_GAP;
+    saveBoardOrderChanges(
+      [reminder],
+      `${resolveReminderDisplayTitle(reminder)} moved to ${targetColumn.label}`,
+    );
+    toast(`Moved to ${targetColumn.label}`);
+    return true;
+  }
+
   const dragState = {
     draggingId: null,
     dropTargetId: null,
     dropBefore: true,
+    dropColumnKey: null,
   };
   let dragSetupComplete = false;
   const touchDragState = {
@@ -3648,10 +3804,20 @@ export async function initReminders(sel = {}) {
     return node.closest('[data-reminder-item]');
   }
 
+  function findReminderColumn(node) {
+    if (!node || typeof node.closest !== 'function') {
+      return null;
+    }
+    return node.closest('[data-reminder-column]');
+  }
+
   function clearDragHighlights() {
     if (!list) return;
     list.querySelectorAll('.drag-over-before, .drag-over-after').forEach((node) => {
       node.classList.remove('drag-over-before', 'drag-over-after');
+    });
+    list.querySelectorAll('.reminder-category-column.is-drag-over').forEach((node) => {
+      node.classList.remove('is-drag-over');
     });
     list.classList.remove('drag-over-list');
   }
@@ -3666,32 +3832,48 @@ export async function initReminders(sel = {}) {
     dragState.draggingId = null;
     dragState.dropTargetId = null;
     dragState.dropBefore = true;
+    dragState.dropColumnKey = null;
   }
 
-  function performReorder(sourceId, targetId, before) {
+  function performReorder(sourceId, targetId, before, targetColumnKey = null) {
     if (!sourceId || sourceId === targetId) {
       return;
     }
-    const sourceIndex = items.findIndex((entry) => entry?.id === sourceId);
-    if (sourceIndex < 0) {
+    const moved = items.find((entry) => entry?.id === sourceId);
+    if (!moved) {
       return;
     }
-    const [moved] = items.splice(sourceIndex, 1);
+
+    const target = targetId ? items.find((entry) => entry?.id === targetId) : null;
+    const destinationColumnKey = targetColumnKey
+      || (target ? getReminderBoardColumnKey(target.category) : getReminderBoardColumnKey(moved.category));
+    const destinationColumn = getReminderBoardColumnDefinition(destinationColumnKey);
+    const sourceColumnKey = getReminderBoardColumnKey(moved.category);
+    if (destinationColumnKey === 'other' && sourceColumnKey !== 'other') {
+      return;
+    }
+    if (destinationColumn && sourceColumnKey !== destinationColumn.key) {
+      moved.category = destinationColumn.category;
+    }
+
+    const destinationItems = getReminderBoardColumnItems(destinationColumnKey, {
+      completed: Boolean(moved.done),
+      excludeId: moved.id,
+    });
     let insertIndex;
     if (!targetId) {
-      insertIndex = items.length;
+      insertIndex = destinationItems.length;
     } else {
-      const targetIndex = items.findIndex((entry) => entry?.id === targetId);
+      const targetIndex = destinationItems.findIndex((entry) => entry?.id === targetId);
       if (targetIndex < 0) {
-        items.splice(sourceIndex, 0, moved);
         return;
       }
       insertIndex = before ? targetIndex : targetIndex + 1;
     }
-    items.splice(insertIndex, 0, moved);
+    destinationItems.splice(insertIndex, 0, moved);
 
-    const prev = items[insertIndex - 1];
-    const next = items[insertIndex + 1];
+    const prev = destinationItems[insertIndex - 1];
+    const next = destinationItems[insertIndex + 1];
     const prevVal = Number.isFinite(prev?.orderIndex) ? prev.orderIndex : null;
     const nextVal = Number.isFinite(next?.orderIndex) ? next.orderIndex : null;
     let newOrder;
@@ -3705,7 +3887,7 @@ export async function initReminders(sel = {}) {
       newOrder = ORDER_INDEX_GAP;
     }
     if (!Number.isFinite(newOrder)) {
-      newOrder = ORDER_INDEX_GAP * (items.length + 1);
+      newOrder = ORDER_INDEX_GAP * (destinationItems.length + 1);
     }
     moved.orderIndex = newOrder;
     sortItemsByOrder(items);
@@ -3720,7 +3902,13 @@ export async function initReminders(sel = {}) {
     }
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
-    emitActivity({ action: 'reordered', label: 'Reminders reordered' });
+    const destinationLabel = destinationColumn?.label;
+    emitActivity({
+      action: sourceColumnKey === destinationColumnKey ? 'reordered' : 'moved',
+      label: destinationLabel
+        ? `${resolveReminderDisplayTitle(moved)} moved to ${destinationLabel}`
+        : 'Reminders reordered',
+    });
   }
 
   function handleDragStart(event) {
@@ -3740,6 +3928,7 @@ export async function initReminders(sel = {}) {
     dragState.draggingId = id;
     dragState.dropTargetId = null;
     dragState.dropBefore = true;
+    dragState.dropColumnKey = getReminderBoardColumnKey(item.dataset.category);
     item.classList.add('is-dragging');
     if (event.dataTransfer) {
       try {
@@ -3754,6 +3943,7 @@ export async function initReminders(sel = {}) {
       return;
     }
     const item = findDraggableItem(event.target);
+    const column = findReminderColumn(event.target);
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move';
     }
@@ -3761,8 +3951,13 @@ export async function initReminders(sel = {}) {
       event.preventDefault();
       dragState.dropTargetId = null;
       dragState.dropBefore = false;
+      dragState.dropColumnKey = column?.dataset?.reminderColumn || null;
       clearDragHighlights();
-      list?.classList.add('drag-over-list');
+      if (column) {
+        column.classList.add('is-drag-over');
+      } else {
+        list?.classList.add('drag-over-list');
+      }
       return;
     }
     if (item.dataset.id === dragState.draggingId) {
@@ -3779,6 +3974,8 @@ export async function initReminders(sel = {}) {
       item.classList.add(before ? 'drag-over-before' : 'drag-over-after');
       dragState.dropTargetId = item.dataset.id;
       dragState.dropBefore = before;
+      dragState.dropColumnKey = column?.dataset?.reminderColumn
+        || getReminderBoardColumnKey(item.dataset.category);
     }
   }
 
@@ -3805,8 +4002,10 @@ export async function initReminders(sel = {}) {
     }
     event.preventDefault();
     const item = findDraggableItem(event.target);
+    const column = findReminderColumn(event.target);
     let targetId = item?.dataset.id || null;
     let before = dragState.dropBefore;
+    const targetColumnKey = column?.dataset?.reminderColumn || dragState.dropColumnKey || null;
     if (item) {
       const rect = item.getBoundingClientRect();
       const midpoint = rect.top + rect.height / 2;
@@ -3815,7 +4014,7 @@ export async function initReminders(sel = {}) {
       targetId = null;
       before = false;
     }
-    performReorder(dragState.draggingId, targetId, before);
+    performReorder(dragState.draggingId, targetId, before, targetColumnKey);
     resetDragState();
   }
 
@@ -3935,11 +4134,17 @@ export async function initReminders(sel = {}) {
       });
     }
 
-    function getDropTargets(exclude) {
+    function getDropTargets(exclude, columnKey = null) {
       if (!list) {
         return [];
       }
-      return Array.from(list.querySelectorAll('[data-reminder-item]')).filter((node) => node !== exclude);
+      return Array.from(list.querySelectorAll('[data-reminder-item]')).filter((node) => {
+        if (node === exclude) return false;
+        if (!columnKey) return true;
+        const nodeColumn = findReminderColumn(node)?.dataset?.reminderColumn
+          || getReminderBoardColumnKey(node.dataset.category);
+        return nodeColumn === columnKey;
+      });
     }
 
     function startTouchDrag(point) {
@@ -4006,9 +4211,17 @@ export async function initReminders(sel = {}) {
       }
 
       const item = touchDragState.item;
-      const targets = getDropTargets(item);
+      const pointTarget = typeof document.elementFromPoint === 'function'
+        ? document.elementFromPoint(touchDragState.lastClientX, clientY)
+        : null;
+      const targetColumn = findReminderColumn(pointTarget) || findReminderColumn(item);
+      const targetColumnKey = targetColumn?.dataset?.reminderColumn
+        || getReminderBoardColumnKey(item?.dataset?.category);
+      const targets = getDropTargets(item, targetColumnKey);
 
       clearDragHighlights();
+      dragState.dropColumnKey = targetColumnKey;
+      targetColumn?.classList.add('is-drag-over');
 
       if (!targets.length) {
         dragState.dropTargetId = null;
@@ -4066,7 +4279,12 @@ export async function initReminders(sel = {}) {
       resetTouchDragState();
 
       if (!cancelled && moved && draggedId) {
-        performReorder(draggedId, dragState.dropTargetId, dragState.dropBefore);
+        performReorder(
+          draggedId,
+          dragState.dropTargetId,
+          dragState.dropBefore,
+          dragState.dropColumnKey,
+        );
       }
       resetDragState();
     }
@@ -4102,6 +4320,7 @@ export async function initReminders(sel = {}) {
       dragState.dropTargetId = null;
       dragState.dropBefore = true;
       dragState.draggingId = null;
+      dragState.dropColumnKey = getReminderBoardColumnKey(item.dataset.category);
 
       clearTouchTimer();
       touchDragState.longPressTimer = setTimeout(() => {
@@ -5861,10 +6080,11 @@ export async function initReminders(sel = {}) {
     parent.appendChild(headingEl);
   }
 
-  // Collapse the detailed categories into the four visual groups used by the card grid.
+  // Collapse detailed categories into the broad visual groups used by reminder cards.
   function getReminderCategoryGroup(categoryName) {
     const raw = typeof categoryName === 'string' ? categoryName.toLowerCase() : '';
     if (raw.includes('school')) return { key: 'school', label: 'School' };
+    if (raw.includes('footy') || raw.includes('football')) return { key: 'footy', label: 'Footy' };
     if (raw.includes('home')) return { key: 'home', label: 'Home' };
     if (raw.includes('wellbeing') || raw.includes('support')) return { key: 'wellbeing', label: 'Wellbeing' };
     return { key: 'other', label: 'Other' };
@@ -5998,6 +6218,7 @@ export async function initReminders(sel = {}) {
     const raw = key.toLowerCase();
     if (!raw) return '#6b7280';
     if (raw.includes('school')) return '#2563eb';
+    if (raw.includes('footy') || raw.includes('football')) return '#7c3aed';
     if (raw.includes('home')) return '#15803d';
     if (raw.includes('wellbeing') || raw.includes('support')) return '#0d9488';
     const palette = ['#b45309', '#0d9488', '#be185d', '#0f766e', '#0891b2', '#a16207', '#dc2626', '#0284c7'];
@@ -6546,14 +6767,14 @@ export async function initReminders(sel = {}) {
     }
 
     if(listWrapper){
-      listWrapper.classList.toggle('has-items', hasRows);
+      listWrapper.classList.toggle('has-items', hasRows || variant === 'mobile');
     }
 
     if(!list){
       return;
     }
 
-    if(!hasRows){
+    if(!hasRows && variant !== 'mobile'){
       if(emptyStateEl){
         list.innerHTML = '';
         list.classList.add('hidden');
@@ -6944,77 +7165,108 @@ export async function initReminders(sel = {}) {
     };
 
     if (variant === 'mobile') {
-      const dueTimestamp = (reminder) => {
-        const timestamp = reminder?.due ? new Date(reminder.due).getTime() : NaN;
-        return Number.isFinite(timestamp) ? timestamp : Infinity;
-      };
-      const compareByDueTime = (a, b) => {
-        const dueA = dueTimestamp(a);
-        const dueB = dueTimestamp(b);
-        if (dueA !== dueB) {
-          return dueA < dueB ? -1 : 1;
-        }
-        const orderA = Number.isFinite(a?.orderIndex) ? a.orderIndex : Infinity;
-        const orderB = Number.isFinite(b?.orderIndex) ? b.orderIndex : Infinity;
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-        return resolveReminderDisplayTitle(a).localeCompare(resolveReminderDisplayTitle(b));
-      };
-      const timeGroups = [
-        { key: 'overdue', label: 'Overdue', items: [] },
-        { key: 'today', label: 'Today', items: [] },
-        { key: 'upcoming', label: 'Upcoming', items: [] },
-        { key: 'no-date', label: 'No date', items: [] },
-      ];
-      const timeGroupMap = new Map(timeGroups.map((group) => [group.key, group]));
-
+      const columnItems = new Map(REMINDER_BOARD_COLUMNS.map((column) => [column.key, []]));
+      const otherItems = [];
       activeRows.forEach((reminder) => {
-        const dueTime = dueTimestamp(reminder);
-        let groupKey = 'no-date';
-        if (Number.isFinite(dueTime) && dueTime < t0.getTime()) {
-          groupKey = 'overdue';
-        } else if (reminder?.pinToToday === true || (Number.isFinite(dueTime) && dueTime <= t1.getTime())) {
-          groupKey = 'today';
-        } else if (Number.isFinite(dueTime)) {
-          groupKey = 'upcoming';
+        const columnKey = getReminderBoardColumnKey(reminder.category);
+        if (columnItems.has(columnKey)) {
+          columnItems.get(columnKey).push(reminder);
+        } else {
+          otherItems.push(reminder);
         }
-        timeGroupMap.get(groupKey)?.items.push(reminder);
       });
 
-      timeGroups.forEach((group) => {
-        if (!group.items.length) {
-          return;
-        }
-        group.items.sort(compareByDueTime);
+      const board = document.createElement(listIsSemantic ? 'li' : 'div');
+      board.className = 'reminder-category-board';
+      board.setAttribute('aria-label', 'Reminder categories');
 
-        const section = document.createElement(listIsSemantic ? 'li' : 'section');
-        section.className = `reminder-stream-section reminder-stream-section--${group.key}`;
-        section.dataset.timeGroup = group.key;
+      REMINDER_BOARD_COLUMNS.forEach((column) => {
+        const reminders = columnItems.get(column.key) || [];
+        const section = document.createElement('section');
+        section.className = `reminder-category-column reminder-category-column--${column.key}`;
+        section.dataset.reminderColumn = column.key;
+        section.setAttribute('aria-labelledby', `reminder-column-${column.key}-title`);
 
-        const heading = document.createElement('div');
-        heading.className = 'reminder-stream-section-heading';
+        const heading = document.createElement('header');
+        heading.className = 'reminder-category-column-header';
+        const headingCopy = document.createElement('div');
+        headingCopy.className = 'reminder-category-column-heading-copy';
         const label = document.createElement('h3');
-        label.className = 'reminder-stream-section-label';
-        label.textContent = group.label;
+        label.id = `reminder-column-${column.key}-title`;
+        label.className = 'reminder-category-column-title';
+        label.textContent = column.label;
         const count = document.createElement('span');
-        count.className = 'reminder-stream-section-count';
-        count.textContent = String(group.items.length);
-        heading.append(label, count);
+        count.className = 'reminder-category-column-count';
+        count.textContent = String(reminders.length);
+        count.setAttribute('aria-label', `${reminders.length} cards`);
+        headingCopy.append(label, count);
 
-        const sectionItems = document.createElement(listIsSemantic ? 'ul' : 'div');
-        sectionItems.className = 'reminder-stream-section-items';
-        group.items.forEach((reminder) => {
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'reminder-category-add-card';
+        addButton.textContent = '+ Add';
+        addButton.setAttribute('aria-label', `Add a ${column.label} reminder card`);
+        addButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openNewReminderSheet(addButton);
+          if (categoryInput) {
+            categoryInput.value = column.category;
+            syncCategoryChoiceState(column.category);
+            categoryInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+        heading.append(headingCopy, addButton);
+
+        const sectionItems = document.createElement('ul');
+        sectionItems.className = 'reminder-category-column-items';
+        sectionItems.setAttribute('aria-label', `${column.label} reminder cards`);
+        if (!reminders.length) {
+          const emptyColumn = document.createElement('li');
+          emptyColumn.className = 'reminder-category-column-empty';
+          emptyColumn.textContent = 'No cards yet';
+          sectionItems.appendChild(emptyColumn);
+        } else {
+          reminders.forEach((reminder) => {
+            const catName = (reminder.category && String(reminder.category).trim()) || DEFAULT_CATEGORY;
+            sectionItems.appendChild(buildReminderCard(reminder, catName, {
+              elementTag: 'li',
+              isMobile: true,
+            }));
+          });
+        }
+
+        section.append(heading, sectionItems);
+        board.appendChild(section);
+      });
+      frag.appendChild(board);
+
+      if (otherItems.length) {
+        const otherSection = document.createElement(listIsSemantic ? 'li' : 'section');
+        otherSection.className = 'reminder-other-cards';
+        otherSection.dataset.reminderColumn = 'other';
+        const heading = document.createElement('div');
+        heading.className = 'reminder-other-cards-heading';
+        const label = document.createElement('h3');
+        label.className = 'reminder-other-cards-title';
+        label.textContent = 'Other reminders';
+        const help = document.createElement('span');
+        help.className = 'reminder-other-cards-help';
+        help.textContent = 'Move these to School or Footy from the card menu.';
+        heading.append(label, help);
+
+        const sectionItems = document.createElement('ul');
+        sectionItems.className = 'reminder-other-cards-items';
+        otherItems.forEach((reminder) => {
           const catName = (reminder.category && String(reminder.category).trim()) || DEFAULT_CATEGORY;
           sectionItems.appendChild(buildReminderCard(reminder, catName, {
-            elementTag: listIsSemantic ? 'li' : 'div',
+            elementTag: 'li',
             isMobile: true,
           }));
         });
-
-        section.append(heading, sectionItems);
-        frag.appendChild(section);
-      });
+        otherSection.append(heading, sectionItems);
+        frag.appendChild(otherSection);
+      }
     } else {
       activeRows.forEach((r) => {
         const catName = r.category || DEFAULT_CATEGORY;

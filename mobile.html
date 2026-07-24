@@ -5288,6 +5288,7 @@ body, main, section, div, p, span, li {
                   <select id="quickAddCategory" aria-label="Category for quick reminder">
                     <option value="General">General</option>
                     <option value="School">School</option>
+                    <option value="Footy">Footy</option>
                     <option value="Home &amp; Personal">Home &amp; Personal</option>
                     <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
                   </select>
@@ -5311,9 +5312,9 @@ body, main, section, div, p, span, li {
             <div class="w-full" id="remindersWrapper">
               <div id="emptyState" class="hidden text-center text-base-content/60 py-8 sm:px-4"></div>
               <p id="reminderReorderHint" class="sr-only">
-                Press, hold, and drag a reminder card to reorder your list. Screen reader users can double-tap and hold, then drag to move a reminder.
+                Use each card's actions menu to edit, delete, move, or reorder it. You can also press, hold, and drag cards.
               </p>
-              <ul id="reminderList" class="w-full overflow-x-hidden reminder-list reminders-list" aria-describedby="reminderReorderHint"></ul>
+              <ul id="reminderList" class="w-full overflow-x-hidden reminder-list reminders-list" aria-label="School and Footy reminder board" aria-describedby="reminderReorderHint"></ul>
             </div>
           </section>
         </section>
@@ -6470,6 +6471,7 @@ body, main, section, div, p, span, li {
                     <div id="categoryQuickChoices" class="reminder-category-choice-row" aria-label="Suggested categories">
                       <button type="button" class="reminder-category-choice" data-category-choice="General" aria-pressed="true">General</button>
                       <button type="button" class="reminder-category-choice" data-category-choice="School" aria-pressed="false">School</button>
+                      <button type="button" class="reminder-category-choice" data-category-choice="Footy" aria-pressed="false">Footy</button>
                       <button type="button" class="reminder-category-choice" data-category-choice="Home &amp; Personal" aria-pressed="false">Home</button>
                       <button type="button" class="reminder-category-choice" data-category-choice="Wellbeing &amp; Support" aria-pressed="false">Wellbeing</button>
                     </div>
@@ -6484,6 +6486,8 @@ body, main, section, div, p, span, li {
                     <datalist id="categorySuggestions">
                       <option value="General"></option>
                       <option value="School"></option>
+                      <option value="Footy"></option>
+                      <option value="Footy – Drills"></option>
                       <option value="General Appointments"></option>
                       <option value="Home &amp; Personal"></option>
                       <option value="School – Appointments/Meetings"></option>

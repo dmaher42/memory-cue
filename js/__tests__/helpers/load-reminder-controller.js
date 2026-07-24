@@ -93,6 +93,7 @@ function createReminderMocks(overrides = {}) {
       recurrence: reminder.recurrence || null,
       semanticEmbedding: Array.isArray(reminder.semanticEmbedding) ? reminder.semanticEmbedding : null,
       order: Number.isFinite(reminder.order) ? Number(reminder.order) : null,
+      orderIndex: Number.isFinite(reminder.orderIndex) ? Number(reminder.orderIndex) : null,
       pinToToday: reminder.pinToToday === true,
       metadata: reminder.metadata && typeof reminder.metadata === 'object' ? { ...reminder.metadata } : null,
     };

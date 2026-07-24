@@ -139,7 +139,7 @@ test('mobile reminders normalise uncategorised rows to General', async () => {
   expect(excursionItems).toHaveLength(1);
 });
 
-test('mobile reminders render one due-time stream with completed reminders collapsed', async () => {
+test('mobile reminders render School and Footy as two board columns without hiding older categories', async () => {
   document.body.innerHTML = `
     <input id="title" />
     <input id="date" />
@@ -183,36 +183,113 @@ test('mobile reminders render one due-time stream with completed reminders colla
   };
 
   controller.__testing.setItems([
-    { id: 'upcoming-late', title: 'Reports', priority: 'Medium', category: 'School', done: false, due: dueAt(2, 15) },
-    { id: 'no-date', title: 'Bowies Adoption', priority: 'Medium', category: 'Home & Personal', done: false, due: null },
-    { id: 'today-due', title: 'Paneer', priority: 'High', category: 'General', done: false, due: dueAt(0, 18) },
-    { id: 'overdue', title: 'Passports', priority: 'Medium', category: 'School', done: false, due: dueAt(-1, 9) },
-    { id: 'today-pinned', title: 'Netball', priority: 'Medium', category: 'Wellbeing & Support', done: false, due: null, pinToToday: true },
-    { id: 'upcoming-early', title: 'Saag for Tea', priority: 'Medium', category: 'General', done: false, due: dueAt(1, 8) },
-    { id: 'completed', title: 'Finished task', priority: 'Low', category: 'General', done: true, due: dueAt(0, 10) },
+    { id: 'school-first', title: 'Reports', priority: 'Medium', category: 'School', done: false, due: dueAt(2, 15), orderIndex: 5000 },
+    { id: 'school-second', title: 'Passports', priority: 'Medium', category: 'School – Excursions & Events', done: false, due: dueAt(-1, 9), orderIndex: 4000 },
+    { id: 'footy-first', title: 'Team selection', priority: 'High', category: 'Footy', done: false, due: dueAt(0, 18), orderIndex: 3000 },
+    { id: 'footy-second', title: 'Training plan', priority: 'Medium', category: 'Footy – Drills', done: false, due: null, orderIndex: 2000 },
+    { id: 'older-category', title: 'Bowies Adoption', priority: 'Medium', category: 'Home & Personal', done: false, due: null, orderIndex: 1000 },
+    { id: 'completed', title: 'Finished task', priority: 'Low', category: 'School', done: true, due: dueAt(0, 10), orderIndex: 500 },
   ]);
   controller.__testing.render();
 
-  const groupOrder = Array.from(document.querySelectorAll('.reminder-stream-section'))
-    .map((section) => section.dataset.timeGroup);
-  expect(groupOrder).toEqual(['overdue', 'today', 'upcoming', 'no-date']);
-  expect(document.querySelector('.reminder-group-card')).toBeNull();
+  const columnOrder = Array.from(document.querySelectorAll('.reminder-category-column'))
+    .map((section) => section.dataset.reminderColumn);
+  expect(columnOrder).toEqual(['school', 'footy']);
 
-  const todayIds = Array.from(document.querySelectorAll('[data-time-group="today"] [data-reminder-item="true"]'))
+  const schoolIds = Array.from(document.querySelectorAll('[data-reminder-column="school"] [data-reminder-item="true"]'))
     .map((row) => row.dataset.id);
-  expect(todayIds).toEqual(['today-due', 'today-pinned']);
+  expect(schoolIds).toEqual(['school-first', 'school-second']);
 
-  const upcomingIds = Array.from(document.querySelectorAll('[data-time-group="upcoming"] [data-reminder-item="true"]'))
+  const footyIds = Array.from(document.querySelectorAll('[data-reminder-column="footy"] [data-reminder-item="true"]'))
     .map((row) => row.dataset.id);
-  expect(upcomingIds).toEqual(['upcoming-early', 'upcoming-late']);
+  expect(footyIds).toEqual(['footy-first', 'footy-second']);
+
+  expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-title').textContent).toBe('School');
+  expect(document.querySelector('[data-reminder-column="footy"] .reminder-category-column-title').textContent).toBe('Footy');
+  expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-count').textContent).toBe('2');
+  expect(document.querySelector('[data-reminder-column="footy"] .reminder-category-column-count').textContent).toBe('2');
+
+  expect(document.querySelector('[data-reminder-column="other"] [data-id="older-category"]')).not.toBeNull();
+  expect(document.querySelector('.reminder-other-cards-help').textContent).toMatch(/Move these to School or Footy/i);
 
   expect(document.querySelector('[data-id="completed"]')).toBeNull();
-  expect(document.querySelectorAll('.reminder-stream-more')).toHaveLength(6);
+  expect(document.querySelectorAll('.reminder-stream-more')).toHaveLength(5);
   expect(document.querySelector('[aria-label^="Delete reminder"]')).toBeNull();
-  expect(document.querySelector('[data-id="upcoming-late"] .reminder-stream-category').textContent).toBe('School');
+  expect(document.querySelector('[data-id="footy-second"] .reminder-stream-category').textContent).toBe('Footy – Drills');
 
   document.querySelector('.reminder-completed-section-toggle').click();
   expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
+});
+
+test('mobile board controls add, edit, move, reorder, and delete canonical reminder cards', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <input id="category" list="categorySuggestions" value="General" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="wrapper"><ul id="list"></ul></div>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  const controller = await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  controller.__testing.setItems([
+    { id: 'school-one', title: 'School one', category: 'School', done: false, orderIndex: 3000 },
+    { id: 'school-two', title: 'School two', category: 'School', done: false, orderIndex: 2000 },
+    { id: 'footy-one', title: 'Footy one', category: 'Footy', done: false, orderIndex: 1000 },
+  ]);
+
+  document.querySelector('[data-reminder-column="footy"] .reminder-category-add-card').click();
+  expect(document.getElementById('category').value).toBe('Footy');
+
+  let editOpened = false;
+  document.addEventListener('cue:open', (event) => {
+    if (event.detail?.mode === 'edit') editOpened = true;
+  }, { once: true });
+  document.querySelector('[data-id="school-one"] .reminder-stream-more').click();
+  document.querySelector('.reminder-card-actions-menu [data-action="edit-card"]').click();
+  expect(editOpened).toBe(true);
+
+  document.querySelector('[data-id="school-one"] .reminder-stream-more').click();
+  document.querySelector('.reminder-card-actions-menu [data-action="move-to-footy"]').click();
+  expect(controller.__testing.getItems().find((item) => item.id === 'school-one').category).toBe('Footy');
+  expect(document.querySelector('[data-reminder-column="footy"] [data-id="school-one"]')).not.toBeNull();
+
+  document.querySelector('[data-id="footy-one"] .reminder-stream-more').click();
+  document.querySelector('.reminder-card-actions-menu [data-action="move-card-up"]').click();
+  const footyIds = Array.from(document.querySelectorAll('[data-reminder-column="footy"] [data-reminder-item="true"]'))
+    .map((row) => row.dataset.id);
+  expect(footyIds).toEqual(['footy-one', 'school-one']);
+
+  document.querySelector('[data-id="footy-one"] .reminder-stream-more').click();
+  document.querySelector('.reminder-card-actions-menu [data-action="delete-card"]').click();
+  await Promise.resolve();
+  expect(controller.__testing.getItems().some((item) => item.id === 'footy-one')).toBe(false);
+  expect(document.querySelector('[data-id="footy-one"]')).toBeNull();
+  controller.__testing.setItems([]);
+  controller.__testing.persistItems();
 });
 
 test('legacy Today list items migrate once into canonical reminders before the old store is removed', async () => {
@@ -281,8 +358,8 @@ test('legacy Today list items migrate once into canonical reminders before the o
   expect(migrated.every((item) => item.metadata.suppressNotification === true)).toBe(true);
   expect(localStorage.getItem('dailyTasksByDate')).toBeNull();
 
-  expect(document.querySelector('[data-time-group="today"] [data-id] .reminder-stream-due').textContent).toBe('Today');
-  expect(document.querySelector('[data-time-group="upcoming"] [data-id] .reminder-stream-due').textContent).toBe('Tomorrow');
+  expect(document.querySelector('[data-reminder-column="school"] [data-title="Return School Form"] .reminder-stream-due').textContent).toBe('Today');
+  expect(document.querySelector('[data-reminder-column="other"] [data-title="Check Passport"] .reminder-stream-due').textContent).toBe('Tomorrow');
   expect(document.querySelector('.reminder-completed-section-count').textContent).toBe('1');
 
   localStorage.setItem('dailyTasksByDate', JSON.stringify(legacyPayload));
@@ -349,7 +426,7 @@ test('legacy Today migration keeps the source when any item cannot be safely con
   controller.__testing.persistItems();
 });
 
-test('category selectors include school and general presets', async () => {
+test('category selectors include School, Footy, and existing presets', async () => {
   document.body.innerHTML = `
     <input id="title" />
     <input id="date" />
@@ -382,6 +459,8 @@ test('category selectors include school and general presets', async () => {
 
   const datalistValues = Array.from(document.querySelectorAll('#categorySuggestions option')).map((opt) => opt.value);
   expect(datalistValues).toEqual([
+    'Footy',
+    'Footy – Drills',
     'General',
     'General Appointments',
     'Home & Personal',

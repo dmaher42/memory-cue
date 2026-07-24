@@ -105,6 +105,7 @@ async function main() {
     const context = await browser.newContext({
       timezoneId: 'Australia/Adelaide',
       serviceWorkers: 'block',
+      viewport: { width: 390, height: 844 },
     });
     const page = await context.newPage();
 
@@ -169,6 +170,7 @@ async function main() {
       return panel && !panel.classList.contains('hidden');
     });
 
+    await page.click('.reminders-fast-add-more > summary');
     await page.selectOption('#quickAddCategory', 'School');
     await page.fill('#reminderQuickAdd', 'Call Mum tomorrow at 6pm');
     await page.click('#quickAddSubmit');
@@ -181,11 +183,80 @@ async function main() {
       }
     }, REMINDER_STORAGE_KEY);
 
+    const boardColumnLabels = await page.locator('.reminder-category-column-title').allTextContents();
+    if (JSON.stringify(boardColumnLabels.map((label) => label.trim())) !== JSON.stringify(['School', 'Footy'])) {
+      throw new Error(`Expected School and Footy board columns, received: ${JSON.stringify(boardColumnLabels)}`);
+    }
+
+    await page.selectOption('#quickAddCategory', 'Footy');
+    await page.fill('#reminderQuickAdd', 'Training tomorrow at 7pm');
+    await page.click('#quickAddSubmit');
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return reminders.some((reminder) => reminder?.title === 'Training' && reminder?.category === 'Footy');
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
+
+    const screenshotOutput = typeof process.env.PLAYWRIGHT_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_SCREENSHOT_PATH.trim()
+      : '';
+    if (screenshotOutput) {
+      const screenshotPath = path.resolve(cwd, screenshotOutput);
+      await fs.mkdir(path.dirname(screenshotPath), { recursive: true });
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+    }
+
+    await page.locator('[data-reminder-column="school"] [data-title="Call Mum"] .reminder-stream-more').click();
+    await page.locator('.reminder-card-actions-menu [data-action="move-to-footy"]').click();
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return reminders.some((reminder) => reminder?.title === 'Call Mum' && reminder?.category === 'Footy');
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
+
+    await page.locator('[data-reminder-column="footy"] [data-title="Training"] .reminder-stream-more').click();
+    await page.locator('.reminder-card-actions-menu [data-action="move-card-up"]').click();
+    const firstFootyCardTitle = await page.locator('[data-reminder-column="footy"] [data-reminder-item="true"]')
+      .first()
+      .getAttribute('data-title');
+    if (firstFootyCardTitle !== 'Training') {
+      throw new Error(`Expected Training to move to the top of Footy, received: ${firstFootyCardTitle}`);
+    }
+
+    await page.locator('[data-reminder-column="footy"] [data-title="Training"] .reminder-stream-more').click();
+    await page.locator('.reminder-card-actions-menu [data-action="edit-card"]').click();
+    await page.locator('#create-sheet[data-mode="edit"]').waitFor({ state: 'visible' });
+    await page.click('#closeCreateSheet');
+
+    await page.locator('[data-reminder-column="footy"] [data-title="Training"] .reminder-stream-more').click();
+    await page.locator('.reminder-card-actions-menu [data-action="delete-card"]').click();
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return !reminders.some((reminder) => reminder?.title === 'Training');
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
+
+    await page.locator('[data-reminder-column="footy"] .reminder-category-add-card').click();
+    const addCardCategory = await page.inputValue('#category');
+    if (addCardCategory !== 'Footy') {
+      throw new Error(`Expected Footy add-card control to preselect Footy, received: ${addCardCategory}`);
+    }
+    await page.click('#closeCreateSheet');
+
     const titleTexts = await page.locator(
       '#view-reminders .reminder-row-title, #view-reminders .reminder-group-row-title',
     ).allTextContents();
     const metaTexts = await page.locator(
-      '#view-reminders .reminder-row-meta, #view-reminders .reminder-group-row-due',
+      '#view-reminders .reminder-stream-meta, #view-reminders .reminder-row-meta, #view-reminders .reminder-group-row-due',
     ).allTextContents();
     const titleText = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Get Naplan');
     const metaText = (metaTexts || []).map((text) => (text || '').trim()).find((text) => /Tomorrow,\s*0?8:30(?:\s?AM)?/i.test(text || ''));
@@ -220,7 +291,7 @@ async function main() {
       return title === 'get naplan';
     });
     const visibleQuickAddReminder = persistedReminders.find((reminder) => (
-      reminder?.title === 'Call Mum' && reminder?.category === 'School'
+      reminder?.title === 'Call Mum'
     ));
 
     if (typeof persistedQuickAddReminder?.due !== 'string' || !persistedQuickAddReminder.due) {
@@ -228,7 +299,7 @@ async function main() {
     }
 
     if (typeof visibleQuickAddReminder?.due !== 'string' || !visibleQuickAddReminder.due) {
-      throw new Error(`Expected the visible quick-add bar to save a dated School reminder, received: ${JSON.stringify(persistedReminders)}`);
+      throw new Error(`Expected the visible quick-add bar to save a dated reminder, received: ${JSON.stringify(persistedReminders)}`);
     }
 
     const inboxEntries = await page.evaluate(() => {
@@ -269,6 +340,10 @@ async function main() {
       unscheduledTitle,
       persistedDue: persistedQuickAddReminder.due,
       visibleQuickAddCategory: visibleQuickAddReminder.category,
+      boardColumnLabels,
+      movedCardCategory: persistedReminders.find((reminder) => reminder?.title === 'Call Mum')?.category,
+      firstFootyCardTitle,
+      addCardCategory,
       mirroredInboxSource: mirroredInboxEntry.source,
       mirroredInboxEntryPoint: mirroredInboxEntry.entryPoint,
       blockingErrors,
