@@ -5594,6 +5594,82 @@ export async function initReminders(sel = {}) {
     }
   }
 
+  async function clearCompletedReminders(){
+    const completedItems = items.filter((item) => item?.done === true);
+    if (!completedItems.length) {
+      return;
+    }
+
+    const count = completedItems.length;
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') {
+      return;
+    }
+    const confirmed = window.confirm(
+      `Permanently delete ${count} completed ${count === 1 ? 'reminder' : 'reminders'}? This cannot be undone.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    const completedIds = new Set(completedItems.map((item) => item.id));
+    completedItems.forEach((item) => {
+      if (item?.id) {
+        pendingDeletionItems.set(item.id, item);
+      }
+    });
+
+    items = items.filter((item) => !completedIds.has(item?.id));
+    completedReminderSectionExpanded = false;
+    render();
+    persistItems();
+
+    const results = [];
+    const chunkSize = 8;
+    for (let index = 0; index < completedItems.length; index += chunkSize) {
+      const chunk = completedItems.slice(index, index + chunkSize);
+      const chunkResults = await Promise.all(chunk.map(async (item) => ({
+        item,
+        deleted: await deleteFromFirebase(item.id),
+      })));
+      results.push(...chunkResults);
+    }
+
+    const failedItems = results.filter((result) => !result.deleted).map((result) => result.item);
+    const deletedItems = results.filter((result) => result.deleted).map((result) => result.item);
+
+    failedItems.forEach((item) => {
+      pendingDeletionItems.delete(item.id);
+      items.push(item);
+    });
+    if (!userId) {
+      deletedItems.forEach((item) => pendingDeletionItems.delete(item.id));
+    }
+    deletedItems.forEach((item) => cancelReminder(item.id));
+
+    items = ensureOrderIndicesInitialized(normalizeReminderList(items));
+    sortItemsByOrder(items);
+    render();
+    persistItems();
+    emitReminderUpdates();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items });
+
+    const deletedCount = deletedItems.length;
+    if (!deletedCount) {
+      toast('Could not clear completed reminders. They were restored.');
+      return;
+    }
+
+    emitActivity({
+      action: 'deleted',
+      label: `${deletedCount} completed ${deletedCount === 1 ? 'reminder' : 'reminders'} cleared`,
+    });
+    if (failedItems.length) {
+      toast(`${deletedCount} cleared. ${failedItems.length} could not be deleted and were restored.`);
+    } else {
+      toast(`${deletedCount} completed ${deletedCount === 1 ? 'reminder' : 'reminders'} cleared`);
+    }
+  }
+
   function enableSwipeToDelete(element, onDelete) {
     if (!element || typeof element.addEventListener !== 'function' || typeof onDelete !== 'function') {
       return;
@@ -6130,6 +6206,7 @@ export async function initReminders(sel = {}) {
     count = 0,
     expanded = false,
     onToggle = null,
+    onClear = null,
   } = {}) {
     if (!parent || typeof parent.appendChild !== 'function') {
       return;
@@ -6165,6 +6242,23 @@ export async function initReminders(sel = {}) {
       });
     }
     headingEl.appendChild(toggleBtn);
+    if (typeof onClear === 'function') {
+      const clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
+      clearBtn.className = 'reminder-completed-section-clear';
+      clearBtn.dataset.action = 'clear-completed-reminders';
+      clearBtn.textContent = 'Clear done';
+      clearBtn.setAttribute(
+        'aria-label',
+        `Permanently delete ${count} completed ${count === 1 ? 'reminder' : 'reminders'}`,
+      );
+      clearBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClear();
+      });
+      headingEl.appendChild(clearBtn);
+    }
     parent.appendChild(headingEl);
   }
 
@@ -7577,6 +7671,7 @@ export async function initReminders(sel = {}) {
           completedReminderSectionExpanded = !completedReminderSectionExpanded;
           render();
         },
+        onClear: clearCompletedReminders,
       });
 
       if (completedReminderSectionExpanded) {

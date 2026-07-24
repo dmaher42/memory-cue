@@ -471,6 +471,37 @@ async function main() {
       throw new Error(`Expected the visible quick-add bar to save a dated reminder, received: ${JSON.stringify(persistedReminders)}`);
     }
 
+    await page.locator('[data-title="Get Naplan"] [data-reminder-control="toggle"]').click();
+    await page.locator('[data-action="clear-completed-reminders"]').waitFor({ state: 'visible' });
+    const clearedDoneCount = Number(
+      (await page.locator('.reminder-completed-section-count').textContent())?.trim(),
+    );
+    if (clearedDoneCount !== 1) {
+      throw new Error(`Expected one completed reminder before clearing, received: ${clearedDoneCount}`);
+    }
+    const doneCleanupScreenshotOutput = typeof process.env.PLAYWRIGHT_DONE_CLEANUP_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_DONE_CLEANUP_SCREENSHOT_PATH.trim()
+      : '';
+    if (doneCleanupScreenshotOutput) {
+      const doneCleanupScreenshotPath = path.resolve(cwd, doneCleanupScreenshotOutput);
+      await fs.mkdir(path.dirname(doneCleanupScreenshotPath), { recursive: true });
+      await page.locator('.reminder-completed-section').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: doneCleanupScreenshotPath, fullPage: true });
+    }
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('[data-action="clear-completed-reminders"]').click();
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return Array.isArray(reminders) && reminders.every((reminder) => reminder?.done !== true);
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
+    if (await page.locator('[data-action="clear-completed-reminders"]').count()) {
+      throw new Error('Expected the completed-reminder section to disappear after clearing');
+    }
+
     const inboxEntries = await page.evaluate(() => {
       try {
         return JSON.parse(localStorage.getItem('memoryCueInbox') || '[]');
@@ -530,6 +561,7 @@ async function main() {
       tomorrowValue,
       overlapState,
       compactLayoutState,
+      clearedDoneCount,
       mirroredInboxSource: mirroredInboxEntry.source,
       mirroredInboxEntryPoint: mirroredInboxEntry.entryPoint,
       blockingErrors,

@@ -275,9 +275,22 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelectorAll('.reminder-stream-more')).toHaveLength(5);
   expect(document.querySelector('[aria-label^="Delete reminder"]')).toBeNull();
   expect(document.querySelector('[data-id="footy-second"] .reminder-stream-category').textContent).toBe('Footy – Drills');
+  expect(document.querySelector('.reminder-completed-section-count').textContent).toBe('1');
+  expect(document.querySelector('[data-action="clear-completed-reminders"]').textContent).toBe('Clear done');
 
   document.querySelector('.reminder-completed-section-toggle').click();
   expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
+
+  const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+  document.querySelector('[data-action="clear-completed-reminders"]').click();
+  expect(controller.__testing.getItems().some((item) => item.done)).toBe(true);
+
+  confirmSpy.mockReturnValue(true);
+  document.querySelector('[data-action="clear-completed-reminders"]').click();
+  expect(confirmSpy).toHaveBeenLastCalledWith('Permanently delete 1 completed reminder? This cannot be undone.');
+  expect(controller.__testing.getItems().some((item) => item.done)).toBe(false);
+  expect(document.querySelector('.reminder-completed-section')).toBeNull();
+  confirmSpy.mockRestore();
 });
 
 test('mobile board column headings can be renamed and persist without changing reminder categories', async () => {
