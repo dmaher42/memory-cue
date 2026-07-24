@@ -232,7 +232,7 @@ async function main() {
     await page.locator('[data-reminder-column="footy"] [data-title="Training"] .reminder-stream-more').click();
     await page.locator('.reminder-card-actions-menu [data-action="edit-card"]').click();
     await page.locator('#create-sheet[data-mode="edit"]').waitFor({ state: 'visible' });
-    await page.click('#closeCreateSheet');
+    await page.keyboard.press('Escape');
 
     await page.locator('[data-reminder-column="footy"] [data-title="Training"] .reminder-stream-more').click();
     await page.locator('.reminder-card-actions-menu [data-action="delete-card"]').click();
@@ -250,7 +250,7 @@ async function main() {
     if (addCardCategory !== 'Footy') {
       throw new Error(`Expected Footy add-card control to preselect Footy, received: ${addCardCategory}`);
     }
-    await page.click('#closeCreateSheet');
+    await page.keyboard.press('Escape');
 
     const titleTexts = await page.locator(
       '#view-reminders .reminder-row-title, #view-reminders .reminder-group-row-title',
