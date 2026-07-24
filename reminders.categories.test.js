@@ -221,6 +221,68 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
 });
 
+test('mobile board column headings can be renamed and persist without changing reminder categories', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option selected>Medium</option></select>
+    <input id="category" list="categorySuggestions" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <div id="wrapper"><ul id="list"></ul></div>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  const controller = await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  controller.__testing.setItems([
+    { id: 'school-card', title: 'School card', category: 'School', done: false, orderIndex: 3000 },
+    { id: 'footy-card', title: 'Footy card', category: 'Footy', done: false, orderIndex: 2000 },
+    { id: 'other-card', title: 'Other card', category: 'General', done: false, orderIndex: 1000 },
+  ]);
+
+  const renameButton = document.querySelector('[data-reminder-column="school"] [data-action="rename-column"]');
+  expect(renameButton.getAttribute('aria-label')).toBe('Rename School column');
+  renameButton.click();
+
+  const renameInput = document.querySelector('[data-reminder-column="school"] .reminder-category-column-rename-input');
+  expect(renameInput.value).toBe('School');
+  renameInput.value = 'Work';
+  document.querySelector('[data-reminder-column="school"] .reminder-category-column-rename-save').click();
+
+  expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-title').textContent).toBe('Work');
+  expect(document.querySelector('[data-reminder-column="school"] .reminder-category-add-card').getAttribute('aria-label')).toBe('Add a Work reminder card');
+  expect(document.querySelector('.reminder-other-cards-help').textContent).toMatch(/Move these to Work or Footy/i);
+  expect(JSON.parse(localStorage.getItem('memoryCue:reminderBoardLabels'))).toEqual({ school: 'Work' });
+  expect(controller.__testing.getItems().find((item) => item.id === 'school-card').category).toBe('School');
+
+  document.querySelector('[data-id="footy-card"] .reminder-stream-more').click();
+  expect(document.querySelector('.reminder-card-actions-menu [data-action="move-to-school"]').textContent).toBe('Move to Work');
+
+  controller.__testing.render();
+  expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-title').textContent).toBe('Work');
+});
+
 test('mobile board controls add, edit, move, reorder, and delete canonical reminder cards', async () => {
   document.body.innerHTML = `
     <input id="title" />

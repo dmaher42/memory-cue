@@ -1,5 +1,12 @@
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
-import { saveReminder, removeReminder, saveReminderGroupColorRemote, subscribeReminderGroupColors } from '../repositories/reminderRepository.js';
+import {
+  saveReminder,
+  removeReminder,
+  saveReminderGroupColorRemote,
+  subscribeReminderGroupColors,
+  saveReminderBoardLabelRemote,
+  subscribeReminderBoardLabels,
+} from '../repositories/reminderRepository.js';
 import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
@@ -695,7 +702,7 @@ export async function initReminders(sel = {}) {
     REMINDER_BOARD_COLUMNS
       .filter((column) => column.key !== currentColumnKey)
       .forEach((column) => {
-        addAction(`Move to ${column.label}`, `move-to-${column.key}`, () => {
+        addAction(`Move to ${getReminderBoardLabel(column)}`, `move-to-${column.key}`, () => {
           moveReminderToBoardColumn(reminder.id, column.key);
         }, { renderAfter: false });
       });
@@ -3462,9 +3469,13 @@ export async function initReminders(sel = {}) {
   // dead zone at that moment, throwing "Cannot access ... before
   // initialization" and leaving the reminders list blank.
   const REMINDER_GROUP_COLORS_KEY = 'memoryCue:reminderGroupColors';
+  const REMINDER_BOARD_LABELS_KEY = 'memoryCue:reminderBoardLabels';
+  const REMINDER_BOARD_LABEL_MAX_LENGTH = 32;
   const isHexColor = (value) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
   let groupColorUnsub = null;
   let groupColorInitialSyncDone = false;
+  let boardLabelUnsub = null;
+  let boardLabelInitialSyncDone = false;
   const reminderFirestoreSync = createReminderFirestoreSync({
     normalizeReminderRecord,
     normalizeReminderList,
@@ -3754,11 +3765,12 @@ export async function initReminders(sel = {}) {
 
     reminder.category = targetColumn.category;
     reminder.orderIndex = highestOrder + ORDER_INDEX_GAP;
+    const targetColumnLabel = getReminderBoardLabel(targetColumn);
     saveBoardOrderChanges(
       [reminder],
-      `${resolveReminderDisplayTitle(reminder)} moved to ${targetColumn.label}`,
+      `${resolveReminderDisplayTitle(reminder)} moved to ${targetColumnLabel}`,
     );
-    toast(`Moved to ${targetColumn.label}`);
+    toast(`Moved to ${targetColumnLabel}`);
     return true;
   }
 
@@ -3902,7 +3914,7 @@ export async function initReminders(sel = {}) {
     }
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
-    const destinationLabel = destinationColumn?.label;
+    const destinationLabel = destinationColumn ? getReminderBoardLabel(destinationColumn) : '';
     emitActivity({
       action: sourceColumnKey === destinationColumnKey ? 'reordered' : 'moved',
       label: destinationLabel
@@ -4998,6 +5010,7 @@ export async function initReminders(sel = {}) {
           await ensureNotificationPermission();
           await syncCurrentDevicePushRegistration();
           startGroupColorSync();
+          startBoardLabelSync();
           return;
         }
 
@@ -5005,6 +5018,7 @@ export async function initReminders(sel = {}) {
         notesMigrationUserId = null;
         lastSyncedNoteIds = new Set();
         stopGroupColorSync();
+        stopBoardLabelSync();
         applySignedOutState();
       },
     }))
@@ -6120,6 +6134,183 @@ export async function initReminders(sel = {}) {
     return '';
   }
 
+  function normalizeReminderBoardLabel(value) {
+    return typeof value === 'string'
+      ? value.replace(/\s+/g, ' ').trim().slice(0, REMINDER_BOARD_LABEL_MAX_LENGTH)
+      : '';
+  }
+
+  function loadReminderBoardLabels() {
+    if (typeof localStorage === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem(REMINDER_BOARD_LABELS_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      if (!parsed || typeof parsed !== 'object') return {};
+      return REMINDER_BOARD_COLUMNS.reduce((labels, column) => {
+        const label = normalizeReminderBoardLabel(parsed[column.key]);
+        if (label) labels[column.key] = label;
+        return labels;
+      }, {});
+    } catch {
+      return {};
+    }
+  }
+
+  function persistReminderBoardLabels(labels) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(REMINDER_BOARD_LABELS_KEY, JSON.stringify(labels));
+    } catch {
+      /* ignore persistence errors */
+    }
+  }
+
+  function getReminderBoardLabel(columnOrKey) {
+    const column = typeof columnOrKey === 'string'
+      ? getReminderBoardColumnDefinition(columnOrKey)
+      : columnOrKey;
+    if (!column) return '';
+    return loadReminderBoardLabels()[column.key] || column.label;
+  }
+
+  function saveReminderBoardLabel(columnKey, nextValue) {
+    const column = getReminderBoardColumnDefinition(columnKey);
+    const label = normalizeReminderBoardLabel(nextValue);
+    if (!column || !label) return '';
+    const previousLabel = getReminderBoardLabel(column);
+    const labels = loadReminderBoardLabels();
+    labels[column.key] = label;
+    persistReminderBoardLabels(labels);
+    if (userId) {
+      saveReminderBoardLabelRemote(userId, column.key, label).catch((error) => {
+        console.warn('[reminder] board label save failed', error);
+      });
+    }
+    render();
+    if (label !== previousLabel) {
+      toast(`${previousLabel} renamed to ${label}`);
+    }
+    return label;
+  }
+
+  function applyRemoteReminderBoardLabels(remoteLabels) {
+    if (!remoteLabels || typeof remoteLabels !== 'object') return;
+    const local = loadReminderBoardLabels();
+    let changed = false;
+    REMINDER_BOARD_COLUMNS.forEach((column) => {
+      const remoteLabel = normalizeReminderBoardLabel(remoteLabels[column.key]);
+      if (remoteLabel && local[column.key] !== remoteLabel) {
+        local[column.key] = remoteLabel;
+        changed = true;
+      }
+    });
+    if (changed) {
+      persistReminderBoardLabels(local);
+    }
+    if (!boardLabelInitialSyncDone && userId) {
+      boardLabelInitialSyncDone = true;
+      REMINDER_BOARD_COLUMNS.forEach((column) => {
+        const localLabel = normalizeReminderBoardLabel(local[column.key]);
+        if (localLabel && !normalizeReminderBoardLabel(remoteLabels[column.key])) {
+          saveReminderBoardLabelRemote(userId, column.key, localLabel).catch(() => {});
+        }
+      });
+    }
+    if (changed) {
+      try {
+        render();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  async function startBoardLabelSync() {
+    if (!userId) return;
+    stopBoardLabelSync();
+    try {
+      boardLabelUnsub = await subscribeReminderBoardLabels(
+        userId,
+        (remoteLabels) => applyRemoteReminderBoardLabels(remoteLabels),
+        (error) => console.warn('[reminder] board label sync error', error),
+      );
+    } catch (error) {
+      console.warn('[reminder] board label subscribe failed', error);
+    }
+  }
+
+  function stopBoardLabelSync() {
+    if (typeof boardLabelUnsub === 'function') {
+      try {
+        boardLabelUnsub();
+      } catch {
+        /* ignore */
+      }
+    }
+    boardLabelUnsub = null;
+    boardLabelInitialSyncDone = false;
+  }
+
+  function beginReminderBoardLabelEdit(column, headingCopy, labelHeading) {
+    if (!column || !(headingCopy instanceof HTMLElement) || !(labelHeading instanceof HTMLElement)) {
+      return;
+    }
+    const currentLabel = getReminderBoardLabel(column);
+    const form = document.createElement('form');
+    form.className = 'reminder-category-column-rename-form';
+    form.setAttribute('aria-label', `Rename ${currentLabel} column`);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'reminder-category-column-rename-input';
+    input.value = currentLabel;
+    input.maxLength = REMINDER_BOARD_LABEL_MAX_LENGTH;
+    input.required = true;
+    input.autocomplete = 'off';
+    input.setAttribute('aria-label', 'Column name');
+
+    const saveButton = document.createElement('button');
+    saveButton.type = 'submit';
+    saveButton.className = 'reminder-category-column-rename-save';
+    saveButton.textContent = '✓';
+    saveButton.setAttribute('aria-label', 'Save column name');
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'reminder-category-column-rename-cancel';
+    cancelButton.textContent = '×';
+    cancelButton.setAttribute('aria-label', 'Cancel renaming column');
+
+    const cancel = () => render();
+    cancelButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      cancel();
+    });
+    input.addEventListener('input', () => input.setCustomValidity(''));
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        cancel();
+      }
+    });
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const savedLabel = saveReminderBoardLabel(column.key, input.value);
+      if (!savedLabel) {
+        input.setCustomValidity('Enter a column name');
+        input.reportValidity();
+      }
+    });
+
+    form.append(input, saveButton, cancelButton);
+    headingCopy.classList.add('is-renaming');
+    labelHeading.replaceWith(form);
+    input.focus();
+    input.select();
+  }
+
   function loadReminderGroupColors() {
     if (typeof localStorage === 'undefined') return {};
     try {
@@ -7166,6 +7357,9 @@ export async function initReminders(sel = {}) {
 
     if (variant === 'mobile') {
       const columnItems = new Map(REMINDER_BOARD_COLUMNS.map((column) => [column.key, []]));
+      const boardLabels = new Map(
+        REMINDER_BOARD_COLUMNS.map((column) => [column.key, getReminderBoardLabel(column)]),
+      );
       const otherItems = [];
       activeRows.forEach((reminder) => {
         const columnKey = getReminderBoardColumnKey(reminder.category);
@@ -7179,9 +7373,16 @@ export async function initReminders(sel = {}) {
       const board = document.createElement(listIsSemantic ? 'li' : 'div');
       board.className = 'reminder-category-board';
       board.setAttribute('aria-label', 'Reminder categories');
+      if (list) {
+        list.setAttribute(
+          'aria-label',
+          `${boardLabels.get('school')} and ${boardLabels.get('footy')} reminder board`,
+        );
+      }
 
       REMINDER_BOARD_COLUMNS.forEach((column) => {
         const reminders = columnItems.get(column.key) || [];
+        const displayLabel = boardLabels.get(column.key) || column.label;
         const section = document.createElement('section');
         section.className = `reminder-category-column reminder-category-column--${column.key}`;
         section.dataset.reminderColumn = column.key;
@@ -7194,7 +7395,19 @@ export async function initReminders(sel = {}) {
         const label = document.createElement('h3');
         label.id = `reminder-column-${column.key}-title`;
         label.className = 'reminder-category-column-title';
-        label.textContent = column.label;
+        const renameButton = document.createElement('button');
+        renameButton.type = 'button';
+        renameButton.className = 'reminder-category-column-rename';
+        renameButton.dataset.action = 'rename-column';
+        renameButton.dataset.columnKey = column.key;
+        renameButton.textContent = displayLabel;
+        renameButton.setAttribute('aria-label', `Rename ${displayLabel} column`);
+        renameButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          beginReminderBoardLabelEdit(column, headingCopy, label);
+        });
+        label.appendChild(renameButton);
         const count = document.createElement('span');
         count.className = 'reminder-category-column-count';
         count.textContent = String(reminders.length);
@@ -7205,7 +7418,7 @@ export async function initReminders(sel = {}) {
         addButton.type = 'button';
         addButton.className = 'reminder-category-add-card';
         addButton.textContent = '+ Add';
-        addButton.setAttribute('aria-label', `Add a ${column.label} reminder card`);
+        addButton.setAttribute('aria-label', `Add a ${displayLabel} reminder card`);
         addButton.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -7220,7 +7433,7 @@ export async function initReminders(sel = {}) {
 
         const sectionItems = document.createElement('ul');
         sectionItems.className = 'reminder-category-column-items';
-        sectionItems.setAttribute('aria-label', `${column.label} reminder cards`);
+        sectionItems.setAttribute('aria-label', `${displayLabel} reminder cards`);
         if (!reminders.length) {
           const emptyColumn = document.createElement('li');
           emptyColumn.className = 'reminder-category-column-empty';
@@ -7252,7 +7465,7 @@ export async function initReminders(sel = {}) {
         label.textContent = 'Other reminders';
         const help = document.createElement('span');
         help.className = 'reminder-other-cards-help';
-        help.textContent = 'Move these to School or Footy from the card menu.';
+        help.textContent = `Move these to ${boardLabels.get('school')} or ${boardLabels.get('footy')} from the card menu.`;
         heading.append(label, help);
 
         const sectionItems = document.createElement('ul');

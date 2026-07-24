@@ -52,6 +52,10 @@ afterEach(() => {
 // read group-colour state declared further down the function - i.e. still in its
 // TDZ - throwing "Cannot access ... before initialization".
 test('initReminders survives onSessionChange firing synchronously during init (persisted sign-in)', async () => {
+  const subscribeReminderBoardLabels = jest.fn(async (_userId, onLabels) => {
+    onLabels?.({ school: 'Work' });
+    return () => {};
+  });
   const initAuth = async ({ onSessionChange } = {}) => {
     if (typeof onSessionChange === 'function') {
       // Simulate Firebase replaying a persisted signed-in user during init.
@@ -60,18 +64,24 @@ test('initReminders survives onSessionChange firing synchronously during init (p
     return { signOut: async () => {} };
   };
 
-  const { initReminders } = loadReminderController({ initAuth });
+  const { initReminders } = loadReminderController({ initAuth, subscribeReminderBoardLabels });
 
-  await expect(
-    initReminders({
+  await expect(initReminders({
       statusSel: '#status',
       listWrapperSel: '#remindersWrapper',
       emptyStateSel: '#emptyState',
       listSel: '#reminderList',
       googleSignInBtnSel: '#googleSignInBtn',
       firebaseDeps: createFirebaseStubs(),
-    }),
-  ).resolves.toBeDefined();
+    })).resolves.toBeDefined();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  expect(subscribeReminderBoardLabels).toHaveBeenCalledWith(
+    'user-123',
+    expect.any(Function),
+    expect.any(Function),
+  );
+  expect(JSON.parse(localStorage.getItem('memoryCue:reminderBoardLabels'))).toEqual({ school: 'Work' });
 });
 
 test('local reminders render and save before deferred auth is ready', async () => {

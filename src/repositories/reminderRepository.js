@@ -45,6 +45,11 @@ export const removeReminder = async (uid, reminderId) => {
 
 const groupColorsDoc = (firebase, uid) => firebase.doc(firebase.db, 'users', requireUid(uid), 'preferences', 'reminderGroupColors');
 
+const normalizeBoardColumnKey = (value) => {
+  const key = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return key === 'school' || key === 'footy' ? key : '';
+};
+
 export const saveReminderGroupColorRemote = async (uid, name, color) => {
   const key = typeof name === 'string' ? name.trim() : '';
   if (!key || typeof color !== 'string' || !color) {
@@ -65,6 +70,40 @@ export const subscribeReminderGroupColors = async (uid, onColors, onError = null
     const colors = data && data.colors && typeof data.colors === 'object' ? data.colors : {};
     if (typeof onColors === 'function') {
       onColors(colors);
+    }
+  }, (error) => {
+    if (typeof onError === 'function') {
+      onError(error);
+    }
+  });
+};
+
+export const saveReminderBoardLabelRemote = async (uid, columnKey, label) => {
+  const key = normalizeBoardColumnKey(columnKey);
+  const normalizedLabel = typeof label === 'string' ? label.replace(/\s+/g, ' ').trim().slice(0, 32) : '';
+  if (!key || !normalizedLabel) {
+    return;
+  }
+  const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'save-board-label');
+  await firebase.setDoc(
+    groupColorsDoc(firebase, normalizedUid),
+    { boardLabels: { [key]: normalizedLabel } },
+    { merge: true },
+  );
+};
+
+export const subscribeReminderBoardLabels = async (uid, onLabels, onError = null) => {
+  const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'subscribe-board-labels');
+  if (typeof firebase.onSnapshot !== 'function') {
+    return () => {};
+  }
+  return firebase.onSnapshot(groupColorsDoc(firebase, normalizedUid), (snapshot) => {
+    const data = snapshot && typeof snapshot.data === 'function' ? snapshot.data() : null;
+    const labels = data && data.boardLabels && typeof data.boardLabels === 'object'
+      ? data.boardLabels
+      : {};
+    if (typeof onLabels === 'function') {
+      onLabels(labels);
     }
   }, (error) => {
     if (typeof onError === 'function') {

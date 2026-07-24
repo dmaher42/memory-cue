@@ -188,6 +188,40 @@ async function main() {
       throw new Error(`Expected School and Footy board columns, received: ${JSON.stringify(boardColumnLabels)}`);
     }
 
+    await page.locator('[data-reminder-column="school"] [data-action="rename-column"]').click();
+    await page.locator('[data-reminder-column="school"] .reminder-category-column-rename-input').fill('Work');
+    const renameEditorScreenshotOutput = typeof process.env.PLAYWRIGHT_RENAME_EDITOR_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_RENAME_EDITOR_SCREENSHOT_PATH.trim()
+      : '';
+    if (renameEditorScreenshotOutput) {
+      const renameEditorScreenshotPath = path.resolve(cwd, renameEditorScreenshotOutput);
+      await fs.mkdir(path.dirname(renameEditorScreenshotPath), { recursive: true });
+      await page.screenshot({ path: renameEditorScreenshotPath, fullPage: true });
+    }
+    await page.locator('[data-reminder-column="school"] .reminder-category-column-rename-save').click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-reminder-column="school"] .reminder-category-column-title')?.textContent?.trim() === 'Work'
+    ));
+    const renamedSchoolLabel = (
+      await page.locator('[data-reminder-column="school"] .reminder-category-column-title').textContent()
+    )?.trim();
+    const persistedBoardLabels = await page.evaluate(() => {
+      try {
+        return JSON.parse(localStorage.getItem('memoryCue:reminderBoardLabels') || '{}');
+      } catch {
+        return {};
+      }
+    });
+    const otherReminderHelp = (
+      await page.locator('.reminder-other-cards-help').textContent()
+    )?.trim();
+    if (renamedSchoolLabel !== 'Work' || persistedBoardLabels.school !== 'Work') {
+      throw new Error(`Expected renamed School column to persist as Work, received: ${JSON.stringify({ renamedSchoolLabel, persistedBoardLabels })}`);
+    }
+    if (!/Move these to Work or Footy/i.test(otherReminderHelp || '')) {
+      throw new Error(`Expected Other reminder help to use the renamed column, received: ${otherReminderHelp}`);
+    }
+
     await page.selectOption('#quickAddCategory', 'Footy');
     await page.fill('#reminderQuickAdd', 'Training tomorrow at 7pm');
     await page.click('#quickAddSubmit');
@@ -318,6 +352,16 @@ async function main() {
       throw new Error(`Expected quick-add reminder to mirror into inbox, received: ${JSON.stringify(inboxEntries)}`);
     }
 
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof window.memoryCueQuickAddNow === 'function');
+    await page.click('#mobile-footer-reminders');
+    await page.waitForFunction(() => (
+      document.querySelector('[data-reminder-column="school"] .reminder-category-column-title')?.textContent?.trim() === 'Work'
+    ));
+    const reloadedSchoolLabel = (
+      await page.locator('[data-reminder-column="school"] .reminder-category-column-title').textContent()
+    )?.trim();
+
     const blockingErrors = logs.filter((entry) => {
       const text = entry.text || '';
       return (
@@ -341,6 +385,9 @@ async function main() {
       persistedDue: persistedQuickAddReminder.due,
       visibleQuickAddCategory: visibleQuickAddReminder.category,
       boardColumnLabels,
+      renamedSchoolLabel,
+      reloadedSchoolLabel,
+      persistedBoardLabels,
       movedCardCategory: persistedReminders.find((reminder) => reminder?.title === 'Call Mum')?.category,
       firstFootyCardTitle,
       addCardCategory,
