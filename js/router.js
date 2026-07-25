@@ -1,7 +1,7 @@
 /*
 LEGACY HASH ROUTER (DEPRECATED)
-Phase 3 unified runtime navigation uses js/services/navigation-service.js.
-This file remains as a compatibility no-op for legacy shells.
+The active mobile runtime uses js/services/navigation-service-v2.js.
+This file remains only as a compatibility no-op for the legacy 404.html shell.
 */
 
 (function () {

@@ -73,7 +73,7 @@ The goal of this plan is to split responsibilities into focused modules **withou
 - Top-level mutable variables that represent cross-feature UI state.
 - Generic state update helpers currently reused by multiple areas.
 
-### `js/navigation.js`
+### `js/services/navigation-service-v2.js`
 
 **Owns**
 - Navigation event handlers and route/view switching.
@@ -85,9 +85,10 @@ The goal of this plan is to split responsibilities into focused modules **withou
 - Data persistence.
 - Assistant request logic.
 
-**Examples to move**
-- Handlers that react to nav button clicks/data-nav-target attributes.
-- Functions that show/hide major page sections.
+**Current status**
+- This is the loaded mobile navigation controller.
+- `mobile.js` and feature modules should dispatch `app:navigate` rather than add another view-switching implementation.
+- The older `js/navigation.js` and byte-identical unused `js/services/navigation-service.js` have been removed.
 
 ### `js/inbox.js`
 
@@ -208,7 +209,7 @@ Keep rendering and direct DOM updates out of persistence modules.
 ## Safe Refactor Sequence
 
 1. Extract shared state helpers into `js/app-state.js`.
-2. Extract navigation wiring into `js/navigation.js`.
+2. Keep navigation wiring converged on `js/services/navigation-service-v2.js`; do not recreate `js/navigation.js`.
 3. Extract reminder logic into `js/reminders.js`.
 4. Extract notes and folder/editor logic into `js/notes.js`.
 5. Extract assistant/thinking bar UI logic into `js/assistant-ui.js`.

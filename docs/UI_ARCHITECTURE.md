@@ -5,14 +5,12 @@
 - Legacy shell files remain for reference only and should not be extended.
 
 ## Navigation system
-- Single runtime navigation controller: `js/services/navigation-service.js`.
+- Single runtime navigation controller: `js/services/navigation-service-v2.js`.
 - Primary API: `navigationService.navigate(viewName)`.
 - Views:
   - `capture`
   - `reminders`
-  - `notes`
-  - `assistant`
-  - `settings`
+  - `notebooks`
 - Navigation behavior:
   - Shows target view.
   - Hides all other managed views.
@@ -42,6 +40,6 @@
 - `mobile.html` should keep only minimal inline styles that are layout-critical.
 
 ## Naming conventions
-- Use `notes` (not `notebook`) in navigation and user-facing labels.
+- Use `notebooks` for the internal mobile navigation target and `Notes` for the user-facing label.
 - Use `thinkingBarInput` for the sole freeform capture field.
 - Use `reminderText` only inside the structured reminder-creation sheet.

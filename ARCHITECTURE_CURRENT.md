@@ -33,7 +33,7 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 - **Reminders:** `memoryCue:offlineReminders` + reminder module state/render path.
 - **Notes / notebook memory:** `memoryCueNotes`.
 - **Folders/taxonomy for notes:** `memoryCueFolders`.
-- **Legacy/parallel store still referenced (do not duplicate further):** `memoryCueDB` in the old desktop assistant context path. `brainDumpItems` and `reminderEntries` have no active readers or writers.
+- **Historical local keys with no active readers or writers:** `memoryCueState`, `memoryCueDB`, `brainDumpItems`, and `reminderEntries`. Do not reintroduce these parallel stores.
 
 ## Guardrail
 When adding features, plug into one of the existing flows above. Do **not** add a new storage key or parallel intent pipeline unless a migration plan is explicitly documented.

@@ -1,26 +1,25 @@
 # UI Navigation Map
 
-## 1) Hash routing (`js/router.js`)
+## 1) Active mobile navigation (`js/services/navigation-service-v2.js`)
 
-- Uses `window.location.hash` (default `#dashboard`).
-- `renderRoute()` toggles visibility of elements with `[data-route]` or `[data-view]`.
-- Updates nav active states on elements with `[data-nav]` / `[data-route]`.
-- Bound to `window.addEventListener('hashchange', renderRoute)`.
+- Owns major mobile view switching for `capture`, `reminders`, and `notebooks`.
+- Listens for the canonical `app:navigate` event.
+- Toggles `[data-view]` visibility, `hidden`, `aria-hidden`, and active navigation state.
+- Dispatches `memorycue:navigation:changed` after a successful view change.
+- Binds the `data-nav-target` buttons once and normalizes `notebook` / `notes` to `notebooks`.
 
 ## 2) View toggles in mobile runtime
 
 ### Mobile markup (`mobile.html`)
-- View sections use `data-view` IDs such as:
+- Managed view sections use:
   - `view-capture`
   - `view-reminders`
   - `view-notebook`
-  - `assistantView`
-- Bottom nav buttons use `data-nav-target` (`capture`, `reminders`, `notebook`, `assistant`).
-- Footer click handler dispatches `CustomEvent('app:navigate', { detail: { view } })`.
+- Bottom nav buttons use `data-nav-target` (`capture`, `reminders`, `notebooks`).
 
-### Mobile runtime handlers (`mobile.js`, `js/navigation.js`)
-- `mobile.js` listens for `app:navigate` and toggles panel visibility, `aria-hidden`, and `data-active-view` on `body/main`.
-- `js/navigation.js` includes global `app:navigate` support and helper `showViewFor` handling `capture/reminders/new/notebook/assistant/...`.
+### Mobile runtime handlers
+- `mobile.js` and feature modules dispatch `app:navigate` when they need a major view change.
+- `js/services/navigation-service-v2.js` is the only loaded mobile view-switching controller.
 
 ## 3) Custom navigation events
 
@@ -32,9 +31,6 @@ Primary custom events found:
 
 ## 4) Navigation system overlap summary
 
-Current repo has overlapping mechanisms:
-- Hash route router (`js/router.js`) for older/route-based UI.
-- Event-driven view switching (`app:navigate`) in mobile runtime.
-- Local per-module view togglers in `mobile.js` and `js/navigation.js`.
+Active mobile navigation is converged on the event-driven `js/services/navigation-service-v2.js` controller. The old `js/navigation.js` and duplicate unversioned navigation service have been removed.
 
-This overlap is documented for cleanup planning; no behavior changes were made in this phase.
+`js/router.js` remains isolated to the legacy `404.html` desktop shell. Retiring that shell and router is a separate cleanup task.

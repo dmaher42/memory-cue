@@ -17,21 +17,14 @@ The live serverless code is the Cloudflare Pages Functions under `functions/api/
 
 ## Local assistant logic
 
-### `js/assistant.js` (mobile page assistant form)
-- Binds `#assistantForm` submit.
-- Sends message payload to `/api/assistant-chat`.
-- Appends user and assistant messages to `#assistantMessages`/`#assistantThread`.
-
 ### `mobile.js` assistant/capture hybrid logic
+- Owns the universal thinking-bar submit handler and assistant thread UI.
 - Maintains assistant thread UI and capture-intent routing.
 - Uses local search helpers for "thinking bar" results.
-- For assistant intent, forwards captured text into assistant form submit flow.
+- For assistant intent, routes requests through the shared capture/chat and assistant-orchestration services.
 - Also includes weekly reflection summary generation and recall list support.
 
-### Root `assistant.js` (legacy app shell)
-- Exposes `window.MemoryCueAssistant.askMemoryCue`.
-- Builds local context from `memoryCueState` entries.
-- Sends assistant questions to the assistant endpoint (now `/api/assistant-chat`; the legacy `/api/assistant` route it originally targeted has been removed) and has keyword fallback for offline/errors.
+The unloaded `js/assistant.js` placeholder and the old root `assistant.js` desktop controller have been removed. There is no separate active assistant UI controller outside `mobile.js`.
 
 ## Memory retrieval logic
 
@@ -39,12 +32,10 @@ The live serverless code is the Cloudflare Pages Functions under `functions/api/
   - `/api/assistant-chat` builds context from the client-supplied `inboxEntries`, `notes`, and `reminders`, selects top matches, and calls the OpenAI Responses API. (Retrieval that previously lived in the removed `/api/assistant`, `/api/chat`, and `/api/search` endpoints — person/keyword scoring, lexical similarity, synonym boosts — is now consolidated here.)
 
 - **Client retrieval:**
-  - `mobile.js` reads reminders (`scheduledReminders`), inbox (`memoryEntries`), and notes (`memoryCueNotes` via notes-storage) for recall/results surfaces.
-  - Legacy `assistant.js` filters and selects entries from `memoryCueState` before remote call/fallback.
+  - `mobile.js` reads reminders, the canonical Inbox service/store (`memoryCueInbox`), and notes (`memoryCueNotes` via notes-storage) for recall/results surfaces.
 
 ## Assistant interactions with notes/reminders
 
-- Assistant UI itself does not directly mutate reminders in `js/assistant.js`; it only requests `/api/assistant-chat`.
-- `mobile.js` capture flow may route text to reminder creation (`memoryCueQuickAddNow`) or inbox depending on intent; this sits adjacent to assistant logic.
-- `js/reminders.js` has an assistant request helper calling `/api/assistant-chat` in reminder-related experiences and merges reminders + notes + memory entries for RAG-like context assembly.
+- `mobile.js` capture flow may route text to reminder creation (`memoryCueQuickAddNow`) or Inbox depending on intent; this sits adjacent to assistant logic.
+- Reminder-side assistant helpers call the shared `src/services/assistantOrchestrator.js`, which targets `/api/assistant-chat` and assembles reminder/note/Inbox context.
 - Note creation from AI/capture is implemented via `js/modules/ai-capture-save.js` writing to `memoryCueNotes` and dispatching `memoryCue:notesUpdated`.

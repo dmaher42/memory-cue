@@ -4,7 +4,7 @@
 
 | Storage key | Data structure | Writers | Readers |
 |---|---|---|---|
-| `memoryCueState` | Object `{ schemaVersion, entries[], settings, ui }` | `state.js` (`save`, `addEntry`, updates) | `state.js`, root `assistant.js` (`loadEntriesFromState`) |
+| `memoryCueState` | Historical desktop-shell object `{ schemaVersion, entries[], settings, ui }` | No active writer remains (`state.js` has been removed) | No active reader remains |
 | `memoryCueInbox` | Array of canonical Inbox/capture entries | `src/services/inboxService.js` through the capture-service wrapper and trusted reminder conversion helpers | Inbox service consumers, reminder recall, daily log, Firestore sync |
 | `memoryEntries` | Legacy Inbox array or `{ entries }` wrapper | Historical writers only | `src/services/inboxService.js` for one-time migration when `memoryCueInbox` is empty |
 | `memoryCueNotes` | Array of note objects `{ id,title,body,bodyHtml,bodyText,updatedAt,... }` | `js/modules/notes-storage.js` (`saveAllNotes`), `mobile.js`, `src/reminders/reminderController.js`, `js/modules/ai-capture-save.js` | `js/modules/notes-storage.js` (`loadAllNotes`), `mobile.js`, reminder recall, `js/modules/daily-log.js` |
@@ -27,7 +27,7 @@
 
 ## Specific requested identifiers
 
-- `memoryCueState`: legacy shell state object (`state.js`).
+- `memoryCueState`: historical desktop-shell key with no active reader or writer.
 - `memoryCueInbox`: canonical Inbox/capture store.
 - `memoryEntries`: legacy input migrated into `memoryCueInbox`; no active writers remain.
 - `memoryCueNotes`: main notes model used by notes-storage and multiple conversion paths.

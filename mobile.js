@@ -914,7 +914,7 @@ if (document.readyState === 'loading') {
 
 /*
 DEPRECATED NAVIGATION BLOCK
-Phase 3 uses js/services/navigation-service.js as the single navigation controller.
+The mobile runtime uses js/services/navigation-service-v2.js as the single navigation controller.
 */
 
 
